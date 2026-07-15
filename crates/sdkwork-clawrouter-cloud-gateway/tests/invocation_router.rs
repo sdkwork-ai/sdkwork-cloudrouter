@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -7,6 +8,8 @@ use axum::extract::State;
 use axum::http::{HeaderMap, Method, Request, StatusCode};
 use axum::routing::{any, post};
 use axum::Json;
+use bytes::Bytes;
+use futures_util::StreamExt;
 use sdkwork_claw_config::ProviderAdapterConfig;
 use sdkwork_claw_test_support::assert_server_generated_request_id;
 use sdkwork_clawrouter_router_service::application::{
@@ -30,6 +33,7 @@ use sdkwork_clawrouter_router_service::ports::{
     StickyRouteStoreFuture,
 };
 use serde_json::json;
+use tokio::sync::mpsc;
 use tower::ServiceExt;
 
 #[derive(Debug, Default)]
@@ -115,6 +119,82 @@ impl InvocationDispatcher for CapturingDispatcher {
     }
 }
 
+struct DeferredSseDispatcher {
+    calls: AtomicUsize,
+    receiver: Mutex<Option<mpsc::Receiver<Bytes>>>,
+}
+
+impl DeferredSseDispatcher {
+    fn new(receiver: mpsc::Receiver<Bytes>) -> Self {
+        Self {
+            calls: AtomicUsize::new(0),
+            receiver: Mutex::new(Some(receiver)),
+        }
+    }
+
+    fn calls(&self) -> usize {
+        self.calls.load(Ordering::SeqCst)
+    }
+}
+
+impl InvocationDispatcher for DeferredSseDispatcher {
+    fn dispatch<'a>(
+        &'a self,
+        _invocation: &'a Invocation,
+        _account: &'a InvocationAccount,
+    ) -> InvocationDispatcherFuture<'a> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        let receiver = self
+            .receiver
+            .lock()
+            .unwrap()
+            .take()
+            .expect("test dispatcher should only be invoked once");
+        Box::pin(async move {
+            let stream = futures_util::stream::unfold(receiver, |mut receiver| async move {
+                receiver
+                    .recv()
+                    .await
+                    .map(|bytes| (Ok::<Bytes, std::io::Error>(bytes), receiver))
+            });
+            Ok(InvocationDispatchResponse::streaming(
+                200,
+                Some("text/event-stream".to_owned()),
+                Body::from_stream(stream),
+            ))
+        })
+    }
+}
+
+#[derive(Debug, Default)]
+struct StallingSseDispatcher {
+    calls: AtomicUsize,
+}
+
+impl StallingSseDispatcher {
+    fn calls(&self) -> usize {
+        self.calls.load(Ordering::SeqCst)
+    }
+}
+
+impl InvocationDispatcher for StallingSseDispatcher {
+    fn dispatch<'a>(
+        &'a self,
+        _invocation: &'a Invocation,
+        _account: &'a InvocationAccount,
+    ) -> InvocationDispatcherFuture<'a> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        Box::pin(async move {
+            let stream = futures_util::stream::pending::<Result<Bytes, std::io::Error>>();
+            Ok(InvocationDispatchResponse::streaming(
+                200,
+                Some("text/event-stream".to_owned()),
+                Body::from_stream(stream),
+            ))
+        })
+    }
+}
+
 #[derive(Debug, Default)]
 struct ProviderErrorDispatcher;
 
@@ -161,6 +241,23 @@ impl RecordingUsageRecorder {
     fn traces(&self) -> Vec<GatewayRequestTraceCommand> {
         self.traces.lock().unwrap().clone()
     }
+}
+
+async fn wait_for_usage_commands(
+    recorder: &RecordingUsageRecorder,
+    expected_count: usize,
+) -> Vec<GatewayUsageRecordCommand> {
+    tokio::time::timeout(Duration::from_secs(1), async {
+        loop {
+            let commands = recorder.commands();
+            if commands.len() >= expected_count {
+                return commands;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .expect("stream terminal lifecycle should record usage")
 }
 
 impl GatewayUsageRecorder for RecordingUsageRecorder {
@@ -1292,7 +1389,7 @@ async fn invocation_router_provider_native_adapter_uses_standard_chain_and_recor
         sdkwork_clawrouter_cloud_gateway::invocation_router_with_full_pipeline_and_provider_adapter_config(
             Arc::new(catalog_with_hashed_api_key(&key_hash)),
             hasher,
-            Arc::new(sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::new()),
+            Arc::new(sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::for_development()),
             Some(secret_resolver()),
             None,
             Some(usage_recorder.clone()),
@@ -1572,7 +1669,7 @@ async fn invocation_http_dispatcher_forwards_provider_request_and_returns_normal
                 &format!("{base_url}/openrouter"),
             )),
             hasher,
-            Arc::new(sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::new()),
+            Arc::new(sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::for_development()),
             secret_resolver(),
         );
 
@@ -1582,7 +1679,6 @@ async fn invocation_http_dispatcher_forwards_provider_request_and_returns_normal
                 .method("POST")
                 .uri("/v1/chat/completions")
                 .header("authorization", "Bearer sk-live-secret")
-                .header("x-api-key", "sk-live-secret")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}"#,
@@ -1610,6 +1706,51 @@ async fn invocation_http_dispatcher_forwards_provider_request_and_returns_normal
     assert_eq!("gpt-4o-mini-provider", requests[0].body["model"]);
 
     server.abort();
+}
+
+#[tokio::test]
+async fn invocation_router_rejects_multiple_api_key_credential_sources() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let dispatcher = Arc::new(CapturingDispatcher::default());
+    let router =
+        sdkwork_clawrouter_cloud_gateway::invocation_router_with_catalog_api_key_hasher_dispatcher_and_secret_resolver(
+            Arc::new(catalog_with_hashed_api_key(&key_hash)),
+            hasher,
+            dispatcher.clone(),
+            secret_resolver(),
+        );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("x-api-key", "sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!("invalid_request", payload["error"]["code"]);
+    assert_eq!(
+        "multiple API key credential sources are not allowed",
+        payload["error"]["message"]
+    );
+    assert!(
+        dispatcher.calls().is_empty(),
+        "ambiguous credentials must be rejected before dispatch"
+    );
 }
 
 #[tokio::test]
@@ -1672,7 +1813,7 @@ async fn invocation_http_dispatcher_forwards_streaming_model_call_as_sse_respons
             &format!("{base_url}/openrouter"),
         )),
         hasher,
-        Arc::new(sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::new()),
+        Arc::new(sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::for_development()),
         Some(secret_resolver()),
         None,
         Some(usage_recorder.clone()),
@@ -1717,7 +1858,7 @@ async fn invocation_http_dispatcher_forwards_streaming_model_call_as_sse_respons
     assert_eq!("gpt-4o-mini-provider", requests[0].body["model"]);
     assert_eq!(true, requests[0].body["stream"]);
 
-    let commands = usage_recorder.commands();
+    let commands = wait_for_usage_commands(usage_recorder.as_ref(), 2).await;
     assert_eq!(2, commands.len());
     assert!(commands.iter().all(|command| command.streaming));
     assert_eq!("llm_input_token", commands[0].billing_meter_code);
@@ -1728,6 +1869,151 @@ async fn invocation_http_dispatcher_forwards_streaming_model_call_as_sse_respons
     assert_eq!(3, commands[1].completion_tokens);
 
     server.abort();
+}
+
+#[tokio::test]
+async fn invocation_router_streams_without_buffering_and_retains_idempotency_until_eof() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let (sender, receiver) = mpsc::channel(2);
+    let dispatcher = Arc::new(DeferredSseDispatcher::new(receiver));
+    let usage_recorder = Arc::new(RecordingUsageRecorder::default());
+    let router = sdkwork_clawrouter_cloud_gateway::invocation_router_with_full_pipeline(
+        Arc::new(catalog_with_hashed_api_key(&key_hash)),
+        hasher,
+        dispatcher.clone(),
+        Some(secret_resolver()),
+        None,
+        Some(usage_recorder.clone()),
+    );
+
+    let build_request = || {
+        Request::builder()
+            .method("POST")
+            .uri("/v1/chat/completions")
+            .header("authorization", "Bearer sk-live-secret")
+            .header("idempotency-key", "stream-lifecycle-key")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                r#"{"model":"gpt-4o-mini","stream":true,"messages":[{"role":"user","content":"ping"}]}"#,
+            ))
+            .unwrap()
+    };
+
+    let response = tokio::time::timeout(
+        Duration::from_millis(250),
+        router.clone().oneshot(build_request()),
+    )
+    .await
+    .expect("stream headers must not wait for the provider body")
+    .unwrap();
+    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(1, dispatcher.calls());
+    assert!(
+        usage_recorder.commands().is_empty(),
+        "usage must remain pending while the stream is open"
+    );
+
+    let duplicate = router.clone().oneshot(build_request()).await.unwrap();
+    assert_eq!(StatusCode::CONFLICT, duplicate.status());
+    assert_eq!(
+        1,
+        dispatcher.calls(),
+        "a duplicate in-progress stream must not reach the provider"
+    );
+
+    sender
+        .send(Bytes::from(
+            "data: {\"id\":\"chatcmpl-stream\",\"choices\":[{\"delta\":{\"content\":\"pong\"}}]}\n\n",
+        ))
+        .await
+        .unwrap();
+    let mut body = response.into_body().into_data_stream();
+    let first = body.next().await.unwrap().unwrap();
+    assert!(std::str::from_utf8(&first)
+        .unwrap()
+        .contains("chatcmpl-stream"));
+    assert!(
+        usage_recorder.commands().is_empty(),
+        "usage must not be committed before the terminal usage event"
+    );
+
+    sender
+        .send(Bytes::from(
+            "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":4,\"completion_tokens\":3,\"total_tokens\":7}}\n\ndata: [DONE]\n\n",
+        ))
+        .await
+        .unwrap();
+    drop(sender);
+    while let Some(frame) = body.next().await {
+        frame.unwrap();
+    }
+
+    let commands = wait_for_usage_commands(usage_recorder.as_ref(), 2).await;
+    assert_eq!(2, commands.len());
+    assert!(commands.iter().all(|command| command.streaming));
+}
+
+#[tokio::test]
+async fn invocation_router_times_out_an_unpolled_stream_and_releases_idempotency() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let mut catalog = catalog_with_hashed_api_key(&key_hash);
+    catalog.add_provider_channel_route(
+        ProviderChannelRoute::new("openrouter", 3001)
+            .with_provider_endpoint(
+                Some("http://provider-proxy.internal/openrouter"),
+                Some("vault://providers/openrouter/account/main"),
+            )
+            .with_timeout_ms(25)
+            .with_retry_policy(ProviderRetryPolicy::new(1, vec![429, 503], 0).unwrap()),
+    );
+    let dispatcher = Arc::new(StallingSseDispatcher::default());
+    let router = sdkwork_clawrouter_cloud_gateway::invocation_router_with_full_pipeline(
+        Arc::new(catalog),
+        hasher,
+        dispatcher.clone(),
+        Some(secret_resolver()),
+        None,
+        None,
+    );
+    let build_request = || {
+        Request::builder()
+            .method("POST")
+            .uri("/v1/chat/completions")
+            .header("authorization", "Bearer sk-live-secret")
+            .header("idempotency-key", "unpolled-stream-timeout-key")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                r#"{"model":"gpt-4o-mini","stream":true,"messages":[{"role":"user","content":"ping"}]}"#,
+            ))
+            .unwrap()
+    };
+
+    let first = router.clone().oneshot(build_request()).await.unwrap();
+    assert_eq!(StatusCode::OK, first.status());
+    assert_eq!(1, dispatcher.calls());
+
+    let second = tokio::time::timeout(Duration::from_secs(1), async {
+        loop {
+            let response = router.clone().oneshot(build_request()).await.unwrap();
+            if response.status() != StatusCode::CONFLICT {
+                return response;
+            }
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .expect("the unpolled stream must reach its total deadline");
+    assert_eq!(StatusCode::OK, second.status());
+    assert_eq!(
+        2,
+        dispatcher.calls(),
+        "terminal timeout must release the in-progress idempotency record"
+    );
+
+    drop(first);
+    drop(second);
 }
 
 #[tokio::test]
@@ -1831,7 +2117,7 @@ async fn invocation_http_dispatcher_forwards_provider_header_auth_after_sanitizi
         provider_model: None,
     };
 
-    let response = sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::new()
+    let response = sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::for_development()
         .dispatch(&invocation, &account)
         .await
         .expect("dispatch");
@@ -1892,7 +2178,7 @@ async fn invocation_http_dispatcher_enforces_account_timeout() {
         provider_model: None,
     };
 
-    let error = sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::new()
+    let error = sdkwork_clawrouter_cloud_gateway::InvocationHttpDispatcher::for_development()
         .dispatch(&invocation, &account)
         .await
         .unwrap_err();

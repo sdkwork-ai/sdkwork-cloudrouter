@@ -1,5 +1,5 @@
 import type { PlaygroundModelOption } from '../../playgroundTypes';
-import type { RuntimeUsageSnapshot } from '@sdkwork/clawroutes-pc-commons/runtime';
+import type { RuntimeUsageSnapshot } from '@sdkwork/clawroutes-pc-commons/runtime-usage';
 
 export type ChatRole = 'user' | 'assistant';
 

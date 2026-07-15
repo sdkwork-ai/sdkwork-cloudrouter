@@ -1,17 +1,19 @@
 # Runbooks
 
-Status: active
+Status: pre-launch; target procedures require current-candidate evidence
 Owner: SDKWork Claw Router SRE / clawrouter-release
 Application: sdkwork-clawrouter
-Updated: 2026-06-27
+Updated: 2026-07-14
 Specs: DOCUMENTATION_SPEC.md §7, HEALTH_CHECK_SPEC.md, DEPLOYMENT_SPEC.md
 
 ## Purpose
 
 Operational runbooks for on-call engineers handling SDKWork Claw Router
-production incidents. Each runbook covers a specific failure scenario with
-trigger conditions, diagnostic steps, mitigation, rollback, and post-incident
-checklist.
+incidents. Current procedures are target designs unless they link immutable
+evidence from the current candidate. They do not establish an operating
+production, high-availability, recovery, or RPO/RTO capability on their own.
+Each runbook must be reviewed against deployed topology, backups, identity
+allocation, data-retention policy, and actual drill results before use.
 
 Scenario-specific runbooks live in this directory (`docs/runbooks/`); the
 top-level disaster recovery plan and production operations runbook live in
@@ -23,39 +25,39 @@ top-level disaster recovery plan and production operations runbook live in
 
 Short-incident runbooks for active outages and data-safety events.
 
-| Scenario | Path | Severity | Last Drill |
+| Scenario | Path | Severity | Drill evidence |
 | --- | --- | --- | --- |
-| Provider upstream outage (circuit breaker, failover, retry) | [provider-outage.md](provider-outage.md) | P0 | 2026-06-22 |
-| Tenant isolation incident (cross-tenant data access) | [tenant-isolation-incident.md](tenant-isolation-incident.md) | P0 | 2026-06-21 |
-| Redis failover (Sentinel, degraded mode) | [redis-failover.md](redis-failover.md) | P0 | 2026-06-23 |
-| PostgreSQL HA failover (Patroni, pgBouncer, PITR) | [postgresql-ha-failover.md](postgresql-ha-failover.md) | P0 | 2026-06-23 |
-| Disaster recovery plan (cross-region, full DR) | [../../deployments/runbooks/disaster-recovery-plan.md](../../deployments/runbooks/disaster-recovery-plan.md) | P0 | 2026-06-20 |
+| Provider upstream outage (circuit breaker, failover, retry) | [provider-outage.md](provider-outage.md) | P0 | Historical date only; no current-candidate evidence |
+| Tenant isolation incident (cross-tenant data access) | [tenant-isolation-incident.md](tenant-isolation-incident.md) | P0 | Historical date only; no current-candidate evidence |
+| Redis failover (Sentinel, degraded mode) | [redis-failover.md](redis-failover.md) | P0 | Not executed for current candidate |
+| PostgreSQL HA failover (Patroni, pgBouncer, PITR) | [postgresql-ha-failover.md](postgresql-ha-failover.md) | P0 | Not executed for current candidate |
+| Disaster recovery plan (cross-region, full DR) | [../../deployments/runbooks/disaster-recovery-plan.md](../../deployments/runbooks/disaster-recovery-plan.md) | P0 | Not executed for current candidate |
 
 ### Operations (运维)
 
 Day-2 operations, capacity, and change-management runbooks.
 
-| Scenario | Path | Severity | Last Drill |
+| Scenario | Path | Severity | Drill evidence |
 | --- | --- | --- | --- |
-| Production operations (health, shutdown, password rate limit, supply chain) | [../../deployments/runbooks/production-operations.md](../../deployments/runbooks/production-operations.md) | P0 | 2026-06-20 |
-| Database migration rollback (Flyway down / PITR) | [database-migration-rollback.md](database-migration-rollback.md) | P1 | 2026-06-19 |
-| Rate limit / circuit break tuning | [rate-limit-circuit-break.md](rate-limit-circuit-break.md) | P1 | 2026-06-17 |
+| Production operations (health, shutdown, password rate limit, supply chain) | [../../deployments/runbooks/production-operations.md](../../deployments/runbooks/production-operations.md) | P0 | Historical date only; no current-candidate evidence |
+| Database migration rollback (Flyway down / PITR) | [database-migration-rollback.md](database-migration-rollback.md) | P1 | Historical date only; no current-candidate evidence |
+| Rate limit / circuit break tuning | [rate-limit-circuit-break.md](rate-limit-circuit-break.md) | P1 | Historical date only; no current-candidate evidence |
 
 ### Security (安全)
 
 Credential lifecycle and trust-boundary runbooks.
 
-| Scenario | Path | Severity | Last Drill |
+| Scenario | Path | Severity | Drill evidence |
 | --- | --- | --- | --- |
-| Token / API key rotation (HMAC, provider creds, admin) | [token-api-key-rotation.md](token-api-key-rotation.md) | P1 | 2026-06-18 |
+| Token / API key rotation (HMAC, provider creds, admin) | [token-api-key-rotation.md](token-api-key-rotation.md) | P1 | Historical date only; no current-candidate evidence |
 
 ### Compliance (合规)
 
 Audit, evidence, and regulatory-response runbooks.
 
-| Scenario | Path | Severity | Last Drill |
+| Scenario | Path | Severity | Drill evidence |
 | --- | --- | --- | --- |
-| Audit log investigation (query, export, SIEM) | [audit-log-investigation.md](audit-log-investigation.md) | P2 | 2026-06-15 |
+| Audit log investigation (query, export, SIEM) | [audit-log-investigation.md](audit-log-investigation.md) | P2 | Historical date only; no current-candidate evidence |
 
 ## On-Call Workflow
 

@@ -62,7 +62,10 @@ pub use invocation::{Invocation, InvocationId, InvocationRequest};
 pub use metrics_interceptor::MetricsInterceptor;
 pub use openai_classifier::OpenAiResourceClassifier;
 pub use payload::PayloadExtractionInterceptor;
-pub use pipeline::InvocationPipeline;
+pub use pipeline::{
+    DeferredStreamInvocation, DeferredStreamResponse, InvocationPipeline,
+    InvocationPipelineExecution, InvocationPipelineFailure, StreamTerminalOutcome,
+};
 pub use pricing::{PricingFinalizationInterceptor, PricingPreflightInterceptor};
 pub use provider_adapter_dispatch::ProviderAdapterDispatchInterceptor;
 pub use provider_native_classifier::ProviderNativeResourceClassifier;
@@ -88,5 +91,8 @@ pub use trace::TraceTelemetryInterceptor;
 pub use usage::{
     InvocationPricingQuote, InvocationUsage, InvocationUsageLine, InvocationUsageLineRole,
 };
-pub use usage_extraction::UsageExtractionInterceptor;
+pub use usage_extraction::{
+    record_streaming_usage_body, StreamingUsageAccumulator, StreamingUsageFormat,
+    UsageExtractionInterceptor,
+};
 pub use usage_recording::UsageRecordingInterceptor;

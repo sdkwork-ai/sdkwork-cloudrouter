@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, BarChart3, Coins, Database, RefreshCw, Search, Users, Zap } from 'lucide-react';
+import { Activity, AlertTriangle, Coins, Database, RefreshCw, Search, Users, Zap } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import {
   Area,

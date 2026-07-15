@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-07-10
+Updated: 2026-07-14
 Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 
 This document is the **single entry point** for the Claw Router technical
@@ -13,15 +13,40 @@ verification) and links to detailed TECH shards for deep dives.
 > Commercial/SOC2 reviewers: read sections 1-7 in order. New engineers:
 > read sections 1-4 then jump to the linked TECH shard for your module.
 > The audit facts in `generated/audit/standard-alignment-facts.json` are
-> the machine-checkable mirror of section 9.
+> generated structural-fact input for review; they are not a release-readiness
+> mirror or P0 closure authority.
+
+## Current Evidence Status
+
+Status: pre-launch. The topology, technology, and module descriptions below
+define the intended architecture and do not by themselves prove a deployed,
+high-availability, commercially releasable service.
+
+The active production-readiness gate is
+[REQ-2026-0001](../../product/requirements/REQ-2026-0001-commercial-production-readiness.md)
+and its linked
+[ADR](../decisions/ADR-20260710-commercial-gateway-safety-boundaries.md) and
+implementation plan. Deployment, security, streaming, data-parity, recovery,
+and release assertions require fresh evidence from a clean candidate commit.
+The historical `standard-alignment-audit` documents are retained for
+traceability and are not release evidence.
+
+The active factual review is
+[REVIEW-20260714 Production Readiness Revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md).
+It records unclosed security, streaming, public-contract, persistence,
+concurrency, and PostgreSQL-evidence blockers. Architecture targets in this
+document remain requirements until the review rows are closed with fresh,
+clean-candidate verification evidence.
 
 ## 1. Architecture Overview
 
-Claw Router is a multi-tenant AI gateway that exposes OpenAI-compatible and
-provider-native APIs, routes traffic to upstream AI providers (OpenAI,
-Anthropic, Google, Volcengine, Tencent, Alicloud, etc.), enforces per-tenant
+Claw Router is intended to become a multi-tenant AI gateway that exposes
+OpenAI-compatible and provider-native APIs, routes traffic to upstream AI
+providers (OpenAI, Anthropic, Google, Volcengine, Tencent, Alicloud, etc.),
+and records usage for settlement. The current worktree partially implements
 authentication, quota, billing, circuit breaking, idempotency, and sticky
-routing, then records usage for settlement.
+routing; the active review defines the unclosed tenant, financial, streaming,
+and public-boundary gaps.
 
 The system is a polyglot monorepo: Rust services + TypeScript PC application
 + Python tooling guardians, governed by the SDKWork specs framework.
@@ -61,15 +86,22 @@ The system is a polyglot monorepo: Rust services + TypeScript PC application
 | Backend API | `/backend/v3/api/*` | admin-gateway | Admin UI (operator console) |
 | Platform API | `/openapi.json`, `/openapi/schema-tabs.json`, `/healthz`, `/readyz`, `/metrics` | claw-http | Ops + discovery |
 
+The compatibility prefixes above describe current route inventory, not an
+authorization grant. The production relay boundary must be an explicit
+inference/media `(provider, method, standardizedPath)` allowlist. Broad prefix
+or wildcard classification is a known P0 boundary defect and must not be used
+to claim that all currently reachable `/v1` or provider-native paths are
+commercially supported.
+
 ## 2. Technology Choices
 
 | Layer | Technology | Version pin | Rationale |
 | --- | --- | --- | --- |
 | Gateway core | Rust + axum 0.8 + hyper + tokio | rust-toolchain 1.79.0 | p95 latency overhead target < 50 ms; zero-cost abstractions |
 | HTTP client | hyper-rustls + webpki-roots | workspace dep | TLS by default; no native-tls OpenSSL dependency |
-| Database (prod) | PostgreSQL 16+ via sqlx | `sdkwork-database-sqlx` | Streaming replication, range partitioning for high-traffic tables |
-| Database (dev/desktop) | SQLite via sqlx | `sdkwork-database-sqlx` | Zero-config desktop bundling; same schema baseline |
-| Cache / distributed coordination | Redis 7+ | `sdkwork-claw-config::redis` | Circuit breaker + idempotency + sticky session HA store |
+| Database (prod target) | PostgreSQL 16+ via sqlx | `sdkwork-database-sqlx` | Required production candidate store; HA, recovery, and multi-worker evidence remain open |
+| Database (dev/desktop) | SQLite via sqlx | `sdkwork-database-sqlx` | Zero-config single-node development store; it is not a PostgreSQL HA/concurrency equivalent |
+| Cache / distributed coordination | Redis 7+ | `sdkwork-claw-config::redis` | Circuit breaker, idempotency, sticky state, and optional accounting-retry queue; HA, persistence, recovery, and capacity evidence remain open |
 | Frontend runtime | React 19 + Vite 6 + TanStack Query 5 | `apps/sdkwork-clawrouter-pc` | Concurrent rendering, suspense, streaming SSR-ready |
 | Frontend UI | Tailwind 4 + lucide-react + Recharts 3 | workspace deps | Industry-standard dashboard UX (OpenAI Platform / Vercel Console parity) |
 | i18n | i18next 26 | `@sdkwork/clawrouter-pc-i18n` | 7 languages: en, zh, de, fr, ja, ko, ru |
@@ -288,19 +320,39 @@ Critical/High security and performance controls:
 
 | ID | Control | Implementation |
 | --- | --- | --- |
-| C-1 | SSRF protection | `UpstreamProviderEndpoint::new` resolves upstream host via `to_socket_addrs` and rejects loopback/private/link-local/unspecified/CGN `100.64.0.0/10`/IPv6 ULA `fc00::/7` IP ranges before dispatching. |
+| C-1 | Partial SSRF mitigation | `UpstreamProviderEndpoint::new` resolves an upstream host and rejects selected loopback/private/link-local/unspecified/CGN `100.64.0.0/10`/IPv6 ULA `fc00::/7` ranges before dispatching. Resolver pinning, DNS-rebinding defense, persistent allowlists, redirect policy, and Kubernetes egress enforcement remain open. |
 | C-4 | Circuit breaker fail-closed | `CircuitBreakerConfig::fail_open` defaults to `false`; Redis degradation emits `tracing::warn!(circuit_breaker_redis_degraded = 1)`. |
 | C-5 | HTTP connection-pool tuning | `build_provider_client` configures `pool_idle_timeout`/`pool_max_idle_per_host`/`http2_keep_alive_interval`/`http2_keep_alive_timeout`/`connect_timeout` via `[provider_relay.http_pool]`. |
 | H-1 | HTTPS-only upstream | `hyper_rustls::HttpsConnectorBuilder::https_only()` replaces `.https_or_http()`; plaintext HTTP upstream URLs are rejected at construction. |
-| H-3 | Response body size limit | `http_body_util::Limited::new(response.into_body(), provider_response_max_bytes)` caps non-streaming responses at 64 MiB default; oversized bodies abort with `DomainError`. |
-| H-4 | Provider timeout reduction | `DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS = 60_000` (non-streaming); streaming responses use `stream_response_timeout_millis = 120_000`. |
+| H-3 | Per-request body limits | Non-streaming relay responses are read through a bounded body collector. `SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES` is injected into the unified `InvocationHttpDispatcher`; `gateway_invocation_body_max_bytes` is injected into authenticated passthrough request collection. These are per-request ceilings only. Allowed passthrough bodies are still collected before forwarding, and payload JSON, usage lines, pricing snapshots, retry envelopes, settlement reads, queues, and concurrent in-flight requests still require independent hard budgets. A body cap alone is not an OOM proof. |
+| H-4 | Provider timeout reduction | Non-streaming requests use the configured response timeout. The unified streaming router also applies a total stream timeout and releases terminal state on EOF, cancellation, timeout, or error; separate first-frame and idle deadlines remain unproven. |
 | H-5 | Dispatch retry tightening | `DispatchExecutor::max_attempts` returns 1 for `SseStream`/`ByteStream` invocations (no replay after SSE bytes sent); non-streaming defaults to 2. |
 | H-8 | Redis degraded alerting | `GatewayInvocationRateLimiter::redis_degraded_gauge()` emits Prometheus `redis_degraded=1`; local fallback divides quota by `estimated_instance_count` to prevent per-node over-allowance. |
 | H-9 | Tenant in-flight concurrency | `TenantInflightInterceptor` uses Redis atomic counter (Lua script + 5-minute TTL) or local `LocalTenantInflightCounter`; exceeding `tenant_max_inflight_requests` (default 100) returns HTTP 429 via `InvocationErrorKind::RateLimit`. |
+| H-10 | Accounting command admission | Gateway trace and usage commands reject values wider than their authored PostgreSQL/SQLite DDL fields, and reject decimal text above the existing SQLite `NUMERIC(38, 12)` 40-byte ceiling before parsing. Snapshot JSON is syntax/root-validated without building a second in-process DOM. This does not establish a pricing-snapshot byte/shape budget, queue capacity, or global OOM safety. |
+
+The direct authenticated Provider Adapter passthrough is not part of the
+completed streaming architecture. Its formal trait only returns a buffered JSON
+outcome, while the gateway can currently transfer a raw SSE/NDJSON body with no
+formal terminal usage, idempotency, cancellation, bounded headers, or once-only
+financial completion. It is not fail closed today; until a reviewed Adapter
+stream contract exists, this remains a release blocker rather than a commercial
+streaming capability.
+
+Cloud Gateway, app-api, and backend-api validate an explicit
+`SDKWORK_CLAW_SNOWFLAKE_NODE_ID` before their server/container database
+bootstrap accepts traffic. That prevents a shared fallback node ID but does not
+allocate, lease, fence, or detect duplicate IDs across replicas. The current
+two-replica Kubernetes Deployments provide no such assignment and must not be
+"fixed" with a shared static value. The upstream Snowflake implementation also
+needs a logical-clock correction for small clock rollbacks and a managed
+sequence-exhaustion policy. Cluster deployment remains blocked on an approved
+allocation/fencing design and the upstream ID repair.
 
 ### Cryptographic Material
 
-- App session token signing keys: rotate every 90 days
+- App session token signing keys: 90-day rotation is a policy target; durable
+  cross-replica lifecycle and recovery evidence are not complete
 - API key pepper: ≥32 characters, env or file source
 - Redis TLS: required in production (`redis://` → `rediss://`)
 - PostgreSQL: `sslmode=require` in production
@@ -313,11 +365,11 @@ Detailed security: [TECH-08-securitydesign.md](TECH-08-securitydesign.md)
 
 | Signal | Implementation | Status |
 | --- | --- | --- |
-| Structured logs | `tracing` + EnvFilter + 4 LogFormat (compact/json/pretty/full) | Production |
+| Structured logs | `tracing` + EnvFilter + 4 LogFormat (compact/json/pretty/full) | Implemented locally; no clean-candidate production evidence |
 | Metrics | `sdkwork-claw-http::metrics` 5 AtomicU64 counters | Beta (P0: add Prometheus histogram + labels) |
 | Distributed tracing | `sdkwork-claw-observability::tracing_setup` | Beta (P0: add OTLP exporter) |
-| Health checks | `/healthz` (liveness) + `/readyz` (readiness with combineable checks) | Production |
-| Audit log | `ops_audit_log` table | Production |
+| Health checks | `/healthz` (liveness) + `/readyz` (configured dependency checks) | Partial; not a generic migration/drift or enabled-schema gate |
+| Audit log | `ops_audit_log` table | Implemented; retention, recovery, and production evidence remain open |
 
 ## 7. Deployment And Runtime Topology
 
@@ -336,7 +388,12 @@ Detailed security: [TECH-08-securitydesign.md](TECH-08-securitydesign.md)
 - `server`: systemd / container / K8s deployment
 - `container`: Docker multi-arch (amd64/arm64)
 
-### Kubernetes Topology (production)
+### Target Kubernetes Topology (currently blocked)
+
+The following is a target topology, not a deployable HA claim. The current
+two-replica manifest has no cluster-safe Snowflake allocation/fencing and must
+not receive a shared static node ID. Redis HA, PostgreSQL recovery, NetworkPolicy,
+load, chaos, and restore evidence are also unresolved.
 
 ```
                     ┌──────────────────┐
@@ -436,8 +493,9 @@ pnpm release:preflight -- --strict --env-file .env.release --strict-root-clean
 ### Audit Facts (machine-checkable)
 
 `generated/audit/standard-alignment-facts.json` is generated by
-`scripts/refresh-standard-alignment-audit.mjs` from the repository source
-of truth. It is the single source of truth for P0 status tracking.
+`scripts/refresh-standard-alignment-audit.mjs` from authored structural inputs.
+It records static fact checks only; it is not the source of truth for P0
+closure, release readiness, or production evidence.
 
 ```bash
 node scripts/refresh-standard-alignment-audit.mjs           # regenerate
@@ -445,9 +503,12 @@ node scripts/refresh-standard-alignment-audit.mjs --check   # CI drift check
 node scripts/refresh-standard-alignment-audit.mjs --strict  # fail if any P0 pending
 ```
 
-Current status: see `docs/standard-alignment-audit.md` for the curated
-human-readable audit and `generated/audit/standard-alignment-facts.json`
-for the machine-checkable facts.
+Current status: use
+`docs/product/requirements/REQ-2026-0001-commercial-production-readiness.md`,
+its linked implementation plan, and fresh verification evidence. The historical
+`docs/standard-alignment-audit.md` is retained only for traceability;
+`generated/audit/standard-alignment-facts.json` is an input to review, not
+release evidence on its own.
 
 ## Document Map
 
@@ -564,7 +625,7 @@ Deep-dive TECH shards (linked by topic, not required reading for orientation):
 - [TECH-release-install.md](TECH-release-install.md)
 - [TECH-source-install-2.md](TECH-source-install-2.md)
 - [TECH-source-install.md](TECH-source-install.md)
-- [TECH-standard-alignment-audit.md](TECH-standard-alignment-audit.md)
+- [Historical standard alignment audit](TECH-standard-alignment-audit.md)
 - [TECH-table-catalog.md](TECH-table-catalog.md)
 - [TECH-topology-standard.md](TECH-topology-standard.md)
 - [TECH-usage-2.md](TECH-usage-2.md)

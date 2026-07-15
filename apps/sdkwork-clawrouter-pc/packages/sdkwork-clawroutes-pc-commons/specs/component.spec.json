@@ -121,6 +121,7 @@
     "publicExports": [
       ".",
       "./runtime",
+      "./runtime-usage",
       "./api-result",
       "./sdk-clients",
       "./sdk-request-boundary",

@@ -7,10 +7,13 @@ import { initReactI18next } from "react-i18next";
 import {
   buildApiCategorySidebarTree,
   buildApiReferenceSystemsFromTabs,
+  createApiReferenceSystemSummaries,
   formatApiOperationDisplayName,
   getApiSystemDisplayName,
   getDefaultApiReferenceEndpoint,
   loadApiReferenceSystems,
+  loadApiReferenceSchemaTabs,
+  loadApiReferenceSystem,
   sortApiSchemaTabs,
   type ApiSchemaTab,
   type ApiSchemaTabsDocument,
@@ -25,6 +28,8 @@ import {
   buildSdkReferenceSystems,
   createGeneratedSdkToolConfig,
   getGeneratedSdkMetadataForSystem,
+  loadSdkReferenceSystem,
+  loadSdkReferenceSystemSummaries,
 } from "../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src/sdkReferenceRuntime.ts";
 import {
   buildSdkEndpointDocumentation,
@@ -607,6 +612,56 @@ test("api reference schema tabs sort by backend order and keep schema urls", () 
 
   assert.deepEqual(sortApiSchemaTabs(tabs).map((tab) => tab.id), ["gateway", "backend"]);
   assert.equal(sortApiSchemaTabs(tabs)[0].schemaUrls[0], "/openapi.json");
+});
+
+test("api reference lazy loader fetches the manifest first and one schema on demand", async () => {
+  const manifest: ApiSchemaTabsDocument = {
+    cacheTtlSeconds: 30,
+    tabs: [
+      { id: "gateway", name: "LLM Open API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
+      { id: "app", name: "App API", order: 20, schemaUrls: ["/app/v3/api/openapi.json"], defaultSchemaUrl: "/app/v3/api/openapi.json" },
+    ],
+  };
+  const requested: string[] = [];
+  const fetchJson = async (url: string) => {
+    requested.push(url);
+    if (url === "/openapi/schema-tabs.json") return manifest;
+    if (url === "/app/v3/api/openapi.json") return appSpec;
+    throw new Error(`unexpected schema fetch ${url}`);
+  };
+
+  const loadedManifest = await loadApiReferenceSchemaTabs(fetchJson);
+  const summaries = createApiReferenceSystemSummaries(loadedManifest);
+  assert.deepEqual(requested, ["/openapi/schema-tabs.json"]);
+  assert.equal(summaries[0].categories.length, 0);
+
+  const appSystem = await loadApiReferenceSystem(summaries[1].schemaTab, fetchJson);
+  assert.equal(appSystem.id, "app");
+  assert.deepEqual(requested, ["/openapi/schema-tabs.json", "/app/v3/api/openapi.json"]);
+});
+
+test("sdk reference lazy loader also defers schemas until a system is selected", async () => {
+  const manifest: ApiSchemaTabsDocument = {
+    tabs: [
+      { id: "gateway", name: "LLM Open API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
+      { id: "app", name: "App API", order: 20, schemaUrls: ["/app/v3/api/openapi.json"], defaultSchemaUrl: "/app/v3/api/openapi.json" },
+    ],
+  };
+  const requested: string[] = [];
+  const fetchJson = async (url: string) => {
+    requested.push(url);
+    if (url === "/openapi/schema-tabs.json") return manifest;
+    if (url === "/app/v3/api/openapi.json") return appSpec;
+    throw new Error(`unexpected SDK schema fetch ${url}`);
+  };
+
+  const summaries = await loadSdkReferenceSystemSummaries(fetchJson);
+  assert.deepEqual(requested, ["/openapi/schema-tabs.json"]);
+  assert.deepEqual(summaries.map((system) => system.id), ["llm-open-api", "app-api"]);
+
+  const appSystem = await loadSdkReferenceSystem(summaries[1], fetchJson);
+  assert.equal(appSystem.id, "app-api");
+  assert.deepEqual(requested, ["/openapi/schema-tabs.json", "/app/v3/api/openapi.json"]);
 });
 
 test("api reference builds one system per backend schema tab", async () => {

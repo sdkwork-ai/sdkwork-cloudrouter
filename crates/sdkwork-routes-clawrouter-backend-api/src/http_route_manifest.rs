@@ -206,7 +206,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Post,
         "/backend/v3/api/ai/route_explain",
         "ai",
-        "routeExplain.create",
+        "routeExplain.explain",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -755,5 +755,22 @@ mod tests {
         assert_public_route("GET", "/app/v3/api/ai/model_rankings");
         assert_public_route("GET", "/app/v3/api/ai/model_vendors");
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
+    }
+
+    #[test]
+    fn membership_catalog_routes_allow_anonymous_access() {
+        assert_public_route("GET", "/app/v3/api/memberships/plans");
+        assert_public_route("GET", "/app/v3/api/memberships/benefits");
+        assert_public_route("GET", "/app/v3/api/memberships/packages");
+        assert_public_route("GET", "/app/v3/api/memberships/packages/{packageId}");
+        assert_public_route("GET", "/app/v3/api/memberships/package_groups");
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}",
+        );
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+        );
     }
 }

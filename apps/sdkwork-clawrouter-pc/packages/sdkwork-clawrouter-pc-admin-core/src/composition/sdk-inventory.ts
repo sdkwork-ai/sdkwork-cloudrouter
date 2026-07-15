@@ -2,6 +2,7 @@ export interface SdkworkSdkInventoryEntry {
   workspace: string;
   surface: string;
   credentialMode: string;
+  exportSubpath?: 'domains';
 }
 
 export function listSdkworkAdminCoreSdkInventory(): readonly SdkworkSdkInventoryEntry[] {

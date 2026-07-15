@@ -163,6 +163,7 @@ mod tests {
             locale: None,
             client_kind: None,
             operation: None,
+            idempotency_key: None,
         };
         let injector = ClawRouterAppDomainInjector;
         let mut request = Request::new(Body::empty());

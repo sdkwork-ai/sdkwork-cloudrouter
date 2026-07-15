@@ -8,6 +8,8 @@ use sdkwork_clawrouter_router_service::ports::{
     UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
 };
 
+const SETTLEMENT_BATCH_HARD_LIMIT: i64 = 200;
+
 #[tokio::test]
 async fn usage_settlement_worker_run_once_builds_batch_command_for_all_tenants() {
     let store = Arc::new(RecordingSettlementStore::new(UsageSettlementOutcome {
@@ -65,6 +67,33 @@ async fn usage_settlement_worker_skips_disabled_run_without_touching_store() {
     assert_eq!(0, outcome.failed_count);
     assert_eq!(0, outcome.debited_points);
     assert!(store.commands.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn usage_settlement_worker_clamps_directly_constructed_oversized_batches() {
+    let store = Arc::new(RecordingSettlementStore::new(UsageSettlementOutcome {
+        settled_count: 0,
+        failed_count: 0,
+        debited_points: 0,
+    }));
+    let worker = UsageSettlementWorker::new(
+        store.clone(),
+        UsageSettlementWorkerConfig {
+            enabled: true,
+            tenant_id: 100001,
+            organization_id: 0,
+            batch_size: SETTLEMENT_BATCH_HARD_LIMIT + 1,
+            interval_millis: 10_000,
+        },
+    );
+
+    worker.run_once().await.unwrap();
+
+    assert_eq!(SETTLEMENT_BATCH_HARD_LIMIT, worker.config().batch_size);
+    assert_eq!(
+        SETTLEMENT_BATCH_HARD_LIMIT,
+        store.commands.lock().unwrap()[0].limit
+    );
 }
 
 #[derive(Debug)]

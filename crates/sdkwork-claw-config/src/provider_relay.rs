@@ -1,7 +1,7 @@
 use std::fmt;
 use std::net::{IpAddr, ToSocketAddrs};
 
-use url::Url;
+use url::{Host, Url};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct ProviderRelayConfig {
@@ -43,6 +43,12 @@ pub struct ProviderPassthroughHeader {
     value: String,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ProviderRelayTargetValidationMode {
+    Production,
+    ExplicitDevelopment,
+}
+
 impl ProviderRelayConfig {
     pub const ENV_OPENAI_RELAY_BASE_URL: &'static str = "SDKWORK_CLAW_OPENAI_RELAY_BASE_URL";
     pub const ENV_OPENAI_RELAY_BEARER_TOKEN: &'static str =
@@ -54,10 +60,37 @@ impl ProviderRelayConfig {
         openai_base_url: Option<String>,
         openai_bearer_token: Option<String>,
     ) -> Result<Option<Self>, String> {
+        Self::from_optional_parts_with_validation_mode(
+            openai_base_url,
+            openai_bearer_token,
+            ProviderRelayTargetValidationMode::Production,
+        )
+    }
+
+    /// Creates a relay configuration for an explicit local-development or
+    /// test fixture. Environment and runtime-TOML parsing remain production
+    /// strict and never select this mode implicitly.
+    pub fn from_optional_parts_for_development(
+        openai_base_url: Option<String>,
+        openai_bearer_token: Option<String>,
+    ) -> Result<Option<Self>, String> {
+        Self::from_optional_parts_with_validation_mode(
+            openai_base_url,
+            openai_bearer_token,
+            ProviderRelayTargetValidationMode::ExplicitDevelopment,
+        )
+    }
+
+    fn from_optional_parts_with_validation_mode(
+        openai_base_url: Option<String>,
+        openai_bearer_token: Option<String>,
+        validation_mode: ProviderRelayTargetValidationMode,
+    ) -> Result<Option<Self>, String> {
         match (openai_base_url, openai_bearer_token) {
             (None, None) => Ok(None),
             (Some(base_url), Some(bearer_token)) => {
-                Self::from_parts(base_url, bearer_token).map(Some)
+                Self::from_parts_with_validation_mode(base_url, bearer_token, validation_mode)
+                    .map(Some)
             }
             (Some(_), None) => Err(format!(
                 "{} is required when {} is set",
@@ -76,10 +109,36 @@ impl ProviderRelayConfig {
         openai_base_url: impl Into<String>,
         openai_bearer_token: impl Into<String>,
     ) -> Result<Self, String> {
+        Self::from_parts_with_validation_mode(
+            openai_base_url,
+            openai_bearer_token,
+            ProviderRelayTargetValidationMode::Production,
+        )
+    }
+
+    /// Creates a relay configuration for an explicit local-development or
+    /// test fixture. Production construction must use [`Self::from_parts`].
+    pub fn from_parts_for_development(
+        openai_base_url: impl Into<String>,
+        openai_bearer_token: impl Into<String>,
+    ) -> Result<Self, String> {
+        Self::from_parts_with_validation_mode(
+            openai_base_url,
+            openai_bearer_token,
+            ProviderRelayTargetValidationMode::ExplicitDevelopment,
+        )
+    }
+
+    fn from_parts_with_validation_mode(
+        openai_base_url: impl Into<String>,
+        openai_bearer_token: impl Into<String>,
+        validation_mode: ProviderRelayTargetValidationMode,
+    ) -> Result<Self, String> {
         Ok(Self {
-            openai_relay: Some(OpenAiRelayConfig::from_parts(
+            openai_relay: Some(OpenAiRelayConfig::from_parts_with_validation_mode(
                 openai_base_url,
                 openai_bearer_token,
+                validation_mode,
             )?),
             provider_passthrough: Vec::new(),
         })
@@ -92,7 +151,26 @@ impl ProviderRelayConfig {
             openai_relay: None,
             provider_passthrough: Vec::new(),
         }
-        .with_provider_passthrough_json(passthrough_json)
+        .with_provider_passthrough_json_with_validation_mode(
+            passthrough_json,
+            ProviderRelayTargetValidationMode::Production,
+        )
+    }
+
+    /// Parses provider passthrough fixtures that intentionally use local HTTP
+    /// endpoints. Production environment and runtime configuration parsers
+    /// never call this method.
+    pub fn from_provider_passthrough_json_for_development(
+        passthrough_json: impl AsRef<str>,
+    ) -> Result<Self, String> {
+        Self {
+            openai_relay: None,
+            provider_passthrough: Vec::new(),
+        }
+        .with_provider_passthrough_json_with_validation_mode(
+            passthrough_json,
+            ProviderRelayTargetValidationMode::ExplicitDevelopment,
+        )
     }
 
     pub fn from_env() -> Result<Option<Self>, String> {
@@ -208,32 +286,83 @@ impl ProviderRelayConfig {
     }
 
     pub fn with_provider_passthrough(
-        mut self,
+        self,
         provider: impl Into<String>,
         base_url: impl Into<String>,
         bearer_token: impl Into<String>,
     ) -> Result<Self, String> {
-        let config = ProviderPassthroughRelayConfig::from_parts(provider, base_url, bearer_token)?;
-        if let Some(existing) = self
-            .provider_passthrough
-            .iter_mut()
-            .find(|existing| existing.provider == config.provider)
-        {
-            *existing = config;
-        } else {
-            self.provider_passthrough.push(config);
-        }
-        Ok(self)
+        self.with_provider_passthrough_auth_with_validation_mode(
+            provider,
+            base_url,
+            ProviderPassthroughAuth::bearer(bearer_token)?,
+            ProviderRelayTargetValidationMode::Production,
+        )
+    }
+
+    /// Adds an explicit local-development or test passthrough target.
+    pub fn with_provider_passthrough_for_development(
+        self,
+        provider: impl Into<String>,
+        base_url: impl Into<String>,
+        bearer_token: impl Into<String>,
+    ) -> Result<Self, String> {
+        self.with_provider_passthrough_auth_with_validation_mode(
+            provider,
+            base_url,
+            ProviderPassthroughAuth::bearer(bearer_token)?,
+            ProviderRelayTargetValidationMode::ExplicitDevelopment,
+        )
     }
 
     pub fn with_provider_passthrough_auth(
-        mut self,
+        self,
         provider: impl Into<String>,
         base_url: impl Into<String>,
         auth: ProviderPassthroughAuth,
     ) -> Result<Self, String> {
-        let config =
-            ProviderPassthroughRelayConfig::from_parts_with_auth(provider, base_url, auth)?;
+        self.with_provider_passthrough_auth_with_validation_mode(
+            provider,
+            base_url,
+            auth,
+            ProviderRelayTargetValidationMode::Production,
+        )
+    }
+
+    /// Adds an explicit local-development or test passthrough target with a
+    /// configured header, bearer, or query authentication method.
+    pub fn with_provider_passthrough_auth_for_development(
+        self,
+        provider: impl Into<String>,
+        base_url: impl Into<String>,
+        auth: ProviderPassthroughAuth,
+    ) -> Result<Self, String> {
+        self.with_provider_passthrough_auth_with_validation_mode(
+            provider,
+            base_url,
+            auth,
+            ProviderRelayTargetValidationMode::ExplicitDevelopment,
+        )
+    }
+
+    fn with_provider_passthrough_auth_with_validation_mode(
+        mut self,
+        provider: impl Into<String>,
+        base_url: impl Into<String>,
+        auth: ProviderPassthroughAuth,
+        validation_mode: ProviderRelayTargetValidationMode,
+    ) -> Result<Self, String> {
+        let config = ProviderPassthroughRelayConfig::from_parts_with_auth_and_default_headers_with_validation_mode(
+            provider,
+            base_url,
+            auth,
+            Vec::new(),
+            validation_mode,
+        )?;
+        self.upsert_provider_passthrough(config);
+        Ok(self)
+    }
+
+    fn upsert_provider_passthrough(&mut self, config: ProviderPassthroughRelayConfig) {
         if let Some(existing) = self
             .provider_passthrough
             .iter_mut()
@@ -243,12 +372,33 @@ impl ProviderRelayConfig {
         } else {
             self.provider_passthrough.push(config);
         }
-        Ok(self)
     }
 
     pub fn with_provider_passthrough_json(
+        self,
+        passthrough_json: impl AsRef<str>,
+    ) -> Result<Self, String> {
+        self.with_provider_passthrough_json_with_validation_mode(
+            passthrough_json,
+            ProviderRelayTargetValidationMode::Production,
+        )
+    }
+
+    /// Parses and adds explicit local-development or test passthrough targets.
+    pub fn with_provider_passthrough_json_for_development(
+        self,
+        passthrough_json: impl AsRef<str>,
+    ) -> Result<Self, String> {
+        self.with_provider_passthrough_json_with_validation_mode(
+            passthrough_json,
+            ProviderRelayTargetValidationMode::ExplicitDevelopment,
+        )
+    }
+
+    fn with_provider_passthrough_json_with_validation_mode(
         mut self,
         passthrough_json: impl AsRef<str>,
+        validation_mode: ProviderRelayTargetValidationMode,
     ) -> Result<Self, String> {
         let passthrough_json = passthrough_json.as_ref().trim();
         if passthrough_json.is_empty() {
@@ -288,21 +438,14 @@ impl ProviderRelayConfig {
             let auth = parse_provider_passthrough_auth(provider, config_object)?;
             let default_headers =
                 parse_provider_passthrough_default_headers(provider, config_object)?;
-            let config = ProviderPassthroughRelayConfig::from_parts_with_auth_and_default_headers(
+            let config = ProviderPassthroughRelayConfig::from_parts_with_auth_and_default_headers_with_validation_mode(
                 provider,
                 base_url,
                 auth,
                 default_headers,
+                validation_mode,
             )?;
-            if let Some(existing) = self
-                .provider_passthrough
-                .iter_mut()
-                .find(|existing| existing.provider == config.provider)
-            {
-                *existing = config;
-            } else {
-                self.provider_passthrough.push(config);
-            }
+            self.upsert_provider_passthrough(config);
         }
         Ok(self)
     }
@@ -324,6 +467,18 @@ impl OpenAiRelayConfig {
         base_url: impl Into<String>,
         bearer_token: impl Into<String>,
     ) -> Result<Self, String> {
+        Self::from_parts_with_validation_mode(
+            base_url,
+            bearer_token,
+            ProviderRelayTargetValidationMode::Production,
+        )
+    }
+
+    fn from_parts_with_validation_mode(
+        base_url: impl Into<String>,
+        bearer_token: impl Into<String>,
+        validation_mode: ProviderRelayTargetValidationMode,
+    ) -> Result<Self, String> {
         let base_url = base_url.into().trim().trim_end_matches('/').to_owned();
         if base_url.is_empty() {
             return Err(format!(
@@ -331,7 +486,7 @@ impl OpenAiRelayConfig {
                 ProviderRelayConfig::ENV_OPENAI_RELAY_BASE_URL
             ));
         }
-        validate_base_url_ssrf(&base_url)?;
+        validate_provider_relay_base_url(&base_url, validation_mode)?;
         let bearer_token = bearer_token.into().trim().to_owned();
         if bearer_token.is_empty() {
             return Err(format!(
@@ -381,6 +536,22 @@ impl ProviderPassthroughRelayConfig {
         auth: ProviderPassthroughAuth,
         default_headers: Vec<ProviderPassthroughHeader>,
     ) -> Result<Self, String> {
+        Self::from_parts_with_auth_and_default_headers_with_validation_mode(
+            provider,
+            base_url,
+            auth,
+            default_headers,
+            ProviderRelayTargetValidationMode::Production,
+        )
+    }
+
+    fn from_parts_with_auth_and_default_headers_with_validation_mode(
+        provider: impl Into<String>,
+        base_url: impl Into<String>,
+        auth: ProviderPassthroughAuth,
+        default_headers: Vec<ProviderPassthroughHeader>,
+        validation_mode: ProviderRelayTargetValidationMode,
+    ) -> Result<Self, String> {
         let provider = provider.into().trim().to_owned();
         if provider.is_empty() {
             return Err("provider passthrough code must not be blank".to_owned());
@@ -389,7 +560,7 @@ impl ProviderPassthroughRelayConfig {
         if base_url.is_empty() {
             return Err("provider passthrough base URL must not be blank".to_owned());
         }
-        validate_base_url_ssrf(&base_url)?;
+        validate_provider_relay_base_url(&base_url, validation_mode)?;
         Ok(Self {
             provider,
             base_url,
@@ -717,6 +888,51 @@ impl fmt::Debug for ProviderPassthroughHeader {
             .field("name", &self.name)
             .field("value", &"[REDACTED]")
             .finish()
+    }
+}
+
+fn validate_provider_relay_base_url(
+    base_url: &str,
+    validation_mode: ProviderRelayTargetValidationMode,
+) -> Result<(), String> {
+    match validation_mode {
+        ProviderRelayTargetValidationMode::Production => validate_base_url_ssrf(base_url),
+        ProviderRelayTargetValidationMode::ExplicitDevelopment => {
+            validate_development_base_url(base_url)
+        }
+    }
+}
+
+fn validate_development_base_url(base_url: &str) -> Result<(), String> {
+    let url = Url::parse(base_url).map_err(|error| {
+        format!("provider relay development base URL must be a valid absolute URL: {error}")
+    })?;
+    if !matches!(url.scheme(), "http" | "https") {
+        return Err(format!(
+            "provider relay development base URL must use http or https scheme (got `{}`)",
+            url.scheme()
+        ));
+    }
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err("provider relay development base URL must not include userinfo".to_owned());
+    }
+    if url.fragment().is_some() {
+        return Err("provider relay development base URL must not include a fragment".to_owned());
+    }
+    if url.query().is_some() {
+        return Err(
+            "provider relay development base URL must not include a query string".to_owned(),
+        );
+    }
+    match url.host() {
+        Some(Host::Ipv4(address)) if address.is_unspecified() => Err(
+            "provider relay development base URL must not use an unspecified IP address".to_owned(),
+        ),
+        Some(Host::Ipv6(address)) if address.is_unspecified() => Err(
+            "provider relay development base URL must not use an unspecified IP address".to_owned(),
+        ),
+        Some(_) => Ok(()),
+        None => Err("provider relay development base URL must have a host".to_owned()),
     }
 }
 

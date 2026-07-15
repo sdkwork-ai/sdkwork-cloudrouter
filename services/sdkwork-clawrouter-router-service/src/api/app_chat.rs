@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, RawQuery, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -13,15 +13,15 @@ use serde_json::{Map, Value};
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 
 use crate::api::response::{
-    json_created_response, json_success_list_response, offset_page_info, parse_offset_list_query,
-    problem_from_wire_code, success_envelope,
+    internal_problem, json_created_response, json_success_list_response, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, service_unavailable_problem, success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::infrastructure::OsApiKeySecretGenerator;
 use crate::ports::{
-    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageItem,
-    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnOutcome, AppChatUsageSnapshot,
+    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageList,
+    AppChatStore, AppChatSubject, AppChatTurnOutcome, AppChatUsageSnapshot,
     CompleteAppChatTurnCommand, CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 
@@ -35,6 +35,7 @@ const MAX_MODE_LEN: usize = 64;
 const MAX_STATUS_LEN: usize = 64;
 const MAX_RUNTIME_LEN: usize = 128;
 const MAX_MONEY_LEN: usize = 64;
+const APP_CHAT_STORE_UNAVAILABLE: &str = "app chat store is unavailable";
 
 #[derive(Clone)]
 struct AppChatState {
@@ -42,11 +43,9 @@ struct AppChatState {
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default)]
 struct AppChatListQuery {
-    #[serde(default)]
     page: Option<i64>,
-    #[serde(default)]
     page_size: Option<i64>,
 }
 
@@ -108,23 +107,16 @@ struct AppChatConversationEnvelope {
     item: AppChatConversationItem,
 }
 
-struct EmptyAppChatStore;
+struct UnavailableAppChatStore;
 
-impl AppChatStore for EmptyAppChatStore {
+impl AppChatStore for UnavailableAppChatStore {
     fn list_conversations<'a>(
         &'a self,
         _subject: AppChatSubject,
         _page: i64,
         _page_size: i64,
     ) -> AppChatFuture<'a, AppChatConversationList> {
-        Box::pin(async move {
-            Ok(AppChatConversationList {
-                items: Vec::new(),
-                total: 0,
-                page_no: _page.max(1),
-                page_size: _page_size.max(1),
-            })
-        })
+        Box::pin(async { Err(app_chat_store_unavailable_error()) })
     }
 
     fn get_conversation<'a>(
@@ -132,18 +124,14 @@ impl AppChatStore for EmptyAppChatStore {
         _subject: AppChatSubject,
         _conversation_id: String,
     ) -> AppChatFuture<'a, Option<AppChatConversationItem>> {
-        Box::pin(async { Ok(None) })
+        Box::pin(async { Err(app_chat_store_unavailable_error()) })
     }
 
     fn create_conversation<'a>(
         &'a self,
         _command: CreateAppChatConversationCommand,
     ) -> AppChatFuture<'a, AppChatConversationItem> {
-        Box::pin(async {
-            Err(DomainError::new(
-                "app chat store is unavailable without database configuration",
-            ))
-        })
+        Box::pin(async { Err(app_chat_store_unavailable_error()) })
     }
 
     fn list_messages<'a>(
@@ -153,42 +141,31 @@ impl AppChatStore for EmptyAppChatStore {
         _page: i64,
         _page_size: i64,
     ) -> AppChatFuture<'a, AppChatMessageList> {
-        Box::pin(async move {
-            Ok(AppChatMessageList {
-                items: Vec::new(),
-                total: 0,
-                page_no: 1,
-                page_size: 30,
-            })
-        })
+        Box::pin(async { Err(app_chat_store_unavailable_error()) })
     }
 
     fn create_turn<'a>(
         &'a self,
         _command: CreateAppChatTurnCommand,
     ) -> AppChatFuture<'a, AppChatTurnOutcome> {
-        Box::pin(async {
-            Err(DomainError::new(
-                "app chat store is unavailable without database configuration",
-            ))
-        })
+        Box::pin(async { Err(app_chat_store_unavailable_error()) })
     }
 
     fn complete_turn_response<'a>(
         &'a self,
         _command: CompleteAppChatTurnCommand,
     ) -> AppChatFuture<'a, AppChatTurnOutcome> {
-        Box::pin(async {
-            Err(DomainError::new(
-                "app chat store is unavailable without database configuration",
-            ))
-        })
+        Box::pin(async { Err(app_chat_store_unavailable_error()) })
     }
+}
+
+fn app_chat_store_unavailable_error() -> DomainError {
+    DomainError::new(APP_CHAT_STORE_UNAVAILABLE)
 }
 
 pub fn app_chat_router() -> Router {
     app_chat_router_with_store(
-        Arc::new(EmptyAppChatStore),
+        Arc::new(UnavailableAppChatStore),
         Arc::new(OsApiKeySecretGenerator),
     )
 }
@@ -228,12 +205,16 @@ async fn list_conversations(
     State(state): State<AppChatState>,
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
     _headers: HeaderMap,
-    Query(query): Query<AppChatListQuery>,
+    RawQuery(raw_query): RawQuery,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, AppChatSubject::from);
+    let query = match parse_app_chat_list_query(raw_query.as_deref()) {
+        Ok(query) => query,
+        Err(message) => return invalid_parameter(message),
+    };
     let pagination = match parse_offset_list_query(query.page, query.page_size) {
         Ok(value) => value,
-        Err(message) => return bad_request(message),
+        Err(message) => return invalid_parameter(message),
     };
     match state
         .store
@@ -295,16 +276,20 @@ async fn list_messages(
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
     _headers: HeaderMap,
     Path(conversation_id): Path<String>,
-    Query(query): Query<AppChatListQuery>,
+    RawQuery(raw_query): RawQuery,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, AppChatSubject::from);
     let conversation_id = match normalize_id(&conversation_id, "conversationId") {
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
+    let query = match parse_app_chat_list_query(raw_query.as_deref()) {
+        Ok(query) => query,
+        Err(message) => return invalid_parameter(message),
+    };
     let pagination = match parse_offset_list_query(query.page, query.page_size) {
         Ok(value) => value,
-        Err(message) => return bad_request(message),
+        Err(message) => return invalid_parameter(message),
     };
     match state
         .store
@@ -624,8 +609,38 @@ fn generate_entity_uuid(state: &AppChatState) -> Result<String, AppChatBuildErro
         .map_err(AppChatBuildError::System)
 }
 
+fn parse_app_chat_list_query(raw_query: Option<&str>) -> Result<AppChatListQuery, String> {
+    let mut query = AppChatListQuery::default();
+
+    for (key, value) in url::form_urlencoded::parse(raw_query.unwrap_or_default().as_bytes()) {
+        let target = match key.as_ref() {
+            "page" => &mut query.page,
+            "page_size" => &mut query.page_size,
+            _ => return Err("unsupported query parameter".to_owned()),
+        };
+        if target.is_some() {
+            return Err(format!("{key} must not be repeated"));
+        }
+        *target = Some(
+            value
+                .parse::<i64>()
+                .map_err(|_| format!("{key} must be an integer"))?,
+        );
+    }
+
+    Ok(query)
+}
+
 fn bad_request(message: impl Into<String>) -> Response {
     problem_from_wire_code("4001", message.into()).into_response()
+}
+
+fn invalid_parameter(message: impl Into<String>) -> Response {
+    crate::api::response::platform_problem(
+        sdkwork_utils_rust::SdkWorkResultCode::InvalidParameter,
+        message,
+    )
+    .into_response()
 }
 
 fn not_found(message: impl Into<String>) -> Response {
@@ -633,7 +648,10 @@ fn not_found(message: impl Into<String>) -> Response {
 }
 
 fn app_chat_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
+    if error.to_string() == APP_CHAT_STORE_UNAVAILABLE {
+        return service_unavailable_problem(context).into_response();
+    }
+    internal_problem(context).into_response()
 }
 
 #[derive(Debug)]

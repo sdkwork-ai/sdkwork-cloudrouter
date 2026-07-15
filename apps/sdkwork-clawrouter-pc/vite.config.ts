@@ -912,6 +912,7 @@ function resolvePortalDevProxy(env: NodeJS.ProcessEnv = process.env): Record<str
     '/openapi/schema-tabs.json': portalDevProxyOptions(gatewayTarget),
     '/openapi.json': portalDevProxyOptions(gatewayTarget),
     '/payments/v3/openapi.json': portalDevProxyOptions(gatewayTarget),
+    '/paas/v3/openapi.json': portalDevProxyOptions(gatewayTarget),
     '/cloud/v3/openapi.json': portalDevProxyOptions(gatewayTarget),
     '/v1': portalDevProxyOptions(gatewayTarget),
     '/backend/v3/api': portalDevProxyOptions(backendApiTarget),

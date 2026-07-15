@@ -9,6 +9,16 @@ pub type InvocationFuture<'a, T> =
 pub trait InvocationInterceptor: Send + Sync + 'static {
     fn name(&self) -> &str;
 
+    /// Returns whether this interceptor must run its `after` hook before a
+    /// streaming response is handed to the HTTP transport.
+    ///
+    /// Most completion work belongs to the terminal stream lifecycle so that
+    /// usage, idempotency, circuit state, and tenant permits describe the
+    /// actual body lifetime rather than just the response headers.
+    fn completes_before_stream(&self) -> bool {
+        false
+    }
+
     fn observe_pipeline_errors(&self) -> bool {
         false
     }

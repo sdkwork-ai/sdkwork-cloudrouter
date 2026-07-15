@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/clawroutes-pc-commons';
 import {
-  formatDecimalAmount,
   formatUserAgentDeviceLabel,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +22,15 @@ import { UsageService, UsageLog } from './usageService';
 import { formatUsageLogLocalTime } from './usageFormatting';
 
 const DEFAULT_PAGE_SIZE = 20;
-const SPEND_DECIMAL_DIGITS = 9;
+const DISPLAY_DECIMAL_DIGITS = 2;
+
+function formatDisplayAmount(value: string): string {
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    return (0).toFixed(DISPLAY_DECIMAL_DIGITS);
+  }
+  return num.toFixed(DISPLAY_DECIMAL_DIGITS);
+}
 
 type UsageLogStatus = 'all' | 'success' | 'error';
 
@@ -206,7 +213,7 @@ export function UsageView() {
     : '0%';
 
   return (
-    <div className="w-full mx-auto box-border h-[calc(100vh-72px)] overflow-hidden flex flex-col gap-5 animate-in fade-in duration-500 bg-slate-50 dark:bg-[#121212]">
+    <div className="w-full mx-auto box-border h-[calc(100vh-72px)] overflow-hidden flex flex-col gap-4 animate-in fade-in duration-500 bg-slate-50 px-[5px] pb-[5px] dark:bg-[#121212]">
       {/* 页面标题 + 关键指标摘要 */}
       <div className="shrink-0 px-1 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex flex-col gap-1">
@@ -217,7 +224,7 @@ export function UsageView() {
             {t('console.usage.subtitle', '查看 API 调用日志、计费明细与性能指标')}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto">
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">
               {t('console.usage.stat.total', '总记录')}
@@ -231,7 +238,7 @@ export function UsageView() {
               {t('console.usage.stat.pageCost', '本页花费')}
             </span>
             <span className="text-sm font-semibold text-rose-600 dark:text-rose-400 font-mono">
-              {formatDecimalAmount(String(pageStats.pageCost), SPEND_DECIMAL_DIGITS)}
+              {formatDisplayAmount(String(pageStats.pageCost))}
             </span>
           </div>
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
@@ -348,7 +355,7 @@ export function UsageView() {
           />
         ) : (
           <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
-            <table className="w-full text-left text-sm whitespace-nowrap min-w-[1460px]">
+            <table className="w-full text-left text-sm whitespace-nowrap min-w-[1200px]">
               <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-[#1c1c1c] text-slate-600 dark:text-slate-300 border-b-2 border-slate-200 dark:border-white/10 select-none">
                 <tr>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider">{t('console.usage.table.time', 'Time')}</th>
@@ -475,7 +482,7 @@ export function UsageView() {
                         <td className="px-4 py-3 align-middle text-right">
                           <div className="flex items-center justify-end gap-1 text-rose-600 dark:text-rose-400 font-mono font-medium">
                             <Zap className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{formatDecimalAmount(log.cost, SPEND_DECIMAL_DIGITS)}</span>
+                            <span>{formatDisplayAmount(log.cost)}</span>
                           </div>
                         </td>
                         {/* IP */}
@@ -498,10 +505,10 @@ export function UsageView() {
                           <div className="flex flex-col gap-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                             <div>
                               <span className="text-slate-400 dark:text-slate-500">{t('console.usage.metric.multiplier', 'multiplier')}</span>{' '}
-                              <span className="text-slate-700 dark:text-slate-200 font-mono">{formatDecimalAmount(log.multiplier, 6)}x</span>
+                              <span className="text-slate-700 dark:text-slate-200 font-mono">{formatDisplayAmount(log.multiplier)}x</span>
                             </div>
                             <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500">
-                              {formatDecimalAmount(log.baseInputPrice, 6)} / {formatDecimalAmount(log.cacheReadPrice, 6)}
+                              {formatDisplayAmount(log.baseInputPrice)} / {formatDisplayAmount(log.cacheReadPrice)}
                             </div>
                           </div>
                         </td>
@@ -511,7 +518,7 @@ export function UsageView() {
                       {expanded && (
                         <tr className="bg-slate-50/80 dark:bg-[#1c1c1c]">
                           <td colSpan={13} className="p-0 border-t border-b border-slate-200 dark:border-white/5">
-                            <div className="py-5 px-6">
+                            <div className="py-4 px-5">
                               <div className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-xs">
                                 {/* Request ID */}
                                 <div className="text-right font-medium text-slate-500 dark:text-slate-400 self-center">{t('console.usage.detail.requestId', 'Request ID')}</div>
@@ -526,19 +533,19 @@ export function UsageView() {
                                 <div className="self-start">
                                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-1 px-3 bg-white dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5 w-fit shadow-sm dark:shadow-none">
                                     <span className="text-slate-600 dark:text-slate-300">
-                                      {t('console.usage.metric.input', 'input')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDecimalAmount(log.baseInputPrice, 6)}</span>
+                                      {t('console.usage.metric.input', 'input')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseInputPrice)}</span>
                                       <span className="text-slate-400"> / 1M {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
-                                      {t('console.usage.metric.output', 'output')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDecimalAmount(log.baseOutputPrice, 6)}</span>
+                                      {t('console.usage.metric.output', 'output')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseOutputPrice)}</span>
                                       <span className="text-slate-400"> / 1M {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
-                                      {t('console.usage.metric.cache', 'cache')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDecimalAmount(log.cacheReadPrice, 6)}</span>
+                                      {t('console.usage.metric.cache', 'cache')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cacheReadPrice)}</span>
                                       <span className="text-slate-400"> / 1M {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
-                                      {t('console.usage.metric.multiplier', 'multiplier')} <span className="font-mono text-blue-600 dark:text-blue-400">{formatDecimalAmount(log.multiplier, 6)}x</span>
+                                      {t('console.usage.metric.multiplier', 'multiplier')} <span className="font-mono text-blue-600 dark:text-blue-400">{formatDisplayAmount(log.multiplier)}x</span>
                                     </span>
                                   </div>
                                 </div>
@@ -548,20 +555,20 @@ export function UsageView() {
                                 <div className="self-start">
                                   <div className="flex flex-col gap-1.5 p-3 bg-white dark:bg-[#161616] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none max-w-[640px]">
                                     <div className="text-slate-500 dark:text-slate-400">
-                                      {t('console.usage.detail.inputPrice', 'input price:')} <span className="text-rose-600 dark:text-rose-400">{formatDecimalAmount(log.baseInputPrice, 6)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.inputPrice', 'input price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseInputPrice)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-500 dark:text-slate-400">
-                                      {t('console.usage.detail.outputPrice', 'output price:')} <span className="text-rose-600 dark:text-rose-400">{formatDecimalAmount(log.baseOutputPrice, 6)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.outputPrice', 'output price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseOutputPrice)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-500 dark:text-slate-400 mb-1">
-                                      {t('console.usage.detail.cachePrice', 'cache price:')} <span className="text-rose-600 dark:text-rose-400">{formatDecimalAmount(log.cacheReadPrice, 6)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.cachePrice', 'cache price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cacheReadPrice)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2.5 rounded leading-relaxed break-all">
-                                      {`(${t('console.usage.metric.input', 'input')} ${(log.inputTokens - log.cacheReadTokens).toLocaleString()} / 1M × ${formatDecimalAmount(log.baseInputPrice, 6)}`}
-                                      {` + ${t('console.usage.metric.cache', 'cache')} ${log.cacheReadTokens.toLocaleString()} / 1M × ${formatDecimalAmount(log.cacheReadPrice, 6)}`}
-                                      {` + ${t('console.usage.metric.output', 'output')} ${log.outputTokens.toLocaleString()} / 1M × ${formatDecimalAmount(log.baseOutputPrice, 6)})`}
-                                      {` × ${formatDecimalAmount(log.multiplier, 6)} = `}
-                                      <span className="font-bold text-rose-600 dark:text-rose-400">{formatDecimalAmount(log.cost, SPEND_DECIMAL_DIGITS)}</span>
+                                      {`(${t('console.usage.metric.input', 'input')} ${(log.inputTokens - log.cacheReadTokens).toLocaleString()} / 1M × ${formatDisplayAmount(log.baseInputPrice)}`}
+                                      {` + ${t('console.usage.metric.cache', 'cache')} ${log.cacheReadTokens.toLocaleString()} / 1M × ${formatDisplayAmount(log.cacheReadPrice)}`}
+                                      {` + ${t('console.usage.metric.output', 'output')} ${log.outputTokens.toLocaleString()} / 1M × ${formatDisplayAmount(log.baseOutputPrice)})`}
+                                      {` × ${formatDisplayAmount(log.multiplier)} = `}
+                                      <span className="font-bold text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cost)}</span>
                                     </div>
                                     <div className="text-slate-400 dark:text-slate-500 italic text-[10px]">{t('console.usage.detail.reference', 'Reference only; the ledger is the source of truth.')}</div>
                                   </div>

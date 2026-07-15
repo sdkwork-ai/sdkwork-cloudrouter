@@ -132,3 +132,8 @@ artifacts without trustworthy evidence.
 
 The executable command matrix and evidence checkpoints are maintained in
 `docs/engineering/plans/PLAN-2026-0001-commercial-production-readiness.md`.
+
+The current factual gate state is recorded in
+[REVIEW-20260714 Production Readiness Revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md).
+That review records open blockers only; it does not close an acceptance
+criterion or authorize a production, high-availability, or commercial claim.

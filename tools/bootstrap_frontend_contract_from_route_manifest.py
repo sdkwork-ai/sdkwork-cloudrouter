@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -14,112 +13,76 @@ except ImportError as exc:  # pragma: no cover
 else:
     _YAML_IMPORT_ERROR = None
 
-from tools.relay_retired_admin_surfaces import is_relay_retired_admin_operation_route
-
 TARGETS = (
     {
-        "surface": "app",
         "api_surface": "app",
         "manifest_path": "sdks/_route-manifests/app-api/sdkwork-routes-clawrouter-app-api.route-manifest.json",
-        "api_prefix": "/app/v3/api",
-        "route_scope": "console",
     },
     {
-        "surface": "backend",
         "api_surface": "backend",
         "manifest_path": "sdks/_route-manifests/backend-api/sdkwork-routes-clawrouter-backend-api.route-manifest.json",
-        "api_prefix": "/backend/v3/api",
-        "route_scope": "admin",
     },
 )
 
-KIND_BY_METHOD = {
-    "GET": "read",
-    "POST": "create",
-    "PUT": "update",
-    "PATCH": "update",
-    "DELETE": "delete",
-}
+
+class FrontendContractBootstrapError(RuntimeError):
+    """Raised when route metadata is incorrectly used as frontend contract authority."""
 
 
-def _infer_tag(api_path: str, api_prefix: str, tags: list[Any]) -> str:
-    if tags and isinstance(tags[0], str) and tags[0].strip():
-        return tags[0].strip()
-    relative = api_path.removeprefix(api_prefix).strip("/")
-    return relative.split("/", 1)[0] if relative else "router"
-
-
-def _infer_ui_route(api_path: str, api_prefix: str, route_scope: str) -> str:
-    relative = api_path.removeprefix(api_prefix).strip("/")
-    return f"/{route_scope}/{relative or 'root'}"
-
-
-def _operation_name(operation_id: str) -> str:
-    parts = [part for part in operation_id.split(".") if part]
-    return parts[-1] if parts else "operation"
-
-
-def _read_source_tag(tag: str) -> str:
-    normalized = re.sub(r"[^a-z0-9_]+", "_", tag.lower()).strip("_")
-    return normalized or "ops_audit_log"
-
-
-def _build_operation(route: dict[str, Any], target: dict[str, str]) -> dict[str, Any]:
-    api_path = str(route["path"])
-    api_method = str(route["method"]).upper()
-    operation_id = str(route.get("operationId") or f"{api_method.lower()}.operation")
-    tag = _infer_tag(api_path, target["api_prefix"], route.get("tags", []))
-    kind = KIND_BY_METHOD.get(api_method, "action")
-    entry: dict[str, Any] = {
-        "route": _infer_ui_route(api_path, target["api_prefix"], target["route_scope"]),
-        "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "operation": _operation_name(operation_id),
-        "operation_id": operation_id,
-        "kind": kind,
-        "api_surface": target["api_surface"],
-        "api_method": api_method,
-        "api_path": api_path,
-        "read_sources": [_read_source_tag(tag)],
-        "response_schema": {"name": "NoData", "properties": {}},
-    }
+def _route_semantic_fields(api_method: str) -> list[str]:
+    fields = ["response_schema", "read_sources", "write_tables"]
     if api_method == "GET":
-        entry["query_parameters"] = []
+        fields.append("query_parameters")
     if api_method in {"POST", "PUT", "PATCH"}:
-        entry["request_body_required"] = False
-    if api_method in {"POST", "PUT", "PATCH", "DELETE"}:
-        entry["write_tables"] = ["ops_audit_log"]
-    return entry
+        fields.append("request_schema or request_body_required")
+    return fields
+
+
+def _raise_route_manifest_semantic_authority_error(
+    route: dict[str, Any],
+    target: dict[str, str],
+) -> None:
+    api_path = route.get("path")
+    api_method = route.get("method")
+    operation_id = route.get("operationId")
+    path_display = api_path if isinstance(api_path, str) and api_path else "<missing path>"
+    method_display = api_method.upper() if isinstance(api_method, str) and api_method else "<missing method>"
+    operation_display = operation_id if isinstance(operation_id, str) and operation_id else "<missing operationId>"
+    fields = ", ".join(_route_semantic_fields(method_display))
+    raise FrontendContractBootstrapError(
+        "refusing to bootstrap a semantic frontend contract from route metadata for "
+        f"{target['api_surface']} {method_display} {path_display} "
+        f"(operationId={operation_display}): route manifests do not author {fields}. "
+        "Generating this entry would invent NoData, empty query_parameters, or "
+        "request_body_required: false. Define the operation explicitly in "
+        "docs/schema-registry/frontend-field-contracts/ and materialize the snapshot with "
+        "python -B -m tools.frontend_contract_loader --root <application-root>. "
+        "Do not treat an OpenAPI operation generated from this bootstrap tool as an independent "
+        "semantic authority."
+    )
 
 
 def bootstrap_contract(root: Path) -> dict[str, Any]:
-    operations: list[dict[str, Any]] = []
+    """Fail closed because route manifests cannot author frontend data semantics."""
+
     for target in TARGETS:
         manifest_path = root / target["manifest_path"]
+        if not manifest_path.is_file():
+            raise FrontendContractBootstrapError(f"missing route manifest: {manifest_path}")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        for route in manifest.get("routes", []):
+        routes = manifest.get("routes")
+        if not isinstance(routes, list):
+            raise FrontendContractBootstrapError(f"route manifest routes must be a list: {manifest_path}")
+        for route in routes:
             if not isinstance(route, dict):
-                continue
-            if not route.get("path") or not route.get("method"):
-                continue
-            entry = _build_operation(route, target)
-            if target["route_scope"] == "admin" and is_relay_retired_admin_operation_route(entry["route"]):
-                continue
-            operations.append(entry)
-    operations.sort(key=lambda item: (item["api_surface"], item["api_path"], item["api_method"], item["operation_id"]))
-    return {
-        "schema": {
-            "name": "sdkwork-clawrouter-frontend-field-contracts",
-            "version": "0.1.0",
-            "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        },
-        "frontend_operations": operations,
-    }
+                raise FrontendContractBootstrapError(
+                    f"route manifest route entries must be mappings: {manifest_path}"
+                )
+            _raise_route_manifest_semantic_authority_error(route, target)
 
-
-def _bootstrap_compare_entry(entry: dict[str, Any]) -> dict[str, Any]:
-    normalized = dict(entry)
-    normalized.pop("openapi_exposed", None)
-    return normalized
+    raise FrontendContractBootstrapError(
+        "refusing to bootstrap an empty frontend contract: route manifests contained no route entries"
+    )
 
 
 def main() -> int:
@@ -127,22 +90,37 @@ def main() -> int:
         raise RuntimeError("PyYAML is required") from _YAML_IMPORT_ERROR
 
     parser = argparse.ArgumentParser(
-        description="Bootstrap frontend-field-contracts.yaml from sdkwork-routes-* route manifests.",
+        description="Fail closed when asked to bootstrap semantic frontend contracts from route manifests.",
     )
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument(
         "--output",
         type=Path,
         default=None,
-        help="Output snapshot path (default: docs/schema-registry/frontend-field-contracts.yaml)",
+        help="New output snapshot path; required with --write and must not already exist.",
     )
-    parser.add_argument("--check", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true")
+    mode.add_argument("--write", action="store_true")
     parser.add_argument(
         "--merge-portal-routes",
         action="store_true",
-        help="Preserve or refresh docs/schema-registry frontend route entries from portal App.tsx",
+        help="Reserved for an explicit --write of a new bootstrap output.",
     )
     args = parser.parse_args()
+
+    if not args.check and not args.write:
+        print(
+            "refusing to write a frontend field contract by default; use --check or author curated "
+            "fragments under docs/schema-registry/frontend-field-contracts/"
+        )
+        return 2
+    if args.merge_portal_routes and not args.write:
+        print("--merge-portal-routes requires --write")
+        return 2
+    if args.write and args.output is None:
+        print("--write requires an explicit --output and never overwrites the default documentation snapshot")
+        return 2
 
     root = args.root.resolve()
     output = (
@@ -150,16 +128,16 @@ def main() -> int:
         if args.output is not None
         else root / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
     )
-    payload = bootstrap_contract(root)
-    if output.is_file():
-        existing = yaml.safe_load(output.read_text(encoding="utf-8"))
-        if isinstance(existing, dict):
-            if isinstance(existing.get("routes"), list) and not args.merge_portal_routes:
-                payload["routes"] = existing["routes"]
-            if isinstance(existing.get("frontend_models"), list):
-                payload["frontend_models"] = existing["frontend_models"]
-            if isinstance(existing.get("x_response_entities"), dict):
-                payload["x_response_entities"] = existing["x_response_entities"]
+    if args.write and output.exists():
+        print(f"refusing to overwrite an existing frontend field contract snapshot: {output}")
+        return 1
+
+    try:
+        payload = bootstrap_contract(root)
+    except FrontendContractBootstrapError as exc:
+        print(exc)
+        return 1
+
     if args.merge_portal_routes:
         from tools.bootstrap_frontend_route_classification import bootstrap_contract_routes
 
@@ -175,21 +153,6 @@ def main() -> int:
             return 1
         if current.get("schema") != payload["schema"]:
             print(f"frontend field contract schema is stale: {output}")
-            return 1
-        current_bootstrap_ops = [
-            _bootstrap_compare_entry(entry)
-            for entry in current.get("frontend_operations", [])
-            if isinstance(entry, dict)
-            and entry.get("source") == "tools/bootstrap_frontend_contract_from_route_manifest.py"
-        ]
-        expected_bootstrap_ops = [
-            _bootstrap_compare_entry(entry)
-            for entry in payload["frontend_operations"]
-            if isinstance(entry, dict)
-            and entry.get("source") == "tools/bootstrap_frontend_contract_from_route_manifest.py"
-        ]
-        if current_bootstrap_ops != expected_bootstrap_ops:
-            print(f"frontend field contract bootstrap frontend_operations are stale: {output}")
             return 1
         print(f"frontend field contract snapshot is current: {output}")
         return 0

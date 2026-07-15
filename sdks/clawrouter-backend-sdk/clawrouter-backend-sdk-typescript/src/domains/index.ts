@@ -1,15 +1,12 @@
 import {
   createClient as createGeneratedClawrouterBackendDomainsClient,
   SdkworkBackendClient,
-} from '../../generated/domains/server-openapi/src/index';
-import type { SdkworkBackendConfig } from '../../generated/domains/server-openapi/src/types/common';
+} from '#clawrouter-backend-domains-generated';
+import type { SdkworkBackendConfig } from '#clawrouter-backend-domains-generated';
 
 export { SdkworkBackendClient, createGeneratedClawrouterBackendDomainsClient };
 export type { SdkworkBackendConfig };
-export * from '../../generated/domains/server-openapi/src/types';
-export * from '../../generated/domains/server-openapi/src/api';
-export * from '../../generated/domains/server-openapi/src/http';
-export * from '../../generated/domains/server-openapi/src/auth';
+export * from '#clawrouter-backend-domains-generated';
 
 export type SdkworkClawrouterBackendDomainsClient = SdkworkBackendClient;
 

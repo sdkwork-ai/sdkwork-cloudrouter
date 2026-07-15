@@ -10798,12 +10798,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "Retrieve",
         "tags": [
           "system"
@@ -10820,7 +10815,8 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-auth-mode": "anonymous"
       }
     }
   },

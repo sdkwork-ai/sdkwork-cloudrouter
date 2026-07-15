@@ -526,8 +526,9 @@ async fn gateway_provider_native_passthrough_keeps_official_standard_provider_di
         axum::serve(adapter_listener, adapter).await.unwrap();
     });
 
-    let passthrough_config = ProviderRelayConfig::from_provider_passthrough_json(format!(
-        r#"{{
+    let passthrough_config =
+        ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
+            r#"{{
             "vidu": {{
                 "baseUrl": "http://{provider_addr}/vidu",
                 "auth": {{
@@ -537,8 +538,8 @@ async fn gateway_provider_native_passthrough_keeps_official_standard_provider_di
                 }}
             }}
         }}"#
-    ))
-    .unwrap();
+        ))
+        .unwrap();
     let adapter_config = ProviderAdapterConfig::from_json(
         format!(
             r#"{{
@@ -561,7 +562,7 @@ async fn gateway_provider_native_passthrough_keeps_official_standard_provider_di
     )
     .unwrap();
     let router =
-        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_and_adapter_config(
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_and_adapter_config_for_development(
             passthrough_config,
             Some(adapter_config),
         );
@@ -652,8 +653,9 @@ async fn gateway_provider_native_passthrough_adapts_registered_non_standard_prov
         axum::serve(adapter_listener, adapter).await.unwrap();
     });
 
-    let passthrough_config = ProviderRelayConfig::from_provider_passthrough_json(format!(
-        r#"{{
+    let passthrough_config =
+        ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
+            r#"{{
             "tencent-cloud": {{
                 "baseUrl": "http://{provider_addr}/vidu",
                 "auth": {{
@@ -662,8 +664,8 @@ async fn gateway_provider_native_passthrough_adapts_registered_non_standard_prov
                 }}
             }}
         }}"#
-    ))
-    .unwrap();
+        ))
+        .unwrap();
     let adapter_config = ProviderAdapterConfig::from_json(
         format!(
             r#"{{
@@ -686,7 +688,7 @@ async fn gateway_provider_native_passthrough_adapts_registered_non_standard_prov
     )
     .unwrap();
     let router =
-        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_and_adapter_config(
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_and_adapter_config_for_development(
             passthrough_config,
             Some(adapter_config),
         );
@@ -1351,6 +1353,50 @@ async fn gateway_database_provider_native_adapter_directs_when_selected_account_
 }
 
 #[tokio::test]
+async fn gateway_rejects_local_provider_native_passthrough_target_in_production() {
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let provider = Router::new()
+        .route(
+            "/v1beta/models/gemini-2.5-flash:generateContent",
+            any(capture_native_provider_request),
+        )
+        .with_state(Arc::clone(&captured));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, provider).await.unwrap();
+    });
+
+    let config = ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
+        r#"{{
+            "google": {{
+                "baseUrl": "http://{addr}",
+                "bearerToken": "sk-google-upstream"
+            }}
+        }}"#
+    ))
+    .unwrap();
+    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/provider/google/v1beta/models/gemini-2.5-flash:generateContent")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"contents":[{"parts":[{"text":"must not leave gateway"}]}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::BAD_GATEWAY, response.status());
+    assert!(captured.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
 async fn gateway_forwards_configured_vendor_prefixed_vidu_passthrough_request() {
     let captured = Arc::new(Mutex::new(Vec::new()));
     let provider = Router::new()
@@ -1365,7 +1411,7 @@ async fn gateway_forwards_configured_vendor_prefixed_vidu_passthrough_request() 
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+    let config = ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
         r#"{{
             "vidu": {{
                 "baseUrl": "http://{addr}/vidu",
@@ -1378,7 +1424,10 @@ async fn gateway_forwards_configured_vendor_prefixed_vidu_passthrough_request() 
         }}"#
     ))
     .unwrap();
-    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+    let router =
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config_for_development(
+            config,
+        );
 
     let response = router
         .oneshot(
@@ -1420,11 +1469,18 @@ async fn gateway_forwards_configured_provider_native_passthrough_request() {
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let config = ProviderRelayConfig::from_parts("http://127.0.0.1:9", "sk-openai")
+    let config = ProviderRelayConfig::from_parts_for_development("http://127.0.0.1:9", "sk-openai")
         .unwrap()
-        .with_provider_passthrough("google", format!("http://{addr}"), "sk-google-upstream")
+        .with_provider_passthrough_for_development(
+            "google",
+            format!("http://{addr}"),
+            "sk-google-upstream",
+        )
         .unwrap();
-    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+    let router =
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config_for_development(
+            config,
+        );
 
     let response = router
         .oneshot(
@@ -1485,7 +1541,7 @@ async fn gateway_forwards_provider_native_passthrough_with_configured_header_aut
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+    let config = ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
         r#"{{
             "google": {{
                 "baseUrl": "http://{addr}",
@@ -1498,7 +1554,10 @@ async fn gateway_forwards_provider_native_passthrough_with_configured_header_aut
         }}"#
     ))
     .unwrap();
-    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+    let router =
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config_for_development(
+            config,
+        );
 
     let response = router
         .oneshot(
@@ -1536,7 +1595,7 @@ async fn gateway_forwards_anthropic_provider_native_passthrough_with_configured_
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+    let config = ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
         r#"{{
             "anthropic": {{
                 "baseUrl": "http://{addr}",
@@ -1549,7 +1608,10 @@ async fn gateway_forwards_anthropic_provider_native_passthrough_with_configured_
         }}"#
     ))
     .unwrap();
-    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+    let router =
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config_for_development(
+            config,
+        );
 
     let response = router
         .oneshot(
@@ -1591,7 +1653,7 @@ async fn gateway_applies_configured_provider_native_passthrough_default_headers(
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+    let config = ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
         r#"{{
             "anthropic": {{
                 "baseUrl": "http://{addr}",
@@ -1607,7 +1669,10 @@ async fn gateway_applies_configured_provider_native_passthrough_default_headers(
         }}"#
     ))
     .unwrap();
-    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+    let router =
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config_for_development(
+            config,
+        );
 
     let response = router
         .oneshot(
@@ -1651,7 +1716,7 @@ async fn gateway_forwards_provider_native_passthrough_with_configured_query_auth
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+    let config = ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
         r#"{{
             "google": {{
                 "baseUrl": "http://{addr}",
@@ -1664,7 +1729,10 @@ async fn gateway_forwards_provider_native_passthrough_with_configured_query_auth
         }}"#
     ))
     .unwrap();
-    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+    let router =
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config_for_development(
+            config,
+        );
 
     let response = router
         .oneshot(
@@ -1702,7 +1770,7 @@ async fn gateway_percent_encodes_provider_native_passthrough_query_auth_name_and
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+    let config = ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
         r#"{{
             "google": {{
                 "baseUrl": "http://{addr}",
@@ -1715,7 +1783,10 @@ async fn gateway_percent_encodes_provider_native_passthrough_query_auth_name_and
         }}"#
     ))
     .unwrap();
-    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+    let router =
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config_for_development(
+            config,
+        );
 
     let response = router
         .oneshot(
@@ -1753,7 +1824,7 @@ async fn gateway_forwards_provider_native_passthrough_without_openai_relay_targe
         axum::serve(listener, provider).await.unwrap();
     });
 
-    let config = ProviderRelayConfig::from_provider_passthrough_json(format!(
+    let config = ProviderRelayConfig::from_provider_passthrough_json_for_development(format!(
         r#"{{
             "google": {{
                 "baseUrl": "http://{addr}",
@@ -1762,7 +1833,10 @@ async fn gateway_forwards_provider_native_passthrough_without_openai_relay_targe
         }}"#
     ))
     .unwrap();
-    let router = sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config(config);
+    let router =
+        sdkwork_clawrouter_cloud_gateway::router_with_provider_passthrough_config_for_development(
+            config,
+        );
 
     let response = router
         .oneshot(

@@ -24,7 +24,10 @@ test("console business host mounts T1 domain wallet, membership, coupon, checkou
   assert.match(appSource, /ClawRouterTokenPlanPage/);
   assert.match(tokenPlanPageSource, /@sdkwork\/membership-pc-subscription\/catalog/);
   assert.match(tokenPlanPageSource, /SdkworkSubscriptionCatalogPage/);
-  assert.match(tokenPlanPageSource, /ClawRouterTokenPlanCheckoutModal/);
+  assert.match(tokenPlanPageSource, /sdkworkSubscriptionCatalogHostComponents/);
+  assert.match(tokenPlanPageSource, /\.\.\.sdkworkSubscriptionCatalogHostComponents/);
+  assert.doesNotMatch(tokenPlanPageSource, /ClawRouterTokenPlanCheckoutModal/);
+  assert.doesNotMatch(tokenPlanPageSource, /checkoutModal\s*:/);
   assert.match(tokenPlanPageSource, /useTokenPlanMemberSummary/);
   assert.match(shellSource, /path="\/token-plan"/);
   assert.match(publicNavbarSource, /\/token-plan/);
@@ -127,8 +130,19 @@ test("console coupons page passes resolved locale", () => {
 
 test("app bootstrap wires T1 domain service providers to Claw Router app SDK domains", () => {
   const mainSource = readPortalFile("./src/main.tsx");
+  const providersSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/domain-service-providers.ts");
 
   assert.match(mainSource, /configureClawRouterDomainServiceProviders/);
   assert.match(mainSource, /getClawRouterAppSdkClient/);
   assert.doesNotMatch(mainSource, /configureSdkworkCommerceServiceProvider/);
+  assert.match(providersSource, /bootstrapMembershipOrderAppService/);
+  assert.match(providersSource, /getClawRouterGlobalTokenManager\(\)/);
+  assert.match(providersSource, /resolveRequiredAppDomainTransportBaseUrl\(\{\}\)/);
+});
+
+test("federated commerce runtime mounts Order-owned membership checkout routes", () => {
+  const runtimeSource = readPortalFile("../../crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs");
+
+  assert.match(runtimeSource, /app_membership_order_router_with_postgres_pool_and_payments/);
+  assert.match(runtimeSource, /app_membership_order_router_with_sqlite_pool_and_payments/);
 });

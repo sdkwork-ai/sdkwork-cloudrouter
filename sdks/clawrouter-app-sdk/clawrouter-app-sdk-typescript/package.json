@@ -9,6 +9,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -16,9 +19,16 @@
       "require": "./dist/index.cjs"
     },
     "./domains": {
-      "types": "./src/domains/index.ts",
-      "import": "./src/domains/index.ts",
-      "default": "./src/domains/index.ts"
+      "types": "./dist/domains/index.d.ts",
+      "import": "./dist/domains/index.js",
+      "require": "./dist/domains/index.cjs"
+    }
+  },
+  "imports": {
+    "#clawrouter-app-domains-generated": {
+      "types": "./dist/domains-generated/index.d.ts",
+      "import": "./dist/domains-generated/index.js",
+      "require": "./dist/domains-generated/index.cjs"
     }
   },
   "scripts": {

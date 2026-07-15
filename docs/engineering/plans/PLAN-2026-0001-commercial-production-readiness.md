@@ -16,6 +16,88 @@ terminal event. Control-plane mutations stay on backend-admin surfaces. Authored
 contracts, runtime routes, permissions, generated SDKs, persistence, deployment,
 and documentation are changed at their owning boundaries and verified together.
 
+## Relay Core Checkpoint (2026-07-14)
+
+The following are narrow, verified mitigations in the current worktree. They
+are not acceptance of this plan, production approval, PostgreSQL/SQLite
+equivalence, or evidence of a high-availability deployment.
+
+- [x] The unified invocation stream path no longer buffers SSE/NDJSON to EOF;
+  it forwards frames incrementally, retains idempotency until terminal state,
+  and has a regression case for an unpolled downstream stream timing out and
+  releasing resources.
+- [x] Automatic retry/failover is fail closed for writes and Adapter calls.
+  Only non-streaming direct `GET`, `HEAD`, and `OPTIONS` may retry or switch
+  candidates until provider idempotency is formally declared.
+- [x] Production provider passthrough and Adapter clients reject plaintext HTTP
+  and validate targets before credential forwarding and transport construction.
+- [x] `SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES` is injected into the unified
+  `InvocationHttpDispatcher`; zero or unrepresentable values fail during
+  gateway assembly instead of being silently ignored.
+- [x] `gateway_invocation_body_max_bytes` is parsed once during gateway
+  assembly and injected into authenticated provider-passthrough request
+  collection. The focused boundary test proves the injected ceiling is used;
+  accepted bodies are still collected before forwarding, so this is not a
+  streaming, aggregate-RSS, queue-capacity, or OOM-safety result.
+- [x] Settlement batch count is clamped to `1..=200`, and Cloud Gateway's two
+  environment startup paths reject a shared Snowflake default for
+  server/container modes. This is intentionally recorded as a partial guard,
+  not a cluster identity solution.
+- [x] Cloud Gateway, app-api, and backend-api now validate the configured
+  Snowflake node ID before server/container database bootstrap. This moves
+  malformed or missing configuration to startup; it does not allocate, lease,
+  fence, or make IDs safe across replicas.
+- [x] The shared gateway accounting command rejects text beyond the existing
+  PostgreSQL/SQLite DDL widths and rejects decimal input above SQLite's
+  `NUMERIC(38, 12)` 40-byte text ceiling before parsing. Snapshot validation
+  now avoids materializing an additional JSON DOM. This is a narrow memory and
+  parity mitigation, not a snapshot, queue, or invocation-wide capacity budget.
+- [x] Accounting retry adapters cap one claim to `200`, validate SQLite poison
+  envelopes and row/event identity before leasing, and treat stale Redis or
+  SQLite ACK/reschedule/DLQ mutations as unknown terminal state rather than
+  false success. The focused queue suite passes, but this is not a byte budget,
+  retention, backpressure, Redis HA/recovery, PostgreSQL parity, or load proof.
+- [x] Final pricing, settlement, and usage recording no longer clone complete
+  quote, usage-line, or settlement-command collections when a reference or a
+  single current command is sufficient. Quote identity, first-match ordering,
+  line-quote precedence, sequential write order, and continue-on-error behavior
+  are preserved. This removes redundant copies only; it does not bound input
+  cardinality or payload size.
+
+The following remain release blockers:
+
+- [ ] Exact public inference/media route allowlist and synchronized generated
+  contracts/SDKs; the present public compatibility prefixes and fallbacks are
+  too broad.
+- [ ] Direct authenticated Adapter streams must fail closed until the Adapter
+  contract supports a bounded stream outcome, terminal usage, cancellation,
+  idempotency, and controlled response metadata.
+- [ ] Usage snapshots, usage-line collections, retry envelopes, queues, and
+  settlement reads need independent byte/shape/count budgets. The DDL-width
+  and decimal-parser guards do not bound snapshot payloads or queue backlog;
+  multi-line usage must become atomic and idempotency conflicts must not
+  overwrite facts.
+- [ ] `route_explain` needs tenant/object-scoped authorization, a truthful
+  diagnostic command contract, and a regenerated SDK authority. Recharge
+  cancellation must defer to the mounted Order dependency contract rather than
+  expose an unmounted owner route.
+- [ ] PostgreSQL integration, multi-replica Snowflake allocation/fencing and
+  upstream logical-clock repair, egress resolver/NetworkPolicy, warning-free
+  compilation, observability, load/chaos, and recovery evidence remain open.
+
+The following require human review before implementation because they change
+public contracts, security behavior, migrations, or deployment governance:
+
+1. Shrink public relay and provider-native paths to exact method/path/provider
+   inference/media allowlists.
+2. Fail close direct authenticated Adapter streaming until the formal lifecycle
+   protocol is implemented.
+3. Tighten `route_explain` object authorization and define its command/result
+   semantics; remove or federate the recharge cancellation ghost route.
+4. Approve paired PostgreSQL/SQLite finance and snapshot-bound migrations, plus
+   a cluster-owned Snowflake node allocation/fencing approach and the upstream
+   logical-clock/sequence-exhaustion repair.
+
 **Tech Stack:** Rust, axum/hyper/tokio, SQLx PostgreSQL/SQLite, Redis, OpenAPI
 3.1, generated SDK families, React/Vite, pnpm, Kubernetes, and GitHub Actions.
 
@@ -345,15 +427,23 @@ No task may replace these chains with direct edits to generated output.
 - Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/usage_extraction.rs`
 - Test: streaming relay, first-frame, cancellation, backpressure, and terminal accounting
 
-- [ ] Add RED tests proving the first upstream frame is not delivered before EOF and large streams are
-      buffered/limited by the current implementation.
-- [ ] Add RED cases for >4 MiB streams, slow consumer backpressure, stalled chunk, cancellation,
-      partial upstream error, malformed SSE, missing terminal usage, and disconnect races.
-- [ ] Replace `to_bytes` with frame forwarding plus incremental protocol parsers; bound parser state,
-      not total stream size.
-- [ ] Enforce separate connect, headers, first-frame, chunk-idle, and total deadlines.
-- [ ] Emit exactly one terminal outcome for EOF, cancellation, timeout, or error and pass it to attempt
-      metering and financial settlement without delaying downstream frames.
+- [x] Regression tests prove that the unified invocation path exposes headers
+      and frames before EOF and that an unpolled downstream stream times out
+      without retaining the idempotency lease.
+- [ ] Add RED cases for >4 MiB streams, slow consumer backpressure, stalled
+      chunk, cancellation, partial upstream error, malformed SSE, missing
+      terminal usage, and disconnect races.
+- [x] Replace full-stream buffering in the unified invocation route with frame
+      forwarding and bounded state. Do not regress this path to `to_bytes`.
+- [ ] Enforce separate connect, headers, first-frame, chunk-idle, and total
+      deadlines for every approved stream transport.
+- [ ] Emit exactly one terminal outcome for EOF, cancellation, timeout, or
+      error and pass it to attempt metering and financial settlement without
+      delaying downstream frames.
+- [ ] Before a formal Adapter stream protocol exists, fail close direct
+      authenticated Adapter `SseStream`/`ByteStream` routes before any provider
+      request is made. This is a reviewed public behavior change, not a
+      substitute for implementation.
 - [ ] Measure first-frame overhead with the Task 14 benchmark harness and retain frame timing evidence.
 
 ## Task 10: Financial Contract And State Machine
@@ -369,6 +459,15 @@ No task may replace these chains with direct edits to generated output.
 
 - [ ] Add RED model tests for invalid transitions, negative/float money, missing currency, missing usage,
       duplicate idempotency keys, and dispatch without an approved reservation.
+- [ ] Add a single command-boundary budget for pricing snapshots, trace fields,
+      usage-line count, retry envelopes, queue entries, and DLQ retention. The
+      command must reject unknown/sensitive snapshot fields and oversized input
+      before persistence; a 200-row settlement batch alone is not a memory
+      safety boundary.
+- [ ] Replace sequential Adapter multi-line usage writes with all-lines
+      validation plus one transaction/outbox. Treat an equal idempotency key
+      with a different canonical financial payload as a conflict or explicit
+      adjustment, never an in-place overwrite.
 - [ ] Define immutable states and transitions for authorization, reservation, provider attempts,
       terminal usage, settlement, release/adjustment, reconciliation, and reversal.
 - [ ] Define bounded maximum-cost calculation by model, modalities, request limits, provider pricing
@@ -456,9 +555,12 @@ No task may replace these chains with direct edits to generated output.
 - Modify: `dispatch_executor.rs`, `circuit_breaker.rs`, candidate policy models/stores
 - Test: retry, fallback, cost, breaker, and cancellation integration tests
 
-- [ ] Add RED tests proving generative POST retries by default, primary failure is lost when fallback
-      succeeds, and retry/failover budgets can multiply independently.
-- [ ] Default non-idempotent generative operations to one provider attempt. Replay requires an explicit
+- [x] Regression coverage keeps writes and internal Adapter calls fail closed:
+      automatic retry/failover is limited to non-streaming direct `GET`, `HEAD`,
+      and `OPTIONS` until provider replay safety is proved.
+- [ ] Add RED tests proving primary failure is retained when fallback succeeds
+      and retry/failover budgets cannot multiply independently.
+- [x] Default non-idempotent generative operations to one provider attempt. Replay requires an explicit
       provider capability and stable provider-side idempotency key.
 - [ ] Apply one total-attempt budget across retries and failovers, bounded by reservation exposure.
 - [ ] Record latency, status, response exposure, usage, cost, and breaker outcome for every attempt,
@@ -496,8 +598,9 @@ No task may replace these chains with direct edits to generated output.
       concurrency 20, then a 10-minute steady-state memory phase. For sample `i`, overhead is
       `proxied_duration_i - direct_duration_i`; compute p95 from the paired overhead samples and retain
       every raw direct/proxied/overhead value.
-- [ ] Run `pnpm bench:gateway:production -- --output artifacts/verification/REQ-2026-0001/task-14/gateway-overhead.json` from a clean dependency install; no separately pre-started service or
-      manually seeded database is allowed.
+- [ ] After Task 14 implements its benchmark entrypoint, execute it from a clean dependency install
+      and write the result to `artifacts/verification/REQ-2026-0001/task-14/gateway-overhead.json`;
+      no separately pre-started service or manually seeded database is allowed.
 - [ ] Assert paired gateway p95 unary overhead is `< 50 ms`, p95 first-frame overhead is `< 50 ms`,
       no frame is buffered to EOF, and error rate is zero. After warmup, gateway RSS may grow by at
       most 64 MiB total and its linear growth slope must be at most 1 MiB/minute during the 10-minute

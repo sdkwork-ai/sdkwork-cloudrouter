@@ -39,7 +39,9 @@ impl InvocationInterceptor for UsageRecordingInterceptor {
                 return Ok(());
             }
 
-            for command in invocation.usage.settlement_commands.clone() {
+            let command_count = invocation.usage.settlement_commands.len();
+            for command_index in 0..command_count {
+                let command = invocation.usage.settlement_commands[command_index].clone();
                 match self.recorder.record_gateway_usage(command).await {
                     Ok(()) => {}
                     Err(error) => {

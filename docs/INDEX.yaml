@@ -34,16 +34,52 @@ entries:
     title: Claw Router detailed PRD
   - id: TECH-0001
     path: docs/architecture/tech/TECH_ARCHITECTURE.md
-    kind: adr
+    kind: tech
     status: active
     owner: clawrouter-platform
     title: Technical architecture index
   - id: AUDIT-0001
     path: docs/standard-alignment-audit.md
     kind: audit
-    status: active
+    status: superseded
     owner: clawrouter-platform
-    title: SDKWork standard alignment audit
+    title: Historical SDKWork standard alignment audit
+  - id: REQ-2026-0001
+    path: docs/product/requirements/REQ-2026-0001-commercial-production-readiness.md
+    kind: requirement
+    status: in-progress
+    owner: sdkwork-platform
+    title: Commercial production readiness
+  - id: ADR-20260710
+    path: docs/architecture/decisions/ADR-20260710-commercial-gateway-safety-boundaries.md
+    kind: adr
+    status: accepted
+    owner: sdkwork-platform
+    title: Commercial gateway safety boundaries
+  - id: PLAN-2026-0001
+    path: docs/engineering/plans/PLAN-2026-0001-commercial-production-readiness.md
+    kind: plan
+    status: in-progress
+    owner: sdkwork-platform
+    title: Commercial production readiness implementation plan
+  - id: PLAN-2026-0002
+    path: docs/engineering/plans/PLAN-2026-0002-crate-rename.md
+    kind: plan
+    status: superseded
+    owner: sdkwork-platform
+    title: Historical crate responsibility rename plan
+  - id: REVIEW-20260705
+    path: docs/engineering/reviews/REVIEW-20260705-commercial-readiness-audit.md
+    kind: review
+    status: superseded
+    owner: sdkwork-platform
+    title: Historical commercial readiness audit
+  - id: REVIEW-20260714
+    path: docs/engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md
+    kind: review
+    status: active
+    owner: sdkwork-platform
+    title: Production readiness revalidation
   - id: SCHEMA-0001
     path: docs/schema-registry/table-catalog.md
     kind: schema

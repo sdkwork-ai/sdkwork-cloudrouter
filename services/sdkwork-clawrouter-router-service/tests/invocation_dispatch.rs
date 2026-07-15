@@ -1,4 +1,4 @@
-use axum::http::Method;
+use axum::http::{HeaderName, HeaderValue, Method};
 use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_clawrouter_router_service::application::{
     AuthenticatedApiKeyContext, DispatchExecutor, DispatchMode, Invocation, InvocationAccount,
@@ -347,6 +347,7 @@ async fn retries_failover_candidate_after_retryable_status() {
         AiRouteStrategy::StatelessFailover,
         vec![candidate("primary", 3001), candidate("fallback", 3002)],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -420,6 +421,7 @@ async fn returns_last_retryable_provider_status_when_failover_is_exhausted() {
         AiRouteStrategy::StatelessFailover,
         vec![candidate("primary", 3001), candidate("fallback", 3002)],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -458,6 +460,7 @@ async fn failover_rebuilds_provider_request_for_selected_candidate() {
         AiRouteStrategy::StatelessFailover,
         vec![candidate("primary", 3001), candidate("fallback", 3002)],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -493,6 +496,7 @@ async fn failover_updates_invocation_resource_for_selected_candidate() {
         AiRouteStrategy::StatelessFailover,
         vec![candidate("primary", 3001), fallback],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -551,7 +555,7 @@ async fn failover_rewrites_query_model_for_selected_candidate() {
 }
 
 #[tokio::test]
-async fn failover_rebuilds_adapter_body_for_selected_candidate() {
+async fn non_idempotent_adapter_post_does_not_failover_after_retryable_status() {
     let dispatcher = FakeDispatcher::new(vec![
         ok(503, json!({"error": "retry later"})),
         ok(200, json!({"id": "fallback-ok"})),
@@ -569,36 +573,36 @@ async fn failover_rebuilds_adapter_body_for_selected_candidate() {
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
         .await
-        .expect("dispatch");
+        .expect("provider status remains the final response");
 
     let provider_requests = dispatcher.provider_requests();
-    assert_eq!(2, provider_requests.len());
+    assert_eq!(1, provider_requests.len());
     let Some(InvocationProviderRequest {
         body: InvocationBody::Json(body),
         ..
-    }) = provider_requests[1].as_ref()
+    }) = provider_requests[0].as_ref()
     else {
-        panic!("expected fallback adapter json request");
+        panic!("expected primary adapter json request");
     };
     assert_eq!(
-        Some("fallback"),
+        Some("primary"),
         body.pointer("/provider/providerCode")
             .and_then(Value::as_str)
     );
     assert_eq!(
-        Some("fallback-model"),
+        Some("primary-model"),
         body.pointer("/provider/providerModel")
             .and_then(Value::as_str)
     );
     assert_eq!(
         Some("https://adapter.example/providers/kling/v1/videos/text2video"),
-        provider_requests[1]
+        provider_requests[0]
             .as_ref()
             .and_then(|request| request.url.as_deref())
     );
     assert_eq!(
         Some("Bearer adapter-token"),
-        provider_requests[1]
+        provider_requests[0]
             .as_ref()
             .and_then(|request| request.headers.get("authorization"))
             .and_then(|value| value.to_str().ok())
@@ -608,10 +612,19 @@ async fn failover_rebuilds_adapter_body_for_selected_candidate() {
         body.pointer("/invocation/standardPath")
             .and_then(Value::as_str)
     );
+    assert_eq!(1, invocation.routing.attempted_routes.len());
+    assert_eq!(
+        Some(503),
+        invocation
+            .dispatch
+            .response
+            .as_ref()
+            .map(|response| response.status_code)
+    );
 }
 
 #[tokio::test]
-async fn failover_refreshes_adapter_target_for_selected_candidate() {
+async fn internal_provider_adapter_does_not_failover_for_safe_get() {
     let dispatcher = FakeDispatcher::new(vec![
         ok(503, json!({"error": "retry later"})),
         ok(200, json!({"id": "fallback-ok"})),
@@ -624,18 +637,18 @@ async fn failover_refreshes_adapter_target_for_selected_candidate() {
     invocation.dispatch.adapter_target = Some(adapter_target());
     invocation.resource.surface =
         sdkwork_clawrouter_router_service::application::InvocationSurface::ProviderNative;
-    invocation.request = InvocationRequest::new(Method::POST, "/v1/videos/text2video")
-        .with_request_id("req-dispatch-adapter-refresh")
-        .with_body(InvocationBody::json(json!({"prompt": "make video"})));
+    invocation.request = InvocationRequest::new(Method::GET, "/v1/videos/text2video")
+        .with_request_id("req-dispatch-adapter-refresh");
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .with_adapter_resolver(Arc::new(AccountProviderAdapterResolver))
         .before(&mut invocation)
         .await
-        .expect("dispatch");
+        .expect("provider status remains the final response");
 
     let provider_requests = dispatcher.provider_requests();
-    assert_eq!(2, provider_requests.len());
+    assert_eq!(vec!["primary"], dispatcher.providers());
+    assert_eq!(1, provider_requests.len());
     assert_eq!(
         Some("https://adapter.example/primary/providers/primary/v1/videos/text2video"),
         provider_requests[0]
@@ -643,14 +656,8 @@ async fn failover_refreshes_adapter_target_for_selected_candidate() {
             .and_then(|request| request.url.as_deref())
     );
     assert_eq!(
-        Some("https://adapter.example/fallback/providers/fallback/v1/videos/text2video"),
-        provider_requests[1]
-            .as_ref()
-            .and_then(|request| request.url.as_deref())
-    );
-    assert_eq!(
-        Some("Bearer adapter-token-fallback"),
-        provider_requests[1]
+        Some("Bearer adapter-token-primary"),
+        provider_requests[0]
             .as_ref()
             .and_then(|request| request.headers.get("authorization"))
             .and_then(|value| value.to_str().ok())
@@ -658,24 +665,33 @@ async fn failover_refreshes_adapter_target_for_selected_candidate() {
     let Some(InvocationProviderRequest {
         body: InvocationBody::Json(body),
         ..
-    }) = provider_requests[1].as_ref()
+    }) = provider_requests[0].as_ref()
     else {
-        panic!("expected fallback adapter json request");
+        panic!("expected primary adapter json request");
     };
     assert_eq!(
-        Some("fallback"),
+        Some("primary"),
         body.pointer("/provider/providerCode")
             .and_then(Value::as_str)
     );
     assert_eq!(
-        Some("fallback.text2video"),
+        Some("primary.text2video"),
         body.pointer("/invocation/endpointKey")
             .and_then(Value::as_str)
+    );
+    assert_eq!(1, invocation.routing.attempted_routes.len());
+    assert_eq!(
+        Some(503),
+        invocation
+            .dispatch
+            .response
+            .as_ref()
+            .map(|response| response.status_code)
     );
 }
 
 #[tokio::test]
-async fn adapter_wrapper_retryable_status_fails_over_to_next_candidate() {
+async fn adapter_wrapper_retryable_status_does_not_fail_over_for_safe_get() {
     let dispatcher = FakeDispatcher::new(vec![
         ok(
             200,
@@ -698,17 +714,16 @@ async fn adapter_wrapper_retryable_status_fails_over_to_next_candidate() {
     );
     invocation.dispatch.mode = DispatchMode::InternalProviderAdapter;
     invocation.dispatch.adapter_target = Some(adapter_target());
-    invocation.request = InvocationRequest::new(Method::POST, "/v1/videos/text2video")
-        .with_request_id("req-adapter-wrapper-failover")
-        .with_body(InvocationBody::json(json!({"prompt": "make video"})));
+    invocation.request = InvocationRequest::new(Method::GET, "/v1/videos/text2video")
+        .with_request_id("req-adapter-wrapper-failover");
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
         .await
         .expect("dispatch");
 
-    assert_eq!(vec!["primary", "fallback"], dispatcher.providers());
-    assert_eq!(2, invocation.routing.attempted_routes.len());
+    assert_eq!(vec!["primary"], dispatcher.providers());
+    assert_eq!(1, invocation.routing.attempted_routes.len());
     assert_eq!(
         Some(503),
         invocation.routing.attempted_routes[0].status_code
@@ -716,19 +731,14 @@ async fn adapter_wrapper_retryable_status_fails_over_to_next_candidate() {
     assert!(!invocation.routing.attempted_routes[0].success);
     assert!(invocation.routing.attempted_routes[0].retryable);
     assert_eq!(
-        Some(202),
-        invocation.routing.attempted_routes[1].status_code
-    );
-    assert!(invocation.routing.attempted_routes[1].success);
-    assert_eq!(
-        Some("fallback-task"),
+        Some(503),
         invocation
             .dispatch
             .response
             .as_ref()
             .and_then(|response| response.body.as_ref())
-            .and_then(|body| body.pointer("/body/id"))
-            .and_then(Value::as_str)
+            .and_then(|body| body.get("statusCode"))
+            .and_then(Value::as_u64)
     );
 }
 
@@ -782,6 +792,7 @@ async fn failover_resolves_candidate_secret_and_auth_per_attempt() {
             with_secret_ref(candidate("fallback", 3002)),
         ],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
         .before(&mut invocation)
@@ -815,13 +826,10 @@ async fn failover_resolves_candidate_secret_and_auth_per_attempt() {
 }
 
 #[tokio::test]
-async fn failover_skips_candidate_when_provider_request_preparation_fails() {
+async fn non_idempotent_post_preparation_failure_is_not_failed_over() {
     let dispatcher = FakeDispatcher::new(vec![ok(200, json!({"id": "fallback-ok"}))]);
     let secret_resolver = Arc::new(MapSecretResolver {
-        secrets: HashMap::from([(
-            "vault://provider/fallback".to_owned(),
-            "sk-fallback-provider".to_owned(),
-        )]),
+        secrets: HashMap::new(),
     });
     let mut invocation = invocation_with_plan(
         AiRouteStrategy::StatelessFailover,
@@ -831,13 +839,14 @@ async fn failover_skips_candidate_when_provider_request_preparation_fails() {
         ],
     );
 
-    DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
-        .before(&mut invocation)
-        .await
-        .expect("dispatch");
+    let error =
+        DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
+            .before(&mut invocation)
+            .await
+            .expect_err("non-idempotent request preparation must fail closed");
 
-    assert_eq!(vec!["fallback"], dispatcher.providers());
-    assert_eq!(2, invocation.routing.attempted_routes.len());
+    assert!(dispatcher.providers().is_empty());
+    assert_eq!(1, invocation.routing.attempted_routes.len());
     assert_eq!(
         "primary",
         invocation.routing.attempted_routes[0].provider_code
@@ -847,20 +856,8 @@ async fn failover_skips_candidate_when_provider_request_preparation_fails() {
         Some("provider_request_prepare_failed"),
         invocation.routing.attempted_routes[0].error_code.as_deref()
     );
-    assert_eq!(
-        "fallback",
-        invocation.routing.attempted_routes[1].provider_code
-    );
-    assert!(invocation.routing.attempted_routes[1].success);
-    assert_eq!(
-        Some("Bearer sk-fallback-provider"),
-        dispatcher
-            .provider_requests()
-            .first()
-            .and_then(|request| request.as_ref())
-            .and_then(|request| request.headers.get("authorization"))
-            .and_then(|value| value.to_str().ok())
-    );
+    assert_eq!(InvocationErrorKind::Dispatch, error.kind);
+    assert!(error.message.contains("secret not found"));
 }
 
 #[tokio::test]
@@ -913,6 +910,7 @@ async fn retries_same_candidate_before_failover_when_policy_allows() {
             candidate("fallback", 3002),
         ],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -961,6 +959,7 @@ async fn retries_rebuild_provider_request_and_secret_for_each_attempt() {
             vec![503],
         )],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
         .before(&mut invocation)
@@ -999,6 +998,7 @@ async fn failover_runs_after_same_candidate_retries_are_exhausted() {
             candidate("fallback", 3002),
         ],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -1029,6 +1029,7 @@ async fn final_fallback_transport_error_does_not_return_stale_primary_response()
             with_retry_attempts(candidate("fallback", 3002), 1, vec![]),
         ],
     );
+    invocation.request.method = Method::GET;
 
     let error = DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -1044,7 +1045,7 @@ async fn final_fallback_transport_error_does_not_return_stale_primary_response()
 }
 
 #[tokio::test]
-async fn retries_same_candidate_after_retryable_dispatch_error() {
+async fn safe_get_retries_same_candidate_after_retryable_dispatch_error() {
     let dispatcher = FakeDispatcher::new(vec![
         dispatch_err("provider_http_timeout", true),
         ok(200, json!({"id": "same-candidate-ok"})),
@@ -1057,6 +1058,7 @@ async fn retries_same_candidate_after_retryable_dispatch_error() {
             vec![503],
         )],
     );
+    invocation.request.method = Method::GET;
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -1071,6 +1073,46 @@ async fn retries_same_candidate_after_retryable_dispatch_error() {
     );
     assert!(invocation.routing.attempted_routes[0].retryable);
     assert!(invocation.routing.attempted_routes[1].success);
+}
+
+#[tokio::test]
+async fn retryable_post_dispatch_error_is_not_retried_or_failed_over() {
+    let dispatcher = FakeDispatcher::new(vec![
+        dispatch_err("provider_http_timeout", true),
+        ok(200, json!({"id": "duplicate-must-not-run"})),
+    ]);
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::StatelessFailover,
+        vec![
+            with_retry_attempts(candidate("primary", 3001), 3, vec![503]),
+            candidate("fallback", 3002),
+        ],
+    );
+    invocation.request.idempotency_key = Some("local-only-idempotency-key".to_owned());
+    invocation.request.headers.insert(
+        HeaderName::from_static("idempotency-key"),
+        HeaderValue::from_static("client-idempotency-key"),
+    );
+
+    let error = DispatchExecutor::new(Arc::new(dispatcher.clone()))
+        .before(&mut invocation)
+        .await
+        .expect_err("unproven provider-side idempotency must block POST replay");
+
+    assert_eq!(vec!["primary"], dispatcher.providers());
+    assert_eq!(1, invocation.routing.attempted_routes.len());
+    assert!(invocation.routing.attempted_routes[0].retryable);
+    assert_eq!(
+        Some("client-idempotency-key"),
+        dispatcher
+            .provider_requests()
+            .first()
+            .and_then(|request| request.as_ref())
+            .and_then(|request| request.headers.get("idempotency-key"))
+            .and_then(|value| value.to_str().ok())
+    );
+    assert_eq!(InvocationErrorKind::Dispatch, error.kind);
+    assert!(error.message.contains("provider_http_timeout"));
 }
 
 #[tokio::test]
@@ -1134,7 +1176,7 @@ async fn non_idempotent_sticky_create_ignores_explicit_retry_budget_without_key(
 }
 
 #[tokio::test]
-async fn sticky_create_with_idempotency_key_can_use_explicit_retry_budget() {
+async fn sticky_create_with_unverified_idempotency_key_does_not_replay() {
     let dispatcher = FakeDispatcher::new(vec![
         ok(503, json!({"error": "retry later"})),
         ok(200, json!({"id": "created-on-retry"})),
@@ -1152,9 +1194,16 @@ async fn sticky_create_with_idempotency_key_can_use_explicit_retry_budget() {
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
         .await
-        .expect("idempotency-protected retry");
+        .expect("provider status remains the final response");
 
-    assert_eq!(vec!["primary", "primary"], dispatcher.providers());
-    assert_eq!(2, invocation.routing.attempted_routes.len());
-    assert!(invocation.routing.attempted_routes[1].success);
+    assert_eq!(vec!["primary"], dispatcher.providers());
+    assert_eq!(1, invocation.routing.attempted_routes.len());
+    assert_eq!(
+        Some(503),
+        invocation
+            .dispatch
+            .response
+            .as_ref()
+            .map(|response| response.status_code)
+    );
 }

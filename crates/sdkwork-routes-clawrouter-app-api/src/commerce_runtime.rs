@@ -9,9 +9,11 @@ use std::sync::Arc;
 use axum::Router;
 use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_http::{
-    materialize_federated_database_env_from_claw_config, merge_federated_app_capability_router,
+    materialize_federated_database_env_from_claw_config,
     merge_federated_app_capability_router_with_optional_auth, AppSubjectBoundaryConfig,
 };
+use sdkwork_database_lifecycle::RegistryLifecycleOrchestrator;
+use sdkwork_database_spi::DatabaseModuleRegistry;
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_payment_providers::{PaymentProviderRegistry, ProviderCredentialBundle};
 use sdkwork_payment_service_host::PaymentServiceHost;
@@ -20,9 +22,10 @@ use sdkwork_routes_account_app_api::{
 };
 use sdkwork_routes_membership_app_api::{
     app_membership_router_with_postgres_pool, app_membership_router_with_sqlite_pool,
-    wrap_router_with_web_framework_from_env,
 };
 use sdkwork_routes_order_app_api::{
+    app_membership_order_router_with_postgres_pool_and_payments,
+    app_membership_order_router_with_sqlite_pool_and_payments,
     app_order_router_with_postgres_pool, app_order_router_with_sqlite_pool,
 };
 use sdkwork_routes_payment_app_api::routes::build_payment_app_router;
@@ -43,13 +46,52 @@ pub async fn merge_federated_commerce_app_routers(
         commerce_router,
         subject_boundary_config.clone(),
     );
-    let membership_router =
-        build_membership_app_router_with_framework(payment.database_pool()).await;
-    Ok(merge_federated_app_capability_router(
+    // Bootstrap all federated capability databases on the shared pool using
+    // convention-over-configuration: each `*-database-host` crate exports a
+    // `database_module()` function, the host registers them all into a single
+    // `DatabaseModuleRegistry`, and `RegistryLifecycleOrchestrator` runs
+    // init + migrate + seed once per module — respecting each module's own
+    // manifest/env lifecycle options. No per-capability manual wiring needed.
+    bootstrap_federated_databases(payment.database_pool()).await?;
+    let membership_router = build_membership_router_from_pool(payment.database_pool());
+    Ok(merge_federated_app_capability_router_with_optional_auth(
         router,
         membership_router,
         subject_boundary_config,
     ))
+}
+
+/// Register all federated `*-database-host` modules and bootstrap them on the
+/// shared pool.
+///
+/// To add a new capability database, add the `*-database-host` crate as a
+/// Cargo dependency and add one `.register(...)` line below. The framework
+/// handles init, migration, and seeding automatically based on each module's
+/// own `database.manifest.json` and env overrides.
+async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String> {
+    let membership_module = sdkwork_membership_database_host::database_module()
+        .map_err(|e| format!("load membership database module failed: {e}"))?;
+    let registry = DatabaseModuleRegistry::builder()
+        .register(membership_module)
+        .map_err(|e| format!("register membership database module failed: {e}"))?
+        .build();
+    let orchestrator =
+        RegistryLifecycleOrchestrator::new(pool.clone(), registry)
+            .with_applied_by("sdkwork-clawrouter-commerce");
+    let results = orchestrator
+        .bootstrap_all_from_env()
+        .await
+        .map_err(|e| format!("bootstrap federated databases failed: {e}"))?;
+    for (module_id, migrations, seeds) in &results {
+        tracing::info!(
+            target: "sdkwork.clawrouter.commerce.database",
+            module_id = %module_id,
+            migrations = migrations,
+            seeds = seeds,
+            "federated database module bootstrapped",
+        );
+    }
+    Ok(())
 }
 
 async fn wire_commerce_app_router(payment: Arc<PaymentServiceHost>) -> Result<Router, String> {
@@ -70,11 +112,6 @@ fn build_membership_router_from_pool(pool: &DatabasePool) -> Router {
         DatabasePool::Postgres(pool, _) => app_membership_router_with_postgres_pool(pool.clone()),
         DatabasePool::Sqlite(pool, _) => app_membership_router_with_sqlite_pool(pool.clone()),
     }
-}
-
-async fn build_membership_app_router_with_framework(pool: &DatabasePool) -> Router {
-    let membership_router = build_membership_router_from_pool(pool);
-    wrap_router_with_web_framework_from_env(membership_router).await
 }
 
 fn build_promotion_router_from_payment_pool(pool: &DatabasePool) -> Result<Router, String> {
@@ -99,11 +136,27 @@ fn build_order_router_from_payment_pool(pool: &DatabasePool) -> Result<Router, S
         credentials.clone(),
     ));
     Ok(match pool {
-        DatabasePool::Postgres(pool, _) => {
-            app_order_router_with_postgres_pool(pool.clone(), registry.clone(), credentials.clone())
-        }
-        DatabasePool::Sqlite(pool, _) => {
-            app_order_router_with_sqlite_pool(pool.clone(), registry, credentials)
-        }
+        DatabasePool::Postgres(pool, _) => Router::new()
+            .merge(app_order_router_with_postgres_pool(
+                pool.clone(),
+                registry.clone(),
+                credentials.clone(),
+            ))
+            .merge(app_membership_order_router_with_postgres_pool_and_payments(
+                pool.clone(),
+                registry,
+                credentials,
+            )),
+        DatabasePool::Sqlite(pool, _) => Router::new()
+            .merge(app_order_router_with_sqlite_pool(
+                pool.clone(),
+                registry.clone(),
+                credentials.clone(),
+            ))
+            .merge(app_membership_order_router_with_sqlite_pool_and_payments(
+                pool.clone(),
+                registry,
+                credentials,
+            )),
     })
 }

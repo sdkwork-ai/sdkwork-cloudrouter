@@ -33,9 +33,9 @@ pub fn resolve_usage_settlement_worker_config(
 pub fn resolve_usage_settlement_worker_config_result(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<UsageSettlementWorkerConfig, String> {
-    let config = usage_settlement_worker_config_from_env_or_toml(runtime_toml)?.normalized();
+    let config = usage_settlement_worker_config_from_env_or_toml(runtime_toml)?;
     config.validate_for_deployment()?;
-    Ok(config)
+    Ok(config.normalized())
 }
 
 pub fn usage_settlement_worker_config_from_env_or_toml(
@@ -64,7 +64,7 @@ pub fn usage_settlement_worker_config_from_env_or_toml(
             runtime_toml.and_then(|config| config.usage_settlement.organization_id),
             defaults.organization_id,
         )?,
-        batch_size: parse_positive_i64_config(
+        batch_size: parse_batch_size_config(
             BATCH_SIZE,
             runtime_toml.and_then(|config| config.usage_settlement.batch_size),
             defaults.batch_size,
@@ -110,6 +110,21 @@ fn parse_positive_i64_config(
     Ok(parsed)
 }
 
+fn parse_batch_size_config(
+    name: &str,
+    config_value: Option<i64>,
+    default_value: i64,
+) -> Result<i64, String> {
+    let parsed = parse_positive_i64_config(name, config_value, default_value)?;
+    if parsed > UsageSettlementWorkerConfig::MAX_BATCH_SIZE {
+        return Err(format!(
+            "{name} must be between 1 and {}",
+            UsageSettlementWorkerConfig::MAX_BATCH_SIZE
+        ));
+    }
+    Ok(parsed)
+}
+
 fn parse_positive_u64_config(
     name: &str,
     config_value: Option<u64>,
@@ -121,4 +136,29 @@ fn parse_positive_u64_config(
         return Err(format!("{name} must be a positive integer"));
     }
     Ok(parsed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_batch_size_config, UsageSettlementWorkerConfig};
+
+    #[test]
+    fn usage_settlement_batch_size_rejects_values_above_the_hard_limit() {
+        let error = parse_batch_size_config(
+            "SDKWORK_CLAW_USAGE_SETTLEMENT_BATCH_SIZE",
+            Some(UsageSettlementWorkerConfig::MAX_BATCH_SIZE + 1),
+            100,
+        )
+        .expect_err("an oversized settlement batch must be rejected");
+
+        assert!(error.contains("must be between 1"));
+        assert_eq!(
+            Ok(UsageSettlementWorkerConfig::MAX_BATCH_SIZE),
+            parse_batch_size_config(
+                "SDKWORK_CLAW_USAGE_SETTLEMENT_BATCH_SIZE",
+                Some(UsageSettlementWorkerConfig::MAX_BATCH_SIZE),
+                100,
+            )
+        );
+    }
 }

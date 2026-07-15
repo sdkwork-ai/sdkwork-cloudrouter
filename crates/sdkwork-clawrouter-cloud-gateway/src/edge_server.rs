@@ -662,6 +662,10 @@ fn surface_for_path(path: &str) -> Option<EdgeApiSurface> {
 }
 
 fn sdkwork_api_cloud_gateway_dependency_path(path: &str) -> bool {
+    if is_clawrouter_owned_iam_app_path(path) {
+        return false;
+    }
+
     const APPBASE_APP_DEPENDENCY_PREFIXES: [&str; 4] = [
         "/app/v3/api/auth",
         "/app/v3/api/iam",
@@ -672,6 +676,15 @@ fn sdkwork_api_cloud_gateway_dependency_path(path: &str) -> bool {
     APPBASE_APP_DEPENDENCY_PREFIXES
         .iter()
         .any(|prefix| path_matches_prefix(path, prefix))
+}
+
+fn is_clawrouter_owned_iam_app_path(path: &str) -> bool {
+    const CLAWROUTER_OWNED_IAM_APP_PREFIXES: &[&str] =
+        &["/app/v3/api/iam/api_keys", "/app/v3/api/iam/users/settings"];
+
+    CLAWROUTER_OWNED_IAM_APP_PREFIXES.iter().any(|prefix| {
+        path == prefix.trim_end_matches('/') || path.starts_with(&format!("{prefix}/"))
+    })
 }
 
 fn sdkwork_api_cloud_gateway_surface_path(path: &str) -> bool {

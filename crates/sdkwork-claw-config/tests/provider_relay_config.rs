@@ -11,7 +11,7 @@ use std::sync::{Mutex, OnceLock};
 
 #[test]
 fn parses_optional_openai_relay_config_without_leaking_secret() {
-    let config = ProviderRelayConfig::from_optional_parts(
+    let config = ProviderRelayConfig::from_optional_parts_for_development(
         Some(" http://127.0.0.1:8080/ ".to_owned()),
         Some(" sk-upstream-provider-secret ".to_owned()),
     )
@@ -25,19 +25,68 @@ fn parses_optional_openai_relay_config_without_leaking_secret() {
 }
 
 #[test]
+fn production_rejects_local_targets_and_explicit_development_paths_allow_them() {
+    let production_error =
+        ProviderRelayConfig::from_parts("http://127.0.0.1:8080", "sk-openai").unwrap_err();
+    assert!(production_error.contains("https scheme"));
+
+    let development =
+        ProviderRelayConfig::from_parts_for_development("http://127.0.0.1:8080", "sk-openai")
+            .unwrap()
+            .with_provider_passthrough_for_development(
+                "google",
+                "http://127.0.0.1:8081",
+                "sk-google",
+            )
+            .unwrap();
+    assert_eq!(
+        "http://127.0.0.1:8080",
+        development.openai_relay().unwrap().base_url()
+    );
+    assert_eq!(
+        "http://127.0.0.1:8081",
+        development
+            .provider_passthrough("google")
+            .unwrap()
+            .base_url()
+    );
+
+    let local_json = r#"{
+        "google": {
+            "baseUrl": "http://127.0.0.1:8082",
+            "bearerToken": "sk-google"
+        }
+    }"#;
+    assert!(ProviderRelayConfig::from_provider_passthrough_json(local_json).is_err());
+    let parsed =
+        ProviderRelayConfig::from_provider_passthrough_json_for_development(local_json).unwrap();
+    assert_eq!(
+        "http://127.0.0.1:8082",
+        parsed.provider_passthrough("google").unwrap().base_url()
+    );
+
+    let unsafe_development_target =
+        ProviderRelayConfig::from_provider_passthrough_json_for_development(
+            r#"{"google":{"baseUrl":"http://credential@127.0.0.1:8082","bearerToken":"sk-google"}}"#,
+        )
+        .unwrap_err();
+    assert!(unsafe_development_target.contains("userinfo"));
+}
+
+#[test]
 fn parses_provider_native_passthrough_relay_config_without_leaking_secret() {
-    let config = ProviderRelayConfig::from_parts(
+    let config = ProviderRelayConfig::from_parts_for_development(
         " http://127.0.0.1:8080/ ",
         " sk-upstream-provider-secret ",
     )
     .unwrap()
-    .with_provider_passthrough(
+    .with_provider_passthrough_for_development(
         " google ",
         " https://generativelanguage.googleapis.com/ ",
         " sk-google-provider ",
     )
     .unwrap()
-    .with_provider_passthrough(
+    .with_provider_passthrough_for_development(
         "anthropic",
         "https://api.anthropic.com",
         "sk-anthropic-provider",
@@ -58,7 +107,7 @@ fn parses_provider_native_passthrough_relay_config_without_leaking_secret() {
 
 #[test]
 fn parses_provider_native_passthrough_json_config() {
-    let config = ProviderRelayConfig::from_optional_parts(
+    let config = ProviderRelayConfig::from_optional_parts_for_development(
         Some("http://127.0.0.1:8080".to_owned()),
         Some("sk-openai".to_owned()),
     )
@@ -231,7 +280,9 @@ fn parses_provider_native_passthrough_json_config_without_openai_relay() {
 
 #[test]
 fn rejects_invalid_provider_native_passthrough_json_config() {
-    let config = ProviderRelayConfig::from_parts("http://127.0.0.1:8080", "sk-openai").unwrap();
+    let config =
+        ProviderRelayConfig::from_parts_for_development("http://127.0.0.1:8080", "sk-openai")
+            .unwrap();
 
     let malformed = config
         .clone()
@@ -271,7 +322,9 @@ fn rejects_invalid_provider_native_passthrough_json_config() {
 
 #[test]
 fn rejects_blank_provider_native_passthrough_config() {
-    let config = ProviderRelayConfig::from_parts("http://127.0.0.1:8080", "sk-openai").unwrap();
+    let config =
+        ProviderRelayConfig::from_parts_for_development("http://127.0.0.1:8080", "sk-openai")
+            .unwrap();
 
     let blank_provider = config
         .clone()
@@ -327,7 +380,7 @@ fn from_env_accepts_provider_native_passthrough_without_openai_relay_env() {
 #[test]
 fn rejects_partial_or_blank_openai_relay_config() {
     let missing_token =
-        ProviderRelayConfig::from_optional_parts(Some("http://127.0.0.1:8080".to_owned()), None)
+        ProviderRelayConfig::from_optional_parts(Some("https://provider.example".to_owned()), None)
             .unwrap_err();
     assert!(missing_token.contains("SDKWORK_CLAW_OPENAI_RELAY_BEARER_TOKEN"));
 

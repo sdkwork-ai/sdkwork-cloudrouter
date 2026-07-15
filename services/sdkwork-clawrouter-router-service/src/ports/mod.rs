@@ -398,6 +398,7 @@ pub use usage_logs_read_store::{
     UsageLogItem, UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture, UsageLogsReadStore,
     UsageLogsStatus, UsageLogsSubject,
 };
+pub(crate) use usage_settlement_store::MAX_USAGE_SETTLEMENT_BATCH_SIZE;
 pub use usage_settlement_store::{
     UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
 };

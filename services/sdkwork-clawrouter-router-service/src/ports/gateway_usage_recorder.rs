@@ -1,12 +1,18 @@
 use std::future::Future;
 use std::pin::Pin;
 
+use serde::de::IgnoredAny;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::domain::{BillingMeter, DecimalValue, DomainError, DomainResult};
 
 pub type GatewayUsageRecordFuture<'a> = Pin<Box<dyn Future<Output = DomainResult<()>> + Send + 'a>>;
+
+// The SQLite baseline enforces this textual ceiling for NUMERIC(38, 12)
+// persistence fields. Check it before DecimalValue parses the input so a
+// malformed upstream value cannot force unbounded parser work.
+const DECIMAL_INPUT_MAX_BYTES: usize = 40;
 
 pub trait GatewayUsageRecorder {
     fn record_gateway_trace<'a>(
@@ -174,6 +180,53 @@ impl GatewayRequestTraceCommand {
         positive_i64("tenant_id", self.tenant_id)?;
         non_negative_i64("organization_id", self.organization_id)?;
         required_text("request_id", &self.request_id, 128)?;
+        for (field, value, max_characters) in [
+            (
+                "api_key_name_snapshot",
+                self.api_key_name_snapshot.as_str(),
+                128,
+            ),
+            (
+                "channel_group_snapshot",
+                self.channel_group_snapshot.as_str(),
+                128,
+            ),
+            // This command field is stored as ai_request_trace.channel_name_snapshot.
+            ("provider_code", self.provider_code.as_str(), 128),
+            ("requested_model", self.requested_model.as_str(), 256),
+            (
+                "requested_model_catalog_key",
+                self.requested_model_catalog_key.as_str(),
+                256,
+            ),
+            ("provider_model", self.provider_model.as_str(), 256),
+            (
+                "provider_native_model",
+                self.provider_native_model.as_str(),
+                256,
+            ),
+            ("region_code", self.region_code.as_str(), 64),
+            ("request_path", self.request_path.as_str(), 256),
+            ("http_method", self.http_method.as_str(), 16),
+        ] {
+            validate_text_width(field, value, max_characters)?;
+        }
+        for (field, value, max_characters) in [
+            ("trace_id", self.trace_id.as_deref(), 128),
+            (
+                "provider_error_code",
+                self.provider_error_code.as_deref(),
+                128,
+            ),
+            ("error_type", self.error_type.as_deref(), 128),
+            (
+                "error_message_masked",
+                self.error_message_masked.as_deref(),
+                1024,
+            ),
+        ] {
+            validate_optional_text_width(field, value, max_characters)?;
+        }
         validate_http_status(self.http_status)?;
         for (field, value) in [
             ("prompt_tokens", self.prompt_tokens),
@@ -427,8 +480,10 @@ impl GatewayUsageRecordCommand {
         self.trace_command().validate()?;
         non_negative_i32("modality", self.modality)?;
         non_negative_i32("usage_type", self.usage_type)?;
+        validate_text_width("catalog_key", &self.catalog_key, 256)?;
         required_text("billing_meter_code", &self.billing_meter_code, 64)?;
         required_text("currency", &self.currency, 10)?;
+        validate_text_width("pricing_plan_code", &self.pricing_plan_code, 64)?;
         if self.currency.len() < 3 {
             return Err(DomainError::new(
                 "currency must contain at least three characters".to_owned(),
@@ -469,14 +524,7 @@ impl GatewayUsageRecordCommand {
         }
         validate_optional_non_negative_decimal("audio_seconds", self.audio_seconds.as_deref())?;
         validate_optional_non_negative_decimal("video_seconds", self.video_seconds.as_deref())?;
-
-        let pricing_snapshot: serde_json::Value = serde_json::from_str(&self.pricing_snapshot)
-            .map_err(|_| DomainError::new("pricing_snapshot must be valid JSON".to_owned()))?;
-        if !pricing_snapshot.is_object() {
-            return Err(DomainError::new(
-                "pricing_snapshot must be a JSON object".to_owned(),
-            ));
-        }
+        validate_json_object("pricing_snapshot", &self.pricing_snapshot)?;
         Ok(())
     }
 
@@ -582,10 +630,25 @@ fn required_text(field: &str, value: &str, max_characters: usize) -> DomainResul
             "{field} must be non-empty and must not contain surrounding whitespace"
         )));
     }
-    if value.chars().count() > max_characters {
+    validate_text_width(field, value, max_characters)
+}
+
+fn validate_text_width(field: &str, value: &str, max_characters: usize) -> DomainResult<()> {
+    if value.chars().nth(max_characters).is_some() {
         return Err(DomainError::new(format!(
             "{field} must not exceed {max_characters} characters"
         )));
+    }
+    Ok(())
+}
+
+fn validate_optional_text_width(
+    field: &str,
+    value: Option<&str>,
+    max_characters: usize,
+) -> DomainResult<()> {
+    if let Some(value) = value {
+        validate_text_width(field, value, max_characters)?;
     }
     Ok(())
 }
@@ -609,6 +672,7 @@ pub fn hash_optional_text(value: Option<&str>) -> Option<String> {
 }
 
 fn non_negative_decimal(field: &str, value: &str) -> DomainResult<()> {
+    validate_decimal_input_length(field, value)?;
     let decimal = DecimalValue::parse(value).map_err(|error| {
         DomainError::new(format!(
             "{field} must be a non-negative decimal value: {error}"
@@ -625,6 +689,26 @@ fn non_negative_decimal(field: &str, value: &str) -> DomainResult<()> {
 fn validate_optional_non_negative_decimal(field: &str, value: Option<&str>) -> DomainResult<()> {
     if let Some(value) = value {
         non_negative_decimal(field, value)?;
+    }
+    Ok(())
+}
+
+fn validate_decimal_input_length(field: &str, value: &str) -> DomainResult<()> {
+    if value.len() > DECIMAL_INPUT_MAX_BYTES {
+        return Err(DomainError::new(format!(
+            "{field} must not exceed {DECIMAL_INPUT_MAX_BYTES} bytes"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_json_object(field: &str, value: &str) -> DomainResult<()> {
+    let mut deserializer = serde_json::Deserializer::from_str(value);
+    IgnoredAny::deserialize(&mut deserializer)
+        .and_then(|_| deserializer.end())
+        .map_err(|_| DomainError::new(format!("{field} must be valid JSON")))?;
+    if !value.trim_start().starts_with('{') {
+        return Err(DomainError::new(format!("{field} must be a JSON object")));
     }
     Ok(())
 }
@@ -652,6 +736,7 @@ fn positive_integer_quantity(field: &str, value: &str) -> DomainResult<i64> {
 }
 
 fn positive_decimal_value(field: &str, value: &str) -> DomainResult<DecimalValue> {
+    validate_decimal_input_length(field, value)?;
     let decimal = DecimalValue::parse(value).map_err(|error| {
         DomainError::new(format!(
             "{field} must be a positive decimal quantity: {error}"

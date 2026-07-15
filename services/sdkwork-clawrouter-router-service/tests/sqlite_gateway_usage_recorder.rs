@@ -32,7 +32,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     let recorder = SqliteGatewayUsageRecorder::new_with_attribution(
         pool.clone(),
         GatewayTraceAttribution {
-            gateway_instance_id: None,
+            gateway_instance_id: Some(9001),
             gateway_instance_code_snapshot: Some("gateway-a".to_owned()),
             gateway_region_code_snapshot: Some("cn-east-1".to_owned()),
             gateway_node_name_snapshot: Some("node-a".to_owned()),
@@ -812,9 +812,77 @@ fn gateway_usage_command_rejects_invalid_persistence_values() {
     command.customer_charge_amount = "-0.000001".to_owned();
     invalid_commands.push(("customer_charge_amount", command));
 
-    let mut command = valid;
+    let mut command = valid.clone();
     command.pricing_snapshot = "[]".to_owned();
     invalid_commands.push(("pricing_snapshot", command));
+
+    let mut command = valid.clone();
+    command.trace_id = Some("x".repeat(129));
+    invalid_commands.push(("trace_id", command));
+
+    let mut command = valid.clone();
+    command.api_key_name_snapshot = "x".repeat(129);
+    invalid_commands.push(("api_key_name_snapshot", command));
+
+    let mut command = valid.clone();
+    command.channel_group_snapshot = "x".repeat(129);
+    invalid_commands.push(("channel_group_snapshot", command));
+
+    let mut command = valid.clone();
+    command.provider_code = "x".repeat(129);
+    invalid_commands.push(("provider_code", command));
+
+    let mut command = valid.clone();
+    command.requested_model = "x".repeat(257);
+    invalid_commands.push(("requested_model", command));
+
+    let mut command = valid.clone();
+    command.requested_model_catalog_key = "x".repeat(257);
+    invalid_commands.push(("requested_model_catalog_key", command));
+
+    let mut command = valid.clone();
+    command.provider_model = "x".repeat(257);
+    invalid_commands.push(("provider_model", command));
+
+    let mut command = valid.clone();
+    command.provider_native_model = "x".repeat(257);
+    invalid_commands.push(("provider_native_model", command));
+
+    let mut command = valid.clone();
+    command.region_code = "x".repeat(65);
+    invalid_commands.push(("region_code", command));
+
+    let mut command = valid.clone();
+    command.request_path = "x".repeat(257);
+    invalid_commands.push(("request_path", command));
+
+    let mut command = valid.clone();
+    command.http_method = "x".repeat(17);
+    invalid_commands.push(("http_method", command));
+
+    let mut command = valid.clone();
+    command.provider_error_code = Some("x".repeat(129));
+    invalid_commands.push(("provider_error_code", command));
+
+    let mut command = valid.clone();
+    command.error_type = Some("x".repeat(129));
+    invalid_commands.push(("error_type", command));
+
+    let mut command = valid.clone();
+    command.error_message_masked = Some("x".repeat(1025));
+    invalid_commands.push(("error_message_masked", command));
+
+    let mut command = valid.clone();
+    command.catalog_key = "x".repeat(257);
+    invalid_commands.push(("catalog_key", command));
+
+    let mut command = valid.clone();
+    command.pricing_plan_code = "x".repeat(65);
+    invalid_commands.push(("pricing_plan_code", command));
+
+    let mut command = valid;
+    command.base_input_unit_price = "1".repeat(41);
+    invalid_commands.push(("base_input_unit_price", command));
 
     for (field, command) in invalid_commands {
         let error = command.validate().unwrap_err().to_string();

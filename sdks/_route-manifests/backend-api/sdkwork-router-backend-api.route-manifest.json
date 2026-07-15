@@ -986,7 +986,7 @@
     {
       "method": "POST",
       "path": "/backend/v3/api/ai/route_explain",
-      "operationId": "routeExplain.create",
+      "operationId": "routeExplain.explain",
       "tags": [
         "ai"
       ],

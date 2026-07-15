@@ -181,6 +181,7 @@ export function ConsoleLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [isResizing, setIsResizing] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const startResizing = useCallback((e: React.MouseEvent) => {
     setIsResizing(true);
@@ -220,10 +221,18 @@ export function ConsoleLayout({
 
   const currentWidth = sidebarOpen ? sidebarWidth : 80;
 
-  const handleLogout = useCallback(() => {
-    void revokeAppSession();
-    navigate('/', { replace: true });
-  }, [navigate]);
+  const handleLogout = useCallback(async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+    try {
+      await revokeAppSession();
+    } finally {
+      navigate('/', { replace: true });
+    }
+  }, [isLoggingOut, navigate]);
 
   return (
     <div className="sdkwork-console-shell min-h-screen bg-slate-50 dark:bg-[#121212] flex flex-col selection:bg-lobster-500/30">
@@ -278,8 +287,11 @@ export function ConsoleLayout({
           {/* Logout Nav */}
           <div className="p-3 border-t border-slate-200 dark:border-white/10 flex flex-col gap-1 overflow-hidden">
              <button
-                onClick={handleLogout}
-                className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
+                aria-busy={isLoggingOut}
+                disabled={isLoggingOut}
+                onClick={() => void handleLogout()}
+                type="button"
+                className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:cursor-wait disabled:opacity-60"
                 title={!sidebarOpen ? t("console.core.consolelayout.text.12hokt7", "Log out") : undefined}
               >
                 <LogOut className="w-5 h-5 shrink-0" />

@@ -3,7 +3,7 @@ import type { ChatMessage, ChatSessionSummary } from './chatTypes';
 import {
   emptyRuntimeUsageSnapshot,
   type RuntimeUsageSnapshot,
-} from '@sdkwork/clawroutes-pc-commons/runtime';
+} from '@sdkwork/clawroutes-pc-commons/runtime-usage';
 
 const CHAT_LOCAL_STORE_PREFIX = 'sdkwork-clawrouter.playground.chat';
 

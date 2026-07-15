@@ -86,7 +86,7 @@ From `apps/sdkwork-clawrouter-pc`:
 
 ```bash
 node playground-generation-studio-alignment.test.mjs
-pnpm exec tsx playground-chat-runtime.test.ts
+pnpm exec vitest run playground-chat-runtime.test.ts --config vite.config.ts --pool vmThreads
 pnpm --filter @sdkwork/generations-pc-studio test
 pnpm --filter @sdkwork/music-pc-generation test
 node --import tsx --test commons-runtime.test.ts

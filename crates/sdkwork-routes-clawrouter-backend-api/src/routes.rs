@@ -1568,6 +1568,7 @@ fn router_without_database(deployment_mode: DeploymentMode) -> Router {
 pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
     let runtime_toml =
         RuntimeTomlConfig::from_env_config_file().map_err(ProductCatalogRouterError::Config)?;
+    let deployment_mode = validate_runtime_snowflake_node_id_configuration(runtime_toml.as_ref())?;
     let config = database_config_from_env_for_startup(runtime_toml.as_ref())?;
     let startup_install_mode = StartupInstallMode::from_env_or_runtime_toml(runtime_toml.as_ref())
         .map_err(ProductCatalogRouterError::Config)?;
@@ -1586,8 +1587,6 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
     let provider_secret_map_config =
         ProviderSecretMapConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
             .map_err(ProductCatalogRouterError::Config)?;
-    let deployment_mode = DeploymentMode::from_env_or_runtime_toml(runtime_toml.as_ref())
-        .map_err(ProductCatalogRouterError::Config)?;
     sdkwork_claw_config::ensure_server_production_redis_config(
         deployment_mode,
         runtime_toml.as_ref(),
@@ -1616,6 +1615,15 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
         None => router_without_database(deployment_mode),
     };
     Ok(crate::web_bootstrap::maybe_wrap_router_with_web_framework(router).await)
+}
+
+fn validate_runtime_snowflake_node_id_configuration(
+    runtime_toml: Option<&RuntimeTomlConfig>,
+) -> Result<DeploymentMode, ProductCatalogRouterError> {
+    sdkwork_clawrouter_router_service::infrastructure::sql::validate_claw_runtime_id_configuration(
+        runtime_toml,
+    )
+    .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))
 }
 
 fn database_config_from_env_for_startup(
@@ -2118,6 +2126,7 @@ mod tests {
         let saved_database_url = std::env::var("SDKWORK_CLAW_DATABASE_URL").ok();
         let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
         let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
+        let saved_snowflake_node_id = std::env::var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID").ok();
         let saved_api_key_pepper = std::env::var("SDKWORK_CLAW_API_KEY_PEPPER").ok();
         let saved_trusted_subject_secret =
             std::env::var("SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET").ok();
@@ -2126,6 +2135,7 @@ mod tests {
         std::env::remove_var("SDKWORK_CLAW_DATABASE_URL");
         std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "desktop");
         std::env::set_var("SDKWORK_CLAW_CONFIG_FILE", &config_path);
+        std::env::remove_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID");
         std::env::set_var(
             "SDKWORK_CLAW_API_KEY_PEPPER",
             "0123456789abcdef0123456789abcdef",
@@ -2144,6 +2154,7 @@ mod tests {
         restore_env_var("SDKWORK_CLAW_DATABASE_URL", saved_database_url);
         restore_env_var("SDKWORK_CLAW_DEPLOYMENT_MODE", saved_deployment_mode);
         restore_env_var("SDKWORK_CLAW_CONFIG_FILE", saved_config_file);
+        restore_env_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
         restore_env_var("SDKWORK_CLAW_API_KEY_PEPPER", saved_api_key_pepper);
         restore_env_var(
             "SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET",
@@ -2160,6 +2171,53 @@ mod tests {
         assert!(generated_config.contains("engine = \"sqlite\""));
         assert!(generated_config.contains("deployment_mode = \"desktop\""));
         assert!(generated_config.contains("clawrouter.sqlite"));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn router_from_env_rejects_missing_or_invalid_server_snowflake_node_id_before_database_bootstrap(
+    ) {
+        let _guard = env_guard().lock().unwrap();
+        let saved_database_url = std::env::var("SDKWORK_CLAW_DATABASE_URL").ok();
+        let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
+        let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
+        let saved_snowflake_node_id = std::env::var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID").ok();
+
+        std::env::remove_var("SDKWORK_CLAW_DATABASE_URL");
+        std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "server");
+        for node_id in [None, Some("not-a-node-id")] {
+            let mut config_path = unique_runtime_config_path();
+            config_path.set_file_name(match node_id {
+                Some(_) => "invalid-snowflake-node-id.toml",
+                None => "missing-snowflake-node-id.toml",
+            });
+            std::env::set_var("SDKWORK_CLAW_CONFIG_FILE", &config_path);
+            match node_id {
+                Some(node_id) => std::env::set_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", node_id),
+                None => std::env::remove_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID"),
+            }
+
+            let error = router_from_env()
+                .await
+                .expect_err(
+                    "server startup must reject invalid Snowflake node IDs before bootstrap",
+                )
+                .to_string();
+
+            assert!(
+                error.contains("SDKWORK_CLAW_SNOWFLAKE_NODE_ID"),
+                "unexpected startup error for node id {node_id:?}: {error}"
+            );
+            assert!(
+                !config_path.exists(),
+                "invalid runtime ID configuration must fail before creating {}",
+                config_path.display()
+            );
+        }
+
+        restore_env_var("SDKWORK_CLAW_DATABASE_URL", saved_database_url);
+        restore_env_var("SDKWORK_CLAW_DEPLOYMENT_MODE", saved_deployment_mode);
+        restore_env_var("SDKWORK_CLAW_CONFIG_FILE", saved_config_file);
+        restore_env_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
     }
 
     fn unique_runtime_config_path() -> std::path::PathBuf {

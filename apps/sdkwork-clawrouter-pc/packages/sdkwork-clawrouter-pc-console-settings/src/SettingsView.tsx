@@ -165,8 +165,8 @@ export function SettingsView() {
   ] as const;
 
   return (
-    <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col animate-in fade-in duration-500 bg-slate-50 p-[5px] dark:bg-[#121212]">
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row gap-8">
+    <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col animate-in fade-in duration-500 bg-slate-50 px-[5px] pb-[5px] dark:bg-[#121212]">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row gap-6">
 
         {/* Left Nav */}
         <div className="w-full md:w-64 shrink-0 md:min-h-0">
@@ -216,7 +216,7 @@ export function SettingsView() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-8"
+                className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 md:p-6 space-y-6"
               >
                 <div>
                   <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-1">{t("console.settings.settingsview.text.103js93", "通用设置")}</h2>
@@ -233,7 +233,7 @@ export function SettingsView() {
                         {saveSuccess}
                       </div>
                     ) : null}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                        <div>
                          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{t("console.settings.settingsview.text.acqlsz", "系统首选语言")}</label>
                          <select
@@ -258,7 +258,7 @@ export function SettingsView() {
                        </div>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-200 dark:border-white/5">
+                    <div className="pt-3 border-t border-slate-200 dark:border-white/5">
                       <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{t("console.settings.settingsview.text.2oob40", "全局默认回调 URL配置")}</label>
                       <p className="text-[13px] text-slate-500 mb-3 leading-relaxed">
                         {t("console.settings.settingsview.text.xs2e5v", "当开启异步多模态任务生成（如视频生成、大批量图像生成）时，如果未在 API 请求体内置顶 Notify URL，平台将默认采用此地址进行状态回推。")}</p>
@@ -270,7 +270,7 @@ export function SettingsView() {
                         className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-white focus:outline-none focus:border-lobster-500 transition-colors font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600 shadow-sm" />
                     </div>
 
-                    <div className="pt-6 flex justify-end">
+                    <div className="pt-4 flex justify-end">
                       <button onClick={handleSave} disabled={saving} className="bg-lobster-600 hover:bg-lobster-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-colors shadow-sm">
                         {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                         {t("console.settings.settingsview.text.sig5u1", "保存全部修改")}</button>
@@ -285,7 +285,7 @@ export function SettingsView() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-8"
+                className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 md:p-6 space-y-6"
               >
                 <div className="space-y-8 max-w-4xl">
                   <div>
@@ -362,7 +362,7 @@ export function SettingsView() {
                     </div>
                   </section>
 
-                  <section className="space-y-4 border-t border-slate-200 pt-7 dark:border-white/10">
+                  <section className="space-y-4 border-t border-slate-200 pt-5 dark:border-white/10">
                     <div>
                       <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{t("console.settings.appearance.themeColor", "主题颜色")}</h3>
                       <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">{t("console.settings.appearance.themeColorDescription", "用于导航高亮、按钮强调、滚动条与关键状态的全局主色。")}</p>
@@ -407,7 +407,7 @@ export function SettingsView() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-8"
+                className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 md:p-6 space-y-6"
               >
                 <div>
                   <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-1">{t("console.settings.settingsview.text.1f88e0w", "关键事件通知中心")}</h2>
@@ -425,9 +425,9 @@ export function SettingsView() {
                       </div>
                     ) : null}
 
-                    <div className="bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/5 rounded-xl p-6 shadow-sm space-y-7">
+                    <div className="bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/5 rounded-xl p-5 shadow-sm space-y-5">
 
-                      <div className="flex items-start justify-between gap-6">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
                           <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{t("console.settings.settingsview.text.nvk1uw", "月度账单出账提醒")}</h4>
                           <p className="text-[13px] text-slate-500 mt-1.5 leading-relaxed">{t("console.settings.settingsview.text.13ohdai", "每月初系统完成并生成上月所有多模态大模型的并发调用清单与扣费统计后，向您发送详尽邮件提醒。")}</p>
@@ -442,7 +442,7 @@ export function SettingsView() {
                         </div>
                       </div>
 
-                      <div className="flex items-start justify-between gap-6">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
                           <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{t("console.settings.settingsview.text.1wzexb9", "可用余额/额度熔断告警")}</h4>
                           <p className="text-[13px] text-slate-500 mt-1.5 leading-relaxed">{t("console.settings.settingsview.text.1eriz46", "当您关联的结算账户预估可用余额不足 $50 或单日额度消耗大于 90% 时，立即发送系统紧急站内信与邮件熔断通知。")}</p>
@@ -457,7 +457,7 @@ export function SettingsView() {
                         </div>
                       </div>
 
-                      <div className="flex items-start justify-between gap-6">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
                           <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                             {t("console.settings.settingsview.text.luzgc3", "网关监控异常跌落报警")}<span className="px-2 py-0.5 rounded border border-lobster-500/30 bg-lobster-50 dark:bg-lobster-500/10 text-lobster-600 dark:text-lobster-400 text-[10px] uppercase font-bold tracking-wider">{t("console.settings.settingsview.text.6erjpp", "Pro级")}</span>

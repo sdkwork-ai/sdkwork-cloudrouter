@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@sdkwork/documents-pc-i18n": "workspace:*",
+    "@sdkwork/membership-pc-subscription": "workspace:*",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

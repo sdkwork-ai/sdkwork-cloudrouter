@@ -135,14 +135,14 @@ where
             for (line, quote) in invocation.usage.lines.iter_mut().zip(line_quotes) {
                 line.pricing_quote = quote;
             }
-            invocation.usage.pricing_quotes = dedupe_quotes(
+            let pricing_quotes = dedupe_quotes(
                 invocation
                     .usage
                     .lines
                     .iter()
-                    .filter_map(|line| line.pricing_quote.clone())
-                    .collect(),
+                    .filter_map(|line| line.pricing_quote.as_ref()),
             );
+            invocation.usage.pricing_quotes = pricing_quotes;
             Ok(())
         })
     }
@@ -197,7 +197,9 @@ fn dedupe_meters(meters: Vec<BillingMeter>) -> Vec<BillingMeter> {
     deduped
 }
 
-fn dedupe_quotes(quotes: Vec<InvocationPricingQuote>) -> Vec<InvocationPricingQuote> {
+fn dedupe_quotes<'a>(
+    quotes: impl IntoIterator<Item = &'a InvocationPricingQuote>,
+) -> Vec<InvocationPricingQuote> {
     let mut deduped = Vec::new();
     for quote in quotes {
         if deduped.iter().any(|existing: &InvocationPricingQuote| {
@@ -209,7 +211,7 @@ fn dedupe_quotes(quotes: Vec<InvocationPricingQuote>) -> Vec<InvocationPricingQu
         }) {
             continue;
         }
-        deduped.push(quote);
+        deduped.push(quote.clone());
     }
     deduped
 }
@@ -364,4 +366,50 @@ fn route_key_catalog_key(invocation: &Invocation) -> Result<String, InvocationEr
     .find(|value| !value.is_empty())
     .map(str::to_owned)
     .ok_or_else(|| pricing_error("pricing requires a resource catalog key"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::Money;
+
+    fn quote(
+        meter: BillingMeter,
+        requested_model: &str,
+        pricing_plan_code: &str,
+    ) -> InvocationPricingQuote {
+        let price = Money::usd("0.100000").expect("valid test price");
+        InvocationPricingQuote {
+            catalog_key: "openai/gpt-4o-mini".to_owned(),
+            requested_model: requested_model.to_owned(),
+            provider_code: Some("openrouter".to_owned()),
+            channel_id: Some(3001),
+            region_code: "global".to_owned(),
+            meter,
+            official_reference_unit_price: price.clone(),
+            upstream_cost_unit_price: Some(price.clone()),
+            customer_charge_before_rate: price.clone(),
+            customer_charge_unit_price: price,
+            rate_multiplier: "1.000000".to_owned(),
+            reference_multiplier: "1.000000".to_owned(),
+            pricing_plan_code: pricing_plan_code.to_owned(),
+            group_code: "standard-group".to_owned(),
+        }
+    }
+
+    #[test]
+    fn dedupe_quotes_keeps_the_first_matching_quote_and_input_order() {
+        let first = quote(BillingMeter::LlmInputToken, "first-model", "first-plan");
+        let duplicate = quote(BillingMeter::LlmInputToken, "later-model", "later-plan");
+        let next = quote(BillingMeter::LlmOutputToken, "output-model", "output-plan");
+
+        let deduped = dedupe_quotes([&first, &duplicate, &next]);
+
+        assert_eq!(2, deduped.len());
+        assert_eq!(BillingMeter::LlmInputToken, deduped[0].meter);
+        assert_eq!("first-model", deduped[0].requested_model);
+        assert_eq!("first-plan", deduped[0].pricing_plan_code);
+        assert_eq!(BillingMeter::LlmOutputToken, deduped[1].meter);
+        assert_eq!("output-model", deduped[1].requested_model);
+    }
 }

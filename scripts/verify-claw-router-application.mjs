@@ -691,7 +691,18 @@ function buildVerificationPlan(settings, env = process.env) {
   plan.push({
     label: 'portal playground chat runtime tests',
     command: pnpmCommand(),
-    args: ['--dir', 'apps/sdkwork-clawrouter-pc', 'exec', 'tsx', 'playground-chat-runtime.test.ts'],
+    args: [
+      '--dir',
+      'apps/sdkwork-clawrouter-pc',
+      'exec',
+      'vitest',
+      'run',
+      'playground-chat-runtime.test.ts',
+      '--config',
+      'vite.config.ts',
+      '--pool',
+      'vmThreads',
+    ],
     env,
   });
   plan.push({

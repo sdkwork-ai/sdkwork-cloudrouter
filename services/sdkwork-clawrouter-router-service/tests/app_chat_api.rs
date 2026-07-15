@@ -45,7 +45,7 @@ async fn app_chat_create_conversation_uses_product_chat_namespace_and_store_cont
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
 
@@ -58,8 +58,8 @@ async fn app_chat_create_conversation_uses_product_chat_namespace_and_store_cont
 
     let commands = store.create_conversation_commands.lock().unwrap();
     assert_eq!(1, commands.len());
-    assert_eq!(10, commands[0].subject.tenant_id);
-    assert_eq!(20, commands[0].subject.organization_id);
+    assert_eq!(100001, commands[0].subject.tenant_id);
+    assert_eq!(0, commands[0].subject.organization_id);
     assert_eq!(30, commands[0].subject.user_id);
     assert_eq!("conversation-uuid-1", commands[0].conversation_uuid);
     assert_eq!("Router design", commands[0].title.as_deref().unwrap());
@@ -105,6 +105,75 @@ async fn app_chat_list_conversations_uses_trusted_subject_and_returns_items() {
 }
 
 #[tokio::test]
+async fn app_chat_default_router_fails_closed_without_store_and_redacts_configuration() {
+    let router = sdkwork_clawrouter_router_service::api::app_chat_router();
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/app/v3/api/chat/conversations?page=1&page_size=20")
+                .internal_trusted_subject(100001, 0, 30)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
+    let payload = response_json(response).await;
+    assert_eq!(50301, payload["code"].as_i64().unwrap());
+    assert_eq!(
+        "A required dependency is temporarily unavailable",
+        payload["detail"].as_str().unwrap()
+    );
+    assert!(!payload
+        .to_string()
+        .contains("app chat store is unavailable"));
+}
+
+#[tokio::test]
+async fn app_chat_list_rejects_forbidden_or_ambiguous_pagination_parameters() {
+    let store = Arc::new(TestAppChatStore::default());
+    let router = sdkwork_clawrouter_router_service::api::app_chat_router_with_store(
+        store.clone(),
+        Arc::new(SequentialUuidGenerator::new(Vec::new())),
+    );
+
+    for query in [
+        "pageSize=20",
+        "limit=20",
+        "page_no=1",
+        "pageNo=1",
+        "per_page=20",
+        "size=20",
+        "page=1&page=2",
+        "page=not-a-number",
+        "page_size=201",
+    ] {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(format!("/app/v3/api/chat/conversations?{query}"))
+                    .internal_trusted_subject(100001, 0, 30)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::BAD_REQUEST, response.status(), "query: {query}");
+        let payload = response_json(response).await;
+        assert_eq!(40003, payload["code"].as_i64().unwrap(), "query: {query}");
+        assert_eq!(None, payload.get("message"), "query: {query}");
+    }
+
+    assert!(store.list_subjects.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
 async fn app_chat_create_turn_carries_message_agent_and_model_context() {
     let store = Arc::new(TestAppChatStore::default());
     let router = sdkwork_clawrouter_router_service::api::app_chat_router_with_store(
@@ -141,7 +210,7 @@ async fn app_chat_create_turn_carries_message_agent_and_model_context() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     let payload = response_json(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("chat-turn-1", payload["data"]["turn"]["id"]);

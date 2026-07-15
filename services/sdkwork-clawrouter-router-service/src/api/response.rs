@@ -139,6 +139,10 @@ pub fn internal_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::InternalError, detail)
 }
 
+pub fn service_unavailable_problem(detail: impl Into<String>) -> ProblemResponse {
+    platform_problem(SdkWorkResultCode::ServiceUnavailable, detail)
+}
+
 #[derive(Debug, Clone)]
 pub struct ProblemResponse {
     pub problem: SdkWorkProblemDetail,
@@ -258,6 +262,7 @@ pub fn no_content_response(context: Option<&WebRequestContext>) -> Response {
 pub const DEFAULT_LIST_PAGE_NO: i64 = 1;
 pub const DEFAULT_LIST_PAGE_SIZE: i64 = 20;
 pub const MAX_LIST_PAGE_SIZE: i64 = 200;
+pub const MAX_LIST_PAGE_NO: i64 = i32::MAX as i64;
 pub const MAX_LIST_SEARCH_LEN: usize = 256;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -275,16 +280,22 @@ pub fn parse_offset_list_query(
     if page_no < 1 {
         return Err("page must be greater than or equal to 1".to_owned());
     }
+    if page_no > MAX_LIST_PAGE_NO {
+        return Err(format!("page must be between 1 and {MAX_LIST_PAGE_NO}"));
+    }
     let page_size = page_size.unwrap_or(DEFAULT_LIST_PAGE_SIZE);
     if !(1..=MAX_LIST_PAGE_SIZE).contains(&page_size) {
         return Err(format!(
             "page_size must be between 1 and {MAX_LIST_PAGE_SIZE}"
         ));
     }
+    let offset = (page_no - 1)
+        .checked_mul(page_size)
+        .ok_or_else(|| "page and page_size produce an unsupported offset".to_owned())?;
     Ok(ParsedOffsetListQuery {
         page_no,
         page_size,
-        offset: (page_no - 1) * page_size,
+        offset,
     })
 }
 
@@ -316,15 +327,18 @@ pub fn normalize_list_search_query(
 
 /// Offset pagination metadata for list responses (`API_SPEC.md` §16).
 pub fn offset_page_info(page_no: i64, page_size: i64, total_items: i64) -> PageInfo {
-    let total_pages = if page_size > 0 {
-        Some(((total_items + page_size - 1) / page_size) as i32)
+    let total_pages = if page_size > 0 && total_items >= 0 {
+        total_items
+            .checked_add(page_size - 1)
+            .map(|total_with_remainder| total_with_remainder / page_size)
+            .and_then(|total_pages| i32::try_from(total_pages).ok())
     } else {
         None
     };
     PageInfo {
         mode: PageMode::Offset,
-        page: Some(page_no as i32),
-        page_size: Some(page_size as i32),
+        page: i32::try_from(page_no).ok(),
+        page_size: i32::try_from(page_size).ok(),
         total_items: Some(total_items.to_string()),
         total_pages,
         next_cursor: None,
@@ -410,6 +424,24 @@ mod tests {
     }
 
     #[test]
+    fn parse_offset_list_query_rejects_page_outside_page_info_range() {
+        assert_eq!(
+            Err(format!("page must be between 1 and {MAX_LIST_PAGE_NO}")),
+            parse_offset_list_query(Some(MAX_LIST_PAGE_NO + 1), Some(1))
+        );
+    }
+
+    #[test]
+    fn offset_page_info_does_not_wrap_large_total_page_counts() {
+        let page_info = offset_page_info(1, 1, i64::MAX);
+
+        assert_eq!(Some(1), page_info.page);
+        assert_eq!(Some(1), page_info.page_size);
+        assert_eq!(Some(i64::MAX.to_string()), page_info.total_items);
+        assert_eq!(None, page_info.total_pages);
+    }
+
+    #[test]
     fn problem_response_sets_problem_json_content_type() {
         let response = problem_from_wire_code("4010", "auth required").into_response();
         assert_eq!(
@@ -474,6 +506,7 @@ mod tests {
                 idempotent: false,
             }),
             trace_id: Some("trace-item".to_owned()),
+            idempotency_key: None,
         };
         let response =
             json_success_item_response(Some(&context), serde_json::json!({"summary": {}}));
@@ -565,6 +598,7 @@ mod tests {
                 idempotent: false,
             }),
             trace_id: Some("trace-wallet".to_owned()),
+            idempotency_key: None,
         };
         let response =
             platform_problem_for_context(Some(&context), SdkWorkResultCode::InternalError, "db")

@@ -27,6 +27,7 @@ sha2.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+url.workspace = true
 sdkwork-models.workspace = true
 sdkwork_models_contract_service.workspace = true
 sdkwork_models_catalog_service.workspace = true

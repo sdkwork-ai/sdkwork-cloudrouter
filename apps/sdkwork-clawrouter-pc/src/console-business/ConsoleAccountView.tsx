@@ -59,8 +59,8 @@ function ConsoleAccountViewContent() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-4 py-4 sm:px-5 sm:py-5">
-        <div className="mx-auto flex max-w-5xl flex-col gap-4">
+      <div className="px-4 pb-3 sm:px-5 sm:pb-4">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3">
           <SdkworkWalletBalancePanel
             onOpenRecharge={() => {
               controller.openRecharge();

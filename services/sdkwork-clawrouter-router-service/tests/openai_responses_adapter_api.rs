@@ -97,7 +97,7 @@ async fn openai_responses_registry_hit_calls_internal_adapter_without_direct_rel
             Arc::new(ProviderAdapterRegistry::new(vec![adapter_route(
                 fake_adapter.base_url.as_str(),
             )])),
-            sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::new("test-token"),
+            sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::for_development("test-token"),
         )
         .with_secret_resolver(provider_secret_resolver(
             "vault://providers/openrouter/account/responses",
@@ -155,7 +155,7 @@ async fn openai_responses_registry_miss_calls_existing_direct_relay() {
         sdkwork_clawrouter_router_service::infrastructure::provider::AdapterAwareResponsesRelay::new(
             relay,
             Arc::new(ProviderAdapterRegistry::default()),
-            sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::new("test-token"),
+            sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::for_development("test-token"),
         );
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());

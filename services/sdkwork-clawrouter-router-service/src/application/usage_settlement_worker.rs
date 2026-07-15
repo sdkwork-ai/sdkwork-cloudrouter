@@ -2,7 +2,10 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::domain::DomainResult;
-use crate::ports::{UsageSettlementCommand, UsageSettlementOutcome, UsageSettlementStore};
+use crate::ports::{
+    UsageSettlementCommand, UsageSettlementOutcome, UsageSettlementStore,
+    MAX_USAGE_SETTLEMENT_BATCH_SIZE,
+};
 
 const MIN_BATCH_SIZE: i64 = 1;
 const DEFAULT_BATCH_SIZE: i64 = 100;
@@ -19,6 +22,8 @@ pub struct UsageSettlementWorkerConfig {
 }
 
 impl UsageSettlementWorkerConfig {
+    pub(crate) const MAX_BATCH_SIZE: i64 = MAX_USAGE_SETTLEMENT_BATCH_SIZE;
+
     pub fn disabled() -> Self {
         Self {
             enabled: false,
@@ -31,7 +36,11 @@ impl UsageSettlementWorkerConfig {
             enabled: self.enabled,
             tenant_id: self.tenant_id.max(0),
             organization_id: self.organization_id.max(0),
-            batch_size: self.batch_size.max(MIN_BATCH_SIZE),
+            batch_size: sdkwork_utils_rust::clamp(
+                self.batch_size,
+                MIN_BATCH_SIZE,
+                Self::MAX_BATCH_SIZE,
+            ),
             interval_millis: self.interval_millis.max(MIN_INTERVAL_MILLIS),
         }
     }
@@ -51,12 +60,18 @@ impl Default for UsageSettlementWorkerConfig {
 
 impl UsageSettlementWorkerConfig {
     pub fn validate_for_deployment(&self) -> Result<(), String> {
-        let config = self.normalized();
-        if !config.enabled {
+        if !(MIN_BATCH_SIZE..=Self::MAX_BATCH_SIZE).contains(&self.batch_size) {
+            return Err(format!(
+                "usage settlement worker batch_size must be between {MIN_BATCH_SIZE} and {}",
+                Self::MAX_BATCH_SIZE
+            ));
+        }
+
+        if !self.enabled {
             return Ok(());
         }
 
-        if config.tenant_id > 0 {
+        if self.tenant_id > 0 {
             return Ok(());
         }
 

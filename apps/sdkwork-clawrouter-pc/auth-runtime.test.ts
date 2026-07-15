@@ -1993,6 +1993,12 @@ test("console and admin logout revoke the current IAM session through the app SD
   assert.match(consoleLayoutSource, /revokeAppSession/);
   assert.doesNotMatch(consoleLayoutSource, /clearAppSession/);
   assert.match(adminLayoutSource, /revokeAppSession/);
+  const awaitedLogoutNavigationPattern =
+    /await revokeAppSession\(\);\s*\} finally \{\s*navigate\('\/', \{ replace: true \}\);/;
+  assert.match(consoleLayoutSource, awaitedLogoutNavigationPattern);
+  assert.match(adminLayoutSource, awaitedLogoutNavigationPattern);
+  assert.match(consoleLayoutSource, /disabled=\{isLoggingOut\}/);
+  assert.match(adminLayoutSource, /disabled=\{isLoggingOut\}/);
   assert.match(sessionServiceSource, /auth\.sessions\.current\.delete\(\)/);
   assert.match(sessionServiceSource, /finally \{\s*clearAppSession\(\);\s*\}/);
   assert.doesNotMatch(sessionServiceSource, /\bfetch\s*\(/);

@@ -40,11 +40,11 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
             let mut commands = Vec::new();
             let request_count_line_index = request_count_line_index(&invocation.usage.lines);
             let mut seen_legacy_usage_types = [false; 6];
-            for (line_index, line) in invocation.usage.lines.clone().into_iter().enumerate() {
+            for (line_index, line) in invocation.usage.lines.iter().enumerate() {
                 let Some(quote) = line
                     .pricing_quote
-                    .clone()
-                    .or_else(|| invocation.usage.quote_for_meter(&line.meter).cloned())
+                    .as_ref()
+                    .or_else(|| invocation.usage.quote_for_meter(&line.meter))
                 else {
                     if skippable_without_quote(&line.meter, invocation.billing.mode.clone()) {
                         continue;
@@ -54,7 +54,7 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
                         line.meter.code()
                     )));
                 };
-                let legacy_usage_type = legacy_usage_type_for_line(&line);
+                let legacy_usage_type = legacy_usage_type_for_line(line);
                 let legacy_usage_type_index = usize::try_from(legacy_usage_type)
                     .unwrap_or_default()
                     .min(seen_legacy_usage_types.len() - 1);
@@ -62,13 +62,13 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
                 seen_legacy_usage_types[legacy_usage_type_index] = true;
                 let mut command = command_for_line(
                     invocation,
-                    &line,
-                    &quote,
-                    usage_type_for_line(&line, line_index, duplicate_role),
+                    line,
+                    quote,
+                    usage_type_for_line(line, line_index, duplicate_role),
                 )?;
                 command.request_count = settlement_request_count(
                     invocation,
-                    &line,
+                    line,
                     line_index,
                     request_count_line_index,
                 );
@@ -127,28 +127,28 @@ fn command_for_line(
         .account
         .as_ref()
         .ok_or_else(|| settlement_error("settlement requires resolved invocation account"))?;
-    let quantity = line.quantity.clone();
+    let quantity = &line.quantity;
     let customer_charge_amount = amount_for_line(
         &line.meter,
         &quote.customer_charge_unit_price.unit_price,
-        &quantity,
+        quantity,
     )
     .map_err(|error| settlement_error(error.to_string()))?;
     let official_reference_amount = amount_for_line(
         &line.meter,
         &quote.official_reference_unit_price.unit_price,
-        &quantity,
+        quantity,
     )
     .map_err(|error| settlement_error(error.to_string()))?;
     let upstream_cost_amount = match quote.upstream_cost_unit_price.as_ref() {
-        Some(price) => amount_for_line(&line.meter, &price.unit_price, &quantity)
+        Some(price) => amount_for_line(&line.meter, &price.unit_price, quantity)
             .map_err(|error| settlement_error(error.to_string()))?,
         None => DecimalValue::ZERO,
     };
     let (base_input_unit_price, base_output_unit_price, cache_read_unit_price) =
         unit_price_columns(line, quote);
     let (prompt_tokens, completion_tokens, cached_tokens, total_tokens) =
-        token_columns(line, &quantity);
+        token_columns(line, quantity);
 
     Ok(GatewayUsageRecordCommand {
         request_id: invocation.request.request_id.clone(),

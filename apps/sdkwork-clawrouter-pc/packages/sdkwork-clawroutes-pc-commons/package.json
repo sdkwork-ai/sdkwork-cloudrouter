@@ -19,6 +19,12 @@
       "require": "./src/runtime.ts",
       "default": "./src/runtime.ts"
     },
+    "./runtime-usage": {
+      "types": "./src/runtime-usage.ts",
+      "import": "./src/runtime-usage.ts",
+      "require": "./src/runtime-usage.ts",
+      "default": "./src/runtime-usage.ts"
+    },
     "./api-result": {
       "types": "./src/api-result.ts",
       "import": "./src/api-result.ts",

@@ -1,10 +1,18 @@
 # SDKWork Claw Router - Redis Failover Runbook
 
 **Document Version:** 1.0
-**Last Updated:** 2026-06-27
+**Last Updated:** 2026-07-14
 **Owner:** Platform Engineering / clawrouter-release
 **Review Frequency:** Quarterly
 **Severity:** P0
+**Status:** Target procedure only. It has not been validated for the current
+candidate and must not be used as proof of Redis HA, recovery, or RPO/RTO.
+
+> Accounting safety: Redis can hold gateway-accounting retry stream, schedule,
+> payload, deduplication, and DLQ records. Those records are not disposable
+> cache state. Do not trim, flush, delete, recreate, or fail over this state
+> through a destructive operation until Finance/SRE approve a retention,
+> backup, restore, reconciliation, and operator replay policy.
 
 ---
 
@@ -24,23 +32,30 @@
 
 The Redis primary node fails, or the network partitions the primary from the
 Sentinel quorum. Redis holds circuit-breaker state, idempotency keys, rate
-limit counters, and session cache for Claw Router. Sentinel is expected to
-promote a replica automatically; this runbook covers verification, manual
-override, and degraded-mode operation when Sentinel cannot recover.
+limit counters, session cache, and optionally gateway accounting retry/DLQ
+facts for Claw Router. The documented Sentinel topology is a target design;
+automatic promotion, durability, reconciliation, and degraded-mode behavior
+need current-candidate validation before an operator executes this procedure.
 
 ## Architecture
 
-- **Topology**: 1 primary + 2 replicas + 3 Sentinel nodes (quorum = 2).
+- **Target topology**: 1 primary + 2 replicas + 3 Sentinel nodes (quorum = 2).
 - **Production hardening** (per [SECURITY.md](../../SECURITY.md)): Redis runs
   with `requirepass` enabled and TLS in production.
-- **State classification**: per the
-  [Disaster Recovery Plan](../../deployments/runbooks/disaster-recovery-plan.md#redis-backup),
-  Redis data is treated as stateless and recoverable — no persistent Redis
-  backup is required for DR because circuit-breaker state rebuilds on restart,
-  idempotency keys expire within 24 h, and session cache regenerates on the
-  next authentication.
+- **State classification**: circuit-breaker, rate-limit, session, and some
+  idempotency state can be reconstructed or expire, but Redis accounting retry
+  stream/payload/schedule/DLQ state cannot be classified as disposable. The
+  current candidate has no Finance/SRE-approved retention, backup, restore,
+  reconciliation, or requeue procedure. This is a release blocker, not an
+  instruction to silently fall back to a new empty queue.
 
 ## Automatic Failover
+
+The steps below describe a target Sentinel procedure. Confirm the deployed
+topology, persistence settings, replica health, accounting backlog, and the
+approved destructive-operation guard before using them. A failover does not
+prove an in-flight accounting delivery completed, and billable/non-idempotent
+work must not be automatically retried from an unknown outcome.
 
 Sentinel detects primary loss and orchestrates promotion without human action:
 
@@ -122,6 +137,7 @@ Degraded-mode capabilities and risks:
 | Circuit breaker | Local breaker state; `fail_open` stays `false` (C-4) | Breaker state not shared across pods; one pod may keep retrying a bad provider. |
 | Idempotency | Local 24 h key cache | Duplicate submissions possible if a request retries on a different pod. |
 | Session cache | Cache miss forces re-authentication | Elevated auth load; login rate limit (10 / 15 min) still applies. |
+| Accounting retry/DLQ | No approved fallback, reset, trim, or automatic replay policy | Losing or replacing stream/payload/DLQ state can lose or duplicate accounting facts; keep readiness degraded and reconcile under Finance/SRE control. |
 
 > Degraded mode is a safety net, not a steady state. Resolve Redis failure as
 > fast as possible; data consistency is at risk the longer it persists.
@@ -136,12 +152,17 @@ Once Redis is healthy again (`circuit_breaker_redis_degraded == 0` for 5 min):
      redis-cli -a "${REDIS_PASSWORD}" --tls info replication | grep -E "role|connected_slaves|slave[0-9]"
    ```
 2. **Confirm Sentinel quorum** — all 3 Sentinels report the same master.
-3. **Clear stale local state** — recycle gateway pods so each pod drops its
+3. **Preserve accounting state first** — record retry/DLQ depth, oldest age,
+   pending leases, and recovery decision before any pod or Redis operation that
+   can alter state. Do not use `FLUSH*`, destructive trimming, or an empty
+   replacement queue without the approved reconciliation process.
+4. **Clear stale local state** — recycle gateway pods so each pod drops its
    local fallback counters and re-hydrates from Redis:
    ```bash
    kubectl rollout restart deployment/claw-router-gateway -n clawrouter
    ```
-4. **Validate SLOs** — error rate < 0.1%, p95 latency < 50 ms over 30 min.
+5. **Validate recovery evidence** — do not assert SLO, RPO, or RTO attainment
+   until the current candidate's approved drill captures those measurements.
 
 ## Related Documents
 

@@ -276,8 +276,8 @@ export function ApiKeysView() {
   };
 
   return (
-    <div className="w-full mx-auto box-border h-[calc(100vh-72px)] overflow-hidden flex flex-col gap-6 animate-in fade-in duration-500 bg-slate-50 p-[5px] dark:bg-[#121212]">
-      <div className="shrink-0 flex flex-col gap-3 bg-white p-4 shadow-sm dark:bg-[#252525] md:flex-row md:items-center md:justify-between rounded-xl border border-slate-200 dark:border-white/5" data-console-api-keys-toolbar>
+    <div className="w-full mx-auto box-border h-[calc(100vh-72px)] overflow-hidden flex flex-col gap-3 animate-in fade-in duration-500 bg-slate-50 px-[5px] pb-[5px] dark:bg-[#121212]">
+      <div className="shrink-0 flex flex-col gap-3 bg-white p-3 shadow-sm dark:bg-[#252525] md:flex-row md:items-center md:justify-between rounded-xl border border-slate-200 dark:border-white/5" data-console-api-keys-toolbar>
         <div className="relative w-full sm:w-72" data-console-api-keys-search>
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -320,15 +320,15 @@ export function ApiKeysView() {
           <table className="w-full text-left text-sm whitespace-nowrap min-w-[1120px]">
             <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1e1e1e] text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-white/5 text-xs font-semibold uppercase tracking-wider">
               <tr>
-                <th className="px-5 py-4">{t('console.apiKeys.nameToken', '名称 / 密钥')}</th>
-                <th className="px-4 py-4">{t('console.apiKeys.group', '分组')}</th>
-                <th className="px-4 py-4">{t('console.apiKeys.quota', '额度')}</th>
-                <th className="px-4 py-4">{t('console.apiKeys.modalities', '模态')}</th>
-                <th className="px-4 py-4">{t('console.apiKeys.ipAcl', 'IP 访问控制')}</th>
-                <th className="px-4 py-4">{t('console.apiKeys.status', '状态')}</th>
-                <th className="px-4 py-4">{t('console.apiKeys.created', '创建时间')}</th>
-                <th className="px-4 py-4">{t('console.apiKeys.expiration', '过期时间')}</th>
-                <th className="px-5 py-4 text-right">{t('common.actions.actions', '操作')}</th>
+                <th className="px-4 py-3">{t('console.apiKeys.nameToken', '名称 / 密钥')}</th>
+                <th className="px-3 py-3">{t('console.apiKeys.group', '分组')}</th>
+                <th className="px-3 py-3">{t('console.apiKeys.quota', '额度')}</th>
+                <th className="px-3 py-3">{t('console.apiKeys.modalities', '模态')}</th>
+                <th className="px-3 py-3">{t('console.apiKeys.ipAcl', 'IP 访问控制')}</th>
+                <th className="px-3 py-3">{t('console.apiKeys.status', '状态')}</th>
+                <th className="px-3 py-3">{t('console.apiKeys.created', '创建时间')}</th>
+                <th className="px-3 py-3">{t('console.apiKeys.expiration', '过期时间')}</th>
+                <th className="px-4 py-3 text-right">{t('common.actions.actions', '操作')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-700 dark:text-slate-300 text-sm">
@@ -344,7 +344,7 @@ export function ApiKeysView() {
               {!loading &&
                 keysData.map((key) => (
                   <tr key={key.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex flex-col gap-1.5">
                         <span className="font-bold text-slate-800 dark:text-white">{key.displayName}</span>
                         <div className="flex items-center gap-2">
@@ -363,7 +363,7 @@ export function ApiKeysView() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-1.5">
                         {groupSelectorKeyId === key.id ? (
                           <>
@@ -419,7 +419,7 @@ export function ApiKeysView() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <div className="flex flex-col gap-1 text-[11px]">
                         <span className="text-amber-600 dark:text-amber-500 font-mono font-bold flex items-center gap-1">
                           <Zap className="w-3 h-3" /> {key.usedQuota}
@@ -427,13 +427,13 @@ export function ApiKeysView() {
                         <span className="text-slate-500 font-mono font-medium">/ {key.quota}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4">{renderModalities(key.modalities)}</td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">{renderModalities(key.modalities)}</td>
+                    <td className="px-3 py-3">
                       <span className="bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 px-2 py-1 flex items-center gap-1 w-fit rounded text-[11px] font-mono font-medium">
                         <Lock className="w-3 h-3" /> {key.ipLimit}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <div className="flex flex-col items-start gap-1.5">
                         <span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 px-2 flex items-center gap-1 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide w-fit">
                           <CheckSquare className="w-3 h-3" /> {displayApiKeyStatus(key.status, t)}
@@ -467,13 +467,13 @@ export function ApiKeysView() {
                         </button>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300 font-medium">{key.created}</span>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <span className="text-[11px] font-mono text-slate-500">{key.expires}</span>
                     </td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setUsageDetailsKey(key)}
@@ -526,7 +526,7 @@ export function ApiKeysView() {
           </table>
         </div>
 
-        <div className="shrink-0 p-4 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row gap-4 items-center justify-between text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#1e1e1e]/50">
+        <div className="shrink-0 p-3 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row gap-3 items-center justify-between text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#1e1e1e]/50">
           <div>
             {t('console.apiKeys.showing', {
               defaultValue: 'Showing {{start}} - {{end}} of {{total}}',

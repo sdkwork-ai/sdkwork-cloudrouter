@@ -23,6 +23,7 @@ const SCHEDULE_SUFFIX: &str = "gateway-accounting-retry:schedule";
 const PAYLOAD_SUFFIX: &str = "gateway-accounting-retry:payload";
 const SQLITE_QUEUE_TABLE: &str = "clawrouter_gateway_accounting_retry_queue";
 const SQLITE_DLQ_TABLE: &str = "clawrouter_gateway_accounting_retry_dlq";
+const MAX_CLAIM_BATCH_SIZE: usize = 200;
 
 fn redis_hash_tag(value: &str) -> Option<&str> {
     let open = value.find('{')?;
@@ -46,6 +47,23 @@ fn redis_queue_key_prefix(prefix: &str) -> String {
 
 fn queue_error(context: &str, error: impl std::fmt::Display) -> DomainError {
     DomainError::new(format!("{context}: {error}"))
+}
+
+fn bounded_claim_batch_size(batch_size: usize) -> usize {
+    batch_size.min(MAX_CLAIM_BATCH_SIZE)
+}
+
+fn delivery_lease_lost_error(operation: &str) -> DomainError {
+    DomainError::new(format!(
+        "gateway accounting retry {operation} failed because the delivery lease is no longer owned or its terminal state is unknown"
+    ))
+}
+
+fn require_single_delivery_mutation(operation: &str, rows_affected: u64) -> DomainResult<()> {
+    if rows_affected == 1 {
+        return Ok(());
+    }
+    Err(delivery_lease_lost_error(operation))
 }
 
 fn serialize_envelope(envelope: &GatewayAccountingRetryEnvelope) -> DomainResult<String> {
@@ -376,7 +394,7 @@ impl RedisGatewayAccountingRetryQueue {
             return 1
             "#,
         );
-        script
+        let result = script
             .key(&self.stream)
             .key(&self.dlq)
             .key(&self.schedule)
@@ -397,7 +415,11 @@ impl RedisGatewayAccountingRetryQueue {
                     error,
                 )
             })?;
-        Ok(())
+        if result == 1 {
+            Ok(())
+        } else {
+            Err(delivery_lease_lost_error("Redis invalid-envelope DLQ move"))
+        }
     }
 }
 
@@ -471,6 +493,7 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
         wait_timeout: Duration,
     ) -> GatewayAccountingRetryQueueFuture<'a, Vec<GatewayAccountingRetryDelivery>> {
         Box::pin(async move {
+            let batch_size = bounded_claim_batch_size(batch_size);
             if batch_size == 0 {
                 return Ok(Vec::new());
             }
@@ -563,7 +586,7 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                 return acknowledged
                 "#,
             );
-            script
+            let result = script
                 .key(&self.stream)
                 .key(&self.schedule)
                 .key(&self.payloads)
@@ -574,7 +597,11 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                 .invoke_async::<i64>(&mut connection)
                 .await
                 .map_err(|error| queue_error("gateway accounting retry Redis ACK failed", error))?;
-            Ok(())
+            if result == 1 {
+                Ok(())
+            } else {
+                Err(delivery_lease_lost_error("Redis ACK"))
+            }
         })
     }
 
@@ -643,12 +670,13 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                 .map_err(|error| {
                     queue_error("gateway accounting retry Redis reschedule failed", error)
                 })?;
-            if result == -1 {
-                return Err(DomainError::new(
+            match result {
+                1 => Ok(()),
+                -1 => Err(DomainError::new(
                     "gateway accounting retry Redis stream event_id mismatch during reschedule",
-                ));
+                )),
+                _ => Err(delivery_lease_lost_error("Redis reschedule")),
             }
-            Ok(())
         })
     }
 
@@ -707,12 +735,13 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                 .invoke_async::<i64>(&mut connection)
                 .await
                 .map_err(|error| queue_error("gateway accounting retry Redis DLQ failed", error))?;
-            if result == -1 {
-                return Err(DomainError::new(
+            match result {
+                1 => Ok(()),
+                -1 => Err(DomainError::new(
                     "gateway accounting retry Redis stream event_id mismatch during DLQ move",
-                ));
+                )),
+                _ => Err(delivery_lease_lost_error("Redis DLQ move")),
             }
-            Ok(())
         })
     }
 
@@ -839,32 +868,45 @@ impl SqliteGatewayAccountingRetryQueue {
                     error,
                 )
             })?;
-            let envelope = match deserialize_envelope(&payload) {
-                Ok(envelope) => envelope,
-                Err(_) => {
-                    sqlx::query(&format!(
-                        "INSERT INTO {SQLITE_DLQ_TABLE} (event_id, envelope, failure_code, failed_at) VALUES (?, ?, 'invalid_envelope', ?)"
-                    ))
-                    .bind(&event_id)
-                    .bind(&payload)
-                    .bind(now)
-                    .execute(&mut *transaction)
-                    .await
-                    .map_err(|error| queue_error("gateway accounting retry SQLite poison DLQ insert failed", error))?;
-                    sqlx::query(&format!(
-                        "DELETE FROM {SQLITE_QUEUE_TABLE} WHERE event_id = ?"
-                    ))
-                    .bind(&event_id)
-                    .execute(&mut *transaction)
-                    .await
-                    .map_err(|error| {
-                        queue_error(
-                            "gateway accounting retry SQLite poison delete failed",
-                            error,
-                        )
-                    })?;
-                    continue;
-                }
+            let (envelope, failure_code) = match deserialize_and_validate_envelope(&payload) {
+                Ok(envelope) if envelope.event_id == event_id => (Some(envelope), None),
+                Ok(_) => (None, Some("queue_event_id_mismatch")),
+                Err(_) => (None, Some("invalid_envelope")),
+            };
+            if let Some(failure_code) = failure_code {
+                let inserted = sqlx::query(&format!(
+                    "INSERT INTO {SQLITE_DLQ_TABLE} (event_id, envelope, failure_code, failed_at) VALUES (?, ?, ?, ?)"
+                ))
+                .bind(&event_id)
+                .bind(&payload)
+                .bind(failure_code)
+                .bind(now)
+                .execute(&mut *transaction)
+                .await
+                .map_err(|error| {
+                    queue_error("gateway accounting retry SQLite poison DLQ insert failed", error)
+                })?;
+                require_single_delivery_mutation(
+                    "SQLite poison DLQ insert",
+                    inserted.rows_affected(),
+                )?;
+                let deleted = sqlx::query(&format!(
+                    "DELETE FROM {SQLITE_QUEUE_TABLE} WHERE event_id = ?"
+                ))
+                .bind(&event_id)
+                .execute(&mut *transaction)
+                .await
+                .map_err(|error| {
+                    queue_error(
+                        "gateway accounting retry SQLite poison delete failed",
+                        error,
+                    )
+                })?;
+                require_single_delivery_mutation("SQLite poison delete", deleted.rows_affected())?;
+                continue;
+            }
+            let Some(envelope) = envelope else {
+                continue;
             };
             let delivery_id = Self::next_lease_id(&event_id, envelope.attempt)?;
             sqlx::query(&format!(
@@ -922,6 +964,10 @@ impl GatewayAccountingRetryQueue for SqliteGatewayAccountingRetryQueue {
         wait_timeout: Duration,
     ) -> GatewayAccountingRetryQueueFuture<'a, Vec<GatewayAccountingRetryDelivery>> {
         Box::pin(async move {
+            let batch_size = bounded_claim_batch_size(batch_size);
+            if batch_size == 0 {
+                return Ok(Vec::new());
+            }
             let deliveries = self
                 .claim_ready(consumer_id, batch_size, reclaim_idle)
                 .await?;
@@ -939,14 +985,14 @@ impl GatewayAccountingRetryQueue for SqliteGatewayAccountingRetryQueue {
         delivery_id: &'a str,
     ) -> GatewayAccountingRetryQueueFuture<'a, ()> {
         Box::pin(async move {
-            sqlx::query(&format!(
+            let result = sqlx::query(&format!(
                 "DELETE FROM {SQLITE_QUEUE_TABLE} WHERE lease_id = ?"
             ))
             .bind(delivery_id)
             .execute(&self.pool)
             .await
             .map_err(|error| queue_error("gateway accounting retry SQLite ACK failed", error))?;
-            Ok(())
+            require_single_delivery_mutation("SQLite ACK", result.rows_affected())
         })
     }
 
@@ -956,19 +1002,21 @@ impl GatewayAccountingRetryQueue for SqliteGatewayAccountingRetryQueue {
         envelope: GatewayAccountingRetryEnvelope,
     ) -> GatewayAccountingRetryQueueFuture<'a, ()> {
         Box::pin(async move {
+            envelope.validate()?;
             let payload = serialize_envelope(&envelope)?;
-            sqlx::query(&format!(
-                "UPDATE {SQLITE_QUEUE_TABLE} SET envelope = ?, attempt = ?, available_at = ?, state = 'ready', lease_id = NULL, leased_until = NULL, updated_at = ? WHERE lease_id = ?"
+            let result = sqlx::query(&format!(
+                "UPDATE {SQLITE_QUEUE_TABLE} SET envelope = ?, attempt = ?, available_at = ?, state = 'ready', lease_id = NULL, leased_until = NULL, updated_at = ? WHERE lease_id = ? AND event_id = ?"
             ))
             .bind(payload)
             .bind(i64::from(envelope.attempt))
             .bind(i64::try_from(envelope.available_at_epoch_millis).unwrap_or(i64::MAX))
             .bind(crate::ports::now_epoch_millis() as i64)
             .bind(delivery_id)
+            .bind(&envelope.event_id)
             .execute(&self.pool)
             .await
             .map_err(|error| queue_error("gateway accounting retry SQLite reschedule failed", error))?;
-            Ok(())
+            require_single_delivery_mutation("SQLite reschedule", result.rows_affected())
         })
     }
 
@@ -987,7 +1035,7 @@ impl GatewayAccountingRetryQueue for SqliteGatewayAccountingRetryQueue {
                     error,
                 )
             })?;
-            sqlx::query(&format!(
+            let inserted = sqlx::query(&format!(
                 "INSERT INTO {SQLITE_DLQ_TABLE} (event_id, envelope, failure_code, failed_at) SELECT event_id, ?, ?, ? FROM {SQLITE_QUEUE_TABLE} WHERE lease_id = ?"
             ))
             .bind(payload)
@@ -997,7 +1045,8 @@ impl GatewayAccountingRetryQueue for SqliteGatewayAccountingRetryQueue {
             .execute(&mut *transaction)
             .await
             .map_err(|error| queue_error("gateway accounting retry SQLite DLQ insert failed", error))?;
-            sqlx::query(&format!(
+            require_single_delivery_mutation("SQLite DLQ insert", inserted.rows_affected())?;
+            let deleted = sqlx::query(&format!(
                 "DELETE FROM {SQLITE_QUEUE_TABLE} WHERE lease_id = ?"
             ))
             .bind(delivery_id)
@@ -1006,6 +1055,7 @@ impl GatewayAccountingRetryQueue for SqliteGatewayAccountingRetryQueue {
             .map_err(|error| {
                 queue_error("gateway accounting retry SQLite DLQ delete failed", error)
             })?;
+            require_single_delivery_mutation("SQLite DLQ delete", deleted.rows_affected())?;
             transaction.commit().await.map_err(|error| {
                 queue_error("gateway accounting retry SQLite DLQ commit failed", error)
             })?;
@@ -1061,7 +1111,7 @@ impl GatewayAccountingRetryQueue for InMemoryGatewayAccountingRetryQueue {
     ) -> GatewayAccountingRetryQueueFuture<'a, Vec<GatewayAccountingRetryDelivery>> {
         Box::pin(async move {
             let mut entries = self.entries.lock().await;
-            let take = batch_size.min(entries.len());
+            let take = bounded_claim_batch_size(batch_size).min(entries.len());
             let claimed: Vec<_> = entries.drain(..take).collect();
             Ok(claimed
                 .into_iter()
@@ -1239,6 +1289,14 @@ mod tests {
             .contains("event_id does not match the payload"));
     }
 
+    #[test]
+    fn retry_claim_batch_size_is_bounded_at_the_adapter_boundary() {
+        assert_eq!(0, bounded_claim_batch_size(0));
+        assert_eq!(1, bounded_claim_batch_size(1));
+        assert_eq!(MAX_CLAIM_BATCH_SIZE, bounded_claim_batch_size(201));
+        assert_eq!(MAX_CLAIM_BATCH_SIZE, bounded_claim_batch_size(usize::MAX));
+    }
+
     #[tokio::test]
     async fn sqlite_queue_uses_wal_full_and_deduplicates_enqueue() {
         let path = test_database_path("retry-durability");
@@ -1345,10 +1403,29 @@ mod tests {
             "every lease must have a unique fencing token"
         );
 
-        first_queue
+        let stale_envelope = original_delivery.envelope.clone();
+        let stale_retry = stale_envelope
+            .next_attempt(0, Duration::ZERO)
+            .expect("build stale retry envelope");
+        let error = first_queue
+            .reschedule(&original_delivery.delivery_id, stale_retry)
+            .await
+            .expect_err("stale reschedule must not claim a successful mutation");
+        assert!(error.to_string().contains("lease"));
+        let error = first_queue
+            .dead_letter(
+                &original_delivery.delivery_id,
+                stale_envelope,
+                "stale_consumer",
+            )
+            .await
+            .expect_err("stale DLQ move must not claim a successful mutation");
+        assert!(error.to_string().contains("lease"));
+        let error = first_queue
             .acknowledge(&original_delivery.delivery_id)
             .await
-            .expect("stale ACK is idempotent");
+            .expect_err("stale ACK must not claim a successful mutation");
+        assert!(error.to_string().contains("lease"));
         let active_lease: String = sqlx::query_scalar(&format!(
             "SELECT lease_id FROM {SQLITE_QUEUE_TABLE} WHERE event_id = ?"
         ))
@@ -1459,15 +1536,42 @@ mod tests {
             .expect("dead-letter retry event");
 
         sqlx::query(&format!(
-            "INSERT INTO {SQLITE_QUEUE_TABLE} (event_id, envelope, attempt, available_at, state, created_at, updated_at) VALUES ('poison-event', '{{broken-json', 0, 0, 'ready', 0, 0)"
+            "INSERT INTO {SQLITE_QUEUE_TABLE} (event_id, envelope, attempt, available_at, state, created_at, updated_at) VALUES (?, ?, 0, 0, 'ready', 0, 0)"
         ))
+        .bind("poison-event")
+        .bind("{broken-json")
         .execute(&queue.pool)
         .await
         .expect("insert poison event");
+
+        let mut invalid_envelope = trace_envelope("req-parseable-invalid");
+        invalid_envelope.event_id = format!("acct:v1:{}", "0".repeat(64));
+        let invalid_payload = serialize_envelope(&invalid_envelope)
+            .expect("serialize parseable but invalid envelope");
+        sqlx::query(&format!(
+            "INSERT INTO {SQLITE_QUEUE_TABLE} (event_id, envelope, attempt, available_at, state, created_at, updated_at) VALUES (?, ?, 0, 0, 'ready', 0, 0)"
+        ))
+        .bind("poison-parseable-invalid")
+        .bind(&invalid_payload)
+        .execute(&queue.pool)
+        .await
+        .expect("insert parseable but invalid event");
+
+        let mismatched_envelope = trace_envelope("req-event-id-mismatch");
+        let mismatched_payload = serialize_envelope(&mismatched_envelope)
+            .expect("serialize event-id mismatched envelope");
+        sqlx::query(&format!(
+            "INSERT INTO {SQLITE_QUEUE_TABLE} (event_id, envelope, attempt, available_at, state, created_at, updated_at) VALUES (?, ?, 0, 0, 'ready', 0, 0)"
+        ))
+        .bind("poison-row-event-id-mismatch")
+        .bind(&mismatched_payload)
+        .execute(&queue.pool)
+        .await
+        .expect("insert event-id mismatched event");
         let poison_claim = queue
             .claim(
                 "poison-consumer",
-                1,
+                3,
                 Duration::from_secs(60),
                 Duration::ZERO,
             )
@@ -1487,12 +1591,23 @@ mod tests {
         .await
         .expect("read DLQ events");
         assert_eq!(0, queued_count);
-        assert_eq!(2, dlq_rows.len());
-        assert_eq!(envelope.event_id, dlq_rows[0].0);
-        assert_eq!("attempts_exhausted", dlq_rows[0].2);
-        assert_eq!("poison-event", dlq_rows[1].0);
-        assert_eq!("{broken-json", dlq_rows[1].1);
-        assert_eq!("invalid_envelope", dlq_rows[1].2);
+        assert_eq!(4, dlq_rows.len());
+        assert!(dlq_rows
+            .iter()
+            .any(|row| { row.0 == envelope.event_id && row.2 == "attempts_exhausted" }));
+        assert!(dlq_rows.iter().any(|row| {
+            row.0 == "poison-event" && row.1 == "{broken-json" && row.2 == "invalid_envelope"
+        }));
+        assert!(dlq_rows.iter().any(|row| {
+            row.0 == "poison-parseable-invalid"
+                && row.1 == invalid_payload
+                && row.2 == "invalid_envelope"
+        }));
+        assert!(dlq_rows.iter().any(|row| {
+            row.0 == "poison-row-event-id-mismatch"
+                && row.1 == mismatched_payload
+                && row.2 == "queue_event_id_mismatch"
+        }));
 
         queue.pool.close().await;
         remove_database_files(&path);
@@ -1532,10 +1647,11 @@ mod tests {
             .expect("reclaimed Redis delivery");
         assert_ne!(first.delivery_id, second.delivery_id);
 
-        queue
+        let error = queue
             .acknowledge(&first.delivery_id)
             .await
-            .expect("stale Redis ACK is fenced");
+            .expect_err("stale Redis ACK must not claim a successful mutation");
+        assert!(error.to_string().contains("lease"));
         let mut connection = queue.connection().await.expect("Redis test connection");
         let stream_length: i64 = redis::cmd("XLEN")
             .arg(&queue.stream)

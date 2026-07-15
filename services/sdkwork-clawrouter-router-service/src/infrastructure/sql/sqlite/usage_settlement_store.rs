@@ -1,4 +1,5 @@
 use std::collections::hash_map::DefaultHasher;
+use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
 use sdkwork_contract_service::{CommerceAccountAssetType, CommerceLedgerDirection};
@@ -53,7 +54,7 @@ struct UsageFactForSettlement {
     pricing_snapshot: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct SettlementGroupKey {
     tenant_id: i64,
     organization_id: i64,
@@ -69,7 +70,6 @@ struct SettlementCandidate {
 
 #[derive(Debug, Clone)]
 struct SettlementGroup {
-    key: SettlementGroupKey,
     candidates: Vec<SettlementCandidate>,
 }
 
@@ -90,6 +90,7 @@ async fn settle_pending_usage(
     pool: &SqlitePool,
     command: UsageSettlementCommand,
 ) -> Result<UsageSettlementOutcome, DomainError> {
+    let command = command.bounded();
     if command.limit <= 0 {
         return Ok(UsageSettlementOutcome {
             settled_count: 0,
@@ -180,7 +181,7 @@ async fn collect_settlement_groups(
     usage_facts: Vec<UsageFactForSettlement>,
     outcome: &mut UsageSettlementOutcome,
 ) -> Result<Vec<SettlementGroup>, DomainError> {
-    let mut groups: Vec<SettlementGroup> = Vec::new();
+    let mut groups: BTreeMap<SettlementGroupKey, Vec<SettlementCandidate>> = BTreeMap::new();
     for usage_fact in usage_facts {
         if already_settled(tx, &usage_fact).await? {
             continue;
@@ -209,16 +210,12 @@ async fn collect_settlement_groups(
             usage_fact,
             scaled_amount,
         };
-        if let Some(group) = groups.iter_mut().find(|group| group.key == key) {
-            group.candidates.push(candidate);
-        } else {
-            groups.push(SettlementGroup {
-                key,
-                candidates: vec![candidate],
-            });
-        }
+        groups.entry(key).or_default().push(candidate);
     }
-    Ok(groups)
+    Ok(groups
+        .into_iter()
+        .map(|(_, candidates)| SettlementGroup { candidates })
+        .collect())
 }
 
 async fn mark_invalid_usage_fact_failed(

@@ -525,7 +525,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Post,
         "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
         "chat",
-        "turnResponses.create",
+        "turnResponses.complete",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -653,7 +653,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "invoices",
         "invoices.submissions.create",
     ),
-    HttpRoute::dual_token(
+    HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/memberships/benefits",
         "memberships",
@@ -671,37 +671,37 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "memberships",
         "memberships.current.status.retrieve",
     ),
-    HttpRoute::dual_token(
+    HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/memberships/package_groups",
         "memberships",
         "memberships.packageGroups.list",
     ),
-    HttpRoute::dual_token(
+    HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/memberships/package_groups/{packageGroupId}",
         "memberships",
         "memberships.packageGroups.retrieve",
     ),
-    HttpRoute::dual_token(
+    HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
         "memberships",
         "memberships.packageGroups.packages.list",
     ),
-    HttpRoute::dual_token(
+    HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/memberships/packages",
         "memberships",
         "memberships.packages.list",
     ),
-    HttpRoute::dual_token(
+    HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/memberships/packages/{packageId}",
         "memberships",
         "memberships.packages.retrieve",
     ),
-    HttpRoute::dual_token(
+    HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/memberships/plans",
         "memberships",
@@ -1029,7 +1029,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Post,
         "/app/v3/api/recharges/orders/{orderId}/cancellations",
         "recharges",
-        "recharges.orders.cancellations.create",
+        "recharges.orders.cancel",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -1428,7 +1428,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "shops.current.shippingTemplates.update",
     ),
-    HttpRoute::dual_token(
+    HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/system/site/runtime",
         "system",
@@ -1639,6 +1639,23 @@ mod tests {
         assert_public_route("GET", "/app/v3/api/ai/model_rankings");
         assert_public_route("GET", "/app/v3/api/ai/model_vendors");
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
+    }
+
+    #[test]
+    fn membership_catalog_routes_allow_anonymous_access() {
+        assert_public_route("GET", "/app/v3/api/memberships/plans");
+        assert_public_route("GET", "/app/v3/api/memberships/benefits");
+        assert_public_route("GET", "/app/v3/api/memberships/packages");
+        assert_public_route("GET", "/app/v3/api/memberships/packages/{packageId}");
+        assert_public_route("GET", "/app/v3/api/memberships/package_groups");
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}",
+        );
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+        );
     }
 
     #[test]

@@ -210,8 +210,8 @@ At minimum capture:
 - **Improvement actions** — examples:
   - Add the missing provider to the routing catalog as a backup channel.
   - Tighten alert thresholds on `provider_invocation_total{status="5xx"}`.
-  - Schedule a failover drill and update the *Last Drill* column in
-    [Runbook Index](README.md).
+  - Schedule a failover drill and attach immutable current-candidate evidence
+    in the [Runbook Index](README.md) drill-evidence column.
 
 ## Related Documents
 

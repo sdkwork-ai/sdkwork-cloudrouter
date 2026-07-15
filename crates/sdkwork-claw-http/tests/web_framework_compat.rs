@@ -57,6 +57,7 @@ async fn project_trusted_subject_middleware_resolves_from_web_request_context() 
         locale: None,
         client_kind: None,
         operation: None,
+        idempotency_key: None,
     };
 
     let mut request = Request::new(Body::empty());
@@ -109,6 +110,7 @@ async fn project_trusted_subject_middleware_returns_projection_error_for_non_num
         locale: None,
         client_kind: None,
         operation: None,
+        idempotency_key: None,
     };
 
     let mut request = Request::new(Body::empty());

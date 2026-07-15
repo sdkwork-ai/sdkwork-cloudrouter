@@ -7,8 +7,8 @@ use crate::openai_passthrough_routes::{
     apply_stored_chat_completion_passthrough_routes,
 };
 use crate::provider_passthrough_transport::{
-    build_provider_passthrough_client, forward_provider_passthrough_to_target, PassthroughClient,
-    ProviderPassthroughTarget,
+    build_provider_passthrough_client, forward_provider_passthrough_to_target,
+    validate_provider_passthrough_target, PassthroughClient, ProviderPassthroughTarget,
 };
 use crate::request_identity::generate_server_request_id;
 use axum::body::Body;
@@ -20,7 +20,7 @@ use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, MethodRouter};
 use axum::{Json, Router};
-use http_body_util::{BodyExt, Limited};
+use http_body_util::{BodyExt, LengthLimitError, Limited};
 use sdkwork_claw_config::{
     ProviderAdapterConfig, ProviderPassthroughAuth, ProviderPassthroughAuthType,
     ProviderRelayConfig, RequestLimitsConfig,
@@ -38,6 +38,7 @@ use sdkwork_claw_provider_adapter_registry::{
     ProviderAdapterLookup, ProviderAdapterRegistry, ProviderAdapterRouteConfig,
     ProviderInvocationMode,
 };
+use sdkwork_claw_security::OutboundTargetPolicy;
 use sdkwork_clawrouter_router_service::api::normalize_user_agent_header;
 use sdkwork_clawrouter_router_service::application::{
     find_builtin_ai_route, ApiKeySecretHasher, AuthenticatedApiKeyContext, InvocationError,
@@ -47,6 +48,9 @@ use sdkwork_clawrouter_router_service::domain::{
     ensure_canonical_model_catalog_key, provider_native_model_id, BillingMeter, DecimalValue,
     DomainError, DomainResult,
 };
+use sdkwork_clawrouter_router_service::infrastructure::provider::{
+    ProviderRelayHttpPoolConfig, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
+};
 use sdkwork_clawrouter_router_service::ports::{
     GatewayUsageQuantity, GatewayUsageRecordCommand, GatewayUsageRecorder, PricingCatalog,
     ProviderSecretResolver,
@@ -54,17 +58,13 @@ use sdkwork_clawrouter_router_service::ports::{
 use serde_json::json;
 use serde_json::Value;
 use std::sync::Arc;
+use std::time::Duration;
 
 type UsageRecorder = Arc<dyn GatewayUsageRecorder + Send + Sync>;
 
 const ADAPTER_USAGE_TYPE_BASE: i64 = 10_000;
 const TOKEN_BILLING_UNIT_SIZE_DECIMAL: &str = "1000000";
 const USAGE_AMOUNT_DECIMAL_DIGITS: u32 = 12;
-/// Maximum bytes to buffer when collecting a streaming adapter response
-/// into memory for JSON parsing. 4 MiB is generous for structured JSON
-/// adapter responses (including base64-encoded payloads) while preventing
-/// a single response from consuming excessive server memory.
-const ADAPTER_STREAMING_RESPONSE_MAX_BYTES: usize = 4 * 1024 * 1024;
 const MODALITY_TEXT: i64 = 1;
 const MODALITY_IMAGE: i64 = 2;
 const MODALITY_AUDIO: i64 = 3;
@@ -73,12 +73,30 @@ const MODALITY_VIDEO: i64 = 5;
 const MODALITY_EMBEDDING: i64 = 6;
 const MODALITY_RERANK: i64 = 7;
 
+fn default_provider_passthrough_response_timeout() -> Duration {
+    Duration::from_millis(DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS)
+}
+
 #[derive(Clone)]
 struct ProviderPassthroughRuntime {
     client: PassthroughClient,
+    outbound_target_policy: OutboundTargetPolicy,
     providers: Arc<Vec<ProviderPassthroughTarget>>,
     adapter: Option<ProviderNativeAdapterRuntime>,
     body_max_bytes: usize,
+    response_timeout: Duration,
+}
+
+enum ProviderPassthroughError {
+    RequestBodyTooLarge { limit: usize },
+    InvalidRequest(String),
+    Relay(String),
+}
+
+impl From<String> for ProviderPassthroughError {
+    fn from(message: String) -> Self {
+        Self::Relay(message)
+    }
 }
 
 #[derive(Clone)]
@@ -137,6 +155,16 @@ pub fn router_with_provider_passthrough_config(config: ProviderRelayConfig) -> R
     provider_passthrough_router_with_runtime(ProviderPassthroughRuntime::from_config(config))
 }
 
+/// Creates a passthrough router for explicit desktop-development and local
+/// fixture use. Production router construction always uses the strict policy.
+pub fn router_with_provider_passthrough_config_for_development(
+    config: ProviderRelayConfig,
+) -> Router {
+    provider_passthrough_router_with_runtime(
+        ProviderPassthroughRuntime::from_config_for_development(config),
+    )
+}
+
 pub fn router_with_provider_passthrough_and_adapter_config(
     config: ProviderRelayConfig,
     adapter_config: Option<ProviderAdapterConfig>,
@@ -145,6 +173,20 @@ pub fn router_with_provider_passthrough_and_adapter_config(
         config,
         adapter_config,
     ))
+}
+
+/// Creates a passthrough router with local adapter fixtures enabled. This is
+/// intentionally separate from the strict production constructor above.
+pub fn router_with_provider_passthrough_and_adapter_config_for_development(
+    config: ProviderRelayConfig,
+    adapter_config: Option<ProviderAdapterConfig>,
+) -> Router {
+    provider_passthrough_router_with_runtime(
+        ProviderPassthroughRuntime::from_config_with_adapter_for_development(
+            config,
+            adapter_config,
+        ),
+    )
 }
 
 pub fn authenticated_gateway_passthrough_router_with_adapter_config<C>(
@@ -164,6 +206,9 @@ where
         adapter_config,
         usage_recorder,
         QueryStringApiKeyPolicy::default(),
+        RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        default_provider_passthrough_response_timeout(),
+        ProviderRelayHttpPoolConfig::default(),
     )
 }
 
@@ -176,11 +221,20 @@ pub(crate) fn authenticated_gateway_passthrough_router_with_adapter_config_and_q
     adapter_config: Option<ProviderAdapterConfig>,
     usage_recorder: Option<UsageRecorder>,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
+    body_max_bytes: usize,
+    response_timeout: Duration,
+    http_pool_config: ProviderRelayHttpPoolConfig,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    let runtime = ProviderPassthroughRuntime::from_config_with_adapter(config, adapter_config);
+    let runtime = ProviderPassthroughRuntime::from_config_with_adapter_and_body_max_bytes_and_transport(
+        config,
+        adapter_config,
+        body_max_bytes,
+        response_timeout,
+        http_pool_config,
+    );
     let state = AuthenticatedProviderPassthroughState {
         runtime,
         catalog,
@@ -325,7 +379,7 @@ async fn forward_provider_passthrough(
 ) -> Response {
     match runtime.forward(request, None).await {
         Ok(response) => response,
-        Err(message) => passthrough_relay_failed("provider_passthrough_relay_failed", message),
+        Err(error) => passthrough_forward_failed("provider_passthrough_relay_failed", error),
     }
 }
 
@@ -357,7 +411,7 @@ where
         .await;
     match result {
         Ok(response) => response,
-        Err(message) => passthrough_relay_failed("provider_passthrough_relay_failed", message),
+        Err(error) => passthrough_forward_failed("provider_passthrough_relay_failed", error),
     }
 }
 
@@ -379,7 +433,7 @@ where
     };
     match state.runtime.forward_openai(request).await {
         Ok(response) => response,
-        Err(message) => passthrough_relay_failed("openai_passthrough_relay_failed", message),
+        Err(error) => passthrough_forward_failed("openai_passthrough_relay_failed", error),
     }
 }
 
@@ -402,6 +456,42 @@ fn passthrough_not_configured(code: &'static str, message: &'static str, path: &
 fn passthrough_relay_failed(_code: &'static str, message: String) -> Response {
     let error = InvocationError::new(InvocationErrorKind::ProviderPassthroughFailed, message);
     response_from_invocation_error(&error)
+}
+
+fn passthrough_forward_failed(
+    code: &'static str,
+    error: ProviderPassthroughError,
+) -> Response {
+    match error {
+        ProviderPassthroughError::RequestBodyTooLarge { limit } => passthrough_client_error(
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "payload_too_large",
+            format!("provider passthrough request body exceeds {limit} bytes"),
+        ),
+        ProviderPassthroughError::InvalidRequest(message) => {
+            passthrough_client_error(StatusCode::BAD_REQUEST, "invalid_request", message)
+        }
+        ProviderPassthroughError::Relay(message) => passthrough_relay_failed(code, message),
+    }
+}
+
+fn passthrough_client_error(
+    status: StatusCode,
+    code: &'static str,
+    message: String,
+) -> Response {
+    (
+        status,
+        Json(json!({
+            "error": {
+                "message": message,
+                "type": "invalid_request_error",
+                "param": null,
+                "code": code,
+            }
+        })),
+    )
+        .into_response()
 }
 
 struct AuthenticatedProviderPassthroughState<C> {
@@ -448,16 +538,101 @@ impl ProviderPassthroughRuntime {
         Self::from_config_with_adapter(config, None)
     }
 
+    fn from_config_for_development(config: ProviderRelayConfig) -> Self {
+        Self::from_config_with_adapter_for_development(config, None)
+    }
+
     fn from_config_with_adapter(
         config: ProviderRelayConfig,
         adapter_config: Option<ProviderAdapterConfig>,
     ) -> Self {
-        Self::from_optional_config_with_adapter(Some(config), adapter_config)
+        Self::from_config_with_adapter_and_body_max_bytes(
+            config,
+            adapter_config,
+            RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        )
+    }
+
+    fn from_config_with_adapter_and_body_max_bytes(
+        config: ProviderRelayConfig,
+        adapter_config: Option<ProviderAdapterConfig>,
+        body_max_bytes: usize,
+    ) -> Self {
+        Self::from_config_with_adapter_and_body_max_bytes_and_transport(
+            config,
+            adapter_config,
+            body_max_bytes,
+            default_provider_passthrough_response_timeout(),
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    fn from_config_with_adapter_and_body_max_bytes_and_transport(
+        config: ProviderRelayConfig,
+        adapter_config: Option<ProviderAdapterConfig>,
+        body_max_bytes: usize,
+        response_timeout: Duration,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
+        Self::from_optional_config_with_adapter_and_outbound_target_policy_and_transport(
+            Some(config),
+            adapter_config,
+            OutboundTargetPolicy::Production,
+            body_max_bytes,
+            response_timeout,
+            http_pool_config,
+        )
+    }
+
+    fn from_config_with_adapter_for_development(
+        config: ProviderRelayConfig,
+        adapter_config: Option<ProviderAdapterConfig>,
+    ) -> Self {
+        Self::from_optional_config_with_adapter_and_outbound_target_policy_and_transport(
+            Some(config),
+            adapter_config,
+            OutboundTargetPolicy::Development,
+            RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+            default_provider_passthrough_response_timeout(),
+            ProviderRelayHttpPoolConfig::default(),
+        )
     }
 
     fn from_optional_config_with_adapter(
         config: Option<ProviderRelayConfig>,
         adapter_config: Option<ProviderAdapterConfig>,
+    ) -> Self {
+        Self::from_optional_config_with_adapter_and_outbound_target_policy(
+            config,
+            adapter_config,
+            OutboundTargetPolicy::Production,
+            RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        )
+    }
+
+    fn from_optional_config_with_adapter_and_outbound_target_policy(
+        config: Option<ProviderRelayConfig>,
+        adapter_config: Option<ProviderAdapterConfig>,
+        outbound_target_policy: OutboundTargetPolicy,
+        body_max_bytes: usize,
+    ) -> Self {
+        Self::from_optional_config_with_adapter_and_outbound_target_policy_and_transport(
+            config,
+            adapter_config,
+            outbound_target_policy,
+            body_max_bytes,
+            default_provider_passthrough_response_timeout(),
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    fn from_optional_config_with_adapter_and_outbound_target_policy_and_transport(
+        config: Option<ProviderRelayConfig>,
+        adapter_config: Option<ProviderAdapterConfig>,
+        outbound_target_policy: OutboundTargetPolicy,
+        body_max_bytes: usize,
+        response_timeout: Duration,
+        http_pool_config: ProviderRelayHttpPoolConfig,
     ) -> Self {
         let openai_target = config
             .as_ref()
@@ -472,7 +647,8 @@ impl ProviderPassthroughRuntime {
                 )
             });
         Self {
-            client: build_provider_passthrough_client(),
+            client: build_provider_passthrough_client(outbound_target_policy, http_pool_config),
+            outbound_target_policy,
             providers: Arc::new(
                 openai_target
                     .into_iter()
@@ -496,23 +672,39 @@ impl ProviderPassthroughRuntime {
                 .filter(|config| !config.routes().is_empty())
                 .map(|config| ProviderNativeAdapterRuntime {
                     registry: Arc::new(ProviderAdapterRegistry::new(config.routes().to_vec())),
-                    client: ProviderAdapterHttpClient::new(config.gateway_token().to_owned()),
-                }),
-            body_max_bytes: RequestLimitsConfig::from_env_or_runtime_toml(None)
-                .map(|config| config.gateway_invocation_body_max_bytes())
-                .unwrap_or(RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES),
+                    client: match outbound_target_policy {
+                        OutboundTargetPolicy::Production => {
+                            ProviderAdapterHttpClient::new(config.gateway_token().to_owned())
+                        }
+                        OutboundTargetPolicy::Development => {
+                            ProviderAdapterHttpClient::for_development(
+                                config.gateway_token().to_owned(),
+                            )
+                        }
+                    },
+            }),
+            body_max_bytes,
+            response_timeout,
         }
     }
 
-    async fn read_request_body(&self, body: Body) -> Result<bytes::Bytes, String> {
+    async fn read_request_body(
+        &self,
+        body: Body,
+    ) -> Result<bytes::Bytes, ProviderPassthroughError> {
         Limited::new(body, self.body_max_bytes)
             .collect()
             .await
             .map_err(|error| {
-                format!(
-                    "provider passthrough request body exceeds {} bytes: {error}",
-                    self.body_max_bytes
-                )
+                if error.downcast_ref::<LengthLimitError>().is_some() {
+                    ProviderPassthroughError::RequestBodyTooLarge {
+                        limit: self.body_max_bytes,
+                    }
+                } else {
+                    ProviderPassthroughError::Relay(format!(
+                        "failed to read provider passthrough request body: {error}"
+                    ))
+                }
             })
             .map(|collected| collected.to_bytes())
     }
@@ -521,7 +713,7 @@ impl ProviderPassthroughRuntime {
         &self,
         request: Request,
         context: Option<&AuthenticatedApiKeyContext>,
-    ) -> Result<Response, String> {
+    ) -> Result<Response, ProviderPassthroughError> {
         let target = self
             .target_for_path(request.uri().path())
             .ok_or_else(|| "provider passthrough target is not configured".to_owned())?;
@@ -537,7 +729,7 @@ impl ProviderPassthroughRuntime {
             if let ProviderInvocationMode::InternalHttpAdapter(route) =
                 adapter.registry.resolve_standard_path(&lookup).mode
             {
-                let (_, response, _) = self
+                let (_, result, _) = self
                     .invoke_adapter(
                         request,
                         context,
@@ -550,7 +742,7 @@ impl ProviderPassthroughRuntime {
                         None,
                     )
                     .await?;
-                return adapter_invocation_response(response);
+                return adapter_invoke_result_response(result).map_err(Into::into);
             }
         }
         let upstream_uri = build_provider_passthrough_uri(target, request.uri())?;
@@ -563,7 +755,7 @@ impl ProviderPassthroughRuntime {
         request: Request,
         context: &AuthenticatedApiKeyContext,
         usage_recorder: Option<&UsageRecorder>,
-    ) -> Result<Response, String>
+    ) -> Result<Response, ProviderPassthroughError>
     where
         C: PricingCatalog + Send + Sync + 'static,
     {
@@ -582,7 +774,7 @@ impl ProviderPassthroughRuntime {
             if let ProviderInvocationMode::InternalHttpAdapter(route) =
                 adapter.registry.resolve_standard_path(&lookup).mode
             {
-                let (invocation, response, user_agent) = self
+                let (invocation, result, user_agent) = self
                     .invoke_adapter(
                         request,
                         Some(context),
@@ -595,23 +787,36 @@ impl ProviderPassthroughRuntime {
                         None,
                     )
                     .await?;
-                record_adapter_usage_lines(
-                    catalog,
-                    usage_recorder,
-                    context,
-                    &invocation,
-                    &response,
-                    user_agent.as_deref(),
-                )
-                .await?;
-                return adapter_invocation_response(response);
+                return match result {
+                    AdapterInvokeResult::Buffered(response) => {
+                        record_adapter_usage_lines(
+                            catalog,
+                            usage_recorder,
+                            context,
+                            &invocation,
+                            &response,
+                            user_agent.as_deref(),
+                        )
+                        .await?;
+                        adapter_invocation_response(response).map_err(Into::into)
+                    }
+                    AdapterInvokeResult::Streaming {
+                        status_code,
+                        content_type,
+                        stream_body,
+                    } => adapter_streaming_response(status_code, content_type, stream_body)
+                        .map_err(Into::into),
+                };
             }
         }
         let upstream_uri = build_provider_passthrough_uri(target, request.uri())?;
         self.forward_to_target(request, target, upstream_uri).await
     }
 
-    async fn forward_openai(&self, request: Request) -> Result<Response, String> {
+    async fn forward_openai(
+        &self,
+        request: Request,
+    ) -> Result<Response, ProviderPassthroughError> {
         let target = self
             .providers
             .iter()
@@ -626,11 +831,21 @@ impl ProviderPassthroughRuntime {
         request: Request,
         target: &ProviderPassthroughTarget,
         upstream_uri: Uri,
-    ) -> Result<Response, String> {
+    ) -> Result<Response, ProviderPassthroughError> {
+        validate_provider_passthrough_target(&upstream_uri, self.outbound_target_policy)?;
         let (parts, body) = request.into_parts();
         let body = self.read_request_body(body).await?;
-        forward_provider_passthrough_to_target(&self.client, parts, body, target, upstream_uri)
-            .await
+        forward_provider_passthrough_to_target(
+            &self.client,
+            self.outbound_target_policy,
+            parts,
+            body,
+            target,
+            upstream_uri,
+            self.response_timeout,
+        )
+        .await
+        .map_err(Into::into)
     }
 
     async fn invoke_adapter(
@@ -647,10 +862,10 @@ impl ProviderPassthroughRuntime {
     ) -> Result<
         (
             AdapterInvocationRequest,
-            AdapterInvocationResponse,
+            AdapterInvokeResult,
             Option<String>,
         ),
-        String,
+        ProviderPassthroughError,
     > {
         let (parts, body) = request.into_parts();
         let user_agent = request_header_value(&parts.headers, USER_AGENT.as_str())
@@ -673,24 +888,6 @@ impl ProviderPassthroughRuntime {
             .invoke(&route, invocation.clone())
             .await
             .map_err(provider_adapter_http_error)?;
-        let response = match response {
-            AdapterInvokeResult::Buffered(resp) => resp,
-            AdapterInvokeResult::Streaming {
-                status_code,
-                content_type,
-                stream_body,
-            } => {
-                let bytes = axum::body::to_bytes(stream_body, ADAPTER_STREAMING_RESPONSE_MAX_BYTES)
-                    .await
-                    .map_err(|e| format!("failed to read streaming adapter response: {e}"))?;
-                let body = serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
-                let mut response = AdapterInvocationResponse::json(status_code, body);
-                if let Some(ct) = content_type {
-                    response.headers.insert("content-type".to_owned(), ct);
-                }
-                response
-            }
-        };
         Ok((invocation, response, user_agent))
     }
 
@@ -1239,12 +1436,15 @@ fn standard_path_from_passthrough_uri(original_uri: &Uri) -> Result<String, Stri
     }
 }
 
-fn provider_adapter_request_body(body: &[u8]) -> Result<Value, String> {
+fn provider_adapter_request_body(body: &[u8]) -> Result<Value, ProviderPassthroughError> {
     if body.is_empty() {
         return Ok(Value::Null);
     }
-    serde_json::from_slice(body)
-        .map_err(|error| format!("provider adapter route requires a JSON request body: {error}"))
+    serde_json::from_slice(body).map_err(|error| {
+        ProviderPassthroughError::InvalidRequest(format!(
+            "provider adapter route requires a JSON request body: {error}"
+        ))
+    })
 }
 
 fn build_provider_native_adapter_invocation(
@@ -1626,6 +1826,38 @@ fn adapter_invocation_response(response: AdapterInvocationResponse) -> Result<Re
         .map_err(|error| format!("failed to build provider adapter response: {error}"))
 }
 
+fn adapter_invoke_result_response(result: AdapterInvokeResult) -> Result<Response, String> {
+    match result {
+        AdapterInvokeResult::Buffered(response) => adapter_invocation_response(response),
+        AdapterInvokeResult::Streaming {
+            status_code,
+            content_type,
+            stream_body,
+        } => adapter_streaming_response(status_code, content_type, stream_body),
+    }
+}
+
+fn adapter_streaming_response(
+    status_code: u16,
+    content_type: Option<String>,
+    stream_body: Body,
+) -> Result<Response, String> {
+    let status = StatusCode::from_u16(status_code)
+        .map_err(|error| format!("provider adapter returned invalid status code: {error}"))?;
+    let content_type = content_type
+        .ok_or_else(|| "provider adapter streaming response is missing content type".to_owned())?;
+    let content_type = HeaderValue::from_str(content_type.as_str()).map_err(|error| {
+        format!("provider adapter returned invalid streaming content type: {error}")
+    })?;
+    Response::builder()
+        .status(status)
+        .header(axum::http::header::CONTENT_TYPE, content_type)
+        // Keep upstream reads coupled to downstream body polling; collecting
+        // here would turn a live adapter stream back into an in-memory buffer.
+        .body(stream_body)
+        .map_err(|error| format!("failed to build provider adapter streaming response: {error}"))
+}
+
 fn should_forward_adapter_response_header(name: &str) -> bool {
     !matches!(
         name.to_ascii_lowercase().as_str(),
@@ -1680,6 +1912,51 @@ mod tests {
         ModelVendorDefinition, Money, PriceSide, PricingPlan,
     };
     use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
+
+    #[tokio::test]
+    async fn provider_passthrough_runtime_enforces_the_injected_request_body_limit() {
+        let runtime =
+            ProviderPassthroughRuntime::from_optional_config_with_adapter_and_outbound_target_policy(
+                None,
+                None,
+                OutboundTargetPolicy::Development,
+                3,
+            );
+
+        let accepted = runtime
+            .read_request_body(Body::from("abc"))
+            .await
+            .expect("the configured request-body boundary must be inclusive");
+        assert_eq!(b"abc", accepted.as_ref());
+
+        let error = runtime
+            .read_request_body(Body::from("abcd"))
+            .await
+            .expect_err("the injected request-body limit must reject an oversized payload");
+        assert!(matches!(
+            error,
+            ProviderPassthroughError::RequestBodyTooLarge { limit: 3 }
+        ));
+    }
+
+    #[test]
+    fn passthrough_request_body_limit_maps_to_payload_too_large() {
+        let response = passthrough_forward_failed(
+            "provider_passthrough_relay_failed",
+            ProviderPassthroughError::RequestBodyTooLarge { limit: 3 },
+        );
+
+        assert_eq!(StatusCode::PAYLOAD_TOO_LARGE, response.status());
+    }
+
+    #[test]
+    fn provider_adapter_json_validation_maps_to_bad_request() {
+        let error = provider_adapter_request_body(b"not-json")
+            .expect_err("adapter invocation body must be JSON");
+        let response = passthrough_forward_failed("provider_passthrough_relay_failed", error);
+
+        assert_eq!(StatusCode::BAD_REQUEST, response.status());
+    }
 
     #[test]
     fn adapter_meter_amount_charges_token_meters_per_million_and_duration_directly() {

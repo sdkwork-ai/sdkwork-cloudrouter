@@ -181,8 +181,8 @@ test("console usage logs copy is routed through i18n without read-only caveats",
   const source = readPortalFile("./packages/sdkwork-clawrouter-pc-console-usage/src/UsageView.tsx");
 
   assert.match(source, /t\('console\.usage\.table\.cost', 'Spend'\)/);
-  assert.match(source, /const SPEND_DECIMAL_DIGITS = 9;/);
-  assert.match(source, /formatDecimalAmount\(log\.cost, SPEND_DECIMAL_DIGITS\)/);
+  assert.match(source, /const DISPLAY_DECIMAL_DIGITS = 2;/);
+  assert.match(source, /formatDisplayAmount\(log\.cost\)/);
   assert.doesNotMatch(source, /t\('console\.usage\.loadedCost', 'Loaded cost'\)/);
   assert.doesNotMatch(source, /t\('console\.usage\.table\.cost', 'Cost'\)/);
   assert.match(source, /placeholder=\{t\('console\.usage\.startTimePlaceholder'/);
@@ -205,18 +205,19 @@ test("console usage page does not render a loaded summary header row", () => {
   assert.doesNotMatch(source, /className="[^"]*shrink-0[^"]*justify-end/);
 });
 
-test("console routed pages keep compact 5px page padding below the global header", () => {
+test("console routed pages keep compact 5px page padding with zero top padding below the global header", () => {
   for (const file of simplifiedConsolePageFiles) {
     const source = readPortalFile(file);
     const viewportClasses = viewportClassNames(source);
 
     assert.ok(viewportClasses.length > 0, `${file} must define a console viewport root`);
     for (const className of viewportClasses) {
-      assert.match(className, /(?:^|\s)p-\[5px\](?:\s|$)/, `${file} viewport root must use 5px page padding on every side`);
+      assert.match(className, /(?:^|\s)px-\[5px\](?:\s|$)/, `${file} viewport root must use 5px horizontal padding`);
+      assert.match(className, /(?:^|\s)pb-\[5px\](?:\s|$)/, `${file} viewport root must use 5px bottom padding`);
       assert.doesNotMatch(
         className,
-        /(?:^|\s)(?:(?:p-(?!\[5px\])|(?:px|py|pt|pb|pl|pr)-)|(?:(?:sm|md|lg|xl):(?:p|px|py|pt|pb|pl|pr)-))/,
-        `${file} viewport root must not override the 5px page padding`,
+        /(?:^|\s)(?:(?:p|py|pt|pl|pr)-|(?:px|pb)-(?!\[5px\])|(?:(?:sm|md|lg|xl):(?:p|px|py|pt|pb|pl|pr)-))/,
+        `${file} viewport root must not override the 5px page padding or add top padding`,
       );
     }
     assert.doesNotMatch(source, /\{\/\*\s*Header\s*\*\/\}/, `${file} must not keep page header chrome comments`);

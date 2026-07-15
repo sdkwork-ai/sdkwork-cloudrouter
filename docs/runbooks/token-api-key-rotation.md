@@ -162,8 +162,8 @@ single redeploy and does not require reissuing credentials.
 - Record rotation event, timestamp, and operator in the `ops_audit_log`
   (`action_type = rotate_credential`).
 - Update the secret inventory / key register with the new expiry date.
-- Schedule the next rotation in the runbook index *Last Drill* tracker
-  ([README.md](README.md)).
+- Schedule the next rotation and attach immutable current-candidate evidence in
+  the runbook index drill-evidence column ([README.md](README.md)).
 
 ## Related Documents
 

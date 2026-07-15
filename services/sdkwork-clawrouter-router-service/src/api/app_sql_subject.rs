@@ -394,6 +394,7 @@ mod tests {
             locale: None,
             client_kind: None,
             operation: None,
+            idempotency_key: None,
         };
         let mut extensions = Extensions::new();
         extensions.insert(context);

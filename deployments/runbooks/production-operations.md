@@ -1,11 +1,15 @@
 # SDKWork Claw Router — Production Runbook (Excerpt)
 
+> Status: pre-launch operational target. This excerpt is not current-candidate
+> production, HA, migration, recovery, or release approval evidence. Use the
+> active production-readiness review for verified scope and blockers.
+
 ## Health checks
 
 | Endpoint | Purpose | Expected |
 | --- | --- | --- |
 | `/healthz` | Liveness | `200`, `status: ok` |
-| `/readyz` | Readiness | `200` when database ping succeeds; `503` with `status: not_ready` otherwise |
+| `/readyz` | Dependency readiness | `200` only when the current database `SELECT 1`, enabled settlement-schema subset, and configured Redis checks pass; `503` with `status: not_ready` otherwise. It is not proof of generic migration state, drift, or every application feature table. |
 
 Edge all-in-one mode additionally aggregates upstream readiness via `edge_ready()`.
 
@@ -25,7 +29,10 @@ App password login is rate-limited per client IP and account (10 attempts / 15 m
 
 ## Admin API authorization
 
-All admin routes require database `membership_kind = admin`, including trusted-subject signed requests.
+Admin membership is an admission prerequisite for administrative routes,
+including trusted-subject signed requests. It is not, by itself, proof of
+tenant or object authorization; `route_explain` remains an open P0
+tenant/object-scope authorization issue.
 
 ## Supply chain
 

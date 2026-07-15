@@ -229,15 +229,15 @@ export function DashboardView() {
   const maxModelRequests = snapshot.topModels[0]?.requests ?? 0;
 
   return (
-    <div className="min-h-[calc(100vh-72px)] w-full space-y-5 bg-slate-50 p-[5px] pt-2 text-slate-800 dark:bg-[#121212] dark:text-slate-100 lg:pt-3">
+    <div className="min-h-[calc(100vh-72px)] w-full space-y-2 bg-slate-50 px-[5px] pb-[5px] text-slate-800 dark:bg-[#121212] dark:text-slate-100">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           icon={<Wallet className="h-4 w-4 text-blue-500" />}
           title={t("console.dashboard.dashboardview.text.uvto1d", "可用额度")}
-          value={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} 点", { value: formatNumber(snapshot.summary.availableCredits) })}
+          value={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} 点", { value: formatCredits(snapshot.summary.availableCredits) })}
           valueIcon={<Zap className="h-6 w-6 text-amber-500" />}
           footerLabel={t("console.dashboard.dashboardview.text.totalUsedCredits", "历史总消耗")}
-          footerValue={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} 点", { value: formatNumber(snapshot.summary.totalUsedCredits) })}
+          footerValue={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} 点", { value: formatCredits(snapshot.summary.totalUsedCredits) })}
           action={
             <button
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-[#1f1f1f] dark:text-slate-300 dark:hover:bg-white/10"
@@ -253,32 +253,32 @@ export function DashboardView() {
         <MetricCard
           icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
           title={t("console.dashboard.dashboardview.text.totalRequestCount", "总请求次数")}
-          value={formatNumber(snapshot.summary.totalRequestCount)}
+          value={formatCount(snapshot.summary.totalRequestCount)}
           footerLabel={t("console.dashboard.dashboardview.text.windowRequestCount", "当前周期请求")}
-          footerValue={t("console.dashboard.dashboardview.text.timesValue", "{{value}} 次", { value: formatNumber(snapshot.summary.requestCount) })}
+          footerValue={t("console.dashboard.dashboardview.text.timesValue", "{{value}} 次", { value: formatCount(snapshot.summary.requestCount) })}
           sparkline={snapshot.requestSparkline}
           sparklineColor="#10b981"
         />
         <MetricCard
           icon={<ImageIcon className="h-4 w-4 text-pink-500" />}
           title={t("console.dashboard.dashboardview.text.174ug4u", "多模态用量")}
-          value={formatNumber(
+          value={formatCount(
             snapshot.summary.imageRequests +
               snapshot.summary.videoRequests +
               snapshot.summary.audioRequests +
               snapshot.summary.musicRequests,
           )}
           footerLabel={t("console.dashboard.dashboardview.text.15zvvl1", "图像 / 视频 / 音频 / 音乐")}
-          footerValue={`${formatNumber(snapshot.summary.imageRequests)} / ${formatNumber(snapshot.summary.videoRequests)} / ${formatNumber(snapshot.summary.audioRequests)} / ${formatNumber(snapshot.summary.musicRequests)}`}
+          footerValue={`${formatCount(snapshot.summary.imageRequests)} / ${formatCount(snapshot.summary.videoRequests)} / ${formatCount(snapshot.summary.audioRequests)} / ${formatCount(snapshot.summary.musicRequests)}`}
           sparkline={snapshot.multimodalSparkline}
           sparklineColor="#ec4899"
         />
         <MetricCard
           icon={<Clock className="h-4 w-4 text-indigo-500" />}
           title={t("console.dashboard.dashboardview.text.1celmyr", "吞吐性能")}
-          value={`${formatNumber(snapshot.summary.rpm)} RPM`}
+          value={`${formatCount(snapshot.summary.rpm)} RPM`}
           footerLabel={t("console.dashboard.dashboardview.text.tpm", "每分钟 Token")}
-          footerValue={formatNumber(snapshot.summary.tpm)}
+          footerValue={formatCount(snapshot.summary.tpm)}
           sparkline={snapshot.performanceSparkline}
           sparklineColor="#6366f1"
         />
@@ -324,10 +324,10 @@ export function DashboardView() {
           </button>
         </div>
       )}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="flex flex-col gap-6 xl:col-span-2">
+      <div className="grid grid-cols-1 gap-2 xl:grid-cols-3">
+        <div className="flex flex-col gap-2 xl:col-span-2">
           <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
-            <div className="flex flex-col gap-4 border-b border-slate-100 p-5 dark:border-white/5 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-2 border-b border-slate-100 p-3 dark:border-white/5 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="flex items-center gap-2 text-base font-bold">
                   <Activity className="h-5 w-5 text-blue-500" /> {t("console.dashboard.dashboardview.text.1bgdsz6", "用量趋势")}</h2>
@@ -363,12 +363,12 @@ export function DashboardView() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 bg-slate-50 px-6 py-4 dark:border-white/5 dark:bg-[#1e1e1e]/50">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2 dark:border-white/5 dark:bg-[#1e1e1e]/50">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("console.dashboard.dashboardview.text.3jbcte", "合计")}</span>
                 <span className="flex items-center gap-1 font-mono text-xl font-bold">
                   {metricType === 'cost' && <Zap className="h-4 w-4 text-amber-500" />}
-                  {formatNumber(totalValue)}
+                  {formatMetricValue(totalValue, metricType)}
                 </span>
               </div>
               <div className="flex flex-wrap gap-4 text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -385,7 +385,7 @@ export function DashboardView() {
               </div>
             </div>
 
-            <div className="relative h-[380px] w-full p-6">
+            <div className="relative h-[320px] w-full p-3">
               <div className={`h-full w-full transition-opacity duration-200 ${isRefreshing ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
                 {chartData.length === 0 ? (
                   <EmptyState label={t("console.dashboard.dashboardview.text.na2gzj", "暂无趋势数据")} />
@@ -396,7 +396,7 @@ export function DashboardView() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.14} />
                       <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} interval={xAxisInterval} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
-                      <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatNumber(value), undefined]} />
+                      <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatMetricValue(value, metricType), undefined]} />
                       {SERIES.map((series) =>
                         visibleSeries[series.key] ? <Bar key={series.key} dataKey={series.key} name={series.label(t)} stackId="usage" fill={series.color} radius={[4, 4, 0, 0]} /> : null,
                       )}
@@ -406,7 +406,7 @@ export function DashboardView() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.14} />
                       <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} interval={xAxisInterval} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
-                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatNumber(value), undefined]} />
+                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatMetricValue(value, metricType), undefined]} />
                         {SERIES.map((series) =>
                           visibleSeries[series.key] ? (
                             <Area key={series.key} type="monotone" dataKey={series.key} name={series.label(t)} stackId="usage" stroke={series.color} fill={series.color} fillOpacity={0.2} strokeWidth={2} />
@@ -429,7 +429,7 @@ export function DashboardView() {
           </section>
 
           <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
-            <div className="flex items-center justify-between border-b border-slate-100 p-5 dark:border-white/5">
+            <div className="flex items-center justify-between border-b border-slate-100 p-3 dark:border-white/5">
               <h3 className="flex items-center gap-2 text-sm font-bold">
                 <TrendingUp className="h-4 w-4 text-emerald-500" /> {t("console.dashboard.dashboardview.text.k4ppgb", "模型排行")}</h3>
             </div>
@@ -437,11 +437,11 @@ export function DashboardView() {
               <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
                 <thead className="border-b border-slate-100 bg-slate-50/70 text-xs uppercase text-slate-500 dark:border-white/5 dark:bg-white/[0.02] dark:text-slate-400">
                   <tr>
-                    <th className="w-16 px-6 py-4 text-center font-semibold">{t("console.dashboard.dashboardview.text.1cp4aqw", "排名")}</th>
-                    <th className="px-6 py-4 font-semibold">{t("console.dashboard.dashboardview.text.btc9qz", "模型 / 供应商")}</th>
-                    <th className="px-6 py-4 font-semibold">{t("console.dashboard.dashboardview.text.12udcev", "模态")}</th>
-                    <th className="px-6 py-4 text-right font-semibold">{t("console.dashboard.dashboardview.text.18c8c2x", "请求量")}</th>
-                    <th className="px-6 py-4 text-right font-semibold">{t("console.dashboard.dashboardview.text.1j4app0", "费用")}</th>
+                    <th className="w-16 px-3 py-2.5 text-center font-semibold">{t("console.dashboard.dashboardview.text.1cp4aqw", "排名")}</th>
+                    <th className="px-3 py-2.5 font-semibold">{t("console.dashboard.dashboardview.text.btc9qz", "模型 / 供应商")}</th>
+                    <th className="px-3 py-2.5 font-semibold">{t("console.dashboard.dashboardview.text.12udcev", "模态")}</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">{t("console.dashboard.dashboardview.text.18c8c2x", "请求量")}</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">{t("console.dashboard.dashboardview.text.1j4app0", "费用")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -454,31 +454,31 @@ export function DashboardView() {
                       const widthPercent = maxModelRequests > 0 ? Math.max(2, Math.round((row.requests / maxModelRequests) * 100)) : 0;
                       return (
                         <tr key={`${row.rank}-${row.name}-${row.supplier}-${index}`} className="transition-colors hover:bg-slate-50 dark:hover:bg-white/5">
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-3 py-2.5 text-center">
                             <span className="inline-block h-6 w-6 rounded-md bg-slate-100 text-center text-xs font-bold leading-6 text-slate-500 dark:bg-white/5 dark:text-slate-400">{row.rank}</span>
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1">
+                          <td className="px-3 py-2.5">
+                            <div className="flex flex-col gap-0.5">
                               <span className="font-mono text-[13px] font-semibold text-slate-800 dark:text-slate-100">{row.name}</span>
                               <span className="text-[11px] text-slate-500">{row.supplier}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 py-2.5">
                             <span className="rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:bg-white/10 dark:text-slate-300">{row.modality}</span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 py-2.5">
                             <div className="flex flex-col items-end gap-1">
                               <div className="flex items-center gap-2">
                                 <span className={`text-[10px] font-bold ${row.isUp ? 'text-emerald-500' : 'text-rose-500'}`}>{row.trend}</span>
-                                <span className="font-mono text-sm font-medium">{formatNumber(row.requests)}</span>
+                                <span className="font-mono text-sm font-medium">{formatCount(row.requests)}</span>
                               </div>
                               <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-[#1e1e1e]">
                                 <div className="h-full rounded-full bg-blue-500/50 dark:bg-blue-400/50" style={{ width: `${widthPercent}%` }} />
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className="font-mono text-sm font-bold text-slate-800 dark:text-white">{formatNumber(row.cost)} {t("console.dashboard.dashboardview.text.1gb9aus", "点")}</span>
+                          <td className="px-3 py-2.5 text-right">
+                            <span className="font-mono text-sm font-bold text-slate-800 dark:text-white">{formatCredits(row.cost)} {t("console.dashboard.dashboardview.text.1gb9aus", "点")}</span>
                           </td>
                         </tr>
                       );
@@ -490,9 +490,9 @@ export function DashboardView() {
           </section>
         </div>
 
-        <div className="flex flex-col gap-6 xl:col-span-1">
+        <div className="flex flex-col gap-2 xl:col-span-1">
           <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-4 dark:border-white/5">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-3 dark:border-white/5">
               <h3 className="flex items-center gap-2 text-sm font-bold">
                 <Server className="h-4 w-4 text-sky-500" /> {t("console.dashboard.dashboardview.text.configInfo", "配置信息")}
               </h3>
@@ -500,88 +500,90 @@ export function DashboardView() {
                 {t("console.dashboard.dashboardview.text.domainCount", "{{count}} 个服务节点", { count: snapshot.configurationDomains.length })}
               </span>
             </div>
-            <div className="overflow-x-auto">
-              <div className="min-w-[680px]">
-              <div className="grid grid-cols-[minmax(72px,0.75fr)_minmax(120px,1.15fr)_minmax(88px,0.8fr)_minmax(72px,0.65fr)_minmax(72px,0.75fr)_auto_auto] items-center gap-2 border-b border-slate-100 bg-slate-50/70 px-3 py-2 text-[11px] font-semibold text-slate-400 dark:border-white/5 dark:bg-white/[0.02] dark:text-slate-500">
-                <span>{t("console.dashboard.dashboardview.text.configName", "名称")}</span>
-                <span>{t("console.dashboard.dashboardview.text.configDomain", "域名")}</span>
-                <span>{t("console.dashboard.dashboardview.text.configIp", "IP")}</span>
-                <span>{t("console.dashboard.dashboardview.text.configStatus", "状态")}</span>
-                <span>{t("console.dashboard.dashboardview.text.configRemark", "备注")}</span>
-                <span className="text-right">{t("console.dashboard.dashboardview.text.speedTest", "测速")}</span>
-                <span className="text-right">{t("common.actions.actions", "操作")}</span>
-              </div>
-              <div className="max-h-[320px] divide-y divide-slate-100 overflow-y-auto dark:divide-white/5">
-              {snapshot.configurationDomains.map((item) => {
-                const speedState = domainSpeedStates[item.id];
-                const speedLabel = formatConfigurationDomainSpeedState(speedState, t);
-                const nodeStatusLabel = formatConfigurationDomainStatus(item.status, t);
-                return (
-                  <div key={item.id} className="grid grid-cols-[minmax(72px,0.75fr)_minmax(120px,1.15fr)_minmax(88px,0.8fr)_minmax(72px,0.65fr)_minmax(72px,0.75fr)_auto_auto] items-center gap-2 px-3 py-2.5">
-                    <div className="min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100" title={item.name}>
-                      {item.name}
-                    </div>
-                    <div className="min-w-0 truncate font-mono text-xs text-slate-600 dark:text-slate-300" title={item.domain}>
-                      {item.domain}
-                    </div>
+            <div className="max-h-[280px] overflow-y-auto p-2.5">
+              {snapshot.configurationDomains.length === 0 ? (
+                <EmptyState label={t("console.dashboard.dashboardview.text.noConfigIp", "未配置 IP")} />
+              ) : (
+                <div className="space-y-2">
+                {snapshot.configurationDomains.map((item) => {
+                  const speedState = domainSpeedStates[item.id];
+                  const speedLabel = formatConfigurationDomainSpeedState(speedState, t);
+                  const nodeStatusLabel = formatConfigurationDomainStatus(item.status, t);
+                  return (
                     <div
-                      className="min-w-0 truncate font-mono text-xs text-slate-500 dark:text-slate-400"
-                      title={item.ip || t("console.dashboard.dashboardview.text.noConfigIp", "未配置 IP")}
+                      key={item.id}
+                      className="rounded-lg border border-slate-100 bg-slate-50/50 p-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50 dark:border-white/5 dark:bg-white/[0.02] dark:hover:border-white/10 dark:hover:bg-white/[0.04]"
                     >
-                      {item.ip || t("console.dashboard.dashboardview.text.noConfigIp", "未配置 IP")}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100" title={item.name}>
+                            {item.name}
+                          </span>
+                          <span
+                            className={`shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${configurationStatusClassName(item.status)}`}
+                            title={nodeStatusLabel}
+                          >
+                            {nodeStatusLabel}
+                          </span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-400/40 dark:hover:bg-sky-400/10 dark:hover:text-sky-200"
+                            title={t("console.dashboard.dashboardview.text.openDomain", "跳转")}
+                            aria-label={t("console.dashboard.dashboardview.text.openDomain", "跳转")}
+                            onClick={() => openConfigurationDomain(item.domain)}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-wait disabled:opacity-70 dark:border-white/10 dark:text-slate-300 dark:hover:border-emerald-400/40 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-200"
+                            title={t("console.dashboard.dashboardview.text.speedTest", "测速")}
+                            aria-label={t("console.dashboard.dashboardview.text.speedTest", "测速")}
+                            disabled={speedState?.status === 'testing'}
+                            onClick={() => void handleMeasureConfigurationDomain(item)}
+                          >
+                            {speedState?.status === 'testing'
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Gauge className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+                        <span className="flex items-center gap-1 min-w-0">
+                          <span className="shrink-0 text-slate-400 dark:text-slate-500">{t("console.dashboard.dashboardview.text.configDomain", "域名")}</span>
+                          <span className="truncate font-mono text-slate-600 dark:text-slate-300" title={item.domain}>{item.domain}</span>
+                        </span>
+                        {item.ip && (
+                          <span className="flex items-center gap-1">
+                            <span className="text-slate-400 dark:text-slate-500">IP</span>
+                            <span className="font-mono text-slate-500 dark:text-slate-400">{item.ip}</span>
+                          </span>
+                        )}
+                        <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${configurationSpeedClassName(speedState)}`}>
+                          {speedLabel}
+                        </span>
+                      </div>
+                      {item.remark && (
+                        <div className="mt-1 truncate text-[11px] text-slate-400 dark:text-slate-500" title={item.remark}>
+                          {item.remark}
+                        </div>
+                      )}
                     </div>
-                    <span
-                      className={`w-fit whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${configurationStatusClassName(item.status)}`}
-                      title={nodeStatusLabel}
-                    >
-                      {nodeStatusLabel}
-                    </span>
-                    <div
-                      className="min-w-0 truncate text-xs text-slate-500 dark:text-slate-400"
-                      title={item.remark || t("console.dashboard.dashboardview.text.noConfigRemark", "未配置备注")}
-                    >
-                      {item.remark || t("console.dashboard.dashboardview.text.noConfigRemark", "未配置备注")}
-                    </div>
-                    <span className={`justify-self-end whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${configurationSpeedClassName(speedState)}`}>
-                      {speedLabel}
-                    </span>
-                    <div className="flex shrink-0 items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 dark:border-white/10 dark:text-slate-300 dark:hover:border-sky-400/40 dark:hover:bg-sky-400/10 dark:hover:text-sky-200"
-                          title={t("console.dashboard.dashboardview.text.openDomain", "跳转")}
-                          aria-label={t("console.dashboard.dashboardview.text.openDomain", "跳转")}
-                          onClick={() => openConfigurationDomain(item.domain)}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-wait disabled:opacity-70 dark:border-white/10 dark:text-slate-300 dark:hover:border-emerald-400/40 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-200"
-                          title={t("console.dashboard.dashboardview.text.speedTest", "测速")}
-                          aria-label={t("console.dashboard.dashboardview.text.speedTest", "测速")}
-                          disabled={speedState?.status === 'testing'}
-                          onClick={() => void handleMeasureConfigurationDomain(item)}
-                        >
-                          {speedState?.status === 'testing'
-                            ? <Loader2 className="h-4 w-4 animate-spin" />
-                            : <Gauge className="h-4 w-4" />}
-                        </button>
-                    </div>
-                  </div>
-                );
-              })}
-              </div>
-              </div>
+                  );
+                })}
+                </div>
+              )}
             </div>
           </section>
 
-          <section className="flex h-[280px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
-            <div className="flex items-center justify-between border-b border-slate-100 p-4 dark:border-white/5">
+          <section className="flex h-[240px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
+            <div className="flex items-center justify-between border-b border-slate-100 p-2.5 dark:border-white/5">
               <h3 className="flex items-center gap-2 text-sm font-bold">
                 <PieChartIcon className="h-4 w-4 text-blue-500" /> {t("console.dashboard.dashboardview.text.da5r28", "模态分布")}</h3>
             </div>
-            <div className="flex flex-1 items-center p-4">
+            <div className="flex flex-1 items-center p-2.5">
               {pieData.length === 0 ? (
                 <EmptyState label={t("console.dashboard.dashboardview.text.q1xtoy", "暂无分布数据")} />
               ) : (
@@ -596,7 +598,7 @@ export function DashboardView() {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="flex w-1/2 flex-col justify-center gap-3 pl-2">
+                  <div className="flex w-1/2 flex-col justify-center gap-2 pl-2">
                     {pieData.map((item) => (
                       <div key={item.name} className="flex items-center justify-between">
                         <span className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
@@ -612,16 +614,16 @@ export function DashboardView() {
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
-            <div className="flex items-center justify-between border-b border-slate-100 p-4 dark:border-white/5">
+          <section className="flex min-h-[200px] flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-white/5 dark:bg-[#252525]">
+            <div className="flex items-center justify-between border-b border-slate-100 p-2.5 dark:border-white/5">
               <h3 className="flex items-center gap-2 text-sm font-bold">
                 <Bell className="h-4 w-4 text-blue-500" /> {t("console.dashboard.dashboardview.text.1qzse", "系统消息")}</h3>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-2.5">
               {snapshot.announcements.length === 0 ? (
                 <EmptyState label={t("console.dashboard.dashboardview.text.1jcj3x0", "暂无系统消息")} />
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {snapshot.announcements.map((notice) => (
                     <div key={notice.id} className="group relative border-l-2 border-slate-200 pl-4 dark:border-white/10">
                       <div className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full ring-4 ring-white dark:ring-[#252525]" style={{ backgroundColor: announcementColor(notice.type) }} />
@@ -655,27 +657,27 @@ interface MetricCardProps {
 
 function MetricCard({ icon, title, value, valueIcon, footerLabel, footerValue, sparkline = [], sparklineColor = '#3b82f6', action }: MetricCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-blue-500/30 dark:border-white/5 dark:bg-[#252525]">
+    <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-blue-500/30 dark:border-white/5 dark:bg-[#252525]">
       <div className="relative z-10">
-        <div className="mb-1 flex items-start justify-between gap-3">
+        <div className="mb-0.5 flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
             {icon} {title}
           </div>
           {action}
         </div>
-        <div className="mb-5 mt-2 flex items-center gap-1.5 text-2xl font-bold text-slate-800 dark:text-white lg:text-3xl">
+        <div className="mb-2 mt-1 flex items-center gap-1.5 text-2xl font-bold text-slate-800 dark:text-white lg:text-3xl">
           {valueIcon}
           {value}
         </div>
-        <div className="border-t border-slate-100 pt-4 dark:border-white/5">
-          <div className="mb-1 flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div className="border-t border-slate-100 pt-3 dark:border-white/5">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
             <Activity className="h-3.5 w-3.5 text-purple-400" /> {footerLabel}
           </div>
-          <div className="text-sm font-bold text-slate-600 dark:text-slate-300">{footerValue}</div>
+          <div className="mt-0.5 text-sm font-bold text-slate-600 dark:text-slate-300">{footerValue}</div>
         </div>
       </div>
       {sparkline.length > 0 && (
-        <div className="absolute bottom-6 right-0 h-16 w-1/2 opacity-30">
+        <div className="absolute bottom-3 right-0 h-16 w-1/2 opacity-30">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sparkline}>
               <Line type="monotone" dataKey="value" stroke={sparklineColor} strokeWidth={2} dot={false} isAnimationActive={false} />
@@ -846,11 +848,22 @@ function translateDashboardLocalValue(value: string, fallback: string, t: Transl
   return value;
 }
 
-function formatNumber(value: number): string {
+function formatCredits(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '0.00';
+  }
+  return new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+}
+
+function formatCount(value: number): string {
   if (!Number.isFinite(value)) {
     return '0';
   }
-  return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: value >= 100 ? 0 : 2 }).format(value);
+  return new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 }).format(value);
+}
+
+function formatMetricValue(value: number, metricType: 'cost' | 'requests'): string {
+  return metricType === 'cost' ? formatCredits(value) : formatCount(value);
 }
 
 function formatAxis(value: number): string {

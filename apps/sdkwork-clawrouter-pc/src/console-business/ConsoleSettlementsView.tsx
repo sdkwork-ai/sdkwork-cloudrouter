@@ -131,7 +131,7 @@ function SettlementsPagination({ controller }: { controller: SdkworkOrderControl
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t border-[var(--sdk-color-border-subtle)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 border-t border-[var(--sdk-color-border-subtle)] px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-xs text-[var(--sdk-color-text-secondary)]">
         {formatPaginationSummary(shown, total)}
       </div>
@@ -220,8 +220,8 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-[88rem] px-4 py-6 sm:px-6 lg:px-8">
-        <div className="space-y-6">
+      <div className="mx-auto max-w-[88rem] px-4 pb-6 sm:px-6 lg:px-8">
+        <div className="space-y-4">
           {/* Header */}
           <header className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -245,13 +245,13 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
           </header>
 
           {/* Stats */}
-          <div className="grid gap-4 grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
 
               return (
                 <div
-                  className="rounded-2xl border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-5 shadow-[var(--sdk-shadow-sm)]"
+                  className="rounded-2xl border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4 shadow-[var(--sdk-shadow-sm)]"
                   key={stat.label}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -263,7 +263,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
                       <Icon className="h-4 w-4" />
                     </div>
                   </div>
-                  <div className="mt-3 text-3xl font-semibold tracking-tight tabular-nums text-[var(--sdk-color-text-primary)]">
+                  <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-[var(--sdk-color-text-primary)]">
                     {stat.value}
                   </div>
                 </div>
@@ -281,7 +281,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
           {/* Table panel */}
           <section className="overflow-hidden rounded-2xl border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-[var(--sdk-shadow-sm)]">
             {/* Filter tabs */}
-            <div className="flex items-center gap-1 border-b border-[var(--sdk-color-border-subtle)] px-3 py-2.5">
+            <div className="flex items-center gap-1 border-b border-[var(--sdk-color-border-subtle)] px-3 py-2">
               {SETTLEMENTS_FILTERS.map((filter) => {
                 const active = state.activeFilter === filter;
 

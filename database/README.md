@@ -25,6 +25,14 @@ See `docs/31-product-composition-model.md`.
 
 ## Initialization state
 
+The following lifecycle description is not evidence of a feature-complete
+runtime schema. The active
+[readiness review](../docs/engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md)
+records that the canonical schema does not currently create the app-chat or
+runtime usage-link tables required by the wired app-chat stores. A successful
+`db:init`, `db:validate`, or `/readyz` must not be presented as proof that chat
+routes are safe until that ownership and migration gap is closed.
+
 This module is in **initialization state** for greenfield deployments:
 
 1. **Baseline** — `database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql` contains the full DDL snapshot.

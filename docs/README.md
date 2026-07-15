@@ -27,7 +27,9 @@ Generated SDK transport output, live credentials, private customer data, runtime
 | --- | --- |
 | Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
 | Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
-| Standard alignment audit | [standard-alignment-audit.md](standard-alignment-audit.md) |
+| Historical standard alignment audit | [standard-alignment-audit.md](standard-alignment-audit.md) |
+| Active production-readiness requirement | [product/requirements/REQ-2026-0001-commercial-production-readiness.md](product/requirements/REQ-2026-0001-commercial-production-readiness.md) |
+| Active readiness revalidation | [engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md](engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md) |
 | Schema registry catalog | [schema-registry/table-catalog.md](schema-registry/table-catalog.md) |
 | Production runbook | [../deployments/runbooks/production-operations.md](../deployments/runbooks/production-operations.md) |
 | Runbook index | [runbooks/README.md](runbooks/README.md) |

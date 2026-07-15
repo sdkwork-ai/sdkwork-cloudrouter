@@ -1,5 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
+use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
+use std::time::Duration;
 
 use sdkwork_contract_service::{CommerceAccountAssetType, CommerceLedgerDirection};
 use sqlx::{PgPool, Postgres, Row, Transaction};
@@ -18,6 +20,45 @@ const USAGE_SETTLEMENT_FAILED: i64 = 3;
 const DECIMAL_SCALE: i128 = 1_000_000_000_000;
 const POINTS_PER_MAJOR_UNIT: i128 = 10;
 const MIN_BILLABLE_POINT_SCALED: i128 = DECIMAL_SCALE;
+const MAX_SETTLEMENT_TRANSACTION_ATTEMPTS: usize = 3;
+const SETTLEMENT_RETRY_INITIAL_BACKOFF_MILLIS: u64 = 25;
+const SETTLEMENT_RETRY_MAX_BACKOFF_MILLIS: u64 = 250;
+
+type SettlementResult<T> = Result<T, SettlementStoreError>;
+
+#[derive(Debug)]
+enum SettlementStoreError {
+    RetryableTransaction { sqlstate: &'static str },
+    Domain(DomainError),
+}
+
+impl SettlementStoreError {
+    fn is_retryable_transaction(&self) -> bool {
+        matches!(self, Self::RetryableTransaction { .. })
+    }
+
+    fn sqlstate(&self) -> Option<&'static str> {
+        match self {
+            Self::RetryableTransaction { sqlstate } => Some(*sqlstate),
+            Self::Domain(_) => None,
+        }
+    }
+
+    fn into_domain_error(self) -> DomainError {
+        match self {
+            Self::RetryableTransaction { .. } => {
+                DomainError::new("usage settlement transaction retry budget exhausted")
+            }
+            Self::Domain(error) => error,
+        }
+    }
+}
+
+impl From<DomainError> for SettlementStoreError {
+    fn from(error: DomainError) -> Self {
+        Self::Domain(error)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct PostgresUsageSettlementStore {
@@ -53,7 +94,7 @@ struct UsageFactForSettlement {
     pricing_snapshot: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct SettlementGroupKey {
     tenant_id: i64,
     organization_id: i64,
@@ -69,7 +110,6 @@ struct SettlementCandidate {
 
 #[derive(Debug, Clone)]
 struct SettlementGroup {
-    key: SettlementGroupKey,
     candidates: Vec<SettlementCandidate>,
 }
 
@@ -90,6 +130,7 @@ async fn settle_pending_usage(
     pool: &PgPool,
     command: UsageSettlementCommand,
 ) -> Result<UsageSettlementOutcome, DomainError> {
+    let command = command.bounded();
     if command.limit <= 0 {
         return Ok(UsageSettlementOutcome {
             settled_count: 0,
@@ -98,6 +139,32 @@ async fn settle_pending_usage(
         });
     }
 
+    let mut attempt = 0_usize;
+    loop {
+        match settle_pending_usage_once(pool, command.clone()).await {
+            Ok(outcome) => return Ok(outcome),
+            Err(error)
+                if error.is_retryable_transaction()
+                    && attempt + 1 < MAX_SETTLEMENT_TRANSACTION_ATTEMPTS =>
+            {
+                tracing::warn!(
+                    attempt = attempt + 1,
+                    max_attempts = MAX_SETTLEMENT_TRANSACTION_ATTEMPTS,
+                    sqlstate = error.sqlstate().unwrap_or_default(),
+                    "retrying usage settlement transaction after a retriable PostgreSQL conflict"
+                );
+                tokio::time::sleep(settlement_retry_delay(attempt)).await;
+                attempt += 1;
+            }
+            Err(error) => return Err(error.into_domain_error()),
+        }
+    }
+}
+
+async fn settle_pending_usage_once(
+    pool: &PgPool,
+    command: UsageSettlementCommand,
+) -> SettlementResult<UsageSettlementOutcome> {
     let mut tx = pool
         .begin()
         .await
@@ -124,7 +191,7 @@ async fn settle_pending_usage(
 async fn load_settleable_usage_facts(
     tx: &mut Transaction<'_, Postgres>,
     command: &UsageSettlementCommand,
-) -> Result<Vec<UsageFactForSettlement>, DomainError> {
+) -> SettlementResult<Vec<UsageFactForSettlement>> {
     let rows = sqlx::query(
         r#"
         SELECT
@@ -178,8 +245,8 @@ async fn collect_settlement_groups(
     command: &UsageSettlementCommand,
     usage_facts: Vec<UsageFactForSettlement>,
     outcome: &mut UsageSettlementOutcome,
-) -> Result<Vec<SettlementGroup>, DomainError> {
-    let mut groups: Vec<SettlementGroup> = Vec::new();
+) -> SettlementResult<Vec<SettlementGroup>> {
+    let mut groups: BTreeMap<SettlementGroupKey, Vec<SettlementCandidate>> = BTreeMap::new();
     for usage_fact in usage_facts {
         if already_settled(tx, &usage_fact).await? {
             continue;
@@ -208,16 +275,12 @@ async fn collect_settlement_groups(
             usage_fact,
             scaled_amount,
         };
-        if let Some(group) = groups.iter_mut().find(|group| group.key == key) {
-            group.candidates.push(candidate);
-        } else {
-            groups.push(SettlementGroup {
-                key,
-                candidates: vec![candidate],
-            });
-        }
+        groups.entry(key).or_default().push(candidate);
     }
-    Ok(groups)
+    Ok(groups
+        .into_iter()
+        .map(|(_, candidates)| SettlementGroup { candidates })
+        .collect())
 }
 
 async fn mark_invalid_usage_fact_failed(
@@ -225,7 +288,7 @@ async fn mark_invalid_usage_fact_failed(
     command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
     failure_message: &str,
-) -> Result<(), DomainError> {
+) -> SettlementResult<()> {
     let account = projection_wallet_account(usage_fact);
     let settlement_id =
         upsert_processing_settlement(tx, command, usage_fact, &account.id, 0).await?;
@@ -243,7 +306,7 @@ async fn settle_zero_usage_fact(
     tx: &mut Transaction<'_, Postgres>,
     command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
-) -> Result<(), DomainError> {
+) -> SettlementResult<()> {
     let account = projection_wallet_account(usage_fact);
     let settlement_id =
         upsert_processing_settlement(tx, command, usage_fact, &account.id, 0).await?;
@@ -254,7 +317,7 @@ async fn settle_usage_group(
     tx: &mut Transaction<'_, Postgres>,
     command: &UsageSettlementCommand,
     group: &SettlementGroup,
-) -> Result<UsageSettlementOutcome, DomainError> {
+) -> SettlementResult<UsageSettlementOutcome> {
     if group.candidates.is_empty() {
         return Ok(empty_outcome());
     }
@@ -341,7 +404,7 @@ async fn settle_usage_group(
 async fn already_settled(
     tx: &mut Transaction<'_, Postgres>,
     usage_fact: &UsageFactForSettlement,
-) -> Result<bool, DomainError> {
+) -> SettlementResult<bool> {
     let row = sqlx::query(
         r#"
         SELECT account_ledger_entry_id
@@ -367,7 +430,7 @@ async fn ensure_points_account(
     tx: &mut Transaction<'_, Postgres>,
     command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
-) -> Result<PointsAccount, DomainError> {
+) -> SettlementResult<PointsAccount> {
     let existing = sqlx::query(
         r#"
         SELECT id,
@@ -473,7 +536,7 @@ async fn upsert_processing_settlement(
     usage_fact: &UsageFactForSettlement,
     account_id: &str,
     points: i64,
-) -> Result<i64, DomainError> {
+) -> SettlementResult<i64> {
     let row = sqlx::query(
         r#"
         INSERT INTO commerce_settlement
@@ -549,7 +612,7 @@ async fn existing_account_ledger_entry_id(
     tx: &mut Transaction<'_, Postgres>,
     account_id: &str,
     transaction_id: &str,
-) -> Result<Option<String>, DomainError> {
+) -> SettlementResult<Option<String>> {
     let row = sqlx::query(
         r#"
         SELECT id
@@ -573,7 +636,7 @@ async fn update_account_points(
     account_id: &str,
     points: i64,
     balance_after: i64,
-) -> Result<(), DomainError> {
+) -> SettlementResult<()> {
     let result = sqlx::query(
         r#"
         UPDATE commerce_account
@@ -593,7 +656,8 @@ async fn update_account_points(
     if result.rows_affected() != 1 {
         return Err(DomainError::conflict(
             "usage settlement account points update was not applied atomically",
-        ));
+        )
+        .into());
     }
     Ok(())
 }
@@ -606,7 +670,7 @@ async fn insert_account_ledger_entry(
     balance_after: i64,
     points: i64,
     transaction_id: &str,
-) -> Result<String, DomainError> {
+) -> SettlementResult<String> {
     sqlx::query(
         r#"
         INSERT INTO commerce_account_ledger_entry
@@ -640,7 +704,7 @@ async fn mark_settlement_success(
     usage_fact: &UsageFactForSettlement,
     settlement_id: i64,
     ledger_entry_id: Option<&str>,
-) -> Result<(), DomainError> {
+) -> SettlementResult<()> {
     sqlx::query(
         r#"
         UPDATE commerce_settlement
@@ -682,7 +746,7 @@ async fn mark_settlement_failed(
     settlement_id: i64,
     failure_code: &str,
     failure_message: &str,
-) -> Result<(), DomainError> {
+) -> SettlementResult<()> {
     sqlx::query(
         r#"
         UPDATE commerce_settlement
@@ -779,7 +843,7 @@ fn allocate_candidate_points(
 async fn defer_usage_group(
     tx: &mut Transaction<'_, Postgres>,
     group: &SettlementGroup,
-) -> Result<(), DomainError> {
+) -> SettlementResult<()> {
     for candidate in &group.candidates {
         sqlx::query(
             r#"
@@ -893,6 +957,45 @@ fn settlement_batch_no(candidates: &[SettlementCandidate]) -> String {
     format!("usage-settlement-batch-{:016x}", hasher.finish())
 }
 
+fn settlement_retry_delay(attempt: usize) -> Duration {
+    let base_backoff_millis = settlement_retry_base_backoff_millis(attempt);
+    let jitter_limit = base_backoff_millis / 4;
+    let jitter_millis = retry_jitter_millis(jitter_limit);
+    Duration::from_millis(
+        base_backoff_millis
+            .saturating_add(jitter_millis)
+            .min(SETTLEMENT_RETRY_MAX_BACKOFF_MILLIS),
+    )
+}
+
+fn settlement_retry_base_backoff_millis(attempt: usize) -> u64 {
+    let shift = u32::try_from(attempt).unwrap_or(u32::MAX).min(4);
+    let factor = 1_u64.checked_shl(shift).unwrap_or(u64::MAX);
+    SETTLEMENT_RETRY_INITIAL_BACKOFF_MILLIS
+        .saturating_mul(factor)
+        .min(SETTLEMENT_RETRY_MAX_BACKOFF_MILLIS)
+}
+
+fn retry_jitter_millis(max_jitter_millis: u64) -> u64 {
+    if max_jitter_millis == 0 {
+        return 0;
+    }
+
+    let mut entropy = [0_u8; 8];
+    if getrandom::fill(&mut entropy).is_err() {
+        return 0;
+    }
+    u64::from_le_bytes(entropy) % (max_jitter_millis + 1)
+}
+
+fn retryable_postgres_sqlstate(sqlstate: &str) -> Option<&'static str> {
+    match sqlstate {
+        "40001" => Some("40001"),
+        "40P01" => Some("40P01"),
+        _ => None,
+    }
+}
+
 fn stable_account_id(usage_fact: &UsageFactForSettlement) -> String {
     let mut hasher = DefaultHasher::new();
     "usage-account".hash(&mut hasher);
@@ -935,6 +1038,37 @@ fn parse_integer_text(value: &str) -> Result<i64, DomainError> {
         .map_err(|_| DomainError::new(format!("invalid integer value: {value}")))
 }
 
-fn store_error(context: &str, error: sqlx::Error) -> DomainError {
-    redacted_store_error(context, error)
+fn store_error(context: &'static str, error: sqlx::Error) -> SettlementStoreError {
+    if let sqlx::Error::Database(database_error) = &error {
+        if let Some(sqlstate) = database_error
+            .code()
+            .and_then(|sqlstate| retryable_postgres_sqlstate(sqlstate.as_ref()))
+        {
+            return SettlementStoreError::RetryableTransaction { sqlstate };
+        }
+    }
+    SettlementStoreError::Domain(redacted_store_error(context, error))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{retryable_postgres_sqlstate, settlement_retry_base_backoff_millis};
+
+    #[test]
+    fn settlement_retry_only_accepts_postgres_serialization_and_deadlock_codes() {
+        assert_eq!(Some("40001"), retryable_postgres_sqlstate("40001"));
+        assert_eq!(Some("40P01"), retryable_postgres_sqlstate("40P01"));
+        assert_eq!(None, retryable_postgres_sqlstate("23505"));
+        assert_eq!(None, retryable_postgres_sqlstate("55P03"));
+    }
+
+    #[test]
+    fn settlement_retry_backoff_is_bounded() {
+        assert_eq!(25, settlement_retry_base_backoff_millis(0));
+        assert_eq!(50, settlement_retry_base_backoff_millis(1));
+        assert_eq!(100, settlement_retry_base_backoff_millis(2));
+        assert_eq!(200, settlement_retry_base_backoff_millis(3));
+        assert_eq!(250, settlement_retry_base_backoff_millis(4));
+        assert_eq!(250, settlement_retry_base_backoff_millis(20));
+    }
 }

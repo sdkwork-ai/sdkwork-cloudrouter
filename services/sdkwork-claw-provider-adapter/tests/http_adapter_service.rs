@@ -491,7 +491,9 @@ async fn adapter_http_client_fetches_manifest_from_adapter_service() {
     let server = tokio::spawn(async move {
         axum::serve(listener, router).await.unwrap();
     });
-    let client = sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::new("test-token");
+    let client = sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::for_development(
+        "test-token",
+    );
 
     let manifest = client.fetch_manifest(format!("{base_url}/")).await.unwrap();
 
@@ -516,7 +518,9 @@ async fn adapter_http_client_rejects_manifest_fetch_with_wrong_token() {
     let server = tokio::spawn(async move {
         axum::serve(listener, router).await.unwrap();
     });
-    let client = sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::new("wrong-token");
+    let client = sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient::for_development(
+        "wrong-token",
+    );
 
     let error = client
         .fetch_manifest(base_url)

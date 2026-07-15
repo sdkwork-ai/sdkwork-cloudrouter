@@ -3,6 +3,7 @@ import {
   publicDocsMessages,
   publicSdkReferenceMessages,
 } from '@sdkwork/documents-pc-i18n';
+import { sdkworkSubscriptionCheckoutI18nBundle } from '@sdkwork/membership-pc-subscription/catalog';
 import { mergeI18nBundles } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
 import { adminAuthSettingsMessages } from './admin/auth-settings';
@@ -87,4 +88,5 @@ export const resources = mergeI18nBundles([
   publicSdkReferenceMessages,
   sharedCommonMessages,
   sharedNavigationMessages,
+  sdkworkSubscriptionCheckoutI18nBundle,
 ]);

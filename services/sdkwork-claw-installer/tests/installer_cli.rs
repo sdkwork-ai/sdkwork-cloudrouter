@@ -24,7 +24,7 @@ const RETIRED_INSTALLER_TABLES: [&str; 2] =
 static DB_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 #[tokio::test]
-async fn status_and_refresh_are_schema_side_effect_free_and_reset_admin_is_unsupported() {
+async fn status_and_refresh_are_schema_side_effect_free() {
     let database = SqliteDatabase::new("read-only-status");
 
     let status = run_installer(&database, &["status"]);
@@ -69,17 +69,128 @@ async fn status_and_refresh_are_schema_side_effect_free_and_reset_admin_is_unsup
         "refresh-catalog must not implicitly migrate an empty database"
     );
     pool.close().await;
+}
 
-    let reset_admin = run_installer(&database, &["reset-admin"]);
-    assert!(!reset_admin.status.success());
-    let reset_payload = stderr_json(&reset_admin);
-    assert_eq!("error", reset_payload["status"]);
-    assert_eq!("invalid_argument", reset_payload["errorCode"]);
-    let message = reset_payload["message"]
+#[tokio::test]
+async fn reset_admin_requires_password_env_and_rejects_short_password() {
+    let database = SqliteDatabase::new("reset-admin-no-password");
+    let ensure = run_installer(&database, &["ensure"]);
+    assert_command_succeeded(&ensure, "ensure before reset-admin");
+
+    let no_password = run_installer_with_env(
+        &database,
+        &["reset-admin", "--username", "admin"],
+        &[],
+    );
+    assert!(!no_password.status.success());
+    let no_password_payload = stderr_json(&no_password);
+    assert_eq!("error", no_password_payload["status"]);
+    assert_eq!("invalid_argument", no_password_payload["errorCode"]);
+
+    let short_password = run_installer_with_env(
+        &database,
+        &["reset-admin", "--username", "admin"],
+        &[("SDKWORK_CLAW_ADMIN_RESET_PASSWORD", "short")],
+    );
+    assert!(!short_password.status.success());
+    let short_payload = stderr_json(&short_password);
+    assert_eq!("error", short_payload["status"]);
+    assert_eq!("invalid_argument", short_payload["errorCode"]);
+}
+
+#[tokio::test]
+async fn reset_admin_fails_when_bootstrap_admin_missing() {
+    let database = SqliteDatabase::new("reset-admin-missing-admin");
+    let ensure = run_installer(&database, &["ensure"]);
+    assert_command_succeeded(&ensure, "ensure before reset-admin");
+
+    let pool = connect_existing_sqlite(&database).await;
+    ensure_iam_tables_sqlite(&pool).await;
+    pool.close().await;
+
+    let reset = run_installer_with_env(
+        &database,
+        &["reset-admin", "--username", "admin"],
+        &[("SDKWORK_CLAW_ADMIN_RESET_PASSWORD", "Admin-Reset-2026!")],
+    );
+    assert!(!reset.status.success());
+    let payload = stderr_json(&reset);
+    assert_eq!("error", payload["status"]);
+    assert_eq!("invalid_state", payload["errorCode"]);
+    let message = payload["message"]
         .as_str()
-        .expect("reset error message");
-    assert!(message.contains("unsupported installer command: reset-admin"));
-    assert!(message.contains("Use status, install, upgrade, ensure, or refresh-catalog"));
+        .expect("missing admin error message");
+    assert!(
+        message.contains("bootstrap admin user not found"),
+        "expected admin-not-found message, got: {message}"
+    );
+}
+
+#[tokio::test]
+async fn reset_admin_resets_bootstrap_admin_password() {
+    let database = SqliteDatabase::new("reset-admin-success");
+    let ensure = run_installer(&database, &["ensure"]);
+    assert_command_succeeded(&ensure, "ensure before reset-admin");
+
+    let pool = connect_existing_sqlite(&database).await;
+    ensure_iam_tables_sqlite(&pool).await;
+    let now = chrono::Utc::now().to_rfc3339();
+    sqlx::query(
+        "INSERT INTO iam_user (id, tenant_id, username, display_name, email, phone, \
+         email_verified, phone_verified, status, is_deleted, created_at, updated_at) \
+         VALUES ('1', '100001', 'admin', 'Administrator', 'admin@sdkwork.com', NULL, \
+         1, 0, 'active', 0, ?, ?)",
+    )
+    .bind(&now)
+    .bind(&now)
+    .execute(&pool)
+    .await
+    .expect("insert test iam_user");
+    sqlx::query(
+        "INSERT INTO iam_credential (id, tenant_id, user_id, credential_type, credential_hash, \
+         failed_attempts, status, created_at, updated_at) \
+         VALUES ('iamc_bootstrap_1', '100001', '1', 'password', 'old-hash', 3, 'active', ?, ?)",
+    )
+    .bind(&now)
+    .bind(&now)
+    .execute(&pool)
+    .await
+    .expect("insert test iam_credential");
+    pool.close().await;
+
+    let reset = run_installer_with_env(
+        &database,
+        &[
+            "reset-admin",
+            "--username",
+            "admin",
+            "--display-name",
+            "Administrator",
+            "--email",
+            "admin@sdkwork.com",
+        ],
+        &[("SDKWORK_CLAW_ADMIN_RESET_PASSWORD", "Admin-Reset-2026!")],
+    );
+    assert_command_succeeded(&reset, "reset-admin");
+    let payload = stdout_json(&reset);
+    assert_eq!("reset", payload["status"]);
+    assert_eq!("1", payload["userId"]);
+    assert_eq!("100001", payload["tenantId"]);
+    assert_eq!("admin", payload["username"]);
+
+    let pool = connect_existing_sqlite(&database).await;
+    let row: (String, i64, String) = sqlx::query_as(
+        "SELECT credential_hash, failed_attempts, status FROM iam_credential \
+         WHERE tenant_id = '100001' AND user_id = '1' AND credential_type = 'password'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("read reset credential");
+    assert_ne!("old-hash", row.0, "credential hash must be updated");
+    assert!(row.0.starts_with("$argon2"), "hash must be Argon2");
+    assert_eq!(0, row.1, "failed_attempts must be reset to 0");
+    assert_eq!("active", row.2, "status must remain active");
+    pool.close().await;
 }
 
 #[tokio::test]
@@ -446,8 +557,82 @@ async fn connect_existing_sqlite(database: &SqliteDatabase) -> SqlitePool {
         .expect("connect to installer SQLite database")
 }
 
+/// Create the minimal IAM tables (`iam_user`, `iam_credential`,
+/// `iam_organization_membership`) that the claw router installer lifecycle does not
+/// migrate. This simulates the state where the IAM service has already initialized its
+/// schema, which is required before `reset-admin` can run.
+async fn ensure_iam_tables_sqlite(pool: &SqlitePool) {
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS iam_user (\
+         id TEXT PRIMARY KEY,\
+         tenant_id TEXT NOT NULL,\
+         username TEXT NOT NULL,\
+         display_name TEXT NOT NULL,\
+         email TEXT,\
+         phone TEXT,\
+         status TEXT NOT NULL,\
+         created_at TEXT NOT NULL,\
+         updated_at TEXT NOT NULL,\
+         email_verified INTEGER NOT NULL DEFAULT 0,\
+         phone_verified INTEGER NOT NULL DEFAULT 0,\
+         is_deleted INTEGER NOT NULL DEFAULT 0,\
+         UNIQUE (tenant_id, username))",
+    )
+    .execute(pool)
+    .await
+    .expect("create test iam_user table");
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS iam_credential (\
+         id TEXT PRIMARY KEY,\
+         tenant_id TEXT NOT NULL,\
+         user_id TEXT NOT NULL,\
+         credential_type TEXT NOT NULL,\
+         credential_hash TEXT NOT NULL,\
+         status TEXT NOT NULL,\
+         expires_at TEXT,\
+         created_at TEXT NOT NULL,\
+         updated_at TEXT NOT NULL,\
+         failed_attempts INTEGER NOT NULL DEFAULT 0)",
+    )
+    .execute(pool)
+    .await
+    .expect("create test iam_credential table");
+    sqlx::query(
+        "CREATE UNIQUE INDEX IF NOT EXISTS iam_credential_tenant_user_type_unique \
+         ON iam_credential (tenant_id, user_id, credential_type)",
+    )
+    .execute(pool)
+    .await
+    .expect("create test iam_credential unique index");
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS iam_organization_membership (\
+         id TEXT PRIMARY KEY,\
+         tenant_id TEXT NOT NULL,\
+         organization_id TEXT NOT NULL,\
+         user_id TEXT NOT NULL,\
+         membership_kind TEXT NOT NULL,\
+         is_primary INTEGER NOT NULL DEFAULT 0,\
+         status TEXT NOT NULL,\
+         joined_at TEXT NOT NULL,\
+         created_at TEXT NOT NULL,\
+         updated_at TEXT NOT NULL)",
+    )
+    .execute(pool)
+    .await
+    .expect("create test iam_organization_membership table");
+}
+
 fn run_installer(database: &SqliteDatabase, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_clawrouterctl"))
+    run_installer_with_env(database, args, &[])
+}
+
+fn run_installer_with_env(
+    database: &SqliteDatabase,
+    args: &[&str],
+    extra_env: &[(&str, &str)],
+) -> Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_clawrouterctl"));
+    command
         .args(args)
         .env("SDKWORK_CLAW_DATABASE_URL", &database.url)
         .env("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS", "1")
@@ -457,8 +642,14 @@ fn run_installer(database: &SqliteDatabase, args: &[&str]) -> Output {
         .env_remove("SDKWORK_CLAW_DEPLOYMENT_MODE")
         .env_remove("SDKWORK_MODELS_CATALOG_ROOT")
         .env_remove("SDKWORK_CLAW_ROUTER_DATABASE_AUTO_MIGRATE")
-        .output()
-        .expect("run clawrouterctl")
+        .env_remove("SDKWORK_CLAW_ADMIN_RESET_PASSWORD")
+        .env_remove("SDKWORK_IAM_SUPER_ADMIN_PASSWORD")
+        .env_remove("SDKWORK_IAM_BOOTSTRAP_PASSWORD")
+        .env_remove("SDKWORK_IAM_MANAGER_PASSWORD");
+    for (key, value) in extra_env {
+        command.env(key, value);
+    }
+    command.output().expect("run clawrouterctl")
 }
 
 fn assert_command_succeeded(output: &Output, command: &str) {

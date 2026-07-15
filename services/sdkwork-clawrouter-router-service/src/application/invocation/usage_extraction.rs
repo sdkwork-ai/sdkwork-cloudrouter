@@ -1,4 +1,3 @@
-use axum::body::{to_bytes, Body};
 use serde_json::Value;
 
 use super::{
@@ -34,9 +33,7 @@ impl InvocationInterceptor for UsageExtractionInterceptor {
                 BillingQuantitySource::Composite => extract_composite_usage(invocation),
                 BillingQuantitySource::ResponseBody => extract_response_body_usage(invocation),
                 BillingQuantitySource::AdapterUsageLines => extract_adapter_usage_lines(invocation),
-                BillingQuantitySource::StreamingAccumulator => {
-                    extract_streaming_usage_async(invocation).await
-                }
+                BillingQuantitySource::StreamingAccumulator => extract_streaming_usage(invocation),
                 BillingQuantitySource::None
                 | BillingQuantitySource::RequestBody
                 | BillingQuantitySource::ResponseHeaders => Ok(()),
@@ -149,48 +146,152 @@ fn extract_streaming_usage(invocation: &mut Invocation) -> Result<(), Invocation
     extract_composite_usage_from_body(invocation, &body)
 }
 
-const SSE_USAGE_BODY_LIMIT_BYTES: usize = 4 * 1024 * 1024;
+/// Bounded protocol shape used by the stream transport when extracting usage
+/// without retaining a full provider response in memory.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StreamingUsageFormat {
+    ServerSentEvents,
+    Ndjson,
+}
 
-async fn extract_streaming_usage_async(invocation: &mut Invocation) -> Result<(), InvocationError> {
-    // Take the stream body from the dispatch response (via Mutex)
-    let stream_body = invocation
-        .dispatch
-        .response
-        .as_ref()
-        .and_then(|r| r.stream_body.lock().ok())
-        .and_then(|mut guard| guard.take());
+/// Incrementally extracts the latest provider usage event from a live SSE or
+/// NDJSON response. Memory is bounded by one line and one event, never by the
+/// total stream length.
+#[derive(Debug)]
+pub struct StreamingUsageAccumulator {
+    format: StreamingUsageFormat,
+    pending_line: Vec<u8>,
+    event_data: Vec<u8>,
+    latest_usage_body: Option<Value>,
+}
 
-    let Some(body) = stream_body else {
-        // No stream body — try the buffered path
-        return extract_streaming_usage(invocation);
-    };
+const MAX_STREAM_USAGE_LINE_BYTES: usize = 64 * 1024;
+const MAX_STREAM_USAGE_EVENT_BYTES: usize = 256 * 1024;
 
-    // Buffer the stream body to extract SSE usage
-    let bytes = to_bytes(body, SSE_USAGE_BODY_LIMIT_BYTES)
-        .await
-        .map_err(|error| usage_error(format!("failed to read SSE stream body: {error}")))?;
-
-    // Always put the buffered bytes back for the HTTP response BEFORE any parsing errors
-    if let Some(response) = invocation.dispatch.response.as_ref() {
-        if let Ok(mut guard) = response.stream_body.lock() {
-            *guard = Some(Body::from(bytes.clone()));
+impl StreamingUsageAccumulator {
+    pub fn new(format: StreamingUsageFormat) -> Self {
+        Self {
+            format,
+            pending_line: Vec::new(),
+            event_data: Vec::new(),
+            latest_usage_body: None,
         }
     }
 
-    // Parse SSE usage from the buffered text (lossy UTF-8 to avoid losing data)
-    let text = String::from_utf8_lossy(&bytes);
-    let usage_body = openai_sse_usage_body(&text);
+    /// Observes one transport frame. The caller forwards the frame unchanged;
+    /// this method only retains the bounded protocol state required for usage.
+    pub fn observe(&mut self, bytes: &[u8]) -> Result<(), InvocationError> {
+        for byte in bytes {
+            if *byte == b'\n' {
+                let mut line = std::mem::take(&mut self.pending_line);
+                if line.last() == Some(&b'\r') {
+                    line.pop();
+                }
+                self.observe_line(&line)?;
+                continue;
+            }
+            if self.pending_line.len() >= MAX_STREAM_USAGE_LINE_BYTES {
+                return Err(usage_error(
+                    "stream usage line exceeds the configured limit",
+                ));
+            }
+            self.pending_line.push(*byte);
+        }
+        Ok(())
+    }
 
-    // Extract composite usage from parsed body (non-fatal for streaming)
-    if let Some(ref body) = usage_body {
-        if let Err(error) = extract_composite_usage_from_body(invocation, body) {
-            tracing::warn!(
-                error = %error,
-                "failed to extract streaming SSE usage; client response is unaffected"
-            );
+    /// Flushes a final unterminated line and returns the last valid usage event.
+    pub fn finish(&mut self) -> Result<Option<Value>, InvocationError> {
+        if !self.pending_line.is_empty() {
+            let mut line = std::mem::take(&mut self.pending_line);
+            if line.last() == Some(&b'\r') {
+                line.pop();
+            }
+            self.observe_line(&line)?;
+        }
+        if self.format == StreamingUsageFormat::ServerSentEvents {
+            self.finish_sse_event();
+        }
+        Ok(self.latest_usage_body.clone())
+    }
+
+    fn observe_line(&mut self, line: &[u8]) -> Result<(), InvocationError> {
+        match self.format {
+            StreamingUsageFormat::ServerSentEvents => self.observe_sse_line(line),
+            StreamingUsageFormat::Ndjson => {
+                if !line.iter().all(u8::is_ascii_whitespace) {
+                    self.record_usage_candidate(line);
+                }
+                Ok(())
+            }
         }
     }
-    Ok(())
+
+    fn observe_sse_line(&mut self, line: &[u8]) -> Result<(), InvocationError> {
+        if line.iter().all(u8::is_ascii_whitespace) {
+            self.finish_sse_event();
+            return Ok(());
+        }
+        let trimmed = trim_ascii_start(line);
+        let Some(data) = trimmed.strip_prefix(b"data:") else {
+            return Ok(());
+        };
+        let data = trim_ascii_start(data);
+        let required = self
+            .event_data
+            .len()
+            .saturating_add(data.len())
+            .saturating_add(1);
+        if required > MAX_STREAM_USAGE_EVENT_BYTES {
+            return Err(usage_error(
+                "stream usage event exceeds the configured limit",
+            ));
+        }
+        self.event_data.extend_from_slice(data);
+        self.event_data.push(b'\n');
+        Ok(())
+    }
+
+    fn finish_sse_event(&mut self) {
+        if self.event_data.is_empty() {
+            return;
+        }
+        let event = std::mem::take(&mut self.event_data);
+        self.record_usage_candidate(&event);
+    }
+
+    fn record_usage_candidate(&mut self, candidate: &[u8]) {
+        let Ok(text) = std::str::from_utf8(candidate) else {
+            return;
+        };
+        let text = text.trim();
+        if text.is_empty() || text == "[DONE]" {
+            return;
+        }
+        let Ok(value) = serde_json::from_str::<Value>(text) else {
+            return;
+        };
+        if value.get("usage").is_some() || value.get("usageMetadata").is_some() {
+            self.latest_usage_body = Some(value);
+        }
+    }
+}
+
+fn trim_ascii_start(bytes: &[u8]) -> &[u8] {
+    let start = bytes
+        .iter()
+        .position(|byte| !byte.is_ascii_whitespace())
+        .unwrap_or(bytes.len());
+    &bytes[start..]
+}
+
+/// Applies an incrementally observed terminal usage body to a streaming
+/// invocation before pricing and settlement completion run.
+pub fn record_streaming_usage_body(
+    invocation: &mut Invocation,
+    body: &Value,
+) -> Result<(), InvocationError> {
+    extract_composite_usage_from_body(invocation, body)
 }
 
 fn extract_response_body_usage(invocation: &mut Invocation) -> Result<(), InvocationError> {
@@ -439,35 +540,9 @@ fn streaming_usage_body(invocation: &Invocation) -> Result<Option<Value>, Invoca
 }
 
 fn openai_sse_usage_body(text: &str) -> Option<Value> {
-    let mut last_usage_body = None;
-    let mut current_data = Vec::new();
-    for line in text.lines() {
-        if line.trim().is_empty() {
-            if let Some(value) = usage_body_from_event_data(&current_data) {
-                last_usage_body = Some(value);
-            }
-            current_data.clear();
-            continue;
-        }
-        if let Some(data) = line.trim_start().strip_prefix("data:") {
-            current_data.push(data.trim_start().to_owned());
-        }
-    }
-    if let Some(value) = usage_body_from_event_data(&current_data) {
-        last_usage_body = Some(value);
-    }
-    last_usage_body
-}
-
-fn usage_body_from_event_data(lines: &[String]) -> Option<Value> {
-    let data = lines.join("\n");
-    let data = data.trim();
-    if data.is_empty() || data == "[DONE]" {
-        return None;
-    }
-    serde_json::from_str::<Value>(data)
-        .ok()
-        .filter(|value| value.get("usage").is_some() || value.get("usageMetadata").is_some())
+    let mut accumulator = StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+    accumulator.observe(text.as_bytes()).ok()?;
+    accumulator.finish().ok().flatten()
 }
 
 fn cached_tokens(usage: &Value) -> Option<i64> {
@@ -515,4 +590,84 @@ fn number_field_as_string(value: &Value, names: &[&str]) -> Option<String> {
 
 fn usage_error(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Usage, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{StreamingUsageAccumulator, StreamingUsageFormat};
+
+    #[test]
+    fn streaming_usage_accumulator_handles_fragmented_multiline_sse() {
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator
+            .observe(b"event: response.completed\n data: ignored\n\n")
+            .unwrap();
+        accumulator
+            .observe(b"data: {\"usage\": {\"prompt_tokens\": 4,\n")
+            .unwrap();
+        accumulator
+            .observe(b"data: \"completion_tokens\": 3}}\n\n")
+            .unwrap();
+        accumulator.observe(b"data: [DONE]\n\n").unwrap();
+
+        let usage = accumulator.finish().unwrap().unwrap();
+        assert_eq!(
+            Some(4),
+            usage
+                .pointer("/usage/prompt_tokens")
+                .and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(3),
+            usage
+                .pointer("/usage/completion_tokens")
+                .and_then(|v| v.as_i64())
+        );
+    }
+
+    #[test]
+    fn streaming_usage_accumulator_handles_fragmented_ndjson_and_eof_without_newline() {
+        let mut accumulator = StreamingUsageAccumulator::new(StreamingUsageFormat::Ndjson);
+        accumulator.observe(b"{\"id\":\"chunk\"}\n").unwrap();
+        accumulator
+            .observe(b"{\"usage\":{\"input_tokens\":7,\"output_tokens\":2}}")
+            .unwrap();
+
+        let usage = accumulator.finish().unwrap().unwrap();
+        assert_eq!(
+            Some(7),
+            usage
+                .pointer("/usage/input_tokens")
+                .and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(2),
+            usage
+                .pointer("/usage/output_tokens")
+                .and_then(|v| v.as_i64())
+        );
+    }
+
+    #[test]
+    fn streaming_usage_accumulator_rejects_oversized_line() {
+        let mut accumulator = StreamingUsageAccumulator::new(StreamingUsageFormat::Ndjson);
+        let oversized_line = vec![b'x'; 64 * 1024 + 1];
+
+        assert!(accumulator.observe(&oversized_line).is_err());
+    }
+
+    #[test]
+    fn streaming_usage_accumulator_rejects_oversized_sse_event() {
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        let line = format!("data: {}\n", "x".repeat(63 * 1024));
+
+        for _ in 0..5 {
+            if accumulator.observe(line.as_bytes()).is_err() {
+                return;
+            }
+        }
+        panic!("oversized SSE event should be rejected");
+    }
 }

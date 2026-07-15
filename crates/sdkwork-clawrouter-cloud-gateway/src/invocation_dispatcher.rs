@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::num::NonZeroUsize;
 use std::time::Duration;
 
 use axum::body::Body as AxumBody;
@@ -6,16 +7,17 @@ use axum::http::header::{self, HeaderName, HeaderValue};
 use axum::http::request::Builder as RequestBuilder;
 use axum::http::Uri;
 use bytes::Bytes;
-use http_body_util::BodyExt;
-use http_body_util::Full;
+use http_body_util::{BodyExt, Full, LengthLimitError, Limited};
 use hyper::Request as HyperRequest;
 use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use sdkwork_claw_security::{validate_outbound_url, OutboundTargetPolicy};
 use sdkwork_clawrouter_router_service::application::{
     Invocation, InvocationAccount, InvocationBody, InvocationDispatchResponse,
 };
+use sdkwork_clawrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
 use sdkwork_clawrouter_router_service::ports::{
     InvocationDispatchError, InvocationDispatcher, InvocationDispatcherFuture,
 };
@@ -30,12 +32,75 @@ type InvocationHttpClient = Client<InvocationHttpConnector, InvocationHttpBody>;
 #[derive(Clone)]
 pub struct InvocationHttpDispatcher {
     client: InvocationHttpClient,
+    outbound_target_policy: OutboundTargetPolicy,
+    response_max_bytes: NonZeroUsize,
+    response_timeout: Duration,
 }
 
 impl InvocationHttpDispatcher {
     pub fn new() -> Self {
+        Self::with_outbound_target_policy(OutboundTargetPolicy::Production)
+    }
+
+    /// Creates an explicit development-only dispatcher for desktop and test
+    /// fixtures that intentionally target a local HTTP provider.
+    pub fn for_development() -> Self {
+        Self::with_outbound_target_policy(OutboundTargetPolicy::Development)
+    }
+
+    pub fn with_outbound_target_policy(outbound_target_policy: OutboundTargetPolicy) -> Self {
+        Self::with_outbound_target_policy_and_response_max_bytes(
+            outbound_target_policy,
+            default_response_max_bytes(),
+        )
+    }
+
+    /// Creates a production dispatcher with an explicit non-streaming response budget.
+    pub fn with_response_max_bytes(response_max_bytes: NonZeroUsize) -> Self {
+        Self::with_outbound_target_policy_and_response_max_bytes(
+            OutboundTargetPolicy::Production,
+            response_max_bytes,
+        )
+    }
+
+    pub fn with_outbound_target_policy_and_response_max_bytes(
+        outbound_target_policy: OutboundTargetPolicy,
+        response_max_bytes: NonZeroUsize,
+    ) -> Self {
+        Self::with_outbound_target_policy_and_provider_runtime(
+            outbound_target_policy,
+            response_max_bytes,
+            Duration::from_millis(DEFAULT_DISPATCH_TIMEOUT_MS),
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Creates a production dispatcher from the resolved provider relay runtime
+    /// settings assembled by the gateway bootstrap.
+    pub fn with_provider_runtime(
+        response_max_bytes: NonZeroUsize,
+        response_timeout: Duration,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
+        Self::with_outbound_target_policy_and_provider_runtime(
+            OutboundTargetPolicy::Production,
+            response_max_bytes,
+            response_timeout,
+            http_pool_config,
+        )
+    }
+
+    fn with_outbound_target_policy_and_provider_runtime(
+        outbound_target_policy: OutboundTargetPolicy,
+        response_max_bytes: NonZeroUsize,
+        response_timeout: Duration,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
         Self {
-            client: build_invocation_http_client(),
+            client: build_invocation_http_client(outbound_target_policy, http_pool_config),
+            outbound_target_policy,
+            response_max_bytes,
+            response_timeout,
         }
     }
 }
@@ -66,33 +131,23 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                             false,
                         )
                     })?;
-            let uri = provider_request
-                .url
-                .as_deref()
-                .ok_or_else(|| {
-                    dispatch_error(
-                        "provider_url_missing",
-                        format!(
-                            "invocation route {}:{} is missing provider URL",
-                            account.provider_code, account.channel_id
-                        ),
-                        None,
-                        false,
-                    )
-                })?
-                .parse::<Uri>()
-                .map_err(|error| {
-                    dispatch_error(
-                        "invalid_provider_url",
-                        format!("provider URL is invalid: {error}"),
-                        None,
-                        false,
-                    )
-                })?;
+            let provider_url = provider_request.url.as_deref().ok_or_else(|| {
+                dispatch_error(
+                    "provider_url_missing",
+                    format!(
+                        "invocation route {}:{} is missing provider URL",
+                        account.provider_code, account.channel_id
+                    ),
+                    None,
+                    false,
+                )
+            })?;
+            let uri = validated_provider_uri(provider_url, self.outbound_target_policy)?;
 
             let request = build_upstream_request(provider_request, uri)?;
             let response = execute_with_optional_timeout(
                 account,
+                self.response_timeout,
                 "provider HTTP request",
                 self.client.request(request),
             )
@@ -132,35 +187,27 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 ));
             }
 
-            let body = execute_with_optional_timeout(
+            if declared_content_length_exceeds_limit(
+                response.headers().get(header::CONTENT_LENGTH),
+                self.response_max_bytes.get(),
+            ) {
+                return Err(provider_response_too_large_error(
+                    status_code,
+                    self.response_max_bytes.get(),
+                ));
+            }
+
+            let body = collect_bounded_provider_response_body(
                 account,
-                "provider response body",
-                response.into_body().collect(),
+                status_code,
+                response.into_body(),
+                self.response_max_bytes.get(),
+                self.response_timeout,
             )
-            .await?
-            .map_err(|error| {
-                dispatch_error(
-                    "provider_http_body_failed",
-                    format!("failed to read provider response body: {error}"),
-                    Some(status_code),
-                    true,
-                )
-            })?
-            .to_bytes();
+            .await?;
 
             if body.is_empty() {
                 return Ok(InvocationDispatchResponse::empty(status_code));
-            }
-            if body.len() > INVOCATION_UPSTREAM_BODY_LIMIT_BYTES {
-                return Err(dispatch_error(
-                    "provider_response_too_large",
-                    format!(
-                        "provider response body exceeds {} bytes",
-                        INVOCATION_UPSTREAM_BODY_LIMIT_BYTES
-                    ),
-                    Some(status_code),
-                    false,
-                ));
             }
             if response_body_should_parse_json(content_type.as_deref(), &body) {
                 let body = serde_json::from_slice::<serde_json::Value>(&body).map_err(|error| {
@@ -185,21 +232,24 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
     }
 }
 
+fn default_response_max_bytes() -> NonZeroUsize {
+    NonZeroUsize::new(INVOCATION_UPSTREAM_BODY_LIMIT_BYTES)
+        .expect("the hard-coded invocation response limit must be nonzero")
+}
+
 async fn execute_with_optional_timeout<F, T>(
     account: &InvocationAccount,
+    default_timeout: Duration,
     operation: &'static str,
     future: F,
 ) -> Result<T, InvocationDispatchError>
 where
     F: std::future::Future<Output = T>,
 {
-    let Some(timeout) = account
+    let timeout = account
         .timeout_ms
         .and_then(timeout_duration)
-        .or_else(|| timeout_duration(DEFAULT_DISPATCH_TIMEOUT_MS))
-    else {
-        return Ok(future.await);
-    };
+        .unwrap_or(default_timeout);
     tokio::time::timeout(timeout, future).await.map_err(|_| {
         dispatch_error(
             "provider_http_timeout",
@@ -215,17 +265,107 @@ where
     })
 }
 
+async fn collect_bounded_provider_response_body<B>(
+    account: &InvocationAccount,
+    status_code: u16,
+    body: B,
+    limit: usize,
+    default_timeout: Duration,
+) -> Result<Bytes, InvocationDispatchError>
+where
+    B: hyper::body::Body<Data = Bytes> + Send + 'static,
+    B::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+{
+    execute_with_optional_timeout(
+        account,
+        default_timeout,
+        "provider response body",
+        Limited::new(body, limit).collect(),
+    )
+    .await?
+    .map_err(|error| {
+        if error.downcast_ref::<LengthLimitError>().is_some() {
+            provider_response_too_large_error(status_code, limit)
+        } else {
+            dispatch_error(
+                "provider_http_body_failed",
+                format!("failed to read provider response body: {error}"),
+                Some(status_code),
+                true,
+            )
+        }
+    })
+    .map(|collected| collected.to_bytes())
+}
+
+fn declared_content_length_exceeds_limit(
+    content_length: Option<&HeaderValue>,
+    limit: usize,
+) -> bool {
+    content_length
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .is_some_and(|value| value > limit as u64)
+}
+
+fn provider_response_too_large_error(status_code: u16, limit: usize) -> InvocationDispatchError {
+    dispatch_error(
+        "provider_response_too_large",
+        format!("provider response body exceeds {limit} bytes"),
+        Some(status_code),
+        false,
+    )
+}
+
 fn timeout_duration(timeout_ms: u64) -> Option<Duration> {
     (timeout_ms > 0).then(|| Duration::from_millis(timeout_ms))
 }
 
-fn build_invocation_http_client() -> InvocationHttpClient {
-    let connector = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_webpki_roots()
-        .https_or_http()
-        .enable_http1()
-        .build();
-    Client::builder(TokioExecutor::new()).build(connector)
+fn build_invocation_http_client(
+    policy: OutboundTargetPolicy,
+    pool_config: ProviderRelayHttpPoolConfig,
+) -> InvocationHttpClient {
+    let mut http_connector = HttpConnector::new();
+    http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
+    http_connector.enforce_http(false);
+    let connector = match policy {
+        OutboundTargetPolicy::Production => hyper_rustls::HttpsConnectorBuilder::new()
+            .with_webpki_roots()
+            .https_only()
+            .enable_http1()
+            .wrap_connector(http_connector),
+        OutboundTargetPolicy::Development => hyper_rustls::HttpsConnectorBuilder::new()
+            .with_webpki_roots()
+            .https_or_http()
+            .enable_http1()
+            .wrap_connector(http_connector),
+    };
+    Client::builder(TokioExecutor::new())
+        .pool_idle_timeout(Some(pool_config.pool_idle_timeout))
+        .pool_max_idle_per_host(pool_config.pool_max_idle_per_host)
+        .build(connector)
+}
+
+fn validated_provider_uri(
+    value: &str,
+    policy: OutboundTargetPolicy,
+) -> Result<Uri, InvocationDispatchError> {
+    validate_outbound_url(value, policy).map_err(|_| {
+        dispatch_error(
+            "provider_target_not_allowed",
+            "provider URL violates the outbound target policy",
+            None,
+            false,
+        )
+    })?;
+    value.parse::<Uri>().map_err(|_| {
+        dispatch_error(
+            "invalid_provider_url",
+            "provider URL is invalid",
+            None,
+            false,
+        )
+    })
 }
 
 fn build_upstream_request(
@@ -340,4 +480,117 @@ fn dispatch_error(
     retryable: bool,
 ) -> InvocationDispatchError {
     InvocationDispatchError::new(code, message, status_code, retryable)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn account() -> InvocationAccount {
+        InvocationAccount {
+            provider_code: "test-provider".to_owned(),
+            channel_id: 1,
+            region_code: "global".to_owned(),
+            credential_id: None,
+            credential_rotation: None,
+            base_url: None,
+            secret_ref: None,
+            auth_profile: Default::default(),
+            timeout_ms: Some(DEFAULT_DISPATCH_TIMEOUT_MS),
+            retry_policy: None,
+            provider_model: None,
+        }
+    }
+
+    #[test]
+    fn declared_content_length_rejects_only_valid_values_over_the_limit() {
+        assert!(declared_content_length_exceeds_limit(
+            Some(&HeaderValue::from_static("5")),
+            4
+        ));
+        assert!(!declared_content_length_exceeds_limit(
+            Some(&HeaderValue::from_static("4")),
+            4
+        ));
+        assert!(!declared_content_length_exceeds_limit(
+            Some(&HeaderValue::from_static("not-a-length")),
+            4
+        ));
+        assert!(declared_content_length_exceeds_limit(
+            Some(&HeaderValue::from_static(" 5 ")),
+            4
+        ));
+    }
+
+    #[test]
+    fn provider_target_policy_is_fail_closed_in_production() {
+        let error = validated_provider_uri(
+            "http://127.0.0.1:8080/v1/chat/completions",
+            OutboundTargetPolicy::Production,
+        )
+        .expect_err("production provider target must reject local HTTP");
+        assert_eq!("provider_target_not_allowed", error.code);
+        assert!(!error.retryable);
+
+        assert!(validated_provider_uri(
+            "https://api.openai.com/v1/chat/completions",
+            OutboundTargetPolicy::Production,
+        )
+        .is_ok());
+        assert!(validated_provider_uri(
+            "http://127.0.0.1:8080/v1/chat/completions",
+            OutboundTargetPolicy::Development,
+        )
+        .is_ok());
+    }
+
+    #[tokio::test]
+    async fn bounded_provider_collection_rejects_an_oversized_frame() {
+        let error = collect_bounded_provider_response_body(
+            &account(),
+            200,
+            Full::new(Bytes::from_static(b"12345")),
+            4,
+            Duration::from_millis(DEFAULT_DISPATCH_TIMEOUT_MS),
+        )
+        .await
+        .expect_err("a frame over the budget must not be collected");
+
+        assert_eq!("provider_response_too_large", error.code);
+        assert_eq!("provider response body exceeds 4 bytes", error.message);
+        assert_eq!(Some(200), error.status_code);
+        assert!(!error.retryable);
+    }
+
+    #[tokio::test]
+    async fn configured_response_budget_is_used_for_provider_body_collection() {
+        let dispatcher = InvocationHttpDispatcher::with_response_max_bytes(
+            NonZeroUsize::new(4).expect("test response limit must be nonzero"),
+        );
+
+        let error = collect_bounded_provider_response_body(
+            &account(),
+            200,
+            Full::new(Bytes::from_static(b"12345")),
+            dispatcher.response_max_bytes.get(),
+            dispatcher.response_timeout,
+        )
+        .await
+        .expect_err("configured response budget must reject oversized body");
+
+        assert_eq!("provider_response_too_large", error.code);
+        assert_eq!("provider response body exceeds 4 bytes", error.message);
+    }
+
+    #[test]
+    fn configured_provider_runtime_timeout_is_retained_by_the_dispatcher() {
+        let timeout = Duration::from_millis(123);
+        let dispatcher = InvocationHttpDispatcher::with_provider_runtime(
+            NonZeroUsize::new(1024).expect("nonzero response budget"),
+            timeout,
+            ProviderRelayHttpPoolConfig::default(),
+        );
+
+        assert_eq!(timeout, dispatcher.response_timeout);
+    }
 }

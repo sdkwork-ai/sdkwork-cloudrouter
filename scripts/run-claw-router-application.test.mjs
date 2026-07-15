@@ -77,6 +77,39 @@ function test(name, fn) {
   tests.push({ name, fn });
 }
 
+function parseTestNamePattern(argv) {
+  let rawPattern = null;
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
+    if (argument === '--test-name-pattern') {
+      if (rawPattern !== null || index + 1 >= argv.length) {
+        throw new Error('--test-name-pattern requires exactly one pattern value');
+      }
+      rawPattern = argv[index + 1];
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith('--test-name-pattern=')) {
+      if (rawPattern !== null) {
+        throw new Error('--test-name-pattern may be specified only once');
+      }
+      rawPattern = argument.slice('--test-name-pattern='.length);
+      continue;
+    }
+    throw new Error(`unsupported test runner argument: ${argument}`);
+  }
+
+  if (rawPattern === null) {
+    return null;
+  }
+  try {
+    return new RegExp(rawPattern, 'u');
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`invalid --test-name-pattern: ${detail}`);
+  }
+}
+
 function createFixtureDir(name) {
   const directory = path.join(
     workspaceRoot,
@@ -1415,9 +1448,9 @@ test('installation documentation covers release, source, initialization, usage, 
   assert.ok(enRelease.includes('./bin/clawrouterctl ensure'));
   assert.ok(zhSource.includes('pnpm release:env:write -- --check'));
   assert.ok(enSource.includes('pnpm release:env:write -- --check'));
-  assert.ok(zhSource.includes('目标机器后，不要求安�?`pnpm`'));
+  assert.ok(zhSource.includes('\u76ee\u6807\u673a\u5668\u540e\uff0c\u4e0d\u8981\u6c42\u5b89\u88c5 `pnpm`'));
   assert.ok(enSource.includes('the host does not need `pnpm`'));
-  assert.ok(zhUsage.includes('注册是否需要验证码�?IAM 运行时策略控�?));
+  assert.ok(zhUsage.includes('\u6ce8\u518c\u662f\u5426\u9700\u8981\u9a8c\u8bc1\u7801\u7531 IAM \u8fd0\u884c\u65f6\u7b56\u7565\u63a7\u5236\u3002'));
   assert.ok(enUsage.includes('Whether registration requires verification code is controlled by IAM runtime policy'));
   assert.ok(zhUsage.includes('SDK 包版本独立于 Claw Router release 版本'));
   assert.ok(enUsage.includes('SDK package versions are independent from Claw Router release versions'));
@@ -2345,11 +2378,12 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.equal(installerStep.env.SDKWORK_CLAW_DATABASE_URL, settings.databaseUrl);
     assert.equal(installerStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '10');
     assert.equal(installerStep.env.SDKWORK_CLAW_STARTUP_INSTALL_MODE, 'ensure');
+    assert.equal(installerStep.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1000');
     assert.equal(installerStep.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT, 'development');
     assert.equal(installerStep.env.SDKWORK_CLAW_INSTALL_SEED_PROFILE, 'commercial');
     assert.equal(
       installerStep.env.SDKWORK_MODELS_CATALOG_ROOT,
-      path.join(workspaceRoot, 'data', 'sdkwork-models'),
+      path.join(workspaceRoot, '..', 'sdkwork-models'),
     );
     assert.deepEqual(refreshStep.args, [
       'run',
@@ -2358,7 +2392,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       '--',
       'refresh-catalog',
       '--catalog-root',
-      path.join(workspaceRoot, 'data', 'sdkwork-models'),
+      path.join(workspaceRoot, '..', 'sdkwork-models'),
       '--force',
     ]);
     assert.equal(refreshStep.blocking, true);
@@ -2367,9 +2401,10 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.equal(refreshStep.env.SDKWORK_CLAW_DATABASE_URL, settings.databaseUrl);
     assert.equal(refreshStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '10');
     assert.equal(refreshStep.env.SDKWORK_CLAW_STARTUP_INSTALL_MODE, 'ensure');
+    assert.equal(refreshStep.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1001');
     assert.equal(
       refreshStep.env.SDKWORK_MODELS_CATALOG_ROOT,
-      path.join(workspaceRoot, 'data', 'sdkwork-models'),
+      path.join(workspaceRoot, '..', 'sdkwork-models'),
     );
     assert.equal(plan.steps.some((step) => step.name === 'sdkwork-api-cloud-gateway'), true);
     assert.deepEqual(portalStep.args, [
@@ -2411,6 +2446,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.equal(serverStep.env.SDKWORK_API_CLOUD_GATEWAY_MODE, 'embedded');
     assert.equal(serverStep.env.SDKWORK_CLAW_SERVER_BIND, '0.0.0.0:3900');
     assert.equal(serverStep.env.SDKWORK_CLAW_STARTUP_INSTALL_MODE, 'skip');
+    assert.equal(serverStep.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1005');
     assert.equal(serverStep.env.PORTAL_PUBLIC_SDK_BASE_URL, 'http://127.0.0.1:3900');
     assert.equal(serverStep.env.SDKWORK_CLAW_EDGE_GATEWAY_BASE_URL, 'http://127.0.0.1:3900');
     assert.equal(serverStep.env.SDKWORK_CLAW_EDGE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3900');
@@ -2425,7 +2461,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.equal(serverStep.env.SDKWORK_CLAW_TOOL_API_SDK_GENERATOR_API_KEY, '');
     assert.equal(
       serverStep.env.SDKWORK_MODELS_CATALOG_ROOT,
-      path.join(workspaceRoot, 'data', 'sdkwork-models'),
+      path.join(workspaceRoot, '..', 'sdkwork-models'),
     );
     assert.deepEqual(
       module.workspaceBindTargets(settings).map((target) => `${target.name} ${target.bind}`),
@@ -2436,6 +2472,41 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       ],
     );
   });
+});
+
+test('claw router development services receive explicit Snowflake node ids', async () => {
+  const previousNodeId = process.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID;
+  const module = await import(
+    pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
+  );
+
+  try {
+    delete process.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID;
+    const settings = module.parseWorkspaceArgs([
+      '--database-url',
+      'sqlite:target/test-snowflake-node-id.sqlite',
+    ], { skipDevEnvFile: true });
+    const plan = module.buildWorkspaceCommandPlan(settings, { workspaceRoot, platform: 'linux' });
+
+    assert.equal(plan.steps.find((step) => step.name === 'installer').env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1000');
+    assert.equal(plan.steps.find((step) => step.name === 'model-catalog-refresh').env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1001');
+    assert.equal(plan.steps.find((step) => step.name === 'server').env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1005');
+
+    process.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID = '17';
+    const overriddenPlan = module.buildWorkspaceCommandPlan(settings, { workspaceRoot, platform: 'linux' });
+    for (const stepName of ['installer', 'model-catalog-refresh', 'server']) {
+      assert.equal(
+        overriddenPlan.steps.find((step) => step.name === stepName).env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID,
+        '17',
+      );
+    }
+  } finally {
+    if (previousNodeId === undefined) {
+      delete process.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID;
+    } else {
+      process.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID = previousNodeId;
+    }
+  }
 });
 
 test('claw router workspace launch plan honors SDKWORK_CLAW_DATABASE_URL from dev env', async () => {
@@ -3269,7 +3340,7 @@ test('workspace dry-run output uses server and portal bind names without obsolet
   );
   assert.ok(textOutput.includes('SDKWORK_CLAW_SERVER_BIND=0.0.0.0:12900'));
   assert.ok(textOutput.includes('SDKWORK_CLAW_PORTAL_BIND=0.0.0.0:13900'));
-  assert.ok(textOutput.includes(`SDKWORK_MODELS_CATALOG_ROOT=${path.join(workspaceRoot, 'data', 'sdkwork-models')}`));
+  assert.ok(textOutput.includes(`SDKWORK_MODELS_CATALOG_ROOT=${path.join(workspaceRoot, '..', 'sdkwork-models')}`));
   assert.ok(textOutput.includes('PORTAL_PUBLIC_API_BASE_URL=/v1'));
   assert.ok(textOutput.includes('PORTAL_PUBLIC_OPEN_API_BASE_URL=/v1'));
   assert.ok(textOutput.includes('PORTAL_PUBLIC_BACKEND_API_BASE_URL=/backend/v3/api'));
@@ -9090,7 +9161,7 @@ test('verification plan includes portal playground chat runtime tests before bro
   assert.ok(playgroundChatRuntimeIndex < rustTestsIndex, 'playground chat runtime tests must run before broad Rust tests');
   assert.ok(playgroundChatRuntimeIndex < pythonTestsIndex, 'playground chat runtime tests must run before broad Python tests');
   assert.ok(commandLines.includes(
-    `${module.pnpmCommand()} --dir apps/sdkwork-clawrouter-pc exec tsx playground-chat-runtime.test.ts`,
+    `${module.pnpmCommand()} --dir apps/sdkwork-clawrouter-pc exec vitest run playground-chat-runtime.test.ts --config vite.config.ts --pool vmThreads`,
   ));
 });
 
@@ -9600,8 +9671,17 @@ function assertMarkdownLocalLinksExist(relativePath) {
   }
 }
 
+const testNamePattern = parseTestNamePattern(process.argv.slice(2));
+const selectedTests = testNamePattern === null
+  ? tests
+  : tests.filter(({ name }) => testNamePattern.test(name));
+
+if (testNamePattern !== null && selectedTests.length === 0) {
+  throw new Error(`no tests matched --test-name-pattern ${testNamePattern.source}`);
+}
+
 let failed = 0;
-for (const { name, fn } of tests) {
+for (const { name, fn } of selectedTests) {
   try {
     await fn();
     console.log(`ok - ${name}`);

@@ -1,14 +1,22 @@
+use argon2::password_hash::{rand_core::OsRng, PasswordHasher, SaltString};
+use argon2::Argon2;
 use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine, DeploymentMode, RuntimeConfigProfile};
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
     CatalogRefreshOptions, CatalogRefreshReport, DatabaseInstallError, DatabaseInstaller,
     InstallationReport, InstallationStatus,
 };
+use sdkwork_iam_bootstrap::{
+    DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_IAM_TENANT_ID,
+};
 use sdkwork_models_database_host::connect_models_database;
 use serde::Serialize;
+use sqlx::{PgPool, SqlitePool};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::process::ExitCode;
+
+const SDKWORK_CLAW_ADMIN_RESET_PASSWORD_ENV: &str = "SDKWORK_CLAW_ADMIN_RESET_PASSWORD";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -48,6 +56,9 @@ async fn run_sqlite(config: DatabaseConfig, command: InstallerCommand) -> anyhow
         .as_sqlite()
         .cloned()
         .ok_or_else(|| InstallerCliError::DatabaseConnection("expected SQLite pool".to_owned()))?;
+    if let InstallerCommand::ResetAdmin(options) = &command {
+        return run_reset_admin_sqlite(&pool, options).await;
+    }
     run_command(
         DatabaseInstaller::for_sqlite(pool).with_env_options()?,
         command,
@@ -61,6 +72,9 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
     let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
         InstallerCliError::DatabaseConnection("expected PostgreSQL pool".to_owned())
     })?;
+    if let InstallerCommand::ResetAdmin(options) = &command {
+        return run_reset_admin_postgres(&pool, options).await;
+    }
     run_command(
         DatabaseInstaller::for_postgres(pool).with_env_options()?,
         command,
@@ -173,6 +187,12 @@ async fn run_command(
                 .await?;
             print_json(&CatalogRefreshOutput::from_reports(report, status_report))?;
         }
+        InstallerCommand::ResetAdmin(_) => {
+            return Err(InstallerCliError::InvalidState(
+                "reset-admin is handled before DatabaseInstaller dispatch".to_owned(),
+            )
+            .into());
+        }
     }
     Ok(())
 }
@@ -184,6 +204,14 @@ enum InstallerCommand {
     Upgrade,
     Ensure,
     RefreshCatalog(CatalogRefreshOptions),
+    ResetAdmin(ResetAdminOptions),
+}
+
+#[derive(Debug, Default)]
+struct ResetAdminOptions {
+    username: String,
+    display_name: String,
+    email: String,
 }
 
 fn parse_cli_command<I>(args: I) -> anyhow::Result<InstallerCommand>
@@ -210,9 +238,10 @@ where
             InstallerCommand::Ensure
         }
         "refresh-catalog" => InstallerCommand::RefreshCatalog(parse_refresh_options(args)?),
+        "reset-admin" => InstallerCommand::ResetAdmin(parse_reset_admin_options(args)?),
         other => {
             return Err(InstallerCliError::InvalidArgument(format!(
-                "unsupported installer command: {other}. Use status, install, upgrade, ensure, or refresh-catalog"
+                "unsupported installer command: {other}. Use status, install, upgrade, ensure, refresh-catalog, or reset-admin"
             ))
             .into());
         }
@@ -286,6 +315,48 @@ where
         .into());
     }
     Ok(options)
+}
+
+fn parse_reset_admin_options<I>(args: I) -> anyhow::Result<ResetAdminOptions>
+where
+    I: IntoIterator<Item = String>,
+{
+    let mut options = ResetAdminOptions::default();
+    let mut args = args.into_iter().peekable();
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--username" => {
+                options.username =
+                    ResetAdminOptions::normalize_username(next_arg(&mut args, "--username")?)?;
+            }
+            "--display-name" => {
+                options.display_name = ResetAdminOptions::normalize_display_name(next_arg(
+                    &mut args,
+                    "--display-name",
+                )?)?;
+            }
+            "--email" => {
+                options.email =
+                    ResetAdminOptions::normalize_email(next_arg(&mut args, "--email")?)?;
+            }
+            other => {
+                return Err(InstallerCliError::InvalidArgument(format!(
+                    "unsupported reset-admin option: {other}"
+                ))
+                .into());
+            }
+        }
+    }
+    Ok(options)
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ResetAdminOutput {
+    status: &'static str,
+    user_id: String,
+    tenant_id: &'static str,
+    username: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -368,6 +439,7 @@ fn installer_error_code(error: &(dyn std::error::Error + 'static), message: &str
         return match cli_error {
             InstallerCliError::MissingDatabaseUrl => "missing_database_url",
             InstallerCliError::InvalidArgument(_) => "invalid_argument",
+            InstallerCliError::InvalidState(_) => "invalid_state",
             InstallerCliError::DatabaseConnection(_) => "database_error",
         };
     }
@@ -409,6 +481,7 @@ fn installer_error_code(error: &(dyn std::error::Error + 'static), message: &str
 enum InstallerCliError {
     MissingDatabaseUrl,
     InvalidArgument(String),
+    InvalidState(String),
     DatabaseConnection(String),
 }
 
@@ -421,6 +494,7 @@ impl Display for InstallerCliError {
                 DatabaseConfig::startup_help_text(runtime_config_profile_from_deployment_mode())
             ),
             Self::InvalidArgument(message) => write!(formatter, "{message}"),
+            Self::InvalidState(message) => write!(formatter, "{message}"),
             Self::DatabaseConnection(message) => write!(formatter, "{message}"),
         }
     }
@@ -439,6 +513,41 @@ fn runtime_config_profile_from_deployment_mode() -> RuntimeConfigProfile {
 impl InstallerCommand {
     fn requires_schema_migration(&self) -> bool {
         matches!(self, Self::Install | Self::Upgrade | Self::Ensure)
+    }
+}
+
+impl ResetAdminOptions {
+    fn normalize_username(value: String) -> anyhow::Result<String> {
+        let trimmed = value.trim().to_owned();
+        if trimmed.is_empty() {
+            return Err(InstallerCliError::InvalidArgument(
+                "--username must not be blank".to_owned(),
+            )
+            .into());
+        }
+        Ok(trimmed)
+    }
+
+    fn normalize_display_name(value: String) -> anyhow::Result<String> {
+        let trimmed = value.trim().to_owned();
+        if trimmed.is_empty() {
+            return Err(InstallerCliError::InvalidArgument(
+                "--display-name must not be blank".to_owned(),
+            )
+            .into());
+        }
+        Ok(trimmed)
+    }
+
+    fn normalize_email(value: String) -> anyhow::Result<String> {
+        let trimmed = value.trim().to_owned();
+        if trimmed.is_empty() {
+            return Err(InstallerCliError::InvalidArgument(
+                "--email must not be blank".to_owned(),
+            )
+            .into());
+        }
+        Ok(trimmed)
     }
 }
 
@@ -477,6 +586,279 @@ impl CatalogRefreshOutput {
 fn print_json<T: Serialize>(value: &T) -> anyhow::Result<()> {
     println!("{}", serde_json::to_string(value)?);
     Ok(())
+}
+
+fn hash_admin_password(password: &str) -> anyhow::Result<String> {
+    Argon2::default()
+        .hash_password(password.as_bytes(), &SaltString::generate(&mut OsRng))
+        .map(|hash| hash.to_string())
+        .map_err(|error| {
+            InstallerCliError::InvalidArgument(format!("failed to hash admin password: {error}"))
+                .into()
+        })
+}
+
+fn read_reset_admin_password() -> anyhow::Result<String> {
+    let password = std::env::var(SDKWORK_CLAW_ADMIN_RESET_PASSWORD_ENV)
+        .ok()
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| {
+            InstallerCliError::InvalidArgument(format!(
+                "{SDKWORK_CLAW_ADMIN_RESET_PASSWORD_ENV} is required for reset-admin"
+            ))
+        })?;
+    if password.len() < 8 {
+        return Err(InstallerCliError::InvalidArgument(
+            "admin reset password must be at least 8 characters".to_owned(),
+        )
+        .into());
+    }
+    Ok(password)
+}
+
+fn bootstrap_credential_id(user_id: &str) -> String {
+    format!("iamc_bootstrap_{user_id}")
+}
+
+/// Resolve the bootstrap admin user's actual id. Tries the canonical id first,
+/// then falls back to looking up by username within the default tenant, then
+/// falls back to the tenant's bootstrap owner from `iam_organization_membership`.
+/// This handles environments where IAM bootstrap assigned a non-canonical id
+/// (e.g. a snowflake id) or a different username than `admin`.
+async fn resolve_bootstrap_admin_user_id_sqlite(pool: &SqlitePool) -> anyhow::Result<String> {
+    let canonical: Option<(String,)> = sqlx::query_as(
+        "SELECT id FROM iam_user WHERE id = ? AND tenant_id = ? AND is_deleted = 0",
+    )
+    .bind(DEFAULT_BOOTSTRAP_ADMIN_USER_ID)
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .fetch_optional(pool)
+    .await?;
+    if let Some((id,)) = canonical {
+        return Ok(id);
+    }
+    let by_username: Option<(String,)> = sqlx::query_as(
+        "SELECT id FROM iam_user WHERE tenant_id = ? AND username = ? AND is_deleted = 0",
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_BOOTSTRAP_ADMIN_USERNAME)
+    .fetch_optional(pool)
+    .await?;
+    if let Some((id,)) = by_username {
+        return Ok(id);
+    }
+    resolve_bootstrap_admin_user_id_from_owner_sqlite(pool).await
+}
+
+async fn resolve_bootstrap_admin_user_id_from_owner_sqlite(
+    pool: &SqlitePool,
+) -> anyhow::Result<String> {
+    let owner: Option<(String,)> = sqlx::query_as(
+        "SELECT user_id FROM iam_organization_membership \
+         WHERE tenant_id = ? AND membership_kind = 'owner' AND status = 'active' \
+         LIMIT 1",
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .fetch_optional(pool)
+    .await?;
+    if let Some((user_id,)) = owner {
+        let user: Option<(String,)> = sqlx::query_as(
+            "SELECT id FROM iam_user WHERE id = ? AND tenant_id = ? AND is_deleted = 0",
+        )
+        .bind(&user_id)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .fetch_optional(pool)
+        .await?;
+        if let Some((id,)) = user {
+            return Ok(id);
+        }
+    }
+    Err(InstallerCliError::InvalidState(format!(
+        "bootstrap admin user not found (username={DEFAULT_BOOTSTRAP_ADMIN_USERNAME}, \
+         tenant_id={DEFAULT_IAM_TENANT_ID}). Run `pnpm dev` or `pnpm start` first to \
+         initialize IAM bootstrap, then retry reset-admin."
+    ))
+    .into())
+}
+
+async fn resolve_bootstrap_admin_user_id_postgres(pool: &PgPool) -> anyhow::Result<String> {
+    let canonical: Option<(String,)> = sqlx::query_as(
+        "SELECT id::text FROM iam_user WHERE id = $1 AND tenant_id = $2 AND is_deleted = 0",
+    )
+    .bind(DEFAULT_BOOTSTRAP_ADMIN_USER_ID)
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .fetch_optional(pool)
+    .await?;
+    if let Some((id,)) = canonical {
+        return Ok(id);
+    }
+    let by_username: Option<(String,)> = sqlx::query_as(
+        "SELECT id::text FROM iam_user WHERE tenant_id = $1 AND username = $2 AND is_deleted = 0",
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_BOOTSTRAP_ADMIN_USERNAME)
+    .fetch_optional(pool)
+    .await?;
+    if let Some((id,)) = by_username {
+        return Ok(id);
+    }
+    resolve_bootstrap_admin_user_id_from_owner_postgres(pool).await
+}
+
+async fn resolve_bootstrap_admin_user_id_from_owner_postgres(
+    pool: &PgPool,
+) -> anyhow::Result<String> {
+    let owner: Option<(String,)> = sqlx::query_as(
+        "SELECT user_id::text FROM iam_organization_membership \
+         WHERE tenant_id = $1 AND membership_kind = 'owner' AND status = 'active' \
+         LIMIT 1",
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .fetch_optional(pool)
+    .await?;
+    if let Some((user_id,)) = owner {
+        let user: Option<(String,)> = sqlx::query_as(
+            "SELECT id::text FROM iam_user WHERE id = $1 AND tenant_id = $2 AND is_deleted = 0",
+        )
+        .bind(&user_id)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .fetch_optional(pool)
+        .await?;
+        if let Some((id,)) = user {
+            return Ok(id);
+        }
+    }
+    Err(InstallerCliError::InvalidState(format!(
+        "bootstrap admin user not found (username={DEFAULT_BOOTSTRAP_ADMIN_USERNAME}, \
+         tenant_id={DEFAULT_IAM_TENANT_ID}). Run `pnpm dev` or `pnpm start` first to \
+         initialize IAM bootstrap, then retry reset-admin."
+    ))
+    .into())
+}
+
+async fn run_reset_admin_sqlite(
+    pool: &SqlitePool,
+    options: &ResetAdminOptions,
+) -> anyhow::Result<()> {
+    let password = read_reset_admin_password()?;
+    let admin_user_id = resolve_bootstrap_admin_user_id_sqlite(pool).await?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let password_hash = hash_admin_password(&password)?;
+
+    let affected = sqlx::query(
+        "UPDATE iam_credential SET \
+         credential_hash = ?, failed_attempts = 0, status = 'active', updated_at = ? \
+         WHERE tenant_id = ? AND user_id = ? AND credential_type = 'password'",
+    )
+    .bind(&password_hash)
+    .bind(&now)
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(&admin_user_id)
+    .execute(pool)
+    .await?
+    .rows_affected();
+    if affected == 0 {
+        sqlx::query(
+            "INSERT INTO iam_credential \
+             (id, tenant_id, user_id, credential_type, credential_hash, \
+             failed_attempts, status, created_at, updated_at) \
+             VALUES (?, ?, ?, 'password', ?, 0, 'active', ?, ?)",
+        )
+        .bind(bootstrap_credential_id(&admin_user_id))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(&admin_user_id)
+        .bind(&password_hash)
+        .bind(&now)
+        .bind(&now)
+        .execute(pool)
+        .await?;
+    }
+
+    let username = resolve_admin_username_sqlite(pool, &options.username, &admin_user_id).await?;
+    print_json(&ResetAdminOutput {
+        status: "reset",
+        user_id: admin_user_id,
+        tenant_id: DEFAULT_IAM_TENANT_ID,
+        username,
+    })
+}
+
+async fn run_reset_admin_postgres(
+    pool: &PgPool,
+    options: &ResetAdminOptions,
+) -> anyhow::Result<()> {
+    let password = read_reset_admin_password()?;
+    let admin_user_id = resolve_bootstrap_admin_user_id_postgres(pool).await?;
+
+    let now = chrono::Utc::now();
+    let password_hash = hash_admin_password(&password)?;
+
+    let affected = sqlx::query(
+        "UPDATE iam_credential SET \
+         credential_hash = $1, failed_attempts = 0, status = 'active', updated_at = $2 \
+         WHERE tenant_id = $3 AND user_id = $4 AND credential_type = 'password'",
+    )
+    .bind(&password_hash)
+    .bind(&now)
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(&admin_user_id)
+    .execute(pool)
+    .await?
+    .rows_affected();
+    if affected == 0 {
+        sqlx::query(
+            "INSERT INTO iam_credential \
+             (id, tenant_id, user_id, credential_type, credential_hash, \
+             failed_attempts, status, created_at, updated_at) \
+             VALUES ($1, $2, $3, 'password', $4, 0, 'active', $5, $5)",
+        )
+        .bind(bootstrap_credential_id(&admin_user_id))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(&admin_user_id)
+        .bind(&password_hash)
+        .bind(&now)
+        .execute(pool)
+        .await?;
+    }
+
+    let username = resolve_admin_username_postgres(pool, &options.username, &admin_user_id).await?;
+    print_json(&ResetAdminOutput {
+        status: "reset",
+        user_id: admin_user_id,
+        tenant_id: DEFAULT_IAM_TENANT_ID,
+        username,
+    })
+}
+
+async fn resolve_admin_username_sqlite(
+    pool: &SqlitePool,
+    fallback: &str,
+    user_id: &str,
+) -> anyhow::Result<String> {
+    let row: Option<(String,)> = sqlx::query_as(
+        "SELECT username FROM iam_user WHERE id = ? AND tenant_id = ? AND is_deleted = 0",
+    )
+    .bind(user_id)
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.map(|(username,)| username).unwrap_or_else(|| fallback.to_owned()))
+}
+
+async fn resolve_admin_username_postgres(
+    pool: &PgPool,
+    fallback: &str,
+    user_id: &str,
+) -> anyhow::Result<String> {
+    let row: Option<(String,)> = sqlx::query_as(
+        "SELECT username FROM iam_user WHERE id = $1 AND tenant_id = $2 AND is_deleted = 0",
+    )
+    .bind(user_id)
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.map(|(username,)| username).unwrap_or_else(|| fallback.to_owned()))
 }
 
 fn next_arg<I>(args: &mut std::iter::Peekable<I>, name: &str) -> anyhow::Result<String>

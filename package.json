@@ -46,7 +46,7 @@
     "release:native:package": "node scripts/build-claw-router-native-installer.mjs",
     "release:native:check": "node scripts/build-claw-router-native-installer.mjs --check --dry-run --all",
     "admin:reset:dev": "node scripts/reset-admin-account.mjs --mode dev",
-    "admin:reset:dev:sqlite": "node scripts/reset-admin-account.mjs --mode dev",
+    "admin:reset:dev:sqlite": "node scripts/reset-admin-account.mjs --mode dev --database-url \"sqlite://target/dev/clawrouter.sqlite\"",
     "admin:reset:dev:postgres": "node scripts/reset-admin-account.mjs --mode dev --dev-env-file .env.postgres",
     "admin:reset:release": "node scripts/reset-admin-account.mjs --mode release",
     "db": "node scripts/manage-claw-router-database.mjs",

@@ -1,6 +1,8 @@
-import { SdkworkSubscriptionCatalogPage } from "@sdkwork/membership-pc-subscription/catalog";
+import {
+  SdkworkSubscriptionCatalogPage,
+  sdkworkSubscriptionCatalogHostComponents,
+} from "@sdkwork/membership-pc-subscription/catalog";
 
-import { ClawRouterTokenPlanCheckoutModal } from "./ClawRouterTokenPlanCheckoutModal.tsx";
 import {
   ClawRouterTokenPlanPointsDetailsModal,
   ClawRouterTokenPlanPointsPurchaseModal,
@@ -17,7 +19,7 @@ export function ClawRouterTokenPlanPage() {
     <div className="mx-auto w-full max-w-7xl">
       <SdkworkSubscriptionCatalogPage
         components={{
-          checkoutModal: ClawRouterTokenPlanCheckoutModal,
+          ...sdkworkSubscriptionCatalogHostComponents,
           pointsDetailsModal: ClawRouterTokenPlanPointsDetailsModal,
           pointsPurchaseModal: ClawRouterTokenPlanPointsPurchaseModal,
           redeemModal: ClawRouterTokenPlanRedeemModal,

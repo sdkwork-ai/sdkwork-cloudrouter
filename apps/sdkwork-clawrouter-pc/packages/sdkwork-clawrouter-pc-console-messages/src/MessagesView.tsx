@@ -63,7 +63,7 @@ export function MessagesView() {
 
   if (loading) {
     return (
-      <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col bg-slate-50 p-[5px] dark:bg-[#121212]">
+      <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col bg-slate-50 px-[5px] pb-[5px] dark:bg-[#121212]">
         <BusinessStatePanel kind="loading" title={t('console.messages.states.loading', 'Loading messages...')} />
       </div>
     );
@@ -71,14 +71,14 @@ export function MessagesView() {
 
   if (loadError) {
     return (
-      <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col bg-slate-50 p-[5px] dark:bg-[#121212]">
+      <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col bg-slate-50 px-[5px] pb-[5px] dark:bg-[#121212]">
         <BusinessStatePanel kind="error" title={loadError} onRetry={() => void loadMessages()} retryLabel={t('commons.actions.retry', 'Retry')} />
       </div>
     );
   }
 
   return (
-    <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col animate-in fade-in duration-500 bg-slate-50 p-[5px] dark:bg-[#121212]">
+    <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col animate-in fade-in duration-500 bg-slate-50 px-[5px] pb-[5px] dark:bg-[#121212]">
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row gap-[5px]">
         <aside className="md:w-80 shrink-0 overflow-y-auto custom-scrollbar rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1e1e1e]">
           {messages.length === 0 ? (
@@ -104,11 +104,11 @@ export function MessagesView() {
         <section className="flex-1 min-h-0 overflow-hidden bg-white dark:bg-[#1e1e1e] flex flex-col rounded-xl border border-slate-200 dark:border-white/10">
           {selectedMessage ? (
             <div className={`flex-1 min-h-0 flex flex-col overflow-hidden`}>
-              <div className="border-b border-slate-200 px-6 py-4 dark:border-white/10">
+              <div className="border-b border-slate-200 px-5 py-3 dark:border-white/10">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{selectedMessage.title}</h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{selectedMessage.time}</p>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 text-sm leading-6 text-slate-700 dark:text-slate-200">
+              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 text-sm leading-6 text-slate-700 dark:text-slate-200">
                 {selectedMessage.content}
               </div>
             </div>

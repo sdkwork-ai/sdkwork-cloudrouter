@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::time::Duration;
 
 use axum::body::{to_bytes, Body};
 use axum::extract::ConnectInfo;
@@ -6,10 +7,11 @@ use axum::http::{header, HeaderMap, HeaderValue, Request, StatusCode, Uri};
 use axum::response::Response;
 use sdkwork_claw_security::REDACTED;
 use sdkwork_clawrouter_router_service::application::{
-    BillingMode, DispatchMode, GatewayInvocationPolicyViolation, Invocation, InvocationBody,
-    InvocationClassificationRequest, InvocationDispatchResponse, InvocationError,
-    InvocationErrorKind, InvocationRequest, InvocationResourceClassifier, InvocationSubject,
-    InvocationSurface, OpenAiResourceClassifier, ProviderNativeResourceClassifier, ResourceType,
+    BillingMode, DeferredStreamInvocation, DeferredStreamResponse, DispatchMode,
+    GatewayInvocationPolicyViolation, Invocation, InvocationBody, InvocationClassificationRequest,
+    InvocationDispatchResponse, InvocationError, InvocationErrorKind, InvocationPipelineExecution,
+    InvocationRequest, InvocationResourceClassifier, InvocationSubject, InvocationSurface,
+    OpenAiResourceClassifier, ProviderNativeResourceClassifier, ResourceType,
 };
 use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use serde_json::{json, Value};
@@ -18,6 +20,7 @@ use crate::gateway_api_key_auth::{
     authenticate_gateway_api_key, sanitize_authenticated_gateway_uri,
 };
 use crate::invocation_router::InvocationRouterState;
+use crate::invocation_stream::{wrap_invocation_stream, InvocationStreamTimeouts};
 use crate::request_identity::generate_server_request_id;
 
 pub(crate) async fn handle_invocation<C>(
@@ -86,17 +89,59 @@ where
     invocation.routing = routing;
     apply_gateway_dispatch_defaults(&mut invocation, state.catalog.as_ref());
 
-    if let Err(error) = state.pipeline.execute(&mut invocation).await {
-        if invocation.telemetry.normalized_response.is_none() {
-            return response_from_invocation_error(&error);
+    match state.pipeline.execute_for_response(invocation).await {
+        Ok(InvocationPipelineExecution::Completed(invocation)) => invocation
+            .telemetry
+            .normalized_response
+            .map(normalized_response_to_http)
+            .unwrap_or_else(empty_response),
+        Ok(InvocationPipelineExecution::DeferredStream(deferred)) => {
+            deferred_stream_response_to_http(deferred, state.stream_response_timeout)
+        }
+        Err(failure) => {
+            if failure.invocation.telemetry.normalized_response.is_none() {
+                return response_from_invocation_error(&failure.error);
+            }
+            failure
+                .invocation
+                .telemetry
+                .normalized_response
+                .map(normalized_response_to_http)
+                .unwrap_or_else(empty_response)
         }
     }
+}
 
-    invocation
-        .telemetry
-        .normalized_response
-        .map(normalized_response_to_http)
-        .unwrap_or_else(empty_response)
+fn deferred_stream_response_to_http(
+    mut deferred: DeferredStreamInvocation,
+    stream_response_timeout: Duration,
+) -> Response {
+    let DeferredStreamResponse {
+        status_code,
+        content_type,
+        body,
+    } = match deferred.take_response() {
+        Ok(response) => response,
+        Err(error) => return response_from_invocation_error(&error),
+    };
+    let timeout = InvocationStreamTimeouts::from_account_timeout(
+        deferred.stream_timeout(),
+        stream_response_timeout,
+    );
+    let body = wrap_invocation_stream(body, content_type.as_deref(), deferred, timeout);
+    let status = StatusCode::from_u16(status_code).unwrap_or(StatusCode::BAD_GATEWAY);
+    let mut response = Response::new(body);
+    *response.status_mut() = status;
+    if let Some(content_type) = content_type
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .and_then(|value| HeaderValue::from_str(value).ok())
+    {
+        response
+            .headers_mut()
+            .insert(header::CONTENT_TYPE, content_type);
+    }
+    response
 }
 
 async fn invocation_body_from_http(

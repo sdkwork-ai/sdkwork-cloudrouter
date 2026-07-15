@@ -1,9 +1,18 @@
 # SDKWork Claw Router - Disaster Recovery Plan
 
 **Document Version:** 1.0
-**Last Updated:** 2026-06-27
+**Last Updated:** 2026-07-14
 **Owner:** Platform Engineering
 **Review Frequency:** Quarterly
+**Status:** Target recovery design only. It has not been exercised for the
+current candidate and does not establish deployable HA, backup, restore, RPO,
+or RTO capability.
+
+> Do not execute destructive commands in this document against a deployment
+> until the deployed topology, immutable artifact, backup inventory, recovery
+> owner, and Finance/SRE reconciliation procedure are approved and verified.
+> In-flight billable or non-idempotent outcomes are unknown after a fault and
+> must not be blindly retried.
 
 ---
 
@@ -22,16 +31,19 @@
 
 ## Executive Summary
 
-This document defines the disaster recovery (DR) plan for SDKWork Claw Router, an enterprise-grade AI API gateway. The plan ensures business continuity by establishing recovery procedures for various failure scenarios affecting the gateway infrastructure.
+This document records the target disaster-recovery design for SDKWork Claw
+Router. It does not yet provide a tested recovery procedure for a current
+release candidate; the active production-readiness review remains authoritative
+for open PostgreSQL, Redis, identity, accounting, and recovery blockers.
 
 ### Key Metrics
 
 | Metric | Target | Critical Threshold |
 |--------|--------|-------------------|
-| RTO (Recovery Time Objective) | 4 hours | 8 hours |
-| RPO (Recovery Point Objective) | 5 minutes | 15 minutes |
-| Availability Target | 99.9% | 99.0% |
-| Recovery Validation Frequency | Monthly | Quarterly |
+| RTO (Recovery Time Objective) | Not established for current candidate | Not measured |
+| RPO (Recovery Point Objective) | Not established for current candidate | Not measured |
+| Availability Target | Planning target only | No current-candidate evidence |
+| Recovery Validation Frequency | Required before release | Not executed for current candidate |
 
 ---
 
@@ -57,8 +69,12 @@ This document defines the disaster recovery (DR) plan for SDKWork Claw Router, a
 
 #### Primary Objectives
 
-1. **Minimize Data Loss**: Maximum 5 minutes of data loss (RPO)
-2. **Restore Service Quickly**: Restore critical functions within 4 hours (RTO)
+1. **Data Loss Objective**: Not established for the current candidate. A
+   numeric RPO remains a planning target until backup, restore, and accounting
+   reconciliation drills establish it.
+2. **Service Restoration Objective**: Not established for the current
+   candidate. A numeric RTO remains a planning target until promotion, restore,
+   and application recovery drills establish it.
 3. **Maintain Security Posture**: Ensure encryption keys and credentials remain secure during recovery
 4. **Preserve Audit Trail**: Maintain all request traces and audit logs
 
@@ -79,19 +95,19 @@ This document defines the disaster recovery (DR) plan for SDKWork Claw Router, a
 
 | Component | RTO | RPO | Backup Frequency |
 |-----------|-----|-----|------------------|
-| PostgreSQL | 30 minutes | 5 minutes | Continuous WAL + Daily full |
-| Redis | 15 minutes | 0 (stateless) | N/A |
-| Application Config | 1 hour | 1 hour | On change |
-| Signing Keys | 4 hours | 0 | Encrypted backup on rotation |
+| PostgreSQL | Not established | Not established | No current-candidate PITR/restore evidence |
+| Redis | Not established | Not established | Accounting retry/DLQ retention and recovery policy unapproved |
+| Application Config | Not established | Not established | Inventory and restore drill unverified |
+| Signing Keys | Not established | Not established | Durable key-store and recovery design incomplete |
 
 ### SLO Targets
 
 | SLO | Target | Measurement Window |
 |-----|--------|-------------------|
-| Availability | 99.9% | Rolling 30 days |
-| Error Rate | < 0.1% | Rolling 30 days |
-| p95 Latency | < 50ms | Rolling 1 hour |
-| p99 Latency | < 100ms | Rolling 1 hour |
+| Availability | Not established for current candidate | No current-candidate SLO evidence |
+| Error Rate | Not established for current candidate | No current-candidate SLO evidence |
+| p95 Latency | Not established for current candidate | No current-candidate SLO evidence |
+| p99 Latency | Not established for current candidate | No current-candidate SLO evidence |
 
 ---
 
@@ -101,30 +117,22 @@ This document defines the disaster recovery (DR) plan for SDKWork Claw Router, a
 
 #### PostgreSQL
 
-```sql
--- Full backup schedule (daily at 02:00 UTC)
-0 2 * * * pg_dump -Fc -f /backups/full_$(date +\%Y\%m\%d).dump clawrouter
-
--- WAL archival (continuous)
-wal_level = replica
-archive_mode = on
-archive_command = 'rsync %p backup-server:/wal/%f'
-max_wal_senders = 10
-```
+No approved deployment currently supplies a backup scheduler, WAL archive
+destination, or restore inventory. The former cron and PostgreSQL setting
+fragments were intentionally removed because mixing shell scheduling and server
+configuration in one code block was not an executable backup procedure. A
+reviewed `sdkwork-database` or managed-provider procedure must define, test,
+and evidence these values before release.
 
 #### Point-in-Time Recovery (PITR)
 
-```bash
-# Restore to specific point in time
-pg_restore --checkpoint='2026-06-27 10:30:00 UTC' \
-  --jobs=4 \
-  --dbname=clawrouter \
-  /backups/full_latest.dump
-
-# Apply WAL segments
-restore_command = 'rsync backup-server:/wal/%f %p'
-recovery_target_time = '2026-06-27 10:30:00 UTC'
-```
+No current-candidate PITR procedure, backup inventory, restore target, or
+provider-specific recovery configuration has been exercised. The former
+illustrative `pg_restore`/WAL snippets are intentionally removed because they
+were not an executable PostgreSQL recovery procedure. A reviewed
+`sdkwork-database` or managed-provider runbook must define the exact base
+backup, WAL/archive, isolated restore, validation, reconciliation, and
+cutover sequence before release.
 
 ### Redis Backup
 
@@ -133,13 +141,16 @@ Redis in Claw Router is used for:
 - Idempotency keys
 - Session caching
 - Rate limiting counters
+- Gateway accounting retry stream, schedule, payload, deduplication, and DLQ
+  records when Redis retry mode is enabled
 
-All Redis data is stateless and recoverable via:
-1. Application restart rebuilds circuit breaker state
-2. Idempotency keys expire within 24 hours
-3. Session cache regenerates on next authentication
-
-**No persistent Redis backup required** for disaster recovery.
+Circuit-breaker, rate-limit, session, and some idempotency state can be
+reconstructed or expire. Accounting retry/DLQ state is a recoverable financial
+fact, not disposable cache data. The current candidate has no approved Redis
+retention, persistence, backup, restore, reconciliation, or operator requeue
+procedure. Do not flush, trim, delete, recreate, or replace accounting retry
+state with an empty queue. Finance/SRE must approve the policy and execute a
+restore drill before any Redis RPO/RTO claim.
 
 ### Configuration Backup
 
@@ -154,17 +165,11 @@ kubectl get secret -n clawrouter -o yaml > backups/secrets.yaml
 
 ### Signing Key Backup
 
-Per-tenant signing keys are encrypted with AES-256-GCM:
-
-```bash
-# Encrypted key backup
-kubectl get secret tenant-signing-keys -n clawrouter -o jsonpath='{.data.keys}' \
-  | base64 -d > backups/tenant-signing-keys.enc
-
-# Key rotation backup (retain for 90 days after rotation)
-mv backups/tenant-signing-keys.enc \
-   backups/tenant-signing-keys-$(date +%Y%m%d).enc
-```
+No durable tenant signing-key store, cross-replica lifecycle, encrypted backup
+source, or restore drill is currently approved. Do not treat an in-memory key
+map or an arbitrary Kubernetes Secret export as a complete signing-key backup.
+The Security/IAM owner must first define the canonical key store, access
+controls, encryption, retention, grace/revocation behavior, and recovery test.
 
 ---
 
@@ -195,26 +200,21 @@ FATAL: password authentication failed
    kubectl get pods -n postgres -l app=postgres
    ```
 
-2. **Database Pod Restart** (5-10 minutes)
-   ```bash
-   # If pod is failing, restart it
-   kubectl delete pod postgres-0 -n postgres
+2. **Database recovery decision**
 
-   # If persistent volume is intact, data will recover
-   ```
+   Do not delete a primary Pod or assume its persistent volume is recoverable.
+   First verify the deployed HA manager, replica/WAL state, backup inventory,
+   and application write quiescence under the approved current-candidate
+   procedure. The outcome of in-flight financial transactions remains unknown
+   until idempotency and reconciliation determine it.
 
-3. **Point-in-Time Recovery** (30-60 minutes if pod is lost)
-   ```bash
-   # Scale down gateway
-   kubectl scale deployment claw-router-gateway --replicas=0 -n clawrouter
+3. **Point-in-Time Recovery**
 
-   # Restore from latest backup
-   kubectl exec -it postgres-0 -n postgres -- \
-     pg_restore -c --dbname=postgres /backups/latest.dump
-
-   # Scale up gateway
-   kubectl scale deployment claw-router-gateway --replicas=2 -n clawrouter
-   ```
+   No tested current-candidate command sequence exists. Do not scale the
+   gateway, overwrite a database, or restore an arbitrary backup using this
+   document. Follow the future reviewed provider/`sdkwork-database` PITR
+   procedure only after its isolated restore and accounting reconciliation
+   evidence is attached to the candidate.
 
 4. **Validation**
    ```bash
@@ -228,8 +228,9 @@ FATAL: password authentication failed
 
 ### Scenario 2: Redis Failure
 
-**Impact**: Rate limiting, circuit breakers, idempotency temporarily degraded
-**Severity**: Medium
+**Impact**: Rate limiting, circuit breakers, idempotency, and potentially
+gateway accounting retry/DLQ durability are degraded
+**Severity**: Critical when accounting retry/DLQ state is present
 **Detection**: Prometheus alerts for Redis connection errors
 
 #### Symptoms
@@ -241,20 +242,21 @@ WARN Circuit breaker state lost, resetting to CLOSED
 
 #### Recovery Steps
 
-1. **Redis Pod Restart** (5-10 minutes)
-   ```bash
-   kubectl delete pod redis-primary-0 -n clawrouter
-   # Sentinel will promote replica to primary automatically
-   ```
+1. **Preserve and assess Redis state**
 
-2. **Verify State Recovery**
+   Do not delete the Redis primary or assume Sentinel promotion preserves every
+   accounting delivery. Record stream/DLQ depth, pending leases, replication
+   state, persistence configuration, and the approved recovery decision before
+   a destructive operation.
+
+2. **Verify approved recovery evidence**
    ```bash
    # Check Redis connectivity
    kubectl exec -it deploy/claw-router-gateway -- \
      redis-cli -h redis-primary ping
 
-   # Verify circuit breaker rebuild
-   kubectl logs deploy/claw-router-gateway | grep "Circuit breaker"
+   # Accounting recovery requires a separate approved reconciliation record;
+   # circuit-breaker recreation alone is insufficient.
    ```
 
 ### Scenario 3: Gateway Service Failure
@@ -302,56 +304,41 @@ WARN Circuit breaker state lost, resetting to CLOSED
    ```
 
 2. **PITR to Pre-Corruption Point**
-   ```bash
-   # Stop application writes
-   kubectl scale deployment claw-router-gateway --replicas=0 -n clawrouter
 
-   # Restore to last known good point
-   pg_restore --checkpoint='2026-06-27 08:00:00 UTC' \
-     --jobs=4 /backups/full_latest.dump clawrouter
-
-   # Validate data
-   # ...
-
-   # Resume application
-   kubectl scale deployment claw-router-gateway --replicas=2 -n clawrouter
-   ```
+   No current-candidate PITR/reconciliation procedure is available. Do not
+   scale writers down, overwrite the database, or resume traffic from an
+   arbitrary backup. Use the future reviewed provider/`sdkwork-database`
+   procedure only after isolated restore, financial reconciliation, and
+   cutover evidence are approved.
 
 ### Scenario 5: Encryption Key Loss
 
-**Impact**: Cannot decrypt tenant signing keys, sessions invalidated
+**Impact**: Tenant signing-key recovery is currently unproven; sessions or
+signed artifacts may be invalidated
 **Severity**: Critical
 **Detection**: Signing key verification failures
 
 #### Recovery Steps
 
 1. **Assess Key Loss Scope**
-   ```bash
-   # Check which tenants are affected
-   kubectl get secret tenant-signing-keys -n clawrouter -o yaml
 
-   # Check backup availability
-   ls -la backups/tenant-signing-keys-*.enc
-   ```
+   Do not infer a canonical key store or backup from an arbitrary Kubernetes
+   Secret. The current signing-key lifecycle is not a durable, cross-replica
+   recovery design. Escalate to the Security/IAM owner and preserve incident
+   evidence without exporting raw key material.
 
 2. **Restore from Backup**
-   ```bash
-   # Restore encrypted keys
-   kubectl apply -f backups/tenant-signing-keys-latest.enc
 
-   # Verify decryption works
-   # (Application will auto-verify on next request)
-   ```
+   No approved restore source or procedure exists. A durable key store,
+   encryption/access policy, grace/revocation semantics, and recovery drill are
+   release prerequisites; do not apply a guessed Secret or claim automatic
+   verification.
 
-3. **Force Tenant Re-authentication** (if keys are compromised)
-   ```bash
-   # Invalidate all sessions
-   kubectl exec -it deploy/claw-router-gateway -- \
-     redis-cli FLUSHDB
+3. **Containment**
 
-   # Notify tenants
-   # (Automated via status page and email)
-   ```
+   Do not run `FLUSHDB`: Redis can contain accounting retry/DLQ facts in
+   addition to cache-like state. Follow the reviewed Security/IAM incident
+   response and Finance/SRE reconciliation process when it exists.
 
 ---
 
@@ -365,7 +352,14 @@ WARN Circuit breaker state lost, resetting to CLOSED
 - [ ] Assign incident commander
 - [ ] Document timeline
 
-### Recovery Runbook
+### Non-Executable Historical Template
+
+The shell fragment below is retained only to show why a current procedure must
+not be inferred from historical text. It is not approved for any environment:
+it contains destructive scale/rollback choices without a verified backup,
+cluster identity, migration, accounting-reconciliation, or restore contract.
+Do not copy, execute, or adapt it as an operational recovery command. Replace
+it with an owned, drilled procedure before a release candidate is approved.
 
 ```bash
 #!/bin/bash
@@ -579,10 +573,10 @@ Detailed explanation of the root cause.
 
 | Test Type | Frequency | Team |
 |-----------|-----------|------|
-| Backup Restoration | Monthly | Platform Engineering |
-| DR Runbook Validation | Quarterly | SRE |
-| Full DR Exercise | Annually | All |
-| Chaos Engineering | Weekly | Platform Engineering |
+| Backup Restoration | Planning target; not executed for current candidate | Platform Engineering |
+| DR Runbook Validation | Planning target; not executed for current candidate | SRE |
+| Full DR Exercise | Planning target; not executed for current candidate | All |
+| Chaos Engineering | Planning target; not executed for current candidate | Platform Engineering |
 
 ---
 
@@ -604,19 +598,19 @@ Detailed explanation of the root cause.
 
 | Backup Type | Retention | Location |
 |-------------|-----------|----------|
-| Full Database | 30 days | Primary + Off-site |
-| WAL Archives | 7 days | Primary |
-| Configuration | 30 days | Git + Off-site |
-| Signing Keys | 90 days | HSM + Off-site |
+| Full Database | Not established | No approved backup inventory |
+| WAL Archives | Not established | No approved archive or restore inventory |
+| Configuration | Not established | Restore source and drill unverified |
+| Signing Keys | Not established | Durable key-store and retention design incomplete |
 
 ### B. Recovery Time Estimates
 
 | Scenario | Estimated Time | Notes |
 |----------|---------------|-------|
-| Pod restart | 5-10 minutes | Automated |
-| Database restart | 15-30 minutes | Depends on WAL recovery |
-| Full PITR | 30-60 minutes | Depends on data volume |
-| Cross-region failover | 4-8 hours | Manual + DNS update |
+| Pod restart | Not established | Requires a current-candidate drill |
+| Database restart | Not established | Requires a verified recovery procedure |
+| Full PITR | Not established | Requires isolated restore and reconciliation evidence |
+| Cross-region failover | Not established | Requires approved topology and disaster-recovery drill |
 
 ### C. Related Documents
 

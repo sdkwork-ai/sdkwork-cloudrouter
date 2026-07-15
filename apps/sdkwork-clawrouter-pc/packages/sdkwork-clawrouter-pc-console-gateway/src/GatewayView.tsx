@@ -145,21 +145,21 @@ export function GatewayView() {
   const summary = useMemo(() => summarizeTraces(traces), [traces]);
 
   return (
-    <div className="min-h-[calc(100vh-72px)] w-full mx-auto space-y-6 bg-slate-50 p-[5px] animate-in fade-in duration-500 dark:bg-[#121212] lg:space-y-8">
+    <div className="min-h-[calc(100vh-72px)] w-full mx-auto space-y-4 bg-slate-50 px-[5px] pb-[5px] animate-in fade-in duration-500 dark:bg-[#121212] lg:space-y-5">
       <div className="space-y-1 px-1">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t('console.gateway.title')}</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">{t('console.gateway.subtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-white/10 p-2 rounded-xl shadow-sm">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-white/10 p-2 rounded-xl shadow-sm">
         <SummaryItem icon={<AlignLeft className="w-4 h-4 text-blue-500" />} label={t('console.gateway.summary.traceRows')} value={summary.total.toString()} />
         <SummaryItem icon={<Activity className="w-4 h-4 text-emerald-500" />} label={t('console.gateway.summary.successful')} value={summary.success.toString()} />
         <SummaryItem icon={<Timer className="w-4 h-4 text-rose-500" />} label={t('console.gateway.summary.failed')} value={summary.failed.toString()} />
         <SummaryItem icon={<Server className="w-4 h-4 text-indigo-500" />} label={t('console.gateway.summary.channels')} value={summary.uniqueChannels.toString()} />
       </div>
 
-      <div className="space-y-4 flex flex-col items-start w-full">
-        <div className="flex items-center justify-between w-full mb-2">
+      <div className="space-y-3 flex flex-col items-start w-full">
+        <div className="flex items-center justify-between w-full mb-1">
           <h3 className="font-semibold text-slate-900 dark:text-white">{t('console.gateway.table.title')}</h3>
           <span className="text-xs text-slate-500 dark:text-slate-400">{t('console.gateway.table.description')}</span>
         </div>
@@ -206,7 +206,7 @@ export function GatewayView() {
 
 function SummaryItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="p-4 border-l first:border-l-0 border-slate-100 dark:border-white/5">
+    <div className="p-3 border-l first:border-l-0 border-slate-100 dark:border-white/5">
       <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">
         {icon}
         {label}
@@ -233,7 +233,7 @@ function GatewayTracePagination({
   }
 
   return (
-    <div className="mt-auto flex flex-col items-center gap-2 border-t border-slate-200 px-5 py-4 dark:border-white/10" aria-live="polite">
+    <div className="mt-auto flex flex-col items-center gap-2 border-t border-slate-200 px-4 py-3 dark:border-white/10" aria-live="polite">
       {error ? <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{error}</p> : null}
       <button
         type="button"
@@ -259,23 +259,23 @@ function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
       <table className="w-full text-left text-sm whitespace-nowrap">
         <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-white/10">
           <tr>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.traceId')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.timestamp')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.clientIp')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.method')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.endpoint')}</th>
-            <th className="px-5 py-3 font-medium text-center">{t('console.gateway.table.status')}</th>
-            <th className="px-5 py-3 font-medium text-right">{t('console.gateway.table.duration')}</th>
-            <th className="px-5 py-3 font-medium">{t('console.gateway.table.routedChannel')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.traceId')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.timestamp')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.clientIp')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.method')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.endpoint')}</th>
+            <th className="px-4 py-2.5 font-medium text-center">{t('console.gateway.table.status')}</th>
+            <th className="px-4 py-2.5 font-medium text-right">{t('console.gateway.table.duration')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.routedChannel')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-white/5 text-slate-700 dark:text-slate-300">
           {traces.map((trace, index) => (
             <tr key={`${trace.id}:${trace.time}:${index}`} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors font-mono text-xs">
-              <td className="px-5 py-3 font-bold text-slate-900 dark:text-white">{trace.id}</td>
-              <td className="px-5 py-3 text-slate-500">{trace.time}</td>
-              <td className="px-5 py-3 text-slate-500">{trace.ip}</td>
-              <td className="px-5 py-3">
+              <td className="px-4 py-2.5 font-bold text-slate-900 dark:text-white">{trace.id}</td>
+              <td className="px-4 py-2.5 text-slate-500">{trace.time}</td>
+              <td className="px-4 py-2.5 text-slate-500">{trace.ip}</td>
+              <td className="px-4 py-2.5">
                 <span
                   className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
                     trace.method === 'POST'
@@ -286,8 +286,8 @@ function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
                   {trace.method}
                 </span>
               </td>
-              <td className="px-5 py-3 text-slate-500">{trace.endpoint}</td>
-              <td className="px-5 py-3 text-center">
+              <td className="px-4 py-2.5 text-slate-500">{trace.endpoint}</td>
+              <td className="px-4 py-2.5 text-center">
                 <span
                   className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${
                     trace.status >= 200 && trace.status < 400
@@ -298,8 +298,8 @@ function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
                   {trace.status}
                 </span>
               </td>
-              <td className="px-5 py-3 text-right">{trace.duration}</td>
-              <td className="px-5 py-3 text-slate-500">{trace.channel}</td>
+              <td className="px-4 py-2.5 text-right">{trace.duration}</td>
+              <td className="px-4 py-2.5 text-slate-500">{trace.channel}</td>
             </tr>
           ))}
         </tbody>

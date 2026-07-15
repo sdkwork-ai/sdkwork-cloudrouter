@@ -43,13 +43,6 @@ members = [
     "crates/sdkwork-clawrouter-app-providers-repository-sqlx",
     "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
     "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
-    "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust",
-    "../sdkwork-models/crates/sdkwork-models-contract-service",
-    "../sdkwork-models/crates/sdkwork-models-database-host",
-    "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx",
-    "../sdkwork-models/crates/sdkwork-models-catalog-service",
-    "../sdkwork-models/crates/sdkwork-routes-catalog-backend-api",
-    "../sdkwork-models/crates/sdkwork-routes-catalog-app-api",
 ]
 default-members = [
     "crates/sdkwork-claw-contract",
@@ -88,8 +81,6 @@ default-members = [
     "services/sdkwork-claw-installer",
     "services/sdkwork-claw-provider-adapter",
     "crates/sdkwork-clawrouter-database-host",
-    "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust",
-    "../sdkwork-models/crates/sdkwork-models-database-host",
 ]
 resolver = "2"
 
@@ -113,9 +104,11 @@ license-file = "LICENSE"
 [workspace.dependencies]
 sdkwork-api-cloud-gateway-registry = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway-registry" }
 anyhow = "1.0"
+argon2 = "0.5"
 axum = { version = "0.8", features = ["multipart"] }
 base64 = "0.22.1"
 bytes = "1.11.1"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 toml = "0.8"

@@ -183,8 +183,8 @@ function ClawRouterWalletPageContent() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-4 py-4 sm:px-5 sm:py-5">
-        <div className="mx-auto max-w-6xl space-y-4">
+      <div className="px-4 pb-3 sm:px-5 sm:pb-4">
+        <div className="mx-auto max-w-6xl space-y-3">
           <SdkworkWalletBalancePanel
             onOpenRecharge={() => setActiveTab('recharge')}
             onOpenWithdraw={() => controller.openWithdraw()}
@@ -209,8 +209,8 @@ function ClawRouterWalletPageContent() {
             </StatusNotice>
           ) : null}
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <div className="space-y-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="space-y-3">
               <section className="overflow-hidden rounded-[var(--sdk-radius-panel)] border border-[var(--sdk-color-border-subtle)] bg-[var(--sdk-color-surface-panel)]">
                 <div className="flex gap-1 border-b border-[var(--sdk-color-border-subtle)] p-1.5">
                   <TabButton
@@ -227,7 +227,7 @@ function ClawRouterWalletPageContent() {
                   />
                 </div>
 
-                <div className="space-y-4 p-4 sm:p-5">
+                <div className="space-y-3 p-4 sm:p-4">
                   {state.isLoading && !state.isBootstrapped ? (
                     <div className="space-y-3">
                       <div className="h-4 w-1/3 animate-pulse rounded bg-[var(--sdk-color-surface-panel-muted)]" />
@@ -289,7 +289,7 @@ function ClawRouterWalletPageContent() {
               <RecentRecords transactions={state.overview.transactions} />
             </div>
 
-            <aside className="space-y-4">
+            <aside className="space-y-3">
               <ShareMarketingPanel
                 copiedField={copiedField}
                 unavailableLabel={unavailableLabel}

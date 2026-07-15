@@ -6,6 +6,7 @@ import {
 } from '@sdkwork/account-service';
 import type { MembershipAppSdkClient } from '@sdkwork/membership-sdk-ports';
 import {
+  bootstrapSdkworkOrderAppService as bootstrapMembershipOrderAppService,
   configureSdkworkMembershipAppServiceProvider,
   configureSdkworkMembershipSessionTokenProvider,
   createSdkworkMembershipAppService,
@@ -30,7 +31,11 @@ import {
 } from '@sdkwork/promotion-service';
 
 import { loadStoredAppSessionToken } from './app-session-token.ts';
-import type { ClawRouterAppSdkClient } from './sdk-clients.ts';
+import {
+  getClawRouterGlobalTokenManager,
+  resolveRequiredAppDomainTransportBaseUrl,
+  type ClawRouterAppSdkClient,
+} from './sdk-clients.ts';
 
 type AppDomainClientReader = () => ClawRouterAppSdkClient;
 
@@ -86,6 +91,12 @@ export function configureClawRouterDomainServiceProviders(
   getAppDomainClient: AppDomainClientReader,
 ): void {
   const readSessionTokens = readClawRouterDomainSessionTokens;
+
+  bootstrapMembershipOrderAppService({
+    baseUrl: resolveRequiredAppDomainTransportBaseUrl({}),
+    platform: 'web',
+    tokenManager: getClawRouterGlobalTokenManager(),
+  });
 
   configureSdkworkAccountAppServiceProvider(() => createSdkworkAccountAppService({
     appClient: { commerce: buildAccountCommercePort(getAppDomainClient()) } as AccountAppSdkClient,

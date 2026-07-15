@@ -1,10 +1,19 @@
 # SDKWork Claw Router - PostgreSQL HA Failover Runbook
 
 **Document Version:** 1.0
-**Last Updated:** 2026-06-27
+**Last Updated:** 2026-07-14
 **Owner:** Platform Engineering / clawrouter-release
 **Review Frequency:** Quarterly
 **Severity:** P0
+**Status:** Target procedure only. Patroni, pgBouncer, replication, PITR,
+RPO/RTO, and transaction recovery have not been demonstrated for the current
+candidate.
+
+> Do not promote, restart, scale, restore, or redirect database traffic based
+> on this document alone. An in-flight billable or non-idempotent transaction
+> can have an unknown outcome after failover; it must not be automatically
+> retried until the idempotency key, durable facts, and reconciliation procedure
+> establish a safe result.
 
 ---
 
@@ -29,28 +38,32 @@ promoted or the primary is restored.
 
 ## Architecture
 
-- **Topology**: primary + 1 streaming replication replica + pgBouncer
-  connection pooler in front of both.
+- **Target topology**: primary + 1 streaming replication replica + pgBouncer
+  connection pooler in front of both. The deployed current-candidate topology
+  and recovery ownership are not verified.
 - **Connection hardening** (per [SECURITY.md](../../SECURITY.md)): connections
   MUST use `sslmode=require` with certificate validation.
 - **Pool budget**: per
   [Production Operations](../../deployments/runbooks/production-operations.md),
-  budget `(gateway + admin-api + app-api) 脳 max_connections 鈮?PostgreSQL
-  max_connections 鈭?headroom`. pgBouncer default pool size is 16 connections
+  budget `(gateway + admin-api + app-api) * max_connections <= PostgreSQL
+  max_connections - headroom`. pgBouncer default pool size is 16 connections
   per service process.
 
-## Automatic Failover (Patroni)
+## Target Automatic Failover (Patroni)
 
-When Patroni manages the cluster, failover is automatic:
+When a reviewed Patroni deployment manages the cluster, its target behavior is:
 
-1. **Detect** 鈥?Patroni cannot reach the primary (DCS lease expires).
-2. **Promote** 鈥?the replica with the highest LSN is promoted to primary.
-3. **Re-point** 鈥?the DNS / Service endpoint (`postgres-primary`) is updated to
+1. **Detect**: Patroni cannot reach the primary (DCS lease expires).
+2. **Promote**: the replica with the highest LSN is promoted to primary.
+3. **Re-point**: the DNS / Service endpoint (`postgres-primary`) is updated to
    the new primary.
-4. **Reconnect** 鈥?pgBouncer and the gateway services reconnect through the
-   Service; pending transactions retry against the new primary.
+4. **Reconnect**: pgBouncer and the gateway services reconnect through the
+   Service. In-flight transaction outcomes may be unknown; gateway and worker
+   code must not automatically retry billable or non-idempotent work merely
+   because the connection was lost.
 
-Verify automatic failover:
+The commands below are examples for an approved, actually deployed Patroni
+topology. They are not current-candidate recovery evidence:
 
 ```bash
 # Patroni cluster status
@@ -62,7 +75,11 @@ kubectl exec -it deploy/pgbouncer -n clawrouter -- \
   psql -p 6432 -U clawrouter pgbouncer -c "SHOW POOLS;"
 ```
 
-Confirm the gateway recovered:
+For an approved deployed topology, `/readyz = 200` only confirms its configured
+dependency checks. It does not prove generic schema currency, migration state,
+financial reconciliation, or recovery correctness.
+
+Illustrative gateway readiness check:
 
 ```bash
 kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
@@ -70,10 +87,11 @@ kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
 # Expected: 200 {"status":"ready"}
 ```
 
-## Manual Intervention
+## Illustrative Manual Intervention (requires approved topology)
 
 If Patroni did not promote (split brain, DCS outage, or replica lag too high),
-intervene manually.
+do not act on the following examples until the deployed topology, data owner,
+and incident command have approved a procedure for that specific failure.
 
 ### Step 1: Verify primary reachability
 
@@ -117,8 +135,9 @@ kubectl exec -it deploy/patroni-replica -n clawrouter -- \
 ### Step 4: Re-point clients
 
 Update the Service / connection string so gateway, admin-api, and app-api
-point at the new primary. pgBouncer's PAUSE/RESUME prevents mid-flight query
-loss:
+point at the new primary only through the approved procedure. pgBouncer
+`PAUSE`/`RESUME` does not prove transaction atomicity, confirm the outcome of
+billable or non-idempotent work, or prevent unknown in-flight outcomes:
 
 ```bash
 kubectl exec -it deploy/pgbouncer -n clawrouter -- \
@@ -139,17 +158,11 @@ kubectl rollout status  deployment/claw-router-gateway -n clawrouter
 
 ## Data Recovery
 
-If the primary is corrupted and no healthy replica remains, restore from WAL
-archive + base backup (see
-[Disaster Recovery Plan](../../deployments/runbooks/disaster-recovery-plan.md#point-in-time-recovery-pitr)):
-
-```bash
-# Restore base backup, then replay WAL up to the failure point
-pg_restore --checkpoint='2026-06-27 02:00:00 UTC' \
-  --jobs=4 --dbname=clawrouter /backups/full_latest.dump
-restore_command = 'rsync backup-server:/wal/%f %p'
-recovery_target_time = '2026-06-27 02:00:00 UTC'
-```
+If the primary is corrupted and no healthy replica remains, do not use an
+unverified shell/configuration mixture as a PITR procedure. The current
+candidate has no tested base-backup/WAL archive inventory, isolated restore,
+validation, reconciliation, or cutover sequence. Define and exercise the
+approved provider/`sdkwork-database` procedure before release.
 
 For a corruption scoped to specific rows (not a full primary loss), prefer the
 targeted PITR in
@@ -172,12 +185,13 @@ Per the [Disaster Recovery Plan](../../deployments/runbooks/disaster-recovery-pl
 
 | Objective | Target | Critical threshold | Mechanism |
 |-----------|--------|--------------------|-----------|
-| RPO | 5 minutes | 15 minutes | Continuous WAL archiving (`wal_level = replica`, `archive_mode = on`) |
-| RTO | 4 hours | 8 hours | Replica promotion or PITR |
+| RPO | Not established for current candidate | Not measured | Requires verified WAL/archive, restore, and reconciliation drill |
+| RTO | Not established for current candidate | Not measured | Requires verified promotion/PITR and application recovery drill |
 
-A failover that promotes a lagging replica can exceed the 5-minute RPO. If the
-candidate replica lag exceeds 5 minutes of WAL, prefer a PITR restore over a
-fast promote when the data loss delta is acceptable within the RTO budget.
+A failover can lose or duplicate work when a replica is behind or a transaction
+outcome is unknown. Do not choose promotion versus PITR from unverified target
+numbers; make the decision through the approved incident, data-integrity, and
+Finance/SRE reconciliation process.
 
 ## Related Documents
 

@@ -94,6 +94,21 @@ test("dev server enables React Fast Refresh and HMR by default", async () => {
   });
 });
 
+test("dev proxy forwards every OpenAPI schema route to the gateway", async () => {
+  const config = await resolvePortalViteConfig();
+  const proxy = config.server?.proxy as Record<string, unknown> | undefined;
+
+  for (const route of [
+    "/openapi/schema-tabs.json",
+    "/openapi.json",
+    "/payments/v3/openapi.json",
+    "/paas/v3/openapi.json",
+    "/cloud/v3/openapi.json",
+  ]) {
+    assert.ok(proxy?.[route], `${route} must be proxied instead of falling back to index.html`);
+  }
+});
+
 test("dependency optimizer pre-bundles recharts instead of serving its mixed ESM and CommonJS sources", async () => {
   const config = await resolvePortalViteConfig();
 

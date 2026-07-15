@@ -710,7 +710,7 @@ async fn pricing_after_requotes_usage_lines_for_final_failover_account() {
 }
 
 #[tokio::test]
-async fn settlement_uses_line_level_adapter_quotes() {
+async fn settlement_prefers_line_level_adapter_quotes_over_meter_quotes() {
     let mut invocation = chat_invocation();
     invocation.billing = InvocationBilling {
         mode: BillingMode::ExternalUsageLine,
@@ -725,11 +725,14 @@ async fn settlement_uses_line_level_adapter_quotes() {
         .before(&mut invocation)
         .await
         .expect("pricing");
-    let quote = invocation
+    let mut quote = invocation
         .usage
         .quote_for_meter(&BillingMeter::ApiResult)
         .expect("api result quote")
         .clone();
+    quote.customer_charge_before_rate = Money::usd("0.040000").expect("line-level unit price");
+    quote.customer_charge_unit_price = Money::usd("0.040000").expect("line-level unit price");
+    quote.pricing_plan_code = "line-level-plan".to_owned();
     invocation.usage.add_line(
         sdkwork_clawrouter_router_service::application::InvocationUsageLine::new(
             BillingMeter::ApiResult,
@@ -747,6 +750,7 @@ async fn settlement_uses_line_level_adapter_quotes() {
     assert_eq!("api_result", command.billing_meter_code);
     assert_eq!("3", command.billable_quantity);
     assert_eq!(3, command.result_count);
-    assert_eq!("0.020000", command.base_input_unit_price);
-    assert_eq!("0.060000000000", command.customer_charge_amount);
+    assert_eq!("0.040000", command.base_input_unit_price);
+    assert_eq!("0.120000000000", command.customer_charge_amount);
+    assert!(command.pricing_snapshot.contains("\"line-level-plan\""));
 }

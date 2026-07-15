@@ -34,3 +34,4 @@ pub(crate) mod store_error;
 pub(crate) mod string_value;
 
 pub use queries::PricingCatalogSql;
+pub use runtime_id::{validate_claw_runtime_id_configuration, RuntimeIdConfigurationError};

@@ -78,6 +78,7 @@ where
         locale: None,
         client_kind: None,
         operation: None,
+        idempotency_key: None,
     };
 
     let mut request = Request::builder()
@@ -147,6 +148,7 @@ where
         locale: None,
         client_kind: None,
         operation: None,
+        idempotency_key: None,
     };
 
     let mut request = Request::builder()

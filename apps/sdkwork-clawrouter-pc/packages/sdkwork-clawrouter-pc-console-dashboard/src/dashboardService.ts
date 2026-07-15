@@ -1,7 +1,6 @@
 import {
   APP_API_PREFIX,
   ensureSdkworkApiSuccess,
-  getClawRouterAppSdkClient,
   isRecord,
   readRequiredApiItem,
   readClawRouterRuntimeEnv,

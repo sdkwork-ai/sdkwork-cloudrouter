@@ -29,6 +29,12 @@ struct FailingDispatchInterceptor;
 #[derive(Debug, Default)]
 struct FailingGatewayUsageRecorder;
 
+#[derive(Debug)]
+struct OrderedGatewayUsageRecorder {
+    events: Mutex<Vec<String>>,
+    failing_usage_type: i64,
+}
+
 impl InvocationInterceptor for FailingDispatchInterceptor {
     fn name(&self) -> &str {
         "failing_dispatch"
@@ -95,6 +101,50 @@ impl GatewayUsageRecorder for FailingGatewayUsageRecorder {
         _command: GatewayUsageRecordCommand,
     ) -> GatewayUsageRecordFuture<'a> {
         Box::pin(async { Err(DomainError::new("database unavailable")) })
+    }
+}
+
+impl OrderedGatewayUsageRecorder {
+    fn new(failing_usage_type: i64) -> Self {
+        Self {
+            events: Mutex::new(Vec::new()),
+            failing_usage_type,
+        }
+    }
+
+    fn events(&self) -> Vec<String> {
+        self.events.lock().expect("recording events").clone()
+    }
+}
+
+impl GatewayUsageRecorder for OrderedGatewayUsageRecorder {
+    fn record_gateway_trace<'a>(
+        &'a self,
+        _command: GatewayRequestTraceCommand,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async move {
+            self.events
+                .lock()
+                .expect("recording events")
+                .push("trace".to_owned());
+            Ok(())
+        })
+    }
+
+    fn record_gateway_usage<'a>(
+        &'a self,
+        command: GatewayUsageRecordCommand,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async move {
+            self.events
+                .lock()
+                .expect("recording events")
+                .push(format!("usage:{}", command.usage_type));
+            if command.usage_type == self.failing_usage_type {
+                return Err(DomainError::new("database unavailable"));
+            }
+            Ok(())
+        })
     }
 }
 
@@ -341,6 +391,34 @@ async fn usage_recording_projects_multi_line_tokens_into_one_complete_trace() {
     assert_eq!(1, traces[0].cached_tokens);
     assert_eq!(2, traces[0].completion_tokens);
     assert_eq!(6, traces[0].total_tokens);
+    assert!(invocation.usage.trace_recorded);
+}
+
+#[tokio::test]
+async fn usage_recording_attempts_commands_in_order_after_an_individual_failure() {
+    let recorder = Arc::new(OrderedGatewayUsageRecorder::new(2));
+    let mut invocation = model_invocation();
+    let mut first = usage_command();
+    first.usage_type = 1;
+    let mut failing = first.clone();
+    failing.usage_type = 2;
+    let mut last = first.clone();
+    last.usage_type = 3;
+    invocation
+        .usage
+        .settlement_commands
+        .extend([first, failing, last]);
+
+    UsageRecordingInterceptor::new(recorder.clone())
+        .after(&mut invocation)
+        .await
+        .expect("recording failure must not replace a successful provider response");
+
+    assert_eq!(
+        vec!["usage:1", "usage:2", "usage:3", "trace"],
+        recorder.events()
+    );
+    assert_eq!(1, invocation.usage.recording_failure_count);
     assert!(invocation.usage.trace_recorded);
 }
 

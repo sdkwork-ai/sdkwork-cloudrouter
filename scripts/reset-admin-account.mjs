@@ -13,6 +13,7 @@ import {
 import {
   loadClawRouterDevEnvFile,
   resolveClawRouterDevDatabaseEnv,
+  resolveDefaultDevEnvFilePath,
 } from './dev/claw-router-dev-database-env.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -160,9 +161,14 @@ function installerArgs(settings) {
 }
 
 function devResetEnv(settings, env, root, { write = true } = {}) {
+  // Match `pnpm dev` behavior: when no explicit dev-env-file is provided, auto-detect
+  // `.env.postgres` (or `.env.postgres.example`) from the workspace root. This keeps
+  // reset-admin pointed at the same database the dev server bootstrapped IAM into.
+  // `--database-url sqlite://...` (used by admin:reset:dev:sqlite) still overrides the URL.
+  const devEnvFile = settings.devEnvFile ?? resolveDefaultDevEnvFilePath(root);
   const devEnv = {
     ...env,
-    ...loadClawRouterDevEnvFile(settings.devEnvFile, { workspaceRoot: root }),
+    ...loadClawRouterDevEnvFile(devEnvFile, { workspaceRoot: root }),
   };
   const resolvedDatabase = resolveClawRouterDevDatabaseEnv({
     env: {

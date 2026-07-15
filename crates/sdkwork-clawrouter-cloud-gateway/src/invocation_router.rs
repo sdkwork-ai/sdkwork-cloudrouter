@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::body::Body;
 use axum::http::Request;
@@ -25,6 +26,7 @@ use sdkwork_clawrouter_router_service::ports::{
 
 use crate::invocation_http::handle_invocation;
 use crate::invocation_provider_adapter::InvocationProviderAdapterResolver;
+use crate::invocation_stream::DEFAULT_STREAM_TOTAL_TIMEOUT;
 
 pub(crate) struct InvocationRouterState<C>
 where
@@ -36,6 +38,7 @@ where
     pub(crate) invocation_policy_guard: Arc<GatewayInvocationPolicyGuard>,
     pub(crate) trust_forwarded_headers: bool,
     pub(crate) body_limit_bytes: usize,
+    pub(crate) stream_response_timeout: Duration,
     pub(crate) query_string_api_key_policy: QueryStringApiKeyPolicy,
 }
 
@@ -51,6 +54,7 @@ where
             invocation_policy_guard: Arc::clone(&self.invocation_policy_guard),
             trust_forwarded_headers: self.trust_forwarded_headers,
             body_limit_bytes: self.body_limit_bytes,
+            stream_response_timeout: self.stream_response_timeout,
             query_string_api_key_policy: self.query_string_api_key_policy,
         }
     }
@@ -99,6 +103,7 @@ fn invocation_router_state<C>(
     invocation_policy_guard: Arc<GatewayInvocationPolicyGuard>,
     trust_forwarded_headers: bool,
     body_limit_bytes: usize,
+    stream_response_timeout: Duration,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> InvocationRouterState<C>
 where
@@ -111,6 +116,7 @@ where
         invocation_policy_guard,
         trust_forwarded_headers,
         body_limit_bytes,
+        stream_response_timeout,
         query_string_api_key_policy,
     }
 }
@@ -131,6 +137,7 @@ where
         default_invocation_policy_guard(),
         false,
         RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        DEFAULT_STREAM_TOTAL_TIMEOUT,
         QueryStringApiKeyPolicy::default(),
     ))
 }
@@ -150,6 +157,7 @@ where
         default_invocation_policy_guard(),
         false,
         RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        DEFAULT_STREAM_TOTAL_TIMEOUT,
         QueryStringApiKeyPolicy::default(),
     ))
 }
@@ -180,6 +188,7 @@ where
         default_invocation_policy_guard(),
         false,
         RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        DEFAULT_STREAM_TOTAL_TIMEOUT,
         QueryStringApiKeyPolicy::default(),
     ))
 }
@@ -232,6 +241,7 @@ where
         default_invocation_policy_guard(),
         false,
         RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+        DEFAULT_STREAM_TOTAL_TIMEOUT,
         query_string_api_key_policy,
     ))
 }
@@ -300,6 +310,7 @@ where
         tenant_inflight_config,
         redis_config,
         body_limit_bytes,
+        DEFAULT_STREAM_TOTAL_TIMEOUT,
         QueryStringApiKeyPolicy::default(),
     )
 }
@@ -318,6 +329,7 @@ pub(crate) fn invocation_router_with_full_pipeline_provider_adapter_tenant_infli
     tenant_inflight_config: Option<TenantInflightConfig>,
     redis_config: Option<&RedisConfig>,
     body_limit_bytes: usize,
+    stream_response_timeout: Duration,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Router
 where
@@ -342,6 +354,7 @@ where
         invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
         false,
         body_limit_bytes,
+        stream_response_timeout,
         query_string_api_key_policy,
     ))
 }
@@ -388,6 +401,7 @@ where
         invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
         trust_forwarded_headers,
         body_limit_bytes,
+        DEFAULT_STREAM_TOTAL_TIMEOUT,
         QueryStringApiKeyPolicy::default(),
     ))
 }

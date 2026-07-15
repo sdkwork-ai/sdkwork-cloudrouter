@@ -8,7 +8,7 @@ use super::{
     InvocationInterceptor, InvocationRouteAttempt, InvocationRouteCandidate, InvocationShape,
     InvocationSurface, ResolvedProviderSecret,
 };
-use crate::domain::{AiRouteFailureStrategy, AiRouteStrategy};
+use crate::domain::AiRouteFailureStrategy;
 use crate::ports::{
     InvocationDispatchError, InvocationDispatcher, ProviderAdapterRouteResolver,
     ProviderSecretResolver,
@@ -91,7 +91,8 @@ impl InvocationInterceptor for DispatchExecutor {
                 }
                 refresh_adapter_target(invocation, self.adapter_resolver.as_deref());
 
-                let max_attempts = max_attempts(invocation, candidate);
+                let replay_is_safe = request_allows_replay(invocation);
+                let max_attempts = max_attempts(candidate, replay_is_safe);
                 let mut exhausted_retryable = false;
                 for attempt_no in 1..=max_attempts {
                     if let Err(error) = refresh_provider_request(
@@ -172,7 +173,11 @@ impl InvocationInterceptor for DispatchExecutor {
                     }
                     sleep_before_retry(candidate).await;
                 }
-                if !should_try_next(invocation.routing.failure_strategy, exhausted_retryable) {
+                if !should_try_next(
+                    invocation.routing.failure_strategy,
+                    exhausted_retryable,
+                    replay_is_safe,
+                ) {
                     break;
                 }
             }
@@ -259,7 +264,7 @@ fn refresh_provider_request(
         invocation.dispatch.resolved_secret.as_ref(),
     )?;
     let provider_request =
-        ProviderRequestBuilder::default().build(invocation, account, resolved_secret.as_ref())?;
+        ProviderRequestBuilder.build(invocation, account, resolved_secret.as_ref())?;
     invocation.dispatch.resolved_secret = resolved_secret;
     invocation.dispatch.provider_request = Some(provider_request);
     Ok(())
@@ -301,15 +306,13 @@ fn resolve_provider_secret(
 /// Maximum dispatch attempts for a candidate.
 ///
 /// A missing retry policy means one attempt. Configured retry budgets are
-/// honored only for replay-safe requests; streaming and non-idempotent writes
-/// without an idempotency key are always single-attempt.
-fn max_attempts(invocation: &Invocation, candidate: &InvocationRouteCandidate) -> usize {
-    let is_streaming = matches!(
-        invocation.dispatch.invocation_shape,
-        InvocationShape::SseStream | InvocationShape::ByteStream
-    );
-    if is_streaming || !request_allows_replay(invocation) {
-        // Streaming responses cannot be safely replayed once dispatched.
+/// honored only for requests that are intrinsically replay-safe. A local
+/// idempotency key is not enough: the current provider route and adapter
+/// contracts do not prove a stable key is both forwarded and supported by the
+/// selected provider. Internal provider adapters are also single-attempt until
+/// their request contract explicitly carries and honors provider idempotency.
+fn max_attempts(candidate: &InvocationRouteCandidate, replay_is_safe: bool) -> usize {
+    if !replay_is_safe {
         return 1;
     }
     candidate
@@ -320,28 +323,16 @@ fn max_attempts(invocation: &Invocation, candidate: &InvocationRouteCandidate) -
 }
 
 fn request_allows_replay(invocation: &Invocation) -> bool {
-    if matches!(
-        invocation.routing.strategy,
-        AiRouteStrategy::StatelessFailover | AiRouteStrategy::StatelessFailClosed
-    ) {
-        return true;
-    }
-    if matches!(
-        invocation.request.method,
-        axum::http::Method::GET
-            | axum::http::Method::HEAD
-            | axum::http::Method::OPTIONS
-            | axum::http::Method::PUT
-            | axum::http::Method::DELETE
-    ) {
-        return true;
-    }
-    invocation
-        .request
-        .idempotency_key
-        .as_deref()
-        .map(str::trim)
-        .is_some_and(|key| !key.is_empty())
+    let is_streaming = matches!(
+        invocation.dispatch.invocation_shape,
+        InvocationShape::SseStream | InvocationShape::ByteStream
+    );
+    !is_streaming
+        && invocation.dispatch.mode != DispatchMode::InternalProviderAdapter
+        && matches!(
+            invocation.request.method,
+            axum::http::Method::GET | axum::http::Method::HEAD | axum::http::Method::OPTIONS
+        )
 }
 
 fn account_from_candidate(
@@ -414,8 +405,12 @@ async fn sleep_before_retry(candidate: &InvocationRouteCandidate) {
     tokio::time::sleep(Duration::from_millis(backoff_ms)).await;
 }
 
-fn should_try_next(strategy: AiRouteFailureStrategy, retryable: bool) -> bool {
-    retryable && matches!(strategy, AiRouteFailureStrategy::Failover)
+fn should_try_next(
+    strategy: AiRouteFailureStrategy,
+    retryable: bool,
+    replay_is_safe: bool,
+) -> bool {
+    replay_is_safe && retryable && matches!(strategy, AiRouteFailureStrategy::Failover)
 }
 
 fn success_attempt(

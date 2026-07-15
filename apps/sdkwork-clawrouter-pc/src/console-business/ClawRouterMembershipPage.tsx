@@ -159,8 +159,8 @@ function ClawRouterMembershipPageContent() {
         style={createSdkworkMembershipBackdropStyle()}
       />
 
-      <div className="relative px-4 py-5 sm:px-6 sm:py-6">
-        <div className="mx-auto max-w-6xl space-y-5">
+      <div className="relative px-4 pb-4 sm:px-5 sm:pb-5">
+        <div className="mx-auto max-w-6xl space-y-4">
           <MembershipHero
             isMutating={state.isMutating}
             onPurchase={handlePurchase}
@@ -324,10 +324,10 @@ function MembershipHero({
 
   return (
     <section
-      className="overflow-hidden rounded-[1.75rem] border border-[color-mix(in_srgb,var(--sdk-color-border-default)_72%,transparent)] px-6 py-7 text-white shadow-[var(--sdk-shadow-lg)] sm:px-8 sm:py-8"
+      className="overflow-hidden rounded-[1.75rem] border border-[color-mix(in_srgb,var(--sdk-color-border-default)_72%,transparent)] px-5 py-6 text-white shadow-[var(--sdk-shadow-lg)] sm:px-7 sm:py-7"
       style={createSdkworkMembershipHeroStyle()}
     >
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <span
@@ -447,7 +447,7 @@ function PlansSection({
       id={SECTION_IDS.plans}
       className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-[var(--sdk-shadow-sm)]"
     >
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--sdk-color-border-subtle)] px-6 py-5">
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--sdk-color-border-subtle)] px-5 py-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--sdk-color-text-muted)]">
             {copy.plans.eyebrow}
@@ -461,7 +461,7 @@ function PlansSection({
         </div>
       </div>
 
-      <div className="px-6 py-6">
+      <div className="px-5 py-5">
         {plans.length === 0 ? (
           <div className="rounded-[1.25rem] border border-dashed border-[var(--sdk-color-border-default)] px-5 py-12 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[1rem] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)]">
@@ -651,7 +651,7 @@ function BenefitsSection({ benefits }: BenefitsSectionProps) {
       id={SECTION_IDS.benefits}
       className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-[var(--sdk-shadow-sm)]"
     >
-      <div className="border-b border-[var(--sdk-color-border-subtle)] px-6 py-5">
+      <div className="border-b border-[var(--sdk-color-border-subtle)] px-5 py-4">
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--sdk-color-text-muted)]">
           {copy.benefits.eyebrow}
         </div>
@@ -660,7 +660,7 @@ function BenefitsSection({ benefits }: BenefitsSectionProps) {
         </h2>
       </div>
 
-      <div className="px-6 py-6">
+      <div className="px-5 py-5">
         {benefits.length === 0 ? (
           <div className="rounded-[1.25rem] border border-dashed border-[var(--sdk-color-border-default)] px-5 py-12 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[1rem] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)]">
@@ -878,7 +878,7 @@ function LevelsSection({ levels }: LevelsSectionProps) {
       ) : null}
 
       <div className="overflow-hidden rounded-[1.5rem] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-[var(--sdk-shadow-sm)]">
-        <div className="border-b border-[var(--sdk-color-border-subtle)] px-6 py-5">
+        <div className="border-b border-[var(--sdk-color-border-subtle)] px-5 py-4">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--sdk-color-text-muted)]">
             {copy.levels.eyebrow}
           </div>
@@ -887,7 +887,7 @@ function LevelsSection({ levels }: LevelsSectionProps) {
           </h2>
         </div>
 
-        <div className="px-6 py-6">
+        <div className="px-5 py-5">
           {sortedLevels.length === 0 ? (
             <div className="rounded-[1.25rem] border border-dashed border-[var(--sdk-color-border-default)] px-5 py-12 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[1rem] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)]">

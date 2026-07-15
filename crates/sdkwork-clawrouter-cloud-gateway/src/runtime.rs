@@ -1,3 +1,4 @@
+use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use axum::Router;
@@ -17,15 +18,16 @@ use sdkwork_claw_http::QueryStringApiKeyPolicy;
 use sdkwork_claw_provider_adapter_contract::AdapterRouteStatus;
 use sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient;
 use sdkwork_claw_provider_adapter_registry::{ProviderAdapterRegistry, ProviderAdapterRouteConfig};
+use sdkwork_claw_security::redact_error_message;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::api::{
     OpenAiInvocationPluginRef, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
 use sdkwork_clawrouter_router_service::application::{
     resolve_usage_settlement_worker_config, ApiKeySecretCodec, ApiKeySecretHasher,
-    GatewayAccountingRetryHealth, GatewayAccountingRetryWorker,
-    GatewayAccountingRetryWorkerConfig, RetryingGatewayUsageRecorder, RuntimeCacheManager,
-    RuntimeStreamBus, TenantInflightConfig, UsageSettlementWorker, UsageSettlementWorkerConfig,
+    GatewayAccountingRetryHealth, GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig,
+    RetryingGatewayUsageRecorder, RuntimeCacheManager, RuntimeStreamBus, TenantInflightConfig,
+    UsageSettlementWorker, UsageSettlementWorkerConfig,
 };
 use sdkwork_clawrouter_router_service::domain::{
     ProviderRetryPolicy, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
@@ -45,9 +47,6 @@ use sdkwork_clawrouter_router_service::infrastructure::provider::{
     DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
     DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
 };
-use sdkwork_clawrouter_router_service::infrastructure::{
-    RedisGatewayAccountingRetryQueue, SqliteGatewayAccountingRetryQueue,
-};
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
 };
@@ -61,6 +60,9 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
     SqlCatalogLoadError, SqliteGatewayUsageRecorder, SqlitePricingCatalogLoader,
     SqliteUsageSettlementStore,
+};
+use sdkwork_clawrouter_router_service::infrastructure::{
+    RedisGatewayAccountingRetryQueue, SqliteGatewayAccountingRetryQueue,
 };
 use sdkwork_clawrouter_router_service::ports::{
     ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
@@ -168,8 +170,13 @@ fn router_with_invocation_runtime_routes<C>(
     provider_adapter_config: Option<ProviderAdapterConfig>,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
     runtime_toml: Option<&RuntimeTomlConfig>,
+    body_max_bytes: usize,
     tenant_inflight_config: Option<TenantInflightConfig>,
     estimated_instance_count: u32,
+    stream_response_timeout: Duration,
+    response_max_bytes: NonZeroUsize,
+    provider_response_timeout: Duration,
+    provider_http_pool_config: ProviderRelayHttpPoolConfig,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -181,17 +188,15 @@ where
     let redis_config = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
         .ok()
         .flatten();
-    let body_limit_bytes =
-        sdkwork_claw_config::RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
-            .map(|config| config.gateway_invocation_body_max_bytes())
-            .unwrap_or(
-                sdkwork_claw_config::RequestLimitsConfig::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
-            );
     base_router.merge(
         crate::invocation_router::invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy(
             catalog,
             api_key_hasher,
-            Arc::new(InvocationHttpDispatcher::new()),
+            Arc::new(InvocationHttpDispatcher::with_provider_runtime(
+                response_max_bytes,
+                provider_response_timeout,
+                provider_http_pool_config,
+            )),
             secret_resolver,
             sticky_store,
             usage_recorder,
@@ -202,7 +207,8 @@ where
             )),
             tenant_inflight_config,
             redis_config.as_ref(),
-            body_limit_bytes,
+            body_max_bytes,
+            stream_response_timeout,
             query_string_api_key_policy,
         ),
     )
@@ -217,6 +223,9 @@ fn merge_relay_authenticated_openai_passthrough<C>(
     usage_recorder: Option<UsageRecorder>,
     secret_resolver_configured: bool,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
+    body_max_bytes: usize,
+    provider_response_timeout: Duration,
+    provider_http_pool_config: ProviderRelayHttpPoolConfig,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -235,6 +244,9 @@ where
             provider_adapter_config,
             usage_recorder,
             query_string_api_key_policy,
+            body_max_bytes,
+            provider_response_timeout,
+            provider_http_pool_config,
         ),
     )
 }
@@ -251,10 +263,14 @@ fn router_with_database_runtime_routes<C>(
     provider_runtime_config: ProviderRelayRuntimeConfig,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
     runtime_toml: Option<&RuntimeTomlConfig>,
+    request_limits_config: RequestLimitsConfig,
 ) -> Result<Router, GatewayRouterError>
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    let dispatcher_response_max_bytes =
+        invocation_response_max_bytes(provider_runtime_config.response_max_bytes)?;
+    let body_max_bytes = gateway_invocation_body_max_bytes(request_limits_config);
     let secret_resolver_configured = provider_secret_resolver.is_some();
     let router = if secret_resolver_configured {
         router_with_invocation_runtime_routes(
@@ -267,8 +283,13 @@ where
             provider_adapter_config.clone(),
             query_string_api_key_policy,
             runtime_toml,
+            body_max_bytes,
             Some(provider_runtime_config.tenant_inflight_config),
             provider_runtime_config.estimated_instance_count,
+            provider_runtime_config.stream_response_timeout,
+            dispatcher_response_max_bytes,
+            provider_runtime_config.response_timeout,
+            provider_runtime_config.http_pool_config,
         )
     } else {
         let relays = build_openai_runtime_relays(
@@ -304,8 +325,13 @@ where
             provider_adapter_config.clone(),
             query_string_api_key_policy,
             runtime_toml,
+            body_max_bytes,
             Some(provider_runtime_config.tenant_inflight_config),
             provider_runtime_config.estimated_instance_count,
+            provider_runtime_config.stream_response_timeout,
+            dispatcher_response_max_bytes,
+            provider_runtime_config.response_timeout,
+            provider_runtime_config.http_pool_config,
         )
     };
     Ok(merge_relay_authenticated_openai_passthrough(
@@ -317,7 +343,28 @@ where
         usage_recorder,
         secret_resolver_configured,
         query_string_api_key_policy,
+        body_max_bytes,
+        provider_runtime_config.response_timeout,
+        provider_runtime_config.http_pool_config,
     ))
+}
+
+fn gateway_invocation_body_max_bytes(request_limits_config: RequestLimitsConfig) -> usize {
+    request_limits_config.gateway_invocation_body_max_bytes()
+}
+
+fn invocation_response_max_bytes(value: u64) -> Result<NonZeroUsize, GatewayRouterError> {
+    let value = usize::try_from(value).map_err(|_| {
+        GatewayRouterError::Config(
+            "SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES exceeds this platform's addressable memory"
+                .to_owned(),
+        )
+    })?;
+    NonZeroUsize::new(value).ok_or_else(|| {
+        GatewayRouterError::Config(
+            "SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES must be greater than zero".to_owned(),
+        )
+    })
 }
 
 #[derive(Clone)]
@@ -954,6 +1001,8 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
     let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
+    let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
+        .map_err(GatewayRouterError::Config)?;
     let provider_passthrough_config = provider_relay_config.clone();
     let provider_runtime = provider_relay_runtime_config_from_env_or_toml(runtime_toml)
         .map_err(GatewayRouterError::Config)?;
@@ -1050,6 +1099,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                 provider_runtime,
                 query_string_api_key_policy,
                 runtime_toml,
+                request_limits_config,
             )
         }
         DatabaseEngine::Postgres => {
@@ -1141,6 +1191,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                 provider_runtime,
                 query_string_api_key_policy,
                 runtime_toml,
+                request_limits_config,
             )
         }
     }
@@ -1195,6 +1246,7 @@ fn router_without_database(deployment_mode: DeploymentMode) -> Router {
 pub async fn router_from_env() -> Result<Router, GatewayRouterError> {
     let runtime_toml =
         RuntimeTomlConfig::from_env_config_file().map_err(GatewayRouterError::Config)?;
+    let deployment_mode = validate_runtime_snowflake_node_id_configuration(runtime_toml.as_ref())?;
     let query_string_api_key_policy = QueryStringApiKeyPolicy::from_configured_runtime(
         DeploymentRuntime::resolve_configured(runtime_toml.as_ref())
             .map_err(GatewayRouterError::Config)?,
@@ -1217,8 +1269,6 @@ pub async fn router_from_env() -> Result<Router, GatewayRouterError> {
         startup_install_mode,
     )
     .map_err(GatewayRouterError::Config)?;
-    let deployment_mode = DeploymentMode::from_env_or_runtime_toml(runtime_toml.as_ref())
-        .map_err(GatewayRouterError::Config)?;
     sdkwork_claw_config::ensure_server_production_redis_config(
         deployment_mode,
         runtime_toml.as_ref(),
@@ -1426,6 +1476,27 @@ fn claw_router_product_iam_api_keys_dependency_surface() -> DependencyApiSurface
     }
 }
 
+fn claw_router_product_iam_users_settings_dependency_surface() -> DependencyApiSurfaceConfig {
+    DependencyApiSurfaceConfig {
+        service_id: CLAW_ROUTER_APP_API_SERVICE_ID.to_owned(),
+        workspace: "sdkwork-clawrouter".to_owned(),
+        sdk_family: sdkwork_routes_clawrouter_app_api::manifest::SDK_FAMILY.to_owned(),
+        api_authority: sdkwork_routes_clawrouter_app_api::manifest::API_AUTHORITY.to_owned(),
+        surface: "app".to_owned(),
+        api_prefix: "/app/v3/api/iam/users/settings".to_owned(),
+        runtime_mode: DependencyRuntimeMode::Embedded,
+        same_origin_allowed: true,
+        executable_export: Some(
+            "sdkwork_routes_clawrouter_app_api::build_sdkwork_claw_router_app_api_router"
+                .to_owned(),
+        ),
+        cargo_feature: None,
+        cargo_dependency: Some("sdkwork-routes-clawrouter-app-api".to_owned()),
+        coverage: "clawrouter-product-iam-users-settings-route-crate".to_owned(),
+        required_base_url_key: None,
+    }
+}
+
 fn claw_router_appbase_app_dependency_surface() -> DependencyApiSurfaceConfig {
     DependencyApiSurfaceConfig {
         service_id: APPBASE_APP_API_SERVICE_ID.to_owned(),
@@ -1446,9 +1517,10 @@ fn claw_router_appbase_app_dependency_surface() -> DependencyApiSurfaceConfig {
     }
 }
 
-fn claw_router_gateway_dependency_surfaces() -> [DependencyApiSurfaceConfig; 5] {
+fn claw_router_gateway_dependency_surfaces() -> [DependencyApiSurfaceConfig; 6] {
     [
         claw_router_product_iam_api_keys_dependency_surface(),
+        claw_router_product_iam_users_settings_dependency_surface(),
         claw_router_appbase_app_dependency_surface(),
         claw_router_appbase_backend_dependency_surface(),
         DependencyApiSurfaceConfig {
@@ -1512,6 +1584,8 @@ fn claw_router_appbase_backend_dependency_surface() -> DependencyApiSurfaceConfi
 async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntimeContext> {
     let runtime_toml = RuntimeTomlConfig::from_env_config_file().map_err(anyhow::Error::msg)?;
     let runtime_toml_ref = runtime_toml.as_ref();
+    let deployment_mode = validate_runtime_snowflake_node_id_configuration(runtime_toml_ref)
+        .map_err(anyhow::Error::new)?;
     let query_string_api_key_policy = QueryStringApiKeyPolicy::from_configured_runtime(
         DeploymentRuntime::resolve_configured(runtime_toml_ref).map_err(anyhow::Error::msg)?,
     );
@@ -1573,8 +1647,6 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         provider_adapter_config_from_env_or_runtime_toml(runtime_toml_ref)
             .await
             .map_err(anyhow::Error::msg)?;
-    let deployment_mode =
-        DeploymentMode::from_env_or_runtime_toml(runtime_toml_ref).map_err(anyhow::Error::msg)?;
     let provider_health_probe =
         sdkwork_routes_clawrouter_backend_api::shared_provider_health_probe_from_runtime_toml(
             provider_secret_map_config.clone(),
@@ -1864,6 +1936,7 @@ async fn build_gateway_router_from_all_in_one_context(
         context.provider_runtime_config.clone(),
         context.query_string_api_key_policy,
         runtime_toml.as_ref(),
+        context.request_limits_config,
     )
     .map_err(anyhow::Error::new)
 }
@@ -1872,6 +1945,15 @@ fn gateway_sqlite_pool_error(error: impl std::fmt::Display) -> GatewayRouterErro
     GatewayRouterError::Sqlite(SqlCatalogLoadError::Database(sqlx::Error::Configuration(
         error.to_string().into(),
     )))
+}
+
+fn validate_runtime_snowflake_node_id_configuration(
+    runtime_toml: Option<&RuntimeTomlConfig>,
+) -> Result<DeploymentMode, GatewayRouterError> {
+    sdkwork_clawrouter_router_service::infrastructure::sql::validate_claw_runtime_id_configuration(
+        runtime_toml,
+    )
+    .map_err(|error| GatewayRouterError::Config(error.to_string()))
 }
 
 async fn prepare_claw_router_database_lifecycle(
@@ -1979,38 +2061,36 @@ async fn wrap_usage_recorder_with_durable_accounting_retry(
     attribution: GatewayTraceAttribution,
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<(UsageRecorder, GatewayAccountingRetryHealth), GatewayRouterError> {
-    let retry_queue: AccountingRetryQueue =
-        if let Some(redis_config) = sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(
-            runtime_toml,
+    let retry_queue: AccountingRetryQueue = if let Some(redis_config) =
+        sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
+            .map_err(GatewayRouterError::Config)?
+    {
+        Arc::new(
+            RedisGatewayAccountingRetryQueue::new(
+                redis_config.url(),
+                redis_config.key_prefix().unwrap_or("clawrouter"),
+            )
+            .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
         )
-        .map_err(GatewayRouterError::Config)?
-        {
-            Arc::new(
-                RedisGatewayAccountingRetryQueue::new(
-                    redis_config.url(),
-                    redis_config.key_prefix().unwrap_or("clawrouter"),
-                )
+    } else {
+        let profile = RuntimeConfigProfile::from_env_or_runtime_toml(runtime_toml)
+            .map_err(GatewayRouterError::Config)?;
+        let location = DatabaseConfig::runtime_config_location_from_env(profile);
+        std::fs::create_dir_all(&location.data_directory).map_err(|error| {
+            GatewayRouterError::Config(format!(
+                "create durable accounting retry data directory {} failed: {error}",
+                location.data_directory.display()
+            ))
+        })?;
+        let queue_path = location
+            .data_directory
+            .join("gateway-accounting-retry.sqlite3");
+        Arc::new(
+            SqliteGatewayAccountingRetryQueue::connect(&queue_path)
+                .await
                 .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
-            )
-        } else {
-            let profile = RuntimeConfigProfile::from_env_or_runtime_toml(runtime_toml)
-                .map_err(GatewayRouterError::Config)?;
-            let location = DatabaseConfig::runtime_config_location_from_env(profile);
-            std::fs::create_dir_all(&location.data_directory).map_err(|error| {
-                GatewayRouterError::Config(format!(
-                    "create durable accounting retry data directory {} failed: {error}",
-                    location.data_directory.display()
-                ))
-            })?;
-            let queue_path = location
-                .data_directory
-                .join("gateway-accounting-retry.sqlite3");
-            Arc::new(
-                SqliteGatewayAccountingRetryQueue::connect(&queue_path)
-                    .await
-                    .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
-            )
-        };
+        )
+    };
 
     let health = GatewayAccountingRetryHealth::default();
     let primary_for_worker = Arc::clone(&primary);
@@ -2058,10 +2138,13 @@ fn spawn_gateway_accounting_retry_worker(
             match result {
                 Ok(0) => {}
                 Ok(processed) => {
-                    tracing::debug!(processed, "gateway accounting retry worker processed deliveries");
+                    tracing::debug!(
+                        processed,
+                        "gateway accounting retry worker processed deliveries"
+                    );
                 }
                 Err(error) => {
-                    tracing::warn!(error = %error, "gateway accounting retry worker run failed");
+                    tracing::warn!(error = %redact_error_message(&error), "gateway accounting retry worker run failed");
                 }
             }
             tokio::select! {
@@ -2643,6 +2726,17 @@ fn apply_provider_adapter_config(
 async fn provider_adapter_config_from_env_or_runtime_toml(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Option<ProviderAdapterConfig>, String> {
+    provider_adapter_config_from_env_or_runtime_toml_with_outbound_target_policy(
+        runtime_toml,
+        sdkwork_claw_security::OutboundTargetPolicy::Production,
+    )
+    .await
+}
+
+async fn provider_adapter_config_from_env_or_runtime_toml_with_outbound_target_policy(
+    runtime_toml: Option<&RuntimeTomlConfig>,
+    outbound_target_policy: sdkwork_claw_security::OutboundTargetPolicy,
+) -> Result<Option<ProviderAdapterConfig>, String> {
     let local_config = ProviderAdapterConfig::from_env_or_runtime_toml(runtime_toml)?;
     if local_config.is_some() {
         return Ok(local_config);
@@ -2653,7 +2747,10 @@ async fn provider_adapter_config_from_env_or_runtime_toml(
     else {
         return Ok(None);
     };
-    let client = ProviderAdapterHttpClient::new(discovery_config.gateway_token().to_owned());
+    let client = ProviderAdapterHttpClient::with_outbound_target_policy(
+        discovery_config.gateway_token().to_owned(),
+        outbound_target_policy,
+    );
     let manifest = client
         .fetch_manifest(discovery_config.adapter_base_url())
         .await
@@ -2996,6 +3093,35 @@ impl From<PostgresCatalogLoadError> for GatewayRouterError {
 mod tests {
     use super::*;
 
+    #[test]
+    fn invocation_response_budget_rejects_zero_runtime_config() {
+        let error = invocation_response_max_bytes(0)
+            .expect_err("zero provider response budget must fail during gateway assembly");
+
+        assert!(error
+            .to_string()
+            .contains("SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES"));
+    }
+
+    #[test]
+    fn runtime_toml_body_limit_is_resolved_once_for_invocation_and_passthrough() {
+        let runtime_toml = RuntimeTomlConfig::from_toml_str(
+            r#"
+[request_limits]
+gateway_invocation_body_max_bytes = 37
+"#,
+        )
+        .expect("parse request-limit fixture");
+        let request_limits = RequestLimitsConfig::from_env_or_runtime_toml(Some(&runtime_toml))
+            .expect("resolve request-limit fixture");
+
+        assert_eq!(
+            37,
+            gateway_invocation_body_max_bytes(request_limits),
+            "gateway assembly passes this one resolved value to invocation and passthrough routes"
+        );
+    }
+
     #[tokio::test]
     async fn no_database_router_health_uses_explicit_deployment_mode() {
         use axum::body::{to_bytes, Body};
@@ -3031,13 +3157,17 @@ mod tests {
         use sdkwork_api_cloud_gateway_registry::GatewayRouteRegistry;
 
         let surfaces = claw_router_gateway_dependency_surfaces();
-        assert_eq!(5, surfaces.len());
+        assert_eq!(6, surfaces.len());
         assert_eq!(
             surfaces[0].api_prefix, "/app/v3/api/iam/api_keys",
             "product-owned api_keys surface must be declared first for precedence"
         );
         assert_eq!(
-            surfaces[1].service_id, APPBASE_APP_API_SERVICE_ID,
+            surfaces[1].api_prefix, "/app/v3/api/iam/users/settings",
+            "product-owned users/settings surface must be declared before broad iam catch-all"
+        );
+        assert_eq!(
+            surfaces[2].service_id, APPBASE_APP_API_SERVICE_ID,
             "sdkwork-iam app-api surface must be declared for auth/iam/oauth catch-all routes"
         );
 
@@ -3048,6 +3178,14 @@ mod tests {
         assert_eq!(
             api_keys_route.service_id, CLAW_ROUTER_APP_API_SERVICE_ID,
             "api_keys must route to clawrouter product app-api"
+        );
+
+        let users_settings_route = registry
+            .resolve("GET", "/app/v3/api/iam/users/settings")
+            .expect("users/settings route should resolve");
+        assert_eq!(
+            users_settings_route.service_id, CLAW_ROUTER_APP_API_SERVICE_ID,
+            "users/settings must route to clawrouter product app-api"
         );
 
         let iam_user_route = registry
@@ -3230,7 +3368,11 @@ gateway_token = "adapter-token"
         ))
         .unwrap();
 
-        let adapter_config = provider_adapter_config_from_env_or_runtime_toml(Some(&runtime_toml))
+        let adapter_config =
+            provider_adapter_config_from_env_or_runtime_toml_with_outbound_target_policy(
+                Some(&runtime_toml),
+                sdkwork_claw_security::OutboundTargetPolicy::Development,
+            )
             .await
             .unwrap()
             .unwrap();
@@ -3272,13 +3414,34 @@ gateway_token = "adapter-token"
         ))
         .unwrap();
 
-        let error = provider_adapter_config_from_env_or_runtime_toml(Some(&runtime_toml))
-            .await
-            .unwrap_err();
+        let error = provider_adapter_config_from_env_or_runtime_toml_with_outbound_target_policy(
+            Some(&runtime_toml),
+            sdkwork_claw_security::OutboundTargetPolicy::Development,
+        )
+        .await
+        .unwrap_err();
 
         assert!(error.contains("provider adapter manifest discovery failed"));
 
         server.abort();
+    }
+
+    #[tokio::test]
+    async fn provider_adapter_manifest_discovery_rejects_local_http_in_production() {
+        let runtime_toml = RuntimeTomlConfig::from_toml_str(
+            r#"
+[provider_adapter]
+adapter_base_url = "http://127.0.0.1:9"
+gateway_token = "adapter-token"
+"#,
+        )
+        .unwrap();
+
+        let error = provider_adapter_config_from_env_or_runtime_toml(Some(&runtime_toml))
+            .await
+            .expect_err("production manifest discovery must reject local HTTP before connecting");
+
+        assert!(error.contains("outbound target policy"));
     }
 
     #[tokio::test]
@@ -3321,7 +3484,11 @@ gateway_token = "adapter-token"
         ))
         .unwrap();
 
-        let adapter_config = provider_adapter_config_from_env_or_runtime_toml(Some(&runtime_toml))
+        let adapter_config =
+            provider_adapter_config_from_env_or_runtime_toml_with_outbound_target_policy(
+                Some(&runtime_toml),
+                sdkwork_claw_security::OutboundTargetPolicy::Development,
+            )
             .await
             .unwrap();
 

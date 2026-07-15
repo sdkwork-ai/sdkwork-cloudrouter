@@ -43,6 +43,8 @@ const AUTH_BUILDER = {
   openApiFlexible: "open_api_flexible",
 };
 
+const RUSTFMT_FN_CALL_WIDTH = 60;
+
 function parseArgs(argv) {
   return {
     apply: argv.includes("--apply"),
@@ -68,6 +70,16 @@ function routeEntry(route) {
   const operationId =
     route.operationId ??
     `${route.method.toLowerCase()}.${route.path.replace(/[{}]/g, "").replaceAll("/", ".")}`;
+  const args = [
+    `HttpMethod::${method}`,
+    `"${escapeRustString(route.path)}"`,
+    `"${escapeRustString(tag)}"`,
+    `"${escapeRustString(operationId)}"`,
+  ].join(", ");
+  const entry = `    HttpRoute::${builder}(${args}),`;
+  if (args.length <= RUSTFMT_FN_CALL_WIDTH) {
+    return entry;
+  }
   return `    HttpRoute::${builder}(
         HttpMethod::${method},
         "${escapeRustString(route.path)}",
@@ -84,7 +96,7 @@ async function readAppbaseIamRouteEntries() {
       `failed to parse IAM_APP_API_ROUTES from ${APPBASE_IAM_MANIFEST_PATH}`,
     );
   }
-  return match[1].trim();
+  return `    ${match[1].trim()}`;
 }
 
 function listHttpRouteKeys(rustRouteEntries) {
@@ -148,7 +160,11 @@ mod tests {
         let route = manifest
             .match_route(method, path)
             .unwrap_or_else(|| panic!("{method} {path} must be registered"));
-        assert_eq!(RouteAuth::Public, route.auth, "{method} {path} must be public");
+        assert_eq!(
+            RouteAuth::Public,
+            route.auth,
+            "{method} {path} must be public"
+        );
         assert!(
             resolve_public_path(
                 method,
@@ -167,6 +183,23 @@ mod tests {
         assert_public_route("GET", "/app/v3/api/ai/model_vendors");
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
     }
+
+    #[test]
+    fn membership_catalog_routes_allow_anonymous_access() {
+        assert_public_route("GET", "/app/v3/api/memberships/plans");
+        assert_public_route("GET", "/app/v3/api/memberships/benefits");
+        assert_public_route("GET", "/app/v3/api/memberships/packages");
+        assert_public_route("GET", "/app/v3/api/memberships/packages/{packageId}");
+        assert_public_route("GET", "/app/v3/api/memberships/package_groups");
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}",
+        );
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+        );
+    }
 ${publicBootstrapTests}}
 `;
 }
@@ -178,7 +211,7 @@ async function processTarget(target, mode) {
   const iamRouteEntries = target.mergeAppbaseIamRoutes
     ? await readAppbaseIamRouteEntries()
     : null;
-  const content = `${renderManifest(manifest.routes, { iamRouteEntries })}\n`;
+  const content = renderManifest(manifest.routes, { iamRouteEntries });
   const outputPath = path.join(workspaceRoot, target.outputPath);
   let existing = null;
   try {

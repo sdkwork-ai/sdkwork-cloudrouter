@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   ChevronDown,
@@ -106,6 +106,7 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
   const location = useLocation();
 
   const [permissionScope, setPermissionScope] = useState(() => readPortalPermissionScope());
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const syncPermissionScope = () => setPermissionScope(readPortalPermissionScope());
@@ -122,6 +123,19 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
     () => getFilteredAdminModuleMenu(activeModule, permissionScope),
     [activeModule, permissionScope],
   );
+
+  const handleLogout = useCallback(async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+    try {
+      await revokeAppSession();
+    } finally {
+      navigate('/', { replace: true });
+    }
+  }, [isLoggingOut, navigate]);
 
   return (
     <div
@@ -150,11 +164,10 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
           </div>
           <div className="p-3 border-t border-slate-200 dark:border-white/10 shrink-0">
             <button
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-              onClick={() => {
-                void revokeAppSession();
-                navigate('/', { replace: true });
-              }}
+              aria-busy={isLoggingOut}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:cursor-wait disabled:opacity-60"
+              disabled={isLoggingOut}
+              onClick={() => void handleLogout()}
               type="button"
             >
               <LogOut className="w-4 h-4" />

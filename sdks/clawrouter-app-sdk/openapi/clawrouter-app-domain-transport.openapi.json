@@ -6692,12 +6692,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "memberships"
@@ -6712,7 +6707,8 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "memberships.benefits",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous"
       }
     },
     "/app/v3/api/memberships/current": {
@@ -6932,12 +6928,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "memberships"
@@ -6952,7 +6943,8 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "memberships.packageGroups",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous"
       }
     },
     "/app/v3/api/memberships/package_groups/{packageGroupId}": {
@@ -7022,12 +7014,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "Retrieve",
         "tags": [
           "memberships"
@@ -7042,7 +7029,8 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "memberships.packageGroups",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous"
       }
     },
     "/app/v3/api/memberships/package_groups/{packageGroupId}/packages": {
@@ -7112,12 +7100,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "memberships"
@@ -7132,7 +7115,8 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "memberships.packageGroups.packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous"
       }
     },
     "/app/v3/api/memberships/packages": {
@@ -7192,12 +7176,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "memberships"
@@ -7212,7 +7191,8 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "memberships.packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous"
       }
     },
     "/app/v3/api/memberships/packages/{packageId}": {
@@ -7282,12 +7262,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "Retrieve",
         "tags": [
           "memberships"
@@ -7302,7 +7277,8 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "memberships.packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous"
       }
     },
     "/app/v3/api/memberships/plans": {
@@ -7362,12 +7338,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List",
         "tags": [
           "memberships"
@@ -7382,7 +7353,8 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "memberships.plans",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-auth-mode": "anonymous"
       }
     },
     "/app/v3/api/memberships/points/balance": {

@@ -5,6 +5,7 @@ use sqlx::{Row, SqlitePool};
 
 const SQLITE_USAGE_SETTLEMENT_STORE: &str =
     include_str!("../src/infrastructure/sql/sqlite/usage_settlement_store.rs");
+const SETTLEMENT_BATCH_HARD_LIMIT: i64 = 200;
 
 #[test]
 fn sqlite_usage_settlement_upsert_never_reopens_successful_bridge() {
@@ -176,6 +177,46 @@ async fn sqlite_usage_settlement_skips_usage_without_explicit_settlement_status(
             .unwrap()
             .get::<Option<i64>, _>("settlement_status")
             .is_none()
+    );
+}
+
+#[tokio::test]
+async fn sqlite_usage_settlement_caps_direct_oversized_commands() {
+    let pool = test_pool().await;
+    seed_points_account(&pool, "account-701", 10_000).await;
+    for offset in 0..=SETTLEMENT_BATCH_HARD_LIMIT {
+        let usage_fact_id = 900 + offset;
+        seed_usage_fact(
+            &pool,
+            usage_fact_id,
+            &format!("req-usage-{usage_fact_id}"),
+            "0.990000",
+            2,
+            Some(0),
+        )
+        .await;
+    }
+    let store = SqliteUsageSettlementStore::new(pool.clone());
+
+    let outcome = store
+        .settle_pending_usage(UsageSettlementCommand {
+            tenant_id: 100001,
+            organization_id: 0,
+            limit: i64::MAX,
+            requested_at: "2026-04-30T12:00:00Z".to_owned(),
+        })
+        .await
+        .unwrap();
+
+    assert_eq!(SETTLEMENT_BATCH_HARD_LIMIT, outcome.settled_count);
+    assert_eq!(0, outcome.failed_count);
+    assert_eq!(
+        1,
+        scalar_i64(
+            &pool,
+            "SELECT COUNT(1) FROM ai_usage WHERE settlement_status = 0"
+        )
+        .await
     );
 }
 
