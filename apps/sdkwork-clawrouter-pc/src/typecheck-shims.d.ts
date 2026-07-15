@@ -1307,7 +1307,26 @@ declare module '@sdkwork/models-pc-picker' {
 }
 
 declare module '@sdkwork/appbase-pc-react' {
-  export {};
+  export interface SdkworkAppErrorPageLabels {
+    description: string;
+    home?: string;
+    reference?: string;
+    retry: string;
+    title: string;
+  }
+
+  export interface SdkworkAppErrorBoundaryProps {
+    children: import('react').ReactNode;
+    labels: SdkworkAppErrorPageLabels;
+    onGoHome?: () => void;
+    onRetry?: () => void;
+    resetKeys?: readonly unknown[];
+    variant?: 'inline' | 'page';
+  }
+
+  export function SdkworkAppErrorBoundary(
+    props: SdkworkAppErrorBoundaryProps,
+  ): import('react').ReactNode;
 }
 
 declare module '@sdkwork/conversation' {

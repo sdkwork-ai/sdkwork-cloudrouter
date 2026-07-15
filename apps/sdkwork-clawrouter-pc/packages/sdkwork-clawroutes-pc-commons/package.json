@@ -110,6 +110,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/appbase-pc-react": "workspace:*",
     "@sdkwork/clawrouter-pc-core": "workspace:*",
     "@sdkwork/iam-app-sdk": "workspace:*",
     "@sdkwork/iam-backend-sdk": "workspace:*",
