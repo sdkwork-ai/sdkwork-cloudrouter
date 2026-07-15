@@ -80,6 +80,9 @@
       "@sdkwork/order-pc-order": [
         "../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src/index.ts"
       ],
+      "@sdkwork/order-pc-recharge": [
+        "../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge/src/index.ts"
+      ],
       "@sdkwork/clawrouter-pc-admin-service-nodes": [
         "./packages/sdkwork-clawrouter-pc-admin-service-nodes/src/index.tsx"
       ],

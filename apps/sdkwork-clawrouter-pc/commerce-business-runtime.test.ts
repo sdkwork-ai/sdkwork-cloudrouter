@@ -63,6 +63,29 @@ test("console coupons route is reachable from sidebar navigation", () => {
   assert.doesNotMatch(consoleLayoutSource, /path:\s*'\/console\/payment'/);
 });
 
+test("token plan purchases use the order-owned recharge dialog and recharge SDK port", () => {
+  const modalSource = readPortalFile("./src/token-plan/ClawRouterTokenPlanCommerceModal.tsx");
+  const providerSource = readPortalFile(
+    "./packages/sdkwork-clawroutes-pc-commons/src/domain-service-providers.ts",
+  );
+  const summarySource = readPortalFile("./src/token-plan/tokenPlanMemberSummary.ts");
+  const packageJson = JSON.parse(readPortalFile("./package.json")) as {
+    dependencies: Record<string, string>;
+  };
+
+  assert.equal(packageJson.dependencies["@sdkwork/order-pc-recharge"], "workspace:*");
+  assert.match(modalSource, /@sdkwork\/order-pc-recharge/);
+  assert.match(modalSource, /SdkworkPointsRechargeDialog/);
+  assert.match(modalSource, /getClawRouterPointsRechargeService/);
+  assert.match(modalSource, /service=\{getClawRouterPointsRechargeService\(\)\}/);
+  assert.doesNotMatch(modalSource, /createTokenPlanCommerceModal\("points-purchase"\)/);
+  assert.doesNotMatch(modalSource, /登录后将跳转到控制台钱包完成操作/);
+  assert.match(providerSource, /recharges:\s*client\.recharges/);
+  assert.match(providerSource, /const pointsRechargeOrderAppService = bootstrapMembershipOrderAppService/);
+  assert.match(providerSource, /appService: pointsRechargeOrderAppService/);
+  assert.match(summarySource, /pointBalance:\s*state\.dashboard\.summary\.pointBalance/);
+});
+
 test("console checkout and payment routes stay hidden from sidebar navigation", () => {
   const consoleLayoutSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-shell/src/ConsoleLayout.tsx");
 

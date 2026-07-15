@@ -1071,6 +1071,9 @@ importers:
       '@sdkwork/order-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-order/sdks/sdkwork-order-app-sdk/sdkwork-order-app-sdk-typescript
+      '@sdkwork/order-service':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
@@ -1146,6 +1149,9 @@ importers:
       '@sdkwork/order-pc-checkout':
         specifier: workspace:*
         version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-checkout
+      '@sdkwork/order-pc-recharge':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge
       '@sdkwork/promotion-pc-coupon':
         specifier: workspace:*
         version: link:../../../../../sdkwork-promotion/apps/sdkwork-promotion-pc/packages/sdkwork-promotion-pc-coupon
@@ -1155,9 +1161,6 @@ importers:
       lucide-react:
         specifier: 'catalog:'
         version: 0.546.0(react@19.2.4)
-      qrcode:
-        specifier: 'catalog:'
-        version: 1.5.4
       react-i18next:
         specifier: 'catalog:'
         version: 17.0.8(i18next@26.3.3(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
@@ -1165,9 +1168,6 @@ importers:
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
-      '@types/qrcode':
-        specifier: 'catalog:'
-        version: 1.5.6
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
@@ -1430,6 +1430,40 @@ importers:
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.3(@types/react@19.2.14)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.4
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
+  ../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge:
+    dependencies:
+      '@sdkwork/order-service':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order-common/packages/sdkwork-order-service
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
+      qrcode:
+        specifier: 'catalog:'
+        version: 1.5.4
+    devDependencies:
+      '@types/qrcode':
+        specifier: 'catalog:'
+        version: 1.5.6
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
@@ -2430,6 +2464,9 @@ importers:
       '@sdkwork/order-pc-order':
         specifier: workspace:*
         version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order
+      '@sdkwork/order-pc-recharge':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge
       '@sdkwork/payment-pc-payment':
         specifier: workspace:*
         version: link:../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment
@@ -2987,15 +3024,15 @@ importers:
       '@sdkwork/account-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-account/apps/sdkwork-account-common/packages/sdkwork-account-service
-      '@sdkwork/appbase-pc-react':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react
       '@sdkwork/agents-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-agents/sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-typescript
       '@sdkwork/agents-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-agents/sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript
+      '@sdkwork/appbase-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react
       '@sdkwork/auth-runtime-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react

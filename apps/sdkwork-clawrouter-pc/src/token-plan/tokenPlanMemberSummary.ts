@@ -54,7 +54,10 @@ export function useTokenPlanMemberSummary() {
     }
 
     const membershipTierKey = tierOverride ?? resolveMembershipTierKeyFromSummary(state.dashboard.summary);
-    return { membershipTierKey };
+    return {
+      membershipTierKey,
+      pointBalance: state.dashboard.summary.pointBalance,
+    };
   }, [isAuthenticated, state.dashboard.summary, tierOverride]);
 
   return {

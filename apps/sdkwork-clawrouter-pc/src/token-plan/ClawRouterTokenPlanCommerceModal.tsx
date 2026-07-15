@@ -4,12 +4,14 @@ import { Crown, Sparkles, Wallet, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@sdkwork/ui-pc-react";
 import type { SdkworkSubscriptionCatalogModalProps } from "@sdkwork/membership-pc-subscription/catalog";
+import { SdkworkPointsRechargeDialog } from "@sdkwork/order-pc-recharge";
+import { getClawRouterPointsRechargeService } from "@sdkwork/clawroutes-pc-commons/domain-service-providers";
 import { useNavigate } from "react-router-dom";
 
 import { useConsoleBusinessNavigation } from "../console-business/consoleBusinessNavigation.ts";
 import { navigateTokenPlanProtectedRoute } from "./tokenPlanNavigation.ts";
 
-type TokenPlanCommerceModalVariant = "points-details" | "points-purchase" | "redeem";
+type TokenPlanCommerceModalVariant = "points-details" | "redeem";
 
 interface ClawRouterTokenPlanCommerceModalProps extends SdkworkSubscriptionCatalogModalProps {
   variant: TokenPlanCommerceModalVariant;
@@ -27,14 +29,6 @@ const VARIANT_COPY: Record<
     titleKey: "token_plan_points_details_title",
     titleDefault: "积分明细",
   },
-  "points-purchase": {
-    ctaKey: "token_plan_open_wallet_recharge",
-    ctaDefault: "前往充值",
-    descriptionKey: "token_plan_points_purchase_description",
-    descriptionDefault: "在控制台钱包中选择充值档位或自定义积分数量，支持微信、支付宝等方式。",
-    titleKey: "token_plan_points_purchase_title",
-    titleDefault: "购买算力积分",
-  },
   redeem: {
     ctaKey: "token_plan_open_wallet_redeem",
     ctaDefault: "前往兑换",
@@ -51,9 +45,52 @@ export function createTokenPlanCommerceModal(variant: TokenPlanCommerceModalVari
   };
 }
 
-export const ClawRouterTokenPlanPointsPurchaseModal = createTokenPlanCommerceModal("points-purchase");
 export const ClawRouterTokenPlanPointsDetailsModal = createTokenPlanCommerceModal("points-details");
 export const ClawRouterTokenPlanRedeemModal = createTokenPlanCommerceModal("redeem");
+
+export function ClawRouterTokenPlanPointsPurchaseModal({
+  currentPoints,
+  isOpen,
+  onClose,
+}: SdkworkSubscriptionCatalogModalProps) {
+  const { t } = useTranslation();
+
+  return (
+    <SdkworkPointsRechargeDialog
+      copy={{
+        account: t("points_recharge.account", "Claw Router"),
+        agreement: t("points_recharge.agreement", "支付前请阅读并同意《算力元充值服务协议》"),
+        agreementAccepted: t("points_recharge.agreement_accepted", "您已同意《算力元充值服务协议》"),
+        agreementRequired: t("points_recharge.agreement_required", "请先同意算力元充值服务协议"),
+        close: t("close", "关闭"),
+        completed: t("points_recharge.completed", "支付完成，算力元已到账"),
+        confirmPayment: t("points_recharge.confirm_payment", "同意并支付"),
+        creatingPayment: t("points_recharge.creating_payment", "正在生成支付二维码..."),
+        emptyPackages: t("points_recharge.empty_packages", "暂无可用充值套餐"),
+        loadFailed: t("points_recharge.load_failed", "充值套餐加载失败"),
+        loadingPackages: t("points_recharge.loading_packages", "正在加载充值套餐..."),
+        myPoints: t("points_recharge.my_points", "我的算力元"),
+        notice: t(
+          "points_recharge.notice",
+          "温馨提示：算力元不可兑换会员、不可转赠，也不可提现；充值后有效期以平台规则为准。",
+        ),
+        paymentUnavailable: t("points_recharge.payment_unavailable", "支付暂不可用"),
+        paymentUnavailableDescription: t(
+          "points_recharge.payment_unavailable_description",
+          "暂时无法生成支付二维码，请稍后重试。",
+        ),
+        pointsUnit: t("points_recharge.points_unit", "算力元"),
+        retry: t("points_recharge.retry", "重新加载"),
+        scanPrompt: t("points_recharge.scan_prompt", "请扫码完成支付"),
+        title: t("points_recharge.title", "算力元购买"),
+      }}
+      currentPoints={currentPoints}
+      isOpen={isOpen}
+      onClose={onClose}
+      service={getClawRouterPointsRechargeService()}
+    />
+  );
+}
 
 function ClawRouterTokenPlanCommerceModal({
   isOpen,
@@ -138,7 +175,7 @@ function ClawRouterTokenPlanCommerceModal({
 
               <div className="flex items-center gap-2 rounded-2xl border border-zinc-800/70 bg-zinc-900/70 px-4 py-3 text-sm text-zinc-300">
                 <Sparkles aria-hidden="true" className="h-4 w-4 shrink-0 text-sky-400" />
-                <span>{t("token_plan_console_wallet_hint", "登录后将跳转到控制台钱包完成操作。")}</span>
+                <span>{t("token_plan_console_wallet_hint", "将在控制台钱包中继续处理。")}</span>
               </div>
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

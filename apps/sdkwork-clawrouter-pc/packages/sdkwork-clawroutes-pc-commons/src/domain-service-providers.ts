@@ -15,7 +15,9 @@ import type { OrderAppSdkClient } from '@sdkwork/order-sdk-ports';
 import {
   configureSdkworkOrderAppServiceProvider,
   configureSdkworkOrderSessionTokenProvider,
+  createSdkworkPointsRechargeService,
   createSdkworkOrderAppService,
+  type SdkworkPointsRechargeService,
 } from '@sdkwork/order-service';
 import type { PaymentAppSdkClient } from '@sdkwork/payment-sdk-ports';
 import {
@@ -38,6 +40,8 @@ import {
 } from './sdk-clients.ts';
 
 type AppDomainClientReader = () => ClawRouterAppSdkClient;
+
+let pointsRechargeService: SdkworkPointsRechargeService | null = null;
 
 function readClawRouterDomainSessionTokens() {
   const session = loadStoredAppSessionToken();
@@ -78,6 +82,7 @@ function buildOrderCommercePort(client: ClawRouterAppSdkClient): OrderAppSdkClie
     fulfillments: client.fulfillments,
     shipments: client.shipments,
     afterSales: client.afterSales,
+    recharges: client.recharges,
   } as OrderAppSdkClient['commerce'];
 }
 
@@ -91,11 +96,13 @@ export function configureClawRouterDomainServiceProviders(
   getAppDomainClient: AppDomainClientReader,
 ): void {
   const readSessionTokens = readClawRouterDomainSessionTokens;
-
-  bootstrapMembershipOrderAppService({
+  const pointsRechargeOrderAppService = bootstrapMembershipOrderAppService({
     baseUrl: resolveRequiredAppDomainTransportBaseUrl({}),
     platform: 'web',
     tokenManager: getClawRouterGlobalTokenManager(),
+  });
+  const orderAppService = createSdkworkOrderAppService({
+    appClient: { commerce: buildOrderCommercePort(getAppDomainClient()) } as OrderAppSdkClient,
   });
 
   configureSdkworkAccountAppServiceProvider(() => createSdkworkAccountAppService({
@@ -107,9 +114,10 @@ export function configureClawRouterDomainServiceProviders(
   configureSdkworkPaymentAppServiceProvider(() => createSdkworkPaymentAppService({
     appClient: { commerce: buildPaymentCommercePort(getAppDomainClient()) } as PaymentAppSdkClient,
   }));
-  configureSdkworkOrderAppServiceProvider(() => createSdkworkOrderAppService({
-    appClient: { commerce: buildOrderCommercePort(getAppDomainClient()) } as OrderAppSdkClient,
-  }));
+  configureSdkworkOrderAppServiceProvider(() => orderAppService);
+  pointsRechargeService = createSdkworkPointsRechargeService({
+    appService: pointsRechargeOrderAppService,
+  });
   configureSdkworkPromotionAppServiceProvider(() => createSdkworkPromotionAppService({
     appClient: { commerce: buildPromotionCommercePort(getAppDomainClient()) } as PromotionAppSdkClient,
   }));
@@ -119,4 +127,11 @@ export function configureClawRouterDomainServiceProviders(
   configureSdkworkPaymentSessionTokenProvider(readSessionTokens);
   configureSdkworkOrderSessionTokenProvider(readSessionTokens);
   configureSdkworkPromotionSessionTokenProvider(readSessionTokens);
+}
+
+export function getClawRouterPointsRechargeService(): SdkworkPointsRechargeService {
+  if (!pointsRechargeService) {
+    throw new Error('Claw Router points recharge service is not configured.');
+  }
+  return pointsRechargeService;
 }
