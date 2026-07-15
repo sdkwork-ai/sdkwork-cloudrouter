@@ -72,9 +72,9 @@ async fn database_config_router_uses_sqlite_catalog_for_backend_model_list() {
         Some(catalog.api_key_security_config().unwrap()),
         Some(trusted_subject_config()),
         Some(app_session_config()),
-    )
-    .await
-    .unwrap();
+        )
+        .await
+        .unwrap();
 
     let health = router
         .clone()
@@ -169,16 +169,29 @@ async fn database_config_router_requires_admin_subject_for_backend_model_managem
                 .header("authorization", catalog.gateway_authorization_header())
                 .body(Body::empty())
                 .unwrap(),
-        )
-        .await
-        .unwrap();
+    )
+    .await
+    .unwrap();
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
+    assert_eq!(
+        Some("application/problem+json"),
+        response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok())
+    );
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("4010", payload["code"]);
+    assert_eq!(40101, payload["code"]);
+    assert_eq!(401, payload["status"]);
+    assert!(payload["traceId"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert!(payload.get("msg").is_none());
+    assert!(payload.get("data").is_none());
 
     let response = router
         .oneshot(app_session_request(
@@ -208,7 +221,7 @@ async fn database_config_router_requires_admin_subject_for_backend_model_managem
 }
 
 #[tokio::test]
-async fn database_config_router_rejects_regular_user_session_for_backend_admin_routes() {
+async fn installation_status_rejects_regular_user_with_standard_problem_detail() {
     let catalog = seeded_sqlite_catalog().await.unwrap();
 
     let router = configured_router_from_database_config(
@@ -220,24 +233,51 @@ async fn database_config_router_rejects_regular_user_session_for_backend_admin_r
     .await
     .unwrap();
 
-    let regular_user_subject = trusted_request_subject(100_001, 0, 31);
+    let pool = catalog.open_pool().await.unwrap();
+    sqlx::query(
+        "UPDATE iam_organization_membership SET membership_kind = 'member' WHERE tenant_id = '100001' AND organization_id = '0' AND user_id = '1'",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    pool.close().await;
+
     let response = router
         .oneshot(app_session_request_for_subject(
             "GET",
-            "/backend/v3/api/ai/models",
+            "/backend/v3/api/system/installation/status",
             Body::empty(),
-            regular_user_subject,
+            bootstrap_admin_subject(),
         ))
         .await
         .unwrap();
 
     assert_eq!(StatusCode::FORBIDDEN, response.status());
+    assert_eq!(
+        Some("application/problem+json"),
+        response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok())
+    );
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
-    assert_eq!("4030", payload["code"]);
+    assert_eq!(40301, payload["code"]);
+    assert_eq!(403, payload["status"]);
+    assert_eq!("Permission required", payload["title"]);
+    assert_eq!(
+        "GET /backend/v3/api/system/installation/status",
+        payload["instance"]
+    );
+    assert_eq!("installation.status.retrieve", payload["operationId"]);
+    assert!(payload["traceId"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert!(payload.get("msg").is_none());
+    assert!(payload.get("data").is_none());
 }
 
 #[tokio::test]

@@ -4,11 +4,10 @@ use std::time::Duration;
 use crate::{manifest, paths};
 use axum::body::Body;
 use axum::extract::State;
-use axum::http::{Request, StatusCode};
+use axum::http::Request;
 use axum::middleware::from_fn_with_state;
 use axum::middleware::Next;
-use axum::response::{IntoResponse, Response};
-use axum::Json;
+use axum::response::Response;
 use axum::Router;
 use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
@@ -88,6 +87,8 @@ use sdkwork_routes_models_catalog_backend_api::{
     admin_model_rankings_router, admin_model_rankings_router_with_read_store,
     admin_model_rankings_router_with_read_store_and_refresh_store,
 };
+use sdkwork_web_axum::problem_response_for_request;
+use sdkwork_web_core::WebFrameworkError;
 use sqlx::{PgPool, SqlitePool};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -163,14 +164,6 @@ enum AdminAccessChecker {
 struct AdminSubjectBoundaryConfig {
     subject_boundary: sdkwork_claw_http::AppSubjectBoundaryConfig,
     access_checker: AdminAccessChecker,
-}
-
-#[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-struct AdminBoundaryErrorEnvelope {
-    code: &'static str,
-    msg: String,
-    data: Option<()>,
 }
 
 #[derive(Default)]
@@ -1794,7 +1787,10 @@ async fn admin_web_framework_access_boundary(
     ) {
         Ok(Some(subject)) => subject,
         Ok(None) => {
-            return admin_unauthorized_response("authenticated admin subject is required".to_owned())
+            return admin_unauthorized_response(
+                &request,
+                "authenticated admin subject is required".to_owned(),
+            )
         }
         Err(response) => return response,
     };
@@ -1804,7 +1800,7 @@ async fn admin_web_framework_access_boundary(
 
     match config.access_checker.has_admin_access(trusted).await {
         Ok(true) => next.run(request).await,
-        Ok(false) => admin_forbidden_response("admin access is required".to_owned()),
+        Ok(false) => admin_forbidden_response(&request, "admin access is required".to_owned()),
         Err(error) => {
             tracing::warn!(
                 tenant_id = trusted.tenant_id,
@@ -1813,7 +1809,7 @@ async fn admin_web_framework_access_boundary(
                 error = %error,
                 "failed to verify admin access"
             );
-            admin_internal_error_response("failed to verify admin access".to_owned())
+            admin_internal_error_response(&request, "failed to verify admin access".to_owned())
         }
     }
 }
@@ -1826,7 +1822,7 @@ async fn admin_request_subject_boundary(
     let (subject, attach_subject) =
         match resolve_admin_request_subject(&mut request, &config.subject_boundary) {
             Ok(result) => result,
-            Err(message) => return admin_unauthorized_response(message),
+            Err(message) => return admin_unauthorized_response(&request, message),
         };
     if attach_subject {
         sdkwork_claw_http::attach_trusted_request_subject(&mut request, subject);
@@ -1834,7 +1830,7 @@ async fn admin_request_subject_boundary(
 
     match config.access_checker.has_admin_access(subject).await {
         Ok(true) => next.run(request).await,
-        Ok(false) => admin_forbidden_response("admin access is required".to_owned()),
+        Ok(false) => admin_forbidden_response(&request, "admin access is required".to_owned()),
         Err(error) => {
             tracing::warn!(
                 tenant_id = subject.tenant_id,
@@ -1843,7 +1839,7 @@ async fn admin_request_subject_boundary(
                 error = %error,
                 "failed to verify admin access"
             );
-            admin_internal_error_response("failed to verify admin access".to_owned())
+            admin_internal_error_response(&request, "failed to verify admin access".to_owned())
         }
     }
 }
@@ -1936,32 +1932,16 @@ fn current_unix_seconds() -> i64 {
         .unwrap_or(0)
 }
 
-fn admin_unauthorized_response(message: String) -> Response {
-    admin_boundary_error_response(StatusCode::UNAUTHORIZED, "4010", message)
+fn admin_unauthorized_response(request: &Request<Body>, message: String) -> Response {
+    problem_response_for_request(&WebFrameworkError::missing_credentials(message), request)
 }
 
-fn admin_forbidden_response(message: String) -> Response {
-    admin_boundary_error_response(StatusCode::FORBIDDEN, "4030", message)
+fn admin_forbidden_response(request: &Request<Body>, message: String) -> Response {
+    problem_response_for_request(&WebFrameworkError::forbidden(message), request)
 }
 
-fn admin_internal_error_response(message: String) -> Response {
-    admin_boundary_error_response(StatusCode::INTERNAL_SERVER_ERROR, "5000", message)
-}
-
-fn admin_boundary_error_response(
-    status: StatusCode,
-    code: &'static str,
-    message: String,
-) -> Response {
-    (
-        status,
-        Json(AdminBoundaryErrorEnvelope {
-            code,
-            msg: message,
-            data: None,
-        }),
-    )
-        .into_response()
+fn admin_internal_error_response(request: &Request<Body>, message: String) -> Response {
+    problem_response_for_request(&WebFrameworkError::internal_server_error(message), request)
 }
 
 fn require_api_key_security_config(
