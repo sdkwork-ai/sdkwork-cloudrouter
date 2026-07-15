@@ -19,6 +19,7 @@ export * from './model-catalog-identity';
 export * from './reference-sidebar-groups';
 export * from './documents-reference-runtime-adapter';
 export * from './share-url';
+export * from './portal-auth';
 export * from './recharge-math';
 export * from './queryClient';
 export * from './PortalErrorBoundary';

@@ -14,7 +14,9 @@ test("console business host mounts T1 domain wallet, membership, coupon, checkou
   const appSource = readPortalFile("./src/App.tsx");
   const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
   const navbarSource = readPortalFile("./src/console-business/consoleBusinessNavbar.tsx");
+  const membershipPageSource = readPortalFile("./src/console-business/ClawRouterMembershipPage.tsx");
   const tokenPlanPageSource = readPortalFile("./src/token-plan/ClawRouterTokenPlanPage.tsx");
+  const tokenPlanSurfaceSource = readPortalFile("./src/token-plan/ClawRouterTokenPlanSurface.tsx");
   const shellSource = readPortalFile("./packages/sdkwork-clawrouter-pc-shell/src/AppShellLayout.tsx");
   const publicNavbarSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/components/Navbar.tsx");
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
@@ -22,20 +24,28 @@ test("console business host mounts T1 domain wallet, membership, coupon, checkou
   assert.match(appSource, /ClawRouterConsoleBusinessHostRoutes/);
   assert.match(appSource, /ClawRouterConsoleBusinessNavbarActions/);
   assert.match(appSource, /ClawRouterTokenPlanPage/);
-  assert.match(tokenPlanPageSource, /@sdkwork\/membership-pc-subscription\/catalog/);
-  assert.match(tokenPlanPageSource, /SdkworkSubscriptionCatalogPage/);
-  assert.match(tokenPlanPageSource, /sdkworkSubscriptionCatalogHostComponents/);
-  assert.match(tokenPlanPageSource, /\.\.\.sdkworkSubscriptionCatalogHostComponents/);
-  assert.doesNotMatch(tokenPlanPageSource, /ClawRouterTokenPlanCheckoutModal/);
-  assert.doesNotMatch(tokenPlanPageSource, /checkoutModal\s*:/);
-  assert.match(tokenPlanPageSource, /useTokenPlanMemberSummary/);
+  assert.match(tokenPlanPageSource, /ClawRouterTokenPlanSurface/);
+  assert.match(tokenPlanSurfaceSource, /@sdkwork\/membership-pc-subscription\/catalog/);
+  assert.match(tokenPlanSurfaceSource, /SdkworkSubscriptionCatalogPage/);
+  assert.match(tokenPlanSurfaceSource, /sdkworkSubscriptionCatalogHostComponents/);
+  assert.match(tokenPlanSurfaceSource, /\.\.\.sdkworkSubscriptionCatalogHostComponents/);
+  assert.doesNotMatch(tokenPlanSurfaceSource, /ClawRouterTokenPlanCheckoutModal/);
+  assert.doesNotMatch(tokenPlanSurfaceSource, /checkoutModal\s*:/);
+  assert.match(tokenPlanSurfaceSource, /useTokenPlanMemberSummary/);
+  assert.match(tokenPlanSurfaceSource, /export function ClawRouterTokenPlanSurface/);
+  assert.match(tokenPlanSurfaceSource, /data-token-plan-surface/);
+  assert.match(membershipPageSource, /ClawRouterTokenPlanSurface/);
+  assert.match(membershipPageSource, /data-membership-token-plan/);
+  assert.match(membershipPageSource, /data-membership-monochrome-overview/);
+  assert.doesNotMatch(membershipPageSource, /createSdkworkMembership(?:Backdrop|Glass|Hero|Panel|Tone)Style/);
+  assert.doesNotMatch(membershipPageSource, /Membership(?:Benefits|Levels|Plans)Section/);
   assert.match(shellSource, /path="\/token-plan"/);
   assert.match(publicNavbarSource, /\/token-plan/);
   assert.match(publicNavbarSource, /nav\.tokenPlan/);
   assert.doesNotMatch(navbarSource, /ClawRouterNavbarTokenPlanEntry/);
   assert.doesNotMatch(navbarSource, /SdkworkTokenPlanHeaderEntry/);
   assert.match(readPortalFile("./src/console-business/ClawRouterWalletPage.tsx"), /@sdkwork\/account-pc-wallet/);
-  assert.match(readPortalFile("./src/console-business/ClawRouterMembershipPage.tsx"), /@sdkwork\/membership-pc-membership/);
+  assert.match(membershipPageSource, /@sdkwork\/membership-pc-membership/);
   assert.match(mountSource, /@sdkwork\/promotion-pc-coupon/);
   assert.match(mountSource, /@sdkwork\/payment-pc-payment/);
   assert.doesNotMatch(appSource, /from '@sdkwork\/commerce-pc-host'/);
@@ -75,6 +85,38 @@ test("T1 wallet package owns recharge checkout navigation", () => {
   }
   const walletSource = readPortalFile(walletPagePath);
   assert.match(walletSource, /navigateWalletRechargeCheckout|checkoutBasePath/);
+});
+
+test("console wallet derives authentication from the shared IAM session", () => {
+  const walletSource = readPortalFile("./src/console-business/ClawRouterWalletPage.tsx");
+  const withdrawSource = readPortalFile("./src/console-business/ClawRouterWithdrawDialog.tsx");
+  const quickPanelSource = readPortalFile("./src/console-business/ClawRouterNavbarWalletQuickPanel.tsx");
+  const sessionHookSource = readPortalFile("./src/auth/usePortalIamSession.ts");
+  const guardSource = readPortalFile("./src/auth/protectedPortalRoutes.ts");
+  const tokenPlanSummarySource = readPortalFile("./src/token-plan/tokenPlanMemberSummary.ts");
+  const accountSource = readPortalFile("./src/console-business/ConsoleAccountView.tsx");
+  const walletEntrySource = readPortalFile("./src/console-business/ClawRouterNavbarWalletEntry.tsx");
+
+  assert.match(sessionHookSource, /hasPortalIamSession/);
+  assert.match(sessionHookSource, /subscribePortalSessionChange/);
+  assert.match(sessionHookSource, /useSyncExternalStore/);
+  assert.match(walletSource, /usePortalIamSession/);
+  assert.match(withdrawSource, /usePortalIamSession/);
+  assert.match(quickPanelSource, /usePortalIamSession/);
+  assert.match(guardSource, /usePortalIamSession/);
+  assert.match(tokenPlanSummarySource, /usePortalIamSession/);
+  assert.match(accountSource, /usePortalIamSession/);
+  assert.match(walletEntrySource, /usePortalIamSession/);
+  assert.doesNotMatch(walletSource, /const isAuthenticated = state\.overview\.isAuthenticated/);
+  assert.doesNotMatch(walletSource, /effectivePoints <= 0 \|\| !state\.overview\.isAuthenticated/);
+  assert.doesNotMatch(withdrawSource, /state\.overview\.isAuthenticated/);
+  assert.doesNotMatch(quickPanelSource, /overview\.isAuthenticated/);
+  assert.doesNotMatch(guardSource, /hasPortalIamSession\(\)/);
+  assert.doesNotMatch(tokenPlanSummarySource, /hasPortalIamSession\(\)/);
+  assert.doesNotMatch(accountSource, /SdkworkWalletRechargeDialog|SdkworkWalletWithdrawDialog/);
+  assert.doesNotMatch(walletEntrySource, /SdkworkWalletHeaderEntry/);
+  assert.match(accountSource, /overview=\{\{ \.\.\.state\.overview, isAuthenticated \}\}/);
+  assert.match(walletEntrySource, /overview=\{\{ \.\.\.state\.overview, isAuthenticated \}\}/);
 });
 
 test("console commerce pages guard bootstrap against failure loops", () => {

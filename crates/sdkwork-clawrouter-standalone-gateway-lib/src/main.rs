@@ -188,6 +188,9 @@ pub fn build_edge_server_config(
     edge_config = edge_config
         .with_cors_allowed_origins(cors_allowed_origins_from_env_or_toml(runtime_toml)?)
         .map_err(anyhow::Error::msg)?;
+    edge_config = edge_config.with_development_private_network_cors(
+        !sdkwork_claw_config::is_production_like_runtime_environment(runtime_toml),
+    );
     edge_config = edge_config
         .with_portal_static_cache_control(
             config_value_or_default_with_legacy(

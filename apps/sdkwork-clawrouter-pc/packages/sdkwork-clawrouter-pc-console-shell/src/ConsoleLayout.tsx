@@ -235,14 +235,14 @@ export function ConsoleLayout({
   }, [isLoggingOut, navigate]);
 
   return (
-    <div className="sdkwork-console-shell min-h-screen bg-slate-50 dark:bg-[#121212] flex flex-col selection:bg-lobster-500/30">
+    <div className="sdkwork-console-shell flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-slate-50 selection:bg-lobster-500/30 dark:bg-[#121212]">
       <Navbar
         authenticatedActionsStart={navbarAuthenticatedActionsStart}
         isDark={isDark}
         toggleTheme={toggleTheme}
       />
 
-      <div className="flex-1 flex pt-[72px]">
+      <div className="flex min-h-0 w-full max-w-none flex-1 overflow-hidden pt-16">
         {/* Sidebar */}
         <div
           style={{ width: `${currentWidth}px` }}
@@ -303,8 +303,8 @@ export function ConsoleLayout({
         </div>
 
         {/* Main Content Pane */}
-        <div className="flex-1 flex flex-col min-w-0 max-h-[calc(100vh-72px)] overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-[#121212]">
-          <main className="claw-router-console-commerce-surface flex-1">
+        <div className="custom-scrollbar flex h-full min-h-0 w-full max-w-none min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-[#121212]">
+          <main className="claw-router-console-commerce-surface min-w-0 w-full max-w-none flex-1">
             <Outlet context={{ isDark, toggleTheme, theme, setTheme, themeColor, setThemeColor }} />
           </main>
         </div>

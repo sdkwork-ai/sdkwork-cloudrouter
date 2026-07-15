@@ -276,7 +276,7 @@ export function ApiKeysView() {
   };
 
   return (
-    <div className="w-full mx-auto box-border h-[calc(100vh-72px)] overflow-hidden flex flex-col gap-3 animate-in fade-in duration-500 bg-slate-50 px-[5px] pb-[5px] dark:bg-[#121212]">
+    <div className="w-full mx-auto box-border h-[calc(100vh-64px)] overflow-hidden flex flex-col gap-3 animate-in fade-in duration-500 bg-slate-50 dark:bg-[#121212]">
       <div className="shrink-0 flex flex-col gap-3 bg-white p-3 shadow-sm dark:bg-[#252525] md:flex-row md:items-center md:justify-between rounded-xl border border-slate-200 dark:border-white/5" data-console-api-keys-toolbar>
         <div className="relative w-full sm:w-72" data-console-api-keys-search>
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

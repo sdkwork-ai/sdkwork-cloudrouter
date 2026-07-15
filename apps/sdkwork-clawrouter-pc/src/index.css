@@ -60,6 +60,83 @@
   --sdkwork-sidebar-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Console and admin use a flat operational visual language. Domain packages may
+   keep semantic colors, but decorative gradients and glass effects are removed
+   at the shell boundary so composed SDKWork surfaces remain visually coherent. */
+.sdkwork-console-shell,
+.sdkwork-admin-shell {
+  --sdk-shadow-soft: 0 1px 2px rgb(15 23 42 / 0.05);
+  --sdk-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --sdk-shadow-md: 0 8px 20px rgb(15 23 42 / 0.08);
+  --sdk-shadow-lg: 0 12px 28px rgb(15 23 42 / 0.12);
+}
+
+.sdkwork-console-shell [class*='gradient'],
+.sdkwork-admin-shell [class*='gradient'],
+.sdkwork-console-shell [style*='gradient'],
+.sdkwork-admin-shell [style*='gradient'] {
+  background-image: none !important;
+}
+
+.sdkwork-console-shell [class*='backdrop-blur'],
+.sdkwork-admin-shell [class*='backdrop-blur'] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.sdkwork-console-shell [class*='shadow-2xl'],
+.sdkwork-admin-shell [class*='shadow-2xl'],
+.sdkwork-console-shell [class*='shadow-xl'],
+.sdkwork-admin-shell [class*='shadow-xl'] {
+  box-shadow: var(--sdk-shadow-lg) !important;
+}
+
+.sdkwork-console-shell [class*='rounded-2xl'],
+.sdkwork-admin-shell [class*='rounded-2xl'],
+.sdkwork-console-shell [class*='rounded-xl'],
+.sdkwork-admin-shell [class*='rounded-xl'] {
+  border-radius: 0.5rem !important;
+}
+
+.sdkwork-console-shell :where(button, a)[class*='bg-blue-600'],
+.sdkwork-console-shell :where(button, a)[class*='bg-emerald-600'],
+.sdkwork-console-shell :where(button, a)[class*='bg-cyan-600'],
+.sdkwork-console-shell :where(button, a)[class*='bg-indigo-600'],
+.sdkwork-console-shell :where(button, a)[class*='bg-violet-600'],
+.sdkwork-console-shell :where(button, a)[class*='bg-purple-600'],
+.sdkwork-admin-shell :where(button, a)[class*='bg-blue-600'],
+.sdkwork-admin-shell :where(button, a)[class*='bg-emerald-600'],
+.sdkwork-admin-shell :where(button, a)[class*='bg-cyan-600'],
+.sdkwork-admin-shell :where(button, a)[class*='bg-indigo-600'],
+.sdkwork-admin-shell :where(button, a)[class*='bg-violet-600'],
+.sdkwork-admin-shell :where(button, a)[class*='bg-purple-600'] {
+  background-color: rgb(var(--sdkwork-sidebar-accent-rgb)) !important;
+  color: white !important;
+}
+
+.sdkwork-console-shell :where(button, a)[class*='bg-blue-600']:hover,
+.sdkwork-console-shell :where(button, a)[class*='bg-emerald-600']:hover,
+.sdkwork-console-shell :where(button, a)[class*='bg-cyan-600']:hover,
+.sdkwork-console-shell :where(button, a)[class*='bg-indigo-600']:hover,
+.sdkwork-console-shell :where(button, a)[class*='bg-violet-600']:hover,
+.sdkwork-console-shell :where(button, a)[class*='bg-purple-600']:hover,
+.sdkwork-admin-shell :where(button, a)[class*='bg-blue-600']:hover,
+.sdkwork-admin-shell :where(button, a)[class*='bg-emerald-600']:hover,
+.sdkwork-admin-shell :where(button, a)[class*='bg-cyan-600']:hover,
+.sdkwork-admin-shell :where(button, a)[class*='bg-indigo-600']:hover,
+.sdkwork-admin-shell :where(button, a)[class*='bg-violet-600']:hover,
+.sdkwork-admin-shell :where(button, a)[class*='bg-purple-600']:hover {
+  background-color: rgb(200 63 42) !important;
+}
+
+.dark .sdkwork-console-shell,
+.dark .sdkwork-admin-shell {
+  --sdk-shadow-soft: 0 1px 2px rgb(0 0 0 / 0.2);
+  --sdk-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.24);
+  --sdk-shadow-md: 0 8px 20px rgb(0 0 0 / 0.3);
+  --sdk-shadow-lg: 0 12px 28px rgb(0 0 0 / 0.36);
+}
+
 /* Portal sidebar navigation (console / admin) */
 .sdkwork-portal-sidebar-item {
   position: relative;
@@ -107,30 +184,16 @@
 .sdkwork-portal-sidebar-item[data-active='true'] {
   color: rgb(var(--sdkwork-sidebar-accent-rgb));
   font-weight: 600;
-  background: linear-gradient(
-    90deg,
-    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.17) 0%,
-    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.07) 54%,
-    transparent 100%
-  );
+  background: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.1);
   border-color: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.24);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 1px 3px rgb(var(--sdkwork-sidebar-accent-rgb) / 0.1);
+  box-shadow: none;
 }
 
 .dark .sdkwork-portal-sidebar-item[data-active='true'] {
   color: rgb(252 211 207);
-  background: linear-gradient(
-    90deg,
-    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.24) 0%,
-    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.09) 56%,
-    transparent 100%
-  );
+  background: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.18);
   border-color: rgb(var(--sdkwork-sidebar-accent-rgb) / 0.3);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.05),
-    0 6px 18px rgb(0 0 0 / 0.22);
+  box-shadow: none;
 }
 
 .sdkwork-portal-sidebar-item[data-active='true']::before {
@@ -141,13 +204,8 @@
   width: 3px;
   height: 58%;
   border-radius: 0 3px 3px 0;
-  background: linear-gradient(
-    180deg,
-    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.55),
-    rgb(var(--sdkwork-sidebar-accent-rgb)),
-    rgb(var(--sdkwork-sidebar-accent-rgb) / 0.55)
-  );
-  box-shadow: 0 0 12px rgb(var(--sdkwork-sidebar-accent-rgb) / 0.55);
+  background: rgb(var(--sdkwork-sidebar-accent-rgb));
+  box-shadow: none;
   transform: translateY(-50%);
 }
 
@@ -4036,6 +4094,14 @@ optgroup {
 
 .sdkwork-console-shell {
   --sdkwork-console-card-radius: 0.5rem;
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+.sdkwork-console-shell > :not(header),
+.sdkwork-console-shell main.claw-router-console-commerce-surface {
+  inline-size: 100%;
+  max-inline-size: none;
 }
 
 .sdkwork-console-shell

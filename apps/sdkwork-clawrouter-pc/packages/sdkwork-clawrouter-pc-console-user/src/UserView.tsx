@@ -78,7 +78,7 @@ export function UserView() {
 
   if (loading) {
     return (
-      <div className="mx-auto w-full max-w-3xl min-h-[calc(100vh-72px)] overflow-y-auto px-[5px] pb-[5px]">
+      <div className="w-full max-w-none min-h-[calc(100vh-64px)]">
         <BusinessStatePanel
           kind="loading"
           title={t('console.user.states.loading', '正在加载用户资料...')}
@@ -90,7 +90,7 @@ export function UserView() {
 
   if (loadError) {
     return (
-      <div className="mx-auto w-full max-w-3xl min-h-[calc(100vh-72px)] overflow-y-auto px-[5px] pb-[5px]">
+      <div className="w-full max-w-none min-h-[calc(100vh-64px)]">
         <BusinessStatePanel
           kind="error"
           title={t('console.user.states.loadErrorTitle', '用户资料加载失败')}
@@ -104,7 +104,7 @@ export function UserView() {
 
   if (!profile) {
     return (
-      <div className="mx-auto w-full max-w-3xl min-h-[calc(100vh-72px)] overflow-y-auto px-[5px] pb-[5px]">
+      <div className="w-full max-w-none min-h-[calc(100vh-64px)]">
         <BusinessStatePanel
           kind="empty"
           title={t('console.user.states.emptyTitle', '未找到账户资料')}
@@ -120,7 +120,7 @@ export function UserView() {
   const avatarFallback = profile.name.trim().slice(0, 1).toUpperCase() || 'U';
 
   return (
-    <div className="mx-auto w-full max-w-3xl min-h-[calc(100vh-72px)] overflow-y-auto space-y-4 px-[5px] pb-[5px]">
+    <div className="w-full max-w-none min-h-[calc(100vh-64px)] space-y-4">
       <section className="rounded-lg border border-slate-200 bg-white px-5 py-4 dark:border-white/10 dark:bg-[#252525]">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-lg font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-200">

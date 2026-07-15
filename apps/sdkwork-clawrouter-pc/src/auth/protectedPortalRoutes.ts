@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import {
   buildPortalAuthLoginRedirect,
-  hasPortalIamSession,
   isPortalAuthRoute,
   isProtectedPortalPath,
   PROTECTED_PORTAL_ROUTE_PREFIXES,
@@ -11,6 +10,8 @@ import {
   verifyCurrentPortalAdminAccess,
   type PortalAdminAccessState,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+
+import { usePortalIamSession } from './usePortalIamSession.ts';
 
 export { PROTECTED_PORTAL_ROUTE_PREFIXES, isProtectedPortalPath };
 
@@ -48,8 +49,9 @@ export function resolveProtectedPortalAccess({
 
 export function PortalAuthenticatedAuthRouteGuard({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const isAuthenticated = usePortalIamSession();
 
-  if (hasPortalIamSession() && isPortalAuthRoute(location.pathname)) {
+  if (isAuthenticated && isPortalAuthRoute(location.pathname)) {
     return createElement(Navigate, {
       replace: true,
       to: resolvePortalAuthenticatedAuthRouteRedirect({ location }),
@@ -61,8 +63,9 @@ export function PortalAuthenticatedAuthRouteGuard({ children }: { children: Reac
 
 export function RequirePortalSession({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const isAuthenticated = usePortalIamSession();
   const decision = resolveProtectedPortalAccess({
-    hasSession: hasPortalIamSession(),
+    hasSession: isAuthenticated,
     location,
   });
 
@@ -76,9 +79,10 @@ export function RequirePortalSession({ children }: { children: ReactNode }) {
 export function RequireAdminSession({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { t } = useTranslation();
+  const isAuthenticated = usePortalIamSession();
   const [adminAccessState, setAdminAccessState] = useState<PortalAdminAccessState>('checking');
   const loginDecision = resolveProtectedPortalAccess({
-    hasSession: hasPortalIamSession(),
+    hasSession: isAuthenticated,
     location,
   });
 

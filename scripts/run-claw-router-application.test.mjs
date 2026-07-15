@@ -2650,6 +2650,21 @@ test('claw router workspace reports occupied service ports before startup', asyn
   );
 });
 
+test('claw router workspace can recheck the portal bind after backend startup', async () => {
+  const module = await import(
+    pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
+  );
+
+  const settings = module.parseWorkspaceArgs([]);
+  const portalTargets = module.workspaceBindTargets(settings)
+    .filter((target) => target.name === 'portal');
+
+  await assert.rejects(
+    () => module.assertWorkspaceBindTargetsAvailable(portalTargets, async () => false),
+    /workspace ports are already in use: portal 127\.0\.0\.1:3901/u,
+  );
+});
+
 test('claw router workspace terminates Windows child process trees', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
@@ -2704,6 +2719,50 @@ test('claw router workspace checks service ports before running installer steps'
   assert.ok(
     preflightIndex < blockingStepsIndex,
     'workspace service port preflight must run before installer/model refresh steps',
+  );
+});
+
+test('claw router workspace rechecks backend ports after installer steps', () => {
+  const workspaceStarter = readFileSync(
+    path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs'),
+    'utf8',
+  );
+
+  const blockingStepsIndex = workspaceStarter.indexOf('for (const step of blockingSteps)');
+  const backendPreflightIndex = workspaceStarter.indexOf(
+    'const backendStepNames = new Set(backendServiceSteps.map((step) => step.name));',
+  );
+  const backendLaunchIndex = workspaceStarter.indexOf('for (const step of backendServiceSteps)');
+
+  assert.ok(blockingStepsIndex >= 0, 'workspace starter must run blocking installer steps');
+  assert.ok(backendPreflightIndex >= 0, 'workspace starter must recheck backend binds');
+  assert.ok(backendLaunchIndex >= 0, 'workspace starter must launch backend services');
+  assert.ok(
+    blockingStepsIndex < backendPreflightIndex && backendPreflightIndex < backendLaunchIndex,
+    'backend bind recheck must run after installer steps and before backend launch',
+  );
+});
+
+test('claw router workspace rechecks the portal port immediately before launching it', () => {
+  const workspaceStarter = readFileSync(
+    path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs'),
+    'utf8',
+  );
+
+  const healthCheckIndex = workspaceStarter.indexOf(
+    'await waitForWorkspaceHealthSurfaces(settings);',
+  );
+  const portalPreflightIndex = workspaceStarter.indexOf(
+    "workspaceBindTargets(settings).filter((target) => target.name === 'portal')",
+  );
+  const portalLaunchIndex = workspaceStarter.indexOf('for (const step of portalSteps)');
+
+  assert.ok(healthCheckIndex >= 0, 'workspace starter must wait for backend health');
+  assert.ok(portalPreflightIndex >= 0, 'workspace starter must recheck the portal bind');
+  assert.ok(portalLaunchIndex >= 0, 'workspace starter must launch the portal');
+  assert.ok(
+    healthCheckIndex < portalPreflightIndex && portalPreflightIndex < portalLaunchIndex,
+    'portal bind recheck must run after backend health and before portal launch',
   );
 });
 
@@ -3478,6 +3537,55 @@ test('workspace access output defaults to edge server port 3900', async () => {
   assert.ok(lines.includes('[start-workspace]   Edge Server Health: http://127.0.0.1:3900/healthz'));
   assert.ok(lines.includes('[start-workspace]   Edge Server Ready: http://127.0.0.1:3900/readyz'));
   assert.equal(lines.some((line) => line.includes('Gateway Health: http://127.0.0.1:18080')), false);
+});
+
+test('workspace startup output includes LAN portal links for wildcard edge binds', async () => {
+  const module = await import(
+    pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
+  );
+
+  const settings = module.parseWorkspaceArgs([]);
+  const lines = module.workspaceAccessLines(settings, true, {
+    Ethernet: [
+      { family: 'IPv4', address: '192.168.50.12', internal: false },
+      { family: 'IPv6', address: 'fe80::1', internal: false },
+    ],
+    WiFi: [{ family: 'IPv4', address: '10.0.0.7', internal: false }],
+  });
+
+  assert.ok(lines.includes('[start-workspace] LAN Access (same Wi-Fi/LAN)'));
+  assert.ok(lines.includes('[start-workspace]   LAN: http://10.0.0.7:3900/'));
+  assert.ok(lines.includes('[start-workspace]   LAN: http://192.168.50.12:3900/'));
+
+  const successLines = module.successfulStartupAccessLines(settings, {
+    Ethernet: [{ family: 'IPv4', address: '192.168.50.12', internal: false }],
+  });
+  assert.deepEqual(successLines, [
+    '[start-workspace] application started successfully',
+    '[start-workspace] Access URLs',
+    '[start-workspace]   Local: http://127.0.0.1:3900/',
+    '[start-workspace]   LAN: http://192.168.50.12:3900/',
+  ]);
+});
+
+test('workspace reports successful startup only after the portal is ready', async () => {
+  const module = await import(
+    pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
+  );
+  const settings = module.parseWorkspaceArgs([]);
+  let attempts = 0;
+
+  const portalUrl = await module.waitForPortalReady(settings, {
+    waitFn: async () => {
+      attempts += 1;
+      return attempts === 2;
+    },
+    sleep: async () => {},
+    maxAttempts: 3,
+  });
+
+  assert.equal(portalUrl, 'http://127.0.0.1:3901/');
+  assert.equal(attempts, 2);
 });
 
 test('claw router application launcher desktop mode runs install-checked workspace and installs portal dependencies when requested', async () => {

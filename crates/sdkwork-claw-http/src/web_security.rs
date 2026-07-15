@@ -1,5 +1,5 @@
 use sdkwork_claw_config::StartupInstallMode;
-use sdkwork_web_core::{SecurityPolicy, WebEnvironment};
+use sdkwork_web_core::{CorsPolicy, SecurityPolicy, WebEnvironment};
 
 fn parse_environment(value: Option<String>) -> WebEnvironment {
     match value
@@ -54,7 +54,7 @@ pub fn claw_service_security_policy(environment: &WebEnvironment) -> SecurityPol
         SecurityPolicy::production()
     };
     if matches!(environment, WebEnvironment::Dev | WebEnvironment::Test) {
-        security_policy.cors.allow_all_origins = true;
+        security_policy.cors = CorsPolicy::development_private_network();
         security_policy
             .cross_site
             .reject_untrusted_state_changing_origins = false;
@@ -73,9 +73,17 @@ mod tests {
     use sdkwork_web_core::WebEnvironment;
 
     #[test]
-    fn dev_security_policy_allows_browser_origins() {
+    fn dev_security_policy_allows_private_network_browser_origins() {
         let policy = claw_service_security_policy(&WebEnvironment::Dev);
-        assert!(policy.cors.allow_all_origins);
+        assert!(!policy.cors.allow_all_origins);
+        policy
+            .cors
+            .validate_origin_value("http://192.168.50.12:3901")
+            .expect("private-network development origin");
+        policy
+            .cors
+            .validate_origin_value("https://evil.example.com")
+            .expect_err("public hostname must remain rejected");
         assert!(!policy.cross_site.reject_untrusted_state_changing_origins);
     }
 

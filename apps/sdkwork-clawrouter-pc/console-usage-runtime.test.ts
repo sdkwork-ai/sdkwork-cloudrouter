@@ -174,7 +174,7 @@ const removedConsolePageTitlePatterns = [
 function viewportClassNames(source: string): string[] {
   return [...source.matchAll(/className=(?:"([^"]*)"|\{`([^`]*)`\})/g)]
     .map((match) => match[1] ?? match[2] ?? "")
-    .filter((className) => /(?:^|\s)(?:h|min-h)-\[calc\(100vh-72px\)\](?:\s|$)/.test(className));
+    .filter((className) => /(?:^|\s)(?:h|min-h)-\[calc\(100vh-64px\)\](?:\s|$)/.test(className));
 }
 
 test("console usage logs copy is routed through i18n without read-only caveats", () => {
@@ -205,19 +205,17 @@ test("console usage page does not render a loaded summary header row", () => {
   assert.doesNotMatch(source, /className="[^"]*shrink-0[^"]*justify-end/);
 });
 
-test("console routed pages keep compact 5px page padding with zero top padding below the global header", () => {
-  for (const file of simplifiedConsolePageFiles) {
+test("console routed pages keep the viewport edge-to-edge below the global header", () => {
+  for (const file of [...simplifiedConsolePageFiles, ...deferredConsolePageFiles]) {
     const source = readPortalFile(file);
     const viewportClasses = viewportClassNames(source);
 
     assert.ok(viewportClasses.length > 0, `${file} must define a console viewport root`);
     for (const className of viewportClasses) {
-      assert.match(className, /(?:^|\s)px-\[5px\](?:\s|$)/, `${file} viewport root must use 5px horizontal padding`);
-      assert.match(className, /(?:^|\s)pb-\[5px\](?:\s|$)/, `${file} viewport root must use 5px bottom padding`);
       assert.doesNotMatch(
         className,
-        /(?:^|\s)(?:(?:p|py|pt|pl|pr)-|(?:px|pb)-(?!\[5px\])|(?:(?:sm|md|lg|xl):(?:p|px|py|pt|pb|pl|pr)-))/,
-        `${file} viewport root must not override the 5px page padding or add top padding`,
+        /(?:^|\s)(?:(?:p|px|py|pt|pb|pl|pr)-|(?:(?:sm|md|lg|xl):(?:p|px|py|pt|pb|pl|pr)-))/,
+        `${file} viewport root must not add outer page padding`,
       );
     }
     assert.doesNotMatch(source, /\{\/\*\s*Header\s*\*\/\}/, `${file} must not keep page header chrome comments`);
@@ -251,7 +249,7 @@ test("console usage log time renders as local yyyy-MM-dd HH:mm:ss without ISO se
 test("console usage logs keep pagination visible while the table body scrolls inside the viewport", () => {
   const source = readPortalFile("./packages/sdkwork-clawrouter-pc-console-usage/src/UsageView.tsx");
 
-  assert.match(source, /h-\[calc\(100vh-72px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
+  assert.match(source, /h-\[calc\(100vh-64px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
   assert.match(source, /className="[^"]*shrink-0[^"]*flex[^"]*flex-col[^"]*md:flex-row/);
   assert.match(source, /className="[^"]*flex[^"]*flex-col[^"]*flex-1[^"]*min-h-0/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-auto/);
@@ -388,7 +386,7 @@ test("console message center stays product-focused without implementation caveat
 test("console message center constrains the detail pane to the available viewport height", { skip: !portalFileExists("./packages/sdkwork-clawrouter-pc-console-messages/src/MessagesView.tsx") }, () => {
   const source = readPortalFile("./packages/sdkwork-clawrouter-pc-console-messages/src/MessagesView.tsx");
 
-  assert.match(source, /h-\[calc\(100vh-72px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
+  assert.match(source, /h-\[calc\(100vh-64px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-hidden[^"]*flex[^"]*flex-col[^"]*md:flex-row/);
   assert.match(source, /className=\{`[^`]*flex-1[^`]*min-h-0[^`]*flex[^`]*flex-col/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-y-auto[^"]*custom-scrollbar/);
@@ -427,7 +425,7 @@ test("console user settings stay product-focused without implementation caveats"
 test("console settings center constrains the settings panel to the available viewport height", () => {
   const source = readPortalFile("./packages/sdkwork-clawrouter-pc-console-settings/src/SettingsView.tsx");
 
-  assert.match(source, /h-\[calc\(100vh-72px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
+  assert.match(source, /h-\[calc\(100vh-64px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-hidden[^"]*flex[^"]*flex-col[^"]*md:flex-row/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-hidden[^"]*flex[^"]*flex-col[^"]*bg-white/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-y-auto[^"]*custom-scrollbar[^"]*p-6/);

@@ -145,7 +145,7 @@ export function GatewayView() {
   const summary = useMemo(() => summarizeTraces(traces), [traces]);
 
   return (
-    <div className="min-h-[calc(100vh-72px)] w-full mx-auto space-y-4 bg-slate-50 px-[5px] pb-[5px] animate-in fade-in duration-500 dark:bg-[#121212] lg:space-y-5">
+    <div className="min-h-[calc(100vh-64px)] w-full mx-auto space-y-4 bg-slate-50 animate-in fade-in duration-500 dark:bg-[#121212] lg:space-y-5">
       <div className="space-y-1 px-1">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t('console.gateway.title')}</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">{t('console.gateway.subtitle')}</p>

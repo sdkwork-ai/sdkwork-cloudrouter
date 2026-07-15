@@ -1,3 +1,5 @@
+import { isSdkworkIamSessionAuthenticated } from '@sdkwork/iam-runtime';
+
 import {
   loadStoredAppSessionToken,
 } from './app-session-token.ts';
@@ -16,7 +18,7 @@ export type PortalLoginRequiredActionDecision =
 const DEFAULT_HOME_PATH = '/';
 const AUTH_BASE_PATH = '/auth';
 const AUTH_LOGIN_PATH = '/auth/login';
-const DEFAULT_AUTHENTICATED_HOME_PATH = '/console';
+const DEFAULT_AUTHENTICATED_HOME_PATH = '/admin';
 
 export const PROTECTED_PORTAL_ROUTE_PREFIXES = ['/console', '/admin'] as const;
 
@@ -28,8 +30,7 @@ export function isProtectedPortalPath(pathname: string): boolean {
 }
 
 export function hasPortalIamSession(): boolean {
-  const token = loadStoredAppSessionToken();
-  return Boolean(token?.authToken && token.accessToken);
+  return isSdkworkIamSessionAuthenticated(loadStoredAppSessionToken());
 }
 
 export function hasStoredPortalSession(): boolean {

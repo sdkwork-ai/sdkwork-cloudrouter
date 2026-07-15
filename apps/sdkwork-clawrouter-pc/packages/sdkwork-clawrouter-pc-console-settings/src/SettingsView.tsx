@@ -165,7 +165,7 @@ export function SettingsView() {
   ] as const;
 
   return (
-    <div className="w-full h-[calc(100vh-72px)] mx-auto overflow-hidden flex flex-col animate-in fade-in duration-500 bg-slate-50 px-[5px] pb-[5px] dark:bg-[#121212]">
+    <div className="w-full h-[calc(100vh-64px)] mx-auto overflow-hidden flex flex-col animate-in fade-in duration-500 bg-slate-50 dark:bg-[#121212]">
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row gap-6">
 
         {/* Left Nav */}
@@ -343,7 +343,7 @@ export function SettingsView() {
                                 </div>
                               ) : (
                                 <div className="relative flex h-full items-center justify-center overflow-hidden bg-slate-900 text-slate-200">
-                                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(229,80,57,0.22),transparent_45%)]" />
+                                  <div className="absolute inset-0 bg-lobster-500/[0.06]" />
                                   <Moon className="relative z-10 h-8 w-8" />
                                 </div>
                               )}

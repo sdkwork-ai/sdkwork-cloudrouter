@@ -20,6 +20,8 @@ import {
   type SdkworkWalletWithdrawDestinationCode,
 } from '@sdkwork/account-pc-wallet';
 
+import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
+
 export interface ClawRouterWithdrawDialogProps {
   controller: SdkworkWalletController;
   onOpenChange?: (open: boolean) => void;
@@ -62,6 +64,7 @@ function sanitizeAmount(value: string): string {
 export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: ClawRouterWithdrawDialogProps) {
   const { t } = useTranslation();
   const state = useSdkworkWalletControllerState(controller);
+  const isAuthenticated = usePortalIamSession();
   const destinations = useMemo(() => createDefaultSdkworkWalletWithdrawDestinations(), []);
   const {
     copy,
@@ -109,7 +112,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
 
   const canSubmit = useMemo(
     () =>
-      state.overview.isAuthenticated
+      isAuthenticated
       && Number.isFinite(amountCny)
       && amountCny > 0
       && amountCny <= cashAvailable
@@ -125,7 +128,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
       requiresBankName,
       selectedDestinationCode,
       state.isMutating,
-      state.overview.isAuthenticated,
+      isAuthenticated,
       cashAvailable,
       trimmedAccountName,
       trimmedAccountNo,
@@ -167,7 +170,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
           <div className="grid gap-6 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_17rem]">
             {/* 左侧：提现表单 */}
             <div className="space-y-5">
-              {!state.overview.isAuthenticated ? (
+              {!isAuthenticated ? (
                 <StatusNotice title={copy.withdrawDialog.signInRequiredTitle} tone="warning">
                   {copy.withdrawDialog.signInRequiredDescription}
                 </StatusNotice>
@@ -182,7 +185,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
                   >
                     {copy.withdrawDialog.amountLabel}
                   </label>
-                  {state.overview.isAuthenticated && cashAvailable > 0 ? (
+                  {isAuthenticated && cashAvailable > 0 ? (
                     <button
                       className="rounded-[var(--sdk-radius-pill)] text-xs font-medium text-[var(--sdk-color-brand-primary)] transition-colors hover:text-[var(--sdk-color-brand-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sdk-color-border-focus)]"
                       onClick={() => handleQuickRatio(1)}
@@ -207,7 +210,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
                     value={amountInput}
                   />
                 </div>
-                {state.overview.isAuthenticated && cashAvailable > 0 ? (
+                {isAuthenticated && cashAvailable > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {QUICK_RATIOS.map((ratio) => {
                       const value = Number((cashAvailable * ratio).toFixed(2));
@@ -373,7 +376,7 @@ export function ClawRouterWithdrawDialog({ controller, onOpenChange, open }: Cla
                 />
                 {selectedDestination ? (
                   <SummaryRow
-                    label={copy.withdrawDialog.payoutRailLabel}
+                    label={copy.withdrawDialog.withdrawDestinationLabel}
                     value={formatWithdrawDestinationLabel(selectedDestination.code)}
                   />
                 ) : null}

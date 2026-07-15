@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { mkdirSync } from 'node:fs';
+import { networkInterfaces } from 'node:os';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import path from 'node:path';
@@ -33,6 +34,7 @@ import {
   IAM_APPLICATION_BOOTSTRAP_ENV,
   loadTopologyProfileForWorkspace,
   resolveServiceLayoutFromRuntimeMode,
+  waitForHttpHealthy,
   waitForWorkspaceHealthSurfaces,
 } from '../lib/claw-router-topology.mjs';
 import {
@@ -115,6 +117,76 @@ function loopbackUrl(bind, pathSuffix) {
     ? '127.0.0.1'
     : host;
   return `http://${loopbackHost}:${port}${pathSuffix}`;
+}
+
+function localNetworkIpv4Addresses(interfaces = networkInterfaces()) {
+  const addresses = [];
+  for (const entries of Object.values(interfaces ?? {})) {
+    for (const entry of entries ?? []) {
+      if (entry?.family !== 'IPv4' || entry.internal || !entry.address) {
+        continue;
+      }
+      if (!isPrivateIpv4Address(entry.address)) {
+        continue;
+      }
+      if (!addresses.includes(entry.address)) {
+        addresses.push(entry.address);
+      }
+    }
+  }
+  return addresses.sort();
+}
+
+function isPrivateIpv4Address(address) {
+  const octets = address.split('.').map((value) => Number.parseInt(value, 10));
+  if (octets.length !== 4 || octets.some((value) => !Number.isInteger(value))) {
+    return false;
+  }
+  return octets[0] === 10
+    || (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31)
+    || (octets[0] === 192 && octets[1] === 168);
+}
+
+function lanAccessLines(bind, pathSuffix, interfaces) {
+  const { host, port } = splitBind(bind, '--bind');
+  if (!['0.0.0.0', '[::]', '::'].includes(host)) {
+    return [];
+  }
+  return localNetworkIpv4Addresses(interfaces).map(
+    (address) => `[start-workspace]   LAN: http://${address}:${port}${pathSuffix}`,
+  );
+}
+
+export function successfulStartupAccessLines(settings, interfaces) {
+  const accessBind = settings.runtimeMode === 'client'
+    ? settings.portalBind
+    : settings.serverBind;
+  const lanLines = lanAccessLines(accessBind, '/', interfaces);
+  return [
+    '[start-workspace] application started successfully',
+    '[start-workspace] Access URLs',
+    `[start-workspace]   Local: ${loopbackUrl(accessBind, '/')}`,
+    ...(lanLines.length > 0
+      ? lanLines
+      : ['[start-workspace]   LAN: unavailable (listener is loopback-only or no LAN IPv4 address was detected)']),
+  ];
+}
+
+export async function waitForPortalReady(settings, {
+  waitFn = waitForHttpHealthy,
+  timeoutMs = 2000,
+  pollMs = 500,
+  maxAttempts = 60,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+} = {}) {
+  const portalUrl = loopbackUrl(settings.portalBind, '/');
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (await waitFn(portalUrl, timeoutMs)) {
+      return portalUrl;
+    }
+    await sleep(pollMs);
+  }
+  throw new Error(`timed out waiting for portal at ${portalUrl}`);
 }
 
 function forwardingOrigin(value, flagName) {
@@ -1023,7 +1095,19 @@ export async function assertWorkspaceBindsAvailable(
   settings,
   canBind = canBindWorkspaceTarget,
 ) {
-  const unavailable = await findUnavailableWorkspaceBinds(settings, canBind);
+  await assertWorkspaceBindTargetsAvailable(workspaceBindTargets(settings), canBind);
+}
+
+export async function assertWorkspaceBindTargetsAvailable(
+  targets,
+  canBind = canBindWorkspaceTarget,
+) {
+  const unavailable = [];
+  for (const target of targets) {
+    if (!(await canBind(target))) {
+      unavailable.push(target);
+    }
+  }
   if (unavailable.length === 0) {
     return;
   }
@@ -1035,7 +1119,7 @@ export async function assertWorkspaceBindsAvailable(
   );
 }
 
-export function workspaceAccessLines(settings) {
+export function workspaceAccessLines(settings, includeLanAccess = false, interfaces) {
   if (settings.runtimeMode === 'client') {
     return [
       '[start-workspace] Mode: client (sdkwork-api-cloud-gateway)',
@@ -1071,6 +1155,15 @@ export function workspaceAccessLines(settings) {
     `[start-workspace]   Direct Portal Admin API OpenAPI Proxy: ${loopbackUrl(settings.portalBind, `${BACKEND_API_PREFIX}/openapi.json`)}`,
     `[start-workspace]   Direct Portal App API OpenAPI Proxy: ${loopbackUrl(settings.portalBind, `${APP_API_PREFIX}/openapi.json`)}`,
   ];
+  if (includeLanAccess) {
+    const lanLines = lanAccessLines(settings.serverBind, '/', interfaces);
+    edgeAndPortal.splice(2, 0,
+      '[start-workspace] LAN Access (same Wi-Fi/LAN)',
+      ...(lanLines.length > 0
+        ? lanLines
+        : ['[start-workspace]   LAN: no active LAN IPv4 address detected']),
+    );
+  }
   const edgeHealth = [
     '[start-workspace] Health Checks',
     `[start-workspace]   Edge Server Health: ${loopbackUrl(settings.serverBind, '/healthz')}`,
@@ -1414,6 +1507,18 @@ async function main() {
     }
   }
 
+  if (backendServiceSteps.length > 0) {
+    const backendStepNames = new Set(backendServiceSteps.map((step) => step.name));
+    try {
+      await assertWorkspaceBindTargetsAvailable(
+        workspaceBindTargets(settings).filter((target) => backendStepNames.has(target.name)),
+      );
+    } catch (error) {
+      console.error(`[start-workspace] ${error.message}`);
+      process.exit(1);
+    }
+  }
+
   for (const step of backendServiceSteps) {
     const child = spawnStep(step, children);
     child.on('error', (error) => {
@@ -1438,6 +1543,16 @@ async function main() {
       shutdown('health check failed', 1);
       return;
     }
+
+    try {
+      await assertWorkspaceBindTargetsAvailable(
+        workspaceBindTargets(settings).filter((target) => target.name === 'portal'),
+      );
+    } catch (error) {
+      console.error(`[start-workspace] ${error.message}`);
+      shutdown('portal port preflight failed', 1);
+      return;
+    }
   }
 
   for (const step of portalSteps) {
@@ -1454,6 +1569,18 @@ async function main() {
         shutdown(`${step.name} exit`, code ?? 1);
       }
     });
+  }
+
+  if (portalSteps.length > 0) {
+    try {
+      await waitForPortalReady(settings);
+      for (const line of successfulStartupAccessLines(settings)) {
+        console.log(line);
+      }
+    } catch (error) {
+      console.error(`[start-workspace] ${error.message}`);
+      shutdown('portal readiness check failed', 1);
+    }
   }
 }
 

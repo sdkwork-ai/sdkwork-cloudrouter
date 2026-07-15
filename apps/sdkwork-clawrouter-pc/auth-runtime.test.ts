@@ -13,6 +13,9 @@ import {
   resolveProtectedPortalAccess,
 } from "./src/auth/protectedPortalRoutes.ts";
 import {
+  resolvePortalAuthenticatedAuthRouteRedirect,
+} from "./packages/sdkwork-clawroutes-pc-commons/src/portal-auth.ts";
+import {
   clearStoredAppSessionToken,
   loadStoredAppSessionToken,
   storeAppSessionFromResult,
@@ -393,9 +396,24 @@ test("portal exposes appbase auth routes as standalone React routes", () => {
   assert.match(authRouteSource, /basePath="\/auth"/);
   assert.match(authRouteSource, /locale=\{i18n\.language\}/);
   assert.match(authRouteSource, /getRuntime=\{getClawRouterIamRuntime\}/);
-  assert.match(authRouteSource, /homePath="\/console"/);
+  assert.match(authRouteSource, /homePath="\/admin"/);
   assert.match(authRouteSource, /AUTH_METHOD_UNAVAILABLE_MESSAGE/);
   assert.match(authRouteSource, /methodUnavailableMessage=\{AUTH_METHOD_UNAVAILABLE_MESSAGE\}/);
+});
+
+test("authenticated auth routes default to admin while preserving an explicit redirect", () => {
+  assert.equal(
+    resolvePortalAuthenticatedAuthRouteRedirect({
+      location: { pathname: "/auth/login" },
+    }),
+    "/admin",
+  );
+  assert.equal(
+    resolvePortalAuthenticatedAuthRouteRedirect({
+      location: { pathname: "/auth/login", search: "?redirect=%2Fconsole%2Fdashboard" },
+    }),
+    "/console/dashboard",
+  );
 });
 
 test("claw router auth controller reuses appbase runtime while preserving app SDK boundary", () => {
@@ -1975,6 +1993,7 @@ test("portal wires console and admin routes through the protected session guard"
   assert.doesNotMatch(guardSource, /sdkwork-clawroutes-pc-commons\/runtime/);
   assert.match(sharedAuthSource, /hasPortalIamSession/);
   assert.match(sharedAuthSource, /loadStoredAppSessionToken/);
+  assert.match(sharedAuthSource, /isSdkworkIamSessionAuthenticated/);
   assert.doesNotMatch(guardSource, /\bfetch\s*\(/);
   assert.doesNotMatch(guardSource, /\baxios\b/);
   assert.doesNotMatch(guardSource, /Authorization/);

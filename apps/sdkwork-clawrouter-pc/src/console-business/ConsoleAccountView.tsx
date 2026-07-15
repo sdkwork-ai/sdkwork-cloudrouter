@@ -6,14 +6,13 @@ import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons/components/Bu
 import {
   SdkworkWalletBalancePanel,
   SdkworkWalletIntlProvider,
-  SdkworkWalletRechargeDialog,
   SdkworkWalletTransactionList,
-  SdkworkWalletWithdrawDialog,
   useSdkworkWalletController,
   useSdkworkWalletControllerState,
   useSdkworkWalletIntl,
 } from '@sdkwork/account-pc-wallet';
 
+import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
 import { ConsoleAccountQuickActions } from './ConsoleAccountQuickActions.tsx';
 import { resolveConsoleWalletLocale } from './consoleCommerceLocale.ts';
 import { CLAW_ROUTER_COMMERCE_LINK_CLASS } from './consoleCommerceTheme.ts';
@@ -35,9 +34,10 @@ export function ConsoleAccountView() {
 function ConsoleAccountViewContent() {
   const controller = useSdkworkWalletController();
   const state = useSdkworkWalletControllerState(controller);
+  const isAuthenticated = usePortalIamSession();
   const { copy } = useSdkworkWalletIntl();
   const { t } = useTranslation();
-  const { checkoutPath, onNavigate, walletPath } = useConsoleBusinessNavigation();
+  const { onNavigate, walletPath } = useConsoleBusinessNavigation();
 
   useEffect(() => {
     if (!state.isBootstrapped && !state.isLoading && !state.lastError) {
@@ -60,15 +60,15 @@ function ConsoleAccountViewContent() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-4 pb-3 sm:px-5 sm:pb-4">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3">
+        <div className="flex w-full max-w-none flex-col gap-3">
           <SdkworkWalletBalancePanel
             onOpenRecharge={() => {
-              controller.openRecharge();
+              onNavigate(walletPath);
             }}
             onOpenWithdraw={() => {
-              controller.openWithdraw();
+              onNavigate(walletPath);
             }}
-            overview={state.overview}
+            overview={{ ...state.overview, isAuthenticated }}
           />
 
           <ConsoleAccountQuickActions />
@@ -87,28 +87,6 @@ function ConsoleAccountViewContent() {
           </div>
         </div>
       </div>
-
-      <SdkworkWalletRechargeDialog
-        checkoutBasePath={checkoutPath}
-        controller={controller}
-        onNavigate={onNavigate}
-        onOpenChange={(open) => {
-          if (!open) {
-            controller.closeRecharge();
-          }
-        }}
-        open={state.isRechargeOpen}
-        rechargeFlow="direct"
-      />
-      <SdkworkWalletWithdrawDialog
-        controller={controller}
-        onOpenChange={(open) => {
-          if (!open) {
-            controller.closeWithdraw();
-          }
-        }}
-        open={state.isWithdrawOpen}
-      />
     </div>
   );
 }

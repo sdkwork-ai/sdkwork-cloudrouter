@@ -23,7 +23,7 @@ export function ClawRouterAuthRoutes() {
         basePath="/auth"
         className="!bg-transparent"
         getRuntime={getClawRouterIamRuntime}
-        homePath="/console"
+        homePath="/admin"
         locale={i18n.language}
         methodUnavailableMessage={AUTH_METHOD_UNAVAILABLE_MESSAGE}
         runtimeConfig={runtimeConfig}

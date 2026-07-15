@@ -1,4 +1,5 @@
 import { isBlank, trim } from '../sdkwork-utils.ts';
+import { resolveBrowserReachableBaseUrl } from '../browser-base-url.ts';
 
 type ClawRouterRuntimeWindow = Window & {
   __CLAWROUTER_ENV__?: Record<string, unknown>;
@@ -17,7 +18,11 @@ export function readClawRouterRuntimeEnv(name: string): string | undefined {
   if (typeof value !== 'string' || isBlank(value)) {
     return undefined;
   }
-  return trim(value);
+  const trimmed = trim(value);
+  if (name === 'VITE_API_BASE_URL' || /^(?:PORTAL_PUBLIC_|VITE_CLAWROUTER_|VITE_SDKWORK_).*BASE_URL$/u.test(name)) {
+    return resolveBrowserReachableBaseUrl(trimmed, window.location);
+  }
+  return trimmed;
 }
 
 export function resolveClawRouterRuntimeBoolean(name: string, defaultValue = false): boolean {

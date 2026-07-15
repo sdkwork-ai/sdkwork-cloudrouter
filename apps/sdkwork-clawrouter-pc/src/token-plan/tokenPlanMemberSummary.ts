@@ -4,7 +4,8 @@ import {
   useSdkworkMembershipControllerState,
   type SdkworkMembershipSummary,
 } from "@sdkwork/membership-pc-membership";
-import { hasPortalIamSession } from "@sdkwork/clawroutes-pc-commons/runtime";
+
+import { usePortalIamSession } from "../auth/usePortalIamSession.ts";
 
 export function resolveMembershipTierKeyFromSummary(summary: SdkworkMembershipSummary): string {
   if (!summary.isAuthenticated || summary.status === "guest" || !summary.isMember) {
@@ -22,20 +23,21 @@ export function useTokenPlanMemberSummary() {
   const controller = useSdkworkMembershipController();
   const state = useSdkworkMembershipControllerState(controller);
   const [tierOverride, setTierOverride] = useState<string | null>(null);
+  const isAuthenticated = usePortalIamSession();
 
   useEffect(() => {
-    if (!hasPortalIamSession()) {
+    if (!isAuthenticated) {
       return;
     }
 
     if (!state.isBootstrapped && !state.isLoading && !state.lastError) {
       void controller.bootstrap().catch(() => undefined);
     }
-  }, [controller, state.isBootstrapped, state.isLoading, state.lastError]);
+  }, [controller, isAuthenticated, state.isBootstrapped, state.isLoading, state.lastError]);
 
   useEffect(() => {
     function handleWindowFocus() {
-      if (!hasPortalIamSession()) {
+      if (!isAuthenticated) {
         return;
       }
 
@@ -44,16 +46,16 @@ export function useTokenPlanMemberSummary() {
 
     window.addEventListener("focus", handleWindowFocus);
     return () => window.removeEventListener("focus", handleWindowFocus);
-  }, [controller]);
+  }, [controller, isAuthenticated]);
 
   const memberSummary = useMemo(() => {
-    if (!hasPortalIamSession()) {
+    if (!isAuthenticated) {
       return null;
     }
 
     const membershipTierKey = tierOverride ?? resolveMembershipTierKeyFromSummary(state.dashboard.summary);
     return { membershipTierKey };
-  }, [state.dashboard.summary, tierOverride]);
+  }, [isAuthenticated, state.dashboard.summary, tierOverride]);
 
   return {
     memberSummary,

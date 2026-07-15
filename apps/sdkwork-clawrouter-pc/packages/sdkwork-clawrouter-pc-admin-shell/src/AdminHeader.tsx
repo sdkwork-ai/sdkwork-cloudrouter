@@ -207,8 +207,8 @@ export function AdminHeader({ isDark, toggleTheme, activeModule, onModuleChange 
     <header
       className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-slate-900/95 py-3 backdrop-blur-md dark:bg-slate-950/95'
-          : 'bg-slate-900 py-4 dark:bg-slate-950'
+          ? 'border-b border-white/10 bg-slate-950 py-3 shadow-sm'
+          : 'border-b border-white/10 bg-slate-950 py-4'
       }`}
     >
       <div className="mx-auto flex w-full items-center justify-between px-4 md:px-6 lg:px-8">

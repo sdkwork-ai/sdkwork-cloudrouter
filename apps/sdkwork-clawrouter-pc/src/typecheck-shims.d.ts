@@ -274,6 +274,15 @@ declare module '@sdkwork/iam-runtime' {
     set(session: IamStoredSession): Promise<void> | void;
   }
 
+  export interface SdkworkIamAuthenticationSession {
+    accessToken?: string | null;
+    authToken?: string | null;
+  }
+
+  export function isSdkworkIamSessionAuthenticated(
+    session: SdkworkIamAuthenticationSession | null | undefined,
+  ): boolean;
+
   export interface IamContextStore {
     clear(): Promise<void> | void;
   }

@@ -2436,6 +2436,111 @@ async fn edge_server_handles_direct_portal_dev_cors_preflight() {
 }
 
 #[tokio::test]
+async fn edge_server_dynamically_allows_private_network_origins_in_development() {
+    let upstream = spawn_upstream("unused").await;
+    let config = sdkwork_clawrouter_cloud_gateway::EdgeServerConfig::try_new(
+        &upstream.base_url,
+        &upstream.base_url,
+        &upstream.base_url,
+        &upstream.base_url,
+    )
+    .unwrap()
+    .with_development_private_network_cors(true);
+    let router = sdkwork_clawrouter_cloud_gateway::edge_server_router(config);
+
+    for origin in [
+        "http://10.20.30.40:5173",
+        "http://172.20.30.40:3901",
+        "http://192.168.50.12:3901",
+        "http://[fd12:3456:789a::12]:3901",
+    ] {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::OPTIONS)
+                    .uri("/app/v3/api/ai/models")
+                    .header(header::ORIGIN, origin)
+                    .header(header::ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::NO_CONTENT, response.status(), "origin={origin}");
+        assert_eq!(
+            origin,
+            response
+                .headers()
+                .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+                .unwrap()
+                .to_str()
+                .unwrap(),
+        );
+        assert_eq!(
+            "true",
+            response
+                .headers()
+                .get(header::ACCESS_CONTROL_ALLOW_CREDENTIALS)
+                .unwrap()
+                .to_str()
+                .unwrap(),
+        );
+    }
+
+    for origin in ["http://203.0.113.10:3901", "https://evil.example.com"] {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::OPTIONS)
+                    .uri("/app/v3/api/ai/models")
+                    .header(header::ORIGIN, origin)
+                    .header(header::ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::FORBIDDEN, response.status(), "origin={origin}");
+    }
+
+    let _ = upstream.stop.send(());
+}
+
+#[tokio::test]
+async fn edge_server_keeps_dynamic_private_network_cors_disabled_by_default() {
+    let upstream = spawn_upstream("unused").await;
+    let router = sdkwork_clawrouter_cloud_gateway::edge_server_router(
+        sdkwork_clawrouter_cloud_gateway::EdgeServerConfig::try_new(
+            &upstream.base_url,
+            &upstream.base_url,
+            &upstream.base_url,
+            &upstream.base_url,
+        )
+        .unwrap(),
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method(Method::OPTIONS)
+                .uri("/app/v3/api/ai/models")
+                .header(header::ORIGIN, "http://192.168.50.12:3901")
+                .header(header::ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::FORBIDDEN, response.status());
+    let _ = upstream.stop.send(());
+}
+
+#[tokio::test]
 async fn edge_server_allows_configured_external_cors_origins() {
     let upstream = spawn_upstream("unused").await;
     let config = sdkwork_clawrouter_cloud_gateway::EdgeServerConfig::try_new(

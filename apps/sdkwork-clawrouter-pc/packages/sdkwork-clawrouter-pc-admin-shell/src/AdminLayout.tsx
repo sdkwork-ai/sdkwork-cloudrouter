@@ -139,7 +139,7 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
 
   return (
     <div
-      className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-slate-50 dark:bg-black font-sans text-slate-900 dark:text-white"
+      className="sdkwork-admin-shell flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-slate-50 font-sans text-slate-900 dark:bg-[#0f1115] dark:text-white"
     >
       <AdminHeader
         isDark={isDark}
@@ -149,7 +149,7 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden pt-16">
-        <div className="w-64 min-h-0 bg-white dark:bg-[#121212] border-r border-slate-200 dark:border-white/10 flex flex-col overflow-hidden">
+        <div className="w-64 min-h-0 bg-white dark:bg-[#17191f] border-r border-slate-200 dark:border-white/10 flex flex-col overflow-hidden">
           <div className="min-h-0 flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-2">
             {currentModuleMenu.items?.map((item) => (
               <SidebarItem key={item.path} item={item} siblingItems={currentModuleMenu.items ?? []} />
@@ -176,8 +176,8 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
           </div>
         </div>
 
-        <div className="flex-1 flex min-h-0 flex-col overflow-hidden bg-slate-50 dark:bg-[#0a0a0a] min-w-0 relative">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-[5px]">
+        <div className="relative flex min-h-0 w-full max-w-none min-w-0 flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-[#0f1115]">
+          <div className="flex min-h-0 w-full max-w-none flex-1 flex-col overflow-hidden p-0">
             <AdminRoutePermissionGuard>
               <Outlet />
             </AdminRoutePermissionGuard>

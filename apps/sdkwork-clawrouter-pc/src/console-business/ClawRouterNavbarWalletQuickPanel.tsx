@@ -6,6 +6,7 @@ import {
   type SdkworkWalletQuickPanelProps,
 } from '@sdkwork/account-pc-wallet';
 
+import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
 import { useConsoleBusinessNavigation } from './consoleBusinessNavigation.ts';
 
 // 顶部积分弹出框：主操作为「充值&兑换」，进入钱包中心后同时支持充值与兑换两个能力。
@@ -14,6 +15,7 @@ export function ClawRouterNavbarWalletQuickPanel({
   overview,
 }: SdkworkWalletQuickPanelProps) {
   const { t } = useTranslation();
+  const isAuthenticated = usePortalIamSession();
   const { onNavigate, walletPath } = useConsoleBusinessNavigation();
   const {
     copy,
@@ -39,7 +41,7 @@ export function ClawRouterNavbarWalletQuickPanel({
           {formatPoints(overview.account.availablePoints)}
         </p>
         <p className="mt-1 text-xs text-[var(--sdk-color-text-secondary)]">
-          {overview.isAuthenticated
+          {isAuthenticated
             ? formatAccountLevelSummary(overview.account)
             : copy.quickPanel.signInToUnlock}
         </p>

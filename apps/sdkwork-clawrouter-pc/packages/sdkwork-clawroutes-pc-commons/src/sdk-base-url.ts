@@ -1,4 +1,5 @@
 import { isBlank, trim } from './sdkwork-utils.ts';
+export { resolveBrowserReachableBaseUrl } from './browser-base-url.ts';
 
 function normalizePrefix(prefix: string): string {
   const normalized = trim(prefix).replace(/^\/+|\/+$/g, '');

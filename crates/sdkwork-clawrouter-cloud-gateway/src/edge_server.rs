@@ -124,6 +124,7 @@ pub struct EdgeServerConfig {
     portal_csp_connect_src_extra_origins: Vec<String>,
     portal_csp_frame_src: Vec<String>,
     portal_cors_allowed_origins: Vec<String>,
+    development_private_network_cors: bool,
     portal_content_security_policy: HeaderValue,
     portal_strict_transport_security: Option<HeaderValue>,
     external_scheme: HeaderValue,
@@ -320,6 +321,7 @@ impl EdgeServerConfig {
             portal_csp_connect_src_extra_origins: Vec::new(),
             portal_csp_frame_src: default_portal_csp_frame_src(),
             portal_cors_allowed_origins: Vec::new(),
+            development_private_network_cors: false,
             portal_content_security_policy: default_portal_content_security_policy(),
             portal_strict_transport_security: None,
             external_scheme: HeaderValue::from_static("http"),
@@ -602,6 +604,11 @@ impl EdgeServerConfig {
         }
         self.portal_cors_allowed_origins = normalized;
         Ok(self)
+    }
+
+    pub fn with_development_private_network_cors(mut self, enabled: bool) -> Self {
+        self.development_private_network_cors = enabled;
+        self
     }
 
     fn refresh_portal_content_security_policy(&mut self) -> Result<(), String> {
@@ -3164,6 +3171,11 @@ fn cors_origin_for_request(state: &EdgeServerState, request: &Request) -> Option
     {
         return Some(origin.clone());
     }
+    if state.config.development_private_network_cors
+        && sdkwork_web_core::is_development_private_network_origin(origin_text)
+    {
+        return Some(origin.clone());
+    }
     None
 }
 
@@ -3171,6 +3183,10 @@ fn with_cors_headers(mut response: Response, origin: Option<HeaderValue>) -> Res
     let headers = response.headers_mut();
     if let Some(origin) = origin {
         headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        headers.insert(
+            header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
+            HeaderValue::from_static("true"),
+        );
         merge_vary_origin(headers);
     }
     headers.insert(

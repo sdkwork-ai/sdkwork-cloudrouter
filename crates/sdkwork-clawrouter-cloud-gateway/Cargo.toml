@@ -42,6 +42,7 @@ sdkwork-database-sqlx.workspace = true
 sdkwork-routes-clawrouter-app-api.workspace = true
 sdkwork-routes-clawrouter-backend-api.workspace = true
 sdkwork-sdk-generator-client.workspace = true
+sdkwork-web-core.workspace = true
 sha2.workspace = true
 sqlx.workspace = true
 tokio.workspace = true

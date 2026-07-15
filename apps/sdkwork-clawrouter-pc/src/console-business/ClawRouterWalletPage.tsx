@@ -16,6 +16,7 @@ import {
   unwrapSdkworkPromotionResponse,
 } from '@sdkwork/promotion-service';
 
+import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
 import { ClawRouterWithdrawDialog } from './ClawRouterWithdrawDialog.tsx';
 import { resolveConsoleWalletLocale } from './consoleCommerceLocale.ts';
 
@@ -75,6 +76,7 @@ function ClawRouterWalletPageContent() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('WECHAT');
   const [rechargeNotice, setRechargeNotice] = useState<NoticeState | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const isAuthenticated = usePortalIamSession();
 
   useEffect(() => {
     if (!state.isBootstrapped && !state.isLoading && !state.lastError) {
@@ -137,7 +139,7 @@ function ClawRouterWalletPageContent() {
   }
 
   async function handleRecharge() {
-    if (effectivePoints <= 0 || !state.overview.isAuthenticated) {
+    if (effectivePoints <= 0 || !isAuthenticated) {
       return;
     }
     setRechargeNotice(null);
@@ -178,17 +180,16 @@ function ClawRouterWalletPageContent() {
     });
   }
 
-  const isAuthenticated = state.overview.isAuthenticated;
   const unavailableLabel = t('console.billing.billingview.text.1om3err');
 
   return (
     <div className="h-full overflow-y-auto">
       <div className="px-4 pb-3 sm:px-5 sm:pb-4">
-        <div className="mx-auto max-w-6xl space-y-3">
+        <div className="w-full max-w-none space-y-3">
           <SdkworkWalletBalancePanel
             onOpenRecharge={() => setActiveTab('recharge')}
             onOpenWithdraw={() => controller.openWithdraw()}
-            overview={state.overview}
+            overview={{ ...state.overview, isAuthenticated }}
           />
 
           {state.lastError ? (

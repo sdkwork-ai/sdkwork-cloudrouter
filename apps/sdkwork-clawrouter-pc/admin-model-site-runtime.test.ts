@@ -139,12 +139,12 @@ test("admin model page exposes site management route and navigation markers", ()
   }
 });
 
-test("admin model site page uses compact admin content padding", () => {
+test("admin model site page keeps the content viewport edge-to-edge", () => {
   const adminLayoutSource = readPortalFile("packages/sdkwork-clawrouter-pc-admin-shell/src/AdminLayout.tsx");
 
   assert.ok(
-    adminLayoutSource.includes('className="flex min-h-0 flex-1 flex-col overflow-hidden p-[5px]"'),
-    "admin right content wrapper should use 5px padding on all sides",
+    adminLayoutSource.includes('w-full max-w-none flex-1 flex-col overflow-hidden p-0'),
+    "admin right content wrapper should not add outer padding",
   );
 });
 
