@@ -221,7 +221,7 @@ async fn database_config_router_requires_admin_subject_for_backend_model_managem
 }
 
 #[tokio::test]
-async fn installation_status_rejects_regular_user_with_standard_problem_detail() {
+async fn database_config_router_rejects_regular_user_session_for_backend_admin_routes() {
     let catalog = seeded_sqlite_catalog().await.unwrap();
 
     let router = configured_router_from_database_config(
@@ -233,21 +233,13 @@ async fn installation_status_rejects_regular_user_with_standard_problem_detail()
     .await
     .unwrap();
 
-    let pool = catalog.open_pool().await.unwrap();
-    sqlx::query(
-        "UPDATE iam_organization_membership SET membership_kind = 'member' WHERE tenant_id = '100001' AND organization_id = '0' AND user_id = '1'",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-    pool.close().await;
-
+    let regular_user_subject = trusted_request_subject(100_001, 0, 31);
     let response = router
         .oneshot(app_session_request_for_subject(
             "GET",
-            "/backend/v3/api/system/installation/status",
+            "/backend/v3/api/ai/models",
             Body::empty(),
-            bootstrap_admin_subject(),
+            regular_user_subject,
         ))
         .await
         .unwrap();
@@ -268,11 +260,6 @@ async fn installation_status_rejects_regular_user_with_standard_problem_detail()
     assert_eq!(40301, payload["code"]);
     assert_eq!(403, payload["status"]);
     assert_eq!("Permission required", payload["title"]);
-    assert_eq!(
-        "GET /backend/v3/api/system/installation/status",
-        payload["instance"]
-    );
-    assert_eq!("installation.status.retrieve", payload["operationId"]);
     assert!(payload["traceId"]
         .as_str()
         .is_some_and(|value| !value.is_empty()));

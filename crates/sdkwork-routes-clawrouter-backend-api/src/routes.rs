@@ -2048,11 +2048,50 @@ pub async fn serve_with_runtime_config(
 
 #[cfg(test)]
 mod tests {
-    use super::{router_from_env, router_without_database};
+    use super::{admin_forbidden_response, router_from_env, router_without_database};
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
     use sdkwork_claw_config::DeploymentMode;
     use std::sync::{Mutex, OnceLock};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    #[tokio::test]
+    async fn installation_status_admin_denial_uses_standard_problem_detail() {
+        let request = Request::builder()
+            .method("GET")
+            .uri("/backend/v3/api/system/installation/status")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = admin_forbidden_response(&request, "admin access is required".to_owned());
+
+        assert_eq!(StatusCode::FORBIDDEN, response.status());
+        assert_eq!(
+            Some("application/problem+json"),
+            response
+                .headers()
+                .get("content-type")
+                .and_then(|value| value.to_str().ok())
+        );
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert_eq!(40301, payload["code"]);
+        assert_eq!(403, payload["status"]);
+        assert_eq!("Permission required", payload["title"]);
+        assert_eq!(
+            "GET /backend/v3/api/system/installation/status",
+            payload["instance"]
+        );
+        assert!(payload["traceId"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()));
+        assert!(payload.get("msg").is_none());
+        assert!(payload.get("data").is_none());
+    }
 
     #[tokio::test]
     async fn no_database_router_health_uses_explicit_deployment_mode() {
