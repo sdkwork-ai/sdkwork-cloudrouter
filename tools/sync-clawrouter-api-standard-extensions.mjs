@@ -6,6 +6,17 @@ import { fileURLToPath } from "node:url";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDir, "..");
 
+const ORDER_APP_DEPENDENCY = {
+  assemblyManifestPath:
+    "../sdkwork-order/crates/sdkwork-order-gateway-assembly/assembly-manifest.json",
+  openApiAuthorityPath:
+    "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json",
+  packageName: "sdkwork-routes-order-app-api",
+  apiAuthority: "sdkwork-order-app-api",
+  handlerModule:
+    "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+};
+
 const HTTP_METHODS = new Set([
   "get",
   "post",
@@ -36,6 +47,7 @@ const TARGETS = [
     projectionRouteManifestPaths: [
       "sdks/_route-manifests/app-api/sdkwork-router-app-api.route-manifest.json",
     ],
+    dependencyAssemblies: [ORDER_APP_DEPENDENCY],
   },
   {
     surface: "backend-api",
@@ -237,7 +249,7 @@ function stampOpenApiExtensions(document, target) {
   return changed;
 }
 
-function buildRouteManifest(document, target) {
+function buildRouteEntries(document, target, dependency = null) {
   const routes = [];
   const paths = document.paths ?? {};
   for (const [routePath, pathItem] of Object.entries(paths)) {
@@ -262,22 +274,46 @@ function buildRouteManifest(document, target) {
           : {}),
         auth: inferAuth(operation),
         handler: {
-          module: "crate::routes",
+          module: dependency?.handlerModule ?? "crate::routes",
           name: null,
         },
         ownership: {
-          owner: operation["x-sdkwork-owner"] ?? "sdkwork-clawrouter",
-          apiAuthority: operation["x-sdkwork-api-authority"] ?? target.apiAuthority,
+          owner:
+            operation["x-sdkwork-owner"] ??
+            (dependency ? "sdkwork-order" : "sdkwork-clawrouter"),
+          apiAuthority:
+            operation["x-sdkwork-api-authority"] ??
+            dependency?.apiAuthority ??
+            target.apiAuthority,
         },
         source: {
-          routeCrate: operation["x-sdkwork-source-route-crate"] ?? target.packageName,
-          openApiAuthority: target.openApiPaths[0],
+          routeCrate:
+            operation["x-sdkwork-source-route-crate"] ??
+            dependency?.packageName ??
+            target.packageName,
+          openApiAuthority:
+            dependency?.openApiAuthorityPath ?? target.openApiPaths[0],
         },
         requestContext: "WebRequestContext",
         apiSurface: target.apiSurface,
       });
     }
   }
+
+  return routes;
+}
+
+function buildRouteManifest(document, target, dependencyDocuments = []) {
+  const routeIndex = new Map();
+  for (const route of buildRouteEntries(document, target)) {
+    routeIndex.set(routeKey(route.method, route.path), route);
+  }
+  for (const { document: dependencyDocument, dependency } of dependencyDocuments) {
+    for (const route of buildRouteEntries(dependencyDocument, target, dependency)) {
+      routeIndex.set(routeKey(route.method, route.path), route);
+    }
+  }
+  const routes = [...routeIndex.values()];
 
   return {
     schemaVersion: 1,
@@ -297,6 +333,36 @@ function buildRouteManifest(document, target) {
     },
     routes,
   };
+}
+
+async function loadDependencyAssemblyDocuments(target) {
+  const documents = [];
+  for (const dependency of target.dependencyAssemblies ?? []) {
+    const assemblyPath = path.resolve(workspaceRoot, dependency.assemblyManifestPath);
+    const authorityPath = path.resolve(workspaceRoot, dependency.openApiAuthorityPath);
+    const assembly = JSON.parse(await readFile(assemblyPath, "utf8"));
+    const routeCrates = Array.isArray(assembly.routeCrates) ? assembly.routeCrates : [];
+    const declaresMountedSurface = routeCrates.some(
+      (routeCrate) =>
+        routeCrate?.packageName === dependency.packageName &&
+        routeCrate?.surface === target.surface &&
+        routeCrate?.hasGatewayMount === true,
+    );
+    if (!declaresMountedSurface) {
+      throw new Error(
+        `${dependency.assemblyManifestPath} does not declare mounted ${target.surface} route crate ${dependency.packageName}`,
+      );
+    }
+
+    const document = JSON.parse(await readFile(authorityPath, "utf8"));
+    if (document.info?.["x-sdkwork-api-authority"] !== dependency.apiAuthority) {
+      throw new Error(
+        `${dependency.openApiAuthorityPath} does not declare ${dependency.apiAuthority}`,
+      );
+    }
+    documents.push({ dependency, document });
+  }
+  return documents;
 }
 
 function routeKey(method, routePath) {
@@ -354,7 +420,8 @@ async function processTarget(target, mode) {
   const primaryOpenApiPath = path.join(workspaceRoot, target.openApiPaths[0]);
   const document = JSON.parse(await readFile(primaryOpenApiPath, "utf8"));
   const stampedChanges = stampOpenApiExtensions(document, target);
-  const routeManifest = buildRouteManifest(document, target);
+  const dependencyDocuments = await loadDependencyAssemblyDocuments(target);
+  const routeManifest = buildRouteManifest(document, target, dependencyDocuments);
   const manifestJson = `${JSON.stringify(routeManifest, null, 2)}\n`;
   const openApiJson = `${JSON.stringify(document, null, 2)}\n`;
   const manifestSha = createHash("sha256").update(manifestJson).digest("hex");

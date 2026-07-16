@@ -1,8 +1,7 @@
 //! Federated commerce T1 capability route wiring for Claw Router database-backed runtime.
 //!
-//! Claw Router's unified database still carries legacy `appbase` commerce tables for recharge,
-//! exchange, order, and catalog flows. Account L3 migrations and membership manifest bootstrap
-//! stay disabled here until the platform cutover completes.
+//! The unified runtime mounts commerce routes and registers each capability-owned database module
+//! against the shared pool so schema, migration, and seed lifecycle remain aligned with routing.
 
 use std::sync::Arc;
 
@@ -15,18 +14,12 @@ use sdkwork_claw_http::{
 use sdkwork_database_lifecycle::RegistryLifecycleOrchestrator;
 use sdkwork_database_spi::DatabaseModuleRegistry;
 use sdkwork_database_sqlx::DatabasePool;
-use sdkwork_payment_providers::{PaymentProviderRegistry, ProviderCredentialBundle};
 use sdkwork_payment_service_host::PaymentServiceHost;
 use sdkwork_routes_account_app_api::{
     app_account_wallet_router_with_postgres_pool, app_account_wallet_router_with_sqlite_pool,
 };
 use sdkwork_routes_membership_app_api::{
     app_membership_router_with_postgres_pool, app_membership_router_with_sqlite_pool,
-};
-use sdkwork_routes_order_app_api::{
-    app_membership_order_router_with_postgres_pool_and_payments,
-    app_membership_order_router_with_sqlite_pool_and_payments,
-    app_order_router_with_postgres_pool, app_order_router_with_sqlite_pool,
 };
 use sdkwork_routes_payment_app_api::routes::build_payment_app_router;
 use sdkwork_routes_promotion_app_api::{
@@ -69,15 +62,18 @@ pub async fn merge_federated_commerce_app_routers(
 /// handles init, migration, and seeding automatically based on each module's
 /// own `database.manifest.json` and env overrides.
 async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String> {
+    let order_module = sdkwork_order_gateway_assembly::ApplicationAssembly::database_module()
+        .map_err(|e| format!("load order database module failed: {e}"))?;
     let membership_module = sdkwork_membership_database_host::database_module()
         .map_err(|e| format!("load membership database module failed: {e}"))?;
     let registry = DatabaseModuleRegistry::builder()
+        .register(order_module)
+        .map_err(|e| format!("register order database module failed: {e}"))?
         .register(membership_module)
         .map_err(|e| format!("register membership database module failed: {e}"))?
         .build();
-    let orchestrator =
-        RegistryLifecycleOrchestrator::new(pool.clone(), registry)
-            .with_applied_by("sdkwork-clawrouter-commerce");
+    let orchestrator = RegistryLifecycleOrchestrator::new(pool.clone(), registry)
+        .with_applied_by("sdkwork-clawrouter-commerce");
     let results = orchestrator
         .bootstrap_all_from_env()
         .await
@@ -98,13 +94,16 @@ async fn wire_commerce_app_router(payment: Arc<PaymentServiceHost>) -> Result<Ro
     let promotion_router = build_promotion_router_from_payment_pool(payment.database_pool())?;
     let account_wallet_router =
         build_account_wallet_router_from_payment_pool(payment.database_pool())?;
-    let order_router = build_order_router_from_payment_pool(payment.database_pool())?;
+    let order_assembly = sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool(
+        payment.database_pool().clone(),
+    )
+    .await?;
 
     Ok(Router::new()
         .merge(build_payment_app_router(payment))
         .merge(promotion_router)
         .merge(account_wallet_router)
-        .merge(order_router))
+        .merge(order_assembly.router))
 }
 
 fn build_membership_router_from_pool(pool: &DatabasePool) -> Router {
@@ -130,33 +129,28 @@ fn build_account_wallet_router_from_payment_pool(pool: &DatabasePool) -> Result<
     })
 }
 
-fn build_order_router_from_payment_pool(pool: &DatabasePool) -> Result<Router, String> {
-    let credentials = ProviderCredentialBundle::from_env();
-    let registry = Arc::new(PaymentProviderRegistry::from_credentials(
-        credentials.clone(),
-    ));
-    Ok(match pool {
-        DatabasePool::Postgres(pool, _) => Router::new()
-            .merge(app_order_router_with_postgres_pool(
-                pool.clone(),
-                registry.clone(),
-                credentials.clone(),
-            ))
-            .merge(app_membership_order_router_with_postgres_pool_and_payments(
-                pool.clone(),
-                registry,
-                credentials,
-            )),
-        DatabasePool::Sqlite(pool, _) => Router::new()
-            .merge(app_order_router_with_sqlite_pool(
-                pool.clone(),
-                registry.clone(),
-                credentials.clone(),
-            ))
-            .merge(app_membership_order_router_with_sqlite_pool_and_payments(
-                pool.clone(),
-                registry,
-                credentials,
-            )),
-    })
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn federated_commerce_consumes_complete_order_gateway_assembly() {
+        let source = include_str!("commerce_runtime.rs");
+
+        let order = source
+            .find("sdkwork_order_gateway_assembly::ApplicationAssembly::database_module()")
+            .expect("order assembly database module registration");
+        let membership = source
+            .find("sdkwork_membership_database_host::database_module()")
+            .expect("membership database module registration");
+        assert!(
+            order < membership,
+            "order database must bootstrap before membership"
+        );
+        assert!(source.contains(".register(order_module)"));
+        assert!(source.contains(".register(membership_module)"));
+        assert!(source.contains(
+            "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool("
+        ));
+        let forbidden_direct_route_crate = ["sdkwork_routes_order", "_app_api::"].concat();
+        assert!(!source.contains(&forbidden_direct_route_crate));
+    }
 }

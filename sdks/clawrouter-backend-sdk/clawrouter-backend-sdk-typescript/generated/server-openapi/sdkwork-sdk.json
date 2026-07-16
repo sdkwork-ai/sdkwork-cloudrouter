@@ -3,7 +3,5 @@
   "sdkType": "backend",
   "name": "clawrouter-backend-sdk",
   "packageName": "clawrouter-backend-sdk-generated-typescript",
-  "version": "0.1.0",
-  "transportPackageName": "clawrouter-backend-sdk-generated-typescript",
-  "consumerPackageName": "@sdkwork/clawrouter-backend-sdk"
+  "version": "0.1.0"
 }

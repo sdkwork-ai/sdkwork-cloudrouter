@@ -22,7 +22,7 @@ export class FineTuningJobsCheckpointsApi {
 /** List fine-tuning checkpoints */
   async list(fineTuningJobId: string, params?: FineTuningJobsCheckpointsListParams): Promise<OpenAiFineTuningJobCheckpointList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -58,7 +58,7 @@ export class FineTuningJobsApi {
 /** List fine-tuning jobs */
   async list(params?: FineTuningJobsListParams): Promise<OpenAiFineTuningJobList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -84,7 +84,7 @@ export class FineTuningJobsApi {
 /** List fine-tuning events */
   async listEvents(fineTuningJobId: string, params?: FineTuningJobsListEventsParams): Promise<OpenAiFineTuningJobEventList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -122,7 +122,7 @@ export class FineTuningCheckpointsPermissionsApi {
 /** List fine-tuning checkpoint permissions */
   async retrieve(fineTunedModelCheckpoint: string, params?: FineTuningCheckpointsPermissionsRetrieveParams): Promise<OpenAiFineTuningCheckpointPermissionList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },

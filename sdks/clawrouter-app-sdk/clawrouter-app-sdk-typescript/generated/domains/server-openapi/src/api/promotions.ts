@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
-
-import type { PromotionsCodesRedemptionsCreateResult, PromotionsDiscountApplicationsCreateResult, PromotionsDiscountApplicationsReleaseResult, PromotionsDiscountApplicationsReversalsCreateResult, PromotionsDiscountApplicationsRollbackResult, PromotionsDiscountApplicationsSettleResult, PromotionsOffersRetrieveResult, PromotionsUserCouponsClaimsCreateResult, PromotionsUserCouponsRetrieveResult, PromotionsUserCouponsWalletRetrieveResult, SdkWorkPageData } from '../types';
-
-
+import type { PromotionsCodesRedemptionsCreateRequest, PromotionsCodesRedemptionsCreateResult } from '../types';
 export class PromotionsUserCouponsWalletApi {
   private client: HttpClient;
 
@@ -13,13 +10,13 @@ export class PromotionsUserCouponsWalletApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/promotions/user_coupons/wallet`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/promotions/user_coupons/wallet`));
   }
 
 /** Retrieve */
-  async retrieve(userCouponId: string): Promise<PromotionsUserCouponsWalletRetrieveResult> {
-    return this.client.get<PromotionsUserCouponsWalletRetrieveResult>(appApiPath(`/promotions/user_coupons/wallet/${serializePathParameter(userCouponId, { name: 'userCouponId', style: 'simple', explode: false })}`));
+  async retrieve(userCouponId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/promotions/user_coupons/wallet/${serializePathParameter(userCouponId, { name: 'userCouponId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -32,8 +29,8 @@ export class PromotionsUserCouponsClaimsApi {
 
 
 /** Create */
-  async create(): Promise<PromotionsUserCouponsClaimsCreateResult> {
-    return this.client.post<PromotionsUserCouponsClaimsCreateResult>(appApiPath(`/promotions/user_coupon_claims`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/promotions/user_coupon_claims`));
   }
 }
 
@@ -50,13 +47,13 @@ export class PromotionsUserCouponsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/promotions/user_coupons`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/promotions/user_coupons`));
   }
 
 /** Retrieve */
-  async retrieve(userCouponId: string): Promise<PromotionsUserCouponsRetrieveResult> {
-    return this.client.get<PromotionsUserCouponsRetrieveResult>(appApiPath(`/promotions/user_coupons/${serializePathParameter(userCouponId, { name: 'userCouponId', style: 'simple', explode: false })}`));
+  async retrieve(userCouponId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/promotions/user_coupons/${serializePathParameter(userCouponId, { name: 'userCouponId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -69,13 +66,41 @@ export class PromotionsOffersApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/promotions/offers`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/promotions/offers`));
   }
 
 /** Retrieve */
-  async retrieve(offerId: string): Promise<PromotionsOffersRetrieveResult> {
-    return this.client.get<PromotionsOffersRetrieveResult>(appApiPath(`/promotions/offers/${serializePathParameter(offerId, { name: 'offerId', style: 'simple', explode: false })}`));
+  async retrieve(offerId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/promotions/offers/${serializePathParameter(offerId, { name: 'offerId', style: 'simple', explode: false })}`));
+  }
+}
+
+export class PromotionsDiscountApplicationsSettlementsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Settle */
+  async create(applicationId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/settlements`));
+  }
+}
+
+export class PromotionsDiscountApplicationsReleasesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Release */
+  async create(applicationId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/releases`));
   }
 }
 
@@ -88,39 +113,33 @@ export class PromotionsDiscountApplicationsReversalsApi {
 
 
 /** Create */
-  async create(): Promise<PromotionsDiscountApplicationsReversalsCreateResult> {
-    return this.client.post<PromotionsDiscountApplicationsReversalsCreateResult>(appApiPath(`/promotions/discount_applications/reversals`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/promotions/discount_applications/reversals`));
   }
 }
 
 export class PromotionsDiscountApplicationsApi {
   private client: HttpClient;
   public readonly reversals: PromotionsDiscountApplicationsReversalsApi;
+  public readonly releases: PromotionsDiscountApplicationsReleasesApi;
+  public readonly settlements: PromotionsDiscountApplicationsSettlementsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.reversals = new PromotionsDiscountApplicationsReversalsApi(client);
+    this.releases = new PromotionsDiscountApplicationsReleasesApi(client);
+    this.settlements = new PromotionsDiscountApplicationsSettlementsApi(client);
   }
 
 
 /** Create */
-  async create(): Promise<PromotionsDiscountApplicationsCreateResult> {
-    return this.client.post<PromotionsDiscountApplicationsCreateResult>(appApiPath(`/promotions/discount_applications`));
-  }
-
-/** Release */
-  async release(applicationId: string): Promise<PromotionsDiscountApplicationsReleaseResult> {
-    return this.client.post<PromotionsDiscountApplicationsReleaseResult>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/releases`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/promotions/discount_applications`));
   }
 
 /** Rollback */
-  async rollback(applicationId: string): Promise<PromotionsDiscountApplicationsRollbackResult> {
-    return this.client.post<PromotionsDiscountApplicationsRollbackResult>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/rollback`));
-  }
-
-/** Settle */
-  async settle(applicationId: string): Promise<PromotionsDiscountApplicationsSettleResult> {
-    return this.client.post<PromotionsDiscountApplicationsSettleResult>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/settlements`));
+  async rollback(applicationId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/promotions/discount_applications/${serializePathParameter(applicationId, { name: 'applicationId', style: 'simple', explode: false })}/rollback`));
   }
 }
 
@@ -133,8 +152,8 @@ export class PromotionsCodesRedemptionsApi {
 
 
 /** Create */
-  async create(body: { code: string; channel?: string }): Promise<PromotionsCodesRedemptionsCreateResult> {
-    return this.client.post<PromotionsCodesRedemptionsCreateResult>(appApiPath(`/promotions/codes/redemptions`), body);
+  async create(body: PromotionsCodesRedemptionsCreateRequest): Promise<PromotionsCodesRedemptionsCreateResult> {
+    return this.client.post<PromotionsCodesRedemptionsCreateResult>(appApiPath(`/promotions/codes/redemptions`), body, undefined, undefined, 'application/json');
   }
 }
 

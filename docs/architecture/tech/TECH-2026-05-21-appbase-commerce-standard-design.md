@@ -7,7 +7,7 @@
 
 Described a no-compatibility commerce standard for appbase repositories. Claw Router consumes **domain-top-level** backend SDK modules (`wallet`, `catalog`, `memberships`, `promotions`, `inventory`, `invoices`, `orders`, `payments`, …).
 
-See `sdks/clawrouter-backend-sdk/.sdkwork-assembly.json` and `apps/sdkwork-clawrouter-pc/specs/component.spec.json` for live capability inventory.
+See `sdks/clawrouter-backend-sdk/sdk-manifest.json` and `apps/sdkwork-clawrouter-pc/specs/component.spec.json` for live capability inventory.
 
 ## Verification
 

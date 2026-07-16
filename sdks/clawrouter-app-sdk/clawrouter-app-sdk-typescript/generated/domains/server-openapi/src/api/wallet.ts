@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { SdkWorkPageData, WalletAccountsCashRetrieveResult, WalletAccountsOverviewRetrieveResult, WalletAccountsPointsRetrieveResult, WalletAccountsRetrieveResult, WalletAccountsTokensRetrieveResult, WalletAdjustmentsCreateResult, WalletExchangeRateRetrieveResult, WalletHoldsCreateResult, WalletHoldsReleasesCreateResult, WalletHoldsSettlementsCreateResult, WalletLedgerEntriesRetrieveResult, WalletOverviewRetrieveResult, WalletPointExchangesCreateResult, WalletPointExchangesRetrieveResult, WalletPointTransfersCreateResult, WalletRequestsRetrieveResult, WalletTokensRetrieveResult, WalletTopupTransfersCreateResult, WalletTransactionsRetrieveResult, WalletWithdrawalTransfersCreateResult } from '../types';
-
-
 export class WalletWithdrawalTransfersApi {
   private client: HttpClient;
 
@@ -13,8 +10,8 @@ export class WalletWithdrawalTransfersApi {
 
 
 /** Create */
-  async create(): Promise<WalletWithdrawalTransfersCreateResult> {
-    return this.client.post<WalletWithdrawalTransfersCreateResult>(appApiPath(`/wallet/withdrawal_transfers`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/wallet/withdrawal_transfers`));
   }
 }
 
@@ -27,13 +24,13 @@ export class WalletTransactionsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/wallet/transactions`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/transactions`));
   }
 
 /** Retrieve */
-  async retrieve(transactionId: string): Promise<WalletTransactionsRetrieveResult> {
-    return this.client.get<WalletTransactionsRetrieveResult>(appApiPath(`/wallet/transactions/${serializePathParameter(transactionId, { name: 'transactionId', style: 'simple', explode: false })}`));
+  async retrieve(transactionId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/transactions/${serializePathParameter(transactionId, { name: 'transactionId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -46,8 +43,8 @@ export class WalletTopupTransfersApi {
 
 
 /** Create */
-  async create(): Promise<WalletTopupTransfersCreateResult> {
-    return this.client.post<WalletTopupTransfersCreateResult>(appApiPath(`/wallet/topup_transfers`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/wallet/topup_transfers`));
   }
 }
 
@@ -60,8 +57,8 @@ export class WalletTokensApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<WalletTokensRetrieveResult> {
-    return this.client.get<WalletTokensRetrieveResult>(appApiPath(`/wallet/tokens`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/tokens`));
   }
 }
 
@@ -74,8 +71,8 @@ export class WalletRequestsApi {
 
 
 /** Retrieve */
-  async retrieve(requestNo: string): Promise<WalletRequestsRetrieveResult> {
-    return this.client.get<WalletRequestsRetrieveResult>(appApiPath(`/wallet/requests/${serializePathParameter(requestNo, { name: 'requestNo', style: 'simple', explode: false })}`));
+  async retrieve(requestNo: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/requests/${serializePathParameter(requestNo, { name: 'requestNo', style: 'simple', explode: false })}`));
   }
 }
 
@@ -88,8 +85,8 @@ export class WalletPointsExchangeRulesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/wallet/points/exchanges/rules`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/points/exchanges/rules`));
   }
 }
 
@@ -113,8 +110,8 @@ export class WalletPointTransfersApi {
 
 
 /** Create */
-  async create(): Promise<WalletPointTransfersCreateResult> {
-    return this.client.post<WalletPointTransfersCreateResult>(appApiPath(`/wallet/point_transfers`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/wallet/point_transfers`));
   }
 }
 
@@ -127,13 +124,13 @@ export class WalletPointExchangesApi {
 
 
 /** Create */
-  async create(): Promise<WalletPointExchangesCreateResult> {
-    return this.client.post<WalletPointExchangesCreateResult>(appApiPath(`/wallet/point_exchanges`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/wallet/point_exchanges`));
   }
 
 /** Retrieve */
-  async retrieve(exchangeNo: string): Promise<WalletPointExchangesRetrieveResult> {
-    return this.client.get<WalletPointExchangesRetrieveResult>(appApiPath(`/wallet/point_exchanges/${serializePathParameter(exchangeNo, { name: 'exchangeNo', style: 'simple', explode: false })}`));
+  async retrieve(exchangeNo: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/point_exchanges/${serializePathParameter(exchangeNo, { name: 'exchangeNo', style: 'simple', explode: false })}`));
   }
 }
 
@@ -146,8 +143,8 @@ export class WalletOverviewApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<WalletOverviewRetrieveResult> {
-    return this.client.get<WalletOverviewRetrieveResult>(appApiPath(`/wallet/overview`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/overview`));
   }
 }
 
@@ -160,8 +157,8 @@ export class WalletLedgerEntriesPointsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/wallet/ledger_entries/points`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/ledger_entries/points`));
   }
 }
 
@@ -176,13 +173,13 @@ export class WalletLedgerEntriesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/wallet/ledger_entries`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/ledger_entries`));
   }
 
 /** Retrieve */
-  async retrieve(ledgerEntryId: string): Promise<WalletLedgerEntriesRetrieveResult> {
-    return this.client.get<WalletLedgerEntriesRetrieveResult>(appApiPath(`/wallet/ledger_entries/${serializePathParameter(ledgerEntryId, { name: 'ledgerEntryId', style: 'simple', explode: false })}`));
+  async retrieve(ledgerEntryId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/ledger_entries/${serializePathParameter(ledgerEntryId, { name: 'ledgerEntryId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -195,8 +192,8 @@ export class WalletHoldsSettlementsApi {
 
 
 /** Create */
-  async create(): Promise<WalletHoldsSettlementsCreateResult> {
-    return this.client.post<WalletHoldsSettlementsCreateResult>(appApiPath(`/wallet/holds/settlements`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/wallet/holds/settlements`));
   }
 }
 
@@ -209,8 +206,8 @@ export class WalletHoldsReleasesApi {
 
 
 /** Create */
-  async create(): Promise<WalletHoldsReleasesCreateResult> {
-    return this.client.post<WalletHoldsReleasesCreateResult>(appApiPath(`/wallet/holds/releases`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/wallet/holds/releases`));
   }
 }
 
@@ -227,13 +224,13 @@ export class WalletHoldsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/wallet/holds`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/holds`));
   }
 
 /** Create */
-  async create(): Promise<WalletHoldsCreateResult> {
-    return this.client.post<WalletHoldsCreateResult>(appApiPath(`/wallet/holds`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/wallet/holds`));
   }
 }
 
@@ -246,8 +243,8 @@ export class WalletExchangeRulesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/wallet/exchange_rules`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/exchange_rules`));
   }
 }
 
@@ -260,8 +257,8 @@ export class WalletExchangeRateApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<WalletExchangeRateRetrieveResult> {
-    return this.client.get<WalletExchangeRateRetrieveResult>(appApiPath(`/wallet/exchange_rate`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/exchange_rate`));
   }
 }
 
@@ -274,8 +271,8 @@ export class WalletAdjustmentsApi {
 
 
 /** Create */
-  async create(): Promise<WalletAdjustmentsCreateResult> {
-    return this.client.post<WalletAdjustmentsCreateResult>(appApiPath(`/wallet/adjustments`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/wallet/adjustments`));
   }
 }
 
@@ -288,8 +285,8 @@ export class WalletAccountsTokensApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<WalletAccountsTokensRetrieveResult> {
-    return this.client.get<WalletAccountsTokensRetrieveResult>(appApiPath(`/wallet/accounts/tokens`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/accounts/tokens`));
   }
 }
 
@@ -302,8 +299,8 @@ export class WalletAccountsPointsApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<WalletAccountsPointsRetrieveResult> {
-    return this.client.get<WalletAccountsPointsRetrieveResult>(appApiPath(`/wallet/accounts/points`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/accounts/points`));
   }
 }
 
@@ -316,8 +313,8 @@ export class WalletAccountsOverviewApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<WalletAccountsOverviewRetrieveResult> {
-    return this.client.get<WalletAccountsOverviewRetrieveResult>(appApiPath(`/wallet/accounts/overview`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/accounts/overview`));
   }
 }
 
@@ -330,8 +327,8 @@ export class WalletAccountsCashApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<WalletAccountsCashRetrieveResult> {
-    return this.client.get<WalletAccountsCashRetrieveResult>(appApiPath(`/wallet/accounts/cash`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/accounts/cash`));
   }
 }
 
@@ -352,13 +349,13 @@ export class WalletAccountsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/wallet/accounts`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/accounts`));
   }
 
 /** Retrieve */
-  async retrieve(accountId: string): Promise<WalletAccountsRetrieveResult> {
-    return this.client.get<WalletAccountsRetrieveResult>(appApiPath(`/wallet/accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}`));
+  async retrieve(accountId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/wallet/accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}`));
   }
 }
 

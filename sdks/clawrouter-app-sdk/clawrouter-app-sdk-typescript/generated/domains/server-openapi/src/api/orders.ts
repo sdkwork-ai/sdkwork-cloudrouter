@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { OrdersCancellationsCreateResult, OrdersCancelResult, OrdersCreateResult, OrdersPaymentSuccessRetrieveResult, OrdersPayResult, OrdersRetrieveResult, OrdersStatisticsRetrieveResult, OrdersStatusRetrieveResult, SdkWorkPageData } from '../types';
+import type { CommerceOperationCommand, OrderPaymentSuccess, OrdersPaymentsWebhooksReceiveRequest, RefundRequestCreateCommand, SdkWorkCommandData, SdkWorkPageData } from '../types';
 
 
 export class OrdersStatusApi {
@@ -12,35 +12,10 @@ export class OrdersStatusApi {
   }
 
 
-/** Retrieve */
-  async retrieve(orderId: string): Promise<OrdersStatusRetrieveResult> {
-    return this.client.get<OrdersStatusRetrieveResult>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/status`));
+/** Orders status retrieve. */
+  async retrieve(orderId: string): Promise<Record<string, unknown>> {
+    return this.client.get<Record<string, unknown>>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/status`));
   }
-}
-
-export class OrdersPaymentsOrderPaymentsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(orderId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/payments`));
-  }
-}
-
-export class OrdersPaymentsApi {
-  private client: HttpClient;
-  public readonly orderPayments: OrdersPaymentsOrderPaymentsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.orderPayments = new OrdersPaymentsOrderPaymentsApi(client);
-  }
-
 }
 
 export class OrdersPaymentSuccessApi {
@@ -51,10 +26,15 @@ export class OrdersPaymentSuccessApi {
   }
 
 
-/** Retrieve */
-  async retrieve(orderId: string): Promise<OrdersPaymentSuccessRetrieveResult> {
-    return this.client.get<OrdersPaymentSuccessRetrieveResult>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/payment_success`));
+/** Orders payment Success retrieve. */
+  async retrieve(orderId: string): Promise<OrderPaymentSuccess> {
+    return this.client.get<OrderPaymentSuccess>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/payment_success`));
   }
+}
+
+export interface OrdersEventsListParams {
+  page?: number;
+  pageSize?: number;
 }
 
 export class OrdersEventsApi {
@@ -65,10 +45,20 @@ export class OrdersEventsApi {
   }
 
 
-/** List */
-  async list(orderId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/events`));
+/** Orders events list. */
+  async list(orderId: string, params?: OrdersEventsListParams): Promise<SdkWorkPageData> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<SdkWorkPageData>(appendQueryString(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/events`), query));
   }
+}
+
+export interface OrdersCancellationsCreateParams {
+  idempotencyKey: string;
+  sdkworkRequestHash: string;
+  xIdempotencyFingerprint: string;
 }
 
 export class OrdersCancellationsApi {
@@ -79,9 +69,17 @@ export class OrdersCancellationsApi {
   }
 
 
-/** Create */
-  async create(orderId: string): Promise<OrdersCancellationsCreateResult> {
-    return this.client.post<OrdersCancellationsCreateResult>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/cancellations`));
+/** Orders cancellations create. */
+  async create(orderId: string, params: OrdersCancellationsCreateParams, body?: CommerceOperationCommand): Promise<SdkWorkCommandData> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+        'Sdkwork-Request-Hash': { value: params.sdkworkRequestHash, style: 'simple', explode: false },
+        'X-Idempotency-Fingerprint': { value: params.xIdempotencyFingerprint, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<SdkWorkCommandData>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/cancellations`), body, undefined, requestHeaders, 'application/json');
   }
 }
 
@@ -93,55 +91,184 @@ export class OrdersStatisticsApi {
   }
 
 
-/** Retrieve */
-  async retrieve(): Promise<OrdersStatisticsRetrieveResult> {
-    return this.client.get<OrdersStatisticsRetrieveResult>(appApiPath(`/orders/statistics`));
+/** Orders statistics retrieve. */
+  async retrieve(): Promise<Record<string, unknown>> {
+    return this.client.get<Record<string, unknown>>(appApiPath(`/orders/statistics`));
   }
+}
+
+export interface OrdersRefundRequestsListParams {
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface OrdersRefundRequestsCreateParams {
+  idempotencyKey: string;
+  sdkworkRequestHash: string;
+  xIdempotencyFingerprint: string;
+}
+
+export class OrdersRefundRequestsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Order refund requests list. */
+  async list(params?: OrdersRefundRequestsListParams): Promise<SdkWorkPageData> {
+    const query = buildQueryString([
+      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<SdkWorkPageData>(appendQueryString(appApiPath(`/orders/refund_requests`), query));
+  }
+
+/** Order refund requests create. */
+  async create(body: RefundRequestCreateCommand, params: OrdersRefundRequestsCreateParams): Promise<Record<string, unknown>> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+        'Sdkwork-Request-Hash': { value: params.sdkworkRequestHash, style: 'simple', explode: false },
+        'X-Idempotency-Fingerprint': { value: params.xIdempotencyFingerprint, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<Record<string, unknown>>(appApiPath(`/orders/refund_requests`), body, undefined, requestHeaders, 'application/json');
+  }
+
+/** Order refund requests retrieve. */
+  async retrieve(refundRequestId: string): Promise<Record<string, unknown>> {
+    return this.client.get<Record<string, unknown>>(appApiPath(`/orders/refund_requests/${serializePathParameter(refundRequestId, { name: 'refundRequestId', style: 'simple', explode: false })}`));
+  }
+}
+
+export class OrdersPaymentsWebhooksApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Receive PSP payment webhook */
+  async receive(providerCode: string, body: OrdersPaymentsWebhooksReceiveRequest): Promise<SdkWorkCommandData> {
+    return this.client.post<SdkWorkCommandData>(appApiPath(`/orders/payments/webhooks/${serializePathParameter(providerCode, { name: 'providerCode', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  }
+}
+
+export interface OrdersPaymentsCreateParams {
+  idempotencyKey: string;
+  sdkworkRequestHash: string;
+  xIdempotencyFingerprint: string;
+}
+
+export class OrdersPaymentsApi {
+  private client: HttpClient;
+  public readonly webhooks: OrdersPaymentsWebhooksApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.webhooks = new OrdersPaymentsWebhooksApi(client);
+  }
+
+
+/** Orders payments create. */
+  async create(orderId: string, body: CommerceOperationCommand, params: OrdersPaymentsCreateParams): Promise<Record<string, unknown>> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+        'Sdkwork-Request-Hash': { value: params.sdkworkRequestHash, style: 'simple', explode: false },
+        'X-Idempotency-Fingerprint': { value: params.xIdempotencyFingerprint, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<Record<string, unknown>>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/payments`), body, undefined, requestHeaders, 'application/json');
+  }
+}
+
+export interface OrdersListParams {
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface OrdersCreateParams {
+  idempotencyKey: string;
+  sdkworkRequestHash: string;
+  xIdempotencyFingerprint: string;
+}
+
+export interface OrdersCancelParams {
+  idempotencyKey: string;
+  sdkworkRequestHash: string;
+  xIdempotencyFingerprint: string;
 }
 
 export class OrdersApi {
   private client: HttpClient;
+  public readonly payments: OrdersPaymentsApi;
+  public readonly refundRequests: OrdersRefundRequestsApi;
   public readonly statistics: OrdersStatisticsApi;
   public readonly cancellations: OrdersCancellationsApi;
   public readonly events: OrdersEventsApi;
   public readonly paymentSuccess: OrdersPaymentSuccessApi;
-  public readonly payments: OrdersPaymentsApi;
   public readonly status: OrdersStatusApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.payments = new OrdersPaymentsApi(client);
+    this.refundRequests = new OrdersRefundRequestsApi(client);
     this.statistics = new OrdersStatisticsApi(client);
     this.cancellations = new OrdersCancellationsApi(client);
     this.events = new OrdersEventsApi(client);
     this.paymentSuccess = new OrdersPaymentSuccessApi(client);
-    this.payments = new OrdersPaymentsApi(client);
     this.status = new OrdersStatusApi(client);
   }
 
 
-/** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/orders`));
+/** Orders list. */
+  async list(params?: OrdersListParams): Promise<SdkWorkPageData> {
+    const query = buildQueryString([
+      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.get<SdkWorkPageData>(appendQueryString(appApiPath(`/orders`), query));
   }
 
-/** Create */
-  async create(): Promise<OrdersCreateResult> {
-    return this.client.post<OrdersCreateResult>(appApiPath(`/orders`));
+/** Orders create. */
+  async create(body: CommerceOperationCommand, params: OrdersCreateParams): Promise<Record<string, unknown>> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+        'Sdkwork-Request-Hash': { value: params.sdkworkRequestHash, style: 'simple', explode: false },
+        'X-Idempotency-Fingerprint': { value: params.xIdempotencyFingerprint, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<Record<string, unknown>>(appApiPath(`/orders`), body, undefined, requestHeaders, 'application/json');
   }
 
-/** Retrieve */
-  async retrieve(orderId: string): Promise<OrdersRetrieveResult> {
-    return this.client.get<OrdersRetrieveResult>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}`));
+/** Orders retrieve. */
+  async retrieve(orderId: string): Promise<Record<string, unknown>> {
+    return this.client.get<Record<string, unknown>>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}`));
   }
 
-/** Cancel */
-  async cancel(orderId: string): Promise<OrdersCancelResult> {
-    return this.client.post<OrdersCancelResult>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/cancel`));
-  }
-
-/** Pay */
-  async pay(orderId: string): Promise<OrdersPayResult> {
-    return this.client.post<OrdersPayResult>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/payments`));
+/** Orders cancel. */
+  async cancel(orderId: string, params: OrdersCancelParams, body?: CommerceOperationCommand): Promise<SdkWorkCommandData> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+        'Sdkwork-Request-Hash': { value: params.sdkworkRequestHash, style: 'simple', explode: false },
+        'X-Idempotency-Fingerprint': { value: params.xIdempotencyFingerprint, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<SdkWorkCommandData>(appApiPath(`/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}/cancel`), body, undefined, requestHeaders, 'application/json');
   }
 }
 
@@ -225,6 +352,233 @@ function serializePathPrimitive(value: unknown): string {
   }
   if (typeof value === 'object') {
     return JSON.stringify(value);
+  }
+  return String(value);
+}
+interface QueryParameterSpec {
+  name: string;
+  value: unknown;
+  style: string;
+  explode: boolean;
+  allowReserved: boolean;
+  contentType?: string;
+}
+
+function buildQueryString(parameters: QueryParameterSpec[]): string {
+  const pairs: string[] = [];
+  for (const parameter of parameters) {
+    appendSerializedParameter(pairs, parameter);
+  }
+  return pairs.join('&');
+}
+
+function appendSerializedParameter(pairs: string[], parameter: QueryParameterSpec): void {
+  if (parameter.value === undefined || parameter.value === null) {
+    return;
+  }
+
+  if (parameter.contentType) {
+    pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(JSON.stringify(parameter.value), parameter.allowReserved)}`);
+    return;
+  }
+
+  const style = parameter.style || 'form';
+  if (style === 'deepObject') {
+    appendDeepObjectParameter(pairs, parameter.name, parameter.value, parameter.allowReserved);
+    return;
+  }
+
+  if (Array.isArray(parameter.value)) {
+    appendArrayParameter(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+
+  if (typeof parameter.value === 'object') {
+    appendObjectParameter(pairs, parameter.name, parameter.value as Record<string, unknown>, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+
+  pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(serializePrimitive(parameter.value), parameter.allowReserved)}`);
+}
+
+function appendArrayParameter(
+  pairs: string[],
+  name: string,
+  value: unknown[],
+  style: string,
+  explode: boolean,
+  allowReserved: boolean,
+): void {
+  const values = value
+    .filter((item) => item !== undefined && item !== null)
+    .map((item) => serializePrimitive(item));
+  if (values.length === 0) {
+    return;
+  }
+
+  if (style === 'form' && explode) {
+    for (const item of values) {
+      pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(item, allowReserved)}`);
+    }
+    return;
+  }
+
+  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(values.join(','), allowReserved)}`);
+}
+
+function appendObjectParameter(
+  pairs: string[],
+  name: string,
+  value: Record<string, unknown>,
+  style: string,
+  explode: boolean,
+  allowReserved: boolean,
+): void {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (entries.length === 0) {
+    return;
+  }
+
+  if (style === 'form' && explode) {
+    for (const [key, entryValue] of entries) {
+      pairs.push(`${encodeQueryComponent(key)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
+    }
+    return;
+  }
+
+  const serialized = entries.flatMap(([key, entryValue]) => [key, serializePrimitive(entryValue)]).join(',');
+  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serialized, allowReserved)}`);
+}
+
+function appendDeepObjectParameter(
+  pairs: string[],
+  name: string,
+  value: unknown,
+  allowReserved: boolean,
+): void {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serializePrimitive(value), allowReserved)}`);
+    return;
+  }
+
+  for (const [key, entryValue] of Object.entries(value as Record<string, unknown>)) {
+    if (entryValue === undefined || entryValue === null) {
+      continue;
+    }
+    pairs.push(`${encodeQueryComponent(`${name}[${key}]`)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
+  }
+}
+
+function serializePrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function encodeQueryComponent(value: string): string {
+  return encodeURIComponent(value);
+}
+
+function encodeQueryValue(value: string, allowReserved: boolean): string {
+  const encoded = encodeURIComponent(value);
+  if (!allowReserved) {
+    return encoded;
+  }
+  return encoded.replace(/%3A/gi, ':')
+    .replace(/%2F/gi, '/')
+    .replace(/%3F/gi, '?')
+    .replace(/%23/gi, '#')
+    .replace(/%5B/gi, '[')
+    .replace(/%5D/gi, ']')
+    .replace(/%40/gi, '@')
+    .replace(/%21/gi, '!')
+    .replace(/%24/gi, '$')
+    .replace(/%26/gi, '&')
+    .replace(/%27/gi, "'")
+    .replace(/%28/gi, '(')
+    .replace(/%29/gi, ')')
+    .replace(/%2A/gi, '*')
+    .replace(/%2B/gi, '+')
+    .replace(/%2C/gi, ',')
+    .replace(/%3B/gi, ';')
+    .replace(/%3D/gi, '=');
+}
+function buildRequestHeaders(
+  headers: Record<string, HeaderParameterSpec | undefined>,
+  cookies: Record<string, HeaderParameterSpec | undefined> = {},
+): Record<string, string> | undefined {
+  const requestHeaders: Record<string, string> = {};
+
+  for (const [name, parameter] of Object.entries(headers)) {
+    const serialized = serializeParameterValue(parameter);
+    if (serialized !== undefined) {
+      requestHeaders[name] = serialized;
+    }
+  }
+
+  const cookieHeader = buildCookieHeader(cookies);
+  if (cookieHeader) {
+    requestHeaders.Cookie = requestHeaders.Cookie
+      ? `${requestHeaders.Cookie}; ${cookieHeader}`
+      : cookieHeader;
+  }
+
+  return Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined;
+}
+
+interface HeaderParameterSpec {
+  value: unknown;
+  style: string;
+  explode: boolean;
+  contentType?: string;
+}
+
+function buildCookieHeader(cookies: Record<string, HeaderParameterSpec | undefined>): string | undefined {
+  const pairs: string[] = [];
+  for (const [name, parameter] of Object.entries(cookies)) {
+    const serialized = serializeParameterValue(parameter);
+    if (serialized !== undefined) {
+      pairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(serialized)}`);
+    }
+  }
+  return pairs.length > 0 ? pairs.join('; ') : undefined;
+}
+
+function serializeParameterValue(parameter: HeaderParameterSpec | undefined): string | undefined {
+  const value = parameter?.value;
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (parameter?.contentType) {
+    return JSON.stringify(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => serializeHeaderPrimitive(item)).join(',');
+  }
+  if (typeof value === 'object' && value !== null) {
+    return serializeHeaderObject(value as Record<string, unknown>, parameter?.explode === true);
+  }
+  return serializeHeaderPrimitive(value);
+}
+
+function serializeHeaderObject(value: Record<string, unknown>, explode: boolean): string {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (explode) {
+    return entries.map(([key, entryValue]) => `${key}=${serializeHeaderPrimitive(entryValue)}`).join(',');
+  }
+  return entries.flatMap(([key, entryValue]) => [key, serializeHeaderPrimitive(entryValue)]).join(',');
+}
+
+function serializeHeaderPrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
   }
   return String(value);
 }

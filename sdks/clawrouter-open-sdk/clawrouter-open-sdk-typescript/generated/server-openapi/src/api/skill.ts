@@ -22,7 +22,7 @@ export class SkillVersionsApi {
 /** List skill versions */
   async list(skillId: string, params?: SkillVersionsListParams): Promise<OpenAiSkillVersionList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -71,7 +71,7 @@ export class SkillApi {
 /** List skills */
   async list(params?: SkillListParams): Promise<OpenAiSkillList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },

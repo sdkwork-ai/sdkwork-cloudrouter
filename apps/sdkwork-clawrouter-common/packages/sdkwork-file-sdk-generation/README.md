@@ -19,11 +19,11 @@ inputs.
 `createFileSdkArtifactWritePlan()` returns deterministic files for the file
 package-owned SDK family layout:
 
-- `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/.sdkwork-assembly.json`
+- `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/sdk-manifest.json`
 - `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/README.md`
 - `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/openapi/file-app-sdk.openapi.json`
 - `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-app-sdk/openapi/file-app-sdk.sdkgen.json`
-- `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/.sdkwork-assembly.json`
+- `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/sdk-manifest.json`
 - `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/README.md`
 - `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/openapi/file-backend-sdk.openapi.json`
 - `packages/common/file/sdkwork-file-sdk-generation/generated/sdks/file-backend-sdk/openapi/file-backend-sdk.sdkgen.json`

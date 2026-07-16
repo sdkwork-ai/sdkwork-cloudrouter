@@ -193,7 +193,14 @@ async fn installed_sqlite_seed_contains_models_pricing_ranking_and_routing_defau
     .expect("count seeded API resource groups");
     assert!(api_group_count >= 2);
 
-    for group_code in ["api.all", "api.openai.codex"] {
+    for group_code in [
+        "api.all",
+        "api.openai.codex",
+        "official.openai.codex",
+        "official.anthropic.claude_code",
+        "official.gemini.code",
+        "relay.openai_compatible.chat",
+    ] {
         let count: i64 = sqlx::query_scalar(
             r#"SELECT COUNT(*) FROM ai_resource_group
                WHERE tenant_id = 0 AND organization_id = 0

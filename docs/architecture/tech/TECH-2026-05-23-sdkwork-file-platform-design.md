@@ -1143,7 +1143,7 @@ custom source documents cannot bypass route, operation, typed response,
 command request, surface pruning, or schema `$ref` resolution checks before
 being exported as SDK inputs.
 It also defines the standard SDK family file layout under `sdks/file-app-sdk`
-and `sdks/file-backend-sdk`: each family has `.sdkwork-assembly.json`,
+and `sdks/file-backend-sdk`: each family has `sdk-manifest.json`,
 `openapi/<family>.openapi.json`, `openapi/<family>.sdkgen.json`, and README
 content. A root `sdks/file-sdk-generation-manifest.json` records deterministic
 file hashes so generated SDK inputs can be checked for drift before code

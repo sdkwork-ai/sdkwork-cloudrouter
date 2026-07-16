@@ -4,7 +4,7 @@
     {
       "groupCode": "official.openai.full",
       "groupName": "Official OpenAI Full API",
-      "groupType": "official",
+      "groupType": "api_group",
       "selectionMode": "all",
       "description": "OpenAI official account resources covering model APIs, management APIs, media APIs, Codex, and realtime.",
       "sortOrder": 100,
@@ -140,9 +140,39 @@
       ]
     },
     {
+      "groupCode": "official.openai.codex",
+      "groupName": "OpenAI Codex",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "OpenAI account resources for Codex and coding-agent workflows.",
+      "sortOrder": 105,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.openai"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.codex"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.responses"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.containers"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.skills"
+        }
+      ]
+    },
+    {
       "groupCode": "official.gemini.full",
       "groupName": "Official Gemini Full API",
-      "groupType": "official",
+      "groupType": "api_group",
       "selectionMode": "all",
       "description": "Gemini official account resources including language, embedding, live, image, video, and Nano Banana image generation.",
       "sortOrder": 110,
@@ -182,9 +212,31 @@
       ]
     },
     {
+      "groupCode": "official.gemini.code",
+      "groupName": "Gemini Code",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Gemini account resources for coding assistants and streaming code-generation clients.",
+      "sortOrder": 115,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.gemini"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.generate_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.stream_generate_content"
+        }
+      ]
+    },
+    {
       "groupCode": "official.anthropic.claude_code",
       "groupName": "Official Claude Code",
-      "groupType": "official",
+      "groupType": "api_group",
       "selectionMode": "all",
       "description": "Anthropic Claude Code session routing resources.",
       "sortOrder": 120,
@@ -202,7 +254,7 @@
     {
       "groupCode": "official.kling.full",
       "groupName": "Official Kling Full API",
-      "groupType": "official",
+      "groupType": "api_group",
       "selectionMode": "all",
       "description": "Kling official account resources including text-to-video, image-to-video, image generation, and task query.",
       "sortOrder": 130,
@@ -232,7 +284,7 @@
     {
       "groupCode": "official.jimeng.full",
       "groupName": "Official Jimeng Full API",
-      "groupType": "official",
+      "groupType": "api_group",
       "selectionMode": "all",
       "description": "Jimeng official account resources including image generation, video generation, and task query.",
       "sortOrder": 140,
@@ -258,7 +310,7 @@
     {
       "groupCode": "official.volcengine.full",
       "groupName": "Official Volcengine Full API",
-      "groupType": "official",
+      "groupType": "api_group",
       "selectionMode": "all",
       "description": "Volcengine official account resources including image generation, video generation, and task query.",
       "sortOrder": 150,
@@ -284,7 +336,7 @@
     {
       "groupCode": "official.minimax.music",
       "groupName": "Official MiniMax Music API",
-      "groupType": "official",
+      "groupType": "api_group",
       "selectionMode": "all",
       "description": "MiniMax official account resources including music generation.",
       "sortOrder": 155,
@@ -302,7 +354,7 @@
     {
       "groupCode": "official.vidu.full",
       "groupName": "Official Vidu Full API",
-      "groupType": "official",
+      "groupType": "api_group",
       "selectionMode": "all",
       "description": "Vidu official account resources including image and start-end video generation.",
       "sortOrder": 160,

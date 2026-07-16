@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { CatalogCategoriesRetrieveResult, CatalogProductsRetrieveResult, CatalogSkusPricesRetrieveResult, CatalogSkusRetrieveResult, CatalogSpusRetrieveResult, SdkWorkPageData } from '../types';
-
-
 export class CatalogSpusApi {
   private client: HttpClient;
 
@@ -13,13 +10,13 @@ export class CatalogSpusApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/catalog/spus`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/spus`));
   }
 
 /** Retrieve */
-  async retrieve(spuId: string): Promise<CatalogSpusRetrieveResult> {
-    return this.client.get<CatalogSpusRetrieveResult>(appApiPath(`/catalog/spus/${serializePathParameter(spuId, { name: 'spuId', style: 'simple', explode: false })}`));
+  async retrieve(spuId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/spus/${serializePathParameter(spuId, { name: 'spuId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -32,8 +29,8 @@ export class CatalogSkusPricesApi {
 
 
 /** Retrieve */
-  async retrieve(skuId: string): Promise<CatalogSkusPricesRetrieveResult> {
-    return this.client.get<CatalogSkusPricesRetrieveResult>(appApiPath(`/catalog/skus/${serializePathParameter(skuId, { name: 'skuId', style: 'simple', explode: false })}/prices`));
+  async retrieve(skuId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/skus/${serializePathParameter(skuId, { name: 'skuId', style: 'simple', explode: false })}/prices`));
   }
 }
 
@@ -48,8 +45,8 @@ export class CatalogSkusApi {
 
 
 /** Retrieve */
-  async retrieve(skuId: string): Promise<CatalogSkusRetrieveResult> {
-    return this.client.get<CatalogSkusRetrieveResult>(appApiPath(`/catalog/skus/${serializePathParameter(skuId, { name: 'skuId', style: 'simple', explode: false })}`));
+  async retrieve(skuId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/skus/${serializePathParameter(skuId, { name: 'skuId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -62,13 +59,13 @@ export class CatalogProductsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/catalog/products`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/products`));
   }
 
 /** Retrieve */
-  async retrieve(productId: string): Promise<CatalogProductsRetrieveResult> {
-    return this.client.get<CatalogProductsRetrieveResult>(appApiPath(`/catalog/products/${serializePathParameter(productId, { name: 'productId', style: 'simple', explode: false })}`));
+  async retrieve(productId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/products/${serializePathParameter(productId, { name: 'productId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -81,13 +78,13 @@ export class CatalogCategoriesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/catalog/categories`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/categories`));
   }
 
 /** Retrieve */
-  async retrieve(categoryId: string): Promise<CatalogCategoriesRetrieveResult> {
-    return this.client.get<CatalogCategoriesRetrieveResult>(appApiPath(`/catalog/categories/${serializePathParameter(categoryId, { name: 'categoryId', style: 'simple', explode: false })}`));
+  async retrieve(categoryId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/categories/${serializePathParameter(categoryId, { name: 'categoryId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -100,8 +97,8 @@ export class CatalogAttributesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/catalog/attributes`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/catalog/attributes`));
   }
 }
 

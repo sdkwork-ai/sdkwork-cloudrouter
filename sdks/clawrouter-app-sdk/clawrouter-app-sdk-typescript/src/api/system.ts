@@ -26,6 +26,52 @@ export class SystemSiteApi {
 
 }
 
+export class SystemAfterSalesReturnShipmentsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Create */
+  async create(afterSalesRequestId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
+  }
+}
+
+export class SystemAfterSalesRequestsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Create */
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/system/after_sales/requests`));
+  }
+
+/** Update */
+  async update(afterSalesRequestId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}`));
+  }
+}
+
+export class SystemAfterSalesApi {
+  private client: HttpClient;
+  public readonly requests: SystemAfterSalesRequestsApi;
+  public readonly returnShipments: SystemAfterSalesReturnShipmentsApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.requests = new SystemAfterSalesRequestsApi(client);
+    this.returnShipments = new SystemAfterSalesReturnShipmentsApi(client);
+  }
+
+}
+
 export class SystemShopsCurrentVerificationsApi {
   private client: HttpClient;
 
@@ -567,93 +613,16 @@ export class SystemShopsApi {
   }
 }
 
-export class SystemAfterSalesReturnShipmentsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(afterSalesRequestId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
-  }
-
-/** Create */
-  async create(afterSalesRequestId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/return_shipments`));
-  }
-}
-
-export class SystemAfterSalesEventsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(afterSalesRequestId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/events`));
-  }
-}
-
-export class SystemAfterSalesRequestsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/after_sales/requests`));
-  }
-
-/** Retrieve */
-  async retrieve(afterSalesRequestId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}`));
-  }
-
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/system/after_sales/requests`));
-  }
-
-/** Update */
-  async update(afterSalesRequestId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(appApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}`));
-  }
-}
-
-export class SystemAfterSalesApi {
-  private client: HttpClient;
-  public readonly requests: SystemAfterSalesRequestsApi;
-  public readonly events: SystemAfterSalesEventsApi;
-  public readonly returnShipments: SystemAfterSalesReturnShipmentsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.requests = new SystemAfterSalesRequestsApi(client);
-    this.events = new SystemAfterSalesEventsApi(client);
-    this.returnShipments = new SystemAfterSalesReturnShipmentsApi(client);
-  }
-
-}
-
 export class SystemApi {
   private client: HttpClient;
-  public readonly afterSales: SystemAfterSalesApi;
   public readonly shops: SystemShopsApi;
+  public readonly afterSales: SystemAfterSalesApi;
   public readonly site: SystemSiteApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.afterSales = new SystemAfterSalesApi(client);
     this.shops = new SystemShopsApi(client);
+    this.afterSales = new SystemAfterSalesApi(client);
     this.site = new SystemSiteApi(client);
   }
 

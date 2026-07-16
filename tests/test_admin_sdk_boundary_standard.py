@@ -72,6 +72,18 @@ def source_contains_backend_sdk_marker(source: str) -> bool:
 
 
 class AdminSdkBoundaryStandardTest(unittest.TestCase):
+    def test_portal_manifest_inherits_root_backend_admin_identity_and_scope(self) -> None:
+        root_backend = read_json(ROOT / "sdkwork.app.config.json")["backend"]
+        portal_backend = read_json(PORTAL_ROOT / "sdkwork.app.config.json")["backend"]
+
+        self.assertEqual(root_backend["appId"], portal_backend["appId"])
+        self.assertEqual(
+            root_backend["accessTokenPermissionScope"],
+            portal_backend["accessTokenPermissionScope"],
+        )
+        self.assertIn("clawrouter.admin.access", portal_backend["accessTokenPermissionScope"])
+        self.assertIn("clawrouter.system.read", portal_backend["accessTokenPermissionScope"])
+
     def test_backend_sdk_usage_stays_inside_backend_admin_boundaries(self) -> None:
         violations: list[str] = []
 

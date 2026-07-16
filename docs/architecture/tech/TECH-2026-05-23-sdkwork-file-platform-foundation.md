@@ -85,11 +85,11 @@ preserving the SDKWork appbase package boundaries and naming.
 - Create: `packages/common/file/sdkwork-file-sdk-generation/src/index.ts`
 - Create: `packages/common/file/sdkwork-file-sdk-generation/tests/file-sdk-generation.standard.test.ts`
 - Create: `scripts/materialize-file-sdk-artifacts.mjs`
-- Create: `sdks/file-app-sdk/.sdkwork-assembly.json`
+- Create: `sdks/file-app-sdk/sdk-manifest.json`
 - Create: `sdks/file-app-sdk/README.md`
 - Create: `sdks/file-app-sdk/openapi/file-app-sdk.openapi.json`
 - Create: `sdks/file-app-sdk/openapi/file-app-sdk.sdkgen.json`
-- Create: `sdks/file-backend-sdk/.sdkwork-assembly.json`
+- Create: `sdks/file-backend-sdk/sdk-manifest.json`
 - Create: `sdks/file-backend-sdk/README.md`
 - Create: `sdks/file-backend-sdk/openapi/file-backend-sdk.openapi.json`
 - Create: `sdks/file-backend-sdk/openapi/file-backend-sdk.sdkgen.json`

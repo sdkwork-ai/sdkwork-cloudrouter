@@ -501,7 +501,7 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
             family = root / "sdks" / "clawrouter-open-sdk"
             authority = json.loads((family / "openapi" / "clawrouter-open-sdk.openapi.json").read_text(encoding="utf-8"))
             sdkgen = json.loads((family / "openapi" / "clawrouter-open-sdk.sdkgen.json").read_text(encoding="utf-8"))
-            assembly = json.loads((family / ".sdkwork-assembly.json").read_text(encoding="utf-8"))
+            assembly = json.loads((family / "sdk-manifest.json").read_text(encoding="utf-8"))
             generate_script = (family / "bin" / "generate-sdk.mjs").read_text(encoding="utf-8")
 
             self.assertEqual(
@@ -552,7 +552,7 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
 
             for sdk_dir in ("clawrouter-app-sdk", "clawrouter-backend-sdk"):
                 generate_script = (root / "sdks" / sdk_dir / "bin" / "generate-sdk.mjs").read_text(encoding="utf-8")
-                assembly = json.loads((root / "sdks" / sdk_dir / ".sdkwork-assembly.json").read_text(encoding="utf-8"))
+                assembly = json.loads((root / "sdks" / sdk_dir / "sdk-manifest.json").read_text(encoding="utf-8"))
                 strict_body = self.javascript_function_body(generate_script, "strictTypeScriptArgs")
                 generator_body = self.javascript_function_body(generate_script, "generatorArgs")
                 self.assertIn("const authorityInputPath = `sdks/${sdkFamily}/openapi/${sdkFamily}.openapi.json`;", generate_script)
@@ -568,6 +568,18 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertIn("function cleanGeneratedOutput(language) {", generate_script)
                 self.assertIn("syncFamilyOpenApiSnapshots();", generate_script)
                 self.assertIn("function syncFamilyOpenApiSnapshots() {", generate_script)
+                self.assertIn(
+                    "const domainTransportInputPath = `sdks/${sdkFamily}/openapi/${domainTransportName}.openapi.json`;",
+                    generate_script,
+                )
+                self.assertIn(
+                    "const domainTransportOutputPath = `sdks/${sdkFamily}/${sdkFamily}-typescript/generated/domains/server-openapi`;",
+                    generate_script,
+                )
+                self.assertIn("function runDomainTransportGeneration() {", generate_script)
+                self.assertIn("runDomainTransportGeneration();", generate_script)
+                self.assertIn("'-i', domainTransportInputPath", generate_script)
+                self.assertIn("'-o', domainTransportOutputPath", generate_script)
 
     def test_verify_script_checks_family_generation_input_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

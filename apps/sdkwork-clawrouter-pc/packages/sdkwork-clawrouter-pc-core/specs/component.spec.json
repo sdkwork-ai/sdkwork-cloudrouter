@@ -154,7 +154,8 @@
       {
         "workspace": "clawrouter-app-wallet-capability",
         "surface": "app-api",
-        "credentialMode": "authenticated-app-api"
+        "credentialMode": "authenticated-app-api",
+        "permissionModuleId": "clawrouter"
       },
       {
         "workspace": "clawrouter-open-sdk",
@@ -292,8 +293,8 @@
           "inheritRoles": true
         },
         {
-          "moduleId": "wallet",
-          "manifestRef": "../../../../../specs/iam.module.manifest.json",
+          "moduleId": "clawrouter",
+          "manifestRef": "../../../specs/iam.module.manifest.json",
           "inheritPermissions": true,
           "inheritRoles": true
         }

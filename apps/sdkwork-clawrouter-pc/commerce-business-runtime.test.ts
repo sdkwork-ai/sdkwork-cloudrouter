@@ -81,8 +81,10 @@ test("token plan purchases use the order-owned recharge dialog and recharge SDK 
   assert.doesNotMatch(modalSource, /createTokenPlanCommerceModal\("points-purchase"\)/);
   assert.doesNotMatch(modalSource, /登录后将跳转到控制台钱包完成操作/);
   assert.match(providerSource, /recharges:\s*client\.recharges/);
-  assert.match(providerSource, /const pointsRechargeOrderAppService = bootstrapMembershipOrderAppService/);
-  assert.match(providerSource, /appService: pointsRechargeOrderAppService/);
+  assert.match(providerSource, /const orderAppService = createSdkworkOrderAppService/);
+  assert.match(providerSource, /configureSdkworkOrderAppServiceProvider\(\(\) => orderAppService\)/);
+  assert.match(providerSource, /appService: orderAppService/);
+  assert.doesNotMatch(providerSource, /bootstrapMembershipOrderAppService/);
   assert.match(summarySource, /pointBalance:\s*state\.dashboard\.summary\.pointBalance/);
 });
 
@@ -200,14 +202,16 @@ test("app bootstrap wires T1 domain service providers to Claw Router app SDK dom
   assert.match(mainSource, /configureClawRouterDomainServiceProviders/);
   assert.match(mainSource, /getClawRouterAppSdkClient/);
   assert.doesNotMatch(mainSource, /configureSdkworkCommerceServiceProvider/);
-  assert.match(providersSource, /bootstrapMembershipOrderAppService/);
-  assert.match(providersSource, /getClawRouterGlobalTokenManager\(\)/);
-  assert.match(providersSource, /resolveRequiredAppDomainTransportBaseUrl\(\{\}\)/);
+  assert.match(providersSource, /createSdkworkOrderAppService/);
+  assert.match(providersSource, /buildOrderCommercePort\(getAppDomainClient\(\)\)/);
+  assert.match(providersSource, /configureSdkworkOrderSessionTokenProvider\(readSessionTokens\)/);
+  assert.doesNotMatch(providersSource, /createTokenManager|Authorization|Access-Token/);
 });
 
-test("federated commerce runtime mounts Order-owned membership checkout routes", () => {
+test("federated commerce runtime mounts the complete Order gateway assembly", () => {
   const runtimeSource = readPortalFile("../../crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs");
 
-  assert.match(runtimeSource, /app_membership_order_router_with_postgres_pool_and_payments/);
-  assert.match(runtimeSource, /app_membership_order_router_with_sqlite_pool_and_payments/);
+  assert.match(runtimeSource, /sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool/);
+  assert.match(runtimeSource, /\.merge\(order_assembly\.router\)/);
+  assert.doesNotMatch(runtimeSource, /sdkwork_routes_order_app_api::/);
 });

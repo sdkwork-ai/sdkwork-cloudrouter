@@ -203,7 +203,7 @@ function assertGeneratedOutputHasNoDependencySurface(contract, localDocument, ap
 
 function assertDependencyMetadata(contract) {
   const familyRoot = path.join(sdksRoot, contract.sdkFamily);
-  const assembly = readJson(path.join(familyRoot, '.sdkwork-assembly.json'));
+  const assembly = readJson(path.join(familyRoot, 'sdk-manifest.json'));
   const componentSpec = readJson(path.join(familyRoot, 'specs', 'component.spec.json'));
   const readme = readFileSync(path.join(familyRoot, 'README.md'), 'utf8');
   const assemblyDependency = (assembly.sdkDependencies ?? []).find(

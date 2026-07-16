@@ -116,11 +116,11 @@ describe("SDKWork file SDK generation manifest", () => {
     expect(firstPlan).toEqual(secondPlan);
     expect(firstPlan.rootDir).toBe(SDKWORK_FILE_SDK_ARTIFACT_ROOT);
     expect(firstPlan.files.map((file) => file.path)).toEqual([
-      `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/.sdkwork-assembly.json`,
+      `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/sdk-manifest.json`,
       `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/README.md`,
       `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/openapi/file-app-sdk.openapi.json`,
       `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/openapi/file-app-sdk.sdkgen.json`,
-      `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-backend-sdk/.sdkwork-assembly.json`,
+      `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-backend-sdk/sdk-manifest.json`,
       `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-backend-sdk/README.md`,
       `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-backend-sdk/openapi/file-backend-sdk.openapi.json`,
       `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-backend-sdk/openapi/file-backend-sdk.sdkgen.json`,
@@ -134,7 +134,7 @@ describe("SDKWork file SDK generation manifest", () => {
       expect(file.content).not.toContain("presigned_url");
     }
 
-    const appAssembly = JSON.parse(readPlannedFile(firstPlan, `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/.sdkwork-assembly.json`));
+    const appAssembly = JSON.parse(readPlannedFile(firstPlan, `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/sdk-manifest.json`));
     expect(appAssembly).toEqual(
       expect.objectContaining({
         generationInputSpec: "openapi/file-app-sdk.openapi.json",
@@ -158,7 +158,7 @@ describe("SDKWork file SDK generation manifest", () => {
     expect(manifest.generatedAtPolicy).toBe("deterministic");
     expect(manifest.files).toHaveLength(8);
     expect(manifest.files[0]).toEqual({
-      path: `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/.sdkwork-assembly.json`,
+      path: `${SDKWORK_FILE_SDK_ARTIFACT_ROOT}/file-app-sdk/sdk-manifest.json`,
       sha256: firstPlan.files[0].sha256,
       surface: "app",
     });

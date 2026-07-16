@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AddressesCreateResult, AddressesDefaultSelectionCreateResult, AddressesUpdateResult, SdkWorkCommandData, SdkWorkPageData } from '../types';
-
-
 export class AddressesDefaultSelectionApi {
   private client: HttpClient;
 
@@ -13,8 +10,8 @@ export class AddressesDefaultSelectionApi {
 
 
 /** Create */
-  async create(addressId: string): Promise<AddressesDefaultSelectionCreateResult> {
-    return this.client.post<AddressesDefaultSelectionCreateResult>(appApiPath(`/addresses/${serializePathParameter(addressId, { name: 'addressId', style: 'simple', explode: false })}/default_selection`));
+  async create(addressId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/addresses/${serializePathParameter(addressId, { name: 'addressId', style: 'simple', explode: false })}/default_selection`));
   }
 }
 
@@ -29,23 +26,23 @@ export class AddressesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/addresses`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/addresses`));
   }
 
 /** Create */
-  async create(): Promise<AddressesCreateResult> {
-    return this.client.post<AddressesCreateResult>(appApiPath(`/addresses`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/addresses`));
   }
 
 /** Delete */
-  async delete(addressId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(appApiPath(`/addresses/${serializePathParameter(addressId, { name: 'addressId', style: 'simple', explode: false })}`));
+  async delete(addressId: string): Promise<void> {
+    return this.client.delete<void>(appApiPath(`/addresses/${serializePathParameter(addressId, { name: 'addressId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(addressId: string): Promise<AddressesUpdateResult> {
-    return this.client.patch<AddressesUpdateResult>(appApiPath(`/addresses/${serializePathParameter(addressId, { name: 'addressId', style: 'simple', explode: false })}`));
+  async update(addressId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/addresses/${serializePathParameter(addressId, { name: 'addressId', style: 'simple', explode: false })}`));
   }
 }
 

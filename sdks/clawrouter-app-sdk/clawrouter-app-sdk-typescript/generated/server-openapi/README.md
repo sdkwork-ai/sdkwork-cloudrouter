@@ -54,21 +54,14 @@ const client = new SdkworkAppClient({
 
 ## API Modules
 
-- `client.system` - system API
 - `client.ai` - ai API
 - `client.chat` - chat API
 - `client.iam` - iam API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
+- `client.system` - system API
 
 ## Usage Examples
-
-### system
-
-```typescript
-// List
-const result = await client.system.afterSales.requests.list();
-```
 
 ### ai
 
@@ -103,6 +96,13 @@ const result = await client.notification.list();
 ```typescript
 // List
 const result = await client.runtime.invocations.list();
+```
+
+### system
+
+```typescript
+// List
+const result = await client.system.shops.list();
 ```
 
 ## Error Handling

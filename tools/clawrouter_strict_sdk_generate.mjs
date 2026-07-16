@@ -255,7 +255,7 @@ export async function runStrictGenerateCommand(options) {
     throw new Error('Generation produced no files.');
   }
 
-  const strictFiles = applyStrictTypeScriptContractFiles(result.files, spec);
+  const strictFiles = applyStrictTypeScriptContractFiles(result.files, spec, config.packageName);
   const strictResult = {
     ...result,
     files: strictFiles,
@@ -383,7 +383,7 @@ function resolvePythonCommand() {
   throw new Error('Python runtime not found. Set PYTHON_BIN or install python/python3.');
 }
 
-export function applyStrictTypeScriptContractFiles(files, spec) {
+export function applyStrictTypeScriptContractFiles(files, spec, configuredPackageName) {
   const closedEmptySchemas = collectClosedEmptySchemaComponents(spec);
   const multipartRequestSchemas = collectMultipartRequestSchemas(spec);
   const sdkworkV3ResponseTypes = collectSdkworkV3UnwrappedResponseTypes(spec);
@@ -438,7 +438,13 @@ export function applyStrictTypeScriptContractFiles(files, spec) {
         content = renderClosedEmptyModelInterface(content, closedEmptyModelName);
       }
 
-      content = standardizeProjectRuntimeGeneratedContent(normalizedPath, content, file, spec);
+      content = standardizeProjectRuntimeGeneratedContent(
+        normalizedPath,
+        content,
+        file,
+        spec,
+        configuredPackageName,
+      );
       content = removeTrailingWhitespace(content);
       return content === file.content ? { ...file } : { ...file, content };
     })
@@ -772,14 +778,20 @@ function mergeSdkDomainTags(tags, sdkDomains) {
   return result;
 }
 
-function standardizeProjectRuntimeGeneratedContent(normalizedPath, content, file, spec) {
+function standardizeProjectRuntimeGeneratedContent(
+  normalizedPath,
+  content,
+  file,
+  spec,
+  configuredPackageName,
+) {
   switch (normalizedPath) {
     case 'package.json':
-      return standardizePackageJsonContent(content);
+      return standardizePackageJsonContent(content, configuredPackageName);
     case 'src/api/index.ts':
       return standardizeApiIndexExports(content);
     case 'sdkwork-sdk.json':
-      return standardizeSdkMetadataContent(content, file, spec);
+      return standardizeSdkMetadataContent(content, file, spec, configuredPackageName);
     case 'bin/publish-core.mjs':
       return standardizePublishCoreContent(content);
     case 'custom/build-runtime.mjs':
@@ -921,8 +933,11 @@ function ensureTypeImportName(content, importPath, nameToAdd) {
   return `import type { ${nameToAdd} } from '${importPath}';\n${content}`;
 }
 
-function standardizePackageJsonContent(content) {
+function standardizePackageJsonContent(content, configuredPackageName) {
   const packageJson = JSON.parse(content);
+  packageJson.name = canonicalTransportPackageName(configuredPackageName || packageJson.name);
+  packageJson.private = true;
+  packageJson.sdkworkRole = 'transport';
   const scripts = isRecord(packageJson.scripts) ? packageJson.scripts : {};
   scripts.build = 'node custom/build-runtime.mjs';
   scripts.dev = 'node custom/build-runtime.mjs';
@@ -944,7 +959,17 @@ function standardizePackageJsonContent(content) {
   return `${JSON.stringify(packageJson, null, 2)}\n`;
 }
 
-function standardizeSdkMetadataContent(content, file, spec) {
+function canonicalTransportPackageName(packageName) {
+  const normalized = String(packageName || '').trim();
+  const unscoped = normalized.startsWith('@sdkwork/')
+    ? normalized.slice('@sdkwork/'.length)
+    : normalized.replace(/^sdkwork-/, '');
+  return unscoped.endsWith('-generated-typescript')
+    ? unscoped
+    : `${unscoped}-generated-typescript`;
+}
+
+function standardizeSdkMetadataContent(content, file, spec, configuredPackageName) {
   const metadata = JSON.parse(content);
   const sdk = file?.metadata?.sdk && isRecord(file.metadata.sdk) ? file.metadata.sdk : {};
   const sdkType = sdk.sdkType || inferSdkTypeFromSpec(spec);
@@ -954,7 +979,7 @@ function standardizeSdkMetadataContent(content, file, spec) {
       language: 'typescript',
       sdkType,
       name: metadata.name || sdk.name || (sdkType === 'app' ? 'clawrouter-app-sdk' : 'clawrouter-backend-sdk'),
-      packageName: metadata.packageName || packageName,
+      packageName: canonicalTransportPackageName(configuredPackageName || packageName || metadata.packageName),
       version: metadata.version || sdk.version || '0.1.0',
     },
     null,

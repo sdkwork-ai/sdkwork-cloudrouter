@@ -4,6 +4,7 @@ import type { AuthTokenManager } from '@sdkwork/sdk-common';
 
 import { AccountsApi, createAccountsApi } from './api/accounts';
 import { AddressesApi, createAddressesApi } from './api/addresses';
+import { AfterSalesApi, createAfterSalesApi } from './api/after-sales';
 import { BillingApi, createBillingApi } from './api/billing';
 import { CartApi, createCartApi } from './api/cart';
 import { CatalogApi, createCatalogApi } from './api/catalog';
@@ -18,12 +19,14 @@ import { RechargesApi, createRechargesApi } from './api/recharges';
 import { RefundsApi, createRefundsApi } from './api/refunds';
 import { ShipmentsApi, createShipmentsApi } from './api/shipments';
 import { WalletApi, createWalletApi } from './api/wallet';
+import { WithdrawalsApi, createWithdrawalsApi } from './api/withdrawals';
 
 export class SdkworkAppClient {
   private httpClient: HttpClient;
 
   public readonly accounts: AccountsApi;
   public readonly addresses: AddressesApi;
+  public readonly afterSales: AfterSalesApi;
   public readonly billing: BillingApi;
   public readonly cart: CartApi;
   public readonly catalog: CatalogApi;
@@ -38,12 +41,15 @@ export class SdkworkAppClient {
   public readonly refunds: RefundsApi;
   public readonly shipments: ShipmentsApi;
   public readonly wallet: WalletApi;
+  public readonly withdrawals: WithdrawalsApi;
 
   constructor(config: SdkworkAppConfig) {
     this.httpClient = createHttpClient(config);
     this.accounts = createAccountsApi(this.httpClient);
 
     this.addresses = createAddressesApi(this.httpClient);
+
+    this.afterSales = createAfterSalesApi(this.httpClient);
 
     this.billing = createBillingApi(this.httpClient);
 
@@ -72,6 +78,8 @@ export class SdkworkAppClient {
     this.shipments = createShipmentsApi(this.httpClient);
 
     this.wallet = createWalletApi(this.httpClient);
+
+    this.withdrawals = createWithdrawalsApi(this.httpClient);
   }
   setAuthToken(token: string): this {
     this.httpClient.setAuthToken(token);

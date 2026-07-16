@@ -458,7 +458,7 @@ function createTargetArtifactFiles(
     {
       content: stableJsonStringify(createAssemblyDocument(target, workspace, openapiPath, sdkgenPath)),
       kind: "assembly",
-      path: `${workspaceRoot}/.sdkwork-assembly.json`,
+      path: `${workspaceRoot}/sdk-manifest.json`,
       surface: target.surface,
     },
     {
@@ -527,7 +527,7 @@ function createSdkFamilyReadme(
     `- Authority contract: \`${openapiPath}\``,
     `- Synchronized sdkgen contract: \`${sdkgenPath}\``,
     `- SDK generation input: \`${openapiPath}\``,
-    "- Assembly snapshot: `.sdkwork-assembly.json`",
+    "- Assembly snapshot: `sdk-manifest.json`",
     `- TypeScript workspace: \`${packageRootName(target)}\``,
     "",
     "## Generation Policy",

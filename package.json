@@ -6,11 +6,13 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "dependencies": {
-    "@sdkwork/app-topology": "workspace:*"
+    "@sdkwork/app-topology": "workspace:*",
+    "@sdkwork/iam-application-bootstrap": "workspace:*"
   },
   "scripts": {
     "install:deps:ensure": "node scripts/lib/ensure-claw-router-node-deps.mjs",
     "dev": "pnpm install:deps:ensure && pnpm dev:browser",
+    "stop": "node scripts/stop-claw-router-application.mjs",
     "dev:browser": "pnpm dev:browser:postgres:standalone",
     "dev:browser:postgres": "pnpm dev:browser:postgres:standalone",
     "dev:browser:sqlite": "node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --database sqlite",
@@ -71,7 +73,7 @@
     "gateway:matrix": "node ../sdkwork-app-topology/scripts/sdkwork-topology.mjs print-matrix --root . --spec specs/topology.spec.json --profile all",
     "gateway:matrix:cloud": "node ../sdkwork-app-topology/scripts/sdkwork-topology.mjs print-matrix --root . --spec specs/topology.spec.json --profile platform-config-bundle",
     "sbom:release": "node scripts/generate-release-sbom.mjs",
-    "test:tooling": "node scripts/run-claw-router-application.test.mjs",
+    "test:tooling": "node scripts/run-claw-router-application.test.mjs && node --test scripts/stop-claw-router-application.test.mjs",
     "test:rust:auto": "node scripts/run-claw-router-rust-tests.mjs auto",
     "test:rust:smoke": "node scripts/run-claw-router-rust-tests.mjs smoke",
     "test:rust:quick": "node scripts/run-claw-router-rust-tests.mjs quick",

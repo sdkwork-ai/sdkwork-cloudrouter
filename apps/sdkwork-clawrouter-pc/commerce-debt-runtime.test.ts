@@ -171,8 +171,9 @@ test('domain transport lives under clawrouter SDK families', () => {
   );
 
   const externalClientsSource = readPortalFile('./packages/sdkwork-clawrouter-pc-core/src/sdk/external-dependency-clients.ts');
-  assert.match(externalClientsSource, /clawrouter-app-domain-transport-generated-typescript/);
-  assert.match(externalClientsSource, /clawrouter-backend-domain-transport-generated-typescript/);
+  assert.match(externalClientsSource, /@sdkwork\/clawrouter-app-sdk\/domains/);
+  assert.match(externalClientsSource, /@sdkwork\/clawrouter-backend-sdk\/domains/);
+  assert.doesNotMatch(externalClientsSource, /domain-transport-generated-typescript/);
   assert.doesNotMatch(externalClientsSource, /commerce-capability/);
   assert.doesNotMatch(externalClientsSource, /sdks\/sdkwork-commerce-/);
 });
@@ -222,12 +223,9 @@ test('frontend field contract excludes retired relay-external admin operation ro
   assert.match(contractSource, /^- route: \/admin\/system\//m);
 });
 
-test('backend SDK exposes typed system settings contracts for admin control-plane pages', () => {
+test('backend SDK exposes system settings resources for admin control-plane pages', () => {
   const systemApiSource = readRepoFile(
-    'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/api/system.ts',
-  );
-  const typesIndexSource = readRepoFile(
-    'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/index.ts',
+    'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts',
   );
   const siteServiceSource = readPortalFile('./packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts');
   const authServiceSource = readPortalFile('./packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts');
@@ -235,12 +233,9 @@ test('backend SDK exposes typed system settings contracts for admin control-plan
     './packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts',
   );
 
-  assert.match(typesIndexSource, /AdminAuthSettingsUpdateRequest/);
-  assert.match(typesIndexSource, /AdminSiteSettingsUpdateRequest/);
-  assert.match(typesIndexSource, /AdminRuntimeRegionSettingsUpdateRequest/);
-  assert.match(systemApiSource, /async update\(body: AdminAuthSettingsUpdateRequest\)/);
-  assert.match(systemApiSource, /async update\(body: AdminSiteSettingsUpdateRequest\)/);
-  assert.match(systemApiSource, /async update\(body: AdminRuntimeRegionSettingsUpdateRequest\)/);
+  assert.match(systemApiSource, /class SystemAuthSettingsApi/);
+  assert.match(systemApiSource, /class SystemSiteSettingsApi/);
+  assert.match(systemApiSource, /class SystemRuntimeRegionSettingsApi/);
   assert.match(siteServiceSource, /getClawRouterBackendSdkClient\(\)\.system\.site\.settings\.update\(/);
   assert.match(authServiceSource, /getClawRouterBackendSdkClient\(\)\.system\.auth\.settings\.update\(input/);
   assert.match(runtimeRegionServiceSource, /getClawRouterBackendSdkClient\(\)\.system\.runtimeRegion\.settings\.update\(input\)/);

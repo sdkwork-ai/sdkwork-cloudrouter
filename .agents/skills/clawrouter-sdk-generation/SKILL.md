@@ -23,7 +23,7 @@ SDK generation input is explicit per family:
 
 - app/backend SDK generation uses the authority OpenAPI snapshots in `openapi/<family>.openapi.json`.
 - open SDK generation uses openapi/clawrouter-open-sdk.sdkgen.json because recursive OpenAI-compatible schemas require the derived sdkgen input.
-- `.sdkwork-assembly.json` must declare `generationInputSpec` for the actual generation input and `derivedSpecs` for derived generator artifacts.
+- `sdk-manifest.json` must declare `generationInputSpec` for the actual generation input and `derivedSpecs` for derived generator artifacts.
 
 Never hand-edit generated SDK output. Fix the manifest, OpenAPI generator, or `sdkwork-sdk-generator` inputs and rerun generation.
 
@@ -48,9 +48,9 @@ python -B -m tools.schema_quality_gate
 - URL paths may use the current deployment/API route contract; SDK ownership must not be inferred from `/app`, `/backend`, or `/v1` prefixes.
 - `sdks/` must contain only `clawrouter-app-sdk`, `clawrouter-backend-sdk`, and `clawrouter-open-sdk` SDK family directories.
 - `sdks/clawrouter-app-sdk`, `sdks/clawrouter-backend-sdk`, and `sdks/clawrouter-open-sdk` must stay SDK family directories without root `package.json`, `sdkwork-sdk.json`, `tsconfig.json`, `src`, `custom`, or `.sdkwork` artifacts.
-- `sdks/clawrouter-app-sdk/.sdkwork-assembly.json` and `sdks/clawrouter-backend-sdk/.sdkwork-assembly.json` must set `generationInputSpec` to their authority OpenAPI and `derivedSpecs` to `{}`.
-- `sdks/clawrouter-open-sdk/.sdkwork-assembly.json` must set `generationInputSpec` to `openapi/clawrouter-open-sdk.sdkgen.json` and `derivedSpecs.sdk-generator` to the same sdkgen artifact.
-- `.sdkwork-assembly.json` must not declare legacy `derivedSpec`.
+- `sdks/clawrouter-app-sdk/sdk-manifest.json` and `sdks/clawrouter-backend-sdk/sdk-manifest.json` must set `generationInputSpec` to their authority OpenAPI and `derivedSpecs` to `{}`.
+- `sdks/clawrouter-open-sdk/sdk-manifest.json` must set `generationInputSpec` to `openapi/clawrouter-open-sdk.sdkgen.json` and `derivedSpecs.sdk-generator` to the same sdkgen artifact.
+- `sdk-manifest.json` must not declare legacy `derivedSpec`.
 - `sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/package.json` must be named `@sdkwork/clawrouter-app-sdk`.
 - `sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/package.json` must be named `@sdkwork/clawrouter-backend-sdk`.
 - `sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript/package.json` must be named `@sdkwork/clawrouter-open-sdk`.

@@ -20,7 +20,7 @@ export class FilesGoogleV1betaFilesApi {
 /** Google Gemini list files */
   async list(params?: FilesGoogleV1betaFilesListParams): Promise<GoogleFileListResponse> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<GoogleFileListResponse>(appendQueryString(aiApiPath(`/google/v1beta/files`), query));

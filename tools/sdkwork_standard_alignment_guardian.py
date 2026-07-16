@@ -99,10 +99,9 @@ class SdkworkStandardAlignmentGuardian:
     IAM_RESOLVER_CANONICAL_FACTORY = "iam_web_request_context_resolver_from_env"
     IAM_RESOLVER_LEGACY_FACTORY = "iam_database_resolver_from_env"
     IAM_RESOLVER_CLAW_INTEGRATION_FILE = (
-        "crates/sdkwork-claw-http/src/claw_web_resolver.rs"
+        "crates/sdkwork-claw-http/src/federated_database_env.rs"
     )
     IAM_RESOLVER_CLAW_INTEGRATION_MARKERS: tuple[str, ...] = (
-        "iam_web_resolver_for_claw_database",
         "ensure_iam_database_env_for_claw_database",
     )
 
@@ -2476,7 +2475,7 @@ class SdkworkStandardAlignmentGuardian:
                         status="pass",
                         message=(
                             f"{self.IAM_RESOLVER_CLAW_INTEGRATION_FILE} provides claw-specific "
-                            "IAM resolver factory with database_config and shared pool wiring"
+                            "IAM database environment materialization without a local resolver wrapper"
                         ),
                         remediation="",
                     )
@@ -2490,11 +2489,10 @@ class SdkworkStandardAlignmentGuardian:
                         status="fail",
                         message=(
                             f"{self.IAM_RESOLVER_CLAW_INTEGRATION_FILE} exists but is not the "
-                            "canonical claw IAM integration factory"
+                            "canonical claw IAM database environment integration"
                         ),
                         remediation=(
-                            "implement iam_web_resolver_for_claw_database and "
-                            "ensure_iam_database_env_for_claw_database per WEB_FRAMEWORK_SPEC.md"
+                            "implement ensure_iam_database_env_for_claw_database per WEB_FRAMEWORK_SPEC.md"
                         ),
                     )
                 )
@@ -2506,12 +2504,12 @@ class SdkworkStandardAlignmentGuardian:
                     severity="blocking",
                     status="fail",
                     message=(
-                        f"missing claw IAM integration factory at "
+                        f"missing claw IAM database environment integration at "
                         f"{self.IAM_RESOLVER_CLAW_INTEGRATION_FILE}"
                     ),
                     remediation=(
-                        "add claw_web_resolver.rs with iam_web_resolver_for_claw_database "
-                        "to wire database_config and shared postgres pools into IamWebRequestContextResolver"
+                        "add federated_database_env.rs for IAM database env materialization and wire "
+                        "sdkwork_iam_web_adapter directly in route bootstraps"
                     ),
                 )
             )

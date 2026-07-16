@@ -25,7 +25,7 @@
     "generated": true,
     "private": false,
     "manifests": [
-      ".sdkwork-assembly.json"
+      "sdk-manifest.json"
     ]
   },
   "canonicalSpecs": [
@@ -138,14 +138,14 @@
   "contracts": {
     "publicExports": [],
     "runtimeEntrypoints": [
-      ".sdkwork-assembly.json"
+      "sdk-manifest.json"
     ],
     "sdkClients": [
       "SdkworkAppClient"
     ],
     "events": [],
     "configKeys": [
-      ".sdkwork-assembly.json"
+      "sdk-manifest.json"
     ],
     "sdkDependencies": [
       {
@@ -201,14 +201,14 @@
         }
       },
       {
-        "workspace": "clawrouter-app-order-capability",
+        "workspace": "sdkwork-order-app-sdk",
         "role": "order-app-capability",
         "required": true,
-        "dependencyMode": "internal-capability",
+        "dependencyMode": "consumer-sdk",
         "apiPrefix": "/app/v3/api",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
-          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+          "typescript": "@sdkwork/order-app-sdk"
         }
       },
       {

@@ -820,8 +820,8 @@ frontend_operations:
   - ops_audit_log
 - route: /console/chat/conversations/{conversationId}/turns/{turnId}/response
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: complete
-  operation_id: turnResponses.complete
+  operation: create
+  operation_id: turnResponses.create
   kind: action
   api_surface: app
   api_method: POST
@@ -2223,8 +2223,8 @@ frontend_operations:
   query_parameters: []
 - route: /console/recharges/orders/{orderId}/cancellations
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: cancel
-  operation_id: recharges.orders.cancel
+  operation: create
+  operation_id: recharges.orders.cancellations.create
   kind: create
   api_surface: app
   api_method: POST

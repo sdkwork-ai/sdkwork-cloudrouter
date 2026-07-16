@@ -22,7 +22,7 @@ export class OrganizationUsersRolesApi {
 /** List organization user roles */
   async list(userId: string, params?: OrganizationUsersRolesListParams): Promise<OpenAiRoleAssignmentList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -61,7 +61,7 @@ export class OrganizationUsersApi {
 /** List organization users */
   async list(params?: OrganizationUsersListParams): Promise<OpenAiOrganizationUserList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -440,7 +440,7 @@ export class OrganizationRolesApi {
 /** List organization roles */
   async list(params?: OrganizationRolesListParams): Promise<OpenAiRoleList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -487,7 +487,7 @@ export class OrganizationProjectsUsersApi {
 /** List project users */
   async list(projectId: string, params?: OrganizationProjectsUsersListParams): Promise<OpenAiProjectUserList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -534,7 +534,7 @@ export class OrganizationProjectsServiceAccountsApi {
 /** List project service accounts */
   async list(projectId: string, params?: OrganizationProjectsServiceAccountsListParams): Promise<OpenAiProjectServiceAccountList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -576,7 +576,7 @@ export class OrganizationProjectsRateLimitsApi {
 /** List project rate limits */
   async list(projectId: string, params?: OrganizationProjectsRateLimitsListParams): Promise<OpenAiProjectRateLimitList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -608,7 +608,7 @@ export class OrganizationProjectsGroupsApi {
 /** List project groups */
   async list(projectId: string, params?: OrganizationProjectsGroupsListParams): Promise<OpenAiOrganizationGroupList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -677,7 +677,7 @@ export class OrganizationProjectsCertificatesApi {
 /** List project certificates */
   async list(projectId: string, params?: OrganizationProjectsCertificatesListParams): Promise<OpenAiCertificateList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -718,7 +718,7 @@ export class OrganizationProjectsApiKeysApi {
 /** List project API keys */
   async list(projectId: string, params?: OrganizationProjectsApiKeysListParams): Promise<OpenAiProjectApiKeyList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -769,7 +769,7 @@ export class OrganizationProjectsApi {
 /** List organization projects */
   async list(params?: OrganizationProjectsListParams): Promise<OpenAiProjectList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -811,7 +811,7 @@ export class OrganizationInvitesApi {
 /** List organization invites */
   async list(params?: OrganizationInvitesListParams): Promise<OpenAiOrganizationInviteList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -853,7 +853,7 @@ export class OrganizationGroupsUsersApi {
 /** List organization group users */
   async list(groupId: string, params?: OrganizationGroupsUsersListParams): Promise<OpenAiOrganizationUserList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -890,7 +890,7 @@ export class OrganizationGroupsRolesApi {
 /** List organization group roles */
   async list(groupId: string, params?: OrganizationGroupsRolesListParams): Promise<OpenAiRoleAssignmentList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -931,7 +931,7 @@ export class OrganizationGroupsApi {
 /** List organization groups */
   async list(params?: OrganizationGroupsListParams): Promise<OpenAiOrganizationGroupList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -1049,7 +1049,7 @@ export class OrganizationCertificatesApi {
 /** List organization certificates */
   async list(params?: OrganizationCertificatesListParams): Promise<OpenAiCertificateList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
@@ -1130,7 +1130,7 @@ export class OrganizationAdminApiKeysApi {
 /** List organization admin API keys */
   async list(params?: OrganizationAdminApiKeysListParams): Promise<OpenAiOrganizationAdminApiKeyList> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.limit, style: 'form', explode: true, allowReserved: false },
+      { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },

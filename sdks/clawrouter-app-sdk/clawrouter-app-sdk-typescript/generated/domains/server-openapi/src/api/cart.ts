@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { CartCurrentRetrieveResult, CartItemsCreateResult, CartItemsUpdateResult, SdkWorkCommandData } from '../types';
-
-
 export class CartItemsApi {
   private client: HttpClient;
 
@@ -13,18 +10,18 @@ export class CartItemsApi {
 
 
 /** Create */
-  async create(): Promise<CartItemsCreateResult> {
-    return this.client.post<CartItemsCreateResult>(appApiPath(`/cart/items`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/cart/items`));
   }
 
 /** Delete */
-  async delete(cartItemId: string): Promise<SdkWorkCommandData> {
-    return this.client.delete<SdkWorkCommandData>(appApiPath(`/cart/items/${serializePathParameter(cartItemId, { name: 'cartItemId', style: 'simple', explode: false })}`));
+  async delete(cartItemId: string): Promise<void> {
+    return this.client.delete<void>(appApiPath(`/cart/items/${serializePathParameter(cartItemId, { name: 'cartItemId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(cartItemId: string): Promise<CartItemsUpdateResult> {
-    return this.client.patch<CartItemsUpdateResult>(appApiPath(`/cart/items/${serializePathParameter(cartItemId, { name: 'cartItemId', style: 'simple', explode: false })}`));
+  async update(cartItemId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/cart/items/${serializePathParameter(cartItemId, { name: 'cartItemId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -37,8 +34,8 @@ export class CartCurrentApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<CartCurrentRetrieveResult> {
-    return this.client.get<CartCurrentRetrieveResult>(appApiPath(`/cart/current`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/cart/current`));
   }
 }
 

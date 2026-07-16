@@ -242,6 +242,10 @@ class ClawRouterStrictSdkGenerateTest(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr)
             payload = json.loads(completed.stdout)
             files = {file["path"]: file["content"] for file in payload["files"]}
+            package_json = json.loads(files["package.json"])
+            self.assertEqual("clawrouter-app-sdk-generated-typescript", package_json["name"])
+            self.assertTrue(package_json["private"])
+            self.assertEqual("transport", package_json["sdkworkRole"])
 
             self.assertIn("src/types/common.ts", files)
             self.assertIn(
@@ -685,14 +689,14 @@ class ClawRouterStrictSdkGenerateTest(unittest.TestCase):
             self.assertIn("source.split(/\\r?\\n/u)", build_runtime_source)
             self.assertIn("runtimeLines.join('\\n')", build_runtime_source)
             self.assertTrue((family / "README.md").is_file())
-            self.assertTrue((family / ".sdkwork-assembly.json").is_file())
+            self.assertTrue((family / "sdk-manifest.json").is_file())
             self.assertTrue((family / "openapi" / "clawrouter-app-sdk.openapi.json").is_file())
             self.assertTrue((family / "openapi" / "clawrouter-app-sdk.sdkgen.json").is_file())
             self.assertTrue((family / "bin" / "generate-sdk.mjs").is_file())
             self.assertTrue((family / "bin" / "verify-sdk.mjs").is_file())
             self.assertTrue((family / "tests" / "sdk-family-smoke.test.mjs").is_file())
 
-            assembly = json.loads((family / ".sdkwork-assembly.json").read_text(encoding="utf-8"))
+            assembly = json.loads((family / "sdk-manifest.json").read_text(encoding="utf-8"))
             self.assertEqual("clawrouter-app-sdk", assembly["workspace"])
             self.assertEqual("clawrouter-app-sdk-typescript", assembly["languages"][0]["workspace"])
             publish_core = (output / "bin" / "publish-core.mjs").read_text(encoding="utf-8")

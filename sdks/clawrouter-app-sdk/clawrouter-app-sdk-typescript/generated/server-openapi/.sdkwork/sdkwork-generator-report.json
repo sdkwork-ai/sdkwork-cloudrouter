@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "16a04e0db99610e931c142d7ab38f8d9daea202465dd3a88e90f86cbae4237cf",
+  "changeFingerprint": "ac941a0b917822db2135ea2fab97957bbcaf80d0ee32f966173d29f0941d7dbd",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -226,10 +226,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 131,
-    "models": 102,
+    "totalFiles": 127,
+    "models": 98,
     "apis": 6,
-    "types": 104
+    "types": 100
   },
   "warnings": [
     {
@@ -239,10 +239,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/index.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/system.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -263,6 +259,10 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/runtime.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/system.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -293,7 +293,7 @@
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "16a04e0db99610e931c142d7ab38f8d9daea202465dd3a88e90f86cbae4237cf",
+    "changeFingerprint": "ac941a0b917822db2135ea2fab97957bbcaf80d0ee32f966173d29f0941d7dbd",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",

@@ -173,110 +173,6 @@
     },
     {
       "method": "GET",
-      "path": "/app/v3/api/after_sales/requests",
-      "operationId": "afterSales.requests.list",
-      "tags": [
-        "system"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
-      "operationId": "afterSales.requests.retrieve",
-      "tags": [
-        "system"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/events",
-      "operationId": "afterSales.events.list",
-      "tags": [
-        "system"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
-      "operationId": "afterSales.returnShipments.list",
-      "tags": [
-        "system"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
       "path": "/app/v3/api/ai/channel_groups",
       "operationId": "channelGroups.list",
       "tags": [
@@ -1058,165 +954,9 @@
     {
       "method": "POST",
       "path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "operationId": "turnResponses.complete",
+      "operationId": "turnResponses.create",
       "tags": [
         "chat"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "POST",
-      "path": "/app/v3/api/checkout/sessions",
-      "operationId": "checkout.sessions.create",
-      "tags": [
-        "checkout"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}",
-      "operationId": "checkout.sessions.retrieve",
-      "tags": [
-        "checkout"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "POST",
-      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}/orders",
-      "operationId": "checkout.sessions.orders.create",
-      "tags": [
-        "checkout"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "POST",
-      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}/quotes",
-      "operationId": "checkout.sessions.quotes.create",
-      "tags": [
-        "checkout"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/fulfillments",
-      "operationId": "fulfillments.list",
-      "tags": [
-        "fulfillments"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/fulfillments/{fulfillmentId}",
-      "operationId": "fulfillments.retrieve",
-      "tags": [
-        "fulfillments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -2434,292 +2174,6 @@
       "apiSurface": "app-api"
     },
     {
-      "method": "GET",
-      "path": "/app/v3/api/orders",
-      "operationId": "orders.list",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "POST",
-      "path": "/app/v3/api/orders",
-      "operationId": "orders.create",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/orders/statistics",
-      "operationId": "orders.statistics.retrieve",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/orders/{orderId}",
-      "operationId": "orders.retrieve",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "POST",
-      "path": "/app/v3/api/orders/{orderId}/cancel",
-      "operationId": "orders.cancel",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "POST",
-      "path": "/app/v3/api/orders/{orderId}/cancellations",
-      "operationId": "orders.cancellations.create",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/orders/{orderId}/events",
-      "operationId": "orders.events.list",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/orders/{orderId}/payment_success",
-      "operationId": "orders.paymentSuccess.retrieve",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/orders/{orderId}/payments",
-      "operationId": "payments.orderPayments.list",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "POST",
-      "path": "/app/v3/api/orders/{orderId}/payments",
-      "operationId": "orders.payments.create",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/orders/{orderId}/status",
-      "operationId": "orders.status.retrieve",
-      "tags": [
-        "orders"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
       "method": "POST",
       "path": "/app/v3/api/payments",
       "operationId": "payments.create",
@@ -3449,112 +2903,8 @@
     },
     {
       "method": "POST",
-      "path": "/app/v3/api/recharges/orders",
-      "operationId": "recharges.orders.create",
-      "tags": [
-        "recharges"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/recharges/orders/{orderId}",
-      "operationId": "recharges.orders.retrieve",
-      "tags": [
-        "recharges"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "POST",
       "path": "/app/v3/api/recharges/orders/{orderId}/cancellations",
-      "operationId": "recharges.orders.cancel",
-      "tags": [
-        "recharges"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/recharges/packages",
-      "operationId": "recharges.packages.list",
-      "tags": [
-        "recharges"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/recharges/settings",
-      "operationId": "recharges.settings.retrieve",
+      "operationId": "recharges.orders.cancellations.create",
       "tags": [
         "recharges"
       ],
@@ -3869,84 +3219,6 @@
       "operationId": "invocationEventStreams.list",
       "tags": [
         "runtime"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/shipments/{shipmentId}",
-      "operationId": "shipments.retrieve",
-      "tags": [
-        "shipments"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/shipments/{shipmentId}/packages",
-      "operationId": "shipments.packages.list",
-      "tags": [
-        "shipments"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
-    },
-    {
-      "method": "GET",
-      "path": "/app/v3/api/shipments/{shipmentId}/tracking_events",
-      "operationId": "shipments.trackingEvents.list",
-      "tags": [
-        "shipments"
       ],
       "auth": {
         "mode": "dual-token",
@@ -5991,6 +5263,1072 @@
       "source": {
         "routeCrate": "sdkwork-routes-clawrouter-app-api",
         "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/checkout/sessions",
+      "operationId": "checkout.sessions.create",
+      "tags": [
+        "checkout"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}",
+      "operationId": "checkout.sessions.retrieve",
+      "tags": [
+        "checkout"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}/quotes",
+      "operationId": "checkout.sessions.quotes.create",
+      "tags": [
+        "checkout"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/checkout/sessions/{checkoutSessionId}/orders",
+      "operationId": "checkout.sessions.orders.create",
+      "tags": [
+        "checkout"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders",
+      "operationId": "orders.list",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders",
+      "operationId": "orders.create",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}",
+      "operationId": "orders.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders/{orderId}/payments",
+      "operationId": "orders.payments.create",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}/payments",
+      "operationId": "payments.orderPayments.list",
+      "tags": [
+        "payments"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders/{orderId}/cancel",
+      "operationId": "orders.cancel",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}/events",
+      "operationId": "orders.events.list",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders/{orderId}/cancellations",
+      "operationId": "orders.cancellations.create",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}/payment_success",
+      "operationId": "orders.paymentSuccess.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/statistics",
+      "operationId": "orders.statistics.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/{orderId}/status",
+      "operationId": "orders.status.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders/payments/webhooks/{providerCode}",
+      "operationId": "orders.payments.webhooks.receive",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "public",
+        "required": false
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/after_sales/requests",
+      "operationId": "afterSales.requests.list",
+      "tags": [
+        "afterSales"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/after_sales/requests",
+      "operationId": "afterSales.requests.create",
+      "tags": [
+        "afterSales"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
+      "operationId": "afterSales.requests.retrieve",
+      "tags": [
+        "afterSales"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "PATCH",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
+      "operationId": "afterSales.requests.update",
+      "tags": [
+        "afterSales"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
+      "operationId": "afterSales.returnShipments.list",
+      "tags": [
+        "afterSales"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
+      "operationId": "afterSales.returnShipments.create",
+      "tags": [
+        "afterSales"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/events",
+      "operationId": "afterSales.events.list",
+      "tags": [
+        "afterSales"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/fulfillments",
+      "operationId": "fulfillments.list",
+      "tags": [
+        "fulfillments"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/fulfillments/{fulfillmentId}",
+      "operationId": "fulfillments.retrieve",
+      "tags": [
+        "fulfillments"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shipments/{shipmentId}",
+      "operationId": "shipments.retrieve",
+      "tags": [
+        "shipments"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shipments/{shipmentId}/packages",
+      "operationId": "shipments.packages.list",
+      "tags": [
+        "shipments"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/shipments/{shipmentId}/tracking_events",
+      "operationId": "shipments.trackingEvents.list",
+      "tags": [
+        "shipments"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/recharges/packages",
+      "operationId": "recharges.packages.list",
+      "tags": [
+        "recharges"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/recharges/settings",
+      "operationId": "recharges.settings.retrieve",
+      "tags": [
+        "recharges"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/recharges/orders",
+      "operationId": "recharges.orders.list",
+      "tags": [
+        "recharges"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/recharges/orders",
+      "operationId": "recharges.orders.create",
+      "tags": [
+        "recharges"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/recharges/orders/{orderId}",
+      "operationId": "recharges.orders.retrieve",
+      "tags": [
+        "recharges"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/recharges/orders/{orderId}/cancel",
+      "operationId": "recharges.orders.cancel",
+      "tags": [
+        "recharges"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/memberships/orders",
+      "operationId": "memberships.orders.create",
+      "tags": [
+        "memberships"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/recharges/plans",
+      "operationId": "recharges.plans.list",
+      "tags": [
+        "recharges"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/refund_requests",
+      "operationId": "orders.refundRequests.list",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/orders/refund_requests",
+      "operationId": "orders.refundRequests.create",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/orders/refund_requests/{refundRequestId}",
+      "operationId": "orders.refundRequests.retrieve",
+      "tags": [
+        "orders"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "POST",
+      "path": "/app/v3/api/withdrawals/requests",
+      "operationId": "withdrawals.requests.create",
+      "tags": [
+        "withdrawals"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/withdrawals/requests/{withdrawalRequestId}",
+      "operationId": "withdrawals.requests.retrieve",
+      "tags": [
+        "withdrawals"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api"

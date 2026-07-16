@@ -120,7 +120,15 @@ export function isAiResourceGroupVisibleForChannelVendorScope(
   );
   const groupVendorCodes = channelAiResourceGroupVendorCodes(group);
   if (selectedVendorSet.size > 0 && groupVendorCodes.length > 0) {
-    if (!groupVendorCodes.every((vendorCode) => selectedVendorSet.has(vendorCode))) {
+    const isOpenAiCompatibleGroup = groupVendorCodes.includes('openai_compatible');
+    const groupMatchesSelectedVendors = groupVendorCodes.every((vendorCode) =>
+      selectedVendorSet.has(vendorCode)
+      || (
+        vendorCode === 'openai'
+        && isOpenAiCompatibleGroup
+        && selectedVendorSet.has('openai_compatible')
+      ));
+    if (!groupMatchesSelectedVendors) {
       return false;
     }
   }

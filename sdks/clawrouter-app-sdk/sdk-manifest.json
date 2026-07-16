@@ -80,14 +80,14 @@
       }
     },
     {
-      "workspace": "clawrouter-app-order-capability",
+      "workspace": "sdkwork-order-app-sdk",
       "role": "order-app-capability",
       "required": true,
-      "dependencyMode": "internal-capability",
+      "dependencyMode": "consumer-sdk",
       "apiPrefix": "/app/v3/api",
       "generatedTransportImportPolicy": "forbidden",
       "packageByLanguage": {
-        "typescript": "clawrouter-app-domain-transport-generated-typescript"
+        "typescript": "@sdkwork/order-app-sdk"
       }
     },
     {
@@ -122,7 +122,7 @@
       "generatedPath": "clawrouter-app-sdk-typescript/generated/server-openapi",
       "packagePath": "clawrouter-app-sdk-typescript",
       "manifestPath": "clawrouter-app-sdk-typescript/package.json",
-      "name": "sdkwork-clawrouter-app-sdk-generated-typescript",
+      "name": "@sdkwork/clawrouter-app-sdk",
       "version": "0.1.0",
       "description": "SDKWork Claw Router app API SDK",
       "entrypoints": {
@@ -139,7 +139,7 @@
           "layer": "generated-output",
           "packagePath": "clawrouter-app-sdk-typescript/generated/server-openapi",
           "manifestPath": "clawrouter-app-sdk-typescript/generated/server-openapi/package.json",
-          "name": "sdkwork-clawrouter-app-sdk-generated-typescript",
+          "name": "clawrouter-app-sdk-generated-typescript",
           "version": "0.1.0",
           "description": "SDKWork Claw Router app API SDK generator-owned transport output",
           "entrypoints": {
@@ -152,7 +152,7 @@
           "layer": "package",
           "packagePath": "clawrouter-app-sdk-typescript",
           "manifestPath": "clawrouter-app-sdk-typescript/package.json",
-          "name": "sdkwork-clawrouter-app-sdk-generated-typescript",
+          "name": "@sdkwork/clawrouter-app-sdk",
           "version": "0.1.0",
           "description": "SDKWork Claw Router app API SDK",
           "entrypoints": {
@@ -161,9 +161,7 @@
             "types": "./dist/index.d.ts"
           }
         }
-      ],
-      "consumerPackageName": "@sdkwork/clawrouter-app-sdk",
-      "transportPackageName": "clawrouter-app-sdk-generated-typescript"
+      ]
     },
     {
       "language": "flutter",

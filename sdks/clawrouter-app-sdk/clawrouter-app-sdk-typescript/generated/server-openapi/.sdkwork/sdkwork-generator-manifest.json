@@ -40,15 +40,15 @@
     },
     {
       "path": "package.json",
-      "sha256": "9e40275310ab95ad879475b7b94debf863ed742ad86d32ae417f9a5b8ca98759"
+      "sha256": "f51bf3bc4d0d5e8dd96632b6a64dc5391ce402de3567b1409bc5f37425ad4f7a"
     },
     {
       "path": "README.md",
-      "sha256": "d0aefa54cdc858ce15731e60cfdaf9c9f89a2e81da419bdae51a2cd51b2c3f29"
+      "sha256": "52f47ce69ab97396a996e4ef29f4cd33c2f592fb7aa8626ba1b7dad9d517ec03"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "5e670fb6433f245b7c269a6fb65c0530d86116b91e0033629dec61ae11830b21"
+      "sha256": "ac4785860b7e313b9bf0ff2228aef1e5350c368e702a4ad0f25e3b04e2eb1fe9"
     },
     {
       "path": "src/api/ai.ts",
@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/chat.ts",
-      "sha256": "67f881c54e15f6056ed7042de9f4745fa37c31e6658e950df18ed2a355306dcc"
+      "sha256": "03717240d3f0032a252d847b9009cef3aaa94809ee0da55711bb5f70d1147a51"
     },
     {
       "path": "src/api/iam.ts",
@@ -68,7 +68,7 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "f721365b14d055d42f8f838963f000d14808d72f20c8e37e4d8554304f53c28d"
+      "sha256": "c4c6dd6ca9b47f5519532bf133f77ddddb343ed5204a0459146962c397b34403"
     },
     {
       "path": "src/api/notification.ts",
@@ -84,7 +84,7 @@
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "8dd72b116da4e551311a9155dc202d3c86fc56b51ea4f49a56637ca273955b4e"
+      "sha256": "987c32781585755d94163beaee38c1b50f7057bd099d4933f84fecbe737e7c04"
     },
     {
       "path": "src/auth/index.ts",
@@ -104,7 +104,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "2fb39b2e8b99f1727276d8a0188eaf6973da2cac723a8c2740d4d6b17f822bf0"
+      "sha256": "f2464cdcc367d6c021b60c7aa4806a0f5f95caa1fc243a5234dc197a61fc6b72"
     },
     {
       "path": "src/types/common.ts",

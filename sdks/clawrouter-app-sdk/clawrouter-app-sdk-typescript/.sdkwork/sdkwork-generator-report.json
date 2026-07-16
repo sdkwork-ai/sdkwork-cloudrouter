@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "cf2f927a99d8ab13ba0c44c633254bb4f270fc2e87f0638b54f2729593cc8076",
+  "changeFingerprint": "ac941a0b917822db2135ea2fab97957bbcaf80d0ee32f966173d29f0941d7dbd",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -47,6 +47,8 @@
         "paths": [
           "src/types/common.ts",
           "src/types/field-error.ts",
+          "src/types/gateway-trace.ts",
+          "src/types/gateway-traces-page.ts",
           "src/types/index.ts",
           "src/types/json-null.ts",
           "src/types/json-object.ts",
@@ -224,10 +226,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 130,
-    "models": 101,
+    "totalFiles": 127,
+    "models": 98,
     "apis": 6,
-    "types": 103
+    "types": 100
   },
   "warnings": [
     {
@@ -237,10 +239,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/types/index.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/system.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -261,6 +259,10 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/runtime.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/system.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -286,12 +288,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 39,
+    "writtenFiles": 41,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "cf2f927a99d8ab13ba0c44c633254bb4f270fc2e87f0638b54f2729593cc8076",
+    "changeFingerprint": "ac941a0b917822db2135ea2fab97957bbcaf80d0ee32f966173d29f0941d7dbd",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -320,6 +322,8 @@
         "src/sdk.ts",
         "src/types/common.ts",
         "src/types/field-error.ts",
+        "src/types/gateway-trace.ts",
+        "src/types/gateway-traces-page.ts",
         "src/types/index.ts",
         "src/types/json-null.ts",
         "src/types/json-object.ts",
@@ -376,6 +380,8 @@
           "paths": [
             "src/types/common.ts",
             "src/types/field-error.ts",
+            "src/types/gateway-trace.ts",
+            "src/types/gateway-traces-page.ts",
             "src/types/index.ts",
             "src/types/json-null.ts",
             "src/types/json-object.ts",

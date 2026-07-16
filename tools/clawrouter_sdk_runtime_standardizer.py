@@ -64,6 +64,10 @@ SDK_DOMAIN_TRANSPORT_DESCRIPTIONS = {
         "sdkwork-clawrouter-backend-sdk."
     ),
 }
+SDK_DOMAIN_TRANSPORT_NAMES = {
+    "clawrouter-app-sdk": "clawrouter-app-domain-transport",
+    "clawrouter-backend-sdk": "clawrouter-backend-domain-transport",
+}
 SDK_LANGUAGE_PACKAGE_NAMES = {
     "clawrouter-app-sdk": {
         "typescript": "@sdkwork/clawrouter-app-sdk",
@@ -227,14 +231,14 @@ SDK_DEPENDENCIES = {
             },
         },
         {
-            "workspace": "clawrouter-app-order-capability",
+            "workspace": "sdkwork-order-app-sdk",
             "role": "order-app-capability",
             "required": True,
-            "dependencyMode": "internal-capability",
+            "dependencyMode": "consumer-sdk",
             "apiPrefix": "/app/v3/api",
             "generatedTransportImportPolicy": "forbidden",
             "packageByLanguage": {
-                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+                "typescript": "@sdkwork/order-app-sdk",
             },
         },
         {
@@ -738,12 +742,16 @@ class SdkRuntimeStandardizer:
 
         updated.extend(self._sync_sdk_family_openapi_snapshots(sdk_family, family))
 
-        assembly_path = family / ".sdkwork-assembly.json"
+        manifest_path = family / "sdk-manifest.json"
         package = self._read_json_or_none(base / "package.json") or {}
-        assembly = self._build_assembly(sdk_family, family, package)
-        if not assembly_path.is_file() or self._read_json_or_none(assembly_path) != assembly:
-            self._write_json(assembly_path, assembly)
-            updated.append(assembly_path)
+        current_manifest = self._read_json_or_none(manifest_path) or {}
+        manifest = {
+            **current_manifest,
+            **self._build_family_manifest(sdk_family, family, package),
+        }
+        if not manifest_path.is_file() or self._read_json_or_none(manifest_path) != manifest:
+            self._write_json(manifest_path, manifest)
+            updated.append(manifest_path)
 
         generate_script_path = bin_dir / "generate-sdk.mjs"
         generate_script = self._render_generate_script(sdk_family)
@@ -911,10 +919,14 @@ class SdkRuntimeStandardizer:
             / "sdkwork-iam-backend-sdk"
             / "openapi"
             / "sdkwork-iam-backend-api.openapi.yaml",
+            "sdkwork-order-app-sdk": self._dependency_root("sdkwork-order")
+            / "sdks"
+            / "sdkwork-order-app-sdk"
+            / "openapi"
+            / "sdkwork-order-app-api.openapi.json",
             "clawrouter-app-wallet-capability": commerce_app_authority,
             "clawrouter-app-membership-capability": commerce_app_authority,
             "clawrouter-app-promotion-capability": commerce_app_authority,
-            "clawrouter-app-order-capability": commerce_app_authority,
             "clawrouter-app-payment-capability": commerce_app_authority,
             "clawrouter-app-catalog-capability": commerce_app_authority,
             "clawrouter-backend-wallet-capability": commerce_backend_authority,
@@ -1237,7 +1249,7 @@ class SdkRuntimeStandardizer:
         }
         return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
 
-    def _build_assembly(self, sdk_family: str, family: Path, package: dict[str, Any]) -> dict[str, Any]:
+    def _build_family_manifest(self, sdk_family: str, family: Path, package: dict[str, Any]) -> dict[str, Any]:
         typescript_directory = SDK_TYPESCRIPT_DIRECTORIES[sdk_family]
         typescript_generated_path = f"{typescript_directory}/generated/server-openapi"
         package_name = SDK_PACKAGE_NAMES[sdk_family]
@@ -1339,7 +1351,11 @@ class SdkRuntimeStandardizer:
                 }
             )
         return {
+            "schemaVersion": 1,
             "workspace": sdk_family,
+            "sdkFamily": sdk_family,
+            "sdkName": sdk_family,
+            "packageName": SDK_PACKAGE_NAMES[sdk_family],
             "sdkOwner": SDK_OWNER,
             "apiAuthority": SDK_API_AUTHORITIES[sdk_family],
             "title": SDK_DESCRIPTIONS[sdk_family],
@@ -1405,7 +1421,7 @@ class SdkRuntimeStandardizer:
             f"- Authority contract: `openapi/{sdk_family}.openapi.json`\n"
             f"{derived_contract_line}"
             f"- SDK generation input: {generation_input}\n"
-            "- Assembly snapshot: `.sdkwork-assembly.json`\n"
+            "- Assembly snapshot: `sdk-manifest.json`\n"
             f"- TypeScript workspace: `{typescript_directory}`\n"
             f"- TypeScript generated output: `{typescript_directory}/generated/server-openapi`\n"
             "- Other generated outputs: `<family>-<language>/generated/server-openapi`\n"
@@ -1489,6 +1505,49 @@ class SdkRuntimeStandardizer:
             if sdk_family in {"clawrouter-app-sdk", "clawrouter-backend-sdk"}
             else ""
         )
+        domain_transport_constants = ""
+        domain_transport_after_generation = ""
+        domain_transport_function = ""
+        if sdk_family in SDK_DOMAIN_TRANSPORT_NAMES:
+            domain_transport_constants = (
+                f"const domainTransportName = '{SDK_DOMAIN_TRANSPORT_NAMES[sdk_family]}';\n"
+                "const domainTransportInputPath = `sdks/${sdkFamily}/openapi/${domainTransportName}.openapi.json`;\n"
+                f"const domainTransportPackageName = '{SDK_DOMAIN_TRANSPORT_PACKAGE_NAMES[sdk_family]}';\n"
+                "const domainTransportOutputPath = `sdks/${sdkFamily}/${sdkFamily}-typescript/generated/domains/server-openapi`;\n"
+            )
+            domain_transport_after_generation = (
+                "  if (language === 'typescript') {\n"
+                "    runDomainTransportGeneration();\n"
+                "  }\n"
+            )
+            domain_transport_function = (
+                "function runDomainTransportGeneration() {\n"
+                "  rmSync(path.join(workspaceRoot, domainTransportOutputPath), { recursive: true, force: true });\n"
+                "  const result = spawnSync(command, [\n"
+                "    'tools/clawrouter_strict_sdk_generate.mjs',\n"
+                "    'generate',\n"
+                "    '-i', domainTransportInputPath,\n"
+                "    '-o', domainTransportOutputPath,\n"
+                "    '-n', domainTransportName,\n"
+                "    '-t', sdkType,\n"
+                "    '-l', 'typescript',\n"
+                "    '--base-url', baseUrl,\n"
+                "    '--api-prefix', apiPrefix,\n"
+                "    '--package-name', domainTransportPackageName,\n"
+                "    '--description', `${description} federated domain transport`,\n"
+                "    '--fixed-sdk-version', '0.1.0',\n"
+                "    '--no-sync-published-version',\n"
+                "    '--standard-profile', 'sdkwork-v3',\n"
+                "  ], { cwd: workspaceRoot, stdio: 'inherit' });\n"
+                "  if (result.error) {\n"
+                "    throw result.error;\n"
+                "  }\n"
+                "  if ((result.status ?? 1) !== 0) {\n"
+                "    process.exit(result.status ?? 1);\n"
+                "  }\n"
+                "  cleanGeneratedOutputAt(domainTransportOutputPath);\n"
+                "}\n\n"
+            )
         return (
             "#!/usr/bin/env node\n"
             "import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';\n"
@@ -1502,6 +1561,7 @@ class SdkRuntimeStandardizer:
             f"const sdkFamily = '{sdk_family}';\n"
             f"const sdkType = '{sdk_type}';\n"
             "const authorityInputPath = `sdks/${sdkFamily}/openapi/${sdkFamily}.openapi.json`;\n"
+            f"{domain_transport_constants}"
             f"{sdkgen_input_path_line}"
             f"const baseUrl = '{base_url}';\n"
             f"const apiPrefix = '{api_prefix}';\n"
@@ -1596,7 +1656,9 @@ class SdkRuntimeStandardizer:
             "    process.exit(result.status ?? 1);\n"
             "  }\n"
             "  cleanGeneratedOutput(language);\n"
+            f"{domain_transport_after_generation}"
             "}\n\n"
+            f"{domain_transport_function}"
             "function strictTypeScriptArgs() {\n"
             "  return [\n"
             "    'tools/clawrouter_strict_sdk_generate.mjs',\n"
@@ -1647,7 +1709,10 @@ class SdkRuntimeStandardizer:
             "  return `sdks/${sdkFamily}/${sdkFamily}-${language}/generated/server-openapi`;\n"
             "}\n\n"
             "function cleanGeneratedOutput(language) {\n"
-            "  const outputRoot = path.join(workspaceRoot, generatedOutputPath(language));\n"
+            "  cleanGeneratedOutputAt(generatedOutputPath(language));\n"
+            "}\n\n"
+            "function cleanGeneratedOutputAt(outputPath) {\n"
+            "  const outputRoot = path.join(workspaceRoot, outputPath);\n"
             "  if (!existsSync(outputRoot)) {\n"
             "    return;\n"
             "  }\n"
@@ -1692,7 +1757,7 @@ class SdkRuntimeStandardizer:
             "const __filename = fileURLToPath(import.meta.url);\n"
             "const workspaceRoot = path.resolve(path.dirname(__filename), '..');\n"
             "const required = [\n"
-            "  '.sdkwork-assembly.json',\n"
+            "  'sdk-manifest.json',\n"
             f"  'openapi/{sdk_family}.openapi.json',\n"
             f"  'openapi/{sdk_family}.sdkgen.json',\n"
             f"  '{typescript_directory}/generated/server-openapi/package.json',\n"
@@ -1703,7 +1768,7 @@ class SdkRuntimeStandardizer:
             "if (missing.length > 0) {\n"
             f"  throw new Error('{sdk_family} SDK family is incomplete: ' + missing.join(', '));\n"
             "}\n"
-            "const assembly = JSON.parse(readFileSync(path.join(workspaceRoot, '.sdkwork-assembly.json'), 'utf8'));\n"
+            "const assembly = JSON.parse(readFileSync(path.join(workspaceRoot, 'sdk-manifest.json'), 'utf8'));\n"
             f"if (assembly.workspace !== '{sdk_family}') {{\n"
             "  throw new Error('SDK assembly workspace drifted');\n"
             "}\n"
@@ -1735,7 +1800,7 @@ class SdkRuntimeStandardizer:
             f"test('{sdk_family} family layout is materialized', () => {{\n"
             f"  assert.equal(existsSync(path.join(workspaceRoot, '{typescript_directory}', 'generated', 'server-openapi', 'package.json')), true);\n"
             f"  assert.equal(existsSync(path.join(workspaceRoot, 'openapi', '{sdk_family}.openapi.json')), true);\n"
-            "  assert.equal(existsSync(path.join(workspaceRoot, '.sdkwork-assembly.json')), true);\n"
+            "  assert.equal(existsSync(path.join(workspaceRoot, 'sdk-manifest.json')), true);\n"
             "});\n"
         )
 

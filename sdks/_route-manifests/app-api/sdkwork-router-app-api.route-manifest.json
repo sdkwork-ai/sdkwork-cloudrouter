@@ -176,25 +176,25 @@
       "path": "/app/v3/api/after_sales/requests",
       "operationId": "afterSales.requests.list",
       "tags": [
-        "system"
+        "afterSales"
       ],
       "auth": {
         "mode": "dual-token",
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -209,40 +209,44 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
+      "apiSurface": "app-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      }
     },
     {
       "method": "GET",
       "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
       "operationId": "afterSales.requests.retrieve",
       "tags": [
-        "system"
+        "afterSales"
       ],
       "auth": {
         "mode": "dual-token",
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -257,40 +261,44 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
+      "apiSurface": "app-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      }
     },
     {
       "method": "GET",
       "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/events",
       "operationId": "afterSales.events.list",
       "tags": [
-        "system"
+        "afterSales"
       ],
       "auth": {
         "mode": "dual-token",
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -298,25 +306,25 @@
       "path": "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
       "operationId": "afterSales.returnShipments.list",
       "tags": [
-        "system"
+        "afterSales"
       ],
       "auth": {
         "mode": "dual-token",
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -331,15 +339,19 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
-      "apiSurface": "app-api"
+      "apiSurface": "app-api",
+      "source": {
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+      }
     },
     {
       "method": "GET",
@@ -1124,7 +1136,7 @@
     {
       "method": "POST",
       "path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "operationId": "turnResponses.complete",
+      "operationId": "turnResponses.create",
       "tags": [
         "chat"
       ],
@@ -1159,18 +1171,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -1185,18 +1197,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -1211,18 +1223,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -1237,18 +1249,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -1263,18 +1275,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -1289,18 +1301,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2507,18 +2519,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2533,18 +2545,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2559,18 +2571,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2585,18 +2597,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2611,18 +2623,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2637,18 +2649,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2663,18 +2675,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2689,18 +2701,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2708,25 +2720,25 @@
       "path": "/app/v3/api/orders/{orderId}/payments",
       "operationId": "payments.orderPayments.list",
       "tags": [
-        "orders"
+        "payments"
       ],
       "auth": {
         "mode": "dual-token",
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2741,18 +2753,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -2767,18 +2779,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -3521,18 +3533,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -3547,24 +3559,24 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
       "method": "POST",
       "path": "/app/v3/api/recharges/orders/{orderId}/cancellations",
-      "operationId": "recharges.orders.cancel",
+      "operationId": "recharges.orders.cancellations.create",
       "tags": [
         "recharges"
       ],
@@ -3599,18 +3611,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -3625,18 +3637,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -3963,18 +3975,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -3989,18 +4001,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {
@@ -4015,18 +4027,18 @@
         "required": true
       },
       "handler": {
-        "module": "crate::routes",
+        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-app-api"
+        "owner": "sdkwork-order",
+        "apiAuthority": "sdkwork-order-app-api"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "app-api",
       "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-app-api",
-        "openApiAuthority": "apis/app-api/clawrouter/clawrouter-app-api.openapi.json"
+        "routeCrate": "sdkwork-routes-order-app-api",
+        "openApiAuthority": "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
       }
     },
     {

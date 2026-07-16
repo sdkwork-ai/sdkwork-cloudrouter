@@ -174,49 +174,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/recharges/orders/{orderId}/cancellations",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#cancel@/console/recharges/orders/{orderId}/cancellations",
-      "kind": "create",
-      "module": "cancellations",
-      "openapi_exposed": true,
-      "operation": "cancel",
-      "operation_id": "recharges.orders.cancel",
-      "path_params": [
-        "orderId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "commerce"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/console/recharges/orders/{orderId}/cancellations",
-      "route_scope": "console",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-app-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "recharges",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/backend/v3/api/system/shops/{shopId}/close",
       "api_surface": "backend",
       "file_targets": [],
@@ -297,50 +254,6 @@
       "sdk_family": "clawrouter-app-sdk",
       "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
       "tag": "payments",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#complete@/console/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "kind": "action",
-      "module": "response",
-      "openapi_exposed": true,
-      "operation": "complete",
-      "operation_id": "turnResponses.complete",
-      "path_params": [
-        "conversationId",
-        "turnId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "chat"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/console/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "route_scope": "console",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "chat",
-      "sdk_family": "clawrouter-app-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "chat",
       "write_tables": [
         "ops_audit_log"
       ]
@@ -1809,6 +1722,50 @@
     },
     {
       "api_method": "POST",
+      "api_path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/console/chat/conversations/{conversationId}/turns/{turnId}/response",
+      "kind": "action",
+      "module": "response",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "turnResponses.create",
+      "path_params": [
+        "conversationId",
+        "turnId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "chat"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/console/chat/conversations/{conversationId}/turns/{turnId}/response",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "chat",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "chat",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
       "api_path": "/app/v3/api/checkout/sessions",
       "api_surface": "app",
       "file_targets": [],
@@ -2734,6 +2691,49 @@
         }
       },
       "route": "/console/recharges/orders",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-app-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/recharges/orders/{orderId}/cancellations",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/console/recharges/orders/{orderId}/cancellations",
+      "kind": "create",
+      "module": "cancellations",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "recharges.orders.cancellations.create",
+      "path_params": [
+        "orderId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "commerce"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/console/recharges/orders/{orderId}/cancellations",
       "route_scope": "console",
       "sdk_api_prefix": "/app/v3/api",
       "sdk_client": "SdkworkAppClient",

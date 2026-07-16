@@ -165,7 +165,11 @@ function generatedOutputPath(language) {
 }
 
 function cleanGeneratedOutput(language) {
-  const outputRoot = path.join(workspaceRoot, generatedOutputPath(language));
+  cleanGeneratedOutputAt(generatedOutputPath(language));
+}
+
+function cleanGeneratedOutputAt(outputPath) {
+  const outputRoot = path.join(workspaceRoot, outputPath);
   if (!existsSync(outputRoot)) {
     return;
   }

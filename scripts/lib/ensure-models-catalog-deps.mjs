@@ -32,7 +32,7 @@ export function ensureModelsCatalogDeps({
   if (!existsSync(path.join(modelsRoot, 'package.json'))) {
     throw new Error(
       `Missing sdkwork-models catalog at ${modelsRoot}. `
-      'Ensure ../sdkwork-models is cloned as a sibling repository.',
+      + 'Ensure ../sdkwork-models is cloned as a sibling repository.',
     );
   }
   if (!existsSync(path.join(utilsPackageRoot, 'package.json'))) {

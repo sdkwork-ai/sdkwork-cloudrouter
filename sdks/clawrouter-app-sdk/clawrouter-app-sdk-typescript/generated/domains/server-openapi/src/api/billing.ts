@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { SdkWorkPageData } from '../types';
-
-
 export class BillingHistoryApi {
   private client: HttpClient;
 
@@ -13,8 +10,8 @@ export class BillingHistoryApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/billing/history`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/billing/history`));
   }
 }
 

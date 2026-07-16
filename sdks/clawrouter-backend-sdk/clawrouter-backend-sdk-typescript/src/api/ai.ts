@@ -9,8 +9,8 @@ export class AiRouteExplainApi {
   }
 
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
+/** Explain */
+  async explain(): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(backendApiPath(`/ai/route_explain`));
   }
 }

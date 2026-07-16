@@ -26,9 +26,19 @@
     "ownerMode": "tenant",
     "grantMode": "current",
     "platform": "WEB",
-    "appId": null,
+    "appId": "sdkwork-clawrouter",
     "organizationId": "0",
-    "tenantId": "100001"
+    "tenantId": "100001",
+    "accessTokenPermissionScope": [
+      "clawrouter.admin.access",
+      "clawrouter.console.access",
+      "clawrouter.system.read",
+      "iam.users.read",
+      "iam.organizations.read",
+      "iam.roles.read",
+      "iam.permissions.read",
+      "iam.oauth.read"
+    ]
   },
   "runtime": {
     "family": "web",

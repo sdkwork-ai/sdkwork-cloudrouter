@@ -273,7 +273,7 @@ class ClawRouterSdkGuardian:
                 )
 
         self._require_file(family / "README.md", messages)
-        self._require_file(family / ".sdkwork-assembly.json", messages)
+        self._require_file(family / "sdk-manifest.json", messages)
         self._require_file(family / "openapi" / f"{expected.family_directory}.openapi.json", messages)
         self._require_file(family / "openapi" / f"{expected.family_directory}.sdkgen.json", messages)
         self._require_file(family / "bin" / "generate-sdk.mjs", messages)
@@ -315,6 +315,21 @@ class ClawRouterSdkGuardian:
                     f"{expected.family_directory} bin/generate-sdk.mjs must not declare sdkgenInputPath "
                     "because generation uses the authority OpenAPI"
                 )
+            if expected.family_directory in {"clawrouter-app-sdk", "clawrouter-backend-sdk"}:
+                domain_generation_markers = (
+                    "const domainTransportInputPath = `sdks/${sdkFamily}/openapi/${domainTransportName}.openapi.json`;",
+                    "const domainTransportOutputPath = `sdks/${sdkFamily}/${sdkFamily}-typescript/generated/domains/server-openapi`;",
+                    "function runDomainTransportGeneration()",
+                    "runDomainTransportGeneration();",
+                    "'-i', domainTransportInputPath",
+                    "'-o', domainTransportOutputPath",
+                )
+                for marker in domain_generation_markers:
+                    if marker not in generate_script:
+                        messages.append(
+                            f"{expected.family_directory} bin/generate-sdk.mjs must regenerate federated "
+                            f"domain transport ({marker})"
+                        )
             if f"sdks/${{sdkFamily}}/${{sdkFamily}}-${{language}}/generated/server-openapi" not in generate_script:
                 messages.append(
                     f"{expected.family_directory} bin/generate-sdk.mjs must generate non-TypeScript SDKs "
@@ -385,34 +400,34 @@ class ClawRouterSdkGuardian:
                             "openapi/${sdkFamily}.sdkgen.json"
                         )
 
-        assembly = self._read_json(family / ".sdkwork-assembly.json", messages)
+        assembly = self._read_json(family / "sdk-manifest.json", messages)
         if assembly is not None:
             if assembly.get("workspace") != expected.family_directory:
-                messages.append(f"{expected.family_directory} .sdkwork-assembly.json workspace must match")
+                messages.append(f"{expected.family_directory} sdk-manifest.json workspace must match")
             if "derivedSpec" in assembly:
                 messages.append(
-                    f"{expected.family_directory} .sdkwork-assembly.json must not declare legacy derivedSpec; "
+                    f"{expected.family_directory} sdk-manifest.json must not declare legacy derivedSpec; "
                     "use derivedSpecs"
                 )
             expected_generation_input = sdk_generation_input_spec(expected.family_directory)
             if assembly.get("generationInputSpec") != expected_generation_input:
                 messages.append(
-                    f"{expected.family_directory} .sdkwork-assembly.json generationInputSpec must be "
+                    f"{expected.family_directory} sdk-manifest.json generationInputSpec must be "
                     f"{expected_generation_input}"
                 )
             derived_specs = assembly.get("derivedSpecs")
             expected_derived_specs = sdk_derived_specs(expected.family_directory)
             if not isinstance(derived_specs, dict):
-                messages.append(f"{expected.family_directory} .sdkwork-assembly.json derivedSpecs must be an object")
+                messages.append(f"{expected.family_directory} sdk-manifest.json derivedSpecs must be an object")
             elif expected.family_directory == "clawrouter-open-sdk":
                 if derived_specs != expected_derived_specs:
                     messages.append(
-                        f"{expected.family_directory} .sdkwork-assembly.json derivedSpecs.sdk-generator must be "
+                        f"{expected.family_directory} sdk-manifest.json derivedSpecs.sdk-generator must be "
                         f"openapi/{expected.family_directory}.sdkgen.json"
                     )
             elif derived_specs != expected_derived_specs:
                 messages.append(
-                    f"{expected.family_directory} .sdkwork-assembly.json derivedSpecs must be empty because "
+                    f"{expected.family_directory} sdk-manifest.json derivedSpecs must be empty because "
                     "generation uses the authority OpenAPI"
                 )
             languages = assembly.get("languages")
@@ -423,7 +438,7 @@ class ClawRouterSdkGuardian:
                 for item in languages
             ):
                 messages.append(
-                    f"{expected.family_directory} .sdkwork-assembly.json must list "
+                    f"{expected.family_directory} sdk-manifest.json must list "
                     f"{expected.typescript_directory} as the materialized TypeScript workspace"
                 )
             if isinstance(languages, list):
@@ -436,7 +451,7 @@ class ClawRouterSdkGuardian:
                     language_entry = languages_by_name.get(language)
                     if not isinstance(language_entry, dict):
                         messages.append(
-                            f"{expected.family_directory} .sdkwork-assembly.json must list official SDK language {language}"
+                            f"{expected.family_directory} sdk-manifest.json must list official SDK language {language}"
                         )
                         continue
                     if language == "typescript":
@@ -445,19 +460,19 @@ class ClawRouterSdkGuardian:
                     expected_generated_path = f"{expected_workspace}/generated/server-openapi"
                     if language_entry.get("workspace") != expected_workspace:
                         messages.append(
-                            f"{expected.family_directory} .sdkwork-assembly.json language {language} "
+                            f"{expected.family_directory} sdk-manifest.json language {language} "
                             f"workspace must be {expected_workspace}"
                         )
                     if language_entry.get("generatedPath") != expected_generated_path:
                         messages.append(
-                            f"{expected.family_directory} .sdkwork-assembly.json language {language} "
+                            f"{expected.family_directory} sdk-manifest.json language {language} "
                             f"generatedPath must be {expected_generated_path}"
                         )
                     if language_entry.get("generationState") == "materialized":
                         manifest_path = language_entry.get("manifestPath")
                         if not isinstance(manifest_path, str) or not manifest_path:
                             messages.append(
-                                f"{expected.family_directory} .sdkwork-assembly.json materialized language {language} "
+                                f"{expected.family_directory} sdk-manifest.json materialized language {language} "
                                 "must declare manifestPath"
                             )
                         else:

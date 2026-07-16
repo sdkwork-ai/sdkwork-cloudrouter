@@ -1,7 +1,7 @@
 {
   "name": "clawrouter-open-sdk-generated-typescript",
   "version": "0.1.0",
-  "description": "Generator-owned TypeScript transport SDK for clawrouter-open-sdk.",
+  "description": "SDKWork Claw Router OpenAI-compatible gateway SDK",
   "author": "SDKWork Team",
   "license": "MIT",
   "type": "module",

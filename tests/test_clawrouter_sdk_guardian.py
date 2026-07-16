@@ -30,7 +30,7 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
         (family / "bin").mkdir(parents=True, exist_ok=True)
         (family / "tests").mkdir(parents=True, exist_ok=True)
         (family / "README.md").write_text(f"# {sdk_dir}\n", encoding="utf-8")
-        (family / ".sdkwork-assembly.json").write_text(
+        (family / "sdk-manifest.json").write_text(
             json.dumps(
                 {
                     "workspace": sdk_dir,
@@ -426,7 +426,7 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
             )
             self.write_portal_sdk_boundary(root)
             family = root / "sdks" / "clawrouter-app-sdk"
-            assembly_path = family / ".sdkwork-assembly.json"
+            assembly_path = family / "sdk-manifest.json"
             assembly = json.loads(assembly_path.read_text(encoding="utf-8"))
             assembly["languages"] = [
                 item
@@ -443,11 +443,11 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "clawrouter-app-sdk .sdkwork-assembly.json must list official SDK language flutter",
+                "clawrouter-app-sdk sdk-manifest.json must list official SDK language flutter",
                 result.messages,
             )
             self.assertIn(
-                "clawrouter-app-sdk .sdkwork-assembly.json must list official SDK language python",
+                "clawrouter-app-sdk sdk-manifest.json must list official SDK language python",
                 result.messages,
             )
             self.assertIn(
@@ -475,7 +475,7 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
                 "/backend/v3/api",
             )
             self.write_portal_sdk_boundary(root)
-            assembly_path = root / "sdks" / "clawrouter-app-sdk" / ".sdkwork-assembly.json"
+            assembly_path = root / "sdks" / "clawrouter-app-sdk" / "sdk-manifest.json"
             assembly = json.loads(assembly_path.read_text(encoding="utf-8"))
             assembly["derivedSpec"] = "openapi/clawrouter-app-sdk.sdkgen.json"
             assembly_path.write_text(json.dumps(assembly) + "\n", encoding="utf-8")
@@ -484,7 +484,7 @@ class ClawRouterSdkGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "clawrouter-app-sdk .sdkwork-assembly.json must not declare legacy derivedSpec; use derivedSpecs",
+                "clawrouter-app-sdk sdk-manifest.json must not declare legacy derivedSpec; use derivedSpecs",
                 result.messages,
             )
 

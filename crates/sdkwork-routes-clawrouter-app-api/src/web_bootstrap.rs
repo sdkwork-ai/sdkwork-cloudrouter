@@ -3,11 +3,12 @@ use std::sync::Arc;
 use axum::Router;
 use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_http::{
-    claw_service_security_policy, iam_web_resolver_for_claw_database,
+    claw_service_security_policy, ensure_iam_database_env_for_claw_database,
     inject_legacy_handler_context_from_web_context, resolve_claw_web_environment_from_process_env,
 };
 use sdkwork_iam_web_adapter::{
-    iam_app_context_from_web_request, IamAuthorizationPolicy, IamWebRequestContextResolver,
+    iam_app_context_from_web_request, iam_web_request_context_resolver_from_env,
+    IamAuthorizationPolicy, IamWebRequestContextResolver,
 };
 use sdkwork_web_axum::{with_web_request_context, WebFrameworkLayer};
 use sdkwork_web_core::{DomainContextInjector, WebRequestContext, WebRequestContextProfile};
@@ -78,7 +79,13 @@ pub async fn iam_web_resolver_from_env(
     database_config: Option<&DatabaseConfig>,
     postgres_pool: Option<Arc<PgPool>>,
 ) -> IamWebRequestContextResolver {
-    iam_web_resolver_for_claw_database(database_config, postgres_pool).await
+    if let Some(config) = database_config {
+        ensure_iam_database_env_for_claw_database(config);
+    }
+    match postgres_pool {
+        Some(pool) => IamWebRequestContextResolver::new(Some(pool)),
+        None => iam_web_request_context_resolver_from_env().await,
+    }
 }
 
 pub async fn maybe_wrap_router_with_web_framework_and_database_config(

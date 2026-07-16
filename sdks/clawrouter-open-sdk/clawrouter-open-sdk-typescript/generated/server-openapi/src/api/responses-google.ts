@@ -20,7 +20,7 @@ export class ResponsesGoogleV1betaCachedContentsApi {
 /** Google Gemini list cached contents */
   async list(params?: ResponsesGoogleV1betaCachedContentsListParams): Promise<GoogleCachedContentListResponse> {
     const query = buildQueryString([
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.get<GoogleCachedContentListResponse>(appendQueryString(aiApiPath(`/google/v1beta/cachedContents`), query));

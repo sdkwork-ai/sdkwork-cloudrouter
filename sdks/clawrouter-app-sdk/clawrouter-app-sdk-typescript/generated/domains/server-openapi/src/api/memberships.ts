@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
-
-import type { MembershipsCurrentRetrieveResult, MembershipsCurrentStatusRetrieveResult, MembershipsPackageGroupsRetrieveResult, MembershipsPackagesRetrieveResult, MembershipsPointsBalanceRetrieveResult, MembershipsPointsDailyRewardsCreateResult, MembershipsPointsDailyRewardsStatusRetrieveResult, MembershipsPrivilegesSpeedUpsCreateResult, MembershipsPrivilegesUsageRetrieveResult, MembershipsPurchasesCreateResult, MembershipsPurchasesRenewResult, MembershipsPurchasesUpgradeResult, SdkWorkPageData } from '../types';
-
-
+import type { MembershipOrderCreateCommand, MembershipOrderCreateResult } from '../types';
 export class MembershipsPurchasesApi {
   private client: HttpClient;
 
@@ -13,18 +10,18 @@ export class MembershipsPurchasesApi {
 
 
 /** Create */
-  async create(): Promise<MembershipsPurchasesCreateResult> {
-    return this.client.post<MembershipsPurchasesCreateResult>(appApiPath(`/memberships/purchases`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/memberships/purchases`));
   }
 
 /** Renew */
-  async renew(): Promise<MembershipsPurchasesRenewResult> {
-    return this.client.post<MembershipsPurchasesRenewResult>(appApiPath(`/memberships/purchases/renew`));
+  async renew(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/memberships/purchases/renew`));
   }
 
 /** Upgrade */
-  async upgrade(): Promise<MembershipsPurchasesUpgradeResult> {
-    return this.client.post<MembershipsPurchasesUpgradeResult>(appApiPath(`/memberships/purchases/upgrade`));
+  async upgrade(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/memberships/purchases/upgrade`));
   }
 }
 
@@ -37,8 +34,8 @@ export class MembershipsPrivilegesUsageApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<MembershipsPrivilegesUsageRetrieveResult> {
-    return this.client.get<MembershipsPrivilegesUsageRetrieveResult>(appApiPath(`/memberships/privileges/usage`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/privileges/usage`));
   }
 }
 
@@ -51,8 +48,8 @@ export class MembershipsPrivilegesSpeedUpsApi {
 
 
 /** Create */
-  async create(): Promise<MembershipsPrivilegesSpeedUpsCreateResult> {
-    return this.client.post<MembershipsPrivilegesSpeedUpsCreateResult>(appApiPath(`/memberships/privileges/speed_ups`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/memberships/privileges/speed_ups`));
   }
 }
 
@@ -78,8 +75,8 @@ export class MembershipsPointsHistoryApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/memberships/points/history`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/points/history`));
   }
 }
 
@@ -92,8 +89,8 @@ export class MembershipsPointsDailyRewardsStatusApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<MembershipsPointsDailyRewardsStatusRetrieveResult> {
-    return this.client.get<MembershipsPointsDailyRewardsStatusRetrieveResult>(appApiPath(`/memberships/points/daily_rewards/status`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/points/daily_rewards/status`));
   }
 }
 
@@ -108,8 +105,8 @@ export class MembershipsPointsDailyRewardsApi {
 
 
 /** Create */
-  async create(): Promise<MembershipsPointsDailyRewardsCreateResult> {
-    return this.client.post<MembershipsPointsDailyRewardsCreateResult>(appApiPath(`/memberships/points/daily_rewards`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/memberships/points/daily_rewards`));
   }
 }
 
@@ -122,8 +119,8 @@ export class MembershipsPointsBalanceApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<MembershipsPointsBalanceRetrieveResult> {
-    return this.client.get<MembershipsPointsBalanceRetrieveResult>(appApiPath(`/memberships/points/balance`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/points/balance`));
   }
 }
 
@@ -151,8 +148,8 @@ export class MembershipsPlansApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/memberships/plans`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/plans`));
   }
 }
 
@@ -165,13 +162,13 @@ export class MembershipsPackagesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/memberships/packages`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/packages`));
   }
 
 /** Retrieve */
-  async retrieve(packageId: string): Promise<MembershipsPackagesRetrieveResult> {
-    return this.client.get<MembershipsPackagesRetrieveResult>(appApiPath(`/memberships/packages/${serializePathParameter(packageId, { name: 'packageId', style: 'simple', explode: false })}`));
+  async retrieve(packageId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/packages/${serializePathParameter(packageId, { name: 'packageId', style: 'simple', explode: false })}`));
   }
 }
 
@@ -184,8 +181,8 @@ export class MembershipsPackageGroupsPackagesApi {
 
 
 /** List */
-  async list(packageGroupId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/memberships/package_groups/${serializePathParameter(packageGroupId, { name: 'packageGroupId', style: 'simple', explode: false })}/packages`));
+  async list(packageGroupId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/package_groups/${serializePathParameter(packageGroupId, { name: 'packageGroupId', style: 'simple', explode: false })}/packages`));
   }
 }
 
@@ -200,13 +197,41 @@ export class MembershipsPackageGroupsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/memberships/package_groups`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/package_groups`));
   }
 
 /** Retrieve */
-  async retrieve(packageGroupId: string): Promise<MembershipsPackageGroupsRetrieveResult> {
-    return this.client.get<MembershipsPackageGroupsRetrieveResult>(appApiPath(`/memberships/package_groups/${serializePathParameter(packageGroupId, { name: 'packageGroupId', style: 'simple', explode: false })}`));
+  async retrieve(packageGroupId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/package_groups/${serializePathParameter(packageGroupId, { name: 'packageGroupId', style: 'simple', explode: false })}`));
+  }
+}
+
+export interface MembershipsOrdersCreateParams {
+  idempotencyKey: string;
+  sdkworkRequestHash: string;
+  xIdempotencyFingerprint: string;
+}
+
+export class MembershipsOrdersApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Memberships orders create. */
+  async create(body: MembershipOrderCreateCommand, params: MembershipsOrdersCreateParams): Promise<MembershipOrderCreateResult> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+        'Sdkwork-Request-Hash': { value: params.sdkworkRequestHash, style: 'simple', explode: false },
+        'X-Idempotency-Fingerprint': { value: params.xIdempotencyFingerprint, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.post<MembershipOrderCreateResult>(appApiPath(`/memberships/orders`), body, undefined, requestHeaders, 'application/json');
   }
 }
 
@@ -219,8 +244,8 @@ export class MembershipsCurrentStatusApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<MembershipsCurrentStatusRetrieveResult> {
-    return this.client.get<MembershipsCurrentStatusRetrieveResult>(appApiPath(`/memberships/current/status`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/current/status`));
   }
 }
 
@@ -235,8 +260,8 @@ export class MembershipsCurrentApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<MembershipsCurrentRetrieveResult> {
-    return this.client.get<MembershipsCurrentRetrieveResult>(appApiPath(`/memberships/current`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/current`));
   }
 }
 
@@ -249,8 +274,8 @@ export class MembershipsBenefitsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/memberships/benefits`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/memberships/benefits`));
   }
 }
 
@@ -258,6 +283,7 @@ export class MembershipsApi {
   private client: HttpClient;
   public readonly benefits: MembershipsBenefitsApi;
   public readonly current: MembershipsCurrentApi;
+  public readonly orders: MembershipsOrdersApi;
   public readonly packageGroups: MembershipsPackageGroupsApi;
   public readonly packages: MembershipsPackagesApi;
   public readonly plans: MembershipsPlansApi;
@@ -269,6 +295,7 @@ export class MembershipsApi {
     this.client = client;
     this.benefits = new MembershipsBenefitsApi(client);
     this.current = new MembershipsCurrentApi(client);
+    this.orders = new MembershipsOrdersApi(client);
     this.packageGroups = new MembershipsPackageGroupsApi(client);
     this.packages = new MembershipsPackagesApi(client);
     this.plans = new MembershipsPlansApi(client);
@@ -359,6 +386,82 @@ function serializePathPrimitive(value: unknown): string {
   }
   if (typeof value === 'object') {
     return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function buildRequestHeaders(
+  headers: Record<string, HeaderParameterSpec | undefined>,
+  cookies: Record<string, HeaderParameterSpec | undefined> = {},
+): Record<string, string> | undefined {
+  const requestHeaders: Record<string, string> = {};
+
+  for (const [name, parameter] of Object.entries(headers)) {
+    const serialized = serializeParameterValue(parameter);
+    if (serialized !== undefined) {
+      requestHeaders[name] = serialized;
+    }
+  }
+
+  const cookieHeader = buildCookieHeader(cookies);
+  if (cookieHeader) {
+    requestHeaders.Cookie = requestHeaders.Cookie
+      ? `${requestHeaders.Cookie}; ${cookieHeader}`
+      : cookieHeader;
+  }
+
+  return Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined;
+}
+
+interface HeaderParameterSpec {
+  value: unknown;
+  style: string;
+  explode: boolean;
+  contentType?: string;
+}
+
+function buildCookieHeader(cookies: Record<string, HeaderParameterSpec | undefined>): string | undefined {
+  const pairs: string[] = [];
+  for (const [name, parameter] of Object.entries(cookies)) {
+    const serialized = serializeParameterValue(parameter);
+    if (serialized !== undefined) {
+      pairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(serialized)}`);
+    }
+  }
+  return pairs.length > 0 ? pairs.join('; ') : undefined;
+}
+
+function serializeParameterValue(parameter: HeaderParameterSpec | undefined): string | undefined {
+  const value = parameter?.value;
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (parameter?.contentType) {
+    return JSON.stringify(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => serializeHeaderPrimitive(item)).join(',');
+  }
+  if (typeof value === 'object' && value !== null) {
+    return serializeHeaderObject(value as Record<string, unknown>, parameter?.explode === true);
+  }
+  return serializeHeaderPrimitive(value);
+}
+
+function serializeHeaderObject(value: Record<string, unknown>, explode: boolean): string {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (explode) {
+    return entries.map(([key, entryValue]) => `${key}=${serializeHeaderPrimitive(entryValue)}`).join(',');
+  }
+  return entries.flatMap(([key, entryValue]) => [key, serializeHeaderPrimitive(entryValue)]).join(',');
+}
+
+function serializeHeaderPrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
   }
   return String(value);
 }

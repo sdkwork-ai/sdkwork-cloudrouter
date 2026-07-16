@@ -30,7 +30,6 @@ import {
   getSdkworkGenerationsAppSdkClient,
   getSdkworkMemoryAppSdkClient,
   getSdkworkAgentAppSdkClient,
-  getSdkworkAgentBackendSdkClient,
   resetClawRouterSdkClients,
 } from './sdk-clients.ts';
 import { normalizeGeneratedSdkBaseUrl } from './sdk-base-url.ts';
@@ -75,7 +74,6 @@ export function createClawRouterIamRuntimeComposition(): SdkworkAppbasePcAuthRun
       getSdkworkGenerationsAppSdkClient(),
       getSdkworkMemoryAppSdkClient(),
       getSdkworkAgentAppSdkClient(),
-      getSdkworkAgentBackendSdkClient(),
       getClawRouterAppDomainTransportSdkClient(),
     ] as SdkworkAppbasePcAuthRuntimeSdkClient[],
     sessionBridge: {

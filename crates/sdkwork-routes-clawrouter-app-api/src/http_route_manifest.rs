@@ -110,13 +110,13 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/oauth/callbacks/{providerCode}",
         "oauth",
-        "oauth.callbacks.handleGet",
+        "oauth.callbacks.retrieve",
     ),
     HttpRoute::credential_entry_public(
         HttpMethod::Post,
         "/app/v3/api/oauth/callbacks/{providerCode}",
         "oauth",
-        "oauth.callbacks.handlePost",
+        "oauth.callbacks.create",
     ),
     HttpRoute::credential_entry_public(
         HttpMethod::Post,
@@ -193,7 +193,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     )
     .with_required_permission("iam.profile.update"),
     HttpRoute::dual_token(
-        HttpMethod::Post,
+        HttpMethod::Patch,
         "/app/v3/api/iam/users/current/password",
         "iam",
         "users.current.password.update",
@@ -316,30 +316,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/addresses/{addressId}/default_selection",
         "addresses",
         "addresses.defaultSelection.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/after_sales/requests",
-        "system",
-        "afterSales.requests.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
-        "system",
-        "afterSales.requests.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/after_sales/requests/{afterSalesRequestId}/events",
-        "system",
-        "afterSales.events.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
-        "system",
-        "afterSales.returnShipments.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -525,43 +501,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Post,
         "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
         "chat",
-        "turnResponses.complete",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/checkout/sessions",
-        "checkout",
-        "checkout.sessions.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/checkout/sessions/{checkoutSessionId}",
-        "checkout",
-        "checkout.sessions.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/checkout/sessions/{checkoutSessionId}/orders",
-        "checkout",
-        "checkout.sessions.orders.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/checkout/sessions/{checkoutSessionId}/quotes",
-        "checkout",
-        "checkout.sessions.quotes.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/fulfillments",
-        "fulfillments",
-        "fulfillments.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/fulfillments/{fulfillmentId}",
-        "fulfillments",
-        "fulfillments.retrieve",
+        "turnResponses.create",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -780,72 +720,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "notifications.popupSeen.create",
     ),
     HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/orders",
-        "orders",
-        "orders.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/orders",
-        "orders",
-        "orders.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/orders/statistics",
-        "orders",
-        "orders.statistics.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/orders/{orderId}",
-        "orders",
-        "orders.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/orders/{orderId}/cancel",
-        "orders",
-        "orders.cancel",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/orders/{orderId}/cancellations",
-        "orders",
-        "orders.cancellations.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/orders/{orderId}/events",
-        "orders",
-        "orders.events.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/orders/{orderId}/payment_success",
-        "orders",
-        "orders.paymentSuccess.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/orders/{orderId}/payments",
-        "orders",
-        "payments.orderPayments.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/orders/{orderId}/payments",
-        "orders",
-        "orders.payments.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/orders/{orderId}/status",
-        "orders",
-        "orders.status.retrieve",
-    ),
-    HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/payments",
         "payments",
@@ -1015,33 +889,9 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
-        "/app/v3/api/recharges/orders",
-        "recharges",
-        "recharges.orders.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/recharges/orders/{orderId}",
-        "recharges",
-        "recharges.orders.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
         "/app/v3/api/recharges/orders/{orderId}/cancellations",
         "recharges",
-        "recharges.orders.cancel",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/recharges/packages",
-        "recharges",
-        "recharges.packages.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/recharges/settings",
-        "recharges",
-        "recharges.settings.retrieve",
+        "recharges.orders.cancellations.create",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -1114,24 +964,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/runtime/invocations/{invocationId}/events/stream",
         "runtime",
         "invocationEventStreams.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/shipments/{shipmentId}",
-        "shipments",
-        "shipments.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/shipments/{shipmentId}/packages",
-        "shipments",
-        "shipments.packages.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/shipments/{shipmentId}/tracking_events",
-        "shipments",
-        "shipments.trackingEvents.list",
     ),
     HttpRoute::dual_token(HttpMethod::Get, "/app/v3/api/shops", "system", "shops.list"),
     HttpRoute::dual_token(
@@ -1596,6 +1428,252 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "wallet",
         "wallet.withdrawalTransfers.create",
     ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/checkout/sessions",
+        "checkout",
+        "checkout.sessions.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/checkout/sessions/{checkoutSessionId}",
+        "checkout",
+        "checkout.sessions.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/checkout/sessions/{checkoutSessionId}/quotes",
+        "checkout",
+        "checkout.sessions.quotes.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/checkout/sessions/{checkoutSessionId}/orders",
+        "checkout",
+        "checkout.sessions.orders.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders",
+        "orders",
+        "orders.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/orders",
+        "orders",
+        "orders.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders/{orderId}",
+        "orders",
+        "orders.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/orders/{orderId}/payments",
+        "orders",
+        "orders.payments.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders/{orderId}/payments",
+        "payments",
+        "payments.orderPayments.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/orders/{orderId}/cancel",
+        "orders",
+        "orders.cancel",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders/{orderId}/events",
+        "orders",
+        "orders.events.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/orders/{orderId}/cancellations",
+        "orders",
+        "orders.cancellations.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders/{orderId}/payment_success",
+        "orders",
+        "orders.paymentSuccess.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders/statistics",
+        "orders",
+        "orders.statistics.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders/{orderId}/status",
+        "orders",
+        "orders.status.retrieve",
+    ),
+    HttpRoute::public(
+        HttpMethod::Post,
+        "/app/v3/api/orders/payments/webhooks/{providerCode}",
+        "orders",
+        "orders.payments.webhooks.receive",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/after_sales/requests",
+        "afterSales",
+        "afterSales.requests.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/after_sales/requests",
+        "afterSales",
+        "afterSales.requests.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
+        "afterSales",
+        "afterSales.requests.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Patch,
+        "/app/v3/api/after_sales/requests/{afterSalesRequestId}",
+        "afterSales",
+        "afterSales.requests.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
+        "afterSales",
+        "afterSales.returnShipments.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments",
+        "afterSales",
+        "afterSales.returnShipments.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/after_sales/requests/{afterSalesRequestId}/events",
+        "afterSales",
+        "afterSales.events.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/fulfillments",
+        "fulfillments",
+        "fulfillments.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/fulfillments/{fulfillmentId}",
+        "fulfillments",
+        "fulfillments.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/shipments/{shipmentId}",
+        "shipments",
+        "shipments.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/shipments/{shipmentId}/packages",
+        "shipments",
+        "shipments.packages.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/shipments/{shipmentId}/tracking_events",
+        "shipments",
+        "shipments.trackingEvents.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/recharges/packages",
+        "recharges",
+        "recharges.packages.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/recharges/settings",
+        "recharges",
+        "recharges.settings.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/recharges/orders",
+        "recharges",
+        "recharges.orders.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/recharges/orders",
+        "recharges",
+        "recharges.orders.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/recharges/orders/{orderId}",
+        "recharges",
+        "recharges.orders.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/recharges/orders/{orderId}/cancel",
+        "recharges",
+        "recharges.orders.cancel",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/memberships/orders",
+        "memberships",
+        "memberships.orders.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/recharges/plans",
+        "recharges",
+        "recharges.plans.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders/refund_requests",
+        "orders",
+        "orders.refundRequests.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/orders/refund_requests",
+        "orders",
+        "orders.refundRequests.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/orders/refund_requests/{refundRequestId}",
+        "orders",
+        "orders.refundRequests.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/withdrawals/requests",
+        "withdrawals",
+        "withdrawals.requests.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/withdrawals/requests/{withdrawalRequestId}",
+        "withdrawals",
+        "withdrawals.requests.retrieve",
+    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {
@@ -1617,11 +1695,7 @@ mod tests {
         let route = manifest
             .match_route(method, path)
             .unwrap_or_else(|| panic!("{method} {path} must be registered"));
-        assert_eq!(
-            RouteAuth::Public,
-            route.auth,
-            "{method} {path} must be public"
-        );
+        assert_eq!(RouteAuth::Public, route.auth, "{method} {path} must be public");
         assert!(
             resolve_public_path(
                 method,
@@ -1648,14 +1722,8 @@ mod tests {
         assert_public_route("GET", "/app/v3/api/memberships/packages");
         assert_public_route("GET", "/app/v3/api/memberships/packages/{packageId}");
         assert_public_route("GET", "/app/v3/api/memberships/package_groups");
-        assert_public_route(
-            "GET",
-            "/app/v3/api/memberships/package_groups/{packageGroupId}",
-        );
-        assert_public_route(
-            "GET",
-            "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
-        );
+        assert_public_route("GET", "/app/v3/api/memberships/package_groups/{packageGroupId}");
+        assert_public_route("GET", "/app/v3/api/memberships/package_groups/{packageGroupId}/packages");
     }
 
     #[test]
@@ -1664,4 +1732,29 @@ mod tests {
         assert_public_route("POST", "/app/v3/api/oauth/device_authorizations");
         assert_public_route("GET", "/app/v3/api/system/iam/runtime");
     }
+
+    #[test]
+    fn order_assembly_routes_are_materialized() {
+        let aggregate = super::http_route_manifest();
+        let order = sdkwork_order_gateway_assembly::ApplicationAssembly::app_route_manifest();
+
+        for dependency_route in order.routes() {
+            let route = aggregate
+                .routes()
+                .iter()
+                .find(|route| {
+                    route.method == dependency_route.method && route.path == dependency_route.path
+                })
+                .unwrap_or_else(|| {
+                    panic!(
+                        "Order assembly route {:?} {} must be materialized",
+                        dependency_route.method, dependency_route.path
+                    )
+                });
+            assert_eq!(dependency_route.operation_id, route.operation_id);
+            assert_eq!(dependency_route.auth, route.auth);
+        }
+        assert_eq!(41, order.routes().len());
+    }
 }
+

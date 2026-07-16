@@ -18,7 +18,7 @@ Production app/backend surfaces use **sdkwork-web-framework** as the canonical H
 
 | Module | Responsibility |
 | --- | --- |
-| `claw_web_resolver.rs` | `iam_web_resolver_for_claw_database` — wires `DatabaseConfig` and optional shared `PgPool` into `IamWebRequestContextResolver` |
+| `federated_database_env.rs` | Materializes IAM and federated capability database environment from `DatabaseConfig`; route crates wire `sdkwork_iam_web_adapter` directly. |
 | `web_bridge.rs` | **Legacy only**: projects into `TrustedRequestSubject` for handlers not yet migrated to `TenantAppContext` |
 | `web_framework_compat.rs` | Feature flags; `merge_web_framework_scoped_app_read_router`; legacy `project_trusted_subject_from_web_request_context` middleware |
 | `auth.rs` | Legacy signed-subject and app-session boundaries; `TrustedRequestSubject` Axum extractors |

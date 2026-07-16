@@ -1,33 +1,6 @@
 {
   "components": {
     "schemas": {
-      "AfterSalesEventsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by after sales events list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "After sales events list result schema exposed by Claw Router.",
-        "x-operation-id": "afterSales.events.list"
-      },
       "AfterSalesRequestsCreateResult": {
         "allOf": [
           {
@@ -54,60 +27,6 @@
         ],
         "description": "After sales requests create result schema exposed by Claw Router.",
         "x-operation-id": "afterSales.requests.create"
-      },
-      "AfterSalesRequestsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by after sales requests list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "After sales requests list result schema exposed by Claw Router.",
-        "x-operation-id": "afterSales.requests.list"
-      },
-      "AfterSalesRequestsRetrieveResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by after sales requests retrieve result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "After sales requests retrieve result schema exposed by Claw Router.",
-        "x-operation-id": "afterSales.requests.retrieve"
       },
       "AfterSalesRequestsUpdateResult": {
         "allOf": [
@@ -162,33 +81,6 @@
         ],
         "description": "After sales return shipments create result schema exposed by Claw Router.",
         "x-operation-id": "afterSales.returnShipments.create"
-      },
-      "AfterSalesReturnShipmentsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by after sales return shipments list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "After sales return shipments list result schema exposed by Claw Router.",
-        "x-operation-id": "afterSales.returnShipments.list"
       },
       "ApiKeysCreateResult": {
         "allOf": [
@@ -2739,14 +2631,14 @@
         "description": "Site runtime retrieve result schema exposed by Claw Router.",
         "x-operation-id": "site.runtime.retrieve"
       },
-      "TurnResponsesCompleteResult": {
+      "TurnResponsesCreateResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by turn responses complete result.",
+            "description": "Object schema used by turn responses create result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2763,8 +2655,8 @@
             "type": "object"
           }
         ],
-        "description": "Turn responses complete result schema exposed by Claw Router.",
-        "x-operation-id": "turnResponses.complete"
+        "description": "Turn responses create result schema exposed by Claw Router.",
+        "x-operation-id": "turnResponses.create"
       },
       "TurnsCreateResult": {
         "allOf": [
@@ -2896,364 +2788,6 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.2",
   "paths": {
-    "/app/v3/api/after_sales/requests": {
-      "get": {
-        "description": "List. Reads system. Writes none. File targets none.",
-        "operationId": "afterSales.requests.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AfterSalesRequestsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "system"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "system"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
-        "x-sdkwork-resource": "afterSales.requests",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
-      }
-    },
-    "/app/v3/api/after_sales/requests/{afterSalesRequestId}": {
-      "get": {
-        "description": "Retrieve. Reads system. Writes none. File targets none.",
-        "operationId": "afterSales.requests.retrieve",
-        "parameters": [
-          {
-            "description": "After sales request id path parameter.",
-            "in": "path",
-            "name": "afterSalesRequestId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AfterSalesRequestsRetrieveResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Retrieve",
-        "tags": [
-          "system"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "system"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
-        "x-sdkwork-resource": "afterSales.requests",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
-      }
-    },
-    "/app/v3/api/after_sales/requests/{afterSalesRequestId}/events": {
-      "get": {
-        "description": "List. Reads system. Writes none. File targets none.",
-        "operationId": "afterSales.events.list",
-        "parameters": [
-          {
-            "description": "After sales request id path parameter.",
-            "in": "path",
-            "name": "afterSalesRequestId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AfterSalesEventsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "system"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "system"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
-        "x-sdkwork-resource": "afterSales.events",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
-      }
-    },
-    "/app/v3/api/after_sales/requests/{afterSalesRequestId}/return_shipments": {
-      "get": {
-        "description": "List. Reads system. Writes none. File targets none.",
-        "operationId": "afterSales.returnShipments.list",
-        "parameters": [
-          {
-            "description": "After sales request id path parameter.",
-            "in": "path",
-            "name": "afterSalesRequestId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AfterSalesReturnShipmentsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List",
-        "tags": [
-          "system"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "system"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-domain": "system",
-        "x-sdkwork-resource": "afterSales.returnShipments",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
-      }
-    },
     "/app/v3/api/ai/channel_groups": {
       "get": {
         "description": "List. Reads ai. Writes none. File targets none.",
@@ -3333,7 +2867,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.channelGroups.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/ai/dashboard/overview": {
@@ -3415,7 +2954,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.dashboard_overview.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/ai/gateway/traces": {
@@ -3532,7 +3076,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.gateway_traces.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/ai/model_rankings": {
@@ -3660,7 +3209,10 @@
         "x-sdkwork-resource": "modelRankings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-app-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-permission": "clawrouter.modelRankings.read"
       }
     },
     "/app/v3/api/ai/model_vendors": {
@@ -3738,7 +3290,10 @@
         "x-sdkwork-resource": "modelVendors",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-app-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-permission": "clawrouter.modelVendors.read"
       }
     },
     "/app/v3/api/ai/models": {
@@ -3930,7 +3485,10 @@
         "x-sdkwork-resource": "models",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-app-api",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": []
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-permission": "clawrouter.models.read"
       }
     },
     "/app/v3/api/ai/routing/api_keys": {
@@ -4012,7 +3570,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.routing_apiKeys.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/ai/routing/channels": {
@@ -4094,7 +3657,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.routing_channels.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/ai/routing/request_traces": {
@@ -4176,7 +3744,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.routing_requestTraces.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/ai/routing/usage": {
@@ -4258,7 +3831,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.routing_usage.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/ai/usage/logs": {
@@ -4340,7 +3918,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.usage_logs.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/chat/conversations": {
@@ -4422,7 +4005,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.conversations.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads chat. Writes ops_audit_log. File targets none.",
@@ -4504,7 +4092,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.conversations.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}": {
@@ -4596,7 +4189,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.conversations.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/messages": {
@@ -4688,7 +4286,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.conversationMessages.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns": {
@@ -4782,13 +4385,18 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.turns.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response": {
       "post": {
-        "description": "Complete. Reads chat. Writes ops_audit_log. File targets none.",
-        "operationId": "turnResponses.complete",
+        "description": "Create. Reads chat. Writes ops_audit_log. File targets none.",
+        "operationId": "turnResponses.create",
         "parameters": [
           {
             "description": "Conversation id path parameter.",
@@ -4810,15 +4418,15 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TurnResponsesCompleteResult"
+                  "$ref": "#/components/schemas/TurnResponsesCreateResult"
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "400": {
             "content": {
@@ -4867,7 +4475,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "Complete",
+        "summary": "Create",
         "tags": [
           "chat"
         ],
@@ -4885,7 +4493,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.turnResponses.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/iam/api_keys": {
@@ -4967,7 +4580,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.apiKeys.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads iam. Writes ops_audit_log. File targets none.",
@@ -5049,7 +4667,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.apiKeys.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/iam/api_keys/{apiKeyId}": {
@@ -5136,7 +4759,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.apiKeys.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "patch": {
         "description": "Update. Reads iam. Writes ops_audit_log. File targets none.",
@@ -5228,7 +4856,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.apiKeys.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/iam/users/settings": {
@@ -5310,7 +4943,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.users_settings.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "put": {
         "description": "Update. Reads iam. Writes ops_audit_log. File targets none.",
@@ -5392,7 +5030,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.users_settings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/notification/notifications": {
@@ -5474,7 +5117,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.notifications.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/acknowledge": {
@@ -5568,7 +5216,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.notifications_acknowledge.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/popup_seen": {
@@ -5662,7 +5315,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.notifications_popupSeen.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/runtime/invocations": {
@@ -5744,7 +5402,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.invocations.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads runtime. Writes ops_audit_log. File targets none.",
@@ -5826,7 +5489,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.invocations.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}": {
@@ -5918,7 +5586,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.invocations.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/artifacts": {
@@ -6010,7 +5683,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.artifacts.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads runtime. Writes ops_audit_log. File targets none.",
@@ -6102,7 +5780,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.artifacts.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/complete": {
@@ -6196,7 +5879,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.invocations.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events": {
@@ -6288,7 +5976,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.invocationEvents.read",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Create. Reads runtime. Writes ops_audit_log. File targets none.",
@@ -6380,7 +6073,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.invocationEvents.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events/stream": {
@@ -6472,7 +6170,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.invocationEventStreams.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops": {
@@ -6554,7 +6257,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current": {
@@ -6636,7 +6344,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/applications": {
@@ -6718,7 +6431,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_applications.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/brand_authorizations": {
@@ -6800,7 +6518,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_brandAuthorizations.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/business_hours": {
@@ -6882,7 +6605,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_businessHours.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/category_bindings": {
@@ -6964,7 +6692,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_categoryBindings.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/channels": {
@@ -7046,7 +6779,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_channels.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/customer_services": {
@@ -7128,7 +6866,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_customerServices.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/dashboard": {
@@ -7210,7 +6953,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_dashboard.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/deposit_account": {
@@ -7292,7 +7040,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_depositAccount.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/fulfillment_profile": {
@@ -7374,7 +7127,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_fulfillmentProfile.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/inventory/stocks": {
@@ -7456,7 +7214,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_inventory_stocks.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/orders": {
@@ -7538,7 +7301,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_orders.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/orders/{orderId}": {
@@ -7630,7 +7398,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_orders.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/policies": {
@@ -7712,7 +7485,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_policies.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/products": {
@@ -7794,7 +7572,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_products.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/qualifications": {
@@ -7876,7 +7659,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_qualifications.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/readiness": {
@@ -7958,7 +7746,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_readiness.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/return_addresses": {
@@ -8040,7 +7833,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_returnAddresses.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/risk_signals": {
@@ -8122,7 +7920,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_riskSignals.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/service_areas": {
@@ -8204,7 +8007,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_serviceAreas.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/settlement_profile": {
@@ -8286,7 +8094,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_settlementProfile.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/settlements": {
@@ -8368,7 +8181,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_settlements.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/shipping_templates": {
@@ -8450,7 +8268,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_shippingTemplates.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/status_events": {
@@ -8532,7 +8355,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_statusEvents.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/current/verifications": {
@@ -8614,7 +8442,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_verifications.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/shops/{shopId}": {
@@ -8706,7 +8539,12 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops.read",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/after_sales/requests": {
@@ -8790,7 +8628,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.afterSales_requests.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/after_sales/requests/{afterSalesRequestId}": {
@@ -8884,7 +8727,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.afterSales_requests.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/after_sales/requests/{afterSalesRequestId}/return_shipments": {
@@ -8978,7 +8826,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.afterSales_returnShipments.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/applications": {
@@ -9062,7 +8915,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_applications.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/brand_authorizations": {
@@ -9146,7 +9004,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_brandAuthorizations.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/business_hours": {
@@ -9230,7 +9093,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_businessHours.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/category_bindings": {
@@ -9314,7 +9182,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_categoryBindings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/channels/{channelId}": {
@@ -9408,7 +9281,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_channels.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/customer_services": {
@@ -9492,7 +9370,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_customerServices.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/fulfillment_profile": {
@@ -9576,7 +9459,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_fulfillmentProfile.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/inventory/stocks/{stockId}/adjustments": {
@@ -9670,7 +9558,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_inventory_stocks_adjustments.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/orders/{orderId}/fulfillments": {
@@ -9764,7 +9657,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_orders_fulfillments.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/policies/{policyId}": {
@@ -9858,7 +9756,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_policies.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/products": {
@@ -9942,7 +9845,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_products.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/products/{productId}": {
@@ -10036,7 +9944,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_products.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/products/{productId}/publish": {
@@ -10130,7 +10043,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_products.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/products/{productId}/unpublish": {
@@ -10224,7 +10142,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_products.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/qualifications": {
@@ -10308,7 +10231,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_qualifications.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/return_addresses": {
@@ -10392,7 +10320,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_returnAddresses.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/service_areas": {
@@ -10476,7 +10409,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_serviceAreas.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/service_areas/{serviceAreaId}": {
@@ -10570,7 +10508,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_serviceAreas.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/settlement_profile": {
@@ -10654,7 +10597,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_settlementProfile.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/shops/current/shipping_templates": {
@@ -10738,7 +10686,12 @@
           "ops_audit_log"
         ],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.shops_current_shippingTemplates.manage",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/app/v3/api/system/site/runtime": {
@@ -10798,12 +10751,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "Retrieve",
         "tags": [
           "system"
@@ -10820,7 +10768,11 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter.app"
+        "x-sdkwork-api-authority": "sdkwork-clawrouter.app",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-app-api",
+        "x-sdkwork-permission": "clawrouter.site_runtime.read"
       }
     }
   },
@@ -10962,9 +10914,6 @@
         "GET catalog/skus/{}/prices",
         "GET catalog/spus",
         "GET catalog/spus/{}",
-        "GET checkout/sessions/{}",
-        "GET fulfillments",
-        "GET fulfillments/{}",
         "GET invoices",
         "GET invoices/current",
         "GET invoices/statistics",
@@ -10983,13 +10932,6 @@
         "GET memberships/points/daily_rewards/status",
         "GET memberships/points/history",
         "GET memberships/privileges/usage",
-        "GET orders",
-        "GET orders/statistics",
-        "GET orders/{}",
-        "GET orders/{}/events",
-        "GET orders/{}/payment_success",
-        "GET orders/{}/payments",
-        "GET orders/{}/status",
         "GET payments/attempts/{}",
         "GET payments/checkout/{}",
         "GET payments/intents/{}",
@@ -11005,14 +10947,8 @@
         "GET promotions/user_coupons/wallet",
         "GET promotions/user_coupons/wallet/{}",
         "GET promotions/user_coupons/{}",
-        "GET recharges/orders/{}",
-        "GET recharges/packages",
-        "GET recharges/settings",
         "GET refunds",
         "GET refunds/{}",
-        "GET shipments/{}",
-        "GET shipments/{}/packages",
-        "GET shipments/{}/tracking_events",
         "GET wallet/accounts",
         "GET wallet/accounts/cash",
         "GET wallet/accounts/overview",
@@ -11038,9 +10974,6 @@
         "POST addresses",
         "POST addresses/{}/default_selection",
         "POST cart/items",
-        "POST checkout/sessions",
-        "POST checkout/sessions/{}/orders",
-        "POST checkout/sessions/{}/quotes",
         "POST invoices",
         "POST invoices/{}/cancellations",
         "POST invoices/{}/submissions",
@@ -11049,10 +10982,6 @@
         "POST memberships/purchases",
         "POST memberships/purchases/renew",
         "POST memberships/purchases/upgrade",
-        "POST orders",
-        "POST orders/{}/cancel",
-        "POST orders/{}/cancellations",
-        "POST orders/{}/payments",
         "POST payments",
         "POST payments/intents",
         "POST payments/intents/{}/attempts",
@@ -11066,7 +10995,6 @@
         "POST promotions/discount_applications/{}/rollback",
         "POST promotions/discount_applications/{}/settlements",
         "POST promotions/user_coupon_claims",
-        "POST recharges/orders",
         "POST recharges/orders/{}/cancellations",
         "POST refunds",
         "POST wallet/adjustments",

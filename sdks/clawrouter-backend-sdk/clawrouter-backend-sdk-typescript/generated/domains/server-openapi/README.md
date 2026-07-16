@@ -1,24 +1,24 @@
 # clawrouter-backend-domain-transport
 
-Generated SDKWork v3 dual-token transport SDK.
+SDKWork Claw Router backend API SDK federated domain transport
 
 ## Installation
 
 ```bash
-npm install clawrouter-backend-domain-transport-generated-typescript
+npm install sdkwork-clawrouter-backend-sdk-domains-generated-typescript
 # or
-yarn add clawrouter-backend-domain-transport-generated-typescript
+yarn add sdkwork-clawrouter-backend-sdk-domains-generated-typescript
 # or
-pnpm add clawrouter-backend-domain-transport-generated-typescript
+pnpm add sdkwork-clawrouter-backend-sdk-domains-generated-typescript
 ```
 
 ## Quick Start
 
 ```typescript
-import { ClawRouterBackendDomainTransportClient } from 'clawrouter-backend-domain-transport-generated-typescript';
+import { SdkworkBackendClient } from 'sdkwork-clawrouter-backend-sdk-domains-generated-typescript';
 
-const client = new ClawRouterBackendDomainTransportClient({
-  baseUrl: 'http://127.0.0.1:18080',
+const client = new SdkworkBackendClient({
+  baseUrl: 'http://localhost:18081',
   timeout: 30000,
 });
 
@@ -27,7 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.recharges.settings.management.retrieve();
+const result = await client.audit.commerceEvents.list();
 ```
 
 ## Authentication
@@ -41,10 +41,10 @@ Access-Token: <accessToken>
 ## Configuration (Non-Auth)
 
 ```typescript
-import { ClawRouterBackendDomainTransportClient } from 'clawrouter-backend-domain-transport-generated-typescript';
+import { SdkworkBackendClient } from 'sdkwork-clawrouter-backend-sdk-domains-generated-typescript';
 
-const client = new ClawRouterBackendDomainTransportClient({
-  baseUrl: 'http://127.0.0.1:18080',
+const client = new SdkworkBackendClient({
+  baseUrl: 'http://localhost:18081',
   timeout: 30000, // Request timeout in ms
   headers: {      // Custom headers
     'X-Custom-Header': 'value',
@@ -54,253 +54,24 @@ const client = new ClawRouterBackendDomainTransportClient({
 
 ## API Modules
 
-- `client.shops` - shops API
-- `client.catalog` - catalog API
-- `client.inventory` - inventory API
-- `client.orders` - orders API
-- `client.payments` - payments API
-- `client.refunds` - refunds API
-- `client.afterSales` - after_sales API
-- `client.fulfillments` - fulfillments API
-- `client.shipments` - shipments API
-- `client.entitlements` - entitlements API
-- `client.memberships` - memberships API
-- `client.recharges` - recharges API
-- `client.wallet` - wallet API
-- `client.promotions` - promotions API
-- `client.invoices` - invoices API
-- `client.commerceReports` - commerce_reports API
-- `client.reports` - reports API
 - `client.audit` - audit API
 
 ## Usage Examples
 
-### shops
-
-```typescript
-// Shops management list.
-const params = {
-  q: 'q',
-  shop_type: 'shop_type',
-  operation_status: 'operation_status',
-  review_status: 'review_status',
-  page: 5,
-  page_size: 6,
-};
-const result = await client.shops.management.list(params);
-```
-
-### catalog
-
-```typescript
-// Catalog categories management list.
-const params = {
-  parent_id: 'parent_id',
-  status: 'status',
-  page: 3,
-  page_size: 4,
-};
-const result = await client.catalog.categories.management.list(params);
-```
-
-### inventory
-
-```typescript
-// Inventory stocks list.
-const params = {
-  sku_id: 'sku_id',
-  warehouse_id: 'warehouse_id',
-  status: 'status',
-  page: 4,
-  page_size: 5,
-};
-const result = await client.inventory.stocks.list(params);
-```
-
-### orders
-
-```typescript
-// Orders cancellations list.
-const params = {
-  status: 'status',
-  page: 2,
-  page_size: 3,
-};
-const result = await client.orders.cancellations.list(params);
-```
-
-### payments
-
-```typescript
-// Payments providers list.
-const params = {
-  status: 'status',
-};
-const result = await client.payments.providers.list(params);
-```
-
-### refunds
-
-```typescript
-// Refunds management list.
-const params = {
-  status: 'status',
-  page: 2,
-  page_size: 3,
-};
-const result = await client.refunds.management.list(params);
-```
-
-### after_sales
-
-```typescript
-// After Sales management list.
-const params = {
-  status: 'status',
-  after_sales_type: 'after_sales_type',
-  order_id: 'order_id',
-  shop_id: 'shop_id',
-  page: 5,
-  page_size: 6,
-};
-const result = await client.afterSales.management.list(params);
-```
-
-### fulfillments
-
-```typescript
-// Fulfillments management list.
-const params = {
-  status: 'status',
-  page: 2,
-  page_size: 3,
-};
-const result = await client.fulfillments.management.list(params);
-```
-
-### shipments
-
-```typescript
-// Shipments list.
-const params = {
-  status: 'status',
-  page: 2,
-  page_size: 3,
-};
-const result = await client.shipments.list(params);
-```
-
-### entitlements
-
-```typescript
-// Entitlements accounts list.
-const params = {
-  subject_type: 'subject_type',
-  subject_id: 'subject_id',
-  benefit_id: 'benefit_id',
-  status: 'status',
-  page: 5,
-  page_size: 6,
-};
-const result = await client.entitlements.accounts.list(params);
-```
-
-### memberships
-
-```typescript
-// Memberships plans management list.
-const params = {
-  status: 'status',
-};
-const result = await client.memberships.plans.management.list(params);
-```
-
-### recharges
-
-```typescript
-// Recharges settings management retrieve.
-const result = await client.recharges.settings.management.retrieve();
-```
-
-### wallet
-
-```typescript
-// Wallet holds list.
-const params = {
-  status: 'status',
-  page: 2,
-  page_size: 3,
-};
-const result = await client.wallet.holds.list(params);
-```
-
-### promotions
-
-```typescript
-// Promotions codes redemptions list.
-const params = {
-  page: 1,
-  page_size: 2,
-  code_status: 'code_status',
-};
-const result = await client.promotions.codes.redemptions.list(params);
-```
-
-### invoices
-
-```typescript
-// Invoices management list.
-const params = {
-  status: 'status',
-  page: 2,
-  page_size: 3,
-};
-const result = await client.invoices.management.list(params);
-```
-
-### commerce_reports
-
-```typescript
-// Commerce Reports payment Reconciliation retrieve.
-const params = {
-  provider_code: 'provider_code',
-  start_time: 'start_time',
-  end_time: 'end_time',
-};
-const result = await client.commerceReports.paymentReconciliation.retrieve(params);
-```
-
-### reports
-
-```typescript
-// Reports commerce Overview retrieve.
-const params = {
-  period_start: 'period_start',
-  period_end: 'period_end',
-};
-const result = await client.reports.commerceOverview.retrieve(params);
-```
-
 ### audit
 
 ```typescript
-// Audit commerce Events list.
-const params = {
-  actor_id: 'actor_id',
-  source_type: 'source_type',
-  page: 3,
-  page_size: 4,
-};
-const result = await client.audit.commerceEvents.list(params);
+// List
+const result = await client.audit.commerceEvents.list();
 ```
 
 ## Error Handling
 
 ```typescript
-import { ClawRouterBackendDomainTransportClient, NetworkError, TimeoutError, AuthenticationError } from 'clawrouter-backend-domain-transport-generated-typescript';
+import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-clawrouter-backend-sdk-domains-generated-typescript';
 
 try {
-  const result = await client.recharges.settings.management.retrieve();
+  const result = await client.audit.commerceEvents.list();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

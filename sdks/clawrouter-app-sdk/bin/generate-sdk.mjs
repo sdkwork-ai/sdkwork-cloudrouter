@@ -11,6 +11,10 @@ const sdkGeneratorCli = path.resolve(workspaceRoot, '../sdkwork-sdk-generator/bi
 const sdkFamily = 'clawrouter-app-sdk';
 const sdkType = 'app';
 const authorityInputPath = `sdks/${sdkFamily}/openapi/${sdkFamily}.openapi.json`;
+const domainTransportName = 'clawrouter-app-domain-transport';
+const domainTransportInputPath = `sdks/${sdkFamily}/openapi/${domainTransportName}.openapi.json`;
+const domainTransportPackageName = 'sdkwork-clawrouter-app-sdk-domains-generated-typescript';
+const domainTransportOutputPath = `sdks/${sdkFamily}/${sdkFamily}-typescript/generated/domains/server-openapi`;
 const baseUrl = 'http://localhost:18082';
 const apiPrefix = '/app/v3/api';
 const description = 'SDKWork Claw Router app API SDK';
@@ -111,6 +115,36 @@ function runLanguage(language) {
     process.exit(result.status ?? 1);
   }
   cleanGeneratedOutput(language);
+  if (language === 'typescript') {
+    runDomainTransportGeneration();
+  }
+}
+
+function runDomainTransportGeneration() {
+  rmSync(path.join(workspaceRoot, domainTransportOutputPath), { recursive: true, force: true });
+  const result = spawnSync(command, [
+    'tools/clawrouter_strict_sdk_generate.mjs',
+    'generate',
+    '-i', domainTransportInputPath,
+    '-o', domainTransportOutputPath,
+    '-n', domainTransportName,
+    '-t', sdkType,
+    '-l', 'typescript',
+    '--base-url', baseUrl,
+    '--api-prefix', apiPrefix,
+    '--package-name', domainTransportPackageName,
+    '--description', `${description} federated domain transport`,
+    '--fixed-sdk-version', '0.1.0',
+    '--no-sync-published-version',
+    '--standard-profile', 'sdkwork-v3',
+  ], { cwd: workspaceRoot, stdio: 'inherit' });
+  if (result.error) {
+    throw result.error;
+  }
+  if ((result.status ?? 1) !== 0) {
+    process.exit(result.status ?? 1);
+  }
+  cleanGeneratedOutputAt(domainTransportOutputPath);
 }
 
 function strictTypeScriptArgs() {
@@ -166,7 +200,11 @@ function generatedOutputPath(language) {
 }
 
 function cleanGeneratedOutput(language) {
-  const outputRoot = path.join(workspaceRoot, generatedOutputPath(language));
+  cleanGeneratedOutputAt(generatedOutputPath(language));
+}
+
+function cleanGeneratedOutputAt(outputPath) {
+  const outputRoot = path.join(workspaceRoot, outputPath);
   if (!existsSync(outputRoot)) {
     return;
   }

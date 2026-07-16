@@ -1,4 +1,6 @@
-const ADMIN_API_SOURCE: &str = include_str!("../src/lib.rs");
+const ADMIN_API_SOURCE: &str = include_str!(
+    "../../../crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs"
+);
 
 fn compact_sql(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
@@ -39,4 +41,22 @@ fn postgres_admin_access_casts_iam_member_identity_columns_to_text() {
     ] {
         assert_sql_not_contains(ADMIN_API_SOURCE, forbidden);
     }
+}
+
+#[test]
+fn admin_access_accepts_only_canonical_elevated_membership_kinds() {
+    let elevated_membership_predicate =
+        "AND LOWER(COALESCE(membership_kind, '')) IN ('admin', 'owner')";
+    let predicate_count = compact_sql(ADMIN_API_SOURCE)
+        .matches(elevated_membership_predicate)
+        .count();
+
+    assert_eq!(
+        2, predicate_count,
+        "SQLite and PostgreSQL admin access checks must accept IAM admin and owner memberships"
+    );
+    assert_sql_not_contains(
+        ADMIN_API_SOURCE,
+        "LOWER(COALESCE(membership_kind, '')) = 'admin'",
+    );
 }

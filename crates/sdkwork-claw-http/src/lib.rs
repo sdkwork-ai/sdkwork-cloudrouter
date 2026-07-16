@@ -1,5 +1,5 @@
 pub mod auth;
-pub mod claw_web_resolver;
+pub mod federated_database_env;
 pub mod contract_routes;
 pub mod error;
 pub mod headers;
@@ -30,8 +30,8 @@ pub use auth::{
     AppSessionTokenKind, AppSubjectBoundaryConfig, QueryStringApiKeyPolicy, TrustedRequestSubject,
     TrustedRequestSubjectError, TrustedSubjectBoundaryError,
 };
-pub use claw_web_resolver::{
-    ensure_iam_database_env_for_claw_database, iam_web_resolver_for_claw_database,
+pub use federated_database_env::{
+    ensure_iam_database_env_for_claw_database,
     materialize_federated_database_env_from_claw_config,
 };
 pub use contract_routes::{

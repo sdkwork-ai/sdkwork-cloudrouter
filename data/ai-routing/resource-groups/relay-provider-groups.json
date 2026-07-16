@@ -4,7 +4,7 @@
     {
       "groupCode": "relay.openai_compatible.llm",
       "groupName": "OpenAI Compatible LLM Relay",
-      "groupType": "relay",
+      "groupType": "api_group",
       "selectionMode": "any",
       "description": "Relay account group for OpenAI-compatible LLM endpoints.",
       "sortOrder": 200,
@@ -32,9 +32,39 @@
       ]
     },
     {
+      "groupCode": "relay.openai_compatible.chat",
+      "groupName": "OpenAI Compatible Chat",
+      "groupType": "api_group",
+      "selectionMode": "any",
+      "description": "OpenAI-compatible account resources for Chat Completions, Responses, legacy Completions, and model discovery.",
+      "sortOrder": 205,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.openai_compatible"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.responses"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.chat_completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.completions"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.openai.models"
+        }
+      ]
+    },
+    {
       "groupCode": "relay.openai_compatible.media",
       "groupName": "OpenAI Compatible Media Relay",
-      "groupType": "relay",
+      "groupType": "api_group",
       "selectionMode": "any",
       "description": "Relay account group for OpenAI-compatible image and audio endpoints.",
       "sortOrder": 210,
@@ -80,7 +110,7 @@
     {
       "groupCode": "relay.cn.visual_generation",
       "groupName": "China Visual Generation Relay",
-      "groupType": "relay",
+      "groupType": "api_group",
       "selectionMode": "any",
       "description": "Relay account group for Kling, Jimeng, and Volcengine image/video APIs.",
       "sortOrder": 220,
@@ -154,7 +184,7 @@
     {
       "groupCode": "relay.minimax.music",
       "groupName": "MiniMax Music Relay",
-      "groupType": "relay",
+      "groupType": "api_group",
       "selectionMode": "any",
       "description": "Relay account group for MiniMax music generation APIs.",
       "sortOrder": 230,

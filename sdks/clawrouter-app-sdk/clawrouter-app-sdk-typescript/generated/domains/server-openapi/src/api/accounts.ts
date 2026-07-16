@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { AccountsCurrentSummaryRetrieveResult } from '../types';
-
-
 export class AccountsCurrentSummaryApi {
   private client: HttpClient;
 
@@ -13,8 +10,8 @@ export class AccountsCurrentSummaryApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<AccountsCurrentSummaryRetrieveResult> {
-    return this.client.get<AccountsCurrentSummaryRetrieveResult>(appApiPath(`/accounts/current/summary`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/accounts/current/summary`));
   }
 }
 

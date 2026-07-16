@@ -87,6 +87,16 @@ class ClawRouterOpenApiGenerator:
             "audience": "Admin, management, and operator-facing clients.",
         },
     }
+    ORDER_APP_ASSEMBLY_MANIFEST = Path(
+        "../sdkwork-order/crates/sdkwork-order-gateway-assembly/assembly-manifest.json"
+    )
+    ORDER_APP_CONSUMER_COMPONENT = Path(
+        "crates/sdkwork-routes-clawrouter-app-api/specs/component.spec.json"
+    )
+    ORDER_APP_OPENAPI_AUTHORITY = Path(
+        "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+    )
+    ORDER_APP_ROUTE_CRATE = "sdkwork-routes-order-app-api"
     COMMERCE_DEPENDENCY_OPENAPI_CANDIDATES = {
         "app": (
             "generated/openapi/commerce-app-api.openapi.json",
@@ -131,6 +141,16 @@ class ClawRouterOpenApiGenerator:
         "models.list",
         "modelVendors.list",
         "modelRankings.list",
+    }
+    PUBLIC_APP_CATALOG_OPERATION_IDS = PUBLIC_MODELS_APP_CATALOG_OPERATION_IDS | {
+        "memberships.plans.list",
+        "memberships.benefits.list",
+        "memberships.packages.list",
+        "memberships.packages.retrieve",
+        "memberships.packageGroups.list",
+        "memberships.packageGroups.retrieve",
+        "memberships.packageGroups.packages.list",
+        "site.runtime.retrieve",
     }
     PUBLIC_PROJECT_LEGACY_RECORD_COMPONENTS = {
         "PlusAgentSkillPackageRecord",
@@ -222,6 +242,8 @@ class ClawRouterOpenApiGenerator:
             self._merge_models_catalog_surface_spec(spec, surface),
             surface,
         )
+        if surface == "app" and self._declares_order_assembly_app_dependency():
+            spec = self._exclude_order_assembly_app_operations(spec)
         return self._align_envelope_document(spec)
 
     def _envelope_align_script_path(self) -> Path:
@@ -622,7 +644,147 @@ class ClawRouterOpenApiGenerator:
     def render_domain_transport_json(self, surface: str) -> str:
         source = self.generate(surface)
         payload = self._extract_domain_transport_spec(source, surface)
+        if surface == "app" and self._declares_order_assembly_app_dependency():
+            payload = self._merge_order_assembly_app_transport(payload)
         return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+    def _declares_order_assembly_app_dependency(self) -> bool:
+        component_path = self.root / self.ORDER_APP_CONSUMER_COMPONENT
+        if not component_path.is_file():
+            return False
+        component = json.loads(component_path.read_text(encoding="utf-8"))
+        contracts = component.get("contracts")
+        dependency_surfaces = (
+            contracts.get("dependencyApiSurfaces") if isinstance(contracts, dict) else None
+        )
+        return isinstance(dependency_surfaces, list) and any(
+            isinstance(dependency, dict)
+            and dependency.get("workspace") == "sdkwork-order"
+            and dependency.get("apiAuthority") == "sdkwork-order-app-api"
+            and dependency.get("surface") == "app-api"
+            and dependency.get("runtimeMode") == "embedded"
+            for dependency in dependency_surfaces
+        )
+
+    def _load_order_assembly_app_openapi(self) -> dict[str, Any]:
+        assembly_path = self.root / self.ORDER_APP_ASSEMBLY_MANIFEST
+        authority_path = self.root / self.ORDER_APP_OPENAPI_AUTHORITY
+        if not assembly_path.is_file():
+            raise FileNotFoundError(
+                f"sdkwork-order gateway assembly manifest is missing: {assembly_path}"
+            )
+        if not authority_path.is_file():
+            raise FileNotFoundError(
+                f"sdkwork-order app OpenAPI authority is missing: {authority_path}"
+            )
+
+        assembly = json.loads(assembly_path.read_text(encoding="utf-8"))
+        route_crates = assembly.get("routeCrates")
+        if not isinstance(route_crates, list) or not any(
+            isinstance(route_crate, dict)
+            and route_crate.get("packageName") == self.ORDER_APP_ROUTE_CRATE
+            and route_crate.get("surface") == "app-api"
+            and route_crate.get("hasGatewayMount") is True
+            for route_crate in route_crates
+        ):
+            raise ValueError(
+                "sdkwork-order gateway assembly does not declare the complete app-api route mount"
+            )
+
+        authority = json.loads(authority_path.read_text(encoding="utf-8"))
+        info = authority.get("info")
+        if not isinstance(info, dict) or info.get("x-sdkwork-api-authority") != "sdkwork-order-app-api":
+            raise ValueError(
+                "sdkwork-order app OpenAPI does not declare sdkwork-order-app-api authority"
+            )
+        return authority
+
+    def _merge_order_assembly_app_transport(self, payload: dict[str, Any]) -> dict[str, Any]:
+        order = self._load_order_assembly_app_openapi()
+        merged = copy.deepcopy(payload)
+        merged_paths = dict(merged.get("paths") or {})
+        used_tags = {
+            self._string(tag.get("name"))
+            for tag in merged.get("tags", [])
+            if isinstance(tag, dict)
+        }
+        for api_path, path_item in (order.get("paths") or {}).items():
+            if not isinstance(path_item, dict):
+                continue
+            methods = {
+                method: copy.deepcopy(operation)
+                for method, operation in path_item.items()
+                if method in {"get", "post", "put", "patch", "delete"}
+                and isinstance(operation, dict)
+            }
+            if not methods:
+                continue
+            for operation in methods.values():
+                operation["x-sdkwork-owner"] = "sdkwork-order"
+                operation["x-sdkwork-api-authority"] = "sdkwork-order-app-api"
+                operation["x-sdkwork-api-surface"] = "app-api"
+                operation["x-sdkwork-source-route-crate"] = self.ORDER_APP_ROUTE_CRATE
+            merged_paths.setdefault(api_path, {}).update(methods)
+            for operation in methods.values():
+                for tag in operation.get("tags", []):
+                    if isinstance(tag, str) and tag.strip():
+                        used_tags.add(tag.strip())
+        merged["paths"] = merged_paths
+
+        merged_components = copy.deepcopy(merged.get("components") or {})
+        for section, values in (order.get("components") or {}).items():
+            if not isinstance(values, dict):
+                continue
+            merged_components.setdefault(section, {})
+            merged_components[section].update(copy.deepcopy(values))
+        merged["components"] = merged_components
+        self._prune_unreachable_component_schemas(merged_paths, merged_components)
+
+        merged["tags"] = [
+            {
+                "name": tag,
+                "description": f"{self._tag_label(tag)} API resources.",
+                "x-sdk-nested-resource-surface": True,
+            }
+            for tag in sorted(tag for tag in used_tags if tag)
+        ]
+        merged_info = merged.setdefault("info", {})
+        merged_info["x-sdkwork-dependency-api-authorities"] = [
+            {
+                "apiAuthority": "sdkwork-order-app-api",
+                "assembly": "sdkwork-order-gateway-assembly",
+                "routeCrate": self.ORDER_APP_ROUTE_CRATE,
+            }
+        ]
+        return merged
+
+    def _exclude_order_assembly_app_operations(self, payload: dict[str, Any]) -> dict[str, Any]:
+        order = self._load_order_assembly_app_openapi()
+        order_operations = {
+            (api_path, method)
+            for api_path, path_item in (order.get("paths") or {}).items()
+            if isinstance(path_item, dict)
+            for method, operation in path_item.items()
+            if method in {"get", "post", "put", "patch", "delete"}
+            and isinstance(operation, dict)
+        }
+        filtered = copy.deepcopy(payload)
+        paths = filtered.get("paths")
+        if not isinstance(paths, dict):
+            return filtered
+        for api_path in list(paths.keys()):
+            path_item = paths.get(api_path)
+            if not isinstance(path_item, dict):
+                continue
+            for method in list(path_item.keys()):
+                if (api_path, method) in order_operations:
+                    del path_item[method]
+            if not any(method in {"get", "post", "put", "patch", "delete"} for method in path_item):
+                del paths[api_path]
+        components = filtered.get("components")
+        if isinstance(components, dict):
+            self._prune_unreachable_component_schemas(paths, components)
+        return filtered
 
     def _extract_domain_transport_spec(self, source: dict[str, Any], surface: str) -> dict[str, Any]:
         metadata = self.DOMAIN_TRANSPORT_INFO[surface]
@@ -1046,7 +1208,7 @@ class ClawRouterOpenApiGenerator:
             return []
         if (
             surface == "app"
-            and operation_id in self.PUBLIC_MODELS_APP_CATALOG_OPERATION_IDS
+            and operation_id in self.PUBLIC_APP_CATALOG_OPERATION_IDS
         ):
             return []
         if operation_id in self.REFRESH_TOKEN_OPERATION_IDS:

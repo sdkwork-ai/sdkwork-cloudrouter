@@ -126,7 +126,6 @@
     "@sdkwork/iam-core-pc-react": "workspace:*",
     "@sdkwork/iam-react": "workspace:*",
     "@sdkwork/iam-runtime": "workspace:*",
-    "@sdkwork/iam-sdk-adapter": "workspace:*",
     "@sdkwork/iam-sdk-ports": "workspace:*",
     "@sdkwork/iam-service": "workspace:*",
     "@sdkwork/notification-pc-react": "workspace:*",

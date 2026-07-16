@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const workspaceRoot = path.resolve(path.dirname(__filename), '..');
 const required = [
-  '.sdkwork-assembly.json',
+  'sdk-manifest.json',
   'openapi/clawrouter-app-sdk.openapi.json',
   'openapi/clawrouter-app-sdk.sdkgen.json',
   'clawrouter-app-sdk-typescript/generated/server-openapi/package.json',
@@ -17,7 +17,7 @@ const missing = required.filter((entry) => !existsSync(path.join(workspaceRoot, 
 if (missing.length > 0) {
   throw new Error('clawrouter-app-sdk SDK family is incomplete: ' + missing.join(', '));
 }
-const assembly = JSON.parse(readFileSync(path.join(workspaceRoot, '.sdkwork-assembly.json'), 'utf8'));
+const assembly = JSON.parse(readFileSync(path.join(workspaceRoot, 'sdk-manifest.json'), 'utf8'));
 if (assembly.workspace !== 'clawrouter-app-sdk') {
   throw new Error('SDK assembly workspace drifted');
 }

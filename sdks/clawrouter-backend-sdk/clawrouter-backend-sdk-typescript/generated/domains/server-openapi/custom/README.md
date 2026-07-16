@@ -1,5 +1,3 @@
-# Custom Code
+# Custom SDK Extensions
 
-Keep hand-written wrappers, adapters, and orchestration here.
-Files outside this directory may be regenerated and overwritten.
-If you need to extend generated behavior, prefer composition from `custom/` instead of editing generated files directly.
+This directory is reserved for handwritten extensions that are not owned by the SDK generator.

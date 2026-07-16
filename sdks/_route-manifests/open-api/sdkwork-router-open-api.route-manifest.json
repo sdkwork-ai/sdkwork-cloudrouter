@@ -34,7 +34,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -62,7 +62,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -90,7 +90,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -118,7 +118,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -146,7 +146,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -174,7 +174,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -202,7 +202,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -230,7 +230,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -258,7 +258,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -286,7 +286,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -314,7 +314,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -342,7 +342,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -370,7 +370,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -398,7 +398,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -426,7 +426,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -454,7 +454,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -482,7 +482,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -510,7 +510,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -538,7 +538,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -566,7 +566,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -594,7 +594,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -622,7 +622,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -650,7 +650,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -678,7 +678,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -706,7 +706,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -734,7 +734,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -762,7 +762,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -790,7 +790,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -818,7 +818,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -846,7 +846,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -874,7 +874,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -902,7 +902,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -930,7 +930,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -958,7 +958,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -986,7 +986,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1014,7 +1014,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1042,7 +1042,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1070,7 +1070,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1098,7 +1098,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1126,7 +1126,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1154,7 +1154,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1182,7 +1182,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1210,7 +1210,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1238,7 +1238,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1266,7 +1266,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1294,7 +1294,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1322,7 +1322,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1350,7 +1350,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1378,7 +1378,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1406,7 +1406,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1434,7 +1434,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1462,7 +1462,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1490,7 +1490,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1518,7 +1518,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1546,7 +1546,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1574,7 +1574,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1602,7 +1602,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1630,7 +1630,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1658,7 +1658,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1686,7 +1686,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1714,7 +1714,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1742,7 +1742,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1770,7 +1770,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1798,7 +1798,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1826,7 +1826,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1854,7 +1854,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1882,7 +1882,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1910,7 +1910,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1938,7 +1938,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1966,7 +1966,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -1994,7 +1994,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2022,7 +2022,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2050,7 +2050,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2078,7 +2078,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2106,7 +2106,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2134,7 +2134,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2162,7 +2162,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2190,7 +2190,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2218,7 +2218,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2246,7 +2246,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2274,7 +2274,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2302,7 +2302,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2330,7 +2330,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2358,7 +2358,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2386,7 +2386,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2414,7 +2414,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2442,7 +2442,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2470,7 +2470,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2498,7 +2498,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2526,7 +2526,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2554,7 +2554,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2582,7 +2582,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2610,7 +2610,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2638,7 +2638,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2666,7 +2666,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2694,7 +2694,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2722,7 +2722,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2750,7 +2750,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2778,7 +2778,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2806,7 +2806,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2834,7 +2834,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2862,7 +2862,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2890,7 +2890,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2918,7 +2918,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2946,7 +2946,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -2974,7 +2974,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3002,7 +3002,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3030,7 +3030,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3058,7 +3058,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3086,7 +3086,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3114,7 +3114,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3142,7 +3142,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3170,7 +3170,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3198,7 +3198,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3226,7 +3226,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3254,7 +3254,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3282,7 +3282,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3310,7 +3310,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3338,7 +3338,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3366,7 +3366,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3394,7 +3394,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3422,7 +3422,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3450,7 +3450,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3478,7 +3478,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3506,7 +3506,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3534,7 +3534,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3562,7 +3562,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3590,7 +3590,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3618,7 +3618,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3646,7 +3646,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3674,7 +3674,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3702,7 +3702,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3730,7 +3730,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3758,7 +3758,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3786,7 +3786,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3814,7 +3814,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3842,7 +3842,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3870,7 +3870,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3898,7 +3898,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3926,7 +3926,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3954,7 +3954,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -3982,7 +3982,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4010,7 +4010,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4038,7 +4038,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4066,7 +4066,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4094,7 +4094,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4122,7 +4122,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4150,7 +4150,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4178,7 +4178,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4206,7 +4206,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4234,7 +4234,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4262,7 +4262,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4290,7 +4290,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4318,7 +4318,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4346,7 +4346,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4374,7 +4374,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4402,7 +4402,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4430,7 +4430,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4458,7 +4458,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4486,7 +4486,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4514,7 +4514,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4542,7 +4542,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4570,7 +4570,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4598,7 +4598,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4626,7 +4626,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4654,7 +4654,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4682,7 +4682,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4710,7 +4710,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4738,7 +4738,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4766,7 +4766,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4794,7 +4794,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4822,7 +4822,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4850,7 +4850,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4878,7 +4878,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4906,7 +4906,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4934,7 +4934,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4962,7 +4962,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -4990,7 +4990,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5018,7 +5018,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5046,7 +5046,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5074,7 +5074,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5102,7 +5102,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5130,7 +5130,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5158,7 +5158,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5186,7 +5186,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5214,7 +5214,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5242,7 +5242,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5270,7 +5270,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5298,7 +5298,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5326,7 +5326,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5354,7 +5354,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5382,7 +5382,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5410,7 +5410,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5438,7 +5438,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5466,7 +5466,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5494,7 +5494,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5522,7 +5522,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5550,7 +5550,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5578,7 +5578,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5606,7 +5606,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5634,7 +5634,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5662,7 +5662,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5690,7 +5690,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5718,7 +5718,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5746,7 +5746,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5774,7 +5774,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5802,7 +5802,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5830,7 +5830,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5858,7 +5858,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5886,7 +5886,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5914,7 +5914,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5942,7 +5942,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5970,7 +5970,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -5998,7 +5998,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6026,7 +6026,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6054,7 +6054,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6082,7 +6082,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6110,7 +6110,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6138,7 +6138,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6166,7 +6166,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6194,7 +6194,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6222,7 +6222,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6250,7 +6250,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6278,7 +6278,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6306,7 +6306,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6334,7 +6334,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6362,7 +6362,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6390,7 +6390,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6418,7 +6418,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6446,7 +6446,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6474,7 +6474,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6502,7 +6502,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6530,7 +6530,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6558,7 +6558,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6586,7 +6586,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6614,7 +6614,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6642,7 +6642,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6670,7 +6670,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6698,7 +6698,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6726,7 +6726,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6754,7 +6754,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6782,7 +6782,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6810,7 +6810,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6838,7 +6838,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6866,7 +6866,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6894,7 +6894,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6922,7 +6922,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6950,7 +6950,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -6978,7 +6978,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7006,7 +7006,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7034,7 +7034,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7062,7 +7062,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7090,7 +7090,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7118,7 +7118,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7146,7 +7146,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7174,7 +7174,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7202,7 +7202,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7230,7 +7230,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7258,7 +7258,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7286,7 +7286,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7314,7 +7314,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7342,7 +7342,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7370,7 +7370,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7398,7 +7398,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7426,7 +7426,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7454,7 +7454,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7482,7 +7482,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7510,7 +7510,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7538,7 +7538,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7566,7 +7566,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7594,7 +7594,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7622,7 +7622,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7650,7 +7650,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7678,7 +7678,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7706,7 +7706,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7734,7 +7734,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7762,7 +7762,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7790,7 +7790,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7818,7 +7818,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",
@@ -7846,7 +7846,7 @@
       },
       "ownership": {
         "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-open-api"
+        "apiAuthority": "sdkwork-clawrouter.ai"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api",

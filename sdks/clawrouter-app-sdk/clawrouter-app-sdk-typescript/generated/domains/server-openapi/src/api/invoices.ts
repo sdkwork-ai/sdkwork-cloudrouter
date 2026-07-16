@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { InvoicesCancellationsCreateResult, InvoicesCreateResult, InvoicesRetrieveResult, InvoicesStatisticsRetrieveResult, InvoicesSubmissionsCreateResult, InvoicesUpdateResult, SdkWorkPageData } from '../types';
-
-
 export class InvoicesSubmissionsApi {
   private client: HttpClient;
 
@@ -13,8 +10,8 @@ export class InvoicesSubmissionsApi {
 
 
 /** Create */
-  async create(invoiceId: string): Promise<InvoicesSubmissionsCreateResult> {
-    return this.client.post<InvoicesSubmissionsCreateResult>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}/submissions`));
+  async create(invoiceId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}/submissions`));
   }
 }
 
@@ -27,8 +24,8 @@ export class InvoicesItemsApi {
 
 
 /** List */
-  async list(invoiceId: string): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}/items`));
+  async list(invoiceId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}/items`));
   }
 }
 
@@ -41,8 +38,8 @@ export class InvoicesCancellationsApi {
 
 
 /** Create */
-  async create(invoiceId: string): Promise<InvoicesCancellationsCreateResult> {
-    return this.client.post<InvoicesCancellationsCreateResult>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}/cancellations`));
+  async create(invoiceId: string): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}/cancellations`));
   }
 }
 
@@ -55,8 +52,8 @@ export class InvoicesStatisticsApi {
 
 
 /** Retrieve */
-  async retrieve(): Promise<InvoicesStatisticsRetrieveResult> {
-    return this.client.get<InvoicesStatisticsRetrieveResult>(appApiPath(`/invoices/statistics`));
+  async retrieve(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/invoices/statistics`));
   }
 }
 
@@ -69,8 +66,8 @@ export class InvoicesMineApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/invoices/current`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/invoices/current`));
   }
 }
 
@@ -93,23 +90,23 @@ export class InvoicesApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/invoices`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/invoices`));
   }
 
 /** Create */
-  async create(): Promise<InvoicesCreateResult> {
-    return this.client.post<InvoicesCreateResult>(appApiPath(`/invoices`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/invoices`));
   }
 
 /** Retrieve */
-  async retrieve(invoiceId: string): Promise<InvoicesRetrieveResult> {
-    return this.client.get<InvoicesRetrieveResult>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}`));
+  async retrieve(invoiceId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}`));
   }
 
 /** Update */
-  async update(invoiceId: string): Promise<InvoicesUpdateResult> {
-    return this.client.patch<InvoicesUpdateResult>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}`));
+  async update(invoiceId: string): Promise<Record<string, never>> {
+    return this.client.patch<Record<string, never>>(appApiPath(`/invoices/${serializePathParameter(invoiceId, { name: 'invoiceId', style: 'simple', explode: false })}`));
   }
 }
 

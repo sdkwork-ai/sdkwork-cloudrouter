@@ -16,6 +16,9 @@
   },
   "canonicalSpecs": [
     { "file": "API_SPEC.md", "path": "../../../sdkwork-specs/API_SPEC.md", "purpose": "HTTP API surface and route manifest rules." },
+    { "file": "APPLICATION_GATEWAY_SPEC.md", "path": "../../../sdkwork-specs/APPLICATION_GATEWAY_SPEC.md", "purpose": "Assembly-based dependency API composition." },
+    { "file": "WEB_FRAMEWORK_SPEC.md", "path": "../../../sdkwork-specs/WEB_FRAMEWORK_SPEC.md", "purpose": "Shared request context and HTTP framework wiring." },
+    { "file": "WEB_BACKEND_SPEC.md", "path": "../../../sdkwork-specs/WEB_BACKEND_SPEC.md", "purpose": "Dependency business router composition boundaries." },
     { "file": "SDK_WORKSPACE_GENERATION_SPEC.md", "path": "../../../sdkwork-specs/SDK_WORKSPACE_GENERATION_SPEC.md", "purpose": "Route crate placement and SDK workspace materialization rules." },
     { "file": "SDK_SPEC.md", "path": "../../../sdkwork-specs/SDK_SPEC.md", "purpose": "SDK family and API authority naming rules." },
     { "file": "COMPONENT_SPEC.md", "path": "../../../sdkwork-specs/COMPONENT_SPEC.md", "purpose": "Component manifest requirements." },
@@ -29,13 +32,28 @@
     "runtimeEntrypoints": [
       "src/manifest.rs#route_manifest",
       "src/routes.rs#build_sdkwork_claw_router_app_api_router",
-      "src/routes.rs#build_sdkwork_claw_router_app_api_router_from_env"
+      "src/routes.rs#build_sdkwork_claw_router_app_api_router_from_env",
+      "src/commerce_runtime.rs#merge_federated_commerce_app_routers"
     ],
     "routeManifest": "src/manifest.rs",
     "sdkClients": [],
     "sdkDependencies": [],
     "dependencyApiExports": [],
-    "dependencyApiSurfaces": [],
+    "dependencyApiSurfaces": [
+      {
+        "workspace": "sdkwork-order",
+        "sdkFamily": "sdkwork-order-app-sdk",
+        "apiAuthority": "sdkwork-order-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "embedded",
+        "executablePublicExport": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "coverageEvidence": [
+          "../../../sdkwork-order/crates/sdkwork-order-gateway-assembly/assembly-manifest.json",
+          "../../../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+        ]
+      }
+    ],
     "events": [],
     "configKeys": []
   },

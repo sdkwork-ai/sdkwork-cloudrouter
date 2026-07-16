@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { RefundsCreateResult, RefundsRetrieveResult, SdkWorkPageData } from '../types';
-
-
 export class RefundsApi {
   private client: HttpClient;
 
@@ -13,18 +10,18 @@ export class RefundsApi {
 
 
 /** List */
-  async list(): Promise<SdkWorkPageData> {
-    return this.client.get<SdkWorkPageData>(appApiPath(`/refunds`));
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/refunds`));
   }
 
 /** Create */
-  async create(): Promise<RefundsCreateResult> {
-    return this.client.post<RefundsCreateResult>(appApiPath(`/refunds`));
+  async create(): Promise<Record<string, never>> {
+    return this.client.post<Record<string, never>>(appApiPath(`/refunds`));
   }
 
 /** Retrieve */
-  async retrieve(refundId: string): Promise<RefundsRetrieveResult> {
-    return this.client.get<RefundsRetrieveResult>(appApiPath(`/refunds/${serializePathParameter(refundId, { name: 'refundId', style: 'simple', explode: false })}`));
+  async retrieve(refundId: string): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(appApiPath(`/refunds/${serializePathParameter(refundId, { name: 'refundId', style: 'simple', explode: false })}`));
   }
 }
 

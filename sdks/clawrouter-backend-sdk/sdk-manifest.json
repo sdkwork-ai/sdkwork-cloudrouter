@@ -144,7 +144,7 @@
       "generatedPath": "clawrouter-backend-sdk-typescript/generated/server-openapi",
       "packagePath": "clawrouter-backend-sdk-typescript",
       "manifestPath": "clawrouter-backend-sdk-typescript/package.json",
-      "name": "sdkwork-clawrouter-backend-sdk-generated-typescript",
+      "name": "@sdkwork/clawrouter-backend-sdk",
       "version": "0.1.0",
       "description": "SDKWork Claw Router backend API SDK",
       "entrypoints": {
@@ -161,7 +161,7 @@
           "layer": "generated-output",
           "packagePath": "clawrouter-backend-sdk-typescript/generated/server-openapi",
           "manifestPath": "clawrouter-backend-sdk-typescript/generated/server-openapi/package.json",
-          "name": "sdkwork-clawrouter-backend-sdk-generated-typescript",
+          "name": "clawrouter-backend-sdk-generated-typescript",
           "version": "0.1.0",
           "description": "SDKWork Claw Router backend API SDK generator-owned transport output",
           "entrypoints": {
@@ -174,7 +174,7 @@
           "layer": "package",
           "packagePath": "clawrouter-backend-sdk-typescript",
           "manifestPath": "clawrouter-backend-sdk-typescript/package.json",
-          "name": "sdkwork-clawrouter-backend-sdk-generated-typescript",
+          "name": "@sdkwork/clawrouter-backend-sdk",
           "version": "0.1.0",
           "description": "SDKWork Claw Router backend API SDK",
           "entrypoints": {
@@ -183,9 +183,7 @@
             "types": "./dist/index.d.ts"
           }
         }
-      ],
-      "consumerPackageName": "@sdkwork/clawrouter-backend-sdk",
-      "transportPackageName": "clawrouter-backend-sdk-generated-typescript"
+      ]
     },
     {
       "language": "flutter",

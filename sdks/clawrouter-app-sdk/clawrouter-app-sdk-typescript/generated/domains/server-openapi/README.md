@@ -1,21 +1,21 @@
 # clawrouter-app-domain-transport
 
-SDKWork Claw Router App Domain Transport API
+SDKWork Claw Router app API SDK federated domain transport
 
 ## Installation
 
 ```bash
-npm install clawrouter-app-domain-transport-generated-typescript
+npm install sdkwork-clawrouter-app-sdk-domains-generated-typescript
 # or
-yarn add clawrouter-app-domain-transport-generated-typescript
+yarn add sdkwork-clawrouter-app-sdk-domains-generated-typescript
 # or
-pnpm add clawrouter-app-domain-transport-generated-typescript
+pnpm add sdkwork-clawrouter-app-sdk-domains-generated-typescript
 ```
 
 ## Quick Start
 
 ```typescript
-import { SdkworkAppClient } from 'clawrouter-app-domain-transport-generated-typescript';
+import { SdkworkAppClient } from 'sdkwork-clawrouter-app-sdk-domains-generated-typescript';
 
 const client = new SdkworkAppClient({
   baseUrl: 'http://localhost:18082',
@@ -41,7 +41,7 @@ Access-Token: <accessToken>
 ## Configuration (Non-Auth)
 
 ```typescript
-import { SdkworkAppClient } from 'clawrouter-app-domain-transport-generated-typescript';
+import { SdkworkAppClient } from 'sdkwork-clawrouter-app-sdk-domains-generated-typescript';
 
 const client = new SdkworkAppClient({
   baseUrl: 'http://localhost:18082',
@@ -56,6 +56,7 @@ const client = new SdkworkAppClient({
 
 - `client.accounts` - accounts API
 - `client.addresses` - addresses API
+- `client.afterSales` - after_sales API
 - `client.billing` - billing API
 - `client.cart` - cart API
 - `client.catalog` - catalog API
@@ -70,6 +71,7 @@ const client = new SdkworkAppClient({
 - `client.refunds` - refunds API
 - `client.shipments` - shipments API
 - `client.wallet` - wallet API
+- `client.withdrawals` - withdrawals API
 
 ## Usage Examples
 
@@ -85,6 +87,19 @@ const result = await client.accounts.current.summary.retrieve();
 ```typescript
 // List
 const result = await client.addresses.list();
+```
+
+### after_sales
+
+```typescript
+// After Sales requests list.
+const params = {
+  status: 'status',
+  order_id: 'order_id',
+  page: 3,
+  page_size: 4,
+};
+const result = await client.afterSales.requests.list(params);
 ```
 
 ### billing
@@ -111,15 +126,21 @@ const result = await client.catalog.attributes.list();
 ### checkout
 
 ```typescript
-// Create
-const result = await client.checkout.sessions.create();
+// Checkout sessions retrieve.
+const checkoutSessionId = '1';
+const result = await client.checkout.sessions.retrieve(checkoutSessionId);
 ```
 
 ### fulfillments
 
 ```typescript
-// List
-const result = await client.fulfillments.list();
+// Fulfillments list.
+const params = {
+  status: 'status',
+  page: 2,
+  page_size: 3,
+};
+const result = await client.fulfillments.list(params);
 ```
 
 ### invoices
@@ -139,8 +160,8 @@ const result = await client.memberships.benefits.list();
 ### orders
 
 ```typescript
-// List
-const result = await client.orders.list();
+// Orders statistics retrieve.
+const result = await client.orders.statistics.retrieve();
 ```
 
 ### payments
@@ -160,8 +181,8 @@ const result = await client.promotions.offers.list();
 ### recharges
 
 ```typescript
-// List
-const result = await client.recharges.packages.list();
+// Recharges settings retrieve.
+const result = await client.recharges.settings.retrieve();
 ```
 
 ### refunds
@@ -174,7 +195,7 @@ const result = await client.refunds.list();
 ### shipments
 
 ```typescript
-// Retrieve
+// Shipments retrieve.
 const shipmentId = '1';
 const result = await client.shipments.retrieve(shipmentId);
 ```
@@ -186,10 +207,18 @@ const result = await client.shipments.retrieve(shipmentId);
 const result = await client.wallet.accounts.list();
 ```
 
+### withdrawals
+
+```typescript
+// Withdrawal requests retrieve.
+const withdrawalRequestId = '1';
+const result = await client.withdrawals.requests.retrieve(withdrawalRequestId);
+```
+
 ## Error Handling
 
 ```typescript
-import { SdkworkAppClient, NetworkError, TimeoutError, AuthenticationError } from 'clawrouter-app-domain-transport-generated-typescript';
+import { SdkworkAppClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-clawrouter-app-sdk-domains-generated-typescript';
 
 try {
   const result = await client.accounts.current.summary.retrieve();

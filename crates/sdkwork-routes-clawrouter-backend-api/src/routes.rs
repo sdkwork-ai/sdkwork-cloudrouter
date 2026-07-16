@@ -1891,7 +1891,7 @@ async fn has_sqlite_admin_access(
           AND organization_id = ?
           AND user_id = ?
           AND status = 'active'
-          AND LOWER(COALESCE(membership_kind, '')) = 'admin'
+          AND LOWER(COALESCE(membership_kind, '')) IN ('admin', 'owner')
         "#,
     )
     .bind(subject.tenant_id.to_string())
@@ -1914,7 +1914,7 @@ async fn has_postgres_admin_access(
           AND CAST(organization_id AS TEXT) = $2
           AND CAST(user_id AS TEXT) = $3
           AND status = 'active'
-          AND LOWER(COALESCE(membership_kind, '')) = 'admin'
+          AND LOWER(COALESCE(membership_kind, '')) IN ('admin', 'owner')
         "#,
     )
     .bind(subject.tenant_id.to_string())
@@ -2048,10 +2048,14 @@ pub async fn serve_with_runtime_config(
 
 #[cfg(test)]
 mod tests {
-    use super::{admin_forbidden_response, router_from_env, router_without_database};
+    use super::{
+        admin_forbidden_response, has_sqlite_admin_access, router_from_env, router_without_database,
+    };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use sdkwork_claw_config::DeploymentMode;
+    use sdkwork_claw_http::TrustedRequestSubject;
+    use sqlx::sqlite::SqlitePoolOptions;
     use std::sync::{Mutex, OnceLock};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -2091,6 +2095,83 @@ mod tests {
             .is_some_and(|value| !value.is_empty()));
         assert!(payload.get("msg").is_none());
         assert!(payload.get("data").is_none());
+    }
+
+    #[tokio::test]
+    async fn canonical_owner_and_admin_memberships_have_admin_access() {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect("sqlite::memory:")
+            .await
+            .unwrap();
+        sqlx::query(
+            r#"
+            CREATE TABLE iam_organization_membership (
+                tenant_id TEXT NOT NULL,
+                organization_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                membership_kind TEXT,
+                status TEXT NOT NULL
+            )
+            "#,
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        for (user_id, membership_kind, status) in [
+            (1_i64, "owner", "active"),
+            (2, "admin", "active"),
+            (3, "member", "active"),
+            (4, "owner", "inactive"),
+        ] {
+            sqlx::query(
+                r#"
+                INSERT INTO iam_organization_membership (
+                    tenant_id,
+                    organization_id,
+                    user_id,
+                    membership_kind,
+                    status
+                ) VALUES (?, ?, ?, ?, ?)
+                "#,
+            )
+            .bind("100001")
+            .bind("100002")
+            .bind(user_id.to_string())
+            .bind(membership_kind)
+            .bind(status)
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
+
+        for user_id in [1_i64, 2] {
+            assert!(
+                has_sqlite_admin_access(&pool, trusted_subject(user_id))
+                    .await
+                    .unwrap(),
+                "active {user_id} membership must retain admin access"
+            );
+        }
+        for user_id in [3_i64, 4, 5] {
+            assert!(
+                !has_sqlite_admin_access(&pool, trusted_subject(user_id))
+                    .await
+                    .unwrap(),
+                "ordinary, inactive, and missing memberships must remain forbidden"
+            );
+        }
+    }
+
+    fn trusted_subject(user_id: i64) -> TrustedRequestSubject {
+        TrustedRequestSubject {
+            tenant_id: 100001,
+            organization_id: 100002,
+            user_id,
+            operator_id: user_id,
+            operator_type: 1,
+        }
     }
 
     #[tokio::test]
