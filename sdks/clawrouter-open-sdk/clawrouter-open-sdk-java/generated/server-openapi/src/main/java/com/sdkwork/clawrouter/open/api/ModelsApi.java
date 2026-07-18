@@ -19,12 +19,6 @@ public class ModelsApi {
         return client.convertValue(raw, new TypeReference<OpenAiModelList>() {});
     }
 
-    /** Delete fine-tuned model */
-    public DeleteResult delete(String model) throws Exception {
-        Object raw = client.delete(ApiPaths.aiPath("/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ""));
-        return client.convertValue(raw, new TypeReference<DeleteResult>() {});
-    }
-
     /** Retrieve model */
     public OpenAiModel retrieve(String model) throws Exception {
         Object raw = client.get(ApiPaths.aiPath("/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ""));

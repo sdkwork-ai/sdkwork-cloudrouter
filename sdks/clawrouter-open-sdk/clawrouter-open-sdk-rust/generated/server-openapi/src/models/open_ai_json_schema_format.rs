@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiJsonSchema;
+use crate::models::{OpenAiJsonSchema};
 
 /// OpenAI-compatible open ai json schema format schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

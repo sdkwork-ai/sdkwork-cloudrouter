@@ -232,10 +232,8 @@ fn product_local_contract_operation(operation: &sdkwork_claw_http::ContractOpera
 }
 
 fn is_clawrouter_owned_iam_app_path(path: &str) -> bool {
-    const CLAWROUTER_OWNED_IAM_APP_PREFIXES: &[&str] = &[
-        "/app/v3/api/iam/api_keys",
-        "/app/v3/api/iam/users/settings",
-    ];
+    const CLAWROUTER_OWNED_IAM_APP_PREFIXES: &[&str] =
+        &["/app/v3/api/iam/api_keys", "/app/v3/api/iam/users/settings"];
 
     CLAWROUTER_OWNED_IAM_APP_PREFIXES.iter().any(|prefix| {
         path == prefix.trim_end_matches('/') || path.starts_with(&format!("{prefix}/"))

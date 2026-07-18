@@ -6,9 +6,9 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiImageEditMultipartRequest
     {
-        public string? Image { get; set; }
+        public string Image { get; set; }
         public string? Mask { get; set; }
-        public string? Model { get; set; }
-        public string? Prompt { get; set; }
+        public string Model { get; set; }
+        public string Prompt { get; set; }
     }
 }

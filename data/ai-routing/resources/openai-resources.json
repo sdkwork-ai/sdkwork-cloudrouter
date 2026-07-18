@@ -178,17 +178,6 @@
       "sortOrder": 280
     },
     {
-      "resourceCode": "api.openai.fine_tuning",
-      "resourceType": "api_endpoint",
-      "displayName": "OpenAI Fine Tuning",
-      "vendorCode": "openai",
-      "modalityCode": "network",
-      "apiCode": "openai.fine_tuning",
-      "capability": "network",
-      "capabilities": ["network", "http"],
-      "sortOrder": 290
-    },
-    {
       "resourceCode": "api.openai.realtime",
       "resourceType": "api_endpoint",
       "displayName": "OpenAI Realtime",
@@ -288,17 +277,6 @@
       "sortOrder": 320
     },
     {
-      "resourceCode": "api.openai.evals",
-      "resourceType": "api_endpoint",
-      "displayName": "OpenAI Evals",
-      "vendorCode": "openai",
-      "modalityCode": "network",
-      "apiCode": "openai.evals",
-      "capability": "network",
-      "capabilities": ["network", "http"],
-      "sortOrder": 330
-    },
-    {
       "resourceCode": "api.openai.chatkit.sessions",
       "resourceType": "api_endpoint",
       "displayName": "OpenAI ChatKit Sessions",
@@ -319,28 +297,6 @@
       "capability": "network",
       "capabilities": ["network", "http"],
       "sortOrder": 350
-    },
-    {
-      "resourceCode": "api.openai.skills",
-      "resourceType": "api_endpoint",
-      "displayName": "OpenAI Skills",
-      "vendorCode": "openai",
-      "modalityCode": "network",
-      "apiCode": "openai.skills",
-      "capability": "network",
-      "capabilities": ["network", "http"],
-      "sortOrder": 360
-    },
-    {
-      "resourceCode": "api.openai.administration",
-      "resourceType": "api_endpoint",
-      "displayName": "OpenAI Administration",
-      "vendorCode": "openai",
-      "modalityCode": "network",
-      "apiCode": "openai.administration",
-      "capability": "network",
-      "capabilities": ["network", "http"],
-      "sortOrder": 370
     }
   ]
 }

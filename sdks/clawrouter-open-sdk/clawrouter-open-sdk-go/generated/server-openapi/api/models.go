@@ -26,16 +26,6 @@ func (a *ModelsApi) List() (sdktypes.OpenAiModelList, error) {
     return decodeResult[sdktypes.OpenAiModelList](raw)
 }
 
-// Delete fine-tuned model
-func (a *ModelsApi) Delete(model string) (sdktypes.DeleteResult, error) {
-    raw, err := a.client.Delete(AiApiPath(fmt.Sprintf("/models/%s", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false}))), nil, nil)
-    if err != nil {
-        var zero sdktypes.DeleteResult
-        return zero, err
-    }
-    return decodeResult[sdktypes.DeleteResult](raw)
-}
-
 // Retrieve model
 func (a *ModelsApi) Retrieve(model string) (sdktypes.OpenAiModel, error) {
     raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/models/%s", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false}))), nil, nil)

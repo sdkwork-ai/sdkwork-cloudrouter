@@ -183,6 +183,7 @@
     "@sdkwork/membership-pc-subscription": "workspace:*",
     "@sdkwork/payment-pc-payment": "workspace:*",
     "@sdkwork/order-pc-order": "workspace:*",
+    "@sdkwork/order-pc-checkout": "workspace:*",
     "@sdkwork/order-pc-recharge": "workspace:*",
     "@sdkwork/order-backend-sdk": "workspace:*",
     "@sdkwork/promotion-service": "workspace:*",

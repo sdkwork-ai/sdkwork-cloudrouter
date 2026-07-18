@@ -28,17 +28,12 @@ namespace Sdkwork.ClawRouter.Open
         public ContainerApi Container { get; }
         public ConversationApi Conversation { get; }
         public EmbeddingsApi Embeddings { get; }
-        public EvalApi Eval { get; }
         public FilesApi Files { get; }
-        public FineTuningApi FineTuning { get; }
         public ImagesApi Images { get; }
         public ModelsApi Models { get; }
         public ModerationsApi Moderations { get; }
-        public OrganizationApi Organization { get; }
-        public ProjectApi Project { get; }
         public RealtimeApi Realtime { get; }
         public ResponsesApi Responses { get; }
-        public SkillApi Skill { get; }
         public ThreadsApi Threads { get; }
         public UploadsApi Uploads { get; }
         public VectorStoresApi VectorStores { get; }
@@ -69,17 +64,12 @@ namespace Sdkwork.ClawRouter.Open
             Container = new ContainerApi(_httpClient);
             Conversation = new ConversationApi(_httpClient);
             Embeddings = new EmbeddingsApi(_httpClient);
-            Eval = new EvalApi(_httpClient);
             Files = new FilesApi(_httpClient);
-            FineTuning = new FineTuningApi(_httpClient);
             Images = new ImagesApi(_httpClient);
             Models = new ModelsApi(_httpClient);
             Moderations = new ModerationsApi(_httpClient);
-            Organization = new OrganizationApi(_httpClient);
-            Project = new ProjectApi(_httpClient);
             Realtime = new RealtimeApi(_httpClient);
             Responses = new ResponsesApi(_httpClient);
-            Skill = new SkillApi(_httpClient);
             Threads = new ThreadsApi(_httpClient);
             Uploads = new UploadsApi(_httpClient);
             VectorStores = new VectorStoresApi(_httpClient);
@@ -111,17 +101,12 @@ namespace Sdkwork.ClawRouter.Open
             Container = new ContainerApi(_httpClient);
             Conversation = new ConversationApi(_httpClient);
             Embeddings = new EmbeddingsApi(_httpClient);
-            Eval = new EvalApi(_httpClient);
             Files = new FilesApi(_httpClient);
-            FineTuning = new FineTuningApi(_httpClient);
             Images = new ImagesApi(_httpClient);
             Models = new ModelsApi(_httpClient);
             Moderations = new ModerationsApi(_httpClient);
-            Organization = new OrganizationApi(_httpClient);
-            Project = new ProjectApi(_httpClient);
             Realtime = new RealtimeApi(_httpClient);
             Responses = new ResponsesApi(_httpClient);
-            Skill = new SkillApi(_httpClient);
             Threads = new ThreadsApi(_httpClient);
             Uploads = new UploadsApi(_httpClient);
             VectorStores = new VectorStoresApi(_httpClient);

@@ -5,6 +5,8 @@
   "language": "go",
   "sdkType": "ai",
   "packageName": "github.com/sdkwork/clawrouter-open-sdk",
+  "transportPackageName": "github.com/sdkwork/clawrouter-open-sdk",
+  "consumerPackageName": "github.com/sdkwork/clawrouter-open-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiUploadPartMultipartRequest
     {
-        public string? Data { get; set; }
+        public string Data { get; set; }
     }
 }

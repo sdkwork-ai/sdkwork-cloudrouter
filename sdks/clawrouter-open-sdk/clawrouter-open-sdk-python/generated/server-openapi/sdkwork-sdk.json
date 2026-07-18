@@ -5,6 +5,8 @@
   "language": "python",
   "sdkType": "ai",
   "packageName": "sdkwork-clawrouter-open-sdk",
+  "transportPackageName": "sdkwork-clawrouter-open-sdk",
+  "consumerPackageName": "sdkwork-clawrouter-open-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

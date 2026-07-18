@@ -77,7 +77,6 @@ use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
 
 use crate::edge_server::EdgeInProcessUpstreams;
-use crate::invocation_router::invocation_router_with_full_pipeline_and_provider_adapter_config;
 use crate::invocation_sticky_store::InvocationStickyObjectRouteStore;
 use crate::router;
 use crate::router_with_database_status_and_passthrough_placeholder;
@@ -396,6 +395,17 @@ impl GatewayUsageRecorder for NotifyingGatewayUsageRecorder {
     ) -> GatewayUsageRecordFuture<'a> {
         Box::pin(async move {
             self.inner.record_gateway_usage(command).await?;
+            self.usage_settlement_wakeup.notify_one();
+            Ok(())
+        })
+    }
+
+    fn record_gateway_usage_batch<'a>(
+        &'a self,
+        commands: Vec<GatewayUsageRecordCommand>,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async move {
+            self.inner.record_gateway_usage_batch(commands).await?;
             self.usage_settlement_wakeup.notify_one();
             Ok(())
         })
@@ -1425,8 +1435,6 @@ async fn build_embedded_sdkwork_api_cloud_gateway_router(
 ) -> Result<Router, GatewayRouterError> {
     let mut config = GatewayRuntimeConfig::default();
     config.mode = GatewayMode::Embedded;
-    config.upstreams.clear();
-    config.readiness.check_upstreams = false;
     config
         .dependency_surfaces
         .extend(claw_router_gateway_dependency_surfaces());
@@ -1472,7 +1480,6 @@ fn claw_router_product_iam_api_keys_dependency_surface() -> DependencyApiSurface
         cargo_feature: None,
         cargo_dependency: Some("sdkwork-routes-clawrouter-app-api".to_owned()),
         coverage: "clawrouter-product-iam-api-keys-route-crate".to_owned(),
-        required_base_url_key: None,
     }
 }
 
@@ -1493,7 +1500,6 @@ fn claw_router_product_iam_users_settings_dependency_surface() -> DependencyApiS
         cargo_feature: None,
         cargo_dependency: Some("sdkwork-routes-clawrouter-app-api".to_owned()),
         coverage: "clawrouter-product-iam-users-settings-route-crate".to_owned(),
-        required_base_url_key: None,
     }
 }
 
@@ -1513,7 +1519,6 @@ fn claw_router_appbase_app_dependency_surface() -> DependencyApiSurfaceConfig {
         cargo_feature: Some("foundation-appbase".to_owned()),
         cargo_dependency: Some("sdkwork-routes-iam-app-api".to_owned()),
         coverage: "appbase-iam-app-routes".to_owned(),
-        required_base_url_key: None,
     }
 }
 
@@ -1539,7 +1544,6 @@ fn claw_router_gateway_dependency_surfaces() -> [DependencyApiSurfaceConfig; 6] 
             cargo_feature: None,
             cargo_dependency: Some("sdkwork-routes-clawrouter-backend-api".to_owned()),
             coverage: "sdkwork-clawrouter-backend-api-route-crate".to_owned(),
-            required_base_url_key: None,
         },
         DependencyApiSurfaceConfig {
             service_id: CLAW_ROUTER_APP_API_SERVICE_ID.to_owned(),
@@ -1556,7 +1560,6 @@ fn claw_router_gateway_dependency_surfaces() -> [DependencyApiSurfaceConfig; 6] 
             cargo_feature: None,
             cargo_dependency: Some("sdkwork-routes-clawrouter-app-api".to_owned()),
             coverage: "sdkwork-clawrouter-app-api-route-crate".to_owned(),
-            required_base_url_key: None,
         },
     ]
 }
@@ -1577,7 +1580,6 @@ fn claw_router_appbase_backend_dependency_surface() -> DependencyApiSurfaceConfi
         cargo_feature: Some("foundation-appbase".to_owned()),
         cargo_dependency: Some("sdkwork-routes-iam-backend-api".to_owned()),
         coverage: "appbase-iam-backend-routes".to_owned(),
-        required_base_url_key: None,
     }
 }
 
@@ -2375,20 +2377,7 @@ fn log_gateway_runtime_catalog_snapshot_summary(
             service = "sdkwork-clawrouter-cloud-gateway",
             catalog_engine = engine,
             catalog_phase = phase,
-            vendors = summary.vendors,
-            models = summary.models,
-            provider_routes = summary.provider_routes,
-            callable_provider_routes = summary.callable_provider_routes,
-            provider_channel_routes = summary.provider_channel_routes,
-            callable_provider_channel_routes = summary.callable_provider_channel_routes,
-            provider_channel_group_bindings = summary.provider_channel_group_bindings,
-            routing_policies = summary.routing_policies,
-            routing_rules = summary.routing_rules,
-            pricing_plans = summary.pricing_plans,
-            channel_groups = summary.channel_groups,
-            api_keys = summary.api_keys,
-            prices = summary.prices,
-            managed_provider_secrets = summary.managed_provider_secrets,
+            catalog_summary = ?summary,
             "gateway runtime catalog snapshot loaded"
         );
     } else {
@@ -2396,20 +2385,7 @@ fn log_gateway_runtime_catalog_snapshot_summary(
             service = "sdkwork-clawrouter-cloud-gateway",
             catalog_engine = engine,
             catalog_phase = phase,
-            vendors = summary.vendors,
-            models = summary.models,
-            provider_routes = summary.provider_routes,
-            callable_provider_routes = summary.callable_provider_routes,
-            provider_channel_routes = summary.provider_channel_routes,
-            callable_provider_channel_routes = summary.callable_provider_channel_routes,
-            provider_channel_group_bindings = summary.provider_channel_group_bindings,
-            routing_policies = summary.routing_policies,
-            routing_rules = summary.routing_rules,
-            pricing_plans = summary.pricing_plans,
-            channel_groups = summary.channel_groups,
-            api_keys = summary.api_keys,
-            prices = summary.prices,
-            managed_provider_secrets = summary.managed_provider_secrets,
+            catalog_summary = ?summary,
             "gateway runtime catalog snapshot loaded"
         );
     }

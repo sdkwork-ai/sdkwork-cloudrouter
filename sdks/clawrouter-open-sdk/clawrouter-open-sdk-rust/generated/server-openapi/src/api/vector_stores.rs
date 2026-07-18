@@ -3,12 +3,7 @@ use std::sync::Arc;
 use crate::api::paths::ai_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{
-    DeleteResult, OpenAiVectorStore, OpenAiVectorStoreCreateRequest, OpenAiVectorStoreFile,
-    OpenAiVectorStoreFileBatch, OpenAiVectorStoreFileBatchCreateRequest,
-    OpenAiVectorStoreFileCreateRequest, OpenAiVectorStoreFileList, OpenAiVectorStoreList,
-    OpenAiVectorStoreSearchRequest, OpenAiVectorStoreSearchResponse,
-};
+use crate::models::{DeleteResult, OpenAiVectorStore, OpenAiVectorStoreCreateRequest, OpenAiVectorStoreFile, OpenAiVectorStoreFileBatch, OpenAiVectorStoreFileBatchCreateRequest, OpenAiVectorStoreFileCreateRequest, OpenAiVectorStoreFileList, OpenAiVectorStoreList, OpenAiVectorStoreSearchRequest, OpenAiVectorStoreSearchResponse};
 
 #[derive(Clone)]
 pub struct VectorStoresApi {
@@ -21,15 +16,9 @@ impl VectorStoresApi {
     }
 
     /// List vector stores
-    pub async fn list_vector_stores(
-        &self,
-        limit: Option<i64>,
-        order: Option<&str>,
-        after: Option<&str>,
-        before: Option<&str>,
-    ) -> Result<OpenAiVectorStoreList, SdkworkError> {
+    pub async fn list_vector_stores(&self, limit: Option<i64>, order: Option<&str>, after: Option<&str>, before: Option<&str>) -> Result<OpenAiVectorStoreList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
+            QueryParameterSpec::new("limit", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
@@ -39,186 +28,71 @@ impl VectorStoresApi {
     }
 
     /// Create vector store
-    pub async fn create_vector_stores(
-        &self,
-        body: &OpenAiVectorStoreCreateRequest,
-    ) -> Result<OpenAiVectorStore, SdkworkError> {
+    pub async fn create_vector_stores(&self, body: &OpenAiVectorStoreCreateRequest) -> Result<OpenAiVectorStore, SdkworkError> {
         let path = ai_path(&"/vector_stores".to_string());
-        self.client
-            .post(&path, Some(body), None, None, Some("application/json"))
-            .await
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Delete vector store
-    pub async fn delete_vector_stores(
-        &self,
-        vector_store_id: &str,
-    ) -> Result<DeleteResult, SdkworkError> {
-        let path = ai_path(&format!(
-            "/vector_stores/{}",
-            serialize_path_parameter(
-                vector_store_id,
-                PathParameterSpec::new("vector_store_id", "simple", false)
-            )
-        ));
+    pub async fn delete_vector_stores(&self, vector_store_id: &str) -> Result<DeleteResult, SdkworkError> {
+        let path = ai_path(&format!("/vector_stores/{}", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
     /// Retrieve vector store
-    pub async fn retrieve_vector_stores(
-        &self,
-        vector_store_id: &str,
-    ) -> Result<OpenAiVectorStore, SdkworkError> {
-        let path = ai_path(&format!(
-            "/vector_stores/{}",
-            serialize_path_parameter(
-                vector_store_id,
-                PathParameterSpec::new("vector_store_id", "simple", false)
-            )
-        ));
+    pub async fn retrieve_vector_stores(&self, vector_store_id: &str) -> Result<OpenAiVectorStore, SdkworkError> {
+        let path = ai_path(&format!("/vector_stores/{}", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
     /// Create vector store file batch
-    pub async fn create_file_batches(
-        &self,
-        vector_store_id: &str,
-        body: &OpenAiVectorStoreFileBatchCreateRequest,
-    ) -> Result<OpenAiVectorStoreFileBatch, SdkworkError> {
-        let path = ai_path(&format!(
-            "/vector_stores/{}/file_batches",
-            serialize_path_parameter(
-                vector_store_id,
-                PathParameterSpec::new("vector_store_id", "simple", false)
-            )
-        ));
-        self.client
-            .post(&path, Some(body), None, None, Some("application/json"))
-            .await
+    pub async fn create_file_batches(&self, vector_store_id: &str, body: &OpenAiVectorStoreFileBatchCreateRequest) -> Result<OpenAiVectorStoreFileBatch, SdkworkError> {
+        let path = ai_path(&format!("/vector_stores/{}/file_batches", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false))));
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Retrieve vector store file batch
-    pub async fn retrieve_file_batches(
-        &self,
-        vector_store_id: &str,
-        batch_id: &str,
-    ) -> Result<OpenAiVectorStoreFileBatch, SdkworkError> {
-        let path = ai_path(&format!(
-            "/vector_stores/{}/file_batches/{}",
-            serialize_path_parameter(
-                vector_store_id,
-                PathParameterSpec::new("vector_store_id", "simple", false)
-            ),
-            serialize_path_parameter(
-                batch_id,
-                PathParameterSpec::new("batch_id", "simple", false)
-            )
-        ));
+    pub async fn retrieve_file_batches(&self, vector_store_id: &str, batch_id: &str) -> Result<OpenAiVectorStoreFileBatch, SdkworkError> {
+        let path = ai_path(&format!("/vector_stores/{}/file_batches/{}", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false)), serialize_path_parameter(batch_id, PathParameterSpec::new("batch_id", "simple", false))));
         self.client.get(&path, None, None).await
     }
 
     /// Cancel vector store file batch
-    pub async fn create_cancel(
-        &self,
-        vector_store_id: &str,
-        batch_id: &str,
-    ) -> Result<OpenAiVectorStoreFileBatch, SdkworkError> {
-        let path = ai_path(&format!(
-            "/vector_stores/{}/file_batches/{}/cancel",
-            serialize_path_parameter(
-                vector_store_id,
-                PathParameterSpec::new("vector_store_id", "simple", false)
-            ),
-            serialize_path_parameter(
-                batch_id,
-                PathParameterSpec::new("batch_id", "simple", false)
-            )
-        ));
-        self.client
-            .post(&path, Option::<&serde_json::Value>::None, None, None, None)
-            .await
+    pub async fn create_cancel(&self, vector_store_id: &str, batch_id: &str) -> Result<OpenAiVectorStoreFileBatch, SdkworkError> {
+        let path = ai_path(&format!("/vector_stores/{}/file_batches/{}/cancel", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false)), serialize_path_parameter(batch_id, PathParameterSpec::new("batch_id", "simple", false))));
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
     /// List vector store files
-    pub async fn retrieve_files(
-        &self,
-        vector_store_id: &str,
-        limit: Option<i64>,
-        order: Option<&str>,
-        after: Option<&str>,
-        before: Option<&str>,
-    ) -> Result<OpenAiVectorStoreFileList, SdkworkError> {
+    pub async fn retrieve_files(&self, vector_store_id: &str, limit: Option<i64>, order: Option<&str>, after: Option<&str>, before: Option<&str>) -> Result<OpenAiVectorStoreFileList, SdkworkError> {
         let query = build_query_string(&[
-            QueryParameterSpec::new("page_size", limit, "form", true, false, None),
+            QueryParameterSpec::new("limit", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
             QueryParameterSpec::new("after", after, "form", true, false, None),
             QueryParameterSpec::new("before", before, "form", true, false, None),
         ]);
-        let path = append_query_string(
-            ai_path(&format!(
-                "/vector_stores/{}/files",
-                serialize_path_parameter(
-                    vector_store_id,
-                    PathParameterSpec::new("vector_store_id", "simple", false)
-                )
-            )),
-            &query,
-        );
+        let path = append_query_string(ai_path(&format!("/vector_stores/{}/files", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false)))), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Create vector store file
-    pub async fn create_files(
-        &self,
-        vector_store_id: &str,
-        body: &OpenAiVectorStoreFileCreateRequest,
-    ) -> Result<OpenAiVectorStoreFile, SdkworkError> {
-        let path = ai_path(&format!(
-            "/vector_stores/{}/files",
-            serialize_path_parameter(
-                vector_store_id,
-                PathParameterSpec::new("vector_store_id", "simple", false)
-            )
-        ));
-        self.client
-            .post(&path, Some(body), None, None, Some("application/json"))
-            .await
+    pub async fn create_files(&self, vector_store_id: &str, body: &OpenAiVectorStoreFileCreateRequest) -> Result<OpenAiVectorStoreFile, SdkworkError> {
+        let path = ai_path(&format!("/vector_stores/{}/files", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false))));
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Delete vector store file
-    pub async fn delete_files(
-        &self,
-        vector_store_id: &str,
-        file_id: &str,
-    ) -> Result<DeleteResult, SdkworkError> {
-        let path = ai_path(&format!(
-            "/vector_stores/{}/files/{}",
-            serialize_path_parameter(
-                vector_store_id,
-                PathParameterSpec::new("vector_store_id", "simple", false)
-            ),
-            serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false))
-        ));
+    pub async fn delete_files(&self, vector_store_id: &str, file_id: &str) -> Result<DeleteResult, SdkworkError> {
+        let path = ai_path(&format!("/vector_stores/{}/files/{}", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false)), serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false))));
         self.client.delete(&path, None, None).await
     }
 
     /// Search vector store
-    pub async fn create_search(
-        &self,
-        vector_store_id: &str,
-        body: &OpenAiVectorStoreSearchRequest,
-    ) -> Result<OpenAiVectorStoreSearchResponse, SdkworkError> {
-        let path = ai_path(&format!(
-            "/vector_stores/{}/search",
-            serialize_path_parameter(
-                vector_store_id,
-                PathParameterSpec::new("vector_store_id", "simple", false)
-            )
-        ));
-        self.client
-            .post(&path, Some(body), None, None, Some("application/json"))
-            .await
+    pub async fn create_search(&self, vector_store_id: &str, body: &OpenAiVectorStoreSearchRequest) -> Result<OpenAiVectorStoreSearchResponse, SdkworkError> {
+        let path = ai_path(&format!("/vector_stores/{}/search", serialize_path_parameter(vector_store_id, PathParameterSpec::new("vector_store_id", "simple", false))));
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
+
 }
 
 struct PathParameterSpec<'a> {
@@ -229,11 +103,7 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self {
-            name,
-            style,
-            explode,
-        }
+        Self { name, style, explode }
     }
 }
 
@@ -242,32 +112,15 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() {
-        "simple"
-    } else {
-        spec.style
-    };
+    let style = if spec.style.is_empty() { "simple" } else { spec.style };
     match value {
-        serde_json::Value::Array(values) => {
-            serialize_path_array(spec.name, &values, style, spec.explode)
-        }
-        serde_json::Value::Object(values) => {
-            serialize_path_object(spec.name, &values, style, spec.explode)
-        }
-        value => format!(
-            "{}{}",
-            path_primitive_prefix(spec.name, style),
-            percent_encode(&primitive_to_string(&value))
-        ),
+        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
+        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
+        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
     }
 }
 
-fn serialize_path_array(
-    name: &str,
-    values: &[serde_json::Value],
-    style: &str,
-    explode: bool,
-) -> String {
+fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -278,11 +131,7 @@ fn serialize_path_array(
     }
     if style == "matrix" {
         if explode {
-            return serialized
-                .iter()
-                .map(|item| format!(";{}={}", name, item))
-                .collect::<Vec<_>>()
-                .join("");
+            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -344,6 +193,7 @@ fn path_primitive_prefix(name: &str, style: &str) -> String {
     }
 }
 
+
 struct QueryParameterSpec<'a> {
     name: &'a str,
     value: serde_json::Value,
@@ -394,36 +244,12 @@ fn append_serialized_parameter(pairs: &mut Vec<String>, parameter: &QueryParamet
         return;
     }
 
-    let style = if parameter.style.is_empty() {
-        "form"
-    } else {
-        parameter.style
-    };
+    let style = if parameter.style.is_empty() { "form" } else { parameter.style };
     match &parameter.value {
-        serde_json::Value::Array(values) => append_array_parameter(
-            pairs,
-            parameter.name,
-            values,
-            style,
-            parameter.explode,
-            parameter.allow_reserved,
-        ),
-        serde_json::Value::Object(values) if style == "deepObject" => {
-            append_deep_object_parameter(pairs, parameter.name, values, parameter.allow_reserved)
-        }
-        serde_json::Value::Object(values) => append_object_parameter(
-            pairs,
-            parameter.name,
-            values,
-            style,
-            parameter.explode,
-            parameter.allow_reserved,
-        ),
-        value => pairs.push(format!(
-            "{}={}",
-            percent_encode(parameter.name),
-            encode_query_value(&primitive_to_string(value), parameter.allow_reserved)
-        )),
+        serde_json::Value::Array(values) => append_array_parameter(pairs, parameter.name, values, style, parameter.explode, parameter.allow_reserved),
+        serde_json::Value::Object(values) if style == "deepObject" => append_deep_object_parameter(pairs, parameter.name, values, parameter.allow_reserved),
+        serde_json::Value::Object(values) => append_object_parameter(pairs, parameter.name, values, style, parameter.explode, parameter.allow_reserved),
+        value => pairs.push(format!("{}={}", percent_encode(parameter.name), encode_query_value(&primitive_to_string(value), parameter.allow_reserved))),
     }
 }
 
@@ -435,29 +261,17 @@ fn append_array_parameter(
     explode: bool,
     allow_reserved: bool,
 ) {
-    let serialized = values
-        .iter()
-        .filter(|value| !value.is_null())
-        .map(primitive_to_string)
-        .collect::<Vec<_>>();
+    let serialized = values.iter().filter(|value| !value.is_null()).map(primitive_to_string).collect::<Vec<_>>();
     if serialized.is_empty() {
         return;
     }
     if style == "form" && explode {
         for item in serialized {
-            pairs.push(format!(
-                "{}={}",
-                percent_encode(name),
-                encode_query_value(&item, allow_reserved)
-            ));
+            pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&item, allow_reserved)));
         }
         return;
     }
-    pairs.push(format!(
-        "{}={}",
-        percent_encode(name),
-        encode_query_value(&serialized.join(","), allow_reserved)
-    ));
+    pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&serialized.join(","), allow_reserved)));
 }
 
 fn append_object_parameter(
@@ -474,22 +288,14 @@ fn append_object_parameter(
             continue;
         }
         if style == "form" && explode {
-            pairs.push(format!(
-                "{}={}",
-                percent_encode(key),
-                encode_query_value(&primitive_to_string(value), allow_reserved)
-            ));
+            pairs.push(format!("{}={}", percent_encode(key), encode_query_value(&primitive_to_string(value), allow_reserved)));
         } else {
             serialized.push(key.clone());
             serialized.push(primitive_to_string(value));
         }
     }
     if !serialized.is_empty() {
-        pairs.push(format!(
-            "{}={}",
-            percent_encode(name),
-            encode_query_value(&serialized.join(","), allow_reserved)
-        ));
+        pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&serialized.join(","), allow_reserved)));
     }
 }
 
@@ -501,11 +307,7 @@ fn append_deep_object_parameter(
 ) {
     for (key, value) in values {
         if !value.is_null() {
-            pairs.push(format!(
-                "{}={}",
-                percent_encode(&format!("{}[{}]", name, key)),
-                encode_query_value(&primitive_to_string(value), allow_reserved)
-            ));
+            pairs.push(format!("{}={}", percent_encode(&format!("{}[{}]", name, key)), encode_query_value(&primitive_to_string(value), allow_reserved)));
         }
     }
 }
@@ -516,24 +318,11 @@ fn encode_query_value(value: &str, allow_reserved: bool) -> String {
         return encoded;
     }
     for (escaped, reserved) in [
-        ("%3A", ":"),
-        ("%2F", "/"),
-        ("%3F", "?"),
-        ("%23", "#"),
-        ("%5B", "["),
-        ("%5D", "]"),
-        ("%40", "@"),
-        ("%21", "!"),
-        ("%24", "$"),
-        ("%26", "&"),
-        ("%27", "'"),
-        ("%28", "("),
-        ("%29", ")"),
-        ("%2A", "*"),
-        ("%2B", "+"),
-        ("%2C", ","),
-        ("%3B", ";"),
-        ("%3D", "="),
+        ("%3A", ":"), ("%2F", "/"), ("%3F", "?"), ("%23", "#"),
+        ("%5B", "["), ("%5D", "]"), ("%40", "@"), ("%21", "!"),
+        ("%24", "$"), ("%26", "&"), ("%27", "'"), ("%28", "("),
+        ("%29", ")"), ("%2A", "*"), ("%2B", "+"), ("%2C", ","),
+        ("%3B", ";"), ("%3D", "="),
     ] {
         encoded = encoded.replace(escaped, reserved);
     }

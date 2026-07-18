@@ -8,6 +8,6 @@ namespace Sdkwork.ClawRouter.Open.Models
     {
         public Dictionary<string, string>? Attributes { get; set; }
         public string? ChunkingStrategy { get; set; }
-        public string? FileId { get; set; }
+        public string FileId { get; set; }
     }
 }

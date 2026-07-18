@@ -684,7 +684,7 @@ export function getClawRouterAppSdkClient(options: ClawRouterAppSdkClientOptions
   }
   const injected = readInjectedAppSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!appClient) {
     appClient = createClawRouterAppSdkClient();
@@ -698,7 +698,7 @@ export function getClawRouterBackendSdkClient(options: ClawRouterBackendSdkClien
   }
   const injected = readInjectedBackendSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!backendClient) {
     backendClient = createClawRouterBackendSdkClient();
@@ -760,7 +760,7 @@ export function getSdkworkAppbaseAppSdkClient(
   }
   const injected = readInjectedAppbaseAppSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!appbaseAppClient) {
     appbaseAppClient = createSdkworkAppbaseAppSdkClient();
@@ -776,7 +776,7 @@ export function getSdkworkAppbaseBackendSdkClient(
   }
   const injected = readInjectedAppbaseBackendSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!appbaseBackendClient) {
     appbaseBackendClient = createSdkworkAppbaseBackendSdkClient();
@@ -792,7 +792,7 @@ export function getSdkworkGenerationsAppSdkClient(
   }
   const injected = readInjectedGenerationsAppSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!generationsAppClient) {
     generationsAppClient = createSdkworkGenerationsAppSdkClient();
@@ -808,7 +808,7 @@ export function getSdkworkMemoryAppSdkClient(
   }
   const injected = readInjectedMemoryAppSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!memoryAppClient) {
     memoryAppClient = createSdkworkMemoryAppSdkClient();
@@ -824,7 +824,7 @@ export function getSdkworkAgentAppSdkClient(
   }
   const injected = readInjectedAgentAppSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!agentAppClient) {
     agentAppClient = createSdkworkAgentAppSdkClient();
@@ -840,7 +840,7 @@ export function getSdkworkAgentBackendSdkClient(
   }
   const injected = readInjectedAgentBackendSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!agentBackendClient) {
     agentBackendClient = createSdkworkAgentBackendSdkClient();
@@ -889,7 +889,7 @@ export function getSdkworkDriveAppSdkClient(
   }
   const injected = readInjectedDriveAppSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!driveAppClient) {
     driveAppClient = createSdkworkDriveAppSdkClient();
@@ -905,7 +905,7 @@ export function getClawRouterAppDomainTransportSdkClient(
   }
   const injected = readInjectedAppDomainTransportSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!appDomainTransportClient) {
     appDomainTransportClient = createClawRouterAppDomainTransportSdkClient();
@@ -921,7 +921,7 @@ export function getClawRouterBackendDomainTransportSdkClient(
   }
   const injected = readInjectedBackendDomainTransportSdkClient();
   if (injected) {
-    return injected;
+    return attachClawRouterSdkSessionAuthBoundary(injected);
   }
   if (!backendDomainTransportClient) {
     backendDomainTransportClient = createClawRouterBackendDomainTransportSdkClient();

@@ -11,7 +11,7 @@ class ResponsesGoogleApi(private val client: HttpClient) {
     /** Google Gemini list cached contents */
     suspend fun listV1betaCachedContents(pageSize: Int? = null, pageToken: String? = null): GoogleCachedContentListResponse? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/cachedContents"), query))

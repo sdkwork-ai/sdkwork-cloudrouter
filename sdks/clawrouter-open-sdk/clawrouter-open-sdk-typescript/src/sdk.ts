@@ -21,17 +21,12 @@ import { CompletionApi, createCompletionApi } from './api/completion';
 import { ContainerApi, createContainerApi } from './api/container';
 import { ConversationApi, createConversationApi } from './api/conversation';
 import { EmbeddingsApi, createEmbeddingsApi } from './api/embeddings';
-import { EvalApi, createEvalApi } from './api/eval';
 import { FilesApi, createFilesApi } from './api/files';
-import { FineTuningApi, createFineTuningApi } from './api/fine-tuning';
 import { ImagesApi, createImagesApi } from './api/images';
 import { ModelsApi, createModelsApi } from './api/models';
 import { ModerationsApi, createModerationsApi } from './api/moderations';
-import { OrganizationApi, createOrganizationApi } from './api/organization';
-import { ProjectApi, createProjectApi } from './api/project';
 import { RealtimeApi, createRealtimeApi } from './api/realtime';
 import { ResponsesApi, createResponsesApi } from './api/responses';
-import { SkillApi, createSkillApi } from './api/skill';
 import { ThreadsApi, createThreadsApi } from './api/threads';
 import { UploadsApi, createUploadsApi } from './api/uploads';
 import { VectorStoresApi, createVectorStoresApi } from './api/vector-stores';
@@ -62,17 +57,12 @@ export class SdkworkAiClient {
   public readonly container: ContainerApi;
   public readonly conversation: ConversationApi;
   public readonly embeddings: EmbeddingsApi;
-  public readonly eval: EvalApi;
   public readonly files: FilesApi;
-  public readonly fineTuning: FineTuningApi;
   public readonly images: ImagesApi;
   public readonly models: ModelsApi;
   public readonly moderations: ModerationsApi;
-  public readonly organization: OrganizationApi;
-  public readonly project: ProjectApi;
   public readonly realtime: RealtimeApi;
   public readonly responses: ResponsesApi;
-  public readonly skill: SkillApi;
   public readonly threads: ThreadsApi;
   public readonly uploads: UploadsApi;
   public readonly vectorStores: VectorStoresApi;
@@ -121,11 +111,7 @@ export class SdkworkAiClient {
 
     this.embeddings = createEmbeddingsApi(this.httpClient);
 
-    this.eval = createEvalApi(this.httpClient);
-
     this.files = createFilesApi(this.httpClient);
-
-    this.fineTuning = createFineTuningApi(this.httpClient);
 
     this.images = createImagesApi(this.httpClient);
 
@@ -133,15 +119,9 @@ export class SdkworkAiClient {
 
     this.moderations = createModerationsApi(this.httpClient);
 
-    this.organization = createOrganizationApi(this.httpClient);
-
-    this.project = createProjectApi(this.httpClient);
-
     this.realtime = createRealtimeApi(this.httpClient);
 
     this.responses = createResponsesApi(this.httpClient);
-
-    this.skill = createSkillApi(this.httpClient);
 
     this.threads = createThreadsApi(this.httpClient);
 

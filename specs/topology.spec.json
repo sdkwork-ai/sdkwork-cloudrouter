@@ -3,14 +3,14 @@
   "kind": "sdkwork.app.topology",
   "appId": "sdkwork-clawrouter",
   "archetype": "application-http-gateway",
-  "profileRoot": "configs/topology",
+  "profileRoot": "etc/topology",
   "profilePattern": "{deploymentProfile}.{environment}.env",
   "vocabulary": {
     "deploymentProfile": {
       "allowed": ["standalone", "cloud"]
     },
     "environment": {
-      "allowed": ["development", "production"]
+      "allowed": ["development", "test", "staging", "production"]
     }
   },
   "defaults": {
@@ -20,10 +20,14 @@
     "gatewayBind": "0.0.0.0:3900"
   },
   "profileFiles": {
-    "standalone.development": "configs/topology/standalone.development.env",
-    "standalone.production": "configs/topology/standalone.production.env",
-    "cloud.development": "configs/topology/cloud.development.env",
-    "cloud.production": "configs/topology/cloud.production.env"
+    "standalone.development": "etc/topology/standalone.development.env",
+    "standalone.test": "etc/topology/standalone.test.env",
+    "standalone.staging": "etc/topology/standalone.staging.env",
+    "standalone.production": "etc/topology/standalone.production.env",
+    "cloud.development": "etc/topology/cloud.development.env",
+    "cloud.test": "etc/topology/cloud.test.env",
+    "cloud.staging": "etc/topology/cloud.staging.env",
+    "cloud.production": "etc/topology/cloud.production.env"
   },
   "envKeys": {
     "deploymentProfile": "SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE",
@@ -77,20 +81,6 @@
       "bindEnv": "SDKWORK_CLAW_ROUTER_INTERNAL_PORTAL_RENDERER_BIND"
     }
   },
-  "cloudPublicHosts": {
-    "application.public-ingress": {
-      "httpHost": "clawrouter.sdkwork.com"
-    },
-    "application.backend-http": {
-      "httpHost": "clawrouter-admin.sdkwork.com"
-    },
-    "application.open-http": {
-      "httpHost": "clawrouter.sdkwork.com"
-    },
-    "platform.api-gateway": {
-      "httpHost": "api.sdkwork.com"
-    }
-  },
   "database": {
     "appPrefix": "SDKWORK_CLAW"
   },
@@ -107,7 +97,7 @@
       "crate": "sdkwork-api-cloud-gateway",
       "binary": "sdkwork-api-cloud-gateway",
       "repository": "sdkwork-api-cloud-gateway",
-      "configGlob": "configs/sdkwork-api-cloud-gateway.claw-router.{profile}.toml"
+      "configGlob": "etc/sdkwork-api-cloud-gateway.claw-router.{profile}.toml"
     },
     "portalRenderer": {
       "package": "apps/sdkwork-clawrouter-pc",
@@ -134,6 +124,34 @@
         "healthSurfaces": ["application.public-ingress"]
       },
       "standalone.production": {
+        "processes": [
+          {
+            "id": "application.public-ingress",
+            "crate": "sdkwork-clawrouter-standalone-gateway",
+            "binary": "sdkwork-clawrouter-standalone-gateway",
+            "required": true
+          }
+        ],
+        "healthSurfaces": ["application.public-ingress"]
+      },
+      "standalone.test": {
+        "processes": [
+          {
+            "id": "application.public-ingress",
+            "crate": "sdkwork-clawrouter-standalone-gateway",
+            "binary": "sdkwork-clawrouter-standalone-gateway",
+            "required": true
+          },
+          {
+            "id": "portal-renderer",
+            "package": "apps/sdkwork-clawrouter-pc",
+            "script": "dev:browser",
+            "required": true
+          }
+        ],
+        "healthSurfaces": ["application.public-ingress"]
+      },
+      "standalone.staging": {
         "processes": [
           {
             "id": "application.public-ingress",
@@ -185,12 +203,56 @@
           }
         ],
         "healthSurfaces": ["application.public-ingress", "platform.api-gateway"]
+      },
+      "cloud.test": {
+        "processes": [
+          {
+            "id": "platform.api-gateway",
+            "crate": "sdkwork-api-cloud-gateway",
+            "binary": "sdkwork-api-cloud-gateway",
+            "repository": "sdkwork-api-cloud-gateway",
+            "required": true
+          },
+          {
+            "id": "application.public-ingress",
+            "crate": "sdkwork-clawrouter-cloud-gateway",
+            "binary": "sdkwork-clawrouter-cloud-gateway",
+            "required": true
+          },
+          {
+            "id": "portal-renderer",
+            "package": "apps/sdkwork-clawrouter-pc",
+            "script": "dev:browser",
+            "required": true
+          }
+        ],
+        "healthSurfaces": ["application.public-ingress", "platform.api-gateway"]
+      },
+      "cloud.staging": {
+        "processes": [
+          {
+            "id": "platform.api-gateway",
+            "crate": "sdkwork-api-cloud-gateway",
+            "binary": "sdkwork-api-cloud-gateway",
+            "repository": "sdkwork-api-cloud-gateway",
+            "required": true
+          },
+          {
+            "id": "application.public-ingress",
+            "crate": "sdkwork-clawrouter-cloud-gateway",
+            "binary": "sdkwork-clawrouter-cloud-gateway",
+            "required": true
+          }
+        ],
+        "healthSurfaces": ["application.public-ingress", "platform.api-gateway"]
       }
     }
   },
   "packaging": {
     "cloudConfigFiles": [
       "sdkwork-api-cloud-gateway.claw-router.development.toml",
+      "sdkwork-api-cloud-gateway.claw-router.test.toml",
+      "sdkwork-api-cloud-gateway.claw-router.staging.toml",
       "sdkwork-api-cloud-gateway.claw-router.production.toml"
     ],
     "targets": [
@@ -267,4 +329,3 @@
     "cliFlags": ["--topology", "--internal-distributed", "--all-in-one"]
   }
 }
-

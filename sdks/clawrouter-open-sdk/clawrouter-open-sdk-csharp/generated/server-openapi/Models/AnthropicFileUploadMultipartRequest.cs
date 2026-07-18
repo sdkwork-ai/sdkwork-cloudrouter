@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class AnthropicFileUploadMultipartRequest
     {
-        public string? File { get; set; }
+        public string File { get; set; }
     }
 }

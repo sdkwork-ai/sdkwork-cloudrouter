@@ -27,6 +27,21 @@ pub trait GatewayUsageRecorder {
         command: GatewayUsageRecordCommand,
     ) -> GatewayUsageRecordFuture<'a>;
 
+    fn record_gateway_usage_batch<'a>(
+        &'a self,
+        commands: Vec<GatewayUsageRecordCommand>,
+    ) -> GatewayUsageRecordFuture<'a>
+    where
+        Self: Sync,
+    {
+        Box::pin(async move {
+            for command in commands {
+                self.record_gateway_usage(command).await?;
+            }
+            Ok(())
+        })
+    }
+
     fn record_gateway_trace_with_context<'a>(
         &'a self,
         command: GatewayRequestTraceCommand,

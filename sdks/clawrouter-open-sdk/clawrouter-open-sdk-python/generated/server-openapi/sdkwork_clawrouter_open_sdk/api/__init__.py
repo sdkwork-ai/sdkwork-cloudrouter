@@ -17,17 +17,12 @@ from .completion import CompletionApi
 from .container import ContainerApi
 from .conversation import ConversationApi
 from .embeddings import EmbeddingsApi
-from .eval import EvalApi
 from .files import FilesApi
-from .fine_tuning import FineTuningApi
 from .images import ImagesApi
 from .models import ModelsApi
 from .moderations import ModerationsApi
-from .organization import OrganizationApi
-from .project import ProjectApi
 from .realtime import RealtimeApi
 from .responses import ResponsesApi
-from .skill import SkillApi
 from .threads import ThreadsApi
 from .uploads import UploadsApi
 from .vector_stores import VectorStoresApi
@@ -36,4 +31,4 @@ from .videos_vidu import VideosViduApi
 from .images_vidu import ImagesViduApi
 from .videos_volcengine import VideosVolcengineApi
 
-__all__ = ['FilesAnthropicApi', 'ChatAnthropicApi', 'BatchesAnthropicApi', 'ResponsesGoogleApi', 'FilesGoogleApi', 'EmbeddingsGoogleApi', 'ChatGoogleApi', 'VideosKlingApi', 'ImagesMidjourneyApi', 'ImagesNanoBananaApi', 'AudioSunoApi', 'AssistantsApi', 'AudioApi', 'BatchesApi', 'ChatApi', 'CompletionApi', 'ContainerApi', 'ConversationApi', 'EmbeddingsApi', 'EvalApi', 'FilesApi', 'FineTuningApi', 'ImagesApi', 'ModelsApi', 'ModerationsApi', 'OrganizationApi', 'ProjectApi', 'RealtimeApi', 'ResponsesApi', 'SkillApi', 'ThreadsApi', 'UploadsApi', 'VectorStoresApi', 'VideoApi', 'VideosViduApi', 'ImagesViduApi', 'VideosVolcengineApi']
+__all__ = ['FilesAnthropicApi', 'ChatAnthropicApi', 'BatchesAnthropicApi', 'ResponsesGoogleApi', 'FilesGoogleApi', 'EmbeddingsGoogleApi', 'ChatGoogleApi', 'VideosKlingApi', 'ImagesMidjourneyApi', 'ImagesNanoBananaApi', 'AudioSunoApi', 'AssistantsApi', 'AudioApi', 'BatchesApi', 'ChatApi', 'CompletionApi', 'ContainerApi', 'ConversationApi', 'EmbeddingsApi', 'FilesApi', 'ImagesApi', 'ModelsApi', 'ModerationsApi', 'RealtimeApi', 'ResponsesApi', 'ThreadsApi', 'UploadsApi', 'VectorStoresApi', 'VideoApi', 'VideosViduApi', 'ImagesViduApi', 'VideosVolcengineApi']

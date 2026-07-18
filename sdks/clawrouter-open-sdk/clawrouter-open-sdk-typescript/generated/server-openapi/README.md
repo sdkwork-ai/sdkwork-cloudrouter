@@ -89,17 +89,12 @@ const client = new SdkworkAiClient({
 - `client.container` - container API
 - `client.conversation` - conversation API
 - `client.embeddings` - embedding API
-- `client.eval` - eval API
 - `client.files` - file API
-- `client.fineTuning` - fine_tuning API
 - `client.images` - image API
 - `client.models` - model API
 - `client.moderations` - moderation API
-- `client.organization` - organization API
-- `client.project` - project API
 - `client.realtime` - realtime API
 - `client.responses` - response API
-- `client.skill` - skill API
 - `client.threads` - thread API
 - `client.uploads` - upload API
 - `client.vectorStores` - vector_store API
@@ -417,19 +412,6 @@ const body = {
 const result = await client.embeddings.create(body);
 ```
 
-### eval
-
-```typescript
-// List evals
-const params = {
-  limit: 1,
-  order: 'asc',
-  after: 'after',
-  before: 'before',
-};
-const result = await client.eval.list(params);
-```
-
 ### file
 
 ```typescript
@@ -441,19 +423,6 @@ const params = {
   before: 'before',
 };
 const result = await client.files.list(params);
-```
-
-### fine_tuning
-
-```typescript
-// List fine-tuning jobs
-const params = {
-  limit: 1,
-  order: 'asc',
-  after: 'after',
-  before: 'before',
-};
-const result = await client.fineTuning.jobs.list(params);
 ```
 
 ### image
@@ -485,33 +454,6 @@ const body = {
   model: 'model',
 };
 const result = await client.moderations.create(body);
-```
-
-### organization
-
-```typescript
-// List organization admin API keys
-const params = {
-  limit: 1,
-  order: 'asc',
-  after: 'after',
-  before: 'before',
-};
-const result = await client.organization.adminApiKeys.list(params);
-```
-
-### project
-
-```typescript
-// List project roles
-const projectId = '1';
-const params = {
-  limit: 1,
-  order: 'asc',
-  after: 'after',
-  before: 'before',
-};
-const result = await client.project.roles.list(projectId, params);
 ```
 
 ### realtime
@@ -575,19 +517,6 @@ const body = {
   user: 'user',
 };
 const result = await client.responses.create(body);
-```
-
-### skill
-
-```typescript
-// List skills
-const params = {
-  limit: 1,
-  order: 'asc',
-  after: 'after',
-  before: 'before',
-};
-const result = await client.skill.list(params);
 ```
 
 ### thread

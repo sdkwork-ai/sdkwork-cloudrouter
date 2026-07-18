@@ -13,7 +13,7 @@ class BatchesAnthropicApi(private val client: HttpClient) {
         val query = buildQueryString(listOf(
             QueryParameterSpec("before_id", beforeId, "form", true, false, null),
             QueryParameterSpec("after_id", afterId, "form", true, false, null),
-            QueryParameterSpec("page_size", limit, "form", true, false, null)
+            QueryParameterSpec("limit", limit, "form", true, false, null)
         ))
         val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/messages/batches"), query))
         return client.convertValue(raw, object : TypeReference<AnthropicMessageBatchListResponse>() {})

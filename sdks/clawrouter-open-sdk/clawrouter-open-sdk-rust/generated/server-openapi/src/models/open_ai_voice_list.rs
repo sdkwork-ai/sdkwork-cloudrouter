@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiVoice;
+use crate::models::{OpenAiVoice};
 
 /// OpenAI-compatible paginated list of voices.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

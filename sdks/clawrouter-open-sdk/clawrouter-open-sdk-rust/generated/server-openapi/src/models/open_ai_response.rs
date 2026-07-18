@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{
-    OpenAiIncompleteDetails, OpenAiResponseError, OpenAiResponseOutputItem, OpenAiResponseUsage,
-};
+use crate::models::{OpenAiIncompleteDetails, OpenAiResponseError, OpenAiResponseOutputItem, OpenAiResponseUsage};
 
 /// OpenAI-compatible open ai response schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -10,6 +10,6 @@ namespace Sdkwork.ClawRouter.Open.Models
         public OpenAiChatImageUrl? ImageUrl { get; set; }
         public OpenAiChatInputAudio? InputAudio { get; set; }
         public string? Text { get; set; }
-        public string? Type { get; set; }
+        public string Type { get; set; }
     }
 }

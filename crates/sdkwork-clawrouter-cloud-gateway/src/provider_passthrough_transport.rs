@@ -158,15 +158,16 @@ pub(crate) async fn forward_provider_passthrough_to_target(
     let upstream_request = builder
         .body(Full::new(body))
         .map_err(|error| format!("failed to build provider passthrough request: {error}"))?;
-    let upstream_response = tokio::time::timeout(response_timeout, client.request(upstream_request))
-        .await
-        .map_err(|_| {
-            format!(
-                "provider passthrough upstream request timed out after {} ms",
-                response_timeout.as_millis()
-            )
-        })?
-        .map_err(|error| format!("provider passthrough upstream request failed: {error}"))?;
+    let upstream_response =
+        tokio::time::timeout(response_timeout, client.request(upstream_request))
+            .await
+            .map_err(|_| {
+                format!(
+                    "provider passthrough upstream request timed out after {} ms",
+                    response_timeout.as_millis()
+                )
+            })?
+            .map_err(|error| format!("provider passthrough upstream request failed: {error}"))?;
     Ok(upstream_to_axum_response(upstream_response))
 }
 

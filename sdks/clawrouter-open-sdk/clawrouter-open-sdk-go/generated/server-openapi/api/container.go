@@ -20,7 +20,7 @@ func NewContainerApi(client *sdkhttp.Client) *ContainerApi {
 // List containers
 func (a *ContainerApi) List(limit *int, order *string, after *string, before *string) (sdktypes.OpenAiContainerList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},
@@ -66,7 +66,7 @@ func (a *ContainerApi) Retrieve(containerId string) (sdktypes.OpenAiContainer, e
 // List container files
 func (a *ContainerApi) ListFiles(containerId string, limit *int, order *string, after *string, before *string) (sdktypes.OpenAiContainerFileList, error) {
     query := BuildQueryString([]QueryParameterSpec{
-        {Name: "page_size", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
+        {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "order", Value: func() interface{} { if order == nil { return nil }; return *order }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after", Value: func() interface{} { if after == nil { return nil }; return *after }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "before", Value: func() interface{} { if before == nil { return nil }; return *before }(), Style: "form", Explode: true, AllowReserved: false},

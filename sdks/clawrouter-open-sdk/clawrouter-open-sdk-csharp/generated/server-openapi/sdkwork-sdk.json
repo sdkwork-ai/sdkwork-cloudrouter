@@ -5,6 +5,8 @@
   "language": "csharp",
   "sdkType": "ai",
   "packageName": "Sdkwork.ClawRouter.Open.Sdk",
+  "transportPackageName": "Sdkwork.ClawRouter.Open.Sdk",
+  "consumerPackageName": "Sdkwork.ClawRouter.Open.Sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

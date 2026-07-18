@@ -77,11 +77,8 @@ async fn reset_admin_requires_password_env_and_rejects_short_password() {
     let ensure = run_installer(&database, &["ensure"]);
     assert_command_succeeded(&ensure, "ensure before reset-admin");
 
-    let no_password = run_installer_with_env(
-        &database,
-        &["reset-admin", "--username", "admin"],
-        &[],
-    );
+    let no_password =
+        run_installer_with_env(&database, &["reset-admin", "--username", "admin"], &[]);
     assert!(!no_password.status.success());
     let no_password_payload = stderr_json(&no_password);
     assert_eq!("error", no_password_payload["status"]);

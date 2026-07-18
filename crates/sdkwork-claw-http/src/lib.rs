@@ -1,7 +1,7 @@
 pub mod auth;
-pub mod federated_database_env;
 pub mod contract_routes;
 pub mod error;
+pub mod federated_database_env;
 pub mod headers;
 pub mod health;
 pub mod metrics;
@@ -30,10 +30,6 @@ pub use auth::{
     AppSessionTokenKind, AppSubjectBoundaryConfig, QueryStringApiKeyPolicy, TrustedRequestSubject,
     TrustedRequestSubjectError, TrustedSubjectBoundaryError,
 };
-pub use federated_database_env::{
-    ensure_iam_database_env_for_claw_database,
-    materialize_federated_database_env_from_claw_config,
-};
 pub use contract_routes::{
     app_openapi_response, backend_openapi_response, cloud_services_openapi_response,
     contract_fallback, gateway_openapi_response, openapi_schema_tabs_response_for_surface,
@@ -42,6 +38,9 @@ pub use contract_routes::{
     OPENAPI_SCHEMA_TABS_PATH, PAAS_OPENAPI_PATH, PAYMENT_AGGREGATE_OPENAPI_PATH,
 };
 pub use error::{not_implemented_response, NotImplementedData};
+pub use federated_database_env::{
+    ensure_iam_database_env_for_claw_database, materialize_federated_database_env_from_claw_config,
+};
 pub use headers::{default_security_headers, redact_http_header};
 pub use metrics::{metrics, metrics_middleware, record_readiness_check};
 pub use query_string::{

@@ -622,7 +622,47 @@ class ClawRouterGatewayOpenApiGenerator:
         self._normalize_component_nested_schema_descriptions(components)
         self._normalize_request_body_descriptions(spec)
         self._normalize_vendor_object_component_closure(spec)
+        self._prune_unreachable_schemas(spec)
         return spec
+
+    @staticmethod
+    def _prune_unreachable_schemas(spec: dict[str, Any]) -> None:
+        components = spec.get("components")
+        if not isinstance(components, dict):
+            return
+        schemas = components.get("schemas")
+        if not isinstance(schemas, dict):
+            return
+
+        reachable: set[str] = set()
+        pending: list[str] = []
+
+        def collect_refs(node: Any) -> None:
+            if isinstance(node, dict):
+                raw_ref = node.get("$ref")
+                if isinstance(raw_ref, str) and raw_ref.startswith("#/components/schemas/"):
+                    schema_name = raw_ref.rsplit("/", 1)[-1]
+                    if schema_name not in reachable:
+                        reachable.add(schema_name)
+                        pending.append(schema_name)
+                for value in node.values():
+                    collect_refs(value)
+            elif isinstance(node, list):
+                for value in node:
+                    collect_refs(value)
+
+        collect_refs(spec.get("paths", {}))
+        while pending:
+            schema_name = pending.pop()
+            schema = schemas.get(schema_name)
+            if schema is not None:
+                collect_refs(schema)
+
+        components["schemas"] = {
+            schema_name: schema
+            for schema_name, schema in schemas.items()
+            if schema_name in reachable
+        }
 
     def _normalize_component_schema_descriptions(self, components: dict[str, Any]) -> None:
         schemas = components.get("schemas")
@@ -1170,10 +1210,6 @@ class ClawRouterGatewayOpenApiGenerator:
             "createVoiceConsent": "OpenAiVoiceConsentCreateRequest",
             "updateVoiceConsent": "OpenAiVoiceConsentUpdateRequest",
             "createContainer": "OpenAiContainerCreateRequest",
-            "createEval": "OpenAiEvalCreateRequest",
-            "modifyEval": "OpenAiEvalUpdateRequest",
-            "createEvalRun": "OpenAiEvalRunCreateRequest",
-            "modifySkill": "OpenAiSkillUpdateRequest",
             "createVectorStore": "OpenAiVectorStoreCreateRequest",
             "modifyVectorStore": "OpenAiVectorStoreUpdateRequest",
             "searchVectorStore": "OpenAiVectorStoreSearchRequest",
@@ -1191,7 +1227,6 @@ class ClawRouterGatewayOpenApiGenerator:
             "modifyAssistant": "OpenAiAssistantUpdateRequest",
             "createMessage": "OpenAiThreadMessageCreateRequest",
             "createRun": "OpenAiRunCreateRequest",
-            "createFineTuningJob": "OpenAiFineTuningJobCreateRequest",
             "createUpload": "OpenAiUploadCreateRequest",
             "completeUpload": "OpenAiUploadCompleteRequest",
             "createRealtimeClientSecret": "OpenAiRealtimeClientSecretCreateRequest",
@@ -1203,34 +1238,6 @@ class ClawRouterGatewayOpenApiGenerator:
             "createRealtimeSession": "OpenAiRealtimeSessionCreateRequest",
             "createRealtimeTranscriptionSession": "OpenAiRealtimeTranscriptionSessionCreateRequest",
             "createRealtimeTranslationSession": "OpenAiRealtimeTranslationSessionCreateRequest",
-            "createFineTuningCheckpointPermission": "OpenAiFineTuningCheckpointPermissionCreateRequest",
-            "runFineTuningGrader": "OpenAiFineTuningGraderRunRequest",
-            "validateFineTuningGrader": "OpenAiFineTuningGraderValidateRequest",
-            "createOrganizationAdminApiKey": "OpenAiOrganizationAdminApiKeyCreateRequest",
-            "createOrganizationInvite": "OpenAiOrganizationInviteCreateRequest",
-            "modifyOrganizationUser": "OpenAiOrganizationUserUpdateRequest",
-            "createOrganizationUserRole": "OpenAiRoleAssignmentCreateRequest",
-            "createOrganizationGroup": "OpenAiOrganizationGroupCreateRequest",
-            "modifyOrganizationGroup": "OpenAiOrganizationGroupUpdateRequest",
-            "addOrganizationGroupUser": "OpenAiOrganizationGroupUserCreateRequest",
-            "createOrganizationGroupRole": "OpenAiRoleAssignmentCreateRequest",
-            "createOrganizationRole": "OpenAiRoleCreateRequest",
-            "modifyOrganizationRole": "OpenAiRoleUpdateRequest",
-            "activateOrganizationCertificates": "OpenAiCertificateActivationRequest",
-            "deactivateOrganizationCertificates": "OpenAiCertificateActivationRequest",
-            "createOrganizationProject": "OpenAiProjectCreateRequest",
-            "modifyOrganizationProject": "OpenAiProjectUpdateRequest",
-            "createProjectUser": "OpenAiProjectUserCreateRequest",
-            "modifyProjectUser": "OpenAiProjectUserUpdateRequest",
-            "createProjectServiceAccount": "OpenAiProjectServiceAccountCreateRequest",
-            "modifyProjectRateLimit": "OpenAiProjectRateLimitUpdateRequest",
-            "createProjectGroup": "OpenAiProjectGroupCreateRequest",
-            "activateProjectCertificates": "OpenAiCertificateActivationRequest",
-            "deactivateProjectCertificates": "OpenAiCertificateActivationRequest",
-            "createProjectRole": "OpenAiRoleCreateRequest",
-            "modifyProjectRole": "OpenAiRoleUpdateRequest",
-            "createProjectUserRole": "OpenAiRoleAssignmentCreateRequest",
-            "createProjectGroupRole": "OpenAiRoleAssignmentCreateRequest",
         }.get(operation_id)
 
     def _public_multipart_request_schema_override(self, operation_id: str) -> str | None:
@@ -1238,9 +1245,6 @@ class ClawRouterGatewayOpenApiGenerator:
             "createVideoCharacter": "OpenAiVideoCharacterMultipartRequest",
             "createVoice": "OpenAiVoiceCreateMultipartRequest",
             "createContainerFile": "OpenAiContainerFileCreateMultipartRequest",
-            "createSkill": "OpenAiSkillCreateMultipartRequest",
-            "createSkillVersion": "OpenAiSkillVersionCreateMultipartRequest",
-            "uploadOrganizationCertificate": "OpenAiCertificateUploadMultipartRequest",
         }.get(operation_id)
 
     def _public_response_schema_override(self, operation_id: str) -> str | None:
@@ -1285,23 +1289,6 @@ class ClawRouterGatewayOpenApiGenerator:
             "listContainerFiles": "OpenAiContainerFileList",
             "createContainerFile": "OpenAiContainerFile",
             "retrieveContainerFile": "OpenAiContainerFile",
-            "listEvals": "OpenAiEvalList",
-            "createEval": "OpenAiEval",
-            "retrieveEval": "OpenAiEval",
-            "modifyEval": "OpenAiEval",
-            "listEvalRuns": "OpenAiEvalRunList",
-            "createEvalRun": "OpenAiEvalRun",
-            "retrieveEvalRun": "OpenAiEvalRun",
-            "cancelEvalRun": "OpenAiEvalRun",
-            "listEvalRunOutputItems": "OpenAiEvalRunOutputItemList",
-            "retrieveEvalRunOutputItem": "OpenAiEvalRunOutputItem",
-            "listSkills": "OpenAiSkillList",
-            "createSkill": "OpenAiSkill",
-            "retrieveSkill": "OpenAiSkill",
-            "modifySkill": "OpenAiSkill",
-            "listSkillVersions": "OpenAiSkillVersionList",
-            "createSkillVersion": "OpenAiSkillVersion",
-            "retrieveSkillVersion": "OpenAiSkillVersion",
             "listVectorStores": "OpenAiVectorStoreList",
             "createVectorStore": "OpenAiVectorStore",
             "retrieveVectorStore": "OpenAiVectorStore",
@@ -1339,18 +1326,6 @@ class ClawRouterGatewayOpenApiGenerator:
             "submitRunToolOutputs": "OpenAiRun",
             "listRunSteps": "OpenAiRunStepList",
             "retrieveRunStep": "OpenAiRunStep",
-            "listFineTuningJobs": "OpenAiFineTuningJobList",
-            "createFineTuningJob": "OpenAiFineTuningJob",
-            "retrieveFineTuningJob": "OpenAiFineTuningJob",
-            "cancelFineTuningJob": "OpenAiFineTuningJob",
-            "pauseFineTuningJob": "OpenAiFineTuningJob",
-            "resumeFineTuningJob": "OpenAiFineTuningJob",
-            "listFineTuningJobEvents": "OpenAiFineTuningJobEventList",
-            "listFineTuningJobCheckpoints": "OpenAiFineTuningJobCheckpointList",
-            "listFineTuningCheckpointPermissions": "OpenAiFineTuningCheckpointPermissionList",
-            "createFineTuningCheckpointPermission": "OpenAiFineTuningCheckpointPermission",
-            "runFineTuningGrader": "OpenAiFineTuningGraderRunResult",
-            "validateFineTuningGrader": "OpenAiFineTuningGraderValidationResult",
             "createUpload": "OpenAiUpload",
             "completeUpload": "OpenAiUpload",
             "cancelUpload": "OpenAiUpload",
@@ -1363,73 +1338,6 @@ class ClawRouterGatewayOpenApiGenerator:
             "createRealtimeSession": "OpenAiRealtimeSession",
             "createRealtimeTranscriptionSession": "OpenAiRealtimeTranscriptionSession",
             "createRealtimeTranslationSession": "OpenAiRealtimeTranslationSession",
-            "getOrganizationCosts": "OpenAiOrganizationCostList",
-            "listOrganizationAuditLogs": "OpenAiOrganizationAuditLogList",
-            "listOrganizationAdminApiKeys": "OpenAiOrganizationAdminApiKeyList",
-            "createOrganizationAdminApiKey": "OpenAiOrganizationAdminApiKey",
-            "retrieveOrganizationAdminApiKey": "OpenAiOrganizationAdminApiKey",
-            "listOrganizationInvites": "OpenAiOrganizationInviteList",
-            "createOrganizationInvite": "OpenAiOrganizationInvite",
-            "retrieveOrganizationInvite": "OpenAiOrganizationInvite",
-            "listOrganizationUsers": "OpenAiOrganizationUserList",
-            "retrieveOrganizationUser": "OpenAiOrganizationUser",
-            "modifyOrganizationUser": "OpenAiOrganizationUser",
-            "listOrganizationUserRoles": "OpenAiRoleAssignmentList",
-            "createOrganizationUserRole": "OpenAiRoleAssignment",
-            "listOrganizationGroups": "OpenAiOrganizationGroupList",
-            "createOrganizationGroup": "OpenAiOrganizationGroup",
-            "retrieveOrganizationGroup": "OpenAiOrganizationGroup",
-            "modifyOrganizationGroup": "OpenAiOrganizationGroup",
-            "listOrganizationGroupUsers": "OpenAiOrganizationUserList",
-            "addOrganizationGroupUser": "OpenAiOrganizationUser",
-            "listOrganizationGroupRoles": "OpenAiRoleAssignmentList",
-            "createOrganizationGroupRole": "OpenAiRoleAssignment",
-            "listOrganizationRoles": "OpenAiRoleList",
-            "createOrganizationRole": "OpenAiRole",
-            "retrieveOrganizationRole": "OpenAiRole",
-            "modifyOrganizationRole": "OpenAiRole",
-            "listOrganizationCertificates": "OpenAiCertificateList",
-            "uploadOrganizationCertificate": "OpenAiCertificate",
-            "retrieveOrganizationCertificate": "OpenAiCertificate",
-            "activateOrganizationCertificates": "OpenAiCertificateList",
-            "deactivateOrganizationCertificates": "OpenAiCertificateList",
-            "getOrganizationCompletionsUsage": "OpenAiOrganizationUsageList",
-            "getOrganizationEmbeddingsUsage": "OpenAiOrganizationUsageList",
-            "getOrganizationModerationsUsage": "OpenAiOrganizationUsageList",
-            "getOrganizationImagesUsage": "OpenAiOrganizationUsageList",
-            "getOrganizationAudioSpeechesUsage": "OpenAiOrganizationUsageList",
-            "getOrganizationAudioTranscriptionsUsage": "OpenAiOrganizationUsageList",
-            "getOrganizationVectorStoresUsage": "OpenAiOrganizationUsageList",
-            "getOrganizationCodeInterpreterSessionsUsage": "OpenAiOrganizationUsageList",
-            "listOrganizationProjects": "OpenAiProjectList",
-            "createOrganizationProject": "OpenAiProject",
-            "retrieveOrganizationProject": "OpenAiProject",
-            "modifyOrganizationProject": "OpenAiProject",
-            "archiveOrganizationProject": "OpenAiProject",
-            "listProjectUsers": "OpenAiProjectUserList",
-            "createProjectUser": "OpenAiProjectUser",
-            "retrieveProjectUser": "OpenAiProjectUser",
-            "modifyProjectUser": "OpenAiProjectUser",
-            "listProjectServiceAccounts": "OpenAiProjectServiceAccountList",
-            "createProjectServiceAccount": "OpenAiProjectServiceAccount",
-            "retrieveProjectServiceAccount": "OpenAiProjectServiceAccount",
-            "listProjectApiKeys": "OpenAiProjectApiKeyList",
-            "retrieveProjectApiKey": "OpenAiProjectApiKey",
-            "listProjectRateLimits": "OpenAiProjectRateLimitList",
-            "modifyProjectRateLimit": "OpenAiProjectRateLimit",
-            "listProjectGroups": "OpenAiOrganizationGroupList",
-            "createProjectGroup": "OpenAiOrganizationGroup",
-            "listProjectCertificates": "OpenAiCertificateList",
-            "activateProjectCertificates": "OpenAiCertificateList",
-            "deactivateProjectCertificates": "OpenAiCertificateList",
-            "listProjectRoles": "OpenAiRoleList",
-            "createProjectRole": "OpenAiRole",
-            "retrieveProjectRole": "OpenAiRole",
-            "modifyProjectRole": "OpenAiRole",
-            "listProjectUserRoles": "OpenAiRoleAssignmentList",
-            "createProjectUserRole": "OpenAiRoleAssignment",
-            "listProjectGroupRoles": "OpenAiRoleAssignmentList",
-            "createProjectGroupRole": "OpenAiRoleAssignment",
         }.get(operation_id)
 
     def _is_public_v1_path(self, path: str) -> bool:
@@ -1543,11 +1451,7 @@ class ClawRouterGatewayOpenApiGenerator:
         }
 
     def _is_public_list_response(self, *, operation_id: str, path: str) -> bool:
-        return (
-            operation_id.startswith("list")
-            or operation_id.endswith("Usage")
-            or operation_id == "getOrganizationCosts"
-        )
+        return operation_id.startswith("list") or operation_id.endswith("Usage")
 
     def _public_request_properties(
         self,
@@ -1673,54 +1577,11 @@ class ClawRouterGatewayOpenApiGenerator:
             })
             return properties
 
-        if tag == "Fine Tuning":
-            properties.update({
-                "model": self._string_schema("Base model id to fine-tune or evaluate."),
-                "training_file": self._string_schema("Training file identifier."),
-                "validation_file": self._string_schema("Validation file identifier."),
-                "suffix": self._string_schema("Suffix added to the fine-tuned model name."),
-                "hyperparameters": self._json_value_schema("Fine-tuning hyperparameter configuration."),
-                "project_id": self._string_schema("Project identifier that receives checkpoint permissions."),
-                "grader": self._json_value_schema("Grader configuration to run or validate."),
-                "input": self._json_value_schema("Sample input used by a grader run."),
-                "metadata": self._metadata_schema("Developer-defined fine-tuning metadata."),
-            })
-            return properties
-
         if tag == "Containers":
             properties.update({
                 "name": self._string_schema("Human-readable container name."),
                 "file_id": self._string_schema("File identifier to attach to the container."),
                 "metadata": self._metadata_schema("Developer-defined container metadata."),
-            })
-            return properties
-
-        if tag == "Evals":
-            properties.update({
-                "name": self._string_schema("Human-readable eval or eval run name."),
-                "data_source": self._json_value_schema("Data source used by the eval or eval run."),
-                "testing_criteria": self._json_array_schema("Testing criteria used by the eval."),
-                "metadata": self._metadata_schema("Developer-defined eval metadata."),
-            })
-            return properties
-
-        if tag == "Skills":
-            properties.update({
-                "name": self._string_schema("Human-readable skill name."),
-                "description": self._string_schema("Human-readable skill description."),
-                "metadata": self._metadata_schema("Developer-defined skill metadata."),
-            })
-            return properties
-
-        if tag == "Administration":
-            properties.update({
-                "name": self._string_schema("Human-readable organization, project, group, or role name."),
-                "email": self._string_schema("User or invitee email address.", format_="email"),
-                "role": self._string_schema("Organization or project role identifier."),
-                "user_id": self._string_schema("User identifier."),
-                "group_id": self._string_schema("Group identifier."),
-                "certificate_ids": self._string_array_schema("Certificate identifiers to activate or deactivate."),
-                "metadata": self._metadata_schema("Developer-defined administrative metadata."),
             })
             return properties
 
@@ -1758,7 +1619,6 @@ class ClawRouterGatewayOpenApiGenerator:
             "createUpload": ["bytes", "filename", "mime_type", "purpose"],
             "completeUpload": ["part_ids"],
             "createBatch": ["input_file_id", "endpoint", "completion_window"],
-            "createFineTuningJob": ["model", "training_file"],
         }
         return [name for name in required_by_operation.get(operation_id, []) if name in properties]
 
@@ -1769,11 +1629,6 @@ class ClawRouterGatewayOpenApiGenerator:
         }
         if "container" in path:
             properties["purpose"] = self._string_schema("Container file purpose when required by the selected upstream.")
-        if "skills" in path:
-            properties["name"] = self._string_schema("Human-readable skill or skill version name.")
-            properties["package"] = {"type": "string", "format": "binary", "description": "Skill package archive when the upstream expects this form field."}
-        if "certificates" in path:
-            properties["certificate"] = {"type": "string", "format": "binary", "description": "Certificate file when the upstream expects this form field."}
         if "voices" in path:
             properties["name"] = self._string_schema("Human-readable voice name.")
             properties["description"] = self._string_schema("Human-readable voice description.")
@@ -1870,37 +1725,11 @@ class ClawRouterGatewayOpenApiGenerator:
                 "output_file_id": self._string_schema("Output file identifier produced by the batch."),
                 "error_file_id": self._string_schema("Error file identifier produced by the batch."),
             })
-        elif tag == "Fine Tuning":
-            properties.update({
-                "model": self._string_schema("Base or fine-tuned model id."),
-                "fine_tuned_model": self._string_schema("Fine-tuned model id when available."),
-                "training_file": self._string_schema("Training file identifier."),
-                "result_files": self._string_array_schema("Result file identifiers returned by the fine-tuning job."),
-            })
         elif tag == "Containers":
             properties.update({
                 "name": self._string_schema("Human-readable container name."),
                 "filename": self._string_schema("Container file name."),
                 "bytes": self._integer_schema("Container file size in bytes.", format_="int64"),
-            })
-        elif tag == "Evals":
-            properties.update({
-                "name": self._string_schema("Human-readable eval or eval run name."),
-                "data_source": self._json_value_schema("Eval data source returned by the upstream."),
-                "result_counts": self._json_value_schema("Eval run result counters when available."),
-            })
-        elif tag == "Skills":
-            properties.update({
-                "name": self._string_schema("Human-readable skill name."),
-                "description": self._string_schema("Human-readable skill description."),
-                "version": self._string_schema("Skill version identifier."),
-            })
-        elif tag == "Administration":
-            properties.update({
-                "name": self._string_schema("Human-readable administrative resource name."),
-                "email": self._string_schema("User or invite email address.", format_="email"),
-                "role": self._string_schema("Role identifier or role name."),
-                "project_id": self._string_schema("Project identifier associated with the resource."),
             })
         elif tag == "Uploads":
             properties.update({
@@ -2009,15 +1838,11 @@ class ClawRouterGatewayOpenApiGenerator:
         schemas.update(self._openai_audio_resource_schemas())
         schemas.update(self._openai_file_resource_schemas())
         schemas.update(self._openai_container_resource_schemas())
-        schemas.update(self._openai_eval_resource_schemas())
-        schemas.update(self._openai_skill_resource_schemas())
         schemas.update(self._openai_vector_store_resource_schemas())
         schemas.update(self._openai_batch_resource_schemas())
         schemas.update(self._openai_assistant_resource_schemas())
-        schemas.update(self._openai_fine_tuning_resource_schemas())
         schemas.update(self._openai_upload_resource_schemas())
         schemas.update(self._openai_realtime_resource_schemas())
-        schemas.update(self._openai_administration_resource_schemas())
         return schemas
 
     def _openai_list_schema(self, name: str, item_schema_name: str) -> dict[str, Any]:
@@ -2506,178 +2331,7 @@ class ClawRouterGatewayOpenApiGenerator:
             },
         }
 
-    def _openai_eval_resource_schemas(self) -> dict[str, Any]:
-        eval_request_properties = {
-            "name": self._string_schema("Human-readable eval name."),
-            "data_source_config": self._json_value_schema("Data source configuration used by the eval."),
-            "data_source": self._json_value_schema("Data source used by the eval or eval run."),
-            "testing_criteria": self._json_array_schema("Testing criteria used by the eval."),
-            "metadata": self._metadata_schema("Developer-defined eval metadata."),
-        }
-        eval_run_request_properties = {
-            "name": self._string_schema("Human-readable eval run name."),
-            "data_source": self._json_value_schema("Data source used by this eval run."),
-            "metadata": self._metadata_schema("Developer-defined eval run metadata."),
-        }
-        return {
-            "OpenAiEvalList": self._openai_list_schema("evals", "OpenAiEval"),
-            "OpenAiEval": {
-                "type": "object",
-                "description": "OpenAI-compatible eval object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "created_at"],
-                "properties": {
-                    "id": self._string_schema("Eval identifier."),
-                    "object": self._string_schema("Object type, normally eval.", enum=["eval"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the eval was created.", format_="int64"),
-                    "name": self._string_schema("Human-readable eval name."),
-                    "data_source_config": self._json_value_schema("Data source configuration used by the eval."),
-                    "testing_criteria": self._json_array_schema("Testing criteria used by the eval."),
-                    "metadata": self._metadata_schema("Developer-defined eval metadata."),
-                },
-            },
-            "OpenAiEvalCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create an eval.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name", "data_source_config", "testing_criteria"],
-                "properties": eval_request_properties,
-            },
-            "OpenAiEvalUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update an eval.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": eval_request_properties,
-            },
-            "OpenAiEvalRunList": self._openai_list_schema("eval runs", "OpenAiEvalRun"),
-            "OpenAiEvalRun": {
-                "type": "object",
-                "description": "OpenAI-compatible eval run object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "created_at", "status"],
-                "properties": {
-                    "id": self._string_schema("Eval run identifier."),
-                    "object": self._string_schema("Object type, normally eval.run.", enum=["eval.run"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the eval run was created.", format_="int64"),
-                    "eval_id": self._string_schema("Eval identifier that owns this run."),
-                    "name": self._string_schema("Human-readable eval run name."),
-                    "status": self._string_schema("Eval run lifecycle status."),
-                    "data_source": self._json_value_schema("Data source used by this eval run."),
-                    "result_counts": {"$ref": "#/components/schemas/OpenAiEvalRunResultCounts"},
-                    "report_url": self._string_schema("Eval run report URL when returned.", format_="uri"),
-                    "metadata": self._metadata_schema("Developer-defined eval run metadata."),
-                },
-            },
-            "OpenAiEvalRunCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create an eval run.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": eval_run_request_properties,
-            },
-            "OpenAiEvalRunResultCounts": {
-                "type": "object",
-                "description": "Counts of eval run output item results.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "total": self._integer_schema("Total number of output items."),
-                    "errored": self._integer_schema("Number of errored output items."),
-                    "failed": self._integer_schema("Number of failed output items."),
-                    "passed": self._integer_schema("Number of passed output items."),
-                },
-            },
-            "OpenAiEvalRunOutputItemList": self._openai_list_schema("eval run output items", "OpenAiEvalRunOutputItem"),
-            "OpenAiEvalRunOutputItem": {
-                "type": "object",
-                "description": "OpenAI-compatible eval run output item.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object"],
-                "properties": {
-                    "id": self._string_schema("Eval run output item identifier."),
-                    "object": self._string_schema("Object type, normally eval.run.output_item.", enum=["eval.run.output_item"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the output item was created.", format_="int64"),
-                    "eval_id": self._string_schema("Eval identifier associated with the output item."),
-                    "run_id": self._string_schema("Eval run identifier associated with the output item."),
-                    "status": self._string_schema("Output item status."),
-                    "sample": self._json_value_schema("Input sample evaluated by this output item."),
-                    "results": self._json_array_schema("Testing criteria results for this output item."),
-                    "metadata": self._metadata_schema("Developer-defined output item metadata."),
-                },
-            },
-        }
 
-    def _openai_skill_resource_schemas(self) -> dict[str, Any]:
-        return {
-            "OpenAiSkillList": self._openai_list_schema("skills", "OpenAiSkill"),
-            "OpenAiSkill": {
-                "type": "object",
-                "description": "OpenAI-compatible skill object exposed by Claw Router.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "created_at", "name"],
-                "properties": {
-                    "id": self._string_schema("Skill identifier."),
-                    "object": self._string_schema("Object type, normally skill.", enum=["skill"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the skill was created.", format_="int64"),
-                    "updated_at": self._integer_schema("Unix timestamp in seconds when the skill was last updated.", format_="int64"),
-                    "name": self._string_schema("Human-readable skill name."),
-                    "description": self._string_schema("Human-readable skill description."),
-                    "status": self._string_schema("Skill lifecycle status."),
-                    "latest_version": self._string_schema("Latest skill version identifier."),
-                    "versions": {"type": "array", "items": {"$ref": "#/components/schemas/OpenAiSkillVersion"}, "description": "Skill versions returned inline when supported."},
-                    "metadata": self._metadata_schema("Developer-defined skill metadata."),
-                },
-            },
-            "OpenAiSkillUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a skill.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "name": self._string_schema("Human-readable skill name."),
-                    "description": self._string_schema("Human-readable skill description."),
-                    "metadata": self._metadata_schema("Developer-defined skill metadata."),
-                },
-            },
-            "OpenAiSkillCreateMultipartRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible multipart request to create a skill.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["file"],
-                "properties": {
-                    "file": {"type": "string", "format": "binary", "description": "Skill package archive or manifest file."},
-                    "package": {"type": "string", "format": "binary", "description": "Skill package archive when the upstream expects this form field."},
-                    "name": self._string_schema("Human-readable skill name."),
-                    "metadata": self._json_string_schema("JSON-serialized skill metadata."),
-                },
-            },
-            "OpenAiSkillVersionList": self._openai_list_schema("skill versions", "OpenAiSkillVersion"),
-            "OpenAiSkillVersion": {
-                "type": "object",
-                "description": "OpenAI-compatible skill version object exposed by Claw Router.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "version"],
-                "properties": {
-                    "id": self._string_schema("Skill version identifier."),
-                    "object": self._string_schema("Object type, normally skill.version.", enum=["skill.version"]),
-                    "skill_id": self._string_schema("Skill identifier that owns this version."),
-                    "version": self._string_schema("Version label."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the version was created.", format_="int64"),
-                    "status": self._string_schema("Skill version lifecycle status."),
-                    "package_sha256": self._string_schema("SHA-256 digest of the uploaded skill package."),
-                    "metadata": self._metadata_schema("Developer-defined skill version metadata."),
-                },
-            },
-            "OpenAiSkillVersionCreateMultipartRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible multipart request to create a skill version.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["file"],
-                "properties": {
-                    "file": {"type": "string", "format": "binary", "description": "Skill version package archive or manifest file."},
-                    "package": {"type": "string", "format": "binary", "description": "Skill package archive when the upstream expects this form field."},
-                    "name": self._string_schema("Human-readable skill version name."),
-                    "metadata": self._json_string_schema("JSON-serialized skill version metadata."),
-                },
-            },
-        }
 
     def _openai_vector_store_resource_schemas(self) -> dict[str, Any]:
         return {
@@ -3126,145 +2780,6 @@ class ClawRouterGatewayOpenApiGenerator:
             },
         }
 
-    def _openai_fine_tuning_resource_schemas(self) -> dict[str, Any]:
-        return {
-            "OpenAiFineTuningJobList": self._openai_list_schema("fine-tuning jobs", "OpenAiFineTuningJob"),
-            "OpenAiFineTuningJob": {
-                "type": "object",
-                "description": "OpenAI-compatible fine-tuning job object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "created_at", "model", "status"],
-                "properties": {
-                    "id": self._string_schema("Fine-tuning job identifier."),
-                    "object": self._string_schema("Object type, normally fine_tuning.job.", enum=["fine_tuning.job"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the job was created.", format_="int64"),
-                    "finished_at": self._integer_schema("Unix timestamp in seconds when the job finished.", format_="int64"),
-                    "model": self._string_schema("Base model id."),
-                    "fine_tuned_model": self._string_schema("Fine-tuned model id when available."),
-                    "organization_id": self._string_schema("Organization identifier that owns the job."),
-                    "result_files": self._string_array_schema("Result file identifiers returned by the job."),
-                    "status": self._string_schema("Fine-tuning job status."),
-                    "validation_file": self._string_schema("Validation file identifier."),
-                    "training_file": self._string_schema("Training file identifier."),
-                    "hyperparameters": self._json_value_schema("Fine-tuning hyperparameters."),
-                    "trained_tokens": self._integer_schema("Number of trained tokens."),
-                    "error": self._json_value_schema("Fine-tuning error object when the job fails."),
-                    "metadata": self._metadata_schema("Developer-defined fine-tuning metadata."),
-                },
-            },
-            "OpenAiFineTuningJobCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a fine-tuning job.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["model", "training_file"],
-                "properties": {
-                    "model": self._string_schema("Base model id to fine-tune."),
-                    "training_file": self._string_schema("Training file identifier."),
-                    "validation_file": self._string_schema("Validation file identifier."),
-                    "suffix": self._string_schema("Suffix added to the fine-tuned model name."),
-                    "hyperparameters": self._json_value_schema("Fine-tuning hyperparameters."),
-                    "integrations": self._json_array_schema("Fine-tuning integrations."),
-                    "seed": self._integer_schema("Best-effort deterministic seed.", format_="int64"),
-                    "metadata": self._metadata_schema("Developer-defined fine-tuning metadata."),
-                },
-            },
-            "OpenAiFineTuningJobEventList": self._openai_list_schema("fine-tuning job events", "OpenAiFineTuningJobEvent"),
-            "OpenAiFineTuningJobEvent": {
-                "type": "object",
-                "description": "OpenAI-compatible fine-tuning job event object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "created_at", "message"],
-                "properties": {
-                    "id": self._string_schema("Fine-tuning job event identifier."),
-                    "object": self._string_schema("Object type, normally fine_tuning.job.event.", enum=["fine_tuning.job.event"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the event was created.", format_="int64"),
-                    "level": self._string_schema("Event severity level."),
-                    "message": self._string_schema("Event message."),
-                    "type": self._string_schema("Event type when returned."),
-                    "data": self._json_value_schema("Provider-specific event data."),
-                },
-            },
-            "OpenAiFineTuningJobCheckpointList": self._openai_list_schema("fine-tuning job checkpoints", "OpenAiFineTuningJobCheckpoint"),
-            "OpenAiFineTuningJobCheckpoint": {
-                "type": "object",
-                "description": "OpenAI-compatible fine-tuning job checkpoint object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "created_at"],
-                "properties": {
-                    "id": self._string_schema("Fine-tuning checkpoint identifier."),
-                    "object": self._string_schema("Object type, normally fine_tuning.job.checkpoint.", enum=["fine_tuning.job.checkpoint"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the checkpoint was created.", format_="int64"),
-                    "fine_tuned_model_checkpoint": self._string_schema("Fine-tuned model checkpoint id."),
-                    "fine_tuning_job_id": self._string_schema("Fine-tuning job identifier that owns this checkpoint."),
-                    "metrics": self._json_value_schema("Checkpoint metrics returned by the upstream."),
-                    "step_number": self._integer_schema("Training step number for this checkpoint."),
-                },
-            },
-            "OpenAiFineTuningCheckpointPermissionList": self._openai_list_schema("fine-tuning checkpoint permissions", "OpenAiFineTuningCheckpointPermission"),
-            "OpenAiFineTuningCheckpointPermission": {
-                "type": "object",
-                "description": "OpenAI-compatible fine-tuning checkpoint permission object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "created_at", "project_id"],
-                "properties": {
-                    "id": self._string_schema("Fine-tuning checkpoint permission identifier."),
-                    "object": self._string_schema("Object type, normally fine_tuning.checkpoint.permission.", enum=["fine_tuning.checkpoint.permission"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the permission was created.", format_="int64"),
-                    "project_id": self._string_schema("Project identifier granted access to the checkpoint."),
-                },
-            },
-            "OpenAiFineTuningCheckpointPermissionCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a fine-tuning checkpoint permission.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["project_id"],
-                "properties": {
-                    "project_id": self._string_schema("Project identifier to grant access to the checkpoint."),
-                },
-            },
-            "OpenAiFineTuningGraderRunRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to run a fine-tuning grader against sample input.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["grader", "input"],
-                "properties": {
-                    "grader": self._json_value_schema("Grader configuration to run."),
-                    "input": self._json_value_schema("Sample input used by the grader run."),
-                    "model_sample": self._string_schema("Model sample output to grade when provided."),
-                    "reference_answer": self._string_schema("Reference answer used by the grader when provided."),
-                },
-            },
-            "OpenAiFineTuningGraderRunResult": {
-                "type": "object",
-                "description": "OpenAI-compatible fine-tuning grader run result.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "passed": self._boolean_schema("Whether the grader judged the sample as passing."),
-                    "score": self._number_schema("Numeric grader score when returned."),
-                    "feedback": self._string_schema("Human-readable grader feedback when returned."),
-                    "details": self._json_value_schema("Provider-specific grader details."),
-                },
-            },
-            "OpenAiFineTuningGraderValidateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to validate a fine-tuning grader definition.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["grader"],
-                "properties": {
-                    "grader": self._json_value_schema("Grader configuration to validate."),
-                },
-            },
-            "OpenAiFineTuningGraderValidationResult": {
-                "type": "object",
-                "description": "OpenAI-compatible fine-tuning grader validation result.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "valid": self._boolean_schema("Whether the grader definition is valid."),
-                    "errors": self._json_array_schema("Validation errors when the grader is invalid."),
-                    "warnings": self._json_array_schema("Validation warnings when returned."),
-                },
-            },
-        }
 
     def _openai_upload_resource_schemas(self) -> dict[str, Any]:
         return {
@@ -3321,416 +2836,6 @@ class ClawRouterGatewayOpenApiGenerator:
             },
         }
 
-    def _openai_administration_resource_schemas(self) -> dict[str, Any]:
-        return {
-            "OpenAiOrganizationCostList": self._openai_list_schema("organization cost buckets", "OpenAiOrganizationCost"),
-            "OpenAiOrganizationCost": {
-                "type": "object",
-                "description": "OpenAI-compatible organization cost bucket.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "object": self._string_schema("Object type returned by the organization costs endpoint."),
-                    "start_time": self._integer_schema("Bucket start time as a Unix timestamp in seconds.", format_="int64"),
-                    "end_time": self._integer_schema("Bucket end time as a Unix timestamp in seconds.", format_="int64"),
-                    "amount": self._json_value_schema("Cost amount returned by the upstream."),
-                    "line_item": self._string_schema("Cost line item or service name."),
-                    "project_id": self._string_schema("Project identifier associated with this cost bucket."),
-                    "metadata": self._metadata_schema("Provider-returned cost metadata."),
-                },
-            },
-            "OpenAiOrganizationUsageList": self._openai_list_schema("organization usage buckets", "OpenAiOrganizationUsageBucket"),
-            "OpenAiOrganizationUsageBucket": {
-                "type": "object",
-                "description": "OpenAI-compatible organization usage bucket.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "object": self._string_schema("Object type returned by the organization usage endpoint."),
-                    "start_time": self._integer_schema("Bucket start time as a Unix timestamp in seconds.", format_="int64"),
-                    "end_time": self._integer_schema("Bucket end time as a Unix timestamp in seconds.", format_="int64"),
-                    "results": self._json_array_schema("Usage result rows returned for this bucket."),
-                    "project_id": self._string_schema("Project identifier associated with this usage bucket."),
-                },
-            },
-            "OpenAiOrganizationAuditLogList": self._openai_list_schema("organization audit log events", "OpenAiOrganizationAuditLog"),
-            "OpenAiOrganizationAuditLog": {
-                "type": "object",
-                "description": "OpenAI-compatible organization audit log event.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object"],
-                "properties": {
-                    "id": self._string_schema("Audit log event identifier."),
-                    "object": self._string_schema("Object type, normally organization.audit_log.", enum=["organization.audit_log"]),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the event was created.", format_="int64"),
-                    "actor": self._json_value_schema("Actor that performed the audited action."),
-                    "event_type": self._string_schema("Audited event type."),
-                    "event": self._json_value_schema("Provider-specific audit event payload."),
-                    "project_id": self._string_schema("Project identifier associated with the audit event."),
-                },
-            },
-            "OpenAiOrganizationAdminApiKeyList": self._openai_list_schema("organization admin API keys", "OpenAiOrganizationAdminApiKey"),
-            "OpenAiOrganizationAdminApiKey": {
-                "type": "object",
-                "description": "OpenAI-compatible organization admin API key object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Admin API key identifier."),
-                    "object": self._string_schema("Object type, normally organization.admin_api_key.", enum=["organization.admin_api_key"]),
-                    "name": self._string_schema("Human-readable admin API key name."),
-                    "redacted_value": self._string_schema("Redacted API key value returned after creation."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the key was created.", format_="int64"),
-                    "last_used_at": self._integer_schema("Unix timestamp in seconds when the key was last used.", format_="int64"),
-                    "owner": self._json_value_schema("Owner details for the admin API key."),
-                },
-            },
-            "OpenAiOrganizationAdminApiKeyCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create an organization admin API key.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "name": self._string_schema("Human-readable admin API key name."),
-                    "metadata": self._metadata_schema("Developer-defined admin API key metadata."),
-                },
-            },
-            "OpenAiOrganizationInviteList": self._openai_list_schema("organization invites", "OpenAiOrganizationInvite"),
-            "OpenAiOrganizationInvite": {
-                "type": "object",
-                "description": "OpenAI-compatible organization invite object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "email"],
-                "properties": {
-                    "id": self._string_schema("Organization invite identifier."),
-                    "object": self._string_schema("Object type, normally organization.invite.", enum=["organization.invite"]),
-                    "email": self._string_schema("Invitee email address.", format_="email"),
-                    "role": self._string_schema("Organization role assigned by the invite."),
-                    "status": self._string_schema("Invite lifecycle status."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the invite was created.", format_="int64"),
-                    "expires_at": self._integer_schema("Unix timestamp in seconds when the invite expires.", format_="int64"),
-                    "invited_by": self._json_value_schema("User or service account that created the invite."),
-                },
-            },
-            "OpenAiOrganizationInviteCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create an organization invite.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["email"],
-                "properties": {
-                    "email": self._string_schema("Invitee email address.", format_="email"),
-                    "role": self._string_schema("Organization role assigned by the invite."),
-                    "projects": self._json_array_schema("Project memberships or roles granted by the invite."),
-                },
-            },
-            "OpenAiOrganizationUserList": self._openai_list_schema("organization users", "OpenAiOrganizationUser"),
-            "OpenAiOrganizationUser": {
-                "type": "object",
-                "description": "OpenAI-compatible organization user object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object"],
-                "properties": {
-                    "id": self._string_schema("Organization user identifier."),
-                    "object": self._string_schema("Object type, normally organization.user.", enum=["organization.user"]),
-                    "name": self._string_schema("Human-readable user name."),
-                    "email": self._string_schema("User email address.", format_="email"),
-                    "role": self._string_schema("Organization role assigned to the user."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the user joined.", format_="int64"),
-                    "metadata": self._metadata_schema("Provider-returned user metadata."),
-                },
-            },
-            "OpenAiOrganizationUserUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update an organization user.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "role": self._string_schema("Organization role assigned to the user."),
-                    "name": self._string_schema("Human-readable user name."),
-                    "metadata": self._metadata_schema("Developer-defined user metadata."),
-                },
-            },
-            "OpenAiOrganizationGroupList": self._openai_list_schema("organization groups", "OpenAiOrganizationGroup"),
-            "OpenAiOrganizationGroup": {
-                "type": "object",
-                "description": "OpenAI-compatible organization group object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Organization group identifier."),
-                    "object": self._string_schema("Object type, normally organization.group.", enum=["organization.group"]),
-                    "name": self._string_schema("Human-readable group name."),
-                    "description": self._string_schema("Human-readable group description."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the group was created.", format_="int64"),
-                    "metadata": self._metadata_schema("Developer-defined group metadata."),
-                },
-            },
-            "OpenAiOrganizationGroupCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create an organization group.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable group name."),
-                    "description": self._string_schema("Human-readable group description."),
-                    "metadata": self._metadata_schema("Developer-defined group metadata."),
-                },
-            },
-            "OpenAiOrganizationGroupUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update an organization group.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "name": self._string_schema("Human-readable group name."),
-                    "description": self._string_schema("Human-readable group description."),
-                    "metadata": self._metadata_schema("Developer-defined group metadata."),
-                },
-            },
-            "OpenAiOrganizationGroupUserCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to add a user to an organization group.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["user_id"],
-                "properties": {
-                    "user_id": self._string_schema("Organization user identifier to add to the group."),
-                },
-            },
-            "OpenAiRoleList": self._openai_list_schema("roles", "OpenAiRole"),
-            "OpenAiRole": {
-                "type": "object",
-                "description": "OpenAI-compatible role object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Role identifier."),
-                    "object": self._string_schema("Object type, normally role.", enum=["role"]),
-                    "name": self._string_schema("Human-readable role name."),
-                    "description": self._string_schema("Human-readable role description."),
-                    "permissions": self._json_array_schema("Permission identifiers or policy objects assigned to this role."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the role was created.", format_="int64"),
-                    "metadata": self._metadata_schema("Developer-defined role metadata."),
-                },
-            },
-            "OpenAiRoleCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a role.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable role name."),
-                    "description": self._string_schema("Human-readable role description."),
-                    "permissions": self._json_array_schema("Permission identifiers or policy objects assigned to this role."),
-                    "metadata": self._metadata_schema("Developer-defined role metadata."),
-                },
-            },
-            "OpenAiRoleUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a role.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "name": self._string_schema("Human-readable role name."),
-                    "description": self._string_schema("Human-readable role description."),
-                    "permissions": self._json_array_schema("Permission identifiers or policy objects assigned to this role."),
-                    "metadata": self._metadata_schema("Developer-defined role metadata."),
-                },
-            },
-            "OpenAiRoleAssignmentList": self._openai_list_schema("role assignments", "OpenAiRoleAssignment"),
-            "OpenAiRoleAssignment": {
-                "type": "object",
-                "description": "OpenAI-compatible role assignment object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "role"],
-                "properties": {
-                    "id": self._string_schema("Role assignment identifier."),
-                    "object": self._string_schema("Object type, normally role.assignment.", enum=["role.assignment"]),
-                    "role": self._string_schema("Assigned role identifier."),
-                    "user_id": self._string_schema("User identifier associated with this role assignment."),
-                    "group_id": self._string_schema("Group identifier associated with this role assignment."),
-                    "project_id": self._string_schema("Project identifier associated with this role assignment."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the role assignment was created.", format_="int64"),
-                },
-            },
-            "OpenAiRoleAssignmentCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a role assignment.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["role"],
-                "properties": {
-                    "role": self._string_schema("Role identifier to assign."),
-                },
-            },
-            "OpenAiCertificateList": self._openai_list_schema("certificates", "OpenAiCertificate"),
-            "OpenAiCertificate": {
-                "type": "object",
-                "description": "OpenAI-compatible organization or project certificate object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object"],
-                "properties": {
-                    "id": self._string_schema("Certificate identifier."),
-                    "object": self._string_schema("Object type, normally certificate.", enum=["certificate"]),
-                    "name": self._string_schema("Human-readable certificate name."),
-                    "status": self._string_schema("Certificate lifecycle or activation status."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the certificate was created.", format_="int64"),
-                    "expires_at": self._integer_schema("Unix timestamp in seconds when the certificate expires.", format_="int64"),
-                    "project_id": self._string_schema("Project identifier associated with the certificate."),
-                    "metadata": self._metadata_schema("Provider-returned certificate metadata."),
-                },
-            },
-            "OpenAiCertificateActivationRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to activate or deactivate certificates.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["certificate_ids"],
-                "properties": {
-                    "certificate_ids": self._string_array_schema("Certificate identifiers to activate or deactivate."),
-                },
-            },
-            "OpenAiProjectList": self._openai_list_schema("projects", "OpenAiProject"),
-            "OpenAiProject": {
-                "type": "object",
-                "description": "OpenAI-compatible project object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Project identifier."),
-                    "object": self._string_schema("Object type, normally organization.project.", enum=["organization.project"]),
-                    "name": self._string_schema("Human-readable project name."),
-                    "status": self._string_schema("Project lifecycle status."),
-                    "archived_at": self._integer_schema("Unix timestamp in seconds when the project was archived.", format_="int64"),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the project was created.", format_="int64"),
-                    "metadata": self._metadata_schema("Developer-defined project metadata."),
-                },
-            },
-            "OpenAiProjectCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a project.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable project name."),
-                    "metadata": self._metadata_schema("Developer-defined project metadata."),
-                },
-            },
-            "OpenAiProjectUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a project.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "name": self._string_schema("Human-readable project name."),
-                    "metadata": self._metadata_schema("Developer-defined project metadata."),
-                },
-            },
-            "OpenAiProjectUserList": self._openai_list_schema("project users", "OpenAiProjectUser"),
-            "OpenAiProjectUser": {
-                "type": "object",
-                "description": "OpenAI-compatible project user object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object"],
-                "properties": {
-                    "id": self._string_schema("Project user identifier."),
-                    "object": self._string_schema("Object type, normally organization.project.user.", enum=["organization.project.user"]),
-                    "name": self._string_schema("Human-readable user name."),
-                    "email": self._string_schema("User email address.", format_="email"),
-                    "role": self._string_schema("Project role assigned to the user."),
-                    "project_id": self._string_schema("Project identifier associated with the user."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the project user was created.", format_="int64"),
-                },
-            },
-            "OpenAiProjectUserCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to add a user to a project.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["user_id"],
-                "properties": {
-                    "user_id": self._string_schema("Organization user identifier to add to the project."),
-                    "role": self._string_schema("Project role assigned to the user."),
-                },
-            },
-            "OpenAiProjectUserUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a project user.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "role": self._string_schema("Project role assigned to the user."),
-                },
-            },
-            "OpenAiProjectServiceAccountList": self._openai_list_schema("project service accounts", "OpenAiProjectServiceAccount"),
-            "OpenAiProjectServiceAccount": {
-                "type": "object",
-                "description": "OpenAI-compatible project service account object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Project service account identifier."),
-                    "object": self._string_schema("Object type, normally organization.project.service_account.", enum=["organization.project.service_account"]),
-                    "name": self._string_schema("Human-readable service account name."),
-                    "role": self._string_schema("Project role assigned to the service account."),
-                    "project_id": self._string_schema("Project identifier associated with the service account."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the service account was created.", format_="int64"),
-                    "api_key": self._json_value_schema("Service account API key returned at creation time when provided."),
-                },
-            },
-            "OpenAiProjectServiceAccountCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a project service account.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable service account name."),
-                    "role": self._string_schema("Project role assigned to the service account."),
-                },
-            },
-            "OpenAiProjectApiKeyList": self._openai_list_schema("project API keys", "OpenAiProjectApiKey"),
-            "OpenAiProjectApiKey": {
-                "type": "object",
-                "description": "OpenAI-compatible project API key object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Project API key identifier."),
-                    "object": self._string_schema("Object type, normally organization.project.api_key.", enum=["organization.project.api_key"]),
-                    "name": self._string_schema("Human-readable project API key name."),
-                    "redacted_value": self._string_schema("Redacted project API key value."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the key was created.", format_="int64"),
-                    "last_used_at": self._integer_schema("Unix timestamp in seconds when the key was last used.", format_="int64"),
-                    "owner": self._json_value_schema("Owner details for the project API key."),
-                    "project_id": self._string_schema("Project identifier associated with the key."),
-                },
-            },
-            "OpenAiProjectRateLimitList": self._openai_list_schema("project rate limits", "OpenAiProjectRateLimit"),
-            "OpenAiProjectRateLimit": {
-                "type": "object",
-                "description": "OpenAI-compatible project rate limit object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object"],
-                "properties": {
-                    "id": self._string_schema("Project rate limit identifier."),
-                    "object": self._string_schema("Object type, normally organization.project.rate_limit.", enum=["organization.project.rate_limit"]),
-                    "model": self._string_schema("Model or model family governed by this rate limit."),
-                    "max_requests_per_1_minute": self._integer_schema("Maximum requests allowed per minute."),
-                    "max_tokens_per_1_minute": self._integer_schema("Maximum tokens allowed per minute."),
-                    "max_images_per_1_minute": self._integer_schema("Maximum images allowed per minute."),
-                    "batch_1_day_max_input_tokens": self._integer_schema("Maximum batch input tokens allowed per day."),
-                    "project_id": self._string_schema("Project identifier associated with the rate limit."),
-                },
-            },
-            "OpenAiProjectRateLimitUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a project rate limit.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "max_requests_per_1_minute": self._integer_schema("Maximum requests allowed per minute."),
-                    "max_tokens_per_1_minute": self._integer_schema("Maximum tokens allowed per minute."),
-                    "max_images_per_1_minute": self._integer_schema("Maximum images allowed per minute."),
-                    "batch_1_day_max_input_tokens": self._integer_schema("Maximum batch input tokens allowed per day."),
-                },
-            },
-            "OpenAiProjectGroupCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to add a group to a project.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["group_id"],
-                "properties": {
-                    "group_id": self._string_schema("Organization group identifier to add to the project."),
-                },
-            },
-        }
 
     def _openai_realtime_resource_schemas(self) -> dict[str, Any]:
         return {
@@ -3886,424 +2991,6 @@ class ClawRouterGatewayOpenApiGenerator:
             },
         }
 
-    def _openai_administration_resource_schemas(self) -> dict[str, Any]:
-        return {
-            "OpenAiOrganizationCostList": self._openai_list_schema("organization cost buckets", "OpenAiOrganizationCostBucket"),
-            "OpenAiOrganizationCostBucket": {
-                "type": "object",
-                "description": "OpenAI-compatible organization cost bucket.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "object": self._string_schema("Object type returned by the costs endpoint."),
-                    "start_time": self._integer_schema("Unix timestamp for the bucket start.", format_="int64"),
-                    "end_time": self._integer_schema("Unix timestamp for the bucket end.", format_="int64"),
-                    "results": self._json_array_schema("Cost results grouped inside this bucket."),
-                    "amount": self._number_schema("Cost amount when returned directly."),
-                    "currency": self._string_schema("Currency for the cost amount."),
-                },
-            },
-            "OpenAiOrganizationUsageList": self._openai_list_schema("organization usage buckets", "OpenAiOrganizationUsageBucket"),
-            "OpenAiOrganizationUsageBucket": {
-                "type": "object",
-                "description": "OpenAI-compatible organization usage bucket.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "object": self._string_schema("Object type returned by the usage endpoint."),
-                    "start_time": self._integer_schema("Unix timestamp for the bucket start.", format_="int64"),
-                    "end_time": self._integer_schema("Unix timestamp for the bucket end.", format_="int64"),
-                    "results": self._json_array_schema("Usage results grouped inside this bucket."),
-                    "input_tokens": self._integer_schema("Input token count when returned directly."),
-                    "output_tokens": self._integer_schema("Output token count when returned directly."),
-                    "num_requests": self._integer_schema("Request count when returned directly."),
-                },
-            },
-            "OpenAiOrganizationAuditLogList": self._openai_list_schema("organization audit log events", "OpenAiOrganizationAuditLog"),
-            "OpenAiOrganizationAuditLog": {
-                "type": "object",
-                "description": "OpenAI-compatible organization audit log event.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "type"],
-                "properties": {
-                    "id": self._string_schema("Audit log event identifier."),
-                    "object": self._string_schema("Object type, normally organization.audit_log.", enum=["organization.audit_log"]),
-                    "type": self._string_schema("Audit event type."),
-                    "effective_at": self._integer_schema("Unix timestamp in seconds when the event took effect.", format_="int64"),
-                    "actor": self._json_value_schema("Actor that performed the audited action."),
-                    "api_key_id": self._string_schema("API key identifier associated with the event when available."),
-                    "project": self._json_value_schema("Project associated with the event when available."),
-                    "request": self._json_value_schema("Request details captured for the audit event."),
-                    "metadata": self._metadata_schema("Provider-specific audit metadata."),
-                },
-            },
-            "OpenAiOrganizationAdminApiKeyList": self._openai_list_schema("organization admin API keys", "OpenAiOrganizationAdminApiKey"),
-            "OpenAiOrganizationAdminApiKey": {
-                "type": "object",
-                "description": "OpenAI-compatible organization admin API key object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Admin API key identifier."),
-                    "object": self._string_schema("Object type, normally organization.admin_api_key.", enum=["organization.admin_api_key"]),
-                    "name": self._string_schema("Human-readable API key name."),
-                    "redacted_value": self._string_schema("Redacted API key value."),
-                    "value": self._string_schema("Full API key value returned only at creation time."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the key was created.", format_="int64"),
-                    "last_used_at": self._integer_schema("Unix timestamp in seconds when the key was last used.", format_="int64"),
-                    "owner": self._json_value_schema("Owner user or service account."),
-                },
-            },
-            "OpenAiOrganizationAdminApiKeyCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create an organization admin API key.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable API key name."),
-                },
-            },
-            "OpenAiOrganizationInviteList": self._openai_list_schema("organization invites", "OpenAiOrganizationInvite"),
-            "OpenAiOrganizationInvite": {
-                "type": "object",
-                "description": "OpenAI-compatible organization invite object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "email"],
-                "properties": {
-                    "id": self._string_schema("Organization invite identifier."),
-                    "object": self._string_schema("Object type, normally organization.invite.", enum=["organization.invite"]),
-                    "email": self._string_schema("Invitee email address.", format_="email"),
-                    "role": self._string_schema("Invited organization role."),
-                    "status": self._string_schema("Invite status."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the invite was created.", format_="int64"),
-                    "expires_at": self._integer_schema("Unix timestamp in seconds when the invite expires.", format_="int64"),
-                    "projects": self._json_array_schema("Projects or project roles included in the invite."),
-                },
-            },
-            "OpenAiOrganizationInviteCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create an organization invite.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["email", "role"],
-                "properties": {
-                    "email": self._string_schema("Invitee email address.", format_="email"),
-                    "role": self._string_schema("Organization role identifier."),
-                    "projects": self._json_array_schema("Project memberships or roles to include in the invite."),
-                },
-            },
-            "OpenAiOrganizationUserList": self._openai_list_schema("organization users", "OpenAiOrganizationUser"),
-            "OpenAiOrganizationUser": {
-                "type": "object",
-                "description": "OpenAI-compatible organization user object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "email"],
-                "properties": {
-                    "id": self._string_schema("Organization user identifier."),
-                    "object": self._string_schema("Object type, normally organization.user.", enum=["organization.user"]),
-                    "name": self._string_schema("User display name."),
-                    "email": self._string_schema("User email address.", format_="email"),
-                    "role": self._string_schema("Organization role identifier."),
-                    "status": self._string_schema("User status."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the user was added.", format_="int64"),
-                    "metadata": self._metadata_schema("Developer-defined user metadata."),
-                },
-            },
-            "OpenAiOrganizationUserUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update an organization user.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "role": self._string_schema("Organization role identifier."),
-                    "metadata": self._metadata_schema("Developer-defined user metadata."),
-                },
-            },
-            "OpenAiOrganizationGroupList": self._openai_list_schema("organization groups", "OpenAiOrganizationGroup"),
-            "OpenAiOrganizationGroup": {
-                "type": "object",
-                "description": "OpenAI-compatible organization group object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Group identifier."),
-                    "object": self._string_schema("Object type, normally organization.group.", enum=["organization.group"]),
-                    "name": self._string_schema("Human-readable group name."),
-                    "description": self._string_schema("Human-readable group description."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the group was created.", format_="int64"),
-                    "metadata": self._metadata_schema("Developer-defined group metadata."),
-                },
-            },
-            "OpenAiOrganizationGroupCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create an organization group.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable group name."),
-                    "description": self._string_schema("Human-readable group description."),
-                    "metadata": self._metadata_schema("Developer-defined group metadata."),
-                },
-            },
-            "OpenAiOrganizationGroupUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update an organization group.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "name": self._string_schema("Human-readable group name."),
-                    "description": self._string_schema("Human-readable group description."),
-                    "metadata": self._metadata_schema("Developer-defined group metadata."),
-                },
-            },
-            "OpenAiOrganizationGroupUserCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to add a user to an organization group.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["user_id"],
-                "properties": {
-                    "user_id": self._string_schema("Organization user identifier."),
-                },
-            },
-            "OpenAiRoleList": self._openai_list_schema("roles", "OpenAiRole"),
-            "OpenAiRole": {
-                "type": "object",
-                "description": "OpenAI-compatible role object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Role identifier."),
-                    "object": self._string_schema("Object type, normally role.", enum=["role"]),
-                    "name": self._string_schema("Human-readable role name."),
-                    "description": self._string_schema("Human-readable role description."),
-                    "permissions": self._string_array_schema("Permission identifiers granted by the role."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the role was created.", format_="int64"),
-                },
-            },
-            "OpenAiRoleCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a role.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable role name."),
-                    "description": self._string_schema("Human-readable role description."),
-                    "permissions": self._string_array_schema("Permission identifiers granted by the role."),
-                },
-            },
-            "OpenAiRoleUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a role.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "name": self._string_schema("Human-readable role name."),
-                    "description": self._string_schema("Human-readable role description."),
-                    "permissions": self._string_array_schema("Permission identifiers granted by the role."),
-                },
-            },
-            "OpenAiRoleAssignmentList": self._openai_list_schema("role assignments", "OpenAiRoleAssignment"),
-            "OpenAiRoleAssignment": {
-                "type": "object",
-                "description": "OpenAI-compatible role assignment object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "role_id"],
-                "properties": {
-                    "id": self._string_schema("Role assignment identifier."),
-                    "object": self._string_schema("Object type, normally role.assignment.", enum=["role.assignment"]),
-                    "role_id": self._string_schema("Role identifier."),
-                    "user_id": self._string_schema("User identifier assigned to the role."),
-                    "group_id": self._string_schema("Group identifier assigned to the role."),
-                    "project_id": self._string_schema("Project identifier associated with the assignment."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the assignment was created.", format_="int64"),
-                },
-            },
-            "OpenAiRoleAssignmentCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a role assignment.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["role_id"],
-                "properties": {
-                    "role_id": self._string_schema("Role identifier to assign."),
-                },
-            },
-            "OpenAiCertificateList": self._openai_list_schema("certificates", "OpenAiCertificate"),
-            "OpenAiCertificate": {
-                "type": "object",
-                "description": "OpenAI-compatible certificate object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object"],
-                "properties": {
-                    "id": self._string_schema("Certificate identifier."),
-                    "object": self._string_schema("Object type, normally certificate.", enum=["certificate"]),
-                    "name": self._string_schema("Human-readable certificate name."),
-                    "content": self._string_schema("Certificate content or PEM when returned."),
-                    "active": self._boolean_schema("Whether the certificate is active."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the certificate was created.", format_="int64"),
-                    "expires_at": self._integer_schema("Unix timestamp in seconds when the certificate expires.", format_="int64"),
-                },
-            },
-            "OpenAiCertificateUploadMultipartRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible multipart request to upload a certificate.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["file"],
-                "properties": {
-                    "file": {"type": "string", "format": "binary", "description": "Certificate file."},
-                    "certificate": {"type": "string", "format": "binary", "description": "Certificate file when the upstream expects this form field."},
-                    "name": self._string_schema("Human-readable certificate name."),
-                    "metadata": self._json_string_schema("JSON-serialized certificate metadata."),
-                },
-            },
-            "OpenAiCertificateActivationRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to activate or deactivate certificates.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["certificate_ids"],
-                "properties": {
-                    "certificate_ids": self._string_array_schema("Certificate identifiers to activate or deactivate."),
-                },
-            },
-            "OpenAiProjectList": self._openai_list_schema("projects", "OpenAiProject"),
-            "OpenAiProject": {
-                "type": "object",
-                "description": "OpenAI-compatible organization project object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Project identifier."),
-                    "object": self._string_schema("Object type, normally organization.project.", enum=["organization.project"]),
-                    "name": self._string_schema("Human-readable project name."),
-                    "status": self._string_schema("Project lifecycle status."),
-                    "archived_at": self._integer_schema("Unix timestamp in seconds when the project was archived.", format_="int64"),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the project was created.", format_="int64"),
-                    "metadata": self._metadata_schema("Developer-defined project metadata."),
-                },
-            },
-            "OpenAiProjectCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a project.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable project name."),
-                    "metadata": self._metadata_schema("Developer-defined project metadata."),
-                },
-            },
-            "OpenAiProjectUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a project.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "name": self._string_schema("Human-readable project name."),
-                    "metadata": self._metadata_schema("Developer-defined project metadata."),
-                },
-            },
-            "OpenAiProjectUserList": self._openai_list_schema("project users", "OpenAiProjectUser"),
-            "OpenAiProjectUser": {
-                "type": "object",
-                "description": "OpenAI-compatible project user object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "email"],
-                "properties": {
-                    "id": self._string_schema("Project user identifier."),
-                    "object": self._string_schema("Object type, normally project.user.", enum=["project.user"]),
-                    "name": self._string_schema("User display name."),
-                    "email": self._string_schema("User email address.", format_="email"),
-                    "role": self._string_schema("Project role identifier."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the user was added to the project.", format_="int64"),
-                },
-            },
-            "OpenAiProjectUserCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to add a user to a project.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["user_id", "role"],
-                "properties": {
-                    "user_id": self._string_schema("Organization user identifier."),
-                    "role": self._string_schema("Project role identifier."),
-                },
-            },
-            "OpenAiProjectUserUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a project user.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "role": self._string_schema("Project role identifier."),
-                },
-            },
-            "OpenAiProjectServiceAccountList": self._openai_list_schema("project service accounts", "OpenAiProjectServiceAccount"),
-            "OpenAiProjectServiceAccount": {
-                "type": "object",
-                "description": "OpenAI-compatible project service account object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Service account identifier."),
-                    "object": self._string_schema("Object type, normally project.service_account.", enum=["project.service_account"]),
-                    "name": self._string_schema("Human-readable service account name."),
-                    "role": self._string_schema("Project role identifier."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the service account was created.", format_="int64"),
-                    "api_key": {"$ref": "#/components/schemas/OpenAiProjectApiKey"},
-                },
-            },
-            "OpenAiProjectServiceAccountCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to create a project service account.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["name"],
-                "properties": {
-                    "name": self._string_schema("Human-readable service account name."),
-                    "role": self._string_schema("Project role identifier."),
-                },
-            },
-            "OpenAiProjectApiKeyList": self._openai_list_schema("project API keys", "OpenAiProjectApiKey"),
-            "OpenAiProjectApiKey": {
-                "type": "object",
-                "description": "OpenAI-compatible project API key object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object", "name"],
-                "properties": {
-                    "id": self._string_schema("Project API key identifier."),
-                    "object": self._string_schema("Object type, normally project.api_key.", enum=["project.api_key"]),
-                    "name": self._string_schema("Human-readable API key name."),
-                    "redacted_value": self._string_schema("Redacted API key value."),
-                    "created_at": self._integer_schema("Unix timestamp in seconds when the key was created.", format_="int64"),
-                    "last_used_at": self._integer_schema("Unix timestamp in seconds when the key was last used.", format_="int64"),
-                    "owner": self._json_value_schema("Owner user or service account."),
-                },
-            },
-            "OpenAiProjectRateLimitList": self._openai_list_schema("project rate limits", "OpenAiProjectRateLimit"),
-            "OpenAiProjectRateLimit": {
-                "type": "object",
-                "description": "OpenAI-compatible project rate limit object.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["id", "object"],
-                "properties": {
-                    "id": self._string_schema("Project rate limit identifier."),
-                    "object": self._string_schema("Object type, normally project.rate_limit.", enum=["project.rate_limit"]),
-                    "model": self._string_schema("Model identifier the rate limit applies to."),
-                    "max_requests_per_1_minute": self._integer_schema("Maximum requests per minute."),
-                    "max_tokens_per_1_minute": self._integer_schema("Maximum tokens per minute."),
-                    "max_images_per_1_minute": self._integer_schema("Maximum images per minute."),
-                    "batch_1_day_max_input_tokens": self._integer_schema("Maximum batch input tokens per day."),
-                },
-            },
-            "OpenAiProjectRateLimitUpdateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to update a project rate limit.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "properties": {
-                    "max_requests_per_1_minute": self._integer_schema("Maximum requests per minute."),
-                    "max_tokens_per_1_minute": self._integer_schema("Maximum tokens per minute."),
-                    "max_images_per_1_minute": self._integer_schema("Maximum images per minute."),
-                    "batch_1_day_max_input_tokens": self._integer_schema("Maximum batch input tokens per day."),
-                },
-            },
-            "OpenAiProjectGroupCreateRequest": {
-                "type": "object",
-                "description": "OpenAI-compatible request to add a group to a project.",
-                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
-                "required": ["group_id"],
-                "properties": {
-                    "group_id": self._string_schema("Organization group identifier."),
-                },
-            },
-        }
 
     def _string_schema(self, description: str, *, enum: list[str] | None = None, format_: str | None = None) -> dict[str, Any]:
         schema: dict[str, Any] = {"type": "string", "description": description}
@@ -4491,11 +3178,7 @@ class ClawRouterGatewayOpenApiGenerator:
             {"name": "Vector Stores", "description": "OpenAI-compatible vector store and vector store file APIs."},
             {"name": "Assistants", "description": "OpenAI-compatible assistants, threads, messages, and runs APIs."},
             {"name": "Batches", "description": "OpenAI-compatible batch processing API."},
-            {"name": "Fine Tuning", "description": "OpenAI-compatible fine-tuning job APIs."},
-            {"name": "Evals", "description": "OpenAI-compatible eval, run, and output item APIs."},
             {"name": "Containers", "description": "OpenAI-compatible container and container file APIs."},
-            {"name": "Skills", "description": "OpenAI-compatible skill and skill version APIs."},
-            {"name": "Administration", "description": "OpenAI-compatible organization, project, usage, cost, and access management APIs."},
             {"name": "Moderations", "description": "OpenAI-compatible moderation API."},
             {"name": "Uploads", "description": "OpenAI-compatible multipart upload APIs."},
             {"name": "Realtime", "description": "OpenAI-compatible realtime session bootstrap APIs."},
@@ -4520,7 +3203,6 @@ class ClawRouterGatewayOpenApiGenerator:
         paths["/v1/models"] = {"get": self._operation("Models", "listModels", "List models", "Lists Claw Router models available to the caller.", None, "OpenAiModelList")}
         paths["/v1/models/{model}"] = {
             "get": self._operation("Models", "retrieveModel", "Retrieve model", "Retrieves one model from the Claw Router catalog.", None, "OpenAiModel", parameters=[self._path_param("model", "Model identifier or catalog key.")]),
-            "delete": self._operation("Models", "deleteModel", "Delete fine-tuned model", "Deletes a fine-tuned model through the configured OpenAI-compatible upstream when supported.", None, "DeleteResult", parameters=[self._path_param("model", "Fine-tuned model identifier.")]),
         }
         paths["/v1/completions"] = {"post": self._operation("Completions", "createCompletion", "Create completion", "Creates a legacy text completion through an OpenAI-compatible request.", "JsonObject", "JsonObject")}
         paths["/v1/moderations"] = {"post": self._operation("Moderations", "createModeration", "Create moderation", "Classifies text or multimodal input through an OpenAI-compatible moderation request.", "JsonObject", "JsonObject")}
@@ -4612,26 +3294,8 @@ class ClawRouterGatewayOpenApiGenerator:
         paths["/v1/batches"] = {"get": self._operation("Batches", "listBatches", "List batches", "Lists batch jobs.", None, "JsonObject", parameters=self._list_pagination_params()), "post": self._operation("Batches", "createBatch", "Create batch", "Creates a batch job.", "JsonObject", "JsonObject")}
         paths["/v1/batches/{batch_id}"] = {"get": self._operation("Batches", "retrieveBatch", "Retrieve batch", "Retrieves a batch job.", None, "JsonObject", parameters=[self._path_param("batch_id", "Batch identifier.")])}
         paths["/v1/batches/{batch_id}/cancel"] = {"post": self._operation("Batches", "cancelBatch", "Cancel batch", "Cancels a batch job.", None, "JsonObject", parameters=[self._path_param("batch_id", "Batch identifier.")])}
-        paths["/v1/fine_tuning/jobs"] = {"get": self._operation("Fine Tuning", "listFineTuningJobs", "List fine-tuning jobs", "Lists fine-tuning jobs.", None, "JsonObject", parameters=self._list_pagination_params()), "post": self._operation("Fine Tuning", "createFineTuningJob", "Create fine-tuning job", "Creates a fine-tuning job.", "JsonObject", "JsonObject")}
-        paths["/v1/fine_tuning/jobs/{fine_tuning_job_id}"] = {"get": self._operation("Fine Tuning", "retrieveFineTuningJob", "Retrieve fine-tuning job", "Retrieves a fine-tuning job.", None, "JsonObject", parameters=[self._path_param("fine_tuning_job_id", "Fine-tuning job identifier.")])}
-        paths["/v1/fine_tuning/jobs/{fine_tuning_job_id}/cancel"] = {"post": self._operation("Fine Tuning", "cancelFineTuningJob", "Cancel fine-tuning job", "Cancels a fine-tuning job.", None, "JsonObject", parameters=[self._path_param("fine_tuning_job_id", "Fine-tuning job identifier.")])}
-        paths["/v1/fine_tuning/jobs/{fine_tuning_job_id}/pause"] = {"post": self._operation("Fine Tuning", "pauseFineTuningJob", "Pause fine-tuning job", "Pauses a fine-tuning job when supported by the selected upstream.", None, "JsonObject", parameters=[self._path_param("fine_tuning_job_id", "Fine-tuning job identifier.")])}
-        paths["/v1/fine_tuning/jobs/{fine_tuning_job_id}/resume"] = {"post": self._operation("Fine Tuning", "resumeFineTuningJob", "Resume fine-tuning job", "Resumes a fine-tuning job when supported by the selected upstream.", None, "JsonObject", parameters=[self._path_param("fine_tuning_job_id", "Fine-tuning job identifier.")])}
-        paths["/v1/fine_tuning/jobs/{fine_tuning_job_id}/events"] = {"get": self._operation("Fine Tuning", "listFineTuningJobEvents", "List fine-tuning events", "Lists events for a fine-tuning job.", None, "JsonObject", parameters=[self._path_param("fine_tuning_job_id", "Fine-tuning job identifier."), *self._list_pagination_params()])}
-        paths["/v1/fine_tuning/jobs/{fine_tuning_job_id}/checkpoints"] = {"get": self._operation("Fine Tuning", "listFineTuningJobCheckpoints", "List fine-tuning checkpoints", "Lists checkpoints for a fine-tuning job.", None, "JsonObject", parameters=[self._path_param("fine_tuning_job_id", "Fine-tuning job identifier."), *self._list_pagination_params()])}
-        checkpoint_param = self._path_param("fine_tuned_model_checkpoint", "Fine-tuned model checkpoint identifier.")
-        paths["/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions"] = {
-            "get": self._operation("Fine Tuning", "listFineTuningCheckpointPermissions", "List fine-tuning checkpoint permissions", "Lists permissions for a fine-tuning checkpoint.", None, "JsonObject", parameters=[checkpoint_param, *self._list_pagination_params(), self._query_param("project_id", "Project identifier for permission filtering.")]),
-            "post": self._operation("Fine Tuning", "createFineTuningCheckpointPermission", "Create fine-tuning checkpoint permission", "Creates a permission for a fine-tuning checkpoint.", "JsonObject", "JsonObject", parameters=[checkpoint_param]),
-        }
-        paths["/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions/{permission_id}"] = {"delete": self._operation("Fine Tuning", "deleteFineTuningCheckpointPermission", "Delete fine-tuning checkpoint permission", "Deletes a permission for a fine-tuning checkpoint.", None, "DeleteResult", parameters=[checkpoint_param, self._path_param("permission_id", "Fine-tuning checkpoint permission identifier.")])}
-        paths["/v1/fine_tuning/alpha/graders/run"] = {"post": self._operation("Fine Tuning", "runFineTuningGrader", "Run fine-tuning grader", "Runs a fine-tuning grader against sample input when supported by the selected upstream.", "JsonObject", "JsonObject")}
-        paths["/v1/fine_tuning/alpha/graders/validate"] = {"post": self._operation("Fine Tuning", "validateFineTuningGrader", "Validate fine-tuning grader", "Validates a fine-tuning grader definition when supported by the selected upstream.", "JsonObject", "JsonObject")}
         paths.update(self._conversation_paths())
         paths.update(self._container_paths())
-        paths.update(self._eval_paths())
-        paths.update(self._skill_paths())
-        paths.update(self._administration_paths())
         paths["/v1/uploads"] = {"post": self._operation("Uploads", "createUpload", "Create upload", "Creates an upload for multipart file transfer.", "JsonObject", "JsonObject")}
         paths["/v1/uploads/{upload_id}/parts"] = {"post": self._operation("Uploads", "addUploadPartExplicit", "Add upload part", "Adds a binary part to an upload.", None, "JsonObject", parameters=[self._path_param("upload_id", "Upload identifier.")], multipart_schema="OpenAiUploadPartMultipartRequest")}
         paths["/v1/uploads/{upload_id}/complete"] = {"post": self._operation("Uploads", "completeUpload", "Complete upload", "Completes an upload.", "JsonObject", "JsonObject", parameters=[self._path_param("upload_id", "Upload identifier.")])}
@@ -4688,202 +3352,6 @@ class ClawRouterGatewayOpenApiGenerator:
                 "delete": self._operation("Containers", "deleteContainerFile", "Delete container file", "Deletes a container file.", None, "DeleteResult", parameters=[self._path_param("container_id", "Container identifier."), self._path_param("file_id", "Container file identifier.")]),
             },
             "/v1/containers/{container_id}/files/{file_id}/content": {"get": self._operation("Containers", "retrieveContainerFileContent", "Retrieve container file content", "Retrieves container file bytes.", None, "BinaryResponse", parameters=[self._path_param("container_id", "Container identifier."), self._path_param("file_id", "Container file identifier.")])},
-        }
-
-    def _eval_paths(self) -> dict[str, Any]:
-        return {
-            "/v1/evals": {
-                "get": self._operation("Evals", "listEvals", "List evals", "Lists eval definitions.", None, "JsonObject", parameters=self._list_pagination_params()),
-                "post": self._operation("Evals", "createEval", "Create eval", "Creates an eval definition.", "JsonObject", "JsonObject"),
-            },
-            "/v1/evals/{eval_id}": {
-                "get": self._operation("Evals", "retrieveEval", "Retrieve eval", "Retrieves an eval definition.", None, "JsonObject", parameters=[self._path_param("eval_id", "Eval identifier.")]),
-                "post": self._operation("Evals", "modifyEval", "Modify eval", "Modifies an eval definition.", "JsonObject", "JsonObject", parameters=[self._path_param("eval_id", "Eval identifier.")]),
-                "delete": self._operation("Evals", "deleteEval", "Delete eval", "Deletes an eval definition.", None, "DeleteResult", parameters=[self._path_param("eval_id", "Eval identifier.")]),
-            },
-            "/v1/evals/{eval_id}/runs": {
-                "get": self._operation("Evals", "listEvalRuns", "List eval runs", "Lists eval runs.", None, "JsonObject", parameters=[self._path_param("eval_id", "Eval identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Evals", "createEvalRun", "Create eval run", "Creates an eval run.", "JsonObject", "JsonObject", parameters=[self._path_param("eval_id", "Eval identifier.")]),
-            },
-            "/v1/evals/{eval_id}/runs/{run_id}": {
-                "get": self._operation("Evals", "retrieveEvalRun", "Retrieve eval run", "Retrieves an eval run.", None, "JsonObject", parameters=[self._path_param("eval_id", "Eval identifier."), self._path_param("run_id", "Eval run identifier.")]),
-                "post": self._operation("Evals", "cancelEvalRun", "Cancel eval run", "Cancels an eval run.", None, "JsonObject", parameters=[self._path_param("eval_id", "Eval identifier."), self._path_param("run_id", "Eval run identifier.")]),
-                "delete": self._operation("Evals", "deleteEvalRun", "Delete eval run", "Deletes an eval run.", None, "DeleteResult", parameters=[self._path_param("eval_id", "Eval identifier."), self._path_param("run_id", "Eval run identifier.")]),
-            },
-            "/v1/evals/{eval_id}/runs/{run_id}/output_items": {"get": self._operation("Evals", "listEvalRunOutputItems", "List eval run output items", "Lists output items for an eval run.", None, "JsonObject", parameters=[self._path_param("eval_id", "Eval identifier."), self._path_param("run_id", "Eval run identifier."), *self._list_pagination_params()])},
-            "/v1/evals/{eval_id}/runs/{run_id}/output_items/{output_item_id}": {"get": self._operation("Evals", "retrieveEvalRunOutputItem", "Retrieve eval run output item", "Retrieves an output item for an eval run.", None, "JsonObject", parameters=[self._path_param("eval_id", "Eval identifier."), self._path_param("run_id", "Eval run identifier."), self._path_param("output_item_id", "Eval run output item identifier.")])},
-        }
-
-    def _skill_paths(self) -> dict[str, Any]:
-        return {
-            "/v1/skills": {
-                "get": self._operation("Skills", "listSkills", "List skills", "Lists skills when supported by the selected upstream.", None, "JsonObject", parameters=self._list_pagination_params()),
-                "post": self._operation("Skills", "createSkill", "Create skill", "Creates a skill when supported by the selected upstream.", None, "JsonObject", multipart_schema="ProviderMultipartRequest"),
-            },
-            "/v1/skills/{skill_id}": {
-                "get": self._operation("Skills", "retrieveSkill", "Retrieve skill", "Retrieves a skill.", None, "JsonObject", parameters=[self._path_param("skill_id", "Skill identifier.")]),
-                "post": self._operation("Skills", "modifySkill", "Modify skill", "Modifies a skill.", "JsonObject", "JsonObject", parameters=[self._path_param("skill_id", "Skill identifier.")]),
-                "delete": self._operation("Skills", "deleteSkill", "Delete skill", "Deletes a skill.", None, "DeleteResult", parameters=[self._path_param("skill_id", "Skill identifier.")]),
-            },
-            "/v1/skills/{skill_id}/content": {"get": self._operation("Skills", "retrieveSkillContent", "Retrieve skill content", "Retrieves skill package content.", None, "BinaryResponse", parameters=[self._path_param("skill_id", "Skill identifier.")])},
-            "/v1/skills/{skill_id}/versions": {
-                "get": self._operation("Skills", "listSkillVersions", "List skill versions", "Lists skill versions.", None, "JsonObject", parameters=[self._path_param("skill_id", "Skill identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Skills", "createSkillVersion", "Create skill version", "Creates a skill version.", None, "JsonObject", parameters=[self._path_param("skill_id", "Skill identifier.")], multipart_schema="ProviderMultipartRequest"),
-            },
-            "/v1/skills/{skill_id}/versions/{version}": {
-                "get": self._operation("Skills", "retrieveSkillVersion", "Retrieve skill version", "Retrieves a skill version.", None, "JsonObject", parameters=[self._path_param("skill_id", "Skill identifier."), self._path_param("version", "Skill version identifier.")]),
-                "delete": self._operation("Skills", "deleteSkillVersion", "Delete skill version", "Deletes a skill version.", None, "DeleteResult", parameters=[self._path_param("skill_id", "Skill identifier."), self._path_param("version", "Skill version identifier.")]),
-            },
-            "/v1/skills/{skill_id}/versions/{version}/content": {"get": self._operation("Skills", "retrieveSkillVersionContent", "Retrieve skill version content", "Retrieves skill version package content.", None, "BinaryResponse", parameters=[self._path_param("skill_id", "Skill identifier."), self._path_param("version", "Skill version identifier.")])},
-        }
-
-    def _administration_paths(self) -> dict[str, Any]:
-        usage_paths = {
-            "/v1/organization/usage/completions": ("getOrganizationCompletionsUsage", "Get completions usage"),
-            "/v1/organization/usage/embeddings": ("getOrganizationEmbeddingsUsage", "Get embeddings usage"),
-            "/v1/organization/usage/moderations": ("getOrganizationModerationsUsage", "Get moderation usage"),
-            "/v1/organization/usage/images": ("getOrganizationImagesUsage", "Get image usage"),
-            "/v1/organization/usage/audio_speeches": ("getOrganizationAudioSpeechesUsage", "Get audio speech usage"),
-            "/v1/organization/usage/audio_transcriptions": ("getOrganizationAudioTranscriptionsUsage", "Get audio transcription usage"),
-            "/v1/organization/usage/vector_stores": ("getOrganizationVectorStoresUsage", "Get vector store usage"),
-            "/v1/organization/usage/code_interpreter_sessions": ("getOrganizationCodeInterpreterSessionsUsage", "Get code interpreter session usage"),
-        }
-        paths: dict[str, Any] = {
-            "/v1/organization/costs": {"get": self._operation("Administration", "getOrganizationCosts", "Get organization costs", "Retrieves organization cost buckets from the OpenAI-compatible administration API.", None, "JsonObject", parameters=self._organization_usage_query_params())},
-            "/v1/organization/audit_logs": {"get": self._operation("Administration", "listOrganizationAuditLogs", "List organization audit logs", "Lists organization audit log events.", None, "JsonObject", parameters=self._organization_audit_query_params())},
-            "/v1/organization/admin_api_keys": {
-                "get": self._operation("Administration", "listOrganizationAdminApiKeys", "List organization admin API keys", "Lists organization admin API keys.", None, "JsonObject", parameters=self._list_pagination_params()),
-                "post": self._operation("Administration", "createOrganizationAdminApiKey", "Create organization admin API key", "Creates an organization admin API key.", "JsonObject", "JsonObject"),
-            },
-            "/v1/organization/admin_api_keys/{key_id}": {
-                "get": self._operation("Administration", "retrieveOrganizationAdminApiKey", "Retrieve organization admin API key", "Retrieves an organization admin API key.", None, "JsonObject", parameters=[self._path_param("key_id", "Admin API key identifier.")]),
-                "delete": self._operation("Administration", "deleteOrganizationAdminApiKey", "Delete organization admin API key", "Deletes an organization admin API key.", None, "DeleteResult", parameters=[self._path_param("key_id", "Admin API key identifier.")]),
-            },
-            "/v1/organization/invites": {
-                "get": self._operation("Administration", "listOrganizationInvites", "List organization invites", "Lists organization invites.", None, "JsonObject", parameters=self._list_pagination_params()),
-                "post": self._operation("Administration", "createOrganizationInvite", "Create organization invite", "Creates an organization invite.", "JsonObject", "JsonObject"),
-            },
-            "/v1/organization/invites/{invite_id}": {
-                "get": self._operation("Administration", "retrieveOrganizationInvite", "Retrieve organization invite", "Retrieves an organization invite.", None, "JsonObject", parameters=[self._path_param("invite_id", "Organization invite identifier.")]),
-                "delete": self._operation("Administration", "deleteOrganizationInvite", "Delete organization invite", "Deletes an organization invite.", None, "DeleteResult", parameters=[self._path_param("invite_id", "Organization invite identifier.")]),
-            },
-            "/v1/organization/users": {"get": self._operation("Administration", "listOrganizationUsers", "List organization users", "Lists organization users.", None, "JsonObject", parameters=self._list_pagination_params())},
-            "/v1/organization/users/{user_id}": {
-                "get": self._operation("Administration", "retrieveOrganizationUser", "Retrieve organization user", "Retrieves an organization user.", None, "JsonObject", parameters=[self._path_param("user_id", "Organization user identifier.")]),
-                "post": self._operation("Administration", "modifyOrganizationUser", "Modify organization user", "Modifies organization user attributes or role.", "JsonObject", "JsonObject", parameters=[self._path_param("user_id", "Organization user identifier.")]),
-                "delete": self._operation("Administration", "deleteOrganizationUser", "Delete organization user", "Deletes or removes an organization user.", None, "DeleteResult", parameters=[self._path_param("user_id", "Organization user identifier.")]),
-            },
-            "/v1/organization/users/{user_id}/roles": {
-                "get": self._operation("Administration", "listOrganizationUserRoles", "List organization user roles", "Lists roles assigned to an organization user.", None, "JsonObject", parameters=[self._path_param("user_id", "Organization user identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "createOrganizationUserRole", "Create organization user role", "Assigns a role to an organization user.", "JsonObject", "JsonObject", parameters=[self._path_param("user_id", "Organization user identifier.")]),
-            },
-            "/v1/organization/users/{user_id}/roles/{role_id}": {"delete": self._operation("Administration", "deleteOrganizationUserRole", "Delete organization user role", "Removes a role from an organization user.", None, "DeleteResult", parameters=[self._path_param("user_id", "Organization user identifier."), self._path_param("role_id", "Organization role identifier.")])},
-            "/v1/organization/groups": {
-                "get": self._operation("Administration", "listOrganizationGroups", "List organization groups", "Lists organization groups.", None, "JsonObject", parameters=self._list_pagination_params()),
-                "post": self._operation("Administration", "createOrganizationGroup", "Create organization group", "Creates an organization group.", "JsonObject", "JsonObject"),
-            },
-            "/v1/organization/groups/{group_id}": {
-                "get": self._operation("Administration", "retrieveOrganizationGroup", "Retrieve organization group", "Retrieves an organization group.", None, "JsonObject", parameters=[self._path_param("group_id", "Organization group identifier.")]),
-                "post": self._operation("Administration", "modifyOrganizationGroup", "Modify organization group", "Modifies an organization group.", "JsonObject", "JsonObject", parameters=[self._path_param("group_id", "Organization group identifier.")]),
-                "delete": self._operation("Administration", "deleteOrganizationGroup", "Delete organization group", "Deletes an organization group.", None, "DeleteResult", parameters=[self._path_param("group_id", "Organization group identifier.")]),
-            },
-            "/v1/organization/groups/{group_id}/users": {
-                "get": self._operation("Administration", "listOrganizationGroupUsers", "List organization group users", "Lists users in an organization group.", None, "JsonObject", parameters=[self._path_param("group_id", "Organization group identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "addOrganizationGroupUser", "Add organization group user", "Adds a user to an organization group.", "JsonObject", "JsonObject", parameters=[self._path_param("group_id", "Organization group identifier.")]),
-            },
-            "/v1/organization/groups/{group_id}/users/{user_id}": {"delete": self._operation("Administration", "deleteOrganizationGroupUser", "Delete organization group user", "Removes a user from an organization group.", None, "DeleteResult", parameters=[self._path_param("group_id", "Organization group identifier."), self._path_param("user_id", "Organization user identifier.")])},
-            "/v1/organization/groups/{group_id}/roles": {
-                "get": self._operation("Administration", "listOrganizationGroupRoles", "List organization group roles", "Lists roles assigned to an organization group.", None, "JsonObject", parameters=[self._path_param("group_id", "Organization group identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "createOrganizationGroupRole", "Create organization group role", "Assigns a role to an organization group.", "JsonObject", "JsonObject", parameters=[self._path_param("group_id", "Organization group identifier.")]),
-            },
-            "/v1/organization/groups/{group_id}/roles/{role_id}": {"delete": self._operation("Administration", "deleteOrganizationGroupRole", "Delete organization group role", "Removes a role from an organization group.", None, "DeleteResult", parameters=[self._path_param("group_id", "Organization group identifier."), self._path_param("role_id", "Organization role identifier.")])},
-            "/v1/organization/roles": {
-                "get": self._operation("Administration", "listOrganizationRoles", "List organization roles", "Lists organization roles.", None, "JsonObject", parameters=self._list_pagination_params()),
-                "post": self._operation("Administration", "createOrganizationRole", "Create organization role", "Creates an organization role.", "JsonObject", "JsonObject"),
-            },
-            "/v1/organization/roles/{role_id}": {
-                "get": self._operation("Administration", "retrieveOrganizationRole", "Retrieve organization role", "Retrieves an organization role.", None, "JsonObject", parameters=[self._path_param("role_id", "Organization role identifier.")]),
-                "post": self._operation("Administration", "modifyOrganizationRole", "Modify organization role", "Modifies an organization role.", "JsonObject", "JsonObject", parameters=[self._path_param("role_id", "Organization role identifier.")]),
-                "delete": self._operation("Administration", "deleteOrganizationRole", "Delete organization role", "Deletes an organization role.", None, "DeleteResult", parameters=[self._path_param("role_id", "Organization role identifier.")]),
-            },
-            "/v1/organization/certificates": {
-                "get": self._operation("Administration", "listOrganizationCertificates", "List organization certificates", "Lists organization certificates.", None, "JsonObject", parameters=self._list_pagination_params()),
-                "post": self._operation("Administration", "uploadOrganizationCertificate", "Upload organization certificate", "Uploads an organization certificate.", None, "JsonObject", multipart_schema="ProviderMultipartRequest"),
-            },
-            "/v1/organization/certificates/{certificate_id}": {
-                "get": self._operation("Administration", "retrieveOrganizationCertificate", "Retrieve organization certificate", "Retrieves an organization certificate.", None, "JsonObject", parameters=[self._path_param("certificate_id", "Certificate identifier.")]),
-                "delete": self._operation("Administration", "deleteOrganizationCertificate", "Delete organization certificate", "Deletes an organization certificate.", None, "DeleteResult", parameters=[self._path_param("certificate_id", "Certificate identifier.")]),
-            },
-            "/v1/organization/certificates/activate": {"post": self._operation("Administration", "activateOrganizationCertificates", "Activate organization certificates", "Activates one or more organization certificates.", "JsonObject", "JsonObject")},
-            "/v1/organization/certificates/deactivate": {"post": self._operation("Administration", "deactivateOrganizationCertificates", "Deactivate organization certificates", "Deactivates one or more organization certificates.", "JsonObject", "JsonObject")},
-        }
-        for path, (operation_id, summary) in usage_paths.items():
-            paths[path] = {"get": self._operation("Administration", operation_id, summary, "Retrieves organization usage buckets from the OpenAI-compatible administration API.", None, "JsonObject", parameters=self._organization_usage_query_params())}
-        paths.update(self._project_administration_paths())
-        return paths
-
-    def _project_administration_paths(self) -> dict[str, Any]:
-        return {
-            "/v1/organization/projects": {
-                "get": self._operation("Administration", "listOrganizationProjects", "List organization projects", "Lists organization projects.", None, "JsonObject", parameters=self._list_pagination_params()),
-                "post": self._operation("Administration", "createOrganizationProject", "Create organization project", "Creates an organization project.", "JsonObject", "JsonObject"),
-            },
-            "/v1/organization/projects/{project_id}": {
-                "get": self._operation("Administration", "retrieveOrganizationProject", "Retrieve organization project", "Retrieves an organization project.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")]),
-                "post": self._operation("Administration", "modifyOrganizationProject", "Modify organization project", "Modifies an organization project.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")]),
-            },
-            "/v1/organization/projects/{project_id}/archive": {"post": self._operation("Administration", "archiveOrganizationProject", "Archive organization project", "Archives an organization project.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")])},
-            "/v1/organization/projects/{project_id}/users": {
-                "get": self._operation("Administration", "listProjectUsers", "List project users", "Lists users in a project.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "createProjectUser", "Create project user", "Adds a user to a project.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")]),
-            },
-            "/v1/organization/projects/{project_id}/users/{user_id}": {
-                "get": self._operation("Administration", "retrieveProjectUser", "Retrieve project user", "Retrieves a project user.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("user_id", "Project user identifier.")]),
-                "post": self._operation("Administration", "modifyProjectUser", "Modify project user", "Modifies a project user.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("user_id", "Project user identifier.")]),
-                "delete": self._operation("Administration", "deleteProjectUser", "Delete project user", "Removes a user from a project.", None, "DeleteResult", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("user_id", "Project user identifier.")]),
-            },
-            "/v1/organization/projects/{project_id}/service_accounts": {
-                "get": self._operation("Administration", "listProjectServiceAccounts", "List project service accounts", "Lists project service accounts.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "createProjectServiceAccount", "Create project service account", "Creates a project service account.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")]),
-            },
-            "/v1/organization/projects/{project_id}/service_accounts/{service_account_id}": {
-                "get": self._operation("Administration", "retrieveProjectServiceAccount", "Retrieve project service account", "Retrieves a project service account.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("service_account_id", "Project service account identifier.")]),
-                "delete": self._operation("Administration", "deleteProjectServiceAccount", "Delete project service account", "Deletes a project service account.", None, "DeleteResult", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("service_account_id", "Project service account identifier.")]),
-            },
-            "/v1/organization/projects/{project_id}/api_keys": {"get": self._operation("Administration", "listProjectApiKeys", "List project API keys", "Lists project API keys.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), *self._list_pagination_params()])},
-            "/v1/organization/projects/{project_id}/api_keys/{key_id}": {
-                "get": self._operation("Administration", "retrieveProjectApiKey", "Retrieve project API key", "Retrieves a project API key.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("key_id", "Project API key identifier.")]),
-                "delete": self._operation("Administration", "deleteProjectApiKey", "Delete project API key", "Deletes a project API key.", None, "DeleteResult", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("key_id", "Project API key identifier.")]),
-            },
-            "/v1/organization/projects/{project_id}/rate_limits": {"get": self._operation("Administration", "listProjectRateLimits", "List project rate limits", "Lists project rate limits.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), *self._list_pagination_params()])},
-            "/v1/organization/projects/{project_id}/rate_limits/{rate_limit_id}": {"post": self._operation("Administration", "modifyProjectRateLimit", "Modify project rate limit", "Modifies a project rate limit.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("rate_limit_id", "Project rate limit identifier.")])},
-            "/v1/organization/projects/{project_id}/groups": {
-                "get": self._operation("Administration", "listProjectGroups", "List project groups", "Lists project groups.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "createProjectGroup", "Create project group", "Adds a group to a project.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")]),
-            },
-            "/v1/organization/projects/{project_id}/groups/{group_id}": {"delete": self._operation("Administration", "deleteProjectGroup", "Delete project group", "Removes a group from a project.", None, "DeleteResult", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("group_id", "Project group identifier.")])},
-            "/v1/organization/projects/{project_id}/certificates": {"get": self._operation("Administration", "listProjectCertificates", "List project certificates", "Lists project certificates.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), *self._list_pagination_params()])},
-            "/v1/organization/projects/{project_id}/certificates/activate": {"post": self._operation("Administration", "activateProjectCertificates", "Activate project certificates", "Activates one or more project certificates.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")])},
-            "/v1/organization/projects/{project_id}/certificates/deactivate": {"post": self._operation("Administration", "deactivateProjectCertificates", "Deactivate project certificates", "Deactivates one or more project certificates.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")])},
-            "/v1/projects/{project_id}/roles": {
-                "get": self._operation("Administration", "listProjectRoles", "List project roles", "Lists project roles.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "createProjectRole", "Create project role", "Creates a project role.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier.")]),
-            },
-            "/v1/projects/{project_id}/roles/{role_id}": {
-                "get": self._operation("Administration", "retrieveProjectRole", "Retrieve project role", "Retrieves a project role.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("role_id", "Project role identifier.")]),
-                "post": self._operation("Administration", "modifyProjectRole", "Modify project role", "Modifies a project role.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("role_id", "Project role identifier.")]),
-                "delete": self._operation("Administration", "deleteProjectRole", "Delete project role", "Deletes a project role.", None, "DeleteResult", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("role_id", "Project role identifier.")]),
-            },
-            "/v1/projects/{project_id}/users/{user_id}/roles": {
-                "get": self._operation("Administration", "listProjectUserRoles", "List project user roles", "Lists roles assigned to a project user.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("user_id", "Project user identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "createProjectUserRole", "Create project user role", "Assigns a role to a project user.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("user_id", "Project user identifier.")]),
-            },
-            "/v1/projects/{project_id}/users/{user_id}/roles/{role_id}": {"delete": self._operation("Administration", "deleteProjectUserRole", "Delete project user role", "Removes a role from a project user.", None, "DeleteResult", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("user_id", "Project user identifier."), self._path_param("role_id", "Project role identifier.")])},
-            "/v1/projects/{project_id}/groups/{group_id}/roles": {
-                "get": self._operation("Administration", "listProjectGroupRoles", "List project group roles", "Lists roles assigned to a project group.", None, "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("group_id", "Project group identifier."), *self._list_pagination_params()]),
-                "post": self._operation("Administration", "createProjectGroupRole", "Create project group role", "Assigns a role to a project group.", "JsonObject", "JsonObject", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("group_id", "Project group identifier.")]),
-            },
-            "/v1/projects/{project_id}/groups/{group_id}/roles/{role_id}": {"delete": self._operation("Administration", "deleteProjectGroupRole", "Delete project group role", "Removes a role from a project group.", None, "DeleteResult", parameters=[self._path_param("project_id", "Project identifier."), self._path_param("group_id", "Project group identifier."), self._path_param("role_id", "Project role identifier.")])},
         }
 
     def _provider_paths(self) -> dict[str, Any]:
@@ -5034,35 +3502,6 @@ class ClawRouterGatewayOpenApiGenerator:
             self._query_param("before_id", "Anthropic cursor for results before an object identifier."),
             self._query_param("after_id", "Anthropic cursor for results after an object identifier."),
             self._query_param("limit", "Maximum number of Anthropic objects to return.", {"type": "integer", "minimum": 1, "maximum": 100}),
-        ]
-
-    def _organization_usage_query_params(self) -> list[dict[str, Any]]:
-        array_of_strings = {"type": "array", "items": {"type": "string"}}
-        return [
-            self._query_param("start_time", "Unix timestamp for the inclusive start of the reporting window.", {"type": "integer", "format": "int64"}),
-            self._query_param("end_time", "Unix timestamp for the exclusive end of the reporting window.", {"type": "integer", "format": "int64"}),
-            self._query_param("bucket_width", "Bucket width accepted by the selected upstream.", {"type": "string"}),
-            self._query_param("project_ids", "Project identifiers to include.", array_of_strings),
-            self._query_param("user_ids", "User identifiers to include.", array_of_strings),
-            self._query_param("api_key_ids", "API key identifiers to include.", array_of_strings),
-            self._query_param("models", "Model identifiers to include.", array_of_strings),
-            self._query_param("group_by", "Fields to group usage or costs by.", array_of_strings),
-            self._query_param("limit", "Maximum number of buckets to return.", {"type": "integer", "minimum": 1}),
-            self._query_param("page", "Pagination cursor returned by the selected upstream."),
-        ]
-
-    def _organization_audit_query_params(self) -> list[dict[str, Any]]:
-        return [
-            self._query_param("effective_at[gte]", "Lower bound for audit event time.", {"type": "integer", "format": "int64"}),
-            self._query_param("effective_at[lte]", "Upper bound for audit event time.", {"type": "integer", "format": "int64"}),
-            self._query_param("project_ids[]", "Project identifiers to include.", {"type": "array", "items": {"type": "string"}}),
-            self._query_param("event_types[]", "Audit event types to include.", {"type": "array", "items": {"type": "string"}}),
-            self._query_param("actor_ids[]", "Actor identifiers to include.", {"type": "array", "items": {"type": "string"}}),
-            self._query_param("actor_emails[]", "Actor email addresses to include.", {"type": "array", "items": {"type": "string"}}),
-            self._query_param("resource_ids[]", "Resource identifiers to include.", {"type": "array", "items": {"type": "string"}}),
-            self._query_param("limit", "Maximum number of audit log events to return.", {"type": "integer", "minimum": 1, "maximum": 100}),
-            self._query_param("after", "Cursor for pagination after an audit event identifier."),
-            self._query_param("before", "Cursor for pagination before an audit event identifier."),
         ]
 
     def _include_query_param(self) -> dict[str, Any]:

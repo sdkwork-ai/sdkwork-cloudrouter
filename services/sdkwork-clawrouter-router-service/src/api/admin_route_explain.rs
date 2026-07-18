@@ -8,7 +8,8 @@ use axum::routing::post;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::admin_sql_subject::{RequiredAdminSqlScopedSubject, SqlScopedAdminSubject};
+use crate::api::response::{not_found_problem, problem_from_wire_code, success_envelope};
 use crate::application::{
     AuthenticatedApiKeyContext, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
     SelectProviderChannelRouteQuery, SelectProviderRouteQuery, SelectedProviderChannelRoute,
@@ -83,8 +84,6 @@ struct AdminRouteExplainCandidateResponse {
     requested_model: Option<String>,
     provider_model: Option<String>,
     region_code: String,
-    credential_id: Option<String>,
-    credential_rotation: Option<String>,
     timeout_ms: Option<u64>,
 }
 
@@ -105,7 +104,11 @@ where
         .with_state(AdminRouteExplainState { catalog })
 }
 
-async fn explain_route<C>(State(state): State<AdminRouteExplainState<C>>, body: Bytes) -> Response
+async fn explain_route<C>(
+    RequiredAdminSqlScopedSubject(subject): RequiredAdminSqlScopedSubject,
+    State(state): State<AdminRouteExplainState<C>>,
+    body: Bytes,
+) -> Response
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
@@ -113,9 +116,11 @@ where
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
-    let normalized = match normalize_route_explain_request(state.catalog.as_ref(), request) {
+    let normalized = match normalize_route_explain_request(state.catalog.as_ref(), subject, request)
+    {
         Ok(request) => request,
-        Err(message) => return bad_request(message),
+        Err(RouteExplainRequestError::BadRequest(message)) => return bad_request(message),
+        Err(RouteExplainRequestError::NotFound) => return route_target_not_found(),
     };
 
     let selector = ProviderRouteSelector::new(state.catalog.as_ref());
@@ -209,31 +214,44 @@ struct NormalizedRouteExplainRequest {
     route_key: String,
 }
 
+enum RouteExplainRequestError {
+    BadRequest(String),
+    NotFound,
+}
+
 fn normalize_route_explain_request<C>(
     catalog: &C,
+    subject: SqlScopedAdminSubject,
     request: AdminRouteExplainRequest,
-) -> Result<NormalizedRouteExplainRequest, String>
+) -> Result<NormalizedRouteExplainRequest, RouteExplainRequestError>
 where
     C: PricingCatalog,
 {
-    let api_key_id = parse_positive_i64(request.api_key_id.as_deref(), "apiKeyId")?;
+    let invalid = RouteExplainRequestError::BadRequest;
+    let api_key_id =
+        parse_positive_i64(request.api_key_id.as_deref(), "apiKeyId").map_err(invalid)?;
     let api_key = catalog
         .find_api_key(api_key_id)
-        .ok_or_else(|| format!("api key was not found: {api_key_id}"))?;
+        .filter(|api_key| object_scope_matches(subject, api_key.tenant_id, api_key.organization_id))
+        .ok_or(RouteExplainRequestError::NotFound)?;
     let channel_group_id = request
         .channel_group_id
         .as_deref()
         .map(|value| parse_positive_i64(Some(value), "channelGroupId"))
-        .transpose()?
+        .transpose()
+        .map_err(RouteExplainRequestError::BadRequest)?
         .unwrap_or(api_key.group_id);
     let group = catalog
         .find_channel_group(channel_group_id)
-        .ok_or_else(|| format!("channel group was not found: {channel_group_id}"))?;
-    ensure_same_scope(&api_key, &group)?;
+        .filter(|group| object_scope_matches(subject, group.tenant_id, group.organization_id))
+        .ok_or(RouteExplainRequestError::NotFound)?;
+    ensure_same_scope(&api_key, &group).map_err(|_| RouteExplainRequestError::NotFound)?;
     let resource_code = normalize_optional_text(request.resource_code.as_deref())
         .or_else(|| normalize_optional_text(request.api_code.as_deref()))
         .or_else(|| normalize_optional_text(request.route_key.as_deref()))
-        .ok_or_else(|| "resourceCode is required".to_owned())?;
+        .ok_or_else(|| {
+            RouteExplainRequestError::BadRequest("resourceCode is required".to_owned())
+        })?;
     let api_code = normalize_optional_text(request.api_code.as_deref())
         .unwrap_or_else(|| normalize_api_code_from_resource(&resource_code));
     let catalog_key = normalize_optional_text(request.catalog_key.as_deref());
@@ -242,13 +260,15 @@ where
         .capability
         .as_deref()
         .map(parse_capability)
-        .transpose()?
+        .transpose()
+        .map_err(RouteExplainRequestError::BadRequest)?
         .unwrap_or(RoutingCapability::Chat);
     let billing_meter = request
         .billing_meter
         .as_deref()
         .map(parse_billing_meter)
-        .transpose()?
+        .transpose()
+        .map_err(RouteExplainRequestError::BadRequest)?
         .unwrap_or(BillingMeter::LlmInputToken);
 
     Ok(NormalizedRouteExplainRequest {
@@ -270,6 +290,14 @@ where
         billing_meter,
         route_key: normalize_optional_text(request.route_key.as_deref()).unwrap_or(api_code),
     })
+}
+
+fn object_scope_matches(
+    subject: SqlScopedAdminSubject,
+    tenant_id: i64,
+    organization_id: i64,
+) -> bool {
+    subject.tenant_id == tenant_id && subject.organization_id == organization_id
 }
 
 fn ensure_same_scope(api_key: &GatewayApiKey, group: &ChannelGroup) -> Result<(), String> {
@@ -297,8 +325,6 @@ fn to_model_candidate_response(
         requested_model: Some(route.model),
         provider_model: Some(route.provider_model),
         region_code: route.region_code,
-        credential_id: route.credential_id.map(|value| value.to_string()),
-        credential_rotation: Some(route.credential_rotation),
         timeout_ms: route.timeout_ms,
     }
 }
@@ -322,8 +348,6 @@ fn to_channel_candidate_response(
         requested_model: None,
         provider_model: None,
         region_code: route.region_code,
-        credential_id: route.credential_id.map(|value| value.to_string()),
-        credential_rotation: Some(route.credential_rotation),
         timeout_ms: route.timeout_ms,
     }
 }
@@ -424,4 +448,8 @@ fn parse_billing_meter(value: &str) -> Result<BillingMeter, String> {
 
 fn bad_request(message: String) -> Response {
     problem_from_wire_code("4001", message).into_response()
+}
+
+fn route_target_not_found() -> Response {
+    not_found_problem("route explain target was not found").into_response()
 }

@@ -11,7 +11,7 @@ class VideoApi(private val client: HttpClient) {
     /** List videos */
     suspend fun list(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiVideoList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("page_size", limit, "form", true, false, null),
+            QueryParameterSpec("limit", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

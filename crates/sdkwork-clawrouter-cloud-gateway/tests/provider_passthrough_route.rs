@@ -222,7 +222,7 @@ async fn seeded_gateway_router_with_provider_adapter_config(
 }
 
 #[test]
-fn openai_compatible_passthrough_path_manifest_stays_complete() {
+fn openai_compatible_passthrough_path_manifest_excludes_provider_control_plane() {
     let paths = sdkwork_clawrouter_cloud_gateway::openai_compatible_passthrough_paths();
     let method_paths = sdkwork_clawrouter_cloud_gateway::openai_method_passthrough_paths();
 
@@ -230,10 +230,7 @@ fn openai_compatible_passthrough_path_manifest_stays_complete() {
         paths.contains(&"/v1/conversations/{conversation_id}/items/{item_id}"),
         "OpenAI conversation item passthrough must stay declared"
     );
-    assert!(
-        method_paths.contains(&"/v1/models/{model}"),
-        "OpenAI model deletion passthrough must stay declared for DELETE /v1/models/{{model}}"
-    );
+    assert!(method_paths.is_empty());
     assert!(
         paths.contains(&"/v1/responses/input_tokens"),
         "OpenAI response input token counting passthrough must stay declared"
@@ -251,18 +248,6 @@ fn openai_compatible_passthrough_path_manifest_stays_complete() {
         "OpenAI realtime translation session passthrough must stay declared"
     );
     assert!(
-        paths.contains(&"/v1/fine_tuning/alpha/graders/validate"),
-        "OpenAI fine-tuning grader validation passthrough must stay declared"
-    );
-    assert!(
-        paths.contains(&"/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions"),
-        "OpenAI fine-tuning checkpoint permissions passthrough must use the standard fine_tuned_model_checkpoint parameter"
-    );
-    assert!(
-        !paths.contains(&"/v1/fine_tuning/checkpoints/{checkpoint_id}/permissions"),
-        "OpenAI fine-tuning checkpoint permissions passthrough must not expose the nonstandard checkpoint_id parameter"
-    );
-    assert!(
         paths.contains(&"/v1/batches/{batch_id}/cancel"),
         "OpenAI batch cancellation passthrough must use the standard cancel subresource"
     );
@@ -278,42 +263,18 @@ fn openai_compatible_passthrough_path_manifest_stays_complete() {
         paths.contains(&"/v1/audio/voice_consents/{consent_id}"),
         "OpenAI voice consent passthrough must use the standard consent_id parameter"
     );
-    assert!(
-        paths.contains(&"/v1/skills/{skill_id}/versions/{version}/content"),
-        "OpenAI skill version content passthrough must use the standard version parameter"
-    );
-    assert!(
-        paths.contains(&"/v1/organization/costs"),
-        "OpenAI organization costs passthrough must stay declared"
-    );
-    assert!(
-        paths.contains(&"/v1/organization/projects/{project_id}/archive"),
-        "OpenAI project archive passthrough must stay declared"
-    );
-    assert!(
-        paths.contains(&"/v1/organization/admin_api_keys/{key_id}"),
-        "OpenAI admin API key passthrough must stay declared"
-    );
-    assert!(
-        paths.contains(&"/v1/organization/users/{user_id}/roles/{role_id}"),
-        "OpenAI organization user role assignment passthrough must stay declared"
-    );
-    assert!(
-        paths.contains(&"/v1/organization/groups/{group_id}/roles/{role_id}"),
-        "OpenAI organization group role assignment passthrough must stay declared"
-    );
-    assert!(
-        paths.contains(&"/v1/organization/projects/{project_id}/api_keys/{key_id}"),
-        "OpenAI project API key passthrough must use the standard key_id parameter"
-    );
-    assert!(
-        !paths.contains(&"/v1/organization/projects/{project_id}/api_keys/{api_key_id}"),
-        "OpenAI project API key passthrough must not expose the nonstandard api_key_id parameter"
-    );
-    assert!(
-        paths.contains(&"/v1/projects/{project_id}/users/{user_id}/roles/{role_id}"),
-        "OpenAI project role assignment passthrough must stay declared"
-    );
+    for forbidden_prefix in [
+        "/v1/organization/",
+        "/v1/projects/",
+        "/v1/fine_tuning/",
+        "/v1/evals",
+        "/v1/skills",
+    ] {
+        assert!(
+            paths.iter().all(|path| !path.starts_with(forbidden_prefix)),
+            "provider control-plane path prefix must not be public: {forbidden_prefix}"
+        );
+    }
     assert!(
         paths.contains(&"/v1/containers/{container_id}/files/{file_id}/content"),
         "OpenAI container file content passthrough must stay declared"
@@ -322,6 +283,37 @@ fn openai_compatible_passthrough_path_manifest_stays_complete() {
         paths.contains(&"/v1/realtime/transcription_sessions"),
         "OpenAI realtime transcription session passthrough must stay declared"
     );
+}
+
+#[tokio::test]
+async fn openai_passthrough_rejects_methods_absent_from_the_public_contract() {
+    let router = sdkwork_clawrouter_cloud_gateway::gateway_passthrough_router();
+
+    let unsupported = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri("/v1/files")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::METHOD_NOT_ALLOWED, unsupported.status());
+    assert_eq!("GET, POST", unsupported.headers()["allow"]);
+
+    let declared = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/files")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::NOT_IMPLEMENTED, declared.status());
 }
 
 #[test]
@@ -443,11 +435,6 @@ async fn gateway_mounts_provider_native_passthrough_boundaries_without_404() {
         ),
         (
             "POST",
-            "/provider/elevenlabs/v1/sound-generation",
-            r#"{"text":"cinematic whoosh"}"#,
-        ),
-        (
-            "POST",
             "/provider/midjourney/v1/images/generations",
             r#"{"prompt":"product render"}"#,
         ),
@@ -490,6 +477,34 @@ async fn gateway_mounts_provider_native_passthrough_boundaries_without_404() {
             payload["error"]["code"]
         );
         assert_eq!(path, payload["error"]["path"]);
+    }
+}
+
+#[tokio::test]
+async fn gateway_rejects_provider_native_paths_absent_from_the_public_contract() {
+    let router = sdkwork_clawrouter_cloud_gateway::router();
+
+    for (method, path) in [
+        (
+            "POST",
+            "/provider/google/v1beta/projects/project-1/locations/global",
+        ),
+        ("POST", "/provider/elevenlabs/v1/sound-generation"),
+        ("DELETE", "/provider/openai/v1/models/gpt-4o-mini"),
+    ] {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(method)
+                    .uri(path)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::NOT_FOUND, response.status(), "{path}");
     }
 }
 
@@ -2402,9 +2417,11 @@ async fn gateway_database_router_forwards_configured_openai_standard_passthrough
         "http://127.0.0.1:9",
     )
     .await;
-    let config =
-        ProviderRelayConfig::from_parts(format!("http://{global_addr}"), "sk-openai-upstream")
-            .unwrap();
+    let config = ProviderRelayConfig::from_parts_for_development(
+        format!("http://{global_addr}"),
+        "sk-openai-upstream",
+    )
+    .unwrap();
     let router = seeded_gateway_router_with_provider_configs(
         &catalog,
         Some(config),
@@ -4055,7 +4072,7 @@ async fn gateway_database_route_scoped_stateless_openai_passthrough_failovers_to
 }
 
 #[tokio::test]
-async fn gateway_database_route_scoped_openai_passthrough_rewrites_delete_path_model() {
+async fn gateway_database_route_scoped_openai_passthrough_rejects_model_delete() {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route("/v1/models/{*model}", any(capture_native_provider_request))
@@ -4116,26 +4133,8 @@ async fn gateway_database_route_scoped_openai_passthrough_rewrites_delete_path_m
         .await
         .unwrap();
 
-    let response_status = response.status();
-    let response_body = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    assert_eq!(
-        StatusCode::CREATED,
-        response_status,
-        "{}",
-        String::from_utf8_lossy(&response_body)
-    );
-    let captured_standard = captured_standard.lock().unwrap();
-    assert_eq!(1, captured_standard.len());
-    assert_eq!(
-        Some("Bearer sk-standard-upstream".to_owned()),
-        captured_standard[0].authorization
-    );
-    assert_eq!(
-        "/v1/models/gpt-4o-mini",
-        captured_standard[0].path_and_query
-    );
+    assert_eq!(StatusCode::METHOD_NOT_ALLOWED, response.status());
+    assert_eq!(0, captured_standard.lock().unwrap().len());
     assert_eq!(0, captured_premium.lock().unwrap().len());
 }
 
@@ -4510,10 +4509,6 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_optional_model_
             "/v1/threads/thread_123/runs",
             any(capture_native_provider_request),
         )
-        .route(
-            "/v1/evals/eval_123/runs",
-            any(capture_native_provider_request),
-        )
         .with_state(Arc::clone(&captured_standard_thread));
     let standard_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let standard_addr = standard_listener.local_addr().unwrap();
@@ -4527,10 +4522,6 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_optional_model_
     let premium_provider = Router::new()
         .route(
             "/v1/threads/thread_123/runs",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/evals/eval_123/runs",
             any(capture_native_provider_request),
         )
         .with_state(Arc::clone(&captured_premium));
@@ -4579,21 +4570,6 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_optional_model_
         )
         .await
         .unwrap();
-    let nested_model_response = router
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/v1/evals/eval_123/runs")
-                .header("authorization", catalog.gateway_authorization_header())
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"data_source":{"type":"responses","model":"gpt-4o-mini","input":"hello"},"name":"quality"}"#,
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
     let channel_route_status = channel_route_response.status();
     let channel_route_body = axum::body::to_bytes(channel_route_response.into_body(), usize::MAX)
         .await
@@ -4604,18 +4580,8 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_optional_model_
         "{}",
         String::from_utf8_lossy(&channel_route_body)
     );
-    let nested_model_status = nested_model_response.status();
-    let nested_model_body = axum::body::to_bytes(nested_model_response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    assert_eq!(
-        StatusCode::CREATED,
-        nested_model_status,
-        "{}",
-        String::from_utf8_lossy(&nested_model_body)
-    );
     let captured_standard = captured_standard_thread.lock().unwrap();
-    assert_eq!(2, captured_standard.len());
+    assert_eq!(1, captured_standard.len());
     assert_eq!(
         Some("Bearer sk-standard-upstream".to_owned()),
         captured_standard[0].authorization
@@ -4626,17 +4592,6 @@ async fn gateway_database_route_scoped_openai_passthrough_routes_optional_model_
         captured_standard[0].path_and_query
     );
     assert!(captured_standard[0].body.contains("asst_123"));
-    assert_eq!("POST", captured_standard[1].method);
-    assert_eq!(
-        "/v1/evals/eval_123/runs",
-        captured_standard[1].path_and_query
-    );
-    assert!(captured_standard[1]
-        .body
-        .contains(r#""model":"gpt-4o-mini""#));
-    assert!(!captured_standard[1]
-        .body
-        .contains(r#""model":"openai/global/gpt-4o-mini""#));
     assert_eq!(0, captured_premium.lock().unwrap().len());
 }
 
@@ -4974,18 +4929,9 @@ async fn gateway_database_router_forwards_configured_openai_supplemental_passthr
     let captured = Arc::new(Mutex::new(Vec::new()));
     let provider = Router::new()
         .route("/v1/conversations", any(capture_native_provider_request))
-        .route("/v1/models/{*model}", any(capture_native_provider_request))
         .route("/v1/files", any(capture_native_provider_request))
         .route(
             "/v1/realtime/calls/call_123/hangup",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/fine_tuning/alpha/graders/validate",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/fine_tuning/checkpoints/ftckpt_123/permissions",
             any(capture_native_provider_request),
         )
         .route(
@@ -5001,38 +4947,6 @@ async fn gateway_database_router_forwards_configured_openai_supplemental_passthr
             any(capture_native_provider_request),
         )
         .route(
-            "/v1/skills/skill_123/versions/v1/content",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/organization/costs",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/organization/projects/proj_123/archive",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/organization/admin_api_keys/key_123",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/organization/users/user_123/roles/role_123",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/organization/groups/group_123/roles",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/organization/projects/proj_123/api_keys/key_123",
-            any(capture_native_provider_request),
-        )
-        .route(
-            "/v1/projects/proj_123/users/user_123/roles/role_123",
-            any(capture_native_provider_request),
-        )
-        .route(
             "/v1/containers/container_123/files/file_123/content",
             any(capture_native_provider_request),
         )
@@ -5042,23 +4956,13 @@ async fn gateway_database_router_forwards_configured_openai_supplemental_passthr
     tokio::spawn(async move {
         axum::serve(listener, provider).await.unwrap();
     });
-    let global_captured = Arc::new(Mutex::new(Vec::new()));
-    let global_provider = Router::new()
-        .route("/{*path}", any(capture_native_provider_request))
-        .with_state(Arc::clone(&global_captured));
-    let global_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let global_addr = global_listener.local_addr().unwrap();
-    tokio::spawn(async move {
-        axum::serve(global_listener, global_provider).await.unwrap();
-    });
-
     let catalog = fork_openai_passthrough_group_route_catalog(
         &format!("http://{addr}"),
         "http://127.0.0.1:9",
     )
     .await;
     let config =
-        ProviderRelayConfig::from_parts(format!("http://{global_addr}"), "sk-openai-upstream")
+        ProviderRelayConfig::from_parts_for_development("http://127.0.0.1:9", "sk-openai-upstream")
             .unwrap();
     let router = seeded_gateway_router_with_provider_configs(
         &catalog,
@@ -5070,22 +4974,11 @@ async fn gateway_database_router_forwards_configured_openai_supplemental_passthr
 
     for (method, uri, body) in [
         ("GET", "/v1/conversations?limit=20&order=desc", ""),
-        ("DELETE", "/v1/models/gpt-4o-mini", ""),
         ("GET", "/v1/files?purpose=assistants", ""),
         (
             "POST",
             "/v1/realtime/calls/call_123/hangup",
             r#"{"reason":"complete"}"#,
-        ),
-        (
-            "POST",
-            "/v1/fine_tuning/alpha/graders/validate",
-            r#"{"grader":{"type":"string_check"}}"#,
-        ),
-        (
-            "GET",
-            "/v1/fine_tuning/checkpoints/ftckpt_123/permissions?project_id=proj_123",
-            "",
         ),
         ("POST", "/v1/batches/batch_123/cancel", ""),
         (
@@ -5094,34 +4987,6 @@ async fn gateway_database_router_forwards_configured_openai_supplemental_passthr
             "",
         ),
         ("DELETE", "/v1/audio/voice_consents/consent_123", ""),
-        ("GET", "/v1/skills/skill_123/versions/v1/content", ""),
-        (
-            "GET",
-            "/v1/organization/costs?start_time=1700000000&group_by=project_id",
-            "",
-        ),
-        ("POST", "/v1/organization/projects/proj_123/archive", ""),
-        ("DELETE", "/v1/organization/admin_api_keys/key_123", ""),
-        (
-            "DELETE",
-            "/v1/organization/users/user_123/roles/role_123",
-            "",
-        ),
-        (
-            "POST",
-            "/v1/organization/groups/group_123/roles",
-            r#"{"role_id":"role_123"}"#,
-        ),
-        (
-            "GET",
-            "/v1/organization/projects/proj_123/api_keys/key_123",
-            "",
-        ),
-        (
-            "DELETE",
-            "/v1/projects/proj_123/users/user_123/roles/role_123",
-            "",
-        ),
         (
             "GET",
             "/v1/containers/container_123/files/file_123/content",
@@ -5141,11 +5006,20 @@ async fn gateway_database_router_forwards_configured_openai_supplemental_passthr
             .await
             .unwrap();
 
-        assert_eq!(StatusCode::CREATED, response.status(), "{method} {uri}");
+        let status = response.status();
+        let response_body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        assert_eq!(
+            StatusCode::CREATED,
+            status,
+            "{method} {uri}: {}",
+            String::from_utf8_lossy(&response_body)
+        );
     }
 
     let captured = captured.lock().unwrap();
-    assert_eq!(18, captured.len());
+    assert_eq!(7, captured.len());
     assert_eq!("GET", captured[0].method);
     assert_eq!(
         "/v1/conversations?limit=20&order=desc",
@@ -5155,86 +5029,29 @@ async fn gateway_database_router_forwards_configured_openai_supplemental_passthr
         Some("Bearer sk-standard-upstream".to_owned()),
         captured[0].authorization
     );
-    assert_eq!("DELETE", captured[1].method);
-    assert_eq!("/v1/models/gpt-4o-mini", captured[1].path_and_query);
-    assert_eq!("GET", captured[2].method);
-    assert_eq!("/v1/files?purpose=assistants", captured[2].path_and_query);
-    assert_eq!("POST", captured[3].method);
+    assert_eq!("GET", captured[1].method);
+    assert_eq!("/v1/files?purpose=assistants", captured[1].path_and_query);
+    assert_eq!("POST", captured[2].method);
     assert_eq!(
         "/v1/realtime/calls/call_123/hangup",
-        captured[3].path_and_query
+        captured[2].path_and_query
     );
+    assert_eq!("POST", captured[3].method);
+    assert_eq!("/v1/batches/batch_123/cancel", captured[3].path_and_query);
     assert_eq!("POST", captured[4].method);
     assert_eq!(
-        "/v1/fine_tuning/alpha/graders/validate",
+        "/v1/vector_stores/vs_123/file_batches/batch_123/cancel",
         captured[4].path_and_query
     );
-    assert_eq!("GET", captured[5].method);
-    assert_eq!(
-        "/v1/fine_tuning/checkpoints/ftckpt_123/permissions?project_id=proj_123",
-        captured[5].path_and_query
-    );
-    assert_eq!("POST", captured[6].method);
-    assert_eq!("/v1/batches/batch_123/cancel", captured[6].path_and_query);
-    assert_eq!("POST", captured[7].method);
-    assert_eq!(
-        "/v1/vector_stores/vs_123/file_batches/batch_123/cancel",
-        captured[7].path_and_query
-    );
-    assert_eq!("DELETE", captured[8].method);
+    assert_eq!("DELETE", captured[5].method);
     assert_eq!(
         "/v1/audio/voice_consents/consent_123",
-        captured[8].path_and_query
+        captured[5].path_and_query
     );
-    assert_eq!("GET", captured[9].method);
-    assert_eq!(
-        "/v1/skills/skill_123/versions/v1/content",
-        captured[9].path_and_query
-    );
-    assert_eq!("GET", captured[10].method);
-    assert_eq!(
-        "/v1/organization/costs?start_time=1700000000&group_by=project_id",
-        captured[10].path_and_query
-    );
-    assert_eq!("POST", captured[11].method);
-    assert_eq!(
-        "/v1/organization/projects/proj_123/archive",
-        captured[11].path_and_query
-    );
-    assert_eq!("DELETE", captured[12].method);
-    assert_eq!(
-        "/v1/organization/admin_api_keys/key_123",
-        captured[12].path_and_query
-    );
-    assert_eq!("DELETE", captured[13].method);
-    assert_eq!(
-        "/v1/organization/users/user_123/roles/role_123",
-        captured[13].path_and_query
-    );
-    assert_eq!("POST", captured[14].method);
-    assert_eq!(
-        "/v1/organization/groups/group_123/roles",
-        captured[14].path_and_query
-    );
-    assert_eq!("GET", captured[15].method);
-    assert_eq!(
-        "/v1/organization/projects/proj_123/api_keys/key_123",
-        captured[15].path_and_query
-    );
-    assert_eq!("DELETE", captured[16].method);
-    assert_eq!(
-        "/v1/projects/proj_123/users/user_123/roles/role_123",
-        captured[16].path_and_query
-    );
+    assert_eq!("GET", captured[6].method);
     assert_eq!(
         "/v1/containers/container_123/files/file_123/content",
-        captured[17].path_and_query
-    );
-    drop(captured);
-    assert_eq!(
-        0,
-        global_captured.lock().unwrap().len(),
-        "supplemental OpenAI passthrough must not bypass the API-key group account pool"
+        captured[6].path_and_query
     );
 }
 
@@ -5516,12 +5333,6 @@ async fn gateway_mounts_openai_standard_passthrough_boundaries_without_404() {
             "/v1/vector_stores/vs_123/file_batches/batch_123/cancel",
             "",
         ),
-        (
-            "GET",
-            "/v1/fine_tuning/jobs/ftjob_123/events",
-            "/v1/fine_tuning/jobs/ftjob_123/events",
-            "",
-        ),
         ("GET", "/v1/conversations", "/v1/conversations", ""),
         (
             "POST",
@@ -5529,48 +5340,11 @@ async fn gateway_mounts_openai_standard_passthrough_boundaries_without_404() {
             "/v1/containers",
             r#"{"name":"code sandbox"}"#,
         ),
-        ("GET", "/v1/evals", "/v1/evals", ""),
         (
             "POST",
             "/v1/responses/input_tokens",
             "/v1/responses/input_tokens",
             r#"{"model":"gpt-5.4","input":"hello"}"#,
-        ),
-        (
-            "POST",
-            "/v1/fine_tuning/alpha/graders/run",
-            "/v1/fine_tuning/alpha/graders/run",
-            r#"{"grader":{"type":"string_check"},"item":{"input":"hello"}}"#,
-        ),
-        (
-            "GET",
-            "/v1/skills/skill_123/content",
-            "/v1/skills/skill_123/content",
-            "",
-        ),
-        (
-            "GET",
-            "/v1/organization/usage/completions?start_time=1700000000",
-            "/v1/organization/usage/completions",
-            "",
-        ),
-        (
-            "POST",
-            "/v1/organization/projects/proj_123/archive",
-            "/v1/organization/projects/proj_123/archive",
-            "",
-        ),
-        (
-            "GET",
-            "/v1/organization/admin_api_keys/key_123",
-            "/v1/organization/admin_api_keys/key_123",
-            "",
-        ),
-        (
-            "DELETE",
-            "/v1/projects/proj_123/users/user_123/roles/role_123",
-            "/v1/projects/proj_123/users/user_123/roles/role_123",
-            "",
         ),
         (
             "POST",
@@ -5790,7 +5564,6 @@ async fn openai_passthrough_group_route_catalog_uses_standard_resource_api_codes
         "openai.responses",
         "openai.videos",
         "openai.vector_stores",
-        "openai.administration",
     ] {
         assert!(
             standard_bundle_api_codes.contains(expected),
@@ -7827,58 +7600,6 @@ async fn seed_openai_passthrough_group_channel_routes(
             sort_order: 9015,
         },
         ResourceSeed {
-            id: 9016,
-            code: "api.openai.fine_tuning",
-            resource_type: "api_endpoint",
-            display_name: "OpenAI Fine Tuning",
-            vendor_code: "openai",
-            modality_code: "network",
-            api_code: "openai.fine_tuning",
-            catalog_key: None,
-            model: None,
-            provider_native_model: None,
-            sort_order: 9016,
-        },
-        ResourceSeed {
-            id: 9017,
-            code: "api.openai.evals",
-            resource_type: "api_endpoint",
-            display_name: "OpenAI Evals",
-            vendor_code: "openai",
-            modality_code: "network",
-            api_code: "openai.evals",
-            catalog_key: None,
-            model: None,
-            provider_native_model: None,
-            sort_order: 9017,
-        },
-        ResourceSeed {
-            id: 9027,
-            code: "model.openai.gpt-4o-mini.evals",
-            resource_type: "model_api",
-            display_name: "GPT-4o mini Evals",
-            vendor_code: "openai",
-            modality_code: "network",
-            api_code: "openai.evals",
-            catalog_key: Some("openai/gpt-4o-mini"),
-            model: Some("gpt-4o-mini"),
-            provider_native_model: Some("gpt-4o-mini"),
-            sort_order: 9027,
-        },
-        ResourceSeed {
-            id: 9018,
-            code: "api.openai.administration",
-            resource_type: "api_endpoint",
-            display_name: "OpenAI Administration",
-            vendor_code: "openai",
-            modality_code: "network",
-            api_code: "openai.administration",
-            catalog_key: None,
-            model: None,
-            provider_native_model: None,
-            sort_order: 9018,
-        },
-        ResourceSeed {
             id: 9019,
             code: "api.openai.responses",
             resource_type: "api_endpoint",
@@ -7955,19 +7676,6 @@ async fn seed_openai_passthrough_group_channel_routes(
             model: None,
             provider_native_model: None,
             sort_order: 9023,
-        },
-        ResourceSeed {
-            id: 9029,
-            code: "api.openai.skills",
-            resource_type: "api_endpoint",
-            display_name: "OpenAI Skills",
-            vendor_code: "openai",
-            modality_code: "network",
-            api_code: "openai.skills",
-            catalog_key: None,
-            model: None,
-            provider_native_model: None,
-            sort_order: 9029,
         },
         ResourceSeed {
             id: 9024,
@@ -8176,11 +7884,6 @@ async fn seed_openai_passthrough_group_channel_routes(
              1, 'openai', 'OpenAI', 1, 'gpt-4o', 1,
              '["chat"]', '["chat"]', 0, 0, 0, 'openai-compatible',
              1, 1, 1, '80.0'),
-            (9014, 'model-openai-management-evals', 100001, 0,
-             'openai/management/evals', 'management/evals', 'OpenAI Evals API',
-             1, 'openai', 'OpenAI', 1, 'gpt-4o', 10,
-             '["network"]', '["network"]', 0, 0, 0, 'openai-compatible',
-             1, 1, 1, '80.0'),
             (9015, 'model-openai-management-files', 100001, 0,
              'openai/management/files', 'management/files', 'OpenAI Files API',
              1, 'openai', 'OpenAI', 1, 'gpt-4o', 10,
@@ -8227,11 +7930,6 @@ async fn seed_openai_passthrough_group_channel_routes(
              1, 'openai', 'OpenAI', 1, 'gpt-4o', 10,
              '["network"]', '["network"]', 0, 0, 0, 'openai-compatible',
              1, 1, 1, '80.0'),
-            (9032, 'model-openai-management-fine-tuning', 100001, 0,
-             'openai/management/fine_tuning', 'management/fine_tuning', 'OpenAI Fine Tuning API',
-             1, 'openai', 'OpenAI', 1, 'gpt-4o', 10,
-             '["network"]', '["network"]', 0, 0, 0, 'openai-compatible',
-             1, 1, 1, '80.0'),
             (9033, 'model-openai-management-batches', 100001, 0,
              'openai/management/batches', 'management/batches', 'OpenAI Batches API',
              1, 'openai', 'OpenAI', 1, 'gpt-4o', 10,
@@ -8252,17 +7950,6 @@ async fn seed_openai_passthrough_group_channel_routes(
              'openai/management/containers', 'management/containers', 'OpenAI Containers API',
              1, 'openai', 'OpenAI', 1, 'gpt-4o', 10,
              '["network"]', '["network"]', 0, 0, 0, 'openai-compatible',
-             1, 1, 1, '80.0'),
-            (9037, 'model-openai-management-skills', 100001, 0,
-             'openai/management/skills', 'management/skills', 'OpenAI Skills API',
-             1, 'openai', 'OpenAI', 1, 'gpt-4o', 10,
-             '["network"]', '["network"]', 0, 0, 0, 'openai-compatible',
-             1, 1, 1, '80.0'),
-            (9038, 'model-openai-management-administration', 100001, 0,
-             'openai/management/administration', 'management/administration',
-             'OpenAI Administration API',
-             1, 'openai', 'OpenAI', 1, 'gpt-4o', 10,
-             '["network"]', '["network"]', 0, 0, 0, 'openai-compatible',
              1, 1, 1, '80.0')
         "#,
     )
@@ -8278,9 +7965,6 @@ async fn seed_openai_passthrough_group_channel_routes(
         VALUES
             (9012, 'price-openai-management-threads-api-request', 100001, 0,
              9013, 'openai/management/threads', 'management/threads', 'openai',
-             'global', 1, 'api_request', '0.001000', 'USD', 1, 1),
-            (9013, 'price-openai-management-evals-api-request', 100001, 0,
-             9014, 'openai/management/evals', 'management/evals', 'openai',
              'global', 1, 'api_request', '0.001000', 'USD', 1, 1),
             (9014, 'price-openai-management-files-api-request', 100001, 0,
              9015, 'openai/management/files', 'management/files', 'openai',
@@ -8309,9 +7993,6 @@ async fn seed_openai_passthrough_group_channel_routes(
             (9031, 'price-openai-management-realtime-api-request', 100001, 0,
              9031, 'openai/management/realtime', 'management/realtime', 'openai',
              'global', 1, 'api_request', '0.001000', 'USD', 1, 1),
-            (9032, 'price-openai-management-fine-tuning-api-request', 100001, 0,
-             9032, 'openai/management/fine_tuning', 'management/fine_tuning', 'openai',
-             'global', 1, 'api_request', '0.001000', 'USD', 1, 1),
             (9033, 'price-openai-management-batches-api-request', 100001, 0,
              9033, 'openai/management/batches', 'management/batches', 'openai',
              'global', 1, 'api_request', '0.001000', 'USD', 1, 1),
@@ -8323,12 +8004,6 @@ async fn seed_openai_passthrough_group_channel_routes(
              'openai', 'global', 1, 'api_request', '0.001000', 'USD', 1, 1),
             (9036, 'price-openai-management-containers-api-request', 100001, 0,
              9036, 'openai/management/containers', 'management/containers', 'openai',
-             'global', 1, 'api_request', '0.001000', 'USD', 1, 1),
-            (9037, 'price-openai-management-skills-api-request', 100001, 0,
-             9037, 'openai/management/skills', 'management/skills', 'openai',
-             'global', 1, 'api_request', '0.001000', 'USD', 1, 1),
-            (9038, 'price-openai-management-administration-api-request', 100001, 0,
-             9038, 'openai/management/administration', 'management/administration', 'openai',
              'global', 1, 'api_request', '0.001000', 'USD', 1, 1)
         "#,
     )

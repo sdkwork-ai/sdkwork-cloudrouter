@@ -22,17 +22,12 @@ public class SdkworkAiClient {
     public let container: ContainerApi
     public let conversation: ConversationApi
     public let embeddings: EmbeddingsApi
-    public let eval: EvalApi
     public let files: FilesApi
-    public let fineTuning: FineTuningApi
     public let images: ImagesApi
     public let models: ModelsApi
     public let moderations: ModerationsApi
-    public let organization: OrganizationApi
-    public let project: ProjectApi
     public let realtime: RealtimeApi
     public let responses: ResponsesApi
-    public let skill: SkillApi
     public let threads: ThreadsApi
     public let uploads: UploadsApi
     public let vectorStores: VectorStoresApi
@@ -62,17 +57,12 @@ public class SdkworkAiClient {
         self.container = ContainerApi(client: httpClient)
         self.conversation = ConversationApi(client: httpClient)
         self.embeddings = EmbeddingsApi(client: httpClient)
-        self.eval = EvalApi(client: httpClient)
         self.files = FilesApi(client: httpClient)
-        self.fineTuning = FineTuningApi(client: httpClient)
         self.images = ImagesApi(client: httpClient)
         self.models = ModelsApi(client: httpClient)
         self.moderations = ModerationsApi(client: httpClient)
-        self.organization = OrganizationApi(client: httpClient)
-        self.project = ProjectApi(client: httpClient)
         self.realtime = RealtimeApi(client: httpClient)
         self.responses = ResponsesApi(client: httpClient)
-        self.skill = SkillApi(client: httpClient)
         self.threads = ThreadsApi(client: httpClient)
         self.uploads = UploadsApi(client: httpClient)
         self.vectorStores = VectorStoresApi(client: httpClient)
@@ -103,17 +93,12 @@ public class SdkworkAiClient {
         self.container = ContainerApi(client: httpClient)
         self.conversation = ConversationApi(client: httpClient)
         self.embeddings = EmbeddingsApi(client: httpClient)
-        self.eval = EvalApi(client: httpClient)
         self.files = FilesApi(client: httpClient)
-        self.fineTuning = FineTuningApi(client: httpClient)
         self.images = ImagesApi(client: httpClient)
         self.models = ModelsApi(client: httpClient)
         self.moderations = ModerationsApi(client: httpClient)
-        self.organization = OrganizationApi(client: httpClient)
-        self.project = ProjectApi(client: httpClient)
         self.realtime = RealtimeApi(client: httpClient)
         self.responses = ResponsesApi(client: httpClient)
-        self.skill = SkillApi(client: httpClient)
         self.threads = ThreadsApi(client: httpClient)
         self.uploads = UploadsApi(client: httpClient)
         self.vectorStores = VectorStoresApi(client: httpClient)

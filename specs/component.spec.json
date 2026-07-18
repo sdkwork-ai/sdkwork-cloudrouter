@@ -180,7 +180,7 @@
       "sdkwork.app.config.json",
       "sdkwork.workflow.json",
       "specs/topology.spec.json",
-      "configs/topology/*.env"
+      "etc/topology/*.env"
     ]
   },
   "integration": {

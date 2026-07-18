@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
+use std::path::{Path, PathBuf};
 
 /// Ensures IAM database env is materialized from the claw unified postgres profile when needed.
 pub fn ensure_iam_database_env_for_claw_database(database_config: &DatabaseConfig) {
@@ -171,9 +171,7 @@ fn resolve_clawrouter_app_root() -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        ensure_iam_database_env_for_claw_database, resolve_clawrouter_app_root,
-    };
+    use super::{ensure_iam_database_env_for_claw_database, resolve_clawrouter_app_root};
     use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
 
     #[test]

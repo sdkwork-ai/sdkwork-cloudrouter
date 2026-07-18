@@ -3,9 +3,11 @@ import {
   sdkworkSubscriptionCatalogHostComponents,
 } from '@sdkwork/membership-pc-subscription/catalog';
 import { buildPortalAuthLoginRedirect } from '@sdkwork/clawroutes-pc-commons';
+import { getClawRouterMembershipCheckoutService } from '@sdkwork/clawroutes-pc-commons/domain-service-providers';
 
 import {
   ClawRouterTokenPlanPointsDetailsModal,
+  ClawRouterTokenPlanCheckoutModal,
   ClawRouterTokenPlanPointsPurchaseModal,
   ClawRouterTokenPlanRedeemModal,
 } from './ClawRouterTokenPlanCommerceModal.tsx';
@@ -27,10 +29,12 @@ export function ClawRouterTokenPlanSurface() {
       <SdkworkSubscriptionCatalogPage
         components={{
           ...sdkworkSubscriptionCatalogHostComponents,
+          checkoutModal: ClawRouterTokenPlanCheckoutModal,
           pointsDetailsModal: ClawRouterTokenPlanPointsDetailsModal,
           pointsPurchaseModal: ClawRouterTokenPlanPointsPurchaseModal,
           redeemModal: ClawRouterTokenPlanRedeemModal,
         }}
+        checkoutPort={getClawRouterMembershipCheckoutService()}
         memberSummary={memberSummary}
         notifyOutlet={NotifyOutlet}
         onLoginRequired={() => {

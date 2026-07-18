@@ -8,11 +8,11 @@ namespace Sdkwork.ClawRouter.Open.Models
     {
         public int? Bytes { get; set; }
         public string? ContainerId { get; set; }
-        public int? CreatedAt { get; set; }
+        public int CreatedAt { get; set; }
         public string? Filename { get; set; }
-        public string? Id { get; set; }
+        public string Id { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
-        public string? Object { get; set; }
+        public string Object { get; set; }
         public string? Path { get; set; }
         public string? Purpose { get; set; }
     }

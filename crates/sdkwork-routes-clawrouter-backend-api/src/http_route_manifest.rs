@@ -717,4 +717,3 @@ const HTTP_ROUTES: &[HttpRoute] = &[
 pub fn http_route_manifest() -> HttpRouteManifest {
     HttpRouteManifest::new(HTTP_ROUTES)
 }
-

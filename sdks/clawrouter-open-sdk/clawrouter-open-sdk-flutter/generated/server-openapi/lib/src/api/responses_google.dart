@@ -14,7 +14,7 @@ class ResponsesGoogleApi {
   /// Google Gemini list cached contents
   Future<GoogleCachedContentListResponse?> listV1betaCachedContents([int? pageSize, String? pageToken]) async {
     final query = buildQueryString([
-      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('pageSize', pageSize, 'form', true, false, null),
       QueryParameterSpec('pageToken', pageToken, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/google/v1beta/cachedContents'), query));

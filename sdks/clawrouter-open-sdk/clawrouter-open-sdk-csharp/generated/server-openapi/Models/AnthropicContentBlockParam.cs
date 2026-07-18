@@ -13,6 +13,6 @@ namespace Sdkwork.ClawRouter.Open.Models
         public AnthropicContentSource? Source { get; set; }
         public string? Text { get; set; }
         public string? ToolUseId { get; set; }
-        public string? Type { get; set; }
+        public string Type { get; set; }
     }
 }

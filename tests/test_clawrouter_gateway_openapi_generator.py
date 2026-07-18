@@ -68,11 +68,6 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 "/v1/threads/{thread_id}/runs/{run_id}/steps",
                 "/v1/batches",
                 "/v1/batches/{batch_id}/cancel",
-                "/v1/fine_tuning/jobs",
-                "/v1/fine_tuning/jobs/{fine_tuning_job_id}/events",
-                "/v1/fine_tuning/jobs/{fine_tuning_job_id}/checkpoints",
-                "/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions",
-                "/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions/{permission_id}",
                 "/v1/conversations",
                 "/v1/conversations/{conversation_id}",
                 "/v1/conversations/{conversation_id}/items",
@@ -82,68 +77,6 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 "/v1/containers/{container_id}/files",
                 "/v1/containers/{container_id}/files/{file_id}",
                 "/v1/containers/{container_id}/files/{file_id}/content",
-                "/v1/evals",
-                "/v1/evals/{eval_id}",
-                "/v1/evals/{eval_id}/runs",
-                "/v1/evals/{eval_id}/runs/{run_id}",
-                "/v1/evals/{eval_id}/runs/{run_id}/output_items",
-                "/v1/evals/{eval_id}/runs/{run_id}/output_items/{output_item_id}",
-                "/v1/fine_tuning/alpha/graders/run",
-                "/v1/fine_tuning/alpha/graders/validate",
-                "/v1/skills/{skill_id}/content",
-                "/v1/skills/{skill_id}/versions/{version}/content",
-                "/v1/organization/costs",
-                "/v1/organization/usage/completions",
-                "/v1/organization/usage/embeddings",
-                "/v1/organization/usage/moderations",
-                "/v1/organization/usage/images",
-                "/v1/organization/usage/audio_speeches",
-                "/v1/organization/usage/audio_transcriptions",
-                "/v1/organization/usage/vector_stores",
-                "/v1/organization/usage/code_interpreter_sessions",
-                "/v1/organization/audit_logs",
-                "/v1/organization/admin_api_keys",
-                "/v1/organization/admin_api_keys/{key_id}",
-                "/v1/organization/invites",
-                "/v1/organization/invites/{invite_id}",
-                "/v1/organization/users",
-                "/v1/organization/users/{user_id}",
-                "/v1/organization/users/{user_id}/roles",
-                "/v1/organization/users/{user_id}/roles/{role_id}",
-                "/v1/organization/groups",
-                "/v1/organization/groups/{group_id}",
-                "/v1/organization/groups/{group_id}/users",
-                "/v1/organization/groups/{group_id}/users/{user_id}",
-                "/v1/organization/groups/{group_id}/roles",
-                "/v1/organization/groups/{group_id}/roles/{role_id}",
-                "/v1/organization/roles",
-                "/v1/organization/roles/{role_id}",
-                "/v1/organization/certificates",
-                "/v1/organization/certificates/{certificate_id}",
-                "/v1/organization/certificates/activate",
-                "/v1/organization/certificates/deactivate",
-                "/v1/organization/projects",
-                "/v1/organization/projects/{project_id}",
-                "/v1/organization/projects/{project_id}/archive",
-                "/v1/organization/projects/{project_id}/users",
-                "/v1/organization/projects/{project_id}/users/{user_id}",
-                "/v1/organization/projects/{project_id}/service_accounts",
-                "/v1/organization/projects/{project_id}/service_accounts/{service_account_id}",
-                "/v1/organization/projects/{project_id}/api_keys",
-                "/v1/organization/projects/{project_id}/api_keys/{key_id}",
-                "/v1/organization/projects/{project_id}/rate_limits",
-                "/v1/organization/projects/{project_id}/rate_limits/{rate_limit_id}",
-                "/v1/organization/projects/{project_id}/groups",
-                "/v1/organization/projects/{project_id}/groups/{group_id}",
-                "/v1/organization/projects/{project_id}/certificates",
-                "/v1/organization/projects/{project_id}/certificates/activate",
-                "/v1/organization/projects/{project_id}/certificates/deactivate",
-                "/v1/projects/{project_id}/roles",
-                "/v1/projects/{project_id}/roles/{role_id}",
-                "/v1/projects/{project_id}/users/{user_id}/roles",
-                "/v1/projects/{project_id}/users/{user_id}/roles/{role_id}",
-                "/v1/projects/{project_id}/groups/{group_id}/roles",
-                "/v1/projects/{project_id}/groups/{group_id}/roles/{role_id}",
                 "/v1/uploads",
                 "/v1/realtime/client_secrets",
                 "/v1/realtime/calls",
@@ -174,10 +107,7 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             ]:
                 self.assertIn(path, spec["paths"])
 
-            self.assertEqual(
-                "deleteModel",
-                spec["paths"]["/v1/models/{model}"]["delete"]["operationId"],
-            )
+            self.assertNotIn("delete", spec["paths"]["/v1/models/{model}"])
 
             operation = spec["paths"]["/google/v1beta/models/{model}:generateContent"]["post"]
             self.assertEqual(["Chat/google"], operation["tags"])
@@ -198,6 +128,58 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             self.assertNotIn("/google/{path}", spec["paths"])
             self.assertNotIn("/vidu/{path}", spec["paths"])
 
+    def test_public_openai_surface_excludes_provider_control_plane_operations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = ClawRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+            forbidden_paths = {
+                "/v1/organization/costs",
+                "/v1/organization/usage/completions",
+                "/v1/organization/audit_logs",
+                "/v1/organization/admin_api_keys",
+                "/v1/organization/users",
+                "/v1/organization/certificates",
+                "/v1/organization/projects",
+                "/v1/projects/{project_id}/roles",
+                "/v1/fine_tuning/jobs",
+                "/v1/evals",
+                "/v1/skills",
+            }
+            self.assertEqual(set(), forbidden_paths.intersection(spec["paths"]))
+            self.assertNotIn("Administration", {tag["name"] for tag in spec["tags"]})
+            forbidden_schemas = {
+                "OpenAiOrganizationAdminApiKey",
+                "OpenAiOrganizationAuditLog",
+                "OpenAiProjectApiKey",
+                "OpenAiFineTuningJob",
+                "OpenAiEval",
+                "OpenAiSkill",
+            }
+            self.assertEqual(
+                set(),
+                forbidden_schemas.intersection(spec["components"]["schemas"]),
+            )
+
+            retained_operations = {
+                ("get", "/v1/models"),
+                ("post", "/v1/chat/completions"),
+                ("post", "/v1/responses"),
+                ("post", "/v1/embeddings"),
+                ("post", "/v1/images/generations"),
+                ("post", "/v1/audio/speech"),
+                ("post", "/v1/videos"),
+                ("post", "/v1/batches"),
+                ("post", "/v1/files"),
+            }
+            actual_operations = {
+                (method, path)
+                for path, path_item in spec["paths"].items()
+                for method in path_item
+                if method in {"get", "post", "put", "patch", "delete"}
+            }
+            self.assertTrue(retained_operations.issubset(actual_operations))
+            self.assertNotIn(("delete", "/v1/models/{model}"), actual_operations)
+
     def test_documents_standard_list_pagination_parameters(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             spec = ClawRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
@@ -217,35 +199,10 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 ("/v1/threads/{thread_id}/runs", "get"),
                 ("/v1/threads/{thread_id}/runs/{run_id}/steps", "get"),
                 ("/v1/batches", "get"),
-                ("/v1/fine_tuning/jobs", "get"),
-                ("/v1/fine_tuning/jobs/{fine_tuning_job_id}/events", "get"),
-                ("/v1/fine_tuning/jobs/{fine_tuning_job_id}/checkpoints", "get"),
-                ("/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions", "get"),
                 ("/v1/conversations", "get"),
                 ("/v1/conversations/{conversation_id}/items", "get"),
                 ("/v1/containers", "get"),
                 ("/v1/containers/{container_id}/files", "get"),
-                ("/v1/evals", "get"),
-                ("/v1/evals/{eval_id}/runs", "get"),
-                ("/v1/evals/{eval_id}/runs/{run_id}/output_items", "get"),
-                ("/v1/organization/admin_api_keys", "get"),
-                ("/v1/organization/invites", "get"),
-                ("/v1/organization/users", "get"),
-                ("/v1/organization/users/{user_id}/roles", "get"),
-                ("/v1/organization/groups", "get"),
-                ("/v1/organization/groups/{group_id}/roles", "get"),
-                ("/v1/organization/roles", "get"),
-                ("/v1/organization/certificates", "get"),
-                ("/v1/organization/projects", "get"),
-                ("/v1/organization/projects/{project_id}/users", "get"),
-                ("/v1/organization/projects/{project_id}/service_accounts", "get"),
-                ("/v1/organization/projects/{project_id}/api_keys", "get"),
-                ("/v1/organization/projects/{project_id}/rate_limits", "get"),
-                ("/v1/organization/projects/{project_id}/groups", "get"),
-                ("/v1/organization/projects/{project_id}/certificates", "get"),
-                ("/v1/projects/{project_id}/roles", "get"),
-                ("/v1/projects/{project_id}/users/{user_id}/roles", "get"),
-                ("/v1/projects/{project_id}/groups/{group_id}/roles", "get"),
             ]:
                 operation = spec["paths"][path][method]
                 parameter_names = {parameter["name"] for parameter in operation["parameters"]}
@@ -418,16 +375,8 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 ("/v1/videos/characters/{character_id}", "get"): "retrieveVideoCharacter",
                 ("/v1/videos/edits", "post"): "editVideo",
                 ("/v1/videos/extensions", "post"): "extendVideo",
-                ("/v1/evals/{eval_id}/runs/{run_id}", "post"): "cancelEvalRun",
-                ("/v1/evals/{eval_id}/runs/{run_id}", "delete"): "deleteEvalRun",
-                ("/v1/evals/{eval_id}/runs/{run_id}/output_items/{output_item_id}", "get"): "retrieveEvalRunOutputItem",
                 ("/v1/batches/{batch_id}/cancel", "post"): "cancelBatch",
                 ("/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel", "post"): "cancelVectorStoreFileBatch",
-                ("/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions", "get"): "listFineTuningCheckpointPermissions",
-                ("/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions", "post"): "createFineTuningCheckpointPermission",
-                ("/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions/{permission_id}", "delete"): "deleteFineTuningCheckpointPermission",
-                ("/v1/fine_tuning/alpha/graders/run", "post"): "runFineTuningGrader",
-                ("/v1/fine_tuning/alpha/graders/validate", "post"): "validateFineTuningGrader",
                 ("/v1/realtime/client_secrets", "post"): "createRealtimeClientSecret",
                 ("/v1/realtime/calls", "post"): "createRealtimeCall",
                 ("/v1/realtime/calls/{call_id}/accept", "post"): "acceptRealtimeCall",
@@ -435,9 +384,6 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 ("/v1/realtime/calls/{call_id}/refer", "post"): "referRealtimeCall",
                 ("/v1/realtime/calls/{call_id}/reject", "post"): "rejectRealtimeCall",
                 ("/v1/realtime/translations", "post"): "createRealtimeTranslationSession",
-                ("/v1/skills/{skill_id}/content", "get"): "retrieveSkillContent",
-                ("/v1/skills/{skill_id}/versions/{version}", "delete"): "deleteSkillVersion",
-                ("/v1/skills/{skill_id}/versions/{version}/content", "get"): "retrieveSkillVersionContent",
                 ("/v1/vector_stores/{vector_store_id}/files/{file_id}", "post"): "modifyVectorStoreFile",
             }
             for (path, method), operation_id in expected_methods.items():
@@ -451,92 +397,12 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 spec["paths"]["/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}"],
             )
             self.assertNotIn("/v1/uploads/{upload_id}", spec["paths"])
-            self.assertNotIn(
-                "/v1/fine_tuning/checkpoints/{checkpoint_id}/permissions",
-                spec["paths"],
-            )
-            self.assertNotIn(
-                "/v1/fine_tuning/checkpoints/{checkpoint_id}/permissions/{permission_id}",
-                spec["paths"],
-            )
-
             consent_path_parameters = {
                 parameter["name"]
                 for parameter in spec["paths"]["/v1/audio/voice_consents/{consent_id}"]["get"]["parameters"]
                 if parameter["in"] == "path"
             }
             self.assertEqual({"consent_id"}, consent_path_parameters)
-
-            checkpoint_permission_query_parameters = {
-                parameter["name"]
-                for parameter in spec["paths"]["/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions"]["get"]["parameters"]
-                if parameter["in"] == "query"
-            }
-            self.assertIn("project_id", checkpoint_permission_query_parameters)
-
-    def test_documents_openai_administration_surface(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            spec = ClawRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
-
-            expected_methods = {
-                ("/v1/organization/costs", "get"): "getOrganizationCosts",
-                ("/v1/organization/usage/completions", "get"): "getOrganizationCompletionsUsage",
-                ("/v1/organization/usage/images", "get"): "getOrganizationImagesUsage",
-                ("/v1/organization/audit_logs", "get"): "listOrganizationAuditLogs",
-                ("/v1/organization/admin_api_keys", "get"): "listOrganizationAdminApiKeys",
-                ("/v1/organization/admin_api_keys", "post"): "createOrganizationAdminApiKey",
-                ("/v1/organization/admin_api_keys/{key_id}", "get"): "retrieveOrganizationAdminApiKey",
-                ("/v1/organization/admin_api_keys/{key_id}", "delete"): "deleteOrganizationAdminApiKey",
-                ("/v1/organization/invites", "post"): "createOrganizationInvite",
-                ("/v1/organization/invites/{invite_id}", "delete"): "deleteOrganizationInvite",
-                ("/v1/organization/users/{user_id}", "post"): "modifyOrganizationUser",
-                ("/v1/organization/users/{user_id}/roles", "get"): "listOrganizationUserRoles",
-                ("/v1/organization/users/{user_id}/roles", "post"): "createOrganizationUserRole",
-                ("/v1/organization/users/{user_id}/roles/{role_id}", "delete"): "deleteOrganizationUserRole",
-                ("/v1/organization/groups/{group_id}/roles", "get"): "listOrganizationGroupRoles",
-                ("/v1/organization/groups/{group_id}/roles", "post"): "createOrganizationGroupRole",
-                ("/v1/organization/groups/{group_id}/roles/{role_id}", "delete"): "deleteOrganizationGroupRole",
-                ("/v1/organization/projects/{project_id}/archive", "post"): "archiveOrganizationProject",
-                ("/v1/organization/projects/{project_id}/api_keys/{key_id}", "get"): "retrieveProjectApiKey",
-                ("/v1/organization/projects/{project_id}/api_keys/{key_id}", "delete"): "deleteProjectApiKey",
-                ("/v1/organization/projects/{project_id}/rate_limits/{rate_limit_id}", "post"): "modifyProjectRateLimit",
-                ("/v1/organization/certificates/activate", "post"): "activateOrganizationCertificates",
-                ("/v1/organization/projects/{project_id}/certificates/deactivate", "post"): "deactivateProjectCertificates",
-                ("/v1/projects/{project_id}/roles", "post"): "createProjectRole",
-                ("/v1/projects/{project_id}/users/{user_id}/roles/{role_id}", "delete"): "deleteProjectUserRole",
-                ("/v1/projects/{project_id}/groups/{group_id}/roles", "post"): "createProjectGroupRole",
-            }
-            for (path, method), operation_id in expected_methods.items():
-                self.assertIn(path, spec["paths"], path)
-                self.assertIn(method, spec["paths"][path], f"{method.upper()} {path}")
-                self.assertEqual(operation_id, spec["paths"][path][method]["operationId"])
-
-            costs_query_names = {
-                parameter["name"]
-                for parameter in spec["paths"]["/v1/organization/costs"]["get"]["parameters"]
-                if parameter["in"] == "query"
-            }
-            self.assertTrue(
-                {"start_time", "end_time", "project_ids", "api_key_ids", "group_by", "limit", "page"}.issubset(costs_query_names)
-            )
-
-            project_archive_parameters = {
-                parameter["name"]
-                for parameter in spec["paths"]["/v1/organization/projects/{project_id}/archive"]["post"]["parameters"]
-                if parameter["in"] == "path"
-            }
-            self.assertEqual({"project_id"}, project_archive_parameters)
-
-            self.assertNotIn(
-                "/v1/organization/projects/{project_id}/api_keys/{api_key_id}",
-                spec["paths"],
-            )
-            project_api_key_parameters = {
-                parameter["name"]
-                for parameter in spec["paths"]["/v1/organization/projects/{project_id}/api_keys/{key_id}"]["get"]["parameters"]
-                if parameter["in"] == "path"
-            }
-            self.assertEqual({"project_id", "key_id"}, project_api_key_parameters)
 
     def test_documents_realtime_call_sdp_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -993,23 +859,6 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 ("/v1/containers/{container_id}/files", "get"): "OpenAiContainerFileList",
                 ("/v1/containers/{container_id}/files", "post"): "OpenAiContainerFile",
                 ("/v1/containers/{container_id}/files/{file_id}", "get"): "OpenAiContainerFile",
-                ("/v1/evals", "get"): "OpenAiEvalList",
-                ("/v1/evals", "post"): "OpenAiEval",
-                ("/v1/evals/{eval_id}", "get"): "OpenAiEval",
-                ("/v1/evals/{eval_id}", "post"): "OpenAiEval",
-                ("/v1/evals/{eval_id}/runs", "get"): "OpenAiEvalRunList",
-                ("/v1/evals/{eval_id}/runs", "post"): "OpenAiEvalRun",
-                ("/v1/evals/{eval_id}/runs/{run_id}", "get"): "OpenAiEvalRun",
-                ("/v1/evals/{eval_id}/runs/{run_id}", "post"): "OpenAiEvalRun",
-                ("/v1/evals/{eval_id}/runs/{run_id}/output_items", "get"): "OpenAiEvalRunOutputItemList",
-                ("/v1/evals/{eval_id}/runs/{run_id}/output_items/{output_item_id}", "get"): "OpenAiEvalRunOutputItem",
-                ("/v1/skills", "get"): "OpenAiSkillList",
-                ("/v1/skills", "post"): "OpenAiSkill",
-                ("/v1/skills/{skill_id}", "get"): "OpenAiSkill",
-                ("/v1/skills/{skill_id}", "post"): "OpenAiSkill",
-                ("/v1/skills/{skill_id}/versions", "get"): "OpenAiSkillVersionList",
-                ("/v1/skills/{skill_id}/versions", "post"): "OpenAiSkillVersion",
-                ("/v1/skills/{skill_id}/versions/{version}", "get"): "OpenAiSkillVersion",
                 ("/v1/vector_stores", "get"): "OpenAiVectorStoreList",
                 ("/v1/vector_stores", "post"): "OpenAiVectorStore",
                 ("/v1/vector_stores/{vector_store_id}", "get"): "OpenAiVectorStore",
@@ -1025,8 +874,6 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 ("/v1/threads/{thread_id}/messages", "post"): "OpenAiThreadMessage",
                 ("/v1/threads/{thread_id}/runs", "post"): "OpenAiRun",
                 ("/v1/threads/{thread_id}/runs/{run_id}/steps", "get"): "OpenAiRunStepList",
-                ("/v1/fine_tuning/jobs", "get"): "OpenAiFineTuningJobList",
-                ("/v1/fine_tuning/jobs", "post"): "OpenAiFineTuningJob",
                 ("/v1/uploads", "post"): "OpenAiUpload",
                 ("/v1/uploads/{upload_id}/complete", "post"): "OpenAiUpload",
                 ("/v1/realtime/client_secrets", "post"): "OpenAiRealtimeClientSecret",
@@ -1052,10 +899,6 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 ("/v1/audio/speech", "post"): "OpenAiSpeechCreateRequest",
                 ("/v1/audio/voice_consents/{consent_id}", "post"): "OpenAiVoiceConsentUpdateRequest",
                 ("/v1/containers", "post"): "OpenAiContainerCreateRequest",
-                ("/v1/evals", "post"): "OpenAiEvalCreateRequest",
-                ("/v1/evals/{eval_id}", "post"): "OpenAiEvalUpdateRequest",
-                ("/v1/evals/{eval_id}/runs", "post"): "OpenAiEvalRunCreateRequest",
-                ("/v1/skills/{skill_id}", "post"): "OpenAiSkillUpdateRequest",
                 ("/v1/batches", "post"): "OpenAiBatchCreateRequest",
                 ("/v1/vector_stores/{vector_store_id}/files", "post"): "OpenAiVectorStoreFileCreateRequest",
                 ("/v1/vector_stores/{vector_store_id}/file_batches", "post"): "OpenAiVectorStoreFileBatchCreateRequest",
@@ -1063,7 +906,6 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 ("/v1/assistants/{assistant_id}", "post"): "OpenAiAssistantUpdateRequest",
                 ("/v1/threads/{thread_id}/messages", "post"): "OpenAiThreadMessageCreateRequest",
                 ("/v1/threads/{thread_id}/runs", "post"): "OpenAiRunCreateRequest",
-                ("/v1/fine_tuning/jobs", "post"): "OpenAiFineTuningJobCreateRequest",
                 ("/v1/uploads", "post"): "OpenAiUploadCreateRequest",
                 ("/v1/realtime/client_secrets", "post"): "OpenAiRealtimeClientSecretCreateRequest",
             }
@@ -1085,11 +927,6 @@ class ClawRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             self.assertIn("client_secret", schemas["OpenAiRealtimeClientSecret"]["properties"])
             self.assertIn("memory_limit", schemas["OpenAiContainer"]["properties"])
             self.assertIn("path", schemas["OpenAiContainerFile"]["properties"])
-            self.assertIn("testing_criteria", schemas["OpenAiEval"]["properties"])
-            self.assertIn("result_counts", schemas["OpenAiEvalRun"]["properties"])
-            self.assertIn("sample", schemas["OpenAiEvalRunOutputItem"]["properties"])
-            self.assertIn("versions", schemas["OpenAiSkill"]["properties"])
-            self.assertIn("package_sha256", schemas["OpenAiSkillVersion"]["properties"])
             self.assertIn("url", schemas["OpenAiImage"]["properties"])
             self.assertIn("seconds", schemas["OpenAiVideo"]["properties"])
             self.assertIn("consent_document", schemas["OpenAiVoiceConsent"]["properties"])

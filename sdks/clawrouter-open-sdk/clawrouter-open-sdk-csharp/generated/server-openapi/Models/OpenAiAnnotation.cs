@@ -12,7 +12,7 @@ namespace Sdkwork.ClawRouter.Open.Models
         public int? Index { get; set; }
         public int? StartIndex { get; set; }
         public string? Title { get; set; }
-        public string? Type { get; set; }
+        public string Type { get; set; }
         public string? Url { get; set; }
     }
 }

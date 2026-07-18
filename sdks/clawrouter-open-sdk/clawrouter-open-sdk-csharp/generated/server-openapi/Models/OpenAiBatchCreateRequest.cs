@@ -6,9 +6,9 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiBatchCreateRequest
     {
-        public string? CompletionWindow { get; set; }
-        public string? Endpoint { get; set; }
-        public string? InputFileId { get; set; }
+        public string CompletionWindow { get; set; }
+        public string Endpoint { get; set; }
+        public string InputFileId { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
     }
 }

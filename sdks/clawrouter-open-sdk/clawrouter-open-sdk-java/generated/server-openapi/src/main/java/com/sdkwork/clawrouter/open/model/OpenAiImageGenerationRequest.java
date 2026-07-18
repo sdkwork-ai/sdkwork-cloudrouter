@@ -3,6 +3,7 @@ package com.sdkwork.clawrouter.open.model;
 
 public class OpenAiImageGenerationRequest {
     private String model;
+    private Integer n;
     private String prompt;
     private String quality;
     private String responseFormat;
@@ -14,6 +15,14 @@ public class OpenAiImageGenerationRequest {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public Integer getN() {
+        return this.n;
+    }
+
+    public void setN(Integer n) {
+        this.n = n;
     }
 
     public String getPrompt() {

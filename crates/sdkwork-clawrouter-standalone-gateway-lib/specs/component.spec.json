@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-clawrouter-standalone-gateway-lib",
+    "displayName": "SDKWork Claw Router Standalone Gateway Host",
+    "version": "0.3.0",
+    "type": "rust-crate",
+    "root": "sdkwork-clawrouter/crates/sdkwork-clawrouter-standalone-gateway-lib",
+    "domain": "platform",
+    "capability": "router",
+    "status": "standardizing",
+    "languages": ["rust"],
+    "generated": false,
+    "private": true,
+    "manifests": ["Cargo.toml"]
+  },
+  "canonicalSpecs": [
+    { "file": "COMPONENT_SPEC.md", "path": "../../../sdkwork-specs/COMPONENT_SPEC.md", "purpose": "Component contract." },
+    { "file": "SOURCE_CONFIG_SPEC.md", "path": "../../../sdkwork-specs/SOURCE_CONFIG_SPEC.md", "purpose": "Deployable-root source configuration." },
+    { "file": "APPLICATION_GATEWAY_SPEC.md", "path": "../../../sdkwork-specs/APPLICATION_GATEWAY_SPEC.md", "purpose": "Standalone gateway ownership." },
+    { "file": "RUST_CODE_SPEC.md", "path": "../../../sdkwork-specs/RUST_CODE_SPEC.md", "purpose": "Rust source rules." }
+  ],
+  "contracts": {
+    "publicExports": ["sdkwork_clawrouter_standalone_gateway_lib"],
+    "runtimeEntrypoints": ["src/main.rs"],
+    "sdkClients": [],
+    "events": [],
+    "configKeys": ["etc/sdkwork.deployment.config.json"],
+    "routeManifest": null
+  },
+  "integration": {
+    "authority": "The binary hosts the standalone application ingress.",
+    "dependencyPolicy": "Gateway behavior composes declared crate public exports.",
+    "sdkPolicy": "Generated SDKs are not constructed inside reusable route modules.",
+    "languagePolicy": "Rust code follows the workspace manifests and Rust standards."
+  },
+  "verification": { "commands": ["cargo test -p sdkwork-clawrouter-standalone-gateway-lib"] }
+}

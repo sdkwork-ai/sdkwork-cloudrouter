@@ -29,8 +29,9 @@ test("console business host mounts T1 domain wallet, membership, coupon, checkou
   assert.match(tokenPlanSurfaceSource, /SdkworkSubscriptionCatalogPage/);
   assert.match(tokenPlanSurfaceSource, /sdkworkSubscriptionCatalogHostComponents/);
   assert.match(tokenPlanSurfaceSource, /\.\.\.sdkworkSubscriptionCatalogHostComponents/);
-  assert.doesNotMatch(tokenPlanSurfaceSource, /ClawRouterTokenPlanCheckoutModal/);
-  assert.doesNotMatch(tokenPlanSurfaceSource, /checkoutModal\s*:/);
+  assert.match(tokenPlanSurfaceSource, /ClawRouterTokenPlanCheckoutModal/);
+  assert.match(tokenPlanSurfaceSource, /checkoutModal:\s*ClawRouterTokenPlanCheckoutModal/);
+  assert.match(tokenPlanSurfaceSource, /checkoutPort=\{getClawRouterMembershipCheckoutService\(\)\}/);
   assert.match(tokenPlanSurfaceSource, /useTokenPlanMemberSummary/);
   assert.match(tokenPlanSurfaceSource, /export function ClawRouterTokenPlanSurface/);
   assert.match(tokenPlanSurfaceSource, /data-token-plan-surface/);
@@ -63,7 +64,7 @@ test("console coupons route is reachable from sidebar navigation", () => {
   assert.doesNotMatch(consoleLayoutSource, /path:\s*'\/console\/payment'/);
 });
 
-test("token plan purchases use the order-owned recharge dialog and recharge SDK port", () => {
+test("token plan purchases use order-owned checkout services and dialogs", () => {
   const modalSource = readPortalFile("./src/token-plan/ClawRouterTokenPlanCommerceModal.tsx");
   const providerSource = readPortalFile(
     "./packages/sdkwork-clawroutes-pc-commons/src/domain-service-providers.ts",
@@ -74,15 +75,29 @@ test("token plan purchases use the order-owned recharge dialog and recharge SDK 
   };
 
   assert.equal(packageJson.dependencies["@sdkwork/order-pc-recharge"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/order-pc-checkout"], "workspace:*");
+  assert.match(modalSource, /@sdkwork\/order-pc-checkout/);
+  assert.match(modalSource, /SdkworkOrderCheckoutDialog/);
   assert.match(modalSource, /@sdkwork\/order-pc-recharge/);
   assert.match(modalSource, /SdkworkPointsRechargeDialog/);
   assert.match(modalSource, /getClawRouterPointsRechargeService/);
   assert.match(modalSource, /service=\{getClawRouterPointsRechargeService\(\)\}/);
+  assert.match(modalSource, /getClawRouterCouponRechargeService\(\)\.redeem/);
+  assert.match(modalSource, /coupon_recharge\.code_label/);
+  assert.match(modalSource, /Token Bank/);
+  assert.doesNotMatch(modalSource, /createTokenPlanCommerceModal\("redeem"\)/);
   assert.doesNotMatch(modalSource, /createTokenPlanCommerceModal\("points-purchase"\)/);
   assert.doesNotMatch(modalSource, /登录后将跳转到控制台钱包完成操作/);
   assert.match(providerSource, /recharges:\s*client\.recharges/);
   assert.match(providerSource, /const orderAppService = createSdkworkOrderAppService/);
   assert.match(providerSource, /configureSdkworkOrderAppServiceProvider\(\(\) => orderAppService\)/);
+  assert.match(providerSource, /memberships:\s*client\.memberships/);
+  assert.match(providerSource, /createSdkworkMembershipCheckoutService/);
+  assert.match(providerSource, /createSdkworkCouponRechargeService/);
+  assert.match(providerSource, /getClawRouterCouponRechargeService/);
+  assert.match(providerSource, /getClawRouterMembershipCheckoutService/);
+  assert.doesNotMatch(providerSource, /configureSdkworkMembershipOrderAppServiceProvider/);
+  assert.doesNotMatch(providerSource, /MembershipOrderAppTransportClient/);
   assert.match(providerSource, /appService: orderAppService/);
   assert.doesNotMatch(providerSource, /bootstrapMembershipOrderAppService/);
   assert.match(summarySource, /pointBalance:\s*state\.dashboard\.summary\.pointBalance/);

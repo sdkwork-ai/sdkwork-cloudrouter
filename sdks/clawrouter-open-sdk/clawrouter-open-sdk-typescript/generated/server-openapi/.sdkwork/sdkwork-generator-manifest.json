@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "5a8c26478398f67b54d147feb2d95d9ed11e730b50691df85c5f1229c2902fa0"
+      "sha256": "1a864d2da735d0de59517fc037c1ff5ce58ab0f734004ee4e39e3984454517e5"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -107,10 +107,6 @@
       "sha256": "6faeb3aa9ca7e5d2155c98114409bd240d8b639c24e19d6db9c3f01b4a8d3529"
     },
     {
-      "path": "src/api/eval.ts",
-      "sha256": "06f85217c559a3342198d05406eb591b5545c1db91f5be5ab5c97ceb7c327cbd"
-    },
-    {
       "path": "src/api/files-anthropic.ts",
       "sha256": "4c540e019aa7bc93f03779bea0b29d004b1ddff0f10901b07e57c8cca5a3d60f"
     },
@@ -121,10 +117,6 @@
     {
       "path": "src/api/files.ts",
       "sha256": "d354c5fa8f45117f7e36569c9d651c50dd0cd4a8123bccf6b2fd23dd65955127"
-    },
-    {
-      "path": "src/api/fine-tuning.ts",
-      "sha256": "5f702f7de5b2cf53a1e6bf0991c95e34df18761ffa04b3eaadbfe4d01b59b401"
     },
     {
       "path": "src/api/images-midjourney.ts",
@@ -144,27 +136,19 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "31d861027511b346576d6b9964fab09a282a5481b94d1dcc640a99efaa33af62"
+      "sha256": "89a83c34fb116291b6054b16a339ed3c971c8f1dcb579c9cda652a01bc7cbffa"
     },
     {
       "path": "src/api/models.ts",
-      "sha256": "a8e098576de0433b26f1c2179722c9b432e206fb5f99397de275f3631df9e229"
+      "sha256": "08d8c0430f69403dc009b2b363e7355e961774824dd6240f10552e736df68756"
     },
     {
       "path": "src/api/moderations.ts",
       "sha256": "f9641e9dd9c7e778768c369cf205b57fc777562d9c96564a2498d7375b4dec47"
     },
     {
-      "path": "src/api/organization.ts",
-      "sha256": "eeed0e3a30d2a6c1af291914af8c2dd37279a79302c97ba8f161149ec13e064f"
-    },
-    {
       "path": "src/api/paths.ts",
       "sha256": "bf164b13ffd3215d53101c32afae8a69d9a6ca2bc930a9524dcd5b235f3f8ce5"
-    },
-    {
-      "path": "src/api/project.ts",
-      "sha256": "2d5ea6b6b8e4940c906f34dfe3c10881506f5f00760572303fbbd512c046b8ad"
     },
     {
       "path": "src/api/realtime.ts",
@@ -177,10 +161,6 @@
     {
       "path": "src/api/responses.ts",
       "sha256": "6fc64a1360f9c936a9f048900f8a01528ebd75d5dbc4386ab19cc66b013109e8"
-    },
-    {
-      "path": "src/api/skill.ts",
-      "sha256": "d70bc8a2b8baab4706ed6190e66fdf344f41a91b520eba11afae451e18b422f4"
     },
     {
       "path": "src/api/threads.ts",
@@ -228,7 +208,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "110481a821140f0486aee1f9a3a28495b0d4d3410aa016e2da4668e9d906252d"
+      "sha256": "3152f9860f838f3fff8d79849d8d806c559e2678b4730de1250c60703ff741cc"
     },
     {
       "path": "src/types/anthropic-content-block-param.ts",
@@ -333,42 +313,6 @@
     {
       "path": "src/types/delete-result.ts",
       "sha256": "78a628a886d834dd02d5f2df697bc70e93635eeace0f5727f94e78898d29aa1c"
-    },
-    {
-      "path": "src/types/get-organization-audio-speeches-usage-item.ts",
-      "sha256": "1eee1d1bc912f31df0773b6fafb87606be9aa7ebac423522c07aeda787a56a81"
-    },
-    {
-      "path": "src/types/get-organization-audio-transcriptions-usage-item.ts",
-      "sha256": "b9091496ad77b30ef26aec7cc3fd9bbf070f4b760ac02bf468595edd21ac2eda"
-    },
-    {
-      "path": "src/types/get-organization-code-interpreter-sessions-usage-item.ts",
-      "sha256": "d9f8157e0539589ccb12cef7de3d9695acbc4002c19d8ccfd789e02574c0b112"
-    },
-    {
-      "path": "src/types/get-organization-completions-usage-item.ts",
-      "sha256": "0a45d4a6aec9d983428338358a700cb37df124cada6fa3784318861b55eda3f3"
-    },
-    {
-      "path": "src/types/get-organization-costs-item.ts",
-      "sha256": "b6f3b0c6fb9e70383868884ee901e21731d2ca7b7cbec15e642dd6d3741832bd"
-    },
-    {
-      "path": "src/types/get-organization-embeddings-usage-item.ts",
-      "sha256": "d78ce117cad93516f9f02d88f8703358f7f433ea36180907138cd9db88c25f80"
-    },
-    {
-      "path": "src/types/get-organization-images-usage-item.ts",
-      "sha256": "7192b663c848f5e1c40b68fda1418b99849792605180ca437fd8143166fed216"
-    },
-    {
-      "path": "src/types/get-organization-moderations-usage-item.ts",
-      "sha256": "69779bcda7428c16a36c899f14e2a3f7f87bb017437ecbd645125452f0e351a4"
-    },
-    {
-      "path": "src/types/get-organization-vector-stores-usage-item.ts",
-      "sha256": "0d708c144023584cd5753b6259804b643c42eb422a52927a7517d1e8190b7d62"
     },
     {
       "path": "src/types/google-batch-embed-contents-request.ts",
@@ -544,11 +488,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "70116984a32dbf7a2e43502ac6917b287129783df2546a83a071e1e8060b0f3d"
-    },
-    {
-      "path": "src/types/json-object.ts",
-      "sha256": "3ed4897809fd9fc793e36f0cd1b973bd2f4bf8fd1185b93a43f2bb5b80e9c70c"
+      "sha256": "fd1440b1314f69a2a5c38f9b3545fd2150d031ebcd49ddbd3c83ecfb499a5bb0"
     },
     {
       "path": "src/types/kling-video-generation-request.ts",
@@ -557,190 +497,6 @@
     {
       "path": "src/types/kling-video-generation-task.ts",
       "sha256": "dc41376e06f2fb9350fb4233ae96b8b699294c85af5337dbf6c3faf5025ba9dc"
-    },
-    {
-      "path": "src/types/list-assistants-item.ts",
-      "sha256": "a962b1f0665e5e04debe647a580320f87d73cfa65ff379f33f4c7d008719678f"
-    },
-    {
-      "path": "src/types/list-batches-item.ts",
-      "sha256": "f5ea30dd3937380e55e16670a71bc75929718d1d7687dec7705f9bae09b19aef"
-    },
-    {
-      "path": "src/types/list-chat-completion-messages-item.ts",
-      "sha256": "9d35ba72e5bf3469663015fa59e08a082a12693f6120e80ee51c12eeaa71be9b"
-    },
-    {
-      "path": "src/types/list-chat-completions-item.ts",
-      "sha256": "a2293bffbe0b5e12ce2d70e43797293fdfc9b9355428b0c88ba61f653a2c7737"
-    },
-    {
-      "path": "src/types/list-container-files-item.ts",
-      "sha256": "2a0ae40242c6b1299a8859e8a8dbc6e2d628f90658629b004cce778568c0df30"
-    },
-    {
-      "path": "src/types/list-containers-item.ts",
-      "sha256": "e20a480dcd534685c60282562c1ec24af5f989ef06c644d41ce9cd536407740a"
-    },
-    {
-      "path": "src/types/list-eval-run-output-items-item.ts",
-      "sha256": "533dc3c93e7d09453a09f5a0956111d12bde6cbdf5e6d8950e4021ea14b7b9e5"
-    },
-    {
-      "path": "src/types/list-eval-runs-item.ts",
-      "sha256": "848dbd2f1b149d9e1ab7ddde878fdd000f412f59d0ec68b936c0929b3b11320f"
-    },
-    {
-      "path": "src/types/list-evals-item.ts",
-      "sha256": "1c741554cb429245320be52a8ed020c1e4f5039f768be612d3c1b6bcaff080ac"
-    },
-    {
-      "path": "src/types/list-files-item.ts",
-      "sha256": "de7213ce0dfccce1388f0dbc32aaccc1f402ce6658297979a322641ebbe6cf76"
-    },
-    {
-      "path": "src/types/list-fine-tuning-checkpoint-permissions-item.ts",
-      "sha256": "cf4595411b52d6e620ed3b0bf06ce1da6c98a1b945bb6a4f54b70f2d04eafac6"
-    },
-    {
-      "path": "src/types/list-fine-tuning-job-checkpoints-item.ts",
-      "sha256": "c11ad46d40fa389c890be85050165b763f96b78d400eb0286a21937f6c0428a7"
-    },
-    {
-      "path": "src/types/list-fine-tuning-job-events-item.ts",
-      "sha256": "fedc38d13702c8d0f163624dbce387b1ee3a2ef1b4806e09e4f338afe85c8d0d"
-    },
-    {
-      "path": "src/types/list-fine-tuning-jobs-item.ts",
-      "sha256": "0977ae3fea989742d5adb474f2492c461346d8c910a83d1817e57f8287fed0d7"
-    },
-    {
-      "path": "src/types/list-messages-item.ts",
-      "sha256": "f96b096198a12cc8b0ea4877b974e95e85a03ece443d8e1af84c614fd7a86685"
-    },
-    {
-      "path": "src/types/list-organization-admin-api-keys-item.ts",
-      "sha256": "b4e882949475489abc387abb33456e98d316ad1dbc26daba11e2b7c393a3b742"
-    },
-    {
-      "path": "src/types/list-organization-audit-logs-item.ts",
-      "sha256": "743cfb0dda92d5ce1f343549b0f5d1e22fc9982cdfe18af6d1736c0416f8a5d5"
-    },
-    {
-      "path": "src/types/list-organization-certificates-item.ts",
-      "sha256": "c19d7a9283f035989e465eb267e78ac9c57e70acf8ccddddf619c4996f8d59ab"
-    },
-    {
-      "path": "src/types/list-organization-group-roles-item.ts",
-      "sha256": "5ac2e3fbc81a159b39941e446457317de903954e55cd7fd671be78b3140e0173"
-    },
-    {
-      "path": "src/types/list-organization-group-users-item.ts",
-      "sha256": "e10b7ac00848f0d33b0c6c8599c1cad07a85d2c854373180e70bb59eb42638b5"
-    },
-    {
-      "path": "src/types/list-organization-groups-item.ts",
-      "sha256": "e2acdaed72cd1d78dc23d7307abda984d35dafd1277403e2bb637b2a7153aa32"
-    },
-    {
-      "path": "src/types/list-organization-invites-item.ts",
-      "sha256": "f6b131a49eeec530c5cca33c1202fc5445396dd91ca92cb181aa126a326487a3"
-    },
-    {
-      "path": "src/types/list-organization-projects-item.ts",
-      "sha256": "9dfa04271a68b1dda8356ceb6303095fc880fc50cf908fa093233c25c737111e"
-    },
-    {
-      "path": "src/types/list-organization-roles-item.ts",
-      "sha256": "52180f4a068199beeb9db302e8b0d2ec7de1223fafb27b2edd1a7b0ee1761baf"
-    },
-    {
-      "path": "src/types/list-organization-user-roles-item.ts",
-      "sha256": "9165ae89d0d35490c28bfae940a404415058b5f0e91d8d4396665e36a475817b"
-    },
-    {
-      "path": "src/types/list-organization-users-item.ts",
-      "sha256": "1bf21a8dc0550d2718872d99fa4ca31adac461d53d85945ee6f3b9b3c9d6081a"
-    },
-    {
-      "path": "src/types/list-project-api-keys-item.ts",
-      "sha256": "7cdb7ab5cb64790dfc21b80a22f1335c6ada6129a627e62cbda835eb41a46abe"
-    },
-    {
-      "path": "src/types/list-project-certificates-item.ts",
-      "sha256": "1e015c96085718aa7066dea8cbeaf91e0124d3c66c1421c3b5e741071ef5397f"
-    },
-    {
-      "path": "src/types/list-project-group-roles-item.ts",
-      "sha256": "9a2c34930d76c3e5efbbd1c8e10ef48ae379d2d3160b99f4fbedb723aa5c615e"
-    },
-    {
-      "path": "src/types/list-project-groups-item.ts",
-      "sha256": "fd9e51dbaa6ff9c7778f260d8c5b1c1a25fbf5ca62ede0d8e15baa27ebc3b4a3"
-    },
-    {
-      "path": "src/types/list-project-rate-limits-item.ts",
-      "sha256": "d3ea6cc49df0052b5f18d821bdd4013bb19b0f959647a49ad044109178c9ad26"
-    },
-    {
-      "path": "src/types/list-project-roles-item.ts",
-      "sha256": "0e14ad13b1efbb4ec28b2e0162e87fef9dbf5dafd87bfc2e7f67350cb892d089"
-    },
-    {
-      "path": "src/types/list-project-service-accounts-item.ts",
-      "sha256": "78fd3974e527c5b44f4ea25d77332121d0d94b65edf272a691deabb5f089847b"
-    },
-    {
-      "path": "src/types/list-project-user-roles-item.ts",
-      "sha256": "27d38c39de59a7b0c30b00470f3cd5aac49064089467d2d3018926a3340741ab"
-    },
-    {
-      "path": "src/types/list-project-users-item.ts",
-      "sha256": "0d182b2b2f4bd58841c679634769ca7abf07d43dd202281a0037906daa421f6d"
-    },
-    {
-      "path": "src/types/list-response-input-items-item.ts",
-      "sha256": "8e962eaeb230f0229c32f330ef3fd0567355b794eaf9bff11d45c4f0c68c3225"
-    },
-    {
-      "path": "src/types/list-run-steps-item.ts",
-      "sha256": "244fa042e7015f313ba3616a25b29c232e50079ec2c45f00562572c71fc2757b"
-    },
-    {
-      "path": "src/types/list-runs-item.ts",
-      "sha256": "1be5977995a5a9443541b08b39ef1abe520139628b78e84a3d21e3bd7bc86c16"
-    },
-    {
-      "path": "src/types/list-skill-versions-item.ts",
-      "sha256": "5b47671f17c1ed0a78f28ff91071cc979c98b41b5d0111c4c91a29f4d44482c9"
-    },
-    {
-      "path": "src/types/list-skills-item.ts",
-      "sha256": "8735e645e2b30ba9db6b285fdb59d6b7e9faf9c52fa08f6339fb2c80ff3fa70a"
-    },
-    {
-      "path": "src/types/list-vector-store-file-batch-files-item.ts",
-      "sha256": "8fef35c8855098a1bc7a1af6946860c88c21361ed904c7ca1d2faed7e24dfbd0"
-    },
-    {
-      "path": "src/types/list-vector-store-files-item.ts",
-      "sha256": "ef4dfcc097c12b8f43ebbd84dda83f987d51e17bf59c78b2d4ec86683ac1469e"
-    },
-    {
-      "path": "src/types/list-vector-stores-item.ts",
-      "sha256": "589046aa83765c4f05ad1491ccc3d5b1b6b1d8363c83bc24ed8a23be4ef5ad1d"
-    },
-    {
-      "path": "src/types/list-videos-item.ts",
-      "sha256": "fdb89b86b7c1c13c12e546a62b4758412397980c0dc45949a56aeb7d35ee592e"
-    },
-    {
-      "path": "src/types/list-voice-consents-item.ts",
-      "sha256": "f5bce303264428a77db5a33b16b69eb18ba39ae380b62229fbd27b877dab745f"
-    },
-    {
-      "path": "src/types/list-voices-item.ts",
-      "sha256": "8dd3e43c7234c5ec30ab4829e617cdf2f23bc57bb4af4d87dd255f8a785c0aba"
     },
     {
       "path": "src/types/midjourney-image-generation-request.ts",
@@ -821,22 +577,6 @@
     {
       "path": "src/types/open-ai-binary-file-part.ts",
       "sha256": "9031b8d766657546cdfa808abfd1d6e4c1442aa312a96b2090256e8258793b4d"
-    },
-    {
-      "path": "src/types/open-ai-certificate-activation-request.ts",
-      "sha256": "c9624f94ac960f5d30f58b9119b9ee832cfa1c843ed566ac8ec44480ef58dbb8"
-    },
-    {
-      "path": "src/types/open-ai-certificate-list.ts",
-      "sha256": "636fdd6b29e78cb28294a55608c44e495cc302d2c549a7d93b48e78f78d7470f"
-    },
-    {
-      "path": "src/types/open-ai-certificate-upload-multipart-request.ts",
-      "sha256": "66cb97bdfeb523efdcbeb074ddf035ac730c2afac07be43ee42d0451ad84004d"
-    },
-    {
-      "path": "src/types/open-ai-certificate.ts",
-      "sha256": "5c76367d0e6330835f5ea3cbe067674ee302ce7417902c57c47f86021e7f96b2"
     },
     {
       "path": "src/types/open-ai-chat-audio-config.ts",
@@ -987,46 +727,6 @@
       "sha256": "b3ff1203343ca9a68d7ba4eee2a36ed1e188bfeb8ae0020a395b70d7a14e5f63"
     },
     {
-      "path": "src/types/open-ai-eval-create-request.ts",
-      "sha256": "af23218763c6b372dca5c0ee7421e9a7e7bd15fdb1b8989b7b6fc0b8da4cbab9"
-    },
-    {
-      "path": "src/types/open-ai-eval-list.ts",
-      "sha256": "8811ea46a1594428d271b546233c28a033b6658a9fc2cf42e30f3e5d23418664"
-    },
-    {
-      "path": "src/types/open-ai-eval-run-create-request.ts",
-      "sha256": "46c965446e3b54a8113b73bed503cfd4dad43b6a5fd2ee362bf0ebbf7bc0b7cf"
-    },
-    {
-      "path": "src/types/open-ai-eval-run-list.ts",
-      "sha256": "80e13127e31cf4951996ac8551824071960f5c270974b636d0fee200b84e1891"
-    },
-    {
-      "path": "src/types/open-ai-eval-run-output-item-list.ts",
-      "sha256": "69a0c09dd61714f50e29c15f6ce92863018f0ca1b03b367ea3e017fc26c7e4b9"
-    },
-    {
-      "path": "src/types/open-ai-eval-run-output-item.ts",
-      "sha256": "52dfc98f5b1f3a899bb565bd305e148c787695aa7bc32644c07a76759f03a05a"
-    },
-    {
-      "path": "src/types/open-ai-eval-run-result-counts.ts",
-      "sha256": "eec78892492108303e4404cee8df55137210fa60309c716b28d36944adfd5122"
-    },
-    {
-      "path": "src/types/open-ai-eval-run.ts",
-      "sha256": "86b3638433549e3cfdba55e8bdf67e45553950c191a0a0f04172c27431d1d0b0"
-    },
-    {
-      "path": "src/types/open-ai-eval-update-request.ts",
-      "sha256": "8cc4553709cb9d5edef3ad5ad5f0171e72e401306c2e5fa993b5e83cc56da35a"
-    },
-    {
-      "path": "src/types/open-ai-eval.ts",
-      "sha256": "7ebcf3b796e74ce2d4f4050d39908cdbcea27ec346c751e69894f2f2d42beb2b"
-    },
-    {
       "path": "src/types/open-ai-file-list.ts",
       "sha256": "1945fd9aaa26b1307cb21193a277f25b1ef11c1df1307fdf2afb4e048e39740f"
     },
@@ -1045,62 +745,6 @@
     {
       "path": "src/types/open-ai-file.ts",
       "sha256": "8d9aa6aacdc4729980a6bc8c4b8b5eec4a02a83344de0f1771ccc64d56f7cb51"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-checkpoint-permission-create-request.ts",
-      "sha256": "b405ff60e6e335f699f984d1b73d4f5c4f0d19f86a5e710dd939a95009773aa6"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-checkpoint-permission-list.ts",
-      "sha256": "5539cefb79ee3287bea35a1f8431bdc8a8c93dae0c304463f73d2d9bd2c2e0f5"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-checkpoint-permission.ts",
-      "sha256": "61eb6fd0d7828b1c3a903d0a8814d7fc06e0a6707a34871ef25a3a23a62f1e96"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-grader-run-request.ts",
-      "sha256": "071fba09d157e3d13202959190fb8182ba5a71e3e8047267e11b9fabe6549fcd"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-grader-run-result.ts",
-      "sha256": "18719cf4489b88e458cf97ab6fcfa2764b1311eea85298f7fb24d951fdcc9e4e"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-grader-validate-request.ts",
-      "sha256": "35323639137c3bb8fefddc12d1e9e7381d4bed17e2f1d795f2a543b7bb2fbdfc"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-grader-validation-result.ts",
-      "sha256": "0f746e00fa9597bbe5aff67196f9cb034f252d7dc5b4786b56ab48408fe23067"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-job-checkpoint-list.ts",
-      "sha256": "ed618a29c9191c6b8ecc2c38f7c58b303865b7a486b4e241634397808a917bd2"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-job-checkpoint.ts",
-      "sha256": "7baa86fef7b5dfba619a1b3d8d37afeaf060fc4ec94ef5b0fe4e0b1f24250f3b"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-job-create-request.ts",
-      "sha256": "18b35a18a6964ffad139915bde3051fbf4cca33d84fc2cd0ac8b6309c2706c49"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-job-event-list.ts",
-      "sha256": "91becbeab6286ec28f5b29305a42a2a1dd73c55e250220801cf482112c34a6c8"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-job-event.ts",
-      "sha256": "9abde782347d46bef396d002277da639191bbce10262a51b2b9511a8aea98308"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-job-list.ts",
-      "sha256": "3400916e37cc95217cbbd6e7688212509a41dfbf671dc2734ed10d3ceea58825"
-    },
-    {
-      "path": "src/types/open-ai-fine-tuning-job.ts",
-      "sha256": "a93e4bd1dd53ac710f5c6d52394b9c8f7ebd5efd40a68925c779bdc5203e66fe"
     },
     {
       "path": "src/types/open-ai-function-call-choice.ts",
@@ -1203,156 +847,8 @@
       "sha256": "43efacf3f37044da5195986b7864771e613926d38b1dc2e4441e9381910c629e"
     },
     {
-      "path": "src/types/open-ai-organization-admin-api-key-create-request.ts",
-      "sha256": "450ef2ee76584b8a342939d3cc9ef602a15bed077981c76abead9616ec6cdec9"
-    },
-    {
-      "path": "src/types/open-ai-organization-admin-api-key-list.ts",
-      "sha256": "4bdd809182404ad86270ba5d5c8af6cd8544474cffe95e955a3682cef43d613a"
-    },
-    {
-      "path": "src/types/open-ai-organization-admin-api-key.ts",
-      "sha256": "79e05719f3c0fdb996de15c84bdf20afea082f0ff997e690ec91a9813f4c6abd"
-    },
-    {
-      "path": "src/types/open-ai-organization-audit-log-list.ts",
-      "sha256": "7182d6d6f4c5382d05aa53334a2fe00414c036f956c96ba49e6a90da2338cf4a"
-    },
-    {
-      "path": "src/types/open-ai-organization-audit-log.ts",
-      "sha256": "e0564350395356002597ab14f626ce320c8d6b6dbd599689cccea02168c168d6"
-    },
-    {
-      "path": "src/types/open-ai-organization-cost-bucket.ts",
-      "sha256": "dd566d58f5f3dd702327d7d7c4fe41290bd26dea0c3d579d1ff96c34625179bc"
-    },
-    {
-      "path": "src/types/open-ai-organization-cost-list.ts",
-      "sha256": "3205ad49af576cdc8078e869d94b863fd9602201a98aba02a40ad7e257bf5b33"
-    },
-    {
-      "path": "src/types/open-ai-organization-group-create-request.ts",
-      "sha256": "c84cf8d09ecdc52543d382cf352d4b4098104f0db0593e76d795502425665701"
-    },
-    {
-      "path": "src/types/open-ai-organization-group-list.ts",
-      "sha256": "35f812b7a30583bd6486dd9a3a2c930fab184f2a5940e511fdc32b1fe4c9a892"
-    },
-    {
-      "path": "src/types/open-ai-organization-group-update-request.ts",
-      "sha256": "f801981c4dfe0fef983fa3baa9dc3b1d15ae1b66968dc3a36e4c54ca15d50a77"
-    },
-    {
-      "path": "src/types/open-ai-organization-group-user-create-request.ts",
-      "sha256": "f50f7f7454be2f353594de5a54796cca54150c7a8787a2770d23dbe1d54fa3bf"
-    },
-    {
-      "path": "src/types/open-ai-organization-group.ts",
-      "sha256": "0e4397b72a1d48d0f09c100a4d9370a223e678eb66926052b0a36d6b92f82c6c"
-    },
-    {
-      "path": "src/types/open-ai-organization-invite-create-request.ts",
-      "sha256": "6fbf40f900860ef8919d500b16781d3e943f7685b83ffea5043bf797fb0ebf00"
-    },
-    {
-      "path": "src/types/open-ai-organization-invite-list.ts",
-      "sha256": "de9151a7e43a1c179e8c5b6c3041bdf073e9637b680162acc166f525a9899b5d"
-    },
-    {
-      "path": "src/types/open-ai-organization-invite.ts",
-      "sha256": "704019e8124ea9fb46f0e892fee59eecc92076939e31dbd7458cd83f40edcbe8"
-    },
-    {
-      "path": "src/types/open-ai-organization-usage-bucket.ts",
-      "sha256": "69b192b748e3dea0cb641bf3d8d03c787ee41a51cd748a75f58c4b14ef166a7f"
-    },
-    {
-      "path": "src/types/open-ai-organization-usage-list.ts",
-      "sha256": "580fcd3735ed824c749573dae80dc562411b2552a883ead70edab15625fdc9ff"
-    },
-    {
-      "path": "src/types/open-ai-organization-user-list.ts",
-      "sha256": "d669fff881e68e9624bfb1d510a311f74b7a530b61d0da24a2c61dd8f3f32402"
-    },
-    {
-      "path": "src/types/open-ai-organization-user-update-request.ts",
-      "sha256": "6bd914551f21b084d626e4948c9a54a1d125f4cbeceb70020813283eaccfbeeb"
-    },
-    {
-      "path": "src/types/open-ai-organization-user.ts",
-      "sha256": "232ef3d0336f014f32eb4356327977661cbcaf0ab9525ca159a146b6252c39e8"
-    },
-    {
       "path": "src/types/open-ai-prediction-config.ts",
       "sha256": "59c721b737dc6a5e803bb1e9153c8c60e10a630b9a102d50b8fbbadc5a4e4692"
-    },
-    {
-      "path": "src/types/open-ai-project-api-key-list.ts",
-      "sha256": "3de13c154e314932ce558f3ff80cc09d25bf31a7ea2c0c5166db90ab7bcec5c5"
-    },
-    {
-      "path": "src/types/open-ai-project-api-key.ts",
-      "sha256": "6904bd6f71f089e143ff6bd12e07ef2615f264fef718584a1282e6a1d69d984c"
-    },
-    {
-      "path": "src/types/open-ai-project-create-request.ts",
-      "sha256": "60fae898768e46d04a69f13a4a5d797513a7ba375a8d3792dd47c3484444f25d"
-    },
-    {
-      "path": "src/types/open-ai-project-group-create-request.ts",
-      "sha256": "4623f7458cacb0037b337ca09e3dd6589dd6ec13c8ce69d1ad03bc60df7be3d4"
-    },
-    {
-      "path": "src/types/open-ai-project-list.ts",
-      "sha256": "9f634591c7ed3c05852ea758f358aa529f8f976c645fb1cccd925027061be5c2"
-    },
-    {
-      "path": "src/types/open-ai-project-rate-limit-list.ts",
-      "sha256": "6e3e35824a9794aec525547f2bed5dc83436ca4188d7dfb2e54c65ae852c5736"
-    },
-    {
-      "path": "src/types/open-ai-project-rate-limit-update-request.ts",
-      "sha256": "9d6c713ec81a7b57e45f34bf53de1c33bda1e8f7469c5d8df1650ee0f770ecbc"
-    },
-    {
-      "path": "src/types/open-ai-project-rate-limit.ts",
-      "sha256": "2badc5385237b2fd434c279c473f53dd875da2faaf4d1fac5fafc30266e6da96"
-    },
-    {
-      "path": "src/types/open-ai-project-service-account-create-request.ts",
-      "sha256": "58769d39a3595d4ba36f57030bb6d56d48d7eeb3b0879751af6c78b0a206a5ef"
-    },
-    {
-      "path": "src/types/open-ai-project-service-account-list.ts",
-      "sha256": "ad371d01666b6a4f520edb8bbe21057dc6ba31ee10f5b08138690cb660be92bc"
-    },
-    {
-      "path": "src/types/open-ai-project-service-account.ts",
-      "sha256": "a58d07da1b85e287b552e45c3501eb64a8f86c10430c80ad17f6d68b7a98a073"
-    },
-    {
-      "path": "src/types/open-ai-project-update-request.ts",
-      "sha256": "c3ceda122c65fffcc85cc2eb6b3b12e52fe1261c27e9ff197bb291c0073a8781"
-    },
-    {
-      "path": "src/types/open-ai-project-user-create-request.ts",
-      "sha256": "507e381bf47dc266c0f32b63ca5cbeb3176c2a6b8cb7da61af9db4f1040cc493"
-    },
-    {
-      "path": "src/types/open-ai-project-user-list.ts",
-      "sha256": "9b35b6af85eafad1250c0d5efa43e154d743e145c541ff9fabda4be19cca0de2"
-    },
-    {
-      "path": "src/types/open-ai-project-user-update-request.ts",
-      "sha256": "66621d7ff79a29cc8f9af8c950abd49282604fceb5894bcad8c170a88342bc80"
-    },
-    {
-      "path": "src/types/open-ai-project-user.ts",
-      "sha256": "c0786845b4be8f20afdcca9932518b81059cb83c2d8ca9aedab252615d979e18"
-    },
-    {
-      "path": "src/types/open-ai-project.ts",
-      "sha256": "6af1b7b9414193139db7171df12cb60681353fa1b18a45020d2ffd63aea9b010"
     },
     {
       "path": "src/types/open-ai-prompt-reference.ts",
@@ -1483,34 +979,6 @@
       "sha256": "2caaee0218c14d09a66c395750f8004c1484868d497f4914294b923cdc45a805"
     },
     {
-      "path": "src/types/open-ai-role-assignment-create-request.ts",
-      "sha256": "cf17b6c60785ff59ab43963a995911a42e1bc9d90d026ca3e0f368fbf10bbace"
-    },
-    {
-      "path": "src/types/open-ai-role-assignment-list.ts",
-      "sha256": "c3e48c66505c94ec0d23ad261727417ce81d40d4a42cf785f4b074863e3f3ab9"
-    },
-    {
-      "path": "src/types/open-ai-role-assignment.ts",
-      "sha256": "5d26e4ff62dde4ec2ee06efd070e2e2dba710f0b52a3af06a9a95c88db386eb8"
-    },
-    {
-      "path": "src/types/open-ai-role-create-request.ts",
-      "sha256": "1beef8b5e13049b962e70399e689e9c378c6100600877b20e2b7ebc1a5bea4ca"
-    },
-    {
-      "path": "src/types/open-ai-role-list.ts",
-      "sha256": "85023a9a288b16f2d753447dacb192a674c1e4688fcda61e00a6b21145193fa5"
-    },
-    {
-      "path": "src/types/open-ai-role-update-request.ts",
-      "sha256": "2739e80810c5879f95fbcd08461dad203deb797b2d768ab56d1b58616654db2a"
-    },
-    {
-      "path": "src/types/open-ai-role.ts",
-      "sha256": "0b44de739022bf53065cf88443dbfeb50ca7227ad1666f21f3d538c61662e394"
-    },
-    {
       "path": "src/types/open-ai-run-create-request.ts",
       "sha256": "0d6eccbea8179249d0519bb7ebfabe70b3cf1e5c0276ec7f984ae1b923888787"
     },
@@ -1537,34 +1005,6 @@
     {
       "path": "src/types/open-ai-run.ts",
       "sha256": "47b4655f3a7b7a74b4d765f0e0b02b6ad901d30abae4e12e634cde6c6b6ccdbd"
-    },
-    {
-      "path": "src/types/open-ai-skill-create-multipart-request.ts",
-      "sha256": "329b7d11be244d25eea56d0d0a4908f60b7c7a74c0c6305a198e59b8c9ed3317"
-    },
-    {
-      "path": "src/types/open-ai-skill-list.ts",
-      "sha256": "f4e76ef0108c3f44bb632919b9c3998d06cdcfe2f5b72f73e12ef90685ee469b"
-    },
-    {
-      "path": "src/types/open-ai-skill-update-request.ts",
-      "sha256": "fa40660126515bb33b8036f7fd9707c154ddb04ab6b423a73eef094ebebab8b6"
-    },
-    {
-      "path": "src/types/open-ai-skill-version-create-multipart-request.ts",
-      "sha256": "cfad1e8574ebb5b2da7ee8f2eb08e3ace9393a5b50ed5ae799203411ff357aa2"
-    },
-    {
-      "path": "src/types/open-ai-skill-version-list.ts",
-      "sha256": "17bc4aa3966da6b8d7c663490affa83094bec5e27984f16a801c25b1ffd7d71d"
-    },
-    {
-      "path": "src/types/open-ai-skill-version.ts",
-      "sha256": "b2a0a1c6de1e727e3af32d5ccec534afaa2ca4363c8555d51657857ef0d4886e"
-    },
-    {
-      "path": "src/types/open-ai-skill.ts",
-      "sha256": "9f611bbe49a67f39d4c2de16b7ea435a78f0485b9d2b82c0284db0bb0ccddfc7"
     },
     {
       "path": "src/types/open-ai-speech-create-request.ts",
@@ -1809,10 +1249,6 @@
     {
       "path": "src/types/provider-metadata.ts",
       "sha256": "2a631dea8fbc386b14d82d77ff4dea43530cb02d137800005fb2fee7dd2f5317"
-    },
-    {
-      "path": "src/types/provider-multipart-request.ts",
-      "sha256": "95b4dabb4d6986c1c84dcf8d9d6ebd8d231add5cbc3ada9dfa14d149e9bc494a"
     },
     {
       "path": "src/types/provider-task-error.ts",

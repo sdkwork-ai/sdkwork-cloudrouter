@@ -26,17 +26,12 @@ type SdkworkAiClient struct {
     Container *api.ContainerApi
     Conversation *api.ConversationApi
     Embeddings *api.EmbeddingsApi
-    Eval *api.EvalApi
     Files *api.FilesApi
-    FineTuning *api.FineTuningApi
     Images *api.ImagesApi
     Models *api.ModelsApi
     Moderations *api.ModerationsApi
-    Organization *api.OrganizationApi
-    Project *api.ProjectApi
     Realtime *api.RealtimeApi
     Responses *api.ResponsesApi
-    Skill *api.SkillApi
     Threads *api.ThreadsApi
     Uploads *api.UploadsApi
     VectorStores *api.VectorStoresApi
@@ -74,17 +69,12 @@ func NewSdkworkAiClientWithConfig(config sdkhttp.Config) *SdkworkAiClient {
         Container: api.NewContainerApi(client),
         Conversation: api.NewConversationApi(client),
         Embeddings: api.NewEmbeddingsApi(client),
-        Eval: api.NewEvalApi(client),
         Files: api.NewFilesApi(client),
-        FineTuning: api.NewFineTuningApi(client),
         Images: api.NewImagesApi(client),
         Models: api.NewModelsApi(client),
         Moderations: api.NewModerationsApi(client),
-        Organization: api.NewOrganizationApi(client),
-        Project: api.NewProjectApi(client),
         Realtime: api.NewRealtimeApi(client),
         Responses: api.NewResponsesApi(client),
-        Skill: api.NewSkillApi(client),
         Threads: api.NewThreadsApi(client),
         Uploads: api.NewUploadsApi(client),
         VectorStores: api.NewVectorStoresApi(client),

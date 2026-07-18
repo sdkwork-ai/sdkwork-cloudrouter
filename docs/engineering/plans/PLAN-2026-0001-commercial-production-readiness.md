@@ -66,19 +66,23 @@ equivalence, or evidence of a high-availability deployment.
 
 The following remain release blockers:
 
-- [ ] Exact public inference/media route allowlist and synchronized generated
-  contracts/SDKs; the present public compatibility prefixes and fallbacks are
-  too broad.
+- [x] The OpenAI-compatible public surface uses synchronized authored
+  contracts, method-aware runtime rejection, classifiers, taxonomy/seeds, and
+  generated SDKs. Provider-native wildcard mounts enforce the embedded
+  OpenAPI `(provider alias, method, standardizedPath)` allowlist before
+  authentication or forwarding.
 - [ ] Direct authenticated Adapter streams must fail closed until the Adapter
   contract supports a bounded stream outcome, terminal usage, cancellation,
   idempotency, and controlled response metadata.
-- [ ] Usage snapshots, usage-line collections, retry envelopes, queues, and
+- [ ] Usage snapshots, retry envelopes, queues, and
   settlement reads need independent byte/shape/count budgets. The DDL-width
-  and decimal-parser guards do not bound snapshot payloads or queue backlog;
-  multi-line usage must become atomic and idempotency conflicts must not
-  overwrite facts.
-- [ ] `route_explain` needs tenant/object-scoped authorization, a truthful
-  diagnostic command contract, and a regenerated SDK authority. Recharge
+  and decimal-parser guards plus the 64-line Adapter cap do not bound snapshot payloads or queue backlog.
+  SQL recorders now persist multi-line usage in one transaction and wrappers
+  preserve that batch boundary; durable batch retry/outbox and idempotency
+  conflict handling remain open.
+- [x] `route_explain` requires a typed admin subject, performs tenant/object
+  authorization before selection, uses non-enumerating `404` behavior, and
+  redacts credential metadata. Recharge
   cancellation must defer to the mounted Order dependency contract rather than
   expose an unmounted owner route.
 - [ ] PostgreSQL integration, multi-replica Snowflake allocation/fencing and
@@ -88,13 +92,11 @@ The following remain release blockers:
 The following require human review before implementation because they change
 public contracts, security behavior, migrations, or deployment governance:
 
-1. Shrink public relay and provider-native paths to exact method/path/provider
-   inference/media allowlists.
-2. Fail close direct authenticated Adapter streaming until the formal lifecycle
+1. Fail close direct authenticated Adapter streaming until the formal lifecycle
    protocol is implemented.
-3. Tighten `route_explain` object authorization and define its command/result
+2. Define the remaining recharge cancellation ownership and command/result
    semantics; remove or federate the recharge cancellation ghost route.
-4. Approve paired PostgreSQL/SQLite finance and snapshot-bound migrations, plus
+3. Approve paired PostgreSQL/SQLite finance and snapshot-bound migrations, plus
    a cluster-owned Snowflake node allocation/fencing approach and the upstream
    logical-clock/sequence-exhaustion repair.
 
@@ -464,10 +466,12 @@ No task may replace these chains with direct edits to generated output.
       command must reject unknown/sensitive snapshot fields and oversized input
       before persistence; a 200-row settlement batch alone is not a memory
       safety boundary.
-- [ ] Replace sequential Adapter multi-line usage writes with all-lines
-      validation plus one transaction/outbox. Treat an equal idempotency key
-      with a different canonical financial payload as a conflict or explicit
-      adjustment, never an in-place overwrite.
+- [x] Replace sequential Adapter multi-line usage writes with all-lines
+      validation and one PostgreSQL/SQLite transaction. Production wrappers
+      preserve the batch boundary and fail closed on primary failure.
+- [ ] Add a durable batch outbox/retry envelope and treat an equal idempotency
+      key with a different canonical financial payload as a conflict or
+      explicit adjustment, never an in-place overwrite.
 - [ ] Define immutable states and transitions for authorization, reservation, provider attempts,
       terminal usage, settlement, release/adjustment, reconciliation, and reversal.
 - [ ] Define bounded maximum-cost calculation by model, modalities, request limits, provider pricing

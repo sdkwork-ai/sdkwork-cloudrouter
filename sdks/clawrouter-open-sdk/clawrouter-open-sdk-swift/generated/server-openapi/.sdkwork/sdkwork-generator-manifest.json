@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "swift",
     "sdkType": "ai",
+    "protocol": "http",
     "packageName": "ClawRouterOpenSdk"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -35,15 +36,15 @@
     },
     {
       "path": "README.md",
-      "sha256": "6dd5c199e15b3760d898757389d47758563d3626369772585e41dac44d7c52ce"
+      "sha256": "ad420d3b515d33f9e5695c1a8c89d31e44f2b25e33049b4f0d2735377862acda"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "d4432bcef71778448cd6e11bee8c44b9682143e361de83051b6c9ac29eb2a5f2"
+      "sha256": "488d0e6ce3e959d9b999d3951e550c4a30f01a141e61b86f60e592a0cf3323d3"
     },
     {
       "path": "Sources/API/API.swift",
-      "sha256": "cf472c75403e90db6f586c573862d74c505a4465e0028a6f857b9e9c3f11ae72"
+      "sha256": "f9f0d995f48e38f50cb66f150f3ddab31cad25e581668b74c836930aa0606f16"
     },
     {
       "path": "Sources/API/ApiPaths.swift",
@@ -102,10 +103,6 @@
       "sha256": "9478e53eb458b3e75b56bf899c81314bf60bbd1df5177018984a17e3608101d0"
     },
     {
-      "path": "Sources/API/EvalApi.swift",
-      "sha256": "2895da1f5280aec9eb4ad2a85dd30c1d23421adb2c516d343496905f3144ce7d"
-    },
-    {
       "path": "Sources/API/FilesAnthropicApi.swift",
       "sha256": "720208927ee93913aee803c090086d30b0bd6380003079cf6bf47b010c62137a"
     },
@@ -116,10 +113,6 @@
     {
       "path": "Sources/API/FilesGoogleApi.swift",
       "sha256": "46f1c1e346c3fec500a356a9f2e7bdd22531aeaa100092ebb4184aa006118c00"
-    },
-    {
-      "path": "Sources/API/FineTuningApi.swift",
-      "sha256": "558901356eef1d9a65274d9a6485807627fe5f3b0856cb8eb209dcb0890d2863"
     },
     {
       "path": "Sources/API/ImagesApi.swift",
@@ -139,19 +132,11 @@
     },
     {
       "path": "Sources/API/ModelsApi.swift",
-      "sha256": "174dceaf36c6a0fc38ed1915c2cb5fd8770a92b68ae02f60ef303946429dc035"
+      "sha256": "208e4e61634407618a8bcd29557ab7ea0f52957f31c19f7ef93f042c26174e54"
     },
     {
       "path": "Sources/API/ModerationsApi.swift",
       "sha256": "660e798bba3961acdd4d2e272495cfc44c66a4b6a360f2e82213ade271c90661"
-    },
-    {
-      "path": "Sources/API/OrganizationApi.swift",
-      "sha256": "3c495817de025c1edf08bba1fe1e43dbdfcc71cc805c2cfd0c8e70aa29119f9f"
-    },
-    {
-      "path": "Sources/API/ProjectApi.swift",
-      "sha256": "3a1b68540dab55a5f78b49ee406ad7b01662f3b64a6b7f85c4e77c10cc97419f"
     },
     {
       "path": "Sources/API/RealtimeApi.swift",
@@ -164,10 +149,6 @@
     {
       "path": "Sources/API/ResponsesGoogleApi.swift",
       "sha256": "9ecae1a593b4c406db05819c9c6beb44678efd34a30e8bce418c330cff71c0b2"
-    },
-    {
-      "path": "Sources/API/SkillApi.swift",
-      "sha256": "e9d7af88cf30ff4b798f719c536a4efb5428ac1d0ffb01a27ffe288cc689ca33"
     },
     {
       "path": "Sources/API/ThreadsApi.swift",
@@ -199,15 +180,15 @@
     },
     {
       "path": "Sources/HTTP/HttpClient.swift",
-      "sha256": "0732a68114363f63803e43bf1b6d1e93cdd691492d1bd739af3d3806062e5942"
+      "sha256": "0a5476a0de8ae546ac1976e8e74638c4a8f48b158ebab7c235b47b94a9ccaea7"
     },
     {
       "path": "Sources/Models.swift",
-      "sha256": "f3d4e0cb72e859b84195c9fee771086099d66d826063e5aa523464d8e75ad8c2"
+      "sha256": "d2b2efc36dec24fa9f520f3e26db529c08ab0d8be9412f87bdf042d0c29db856"
     },
     {
       "path": "Sources/SdkworkAiClient.swift",
-      "sha256": "d55ddead49e0e311e5d2bcbf84e9c122d6466cd88b3ac0c054b9bb92c91382bc"
+      "sha256": "579de280bcf2e4c174d876da3e95990e54db9b666bcbee5f1ce008a52f8c7098"
     }
   ],
   "scaffoldFiles": [

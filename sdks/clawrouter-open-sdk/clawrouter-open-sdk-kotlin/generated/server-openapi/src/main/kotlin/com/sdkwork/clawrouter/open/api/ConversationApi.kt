@@ -11,7 +11,7 @@ class ConversationApi(private val client: HttpClient) {
     /** List conversations */
     suspend fun list(limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiConversationList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("page_size", limit, "form", true, false, null),
+            QueryParameterSpec("limit", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)
@@ -47,7 +47,7 @@ class ConversationApi(private val client: HttpClient) {
     /** List conversation items */
     suspend fun listItems(conversationId: String, limit: Int? = null, order: String? = null, after: String? = null, before: String? = null): OpenAiConversationItemList? {
         val query = buildQueryString(listOf(
-            QueryParameterSpec("page_size", limit, "form", true, false, null),
+            QueryParameterSpec("limit", limit, "form", true, false, null),
             QueryParameterSpec("order", order, "form", true, false, null),
             QueryParameterSpec("after", after, "form", true, false, null),
             QueryParameterSpec("before", before, "form", true, false, null)

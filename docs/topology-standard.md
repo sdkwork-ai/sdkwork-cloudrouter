@@ -52,7 +52,7 @@ Gateway packaging (cloud config bundle only, binary owned by `sdkwork-api-cloud-
 | --- | --- |
 | `pnpm gateway:matrix` | print all packaging targets from topology spec |
 | `pnpm gateway:matrix:cloud` | print `platform-config-bundle` targets |
-| `pnpm gateway:package:cloud` | bundle `configs/sdkwork-api-cloud-gateway.claw-router.*.toml` |
+| `pnpm gateway:package:cloud` | bundle `etc/sdkwork-api-cloud-gateway.claw-router.*.toml` |
 | `pnpm topology:validate` | validate `specs/topology.spec.json` |
 
 ## Local URLs (standalone dev)
@@ -74,10 +74,10 @@ Client env keys:
 `start-workspace.mjs` health-gates the portal dev server: backend processes
 start first, required `/healthz` endpoints must pass, then Vite starts.
 
-Profile values live in `configs/topology/*.env` only. Do not hardcode ports in
+Profile values live in `etc/topology/*.env` only. Do not hardcode ports in
 route crates or feature packages.
 
 Cloud gateway config bundles (for `cloud` profiles):
 
-- `configs/sdkwork-api-cloud-gateway.claw-router.development.toml`
-- `configs/sdkwork-api-cloud-gateway.claw-router.production.toml`
+- `etc/sdkwork-api-cloud-gateway.claw-router.development.toml`
+- `etc/sdkwork-api-cloud-gateway.claw-router.production.toml`

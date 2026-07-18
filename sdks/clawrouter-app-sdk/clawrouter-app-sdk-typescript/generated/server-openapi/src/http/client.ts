@@ -232,13 +232,15 @@ export class HttpClient extends BaseHttpClient {
     const authConfig = this.getInternalAuthConfig();
     const tokenManager = authConfig.tokenManager;
     const accessToken = tokenManager?.getAccessToken?.();
-    if (!accessToken) {
+    const authToken = tokenManager?.getAuthToken?.();
+    if (!accessToken && !authToken) {
       return headers;
     }
 
     return {
       ...(headers ?? {}),
-      [HttpClient.ACCESS_TOKEN_HEADER]: accessToken,
+      ...(accessToken ? { [HttpClient.ACCESS_TOKEN_HEADER]: accessToken } : {}),
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     };
   }
 

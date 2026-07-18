@@ -7,6 +7,6 @@ namespace Sdkwork.ClawRouter.Open.Models
     public class OpenAiRunSubmitToolOutputsRequest
     {
         public bool? Stream { get; set; }
-        public List<string>? ToolOutputs { get; set; }
+        public List<string> ToolOutputs { get; set; }
     }
 }

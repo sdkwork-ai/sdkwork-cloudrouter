@@ -90,17 +90,12 @@ val client = SdkworkAiClient(config)
 - `client.container` - container API
 - `client.conversation` - conversation API
 - `client.embeddings` - embedding API
-- `client.eval` - eval API
 - `client.files` - file API
-- `client.fineTuning` - fine_tuning API
 - `client.images` - image API
 - `client.models` - model API
 - `client.moderations` - moderation API
-- `client.organization` - organization API
-- `client.project` - project API
 - `client.realtime` - realtime API
 - `client.responses` - response API
-- `client.skill` - skill API
 - `client.threads` - thread API
 - `client.uploads` - upload API
 - `client.vectorStores` - vector_store API
@@ -457,20 +452,6 @@ val result = client.embeddings.create(body)
 println(result)
 ```
 
-### eval
-
-```kotlin
-// List evals
-val params = linkedMapOf<String, Any>(
-    "limit" to 1,
-    "order" to "asc",
-    "after" to "after",
-    "before" to "before"
-)
-val result = client.eval.list(params)
-println(result)
-```
-
 ### file
 
 ```kotlin
@@ -482,20 +463,6 @@ val params = linkedMapOf<String, Any>(
     "before" to "before"
 )
 val result = client.files.list(params)
-println(result)
-```
-
-### fine_tuning
-
-```kotlin
-// List fine-tuning jobs
-val params = linkedMapOf<String, Any>(
-    "limit" to 1,
-    "order" to "asc",
-    "after" to "after",
-    "before" to "before"
-)
-val result = client.fineTuning.listJob(params)
 println(result)
 ```
 
@@ -530,35 +497,6 @@ val body = OpenAiModerationCreateRequest(
     model = "model"
 )
 val result = client.moderations.create(body)
-println(result)
-```
-
-### organization
-
-```kotlin
-// List organization admin API keys
-val params = linkedMapOf<String, Any>(
-    "limit" to 1,
-    "order" to "asc",
-    "after" to "after",
-    "before" to "before"
-)
-val result = client.organization.getListAdminApiKeys(params)
-println(result)
-```
-
-### project
-
-```kotlin
-// List project roles
-val projectId = "1"
-val params = linkedMapOf<String, Any>(
-    "limit" to 1,
-    "order" to "asc",
-    "after" to "after",
-    "before" to "before"
-)
-val result = client.project.getListRoles(projectId, params)
 println(result)
 ```
 
@@ -640,20 +578,6 @@ val body = OpenAiResponsesRequest(
     user = "user"
 )
 val result = client.responses.create(body)
-println(result)
-```
-
-### skill
-
-```kotlin
-// List skills
-val params = linkedMapOf<String, Any>(
-    "limit" to 1,
-    "order" to "asc",
-    "after" to "after",
-    "before" to "before"
-)
-val result = client.skill.list(params)
 println(result)
 ```
 
@@ -814,10 +738,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

@@ -156,7 +156,7 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
                 item["resourceCode"] == "api.openai.codex"
                 or item["resourceCode"].startswith("api.openai.codex.")
                 or item["resourceCode"]
-                in {"api.openai.containers", "api.openai.skills"}
+                == "api.openai.containers"
             )
         }
         self.assertGreater(

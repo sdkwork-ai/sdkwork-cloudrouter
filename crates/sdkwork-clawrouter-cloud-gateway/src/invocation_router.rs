@@ -2,7 +2,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::body::Body;
-use axum::http::Request;
+use axum::http::header::ALLOW;
+use axum::http::{HeaderValue, Method, Request, StatusCode};
+use axum::response::{IntoResponse, Response};
 use axum::Router;
 use sdkwork_claw_config::{
     ProviderAdapterConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig,
@@ -410,7 +412,33 @@ fn invocation_router_with_state<C>(state: InvocationRouterState<C>) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    Router::new().fallback(move |request: Request<Body>| handle_invocation(state.clone(), request))
+    Router::new().fallback(move |request: Request<Body>| {
+        let state = state.clone();
+        async move {
+            if let Some(response) = reject_retired_openai_method(&request) {
+                return response;
+            }
+            handle_invocation(state, request).await
+        }
+    })
+}
+
+fn reject_retired_openai_method(request: &Request<Body>) -> Option<Response> {
+    if request.method() != Method::DELETE
+        || !request
+            .uri()
+            .path()
+            .strip_prefix("/v1/models/")
+            .is_some_and(|model| !model.is_empty() && !model.contains('/'))
+    {
+        return None;
+    }
+
+    let mut response = StatusCode::METHOD_NOT_ALLOWED.into_response();
+    response
+        .headers_mut()
+        .insert(ALLOW, HeaderValue::from_static("GET"));
+    Some(response)
 }
 
 fn invocation_pipeline<C>(

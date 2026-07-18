@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::GoogleContentEmbedding;
+use crate::models::{GoogleContentEmbedding};
 
 /// Google Gemini google batch embed contents response schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

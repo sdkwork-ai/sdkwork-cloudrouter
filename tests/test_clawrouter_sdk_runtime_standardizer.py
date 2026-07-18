@@ -122,9 +122,75 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertIn("line.trim() === \"export * from './types';\"", build_runtime)
                 self.assertIn("source.split(/\\r?\\n/u)", build_runtime)
                 self.assertIn("runtimeLines.join('\\n')", build_runtime)
+                self.assertIn("await stageDomainTransport();", build_runtime)
+                self.assertIn("path.join(distDir, 'domains', 'index.js')", build_runtime)
+                self.assertIn("path.join(distDir, 'domains-generated')", build_runtime)
                 http_client = (base / "src" / "http" / "client.ts").read_text(encoding="utf-8")
                 self.assertIn("contentType?: string", http_client)
                 self.assertIn("headers: this.withContentType(headers, contentType)", http_client)
+
+    def test_standardizes_app_and_backend_http_clients_to_dual_token_headers(self) -> None:
+        source = """export class HttpClient {
+  private applySdkworkAuthHeaders(headers?: Record<string, string>): Record<string, string> | undefined {
+    const authConfig = this.getInternalAuthConfig();
+    const tokenManager = authConfig.tokenManager;
+    const accessToken = tokenManager?.getAccessToken?.();
+    if (!accessToken) {
+      return headers;
+    }
+
+    return {
+      ...(headers ?? {}),
+      [HttpClient.ACCESS_TOKEN_HEADER]: accessToken,
+    };
+  }
+}
+"""
+        standardizer = self.standardizer(Path.cwd())
+
+        normalized = standardizer._standardize_http_client_dual_token_headers(source)
+
+        self.assertIn("const authToken = tokenManager?.getAuthToken?.();", normalized)
+        self.assertIn("...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),", normalized)
+        self.assertIn("...(accessToken ? { [HttpClient.ACCESS_TOKEN_HEADER]: accessToken } : {}),", normalized)
+        self.assertEqual(normalized, standardizer._standardize_http_client_dual_token_headers(normalized))
+
+    def test_standardizes_primary_and_domain_generated_http_clients(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            base = self.sdk_base(root, "clawrouter-app-sdk")
+            source = """export class HttpClient {
+  private applySdkworkAuthHeaders(headers?: Record<string, string>): Record<string, string> | undefined {
+    const authConfig = this.getInternalAuthConfig();
+    const tokenManager = authConfig.tokenManager;
+    const accessToken = tokenManager?.getAccessToken?.();
+    if (!accessToken) {
+      return headers;
+    }
+
+    return {
+      ...(headers ?? {}),
+      [HttpClient.ACCESS_TOKEN_HEADER]: accessToken,
+    };
+  }
+}
+"""
+            clients = (
+                base / "generated" / "server-openapi" / "src" / "http" / "client.ts",
+                base / "generated" / "domains" / "server-openapi" / "src" / "http" / "client.ts",
+            )
+            for client in clients:
+                client.parent.mkdir(parents=True, exist_ok=True)
+                client.write_text(source, encoding="utf-8")
+
+            updated = self.standardizer(root, ("clawrouter-app-sdk",))._standardize_generated_http_clients(
+                "clawrouter-app-sdk",
+                base,
+            )
+
+            self.assertEqual(set(clients), set(updated))
+            for client in clients:
+                self.assertIn("Authorization: `Bearer ${authToken}`", client.read_text(encoding="utf-8"))
 
     def test_standardizes_generated_sdk_runtime_build_metadata_idempotently(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -259,6 +325,11 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 "export interface LegacyProviderAccount {}\n",
                 encoding="utf-8",
             )
+            (base / "src" / "domains").mkdir(parents=True, exist_ok=True)
+            (base / "src" / "domains" / "index.ts").write_text(
+                "export const domains = true;\n",
+                encoding="utf-8",
+            )
             (base / "src" / "sdk.ts").write_text("legacyProvider\n", encoding="utf-8")
 
             self.standardizer(root, ("clawrouter-backend-sdk",)).run()
@@ -280,6 +351,9 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
             self.assertEqual("./dist/index.d.ts", package["exports"]["."]["types"])
             self.assertEqual("./dist/index.js", package["exports"]["."]["import"])
             self.assertEqual("./dist/index.cjs", package["exports"]["."]["require"])
+            self.assertEqual("./dist/domains/index.d.ts", package["exports"]["./domains"]["types"])
+            self.assertEqual("./dist/domains/index.js", package["exports"]["./domains"]["import"])
+            self.assertEqual("./dist/domains/index.cjs", package["exports"]["./domains"]["require"])
             self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["build"])
             root_metadata = json.loads((base / "sdkwork-sdk.json").read_text(encoding="utf-8"))
             self.assertEqual("@sdkwork/clawrouter-backend-sdk", root_metadata["packageName"])
@@ -568,6 +642,14 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertIn("function cleanGeneratedOutput(language) {", generate_script)
                 self.assertIn("syncFamilyOpenApiSnapshots();", generate_script)
                 self.assertIn("function syncFamilyOpenApiSnapshots() {", generate_script)
+                self.assertIn("if (languages.includes('typescript')) {", generate_script)
+                self.assertIn("syncComposedTypeScriptFacade();", generate_script)
+                composed_sync_body = self.javascript_function_body(
+                    generate_script,
+                    "syncComposedTypeScriptFacade",
+                )
+                self.assertIn("'tools.clawrouter_sdk_runtime_standardizer'", composed_sync_body)
+                self.assertNotIn("'--openapi-only'", composed_sync_body)
                 self.assertIn(
                     "const domainTransportInputPath = `sdks/${sdkFamily}/openapi/${domainTransportName}.openapi.json`;",
                     generate_script,

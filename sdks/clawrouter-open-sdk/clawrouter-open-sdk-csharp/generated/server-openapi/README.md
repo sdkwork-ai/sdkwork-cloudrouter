@@ -87,17 +87,12 @@ client.SetHeader("X-Custom-Header", "value");
 - `client.Container` - container API
 - `client.Conversation` - conversation API
 - `client.Embeddings` - embedding API
-- `client.Eval` - eval API
 - `client.Files` - file API
-- `client.FineTuning` - fine_tuning API
 - `client.Images` - image API
 - `client.Models` - model API
 - `client.Moderations` - moderation API
-- `client.Organization` - organization API
-- `client.Project` - project API
 - `client.Realtime` - realtime API
 - `client.Responses` - response API
-- `client.Skill` - skill API
 - `client.Threads` - thread API
 - `client.Uploads` - upload API
 - `client.VectorStores` - vector_store API
@@ -423,21 +418,6 @@ var result = await client.Embeddings.CreateAsync(body);
 Console.WriteLine(result);
 ```
 
-### eval
-
-```csharp
-// List evals
-var query = new Dictionary<string, object>
-{
-    ["limit"] = 1,
-    ["order"] = "asc",
-    ["after"] = "after",
-    ["before"] = "before",
-};
-var result = await client.Eval.ListAsync(query);
-Console.WriteLine(result);
-```
-
 ### file
 
 ```csharp
@@ -450,21 +430,6 @@ var query = new Dictionary<string, object>
     ["before"] = "before",
 };
 var result = await client.Files.ListAsync(query);
-Console.WriteLine(result);
-```
-
-### fine_tuning
-
-```csharp
-// List fine-tuning jobs
-var query = new Dictionary<string, object>
-{
-    ["limit"] = 1,
-    ["order"] = "asc",
-    ["after"] = "after",
-    ["before"] = "before",
-};
-var result = await client.FineTuning.ListJobAsync(query);
 Console.WriteLine(result);
 ```
 
@@ -501,37 +466,6 @@ var body = new OpenAiModerationCreateRequest
     Model = "model",
 };
 var result = await client.Moderations.CreateAsync(body);
-Console.WriteLine(result);
-```
-
-### organization
-
-```csharp
-// List organization admin API keys
-var query = new Dictionary<string, object>
-{
-    ["limit"] = 1,
-    ["order"] = "asc",
-    ["after"] = "after",
-    ["before"] = "before",
-};
-var result = await client.Organization.GetListAdminApiKeysAsync(query);
-Console.WriteLine(result);
-```
-
-### project
-
-```csharp
-// List project roles
-var projectId = "1";
-var query = new Dictionary<string, object>
-{
-    ["limit"] = 1,
-    ["order"] = "asc",
-    ["after"] = "after",
-    ["before"] = "before",
-};
-var result = await client.Project.GetListRolesAsync(projectId, query);
 Console.WriteLine(result);
 ```
 
@@ -582,21 +516,6 @@ var body = new OpenAiResponsesRequest
     User = "user",
 };
 var result = await client.Responses.CreateAsync(body);
-Console.WriteLine(result);
-```
-
-### skill
-
-```csharp
-// List skills
-var query = new Dictionary<string, object>
-{
-    ["limit"] = 1,
-    ["order"] = "asc",
-    ["after"] = "after",
-    ["before"] = "before",
-};
-var result = await client.Skill.ListAsync(query);
 Console.WriteLine(result);
 ```
 
@@ -758,10 +677,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class GoogleBatchEmbedContentsRequest
     {
-        public List<GoogleEmbedContentRequest>? Requests { get; set; }
+        public List<GoogleEmbedContentRequest> Requests { get; set; }
     }
 }

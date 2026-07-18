@@ -12,11 +12,6 @@ public class ModelsApi {
         return try await client.get(ApiPaths.aiPath("/models"), responseType: OpenAiModelList.self)
     }
 
-    /// Delete fine-tuned model
-    public func delete(model: String) async throws -> DeleteResult? {
-        return try await client.delete(ApiPaths.aiPath("/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false)))"), responseType: DeleteResult.self)
-    }
-
     /// Retrieve model
     public func retrieve(model: String) async throws -> OpenAiModel? {
         return try await client.get(ApiPaths.aiPath("/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false)))"), responseType: OpenAiModel.self)

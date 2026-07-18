@@ -1,7 +1,7 @@
 import { aiApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-import type { DeleteResult, OpenAiModel, OpenAiModelList } from '../types';
+import type { OpenAiModel, OpenAiModelList } from '../types';
 
 
 export class ModelsApi {
@@ -15,11 +15,6 @@ export class ModelsApi {
 /** List models */
   async list(): Promise<OpenAiModelList> {
     return this.client.get<OpenAiModelList>(aiApiPath(`/models`));
-  }
-
-/** Delete fine-tuned model */
-  async delete(model: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}`));
   }
 
 /** Retrieve model */

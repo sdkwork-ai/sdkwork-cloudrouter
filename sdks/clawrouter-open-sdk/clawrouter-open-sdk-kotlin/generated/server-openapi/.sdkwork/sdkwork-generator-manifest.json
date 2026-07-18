@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "kotlin",
     "sdkType": "ai",
+    "protocol": "http",
     "packageName": "com.sdkwork.clawrouter:clawrouter-open-sdk"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -35,11 +36,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "b041f848a2f86e690539400b417c4e833bbd85b4e96db5023d7fe231bc705d46"
+      "sha256": "aa6f6183e5ba0f95350c080ee4cf29fc2f01d122dc378b63f99cf195136743ea"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "91a173e68d3a8b96c35a6f3aa64ffb946b62b9fbf420a47521bc2197635b4cba"
+      "sha256": "49468166da37649dce1d7a189e499df067dfc9ff8abb2390650afaf541a65838"
     },
     {
       "path": "settings.gradle.kts",
@@ -131,7 +132,7 @@
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/Api.kt",
-      "sha256": "bd411b799b458b243b4212abfb5908f19a0787d6edd193bd627931e921a70cff"
+      "sha256": "475111ee0ba7d12e199fe68f9c027f5186263d0f63aa030f79f9942c92510b23"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/ApiPaths.kt",
@@ -190,10 +191,6 @@
       "sha256": "6b02dec102ed61c2402779d7a87a6d85b7a71bd48ca8e151cb41c51dc21600b4"
     },
     {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/EvalApi.kt",
-      "sha256": "11dea0310bfda69d33e9d70fa2d30f5c8f548a39e1ae8547f976444dc8b315d7"
-    },
-    {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/FilesAnthropicApi.kt",
       "sha256": "a06551356d63aec0d1d8ea971434c1230deff8c1e793aab572ae1b6418979001"
     },
@@ -204,10 +201,6 @@
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/FilesGoogleApi.kt",
       "sha256": "6cca11ae808097d03366a198bd19a46361b4cfd532dafe3457ded437e5c0ff9d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/FineTuningApi.kt",
-      "sha256": "0a2c27ba573d07c012ec4cd79f9e3b9ae0c318927690cd93be5c043b27a519f1"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/ImagesApi.kt",
@@ -227,19 +220,11 @@
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/ModelsApi.kt",
-      "sha256": "b9febef7190df4c555f8e9115d2ea8d10947f5fd3ca31c9dc55eed65500826a1"
+      "sha256": "21f0cd4262dcaad10c8ff37c79906ff9f4eec4988f0f77954402781793533f3d"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/ModerationsApi.kt",
       "sha256": "340a441d6cd3a910ce7a4af8e49ee52f828c54c53e01caaac9b8a1fba7ab3eb2"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/OrganizationApi.kt",
-      "sha256": "ddb8b96a13b5314bf4b8e0d02c88f139e3700833334232fa4e56fa8883d8e21b"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/ProjectApi.kt",
-      "sha256": "4c367827012cf16421fa1cc66159cb0cef1143ac736653f8939a20ffeb2ba81d"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/RealtimeApi.kt",
@@ -252,10 +237,6 @@
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/ResponsesGoogleApi.kt",
       "sha256": "716b9cc452beb9d90a5f8bc83b98a2314ea30e2d076bdb30b29715914e2fcaea"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/SkillApi.kt",
-      "sha256": "9eb822462070d0293433c4c6ab25a9e43e8b83f236b9973d13f209c955358443"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/api/ThreadsApi.kt",
@@ -296,42 +277,6 @@
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/DeleteResult.kt",
       "sha256": "6ae0a1512a23ee85959813673fbaefffedcf34ee57532944a1acf736f0ec1a82"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationAudioSpeechesUsageItem.kt",
-      "sha256": "9401f151f3e2db72030037f681d66906d29b2dcdebdef931eafee2bea3facaaf"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationAudioTranscriptionsUsageItem.kt",
-      "sha256": "766fe0a1fcd76fb5da15910a93f442a1a0050894cea1b2429138d5b8d2b6428b"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationCodeInterpreterSessionsUsageItem.kt",
-      "sha256": "18cc75330f14a566a22b651e86bd4a917951e14a30f4398e94b184680118e294"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationCompletionsUsageItem.kt",
-      "sha256": "800218f5d467cfe1a07365de21feda990b0cdd30d6a417967ac8bc08bd62031d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationCostsItem.kt",
-      "sha256": "9c722357c4e60e480ff8bf2bb3ed9f2a053f7f39bbfad9ee00b76147ffd61999"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationEmbeddingsUsageItem.kt",
-      "sha256": "d646dc2a32446fa9a519060116b084f4649ffb7b9c1d30cefc3eddfbe73d6315"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationImagesUsageItem.kt",
-      "sha256": "db223e95c6b1b5dd54e0f7001e236f02948a8ca74b0c5c4ab98d196e44d1a703"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationModerationsUsageItem.kt",
-      "sha256": "03175bbdb44c92e82e8a30fdb5c039fc8470b843845c9300c8b75379f057736b"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GetOrganizationVectorStoresUsageItem.kt",
-      "sha256": "f831866cd7d10c425d99f2ef6d493467ba2e62ed3f912877cdc7d75d4dc5e4f4"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/GoogleBatchEmbedContentsRequest.kt",
@@ -507,7 +452,7 @@
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/http/HttpClient.kt",
-      "sha256": "4885df658945475d4653f82b8a6c7d3f69dbcd99b9903bb72f8e07899d43f8ca"
+      "sha256": "e4be419ac98f56ebb7558e0fbc94a4e3ea36e70471a9c48bbbf5ddffbf128073"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/KlingVideoGenerationRequest.kt",
@@ -516,190 +461,6 @@
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/KlingVideoGenerationTask.kt",
       "sha256": "09747f608dea5122943894ba9ca421f8e692b0ee26574eaad50dfd3b7d3a7264"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListAssistantsItem.kt",
-      "sha256": "d7c2302587ffdd339693fcb8abf2f6fb2d8e05dfff86e34a4aec10e154ff741d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListBatchesItem.kt",
-      "sha256": "e32414b2be09983165867a2f916cc7841bc3c4a919e1b3fd64e5a1f61cc5ee9c"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListChatCompletionMessagesItem.kt",
-      "sha256": "043ce21d73dba25ce6d492a1d0bff5164d76a8e9745263cbb662569f7f0cd839"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListChatCompletionsItem.kt",
-      "sha256": "4ae77e923cf5b84abdf5d2bbc6d2eaea344b96b1d238c0790e84fc1f13ee6fc6"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListContainerFilesItem.kt",
-      "sha256": "9068f0b90ccba0240e305697976b78ca9d4bedef4a3aeb2a7c49e3de3f10df3e"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListContainersItem.kt",
-      "sha256": "00f94970034e127dbf9700b225917a28863ed28199e36b006b884423ac358d3c"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListEvalRunOutputItemsItem.kt",
-      "sha256": "924d527eb5c1b1bda36e41c4b5ccad0ba05dc7c90fc7c4660d6563ebdd4c855d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListEvalRunsItem.kt",
-      "sha256": "2ac36d9210784bdc2c480b7fb70ed277e3099e0547879ee406320b40b90359b7"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListEvalsItem.kt",
-      "sha256": "3bebdfe173b10dae55f42e0f292a1953a7b12e09e4fe2b930da6c27b01c0693f"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListFilesItem.kt",
-      "sha256": "fedb03f51dc8604cbf94eafe4049266e5473a63fbb3afcf9bb9d191ee22faec2"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListFineTuningCheckpointPermissionsItem.kt",
-      "sha256": "90e1636510b6e1c6d0f51a36edfea99f3c1edb2fc3a4c0b637a7fe661a289f41"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListFineTuningJobCheckpointsItem.kt",
-      "sha256": "afa65bdb5d2f2312a4bb90c3cfc1a9abac72ce90a3e52d5caeb3f43a0f61c008"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListFineTuningJobEventsItem.kt",
-      "sha256": "f3a5d9ec83bd3b5ecb2394ad02a5f7874626b7fa5cc6199b59ace316b4427c51"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListFineTuningJobsItem.kt",
-      "sha256": "961890de227717dece6cff8d0a2334a56dbcbc992205ab0a38cbcb9dcb818c4d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListMessagesItem.kt",
-      "sha256": "0f19f3b74a8b987f280104583d342ee9950f464c34e88c9583047a92c733daf4"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationAdminApiKeysItem.kt",
-      "sha256": "e445be701ab4b00b6e7e9a548be63943883f823f6770fc33e0482e43cc2e7630"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationAuditLogsItem.kt",
-      "sha256": "0b81bf060b030aa1f436e6c68e81c36bb9b9c286d4bf0eff5c2820e0a548deb6"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationCertificatesItem.kt",
-      "sha256": "6e2d4a86a85331b25ea3778e08429621d34ab29476db8ceab70dc6ee18c125fb"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationGroupRolesItem.kt",
-      "sha256": "fdb0b67df13facbcba75aa7ee9afc0e167ff47f234984c35e37fb42493a44815"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationGroupsItem.kt",
-      "sha256": "af33a8c428270ecd042de42c588b3b9281fbd166d52346e5c81e368718301029"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationGroupUsersItem.kt",
-      "sha256": "e782e2d052db0b633d1aef304e2aa7de32b3c99962b399fab4f51ad2622aab7a"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationInvitesItem.kt",
-      "sha256": "3772b3b4eac74c2eb4b32b3794272c40917a0036290fa2b20e316f0be4b692dd"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationProjectsItem.kt",
-      "sha256": "1852246d2b35c9fc4463a3e2853f1c6209438fc361de4bbb365a9f8e6ac8db55"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationRolesItem.kt",
-      "sha256": "40d77a7db487b4376e1f59970ac8dba59621507c41ee76ea8de0f62a05aa15d4"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationUserRolesItem.kt",
-      "sha256": "26356ddd68bb8d5707f7ae65c25e8d3f543e86fc2fb6685251f4e87ba2f1cc07"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListOrganizationUsersItem.kt",
-      "sha256": "ee06377c8c41576ceba73654869b7889164f4cf8033c06aea9693a50abefe352"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectApiKeysItem.kt",
-      "sha256": "a919329b3c74326044e3e65daa3f401c0e55f19934d93091b7da84772b115c11"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectCertificatesItem.kt",
-      "sha256": "dd699860dbd2781878ef21f96bbc334e2f16bf011da0b88ab89698df9859396d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectGroupRolesItem.kt",
-      "sha256": "00dae763faa85b30bd7b02fe8907a7545c731b424880f9aa7ee54c46dfdc1131"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectGroupsItem.kt",
-      "sha256": "c1e3e4be97be4b66a12663ed6b33c8d6b55c1361b8196c8af78ea49468eabcc5"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectRateLimitsItem.kt",
-      "sha256": "f5b2592e52b012658e37f1dd5af4c93f3ac1f87b48107815044b3803820aa0ec"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectRolesItem.kt",
-      "sha256": "bd24b4cd38e4f5c8cfd7f7d87d1a9619f56147edc6de03620e01a33e95676814"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectServiceAccountsItem.kt",
-      "sha256": "ea8432f0f2e6c179d0769f83f5caea90e263e15ffa7f47a498831b1c83a828f3"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectUserRolesItem.kt",
-      "sha256": "ccd0bf0bc576cc3bb94fb444cd27e76ef885e128cd85b8bdf34b95f61db2a11a"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListProjectUsersItem.kt",
-      "sha256": "125548c9e75b2a49ab9f551ba01822b70ca49737ec9298b61e582c3a6ccd50da"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListResponseInputItemsItem.kt",
-      "sha256": "afe0d505bca24bb9db904794633fde87b6a4338f078b32e700962e8cf99f31a1"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListRunsItem.kt",
-      "sha256": "920bb1ac57b9d79e8b4cdf2a70bea81fa1ea50707afef9b31e059d1b4559556d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListRunStepsItem.kt",
-      "sha256": "c592d96154e7b0ab850c7dbdaf9b1369a03925cf23e510a050d9bd8eb7e1a10e"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListSkillsItem.kt",
-      "sha256": "952980341190f12d082e99ea261f755f6e6542cd89cebb0b564bdd6c36778865"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListSkillVersionsItem.kt",
-      "sha256": "6170dc2d13c5bdd719d801db0407f09fe0442ef94ad778107b3012a6eed87ea7"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListVectorStoreFileBatchFilesItem.kt",
-      "sha256": "1ca70ba09c83be6723089c0d75c6f0738c4890290e8edfa1c5b3ba7653d2c6ad"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListVectorStoreFilesItem.kt",
-      "sha256": "e35cbc17cfffc3f5ac6b381ac38c4c24dc3836bd44b8a156b1b5c21957e5c489"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListVectorStoresItem.kt",
-      "sha256": "8c74fee07c7c5896a3562cdb6c96b69b6c60584ebdf61def100b28e19aaac8c9"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListVideosItem.kt",
-      "sha256": "4cf3dd24988978e97f05dd408d04d49d62b7203c37f0c5e2b856474d294edde5"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListVoiceConsentsItem.kt",
-      "sha256": "662cbbc4ff24031c00b1b9e057749b9a2183740e4cd167defbb3657ec5a2222a"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/ListVoicesItem.kt",
-      "sha256": "73a80e34f0f47dc05ae907a7325e8a7a957e6e7c9becc414ae47a229ae86927e"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/MidjourneyImageGenerationRequest.kt",
@@ -776,22 +537,6 @@
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiBatchRequestCounts.kt",
       "sha256": "fdd6c37648e9682da86ba5928ec6189319576f4fb96963574588aec59f5cd41f"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiCertificate.kt",
-      "sha256": "e21a157e3d82c58cc22d84a49c5c483404456d595b76b88aa1036e1593869a99"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiCertificateActivationRequest.kt",
-      "sha256": "477d2a43da1a45bc2d48a25cdd17210c20e903b69f481e3b290f00f0359a1c5c"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiCertificateList.kt",
-      "sha256": "cdc2ae33f6fb608f4d62cac4fc922878f74c42afc58966415ee305c647b76957"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiCertificateUploadMultipartRequest.kt",
-      "sha256": "b14157f5541208004b5162061a41c662bb9695954ddc969068847528edb5d1f6"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiChatAudioConfig.kt",
@@ -942,46 +687,6 @@
       "sha256": "22b9bbec5b31428076ee6b71ff1c94c7b764556368ec9521e7d95bcf77757cb8"
     },
     {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEval.kt",
-      "sha256": "82e7fbe053398439274cc669f164f2c12725a3ce59028801b4cd5549dae5eaff"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalCreateRequest.kt",
-      "sha256": "95a7c17684a82700c7b5d4085386ad62c1afa55e8bf9bba1606d3aa89abced82"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalList.kt",
-      "sha256": "05b3dc24234afbef106e2635755f31762e07a29e3a19a4a79824e47803722186"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalRun.kt",
-      "sha256": "235af33437e9ede32572c1c88b2d5358c075c9202ae43e7dd5d2f457a9cd9cd6"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalRunCreateRequest.kt",
-      "sha256": "7a6394a15bf6425945ea06e3b0ad4678a4a24138a523b76b0d1f028c0a287c09"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalRunList.kt",
-      "sha256": "28bb022e90fb2c88d02767da2faab1879c39452f3f84e0b8fa4ac56a4bce40bd"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalRunOutputItem.kt",
-      "sha256": "279e42ace74dd07bf4b553d41f71d0c2e0363f920e8863bba8ffd48d30131d26"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalRunOutputItemList.kt",
-      "sha256": "c0645b7cd0cccfaa9b3ca023497f5fa30c251771536bafdc4d9a380c2685f79c"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalRunResultCounts.kt",
-      "sha256": "63152c6811c828edbd457ac595d4bda436567abbda45229ea6bb36dafcfd29b1"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiEvalUpdateRequest.kt",
-      "sha256": "6bf9f64894137e9051ad70bc39e30e86387931e8c922b4fb9fc5194858f350ef"
-    },
-    {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFile.kt",
       "sha256": "6593668459bb217cab1576326691e28561f8cc83e9bc3161a994b90b3efd2624"
     },
@@ -1000,62 +705,6 @@
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFileUploadRequest.kt",
       "sha256": "1dce392bfbc91cd175ac2bc52012f11c56a60324cb2123040eed8708e3b3c7ce"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningCheckpointPermission.kt",
-      "sha256": "17ae09380a0f1093c7dca0bda432a71622d2bdbb3b2260eb6098db8b88452b14"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningCheckpointPermissionCreateRequest.kt",
-      "sha256": "0b62511a1774b4b358ce0180e28c0d660c32c4549c3ed8ead3a05373d059138b"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningCheckpointPermissionList.kt",
-      "sha256": "f2bb9d8794facb8f1677ce4d16e96b59ad371fb38d2d4b2d6de558a45094c17c"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningGraderRunRequest.kt",
-      "sha256": "9e259a39f74b992e467575b9f4e13ed993b7c5705324d572b3cfb8f573c8fb9d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningGraderRunResult.kt",
-      "sha256": "466ee62c9bb73f2352e29471518a01b7c1cca0eb696adbbcbe4f6a2bea084de4"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningGraderValidateRequest.kt",
-      "sha256": "be99d54fe9e93fc3f528223704cf657ed9e4196a65d63f3835c8c74e16a576fe"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningGraderValidationResult.kt",
-      "sha256": "f896d361f7586126986c83ae61fd88a26c5ed4fc0ebd5b8098379f145188eefb"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningJob.kt",
-      "sha256": "a8e0458408a48411d9caead4299904b83bf938f0c14caef69d5f4b0b49c16ba1"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningJobCheckpoint.kt",
-      "sha256": "204907d318bb3f436e55ca494241d7934b32526f1a49a4bc2f9e228c2b8ce12a"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningJobCheckpointList.kt",
-      "sha256": "576093b3e29ab0e6470b290fb94a433dfe9952ead8a9ae562ffa90c8c7e096fa"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningJobCreateRequest.kt",
-      "sha256": "b74758af2af382e7fb7e2c9ee4e15fadb4e8b1b6dc0c44fe2a3f8c6df83b3a6a"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningJobEvent.kt",
-      "sha256": "b73060f6d68f1cdb2a62770159b9bec33f6d9accc22b53025b325571ecfb8f6c"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningJobEventList.kt",
-      "sha256": "64e847ca965dd017871aec7aa5b56397ac84f73b07510dc030f329be85a7acad"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFineTuningJobList.kt",
-      "sha256": "3cf1fb87e7d50da49dcba67d9edce1271dadf6a9bcebbbb8cfded2b5930af041"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiFunctionCall.kt",
@@ -1083,7 +732,7 @@
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiImageGenerationRequest.kt",
-      "sha256": "b910d7dda08d0476f70118ce48f8415aba6c2dd1024542f5afda9abaa7fa55ec"
+      "sha256": "30f4e0c4a7012ab99b1fb102b1ffc099d68bea0049cff6b64fcea06dfe12e4d1"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiImageList.kt",
@@ -1154,156 +803,8 @@
       "sha256": "af52bb83ecb1e0594bc3933eb8cafc37f999df609e389dfbbb7e766d61bce5ff"
     },
     {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationAdminApiKey.kt",
-      "sha256": "983626637fef1872473386d5e57374e5d4a4e2e7bba99223c5daf2dbf95902aa"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationAdminApiKeyCreateRequest.kt",
-      "sha256": "f2962aa3b276aad355b9ac2987d45aa5dc38d0b0b11a61ad3c2962e06f221ea2"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationAdminApiKeyList.kt",
-      "sha256": "9500ade0c939f244ea0d41fc96af340aba499fd934659d18830d004f8dc132fb"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationAuditLog.kt",
-      "sha256": "97dc7745c0a603b3657098e2185dd1506859044348c8a5fda34aa5e1dea35b5a"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationAuditLogList.kt",
-      "sha256": "2f1ebff59cd90eb80470e2820ab1d72d93c797a07b696c7f755b66d099dcf925"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationCostBucket.kt",
-      "sha256": "7d9532732d0cb35055805b0d3e2fe73e78f00c6dbcd962700023286c81afacab"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationCostList.kt",
-      "sha256": "b5d1ea7ad12f1f8e2f26e468accdfef1a5d53a64afe503848d9f1ab051919463"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationGroup.kt",
-      "sha256": "f347dd7dda57cb958c649186b5d671487f0471c7101bbdef88d0bf51a4de2f98"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationGroupCreateRequest.kt",
-      "sha256": "5d989fb8a1e34b11c0cfa0b476503edc892f69c095df4af86ab1aaf2c5db3534"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationGroupList.kt",
-      "sha256": "d6d2591c86d94b0270c6cebd10142b6cd04206039120d5b97bea252693521b49"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationGroupUpdateRequest.kt",
-      "sha256": "99dcfda97546b96641e3e161f8ba6df544b3389cbf45c5a8e7665e6b749b337d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationGroupUserCreateRequest.kt",
-      "sha256": "7bf844caf1669da5da4340f4e7910fb27e0159cf984c1e7076d5d94e3a22f14e"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationInvite.kt",
-      "sha256": "6e4acecc709c2d7636e95ff95327b8d1326414a20a91a8b425ba992fb28479d6"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationInviteCreateRequest.kt",
-      "sha256": "5a4b17c960d5ef19cd4ea0a6c93f4d1e94d7a95689973075214173c26bf87198"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationInviteList.kt",
-      "sha256": "c909339ab7fee29ac0b2948889ac225b0f48d400790286f85559906a27528590"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationUsageBucket.kt",
-      "sha256": "2d0eee8ae6595a5e13bacde260fc920f3803bb3caf7ad7e8c5b8110aecfb32f5"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationUsageList.kt",
-      "sha256": "2457e4e1ad9645ac7d757e3959e57433483ada2a5f15ab6f318f6062ce4edce3"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationUser.kt",
-      "sha256": "447fed8bda8adff16a77f50f10d881d21f72d6f778b068be7632ae0aaf02e17e"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationUserList.kt",
-      "sha256": "448dbf725fe202a35d54d87027404c0b1f873756f030b2f89a9553a00523a452"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiOrganizationUserUpdateRequest.kt",
-      "sha256": "3682d793c4bca921fb2eaae5a3d1fc7754327e5b177ee951553b31db42d0f791"
-    },
-    {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiPredictionConfig.kt",
       "sha256": "882bff1968c0390b6bd59bf680be7051a660b0a6cb94f47217967943f86e3a34"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProject.kt",
-      "sha256": "cde1bfc045a4f6bcdcc7d8a54306838e79fe7890abf1bbc2ea4617e6005683ed"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectApiKey.kt",
-      "sha256": "392cf98c73631398193fc17f98c87348bcd6d6a4d430e0c897a0ee9ba8e879c6"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectApiKeyList.kt",
-      "sha256": "579d3b79082d38c1c4b1eef37db0178a0e353917506e7ed48c79d0628b3a335e"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectCreateRequest.kt",
-      "sha256": "b50582ba2ec9665c1e191c8b8e0044eb81b1a106f961413797c75084c1e63cd9"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectGroupCreateRequest.kt",
-      "sha256": "9847c42fdae823a76a96b8f680964f0f839f5894e525f6ab25474743802cc731"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectList.kt",
-      "sha256": "8eb618a9ff1d85cb12fdcddd652ccbd0b08450cf8ab8f4b380c347cba9973437"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectRateLimit.kt",
-      "sha256": "826479ded4d855b6c3524efc8d42a5f5c923a3f0db86d6303add8f269006c998"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectRateLimitList.kt",
-      "sha256": "bcddc4cecf7e38946358f0528bb81d5d755ed00263f191adab10cc082742e5e8"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectRateLimitUpdateRequest.kt",
-      "sha256": "fcfafa37d7952928b33802de9e40acee4240a56708082316fca6691bf2d3eac6"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectServiceAccount.kt",
-      "sha256": "1b0fbe72e4a991a4054df0500ee422f9c5a2218d610df2961b6fa817760780b3"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectServiceAccountCreateRequest.kt",
-      "sha256": "2af10c1fc57e2132f3bc0353f40f06162fb46f7563ac990299ec009b37bc0c01"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectServiceAccountList.kt",
-      "sha256": "320294492e9270b6b762f025fd14dee8b94a8713b1b90d598f9a7b54ce9979f9"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectUpdateRequest.kt",
-      "sha256": "85a57fec45e4c1290493c9c6ea1babbacfe43a0f4739d1fed7748c6417f56f33"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectUser.kt",
-      "sha256": "322f054399c93aab6ce02f5cb65c84d38d2a795e2f5083017a656f612bc01a2e"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectUserCreateRequest.kt",
-      "sha256": "735701c1be386a9af2deccb02eddb2bcb6d77b0842fa43e58c459c8b9efbfae5"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectUserList.kt",
-      "sha256": "c6ed8a779e616173ffdb7ae45fb445580171a6bbfa3fc4c9cc25e38419a55aa1"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiProjectUserUpdateRequest.kt",
-      "sha256": "057737fbd8b2688c1c264bf14cbe1c3331aaf2c5e254afe3812559adcf7e2629"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiPromptReference.kt",
@@ -1434,34 +935,6 @@
       "sha256": "42b8ab02a4d33fe11bc52ca7d4f4c3898c367e36530d0d5eb1532a28e2063771"
     },
     {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRole.kt",
-      "sha256": "8ffd556333edd936d0a4d95e9b44888a9dc65ea31b5c575339e34b9acf1a7b0a"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRoleAssignment.kt",
-      "sha256": "fd5bed62e625a9b581f34108d55bf5907e670d1766032448756010faba50c4d2"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRoleAssignmentCreateRequest.kt",
-      "sha256": "2ed2af50e8cebb472f366e44dd6c540c0840d87a938c6c8faa4224fc817121ef"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRoleAssignmentList.kt",
-      "sha256": "86b28956c91ce0fc26092239b06d6aeefd35f6f41c8a1618e5ec893e00363b21"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRoleCreateRequest.kt",
-      "sha256": "f2b837d7f12787f48f93bfdaa6e808e9a68d2682830b6143e0837e342afd6449"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRoleList.kt",
-      "sha256": "89218f6272dbc9edc33e513dcbae9f4e0b9979d8f31be61a3b6d9dd448a02d11"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRoleUpdateRequest.kt",
-      "sha256": "6384d73d5cabc15a06022a3669425afaf2a12a2b4a350b39b9f0dcc6746e1bf5"
-    },
-    {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRun.kt",
       "sha256": "fd4ffee6c01d41b4b4f8785c899476b89cf7a078f2e9e49fc0a3d450ce920e81"
     },
@@ -1488,34 +961,6 @@
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiRunUpdateRequest.kt",
       "sha256": "03024521891b09ad8af4dd1ca164c917745d23773949080c912a63a6d24c438d"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiSkill.kt",
-      "sha256": "b8520d4a1d60a3769d2fdc76a7f7a9af810e2aea7e5724dfdc490ffc02da7ca0"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiSkillCreateMultipartRequest.kt",
-      "sha256": "024c63c7a30dc4a257d9ca1d517e202c12b55736903e0379cf9db849dddc51ff"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiSkillList.kt",
-      "sha256": "00c931becc736e6607b0059e6f4110ff4680a13982c20277a21b6746d780eae0"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiSkillUpdateRequest.kt",
-      "sha256": "43f37c236d8676c90fe6f0c919b14ac8fa89ee265fe3c4b25f3544b5b90e2954"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiSkillVersion.kt",
-      "sha256": "b247f73950bacd3c677573dc0974623f16654db4ffb01c5d5113b69dac32e839"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiSkillVersionCreateMultipartRequest.kt",
-      "sha256": "82fa013eb9e161c684ec790d058f936055649533797f0ea2524cc6eec602e656"
-    },
-    {
-      "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiSkillVersionList.kt",
-      "sha256": "6a1fea302285ef28ac94fd21e0b710350ab911d95ef249d4e75d4914d0d0450a"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/OpenAiSpeechCreateRequest.kt",
@@ -1751,7 +1196,7 @@
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/SdkworkAiClient.kt",
-      "sha256": "da0e017d387798331b426a109ea7dc04afc9cb1fe90e99411d8c819d341b0cd6"
+      "sha256": "dc49563261c9b0569ed2d14a3773ceb0e0472217f7a57d4f92acba9fbdc1763d"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/clawrouter/open/SunoMusicGenerationRequest.kt",

@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiModerationCreateRequest
     {
-        public string? Input { get; set; }
-        public string? Model { get; set; }
+        public string Input { get; set; }
+        public string Model { get; set; }
     }
 }

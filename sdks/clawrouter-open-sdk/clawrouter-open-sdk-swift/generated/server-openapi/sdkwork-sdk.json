@@ -5,6 +5,8 @@
   "language": "swift",
   "sdkType": "ai",
   "packageName": "ClawRouterOpenSdk",
+  "transportPackageName": "ClawRouterOpenSdk",
+  "consumerPackageName": "ClawRouterOpenSdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

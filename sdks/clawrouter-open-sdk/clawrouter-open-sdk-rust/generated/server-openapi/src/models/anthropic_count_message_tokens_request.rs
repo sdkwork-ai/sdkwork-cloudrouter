@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{
-    AnthropicMessageParam, AnthropicThinkingConfig, AnthropicTool, AnthropicToolChoice,
-};
+use crate::models::{AnthropicMessageParam, AnthropicThinkingConfig, AnthropicTool, AnthropicToolChoice};
 
 /// Anthropic Claude anthropic count message tokens request schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

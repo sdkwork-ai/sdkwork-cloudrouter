@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{
-    ProviderGeneratedMedia, ProviderTaskError, ProviderTaskResult, VolcengineContentPart,
-};
+use crate::models::{ProviderGeneratedMedia, ProviderTaskError, ProviderTaskResult, VolcengineContentPart};
 
 /// Volcengine Ark volcengine content generation task schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -119,7 +119,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
     def test_rejects_windows_reparse_point_when_isjunction_is_unavailable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            candidate = root / "configs/topology"
+            candidate = root / "etc/topology"
             candidate.mkdir(parents=True)
             guardian = SdkworkStandardAlignmentGuardian(root)
             real_lstat = Path.lstat
@@ -139,15 +139,15 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
     def test_rejects_non_posix_repository_relative_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "configs/topology").mkdir(parents=True)
+            (root / "etc/topology").mkdir(parents=True)
             guardian = SdkworkStandardAlignmentGuardian(root)
 
             for relative in (
                 "configs\\topology",
                 "configs/./topology",
                 "configs//topology",
-                "configs/topology/",
-                "C:configs/topology",
+                "etc/topology/",
+                "C:etc/topology",
             ):
                 with self.subTest(relative=relative):
                     self.assertIsNone(guardian._resolve_repository_path(relative))
@@ -996,12 +996,12 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                     "kind": "sdkwork.app.topology",
                     "defaults": {"productionProfileId": "cloud.production"},
                     "profileFiles": {
-                        "standalone.production": "configs/topology/standalone.production.env",
-                        "cloud.production": "configs/topology/cloud.production.env",
+                        "standalone.production": "etc/topology/standalone.production.env",
+                        "cloud.production": "etc/topology/cloud.production.env",
                     },
                 },
             )
-            profile = root / "configs/topology/standalone.production.env"
+            profile = root / "etc/topology/standalone.production.env"
             profile.parent.mkdir(parents=True, exist_ok=True)
             profile.write_text(
                 "SDKWORK_CLAW_ROUTER_PROFILE_ID=standalone.production\n",
@@ -1026,12 +1026,12 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                     "schemaVersion": 4,
                     "kind": "sdkwork.app.topology",
                     "profileFiles": {
-                        "standalone.production": "configs/topology/standalone.production.env"
+                        "standalone.production": "etc/topology/standalone.production.env"
                     },
                 },
             )
             legacy_profile = (
-                root / "configs/topology/standalone.unified-process.production.env"
+                root / "etc/topology/standalone.unified-process.production.env"
             )
             legacy_profile.parent.mkdir(parents=True, exist_ok=True)
             legacy_profile.write_text(
@@ -1044,12 +1044,12 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             )
 
             self.assertEqual("fail", deployment_check.status)
-            self.assertIn("configs/topology/standalone.production.env", deployment_check.remediation)
+            self.assertIn("etc/topology/standalone.production.env", deployment_check.remediation)
 
     def test_rejects_declared_three_segment_legacy_profile(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            legacy_relative = "configs/topology/standalone.unified-process.production.env"
+            legacy_relative = "etc/topology/standalone.unified-process.production.env"
             self.write_json(
                 root,
                 "specs/topology.spec.json",
@@ -1085,7 +1085,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                     "schemaVersion": 4,
                     "kind": "sdkwork.app.topology",
                     "profileFiles": {
-                        "standalone.production": "configs/topology/standalone.production.env"
+                        "standalone.production": "etc/topology/standalone.production.env"
                     },
                 },
             )
@@ -1099,7 +1099,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             )
 
             self.assertEqual("fail", deployment_check.status)
-            self.assertIn("configs/topology/standalone.production.env", deployment_check.remediation)
+            self.assertIn("etc/topology/standalone.production.env", deployment_check.remediation)
 
     def test_topology_rejects_non_object_json_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1126,7 +1126,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                     "schemaVersion": 4,
                     "kind": "sdkwork.app.topology",
                     "profileFiles": {
-                        "standalone.production": "configs/topology/standalone.production.env"
+                        "standalone.production": "etc/topology/standalone.production.env"
                     },
                 },
             )
@@ -1137,7 +1137,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             )
             (root / "configs").mkdir(parents=True, exist_ok=True)
             try:
-                (root / "configs/topology").symlink_to(external_root, target_is_directory=True)
+                (root / "etc/topology").symlink_to(external_root, target_is_directory=True)
             except OSError as error:
                 self.skipTest(f"directory symlink unavailable: {error}")
 

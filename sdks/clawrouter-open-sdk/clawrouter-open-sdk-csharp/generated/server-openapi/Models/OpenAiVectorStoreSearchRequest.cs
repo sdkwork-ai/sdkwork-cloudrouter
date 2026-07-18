@@ -8,7 +8,7 @@ namespace Sdkwork.ClawRouter.Open.Models
     {
         public string? Filters { get; set; }
         public int? MaxNumResults { get; set; }
-        public string? Query { get; set; }
+        public string Query { get; set; }
         public string? RankingOptions { get; set; }
         public bool? RewriteQuery { get; set; }
     }

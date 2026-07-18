@@ -437,35 +437,36 @@ const conversationGatewaySpec = {
   },
 };
 
-const fineTuningGatewaySpec = {
+const vectorStoreFileBatchGatewaySpec = {
   components: {
     schemas: {
-      OpenAiFineTuningJobEventList: {
+      OpenAiVectorStoreFileList: {
         type: "object",
         properties: {
           data: {
             type: "array",
-            items: { $ref: "#/components/schemas/OpenAiFineTuningJobEvent" },
+            items: { $ref: "#/components/schemas/OpenAiVectorStoreFile" },
           },
         },
       },
-      OpenAiFineTuningJobEvent: {
+      OpenAiVectorStoreFile: {
         type: "object",
         properties: {
-          id: { type: "string", description: "Event identifier." },
+          id: { type: "string", description: "Vector store file identifier." },
         },
       },
     },
   },
   paths: {
-    "/v1/fine_tuning/jobs/{fine_tuning_job_id}/events": {
+    "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files": {
       get: {
-        operationId: "listFineTuningEvents",
-        summary: "List fine tuning events",
-        description: "Lists fine tuning events.",
-        tags: ["Fine Tuning"],
+        operationId: "listVectorStoreFileBatchFiles",
+        summary: "List vector store file batch files",
+        description: "Lists files in a vector store file batch.",
+        tags: ["Vector Stores"],
         parameters: [
-          { name: "fine_tuning_job_id", in: "path", required: true, description: "Fine tuning job identifier.", schema: { type: "string" } },
+          { name: "vector_store_id", in: "path", required: true, description: "Vector store identifier.", schema: { type: "string" } },
+          { name: "batch_id", in: "path", required: true, description: "File batch identifier.", schema: { type: "string" } },
           { name: "limit", in: "query", required: false, description: "Maximum number of objects to return.", schema: { type: "integer" } },
         ],
         responses: {
@@ -473,7 +474,7 @@ const fineTuningGatewaySpec = {
             description: "ok",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/OpenAiFineTuningJobEventList" },
+                schema: { $ref: "#/components/schemas/OpenAiVectorStoreFileList" },
               },
             },
           },
@@ -2364,12 +2365,12 @@ test("sdk reference endpoint documentation derives gateway root from configured 
   const systems = await buildSdkReferenceSystems(manifest, async (url) => {
     if (url === "/openapi.json") return {
       paths: {
-        "/v1/evals": {
+        "/v1/files": {
           get: {
-            operationId: "listEvals",
-            summary: "List evals",
-            description: "Lists evals.",
-            tags: ["Evaluations"],
+            operationId: "listFiles",
+            summary: "List files",
+            description: "Lists uploaded files.",
+            tags: ["Files"],
             responses: { "200": { description: "ok" } },
           },
         },
@@ -2380,7 +2381,7 @@ test("sdk reference endpoint documentation derives gateway root from configured 
 
   const endpoint = systems[0].categories
     .flatMap((category) => category.endpoints)
-    .find((item) => item.path === "/v1/evals" && item.method === "GET");
+    .find((item) => item.path === "/v1/files" && item.method === "GET");
 
   assert.ok(endpoint);
 
@@ -2391,8 +2392,8 @@ test("sdk reference endpoint documentation derives gateway root from configured 
   }, "typescript");
 
   assert.equal(docs.signature, "async list(): Promise<void>");
-  assert.equal(docs.exampleUsage.includes("client.eval.list()"), true);
-  assert.equal(docs.exampleUsage.includes("client.evaluations.list()"), false);
+  assert.equal(docs.exampleUsage.includes("client.file.list()"), true);
+  assert.equal(docs.exampleUsage.includes("client.files.list()"), false);
 });
 
 test("sdk reference endpoint documentation uses terminal collection action methods", async () => {
@@ -2404,13 +2405,13 @@ test("sdk reference endpoint documentation uses terminal collection action metho
   };
 
   const systems = await buildSdkReferenceSystems(manifest, async (url) => {
-    if (url === "/openapi.json") return fineTuningGatewaySpec;
+    if (url === "/openapi.json") return vectorStoreFileBatchGatewaySpec;
     throw new Error(`unexpected sdk reference url ${url}`);
   });
 
   const endpoint = systems[0].categories
     .flatMap((category) => category.endpoints)
-    .find((item) => item.path === "/v1/fine_tuning/jobs/{fine_tuning_job_id}/events" && item.method === "GET");
+    .find((item) => item.path === "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files" && item.method === "GET");
 
   assert.ok(endpoint);
 
@@ -2422,10 +2423,10 @@ test("sdk reference endpoint documentation uses terminal collection action metho
 
   assert.equal(
     docs.signature,
-    "async listEvents(fineTuningJobId: string, params?: FineTuningJobsListEventsParams): Promise<OpenAiFineTuningJobEventList>",
+    "async listFiles(vectorStoreId: string, batchId: string, params?: VectorStoresFileBatchesListFilesParams): Promise<OpenAiVectorStoreFileList>",
   );
-  assert.equal(docs.exampleUsage.includes('client.fineTuning.jobs.listEvents("fine_tuning_job_id", {'), true);
-  assert.equal(docs.exampleUsage.includes("client.fineTuning.jobs.events.list"), false);
+  assert.equal(docs.exampleUsage.includes('client.vectorStores.fileBatches.listFiles("vector_store_id", "batch_id", {'), true);
+  assert.equal(docs.exampleUsage.includes("client.vectorStores.fileBatches.files.list"), false);
 });
 
 test("sdk reference endpoint examples use provider native base URLs when endpoints are vendor-prefixed", async () => {

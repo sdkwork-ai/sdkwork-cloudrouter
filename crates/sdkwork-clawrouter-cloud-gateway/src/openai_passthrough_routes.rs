@@ -1,7 +1,196 @@
 #![allow(dead_code)]
 
+use axum::extract::{MatchedPath, Request};
+use axum::http::header::ALLOW;
+use axum::http::{HeaderValue, Method, StatusCode};
+use axum::response::{IntoResponse, Response};
 use axum::routing::MethodRouter;
 use axum::Router;
+use serde::de::IgnoredAny;
+use serde::Deserialize;
+use std::collections::HashMap;
+use std::sync::OnceLock;
+
+const METHOD_GET: u8 = 1 << 0;
+const METHOD_POST: u8 = 1 << 1;
+const METHOD_PUT: u8 = 1 << 2;
+const METHOD_PATCH: u8 = 1 << 3;
+const METHOD_DELETE: u8 = 1 << 4;
+
+static OPENAI_ROUTE_METHODS: OnceLock<HashMap<String, u8>> = OnceLock::new();
+static PROVIDER_ROUTE_METHODS: OnceLock<Vec<ProviderRouteContract>> = OnceLock::new();
+
+struct ProviderRouteContract {
+    provider: String,
+    path: String,
+    methods: u8,
+}
+
+#[derive(Deserialize)]
+struct OpenApiDocument {
+    paths: HashMap<String, OpenApiPathItem>,
+}
+
+#[derive(Deserialize)]
+struct OpenApiPathItem {
+    get: Option<IgnoredAny>,
+    post: Option<IgnoredAny>,
+    put: Option<IgnoredAny>,
+    patch: Option<IgnoredAny>,
+    delete: Option<IgnoredAny>,
+}
+
+pub(crate) fn reject_unsupported_openai_method(request: &Request) -> Option<Response> {
+    let matched_path = request.extensions().get::<MatchedPath>()?.as_str();
+    let allowed = openai_route_methods()
+        .get(matched_path)
+        .copied()
+        .unwrap_or(0);
+    if allowed & method_mask(request.method()) != 0 {
+        return None;
+    }
+
+    let mut response = StatusCode::METHOD_NOT_ALLOWED.into_response();
+    if let Ok(value) = HeaderValue::from_str(&allow_header(allowed)) {
+        response.headers_mut().insert(ALLOW, value);
+    }
+    Some(response)
+}
+
+pub(crate) fn reject_unsupported_provider_route(request: &Request) -> Option<Response> {
+    let (provider, provider_path) = split_provider_route(request.uri().path())?;
+    let contract = provider_route_methods().iter().find(|contract| {
+        (provider == contract.provider && path_template_matches(&contract.path, provider_path))
+            || provider_path
+                .strip_prefix(&contract.provider)
+                .and_then(|path| path.strip_prefix('/'))
+                .is_some_and(|path| path_template_matches(&contract.path, path))
+    });
+    let Some(contract) = contract else {
+        return Some(StatusCode::NOT_FOUND.into_response());
+    };
+    if contract.methods & method_mask(request.method()) != 0 {
+        return None;
+    }
+
+    let mut response = StatusCode::METHOD_NOT_ALLOWED.into_response();
+    if let Ok(value) = HeaderValue::from_str(&allow_header(contract.methods)) {
+        response.headers_mut().insert(ALLOW, value);
+    }
+    Some(response)
+}
+
+fn openai_route_methods() -> &'static HashMap<String, u8> {
+    OPENAI_ROUTE_METHODS.get_or_init(|| {
+        let document: OpenApiDocument = serde_json::from_str(include_str!(
+            "../../../apps/sdkwork-clawrouter-pc/public/openapi.json"
+        ))
+        .expect("embedded Claw Router OpenAPI contract must be valid JSON");
+        document
+            .paths
+            .into_iter()
+            .filter(|(path, _)| path.starts_with("/v1/"))
+            .map(|(path, item)| {
+                let mut methods = 0;
+                methods |= item.get.is_some().then_some(METHOD_GET).unwrap_or(0);
+                methods |= item.post.is_some().then_some(METHOD_POST).unwrap_or(0);
+                methods |= item.put.is_some().then_some(METHOD_PUT).unwrap_or(0);
+                methods |= item.patch.is_some().then_some(METHOD_PATCH).unwrap_or(0);
+                methods |= item.delete.is_some().then_some(METHOD_DELETE).unwrap_or(0);
+                (path, methods)
+            })
+            .collect()
+    })
+}
+
+fn provider_route_methods() -> &'static [ProviderRouteContract] {
+    PROVIDER_ROUTE_METHODS.get_or_init(|| {
+        let document: OpenApiDocument = serde_json::from_str(include_str!(
+            "../../../apps/sdkwork-clawrouter-pc/public/openapi.json"
+        ))
+        .expect("embedded Claw Router OpenAPI contract must be valid JSON");
+        document
+            .paths
+            .into_iter()
+            .filter_map(|(path, item)| {
+                let path = path.strip_prefix('/')?;
+                let (provider, path) = path.split_once('/')?;
+                if provider == "v1" {
+                    return None;
+                }
+                Some(ProviderRouteContract {
+                    provider: provider.to_owned(),
+                    path: path.to_owned(),
+                    methods: path_item_method_mask(&item),
+                })
+            })
+            .collect()
+    })
+}
+
+fn path_item_method_mask(item: &OpenApiPathItem) -> u8 {
+    let mut methods = 0;
+    methods |= item.get.is_some().then_some(METHOD_GET).unwrap_or(0);
+    methods |= item.post.is_some().then_some(METHOD_POST).unwrap_or(0);
+    methods |= item.put.is_some().then_some(METHOD_PUT).unwrap_or(0);
+    methods |= item.patch.is_some().then_some(METHOD_PATCH).unwrap_or(0);
+    methods |= item.delete.is_some().then_some(METHOD_DELETE).unwrap_or(0);
+    methods
+}
+
+fn split_provider_route(path: &str) -> Option<(&str, &str)> {
+    let path = path
+        .strip_prefix("/provider/")
+        .or_else(|| path.strip_prefix('/'))?;
+    let (provider, provider_path) = path.split_once('/')?;
+    (!provider.is_empty() && !provider_path.is_empty()).then_some((provider, provider_path))
+}
+
+fn path_template_matches(template: &str, path: &str) -> bool {
+    let template_segments = template.split('/');
+    let path_segments = path.split('/');
+    template_segments
+        .zip(path_segments)
+        .all(|(template, path)| path_segment_template_matches(template, path))
+        && template.split('/').count() == path.split('/').count()
+}
+
+fn path_segment_template_matches(template: &str, path: &str) -> bool {
+    let Some(open) = template.find('{') else {
+        return template == path;
+    };
+    let Some(close) = template[open + 1..].find('}').map(|index| open + 1 + index) else {
+        return false;
+    };
+    let prefix = &template[..open];
+    let suffix = &template[close + 1..];
+    path.starts_with(prefix) && path.ends_with(suffix) && path.len() > prefix.len() + suffix.len()
+}
+
+fn method_mask(method: &Method) -> u8 {
+    match *method {
+        Method::GET => METHOD_GET,
+        Method::POST => METHOD_POST,
+        Method::PUT => METHOD_PUT,
+        Method::PATCH => METHOD_PATCH,
+        Method::DELETE => METHOD_DELETE,
+        _ => 0,
+    }
+}
+
+fn allow_header(methods: u8) -> String {
+    [
+        (METHOD_GET, "GET"),
+        (METHOD_POST, "POST"),
+        (METHOD_PUT, "PUT"),
+        (METHOD_PATCH, "PATCH"),
+        (METHOD_DELETE, "DELETE"),
+    ]
+    .into_iter()
+    .filter_map(|(mask, method)| (methods & mask != 0).then_some(method))
+    .collect::<Vec<_>>()
+    .join(", ")
+}
 
 pub(crate) fn apply_openai_passthrough_routes<S>(
     mut router: Router<S>,
@@ -96,17 +285,6 @@ const OPENAI_COMPATIBLE_PASSTHROUGH_PATHS: &[&str] = &[
     "/v1/batches",
     "/v1/batches/{batch_id}",
     "/v1/batches/{batch_id}/cancel",
-    "/v1/fine_tuning/jobs",
-    "/v1/fine_tuning/jobs/{fine_tuning_job_id}",
-    "/v1/fine_tuning/jobs/{fine_tuning_job_id}/cancel",
-    "/v1/fine_tuning/jobs/{fine_tuning_job_id}/pause",
-    "/v1/fine_tuning/jobs/{fine_tuning_job_id}/resume",
-    "/v1/fine_tuning/jobs/{fine_tuning_job_id}/events",
-    "/v1/fine_tuning/jobs/{fine_tuning_job_id}/checkpoints",
-    "/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions",
-    "/v1/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions/{permission_id}",
-    "/v1/fine_tuning/alpha/graders/run",
-    "/v1/fine_tuning/alpha/graders/validate",
     "/v1/conversations",
     "/v1/conversations/{conversation_id}",
     "/v1/conversations/{conversation_id}/items",
@@ -116,70 +294,6 @@ const OPENAI_COMPATIBLE_PASSTHROUGH_PATHS: &[&str] = &[
     "/v1/containers/{container_id}/files",
     "/v1/containers/{container_id}/files/{file_id}",
     "/v1/containers/{container_id}/files/{file_id}/content",
-    "/v1/evals",
-    "/v1/evals/{eval_id}",
-    "/v1/evals/{eval_id}/runs",
-    "/v1/evals/{eval_id}/runs/{run_id}",
-    "/v1/evals/{eval_id}/runs/{run_id}/output_items",
-    "/v1/evals/{eval_id}/runs/{run_id}/output_items/{output_item_id}",
-    "/v1/skills",
-    "/v1/skills/{skill_id}",
-    "/v1/skills/{skill_id}/content",
-    "/v1/skills/{skill_id}/versions",
-    "/v1/skills/{skill_id}/versions/{version}",
-    "/v1/skills/{skill_id}/versions/{version}/content",
-    "/v1/organization/costs",
-    "/v1/organization/usage/completions",
-    "/v1/organization/usage/embeddings",
-    "/v1/organization/usage/moderations",
-    "/v1/organization/usage/images",
-    "/v1/organization/usage/audio_speeches",
-    "/v1/organization/usage/audio_transcriptions",
-    "/v1/organization/usage/vector_stores",
-    "/v1/organization/usage/code_interpreter_sessions",
-    "/v1/organization/audit_logs",
-    "/v1/organization/admin_api_keys",
-    "/v1/organization/admin_api_keys/{key_id}",
-    "/v1/organization/invites",
-    "/v1/organization/invites/{invite_id}",
-    "/v1/organization/users",
-    "/v1/organization/users/{user_id}",
-    "/v1/organization/users/{user_id}/roles",
-    "/v1/organization/users/{user_id}/roles/{role_id}",
-    "/v1/organization/groups",
-    "/v1/organization/groups/{group_id}",
-    "/v1/organization/groups/{group_id}/users",
-    "/v1/organization/groups/{group_id}/users/{user_id}",
-    "/v1/organization/groups/{group_id}/roles",
-    "/v1/organization/groups/{group_id}/roles/{role_id}",
-    "/v1/organization/roles",
-    "/v1/organization/roles/{role_id}",
-    "/v1/organization/certificates",
-    "/v1/organization/certificates/{certificate_id}",
-    "/v1/organization/certificates/activate",
-    "/v1/organization/certificates/deactivate",
-    "/v1/organization/projects",
-    "/v1/organization/projects/{project_id}",
-    "/v1/organization/projects/{project_id}/archive",
-    "/v1/organization/projects/{project_id}/users",
-    "/v1/organization/projects/{project_id}/users/{user_id}",
-    "/v1/organization/projects/{project_id}/service_accounts",
-    "/v1/organization/projects/{project_id}/service_accounts/{service_account_id}",
-    "/v1/organization/projects/{project_id}/api_keys",
-    "/v1/organization/projects/{project_id}/api_keys/{key_id}",
-    "/v1/organization/projects/{project_id}/rate_limits",
-    "/v1/organization/projects/{project_id}/rate_limits/{rate_limit_id}",
-    "/v1/organization/projects/{project_id}/groups",
-    "/v1/organization/projects/{project_id}/groups/{group_id}",
-    "/v1/organization/projects/{project_id}/certificates",
-    "/v1/organization/projects/{project_id}/certificates/activate",
-    "/v1/organization/projects/{project_id}/certificates/deactivate",
-    "/v1/projects/{project_id}/roles",
-    "/v1/projects/{project_id}/roles/{role_id}",
-    "/v1/projects/{project_id}/users/{user_id}/roles",
-    "/v1/projects/{project_id}/users/{user_id}/roles/{role_id}",
-    "/v1/projects/{project_id}/groups/{group_id}/roles",
-    "/v1/projects/{project_id}/groups/{group_id}/roles/{role_id}",
     "/v1/uploads",
     "/v1/uploads/{upload_id}/parts",
     "/v1/uploads/{upload_id}/complete",
@@ -207,10 +321,62 @@ pub fn stored_chat_completion_passthrough_paths() -> &'static [&'static str] {
     STORED_CHAT_COMPLETION_PASSTHROUGH_PATHS
 }
 
-const OPENAI_METHOD_PASSTHROUGH_PATHS: &[&str] = &["/v1/models/{model}"];
+const OPENAI_METHOD_PASSTHROUGH_PATHS: &[&str] = &[];
 
 const STORED_CHAT_COMPLETION_PASSTHROUGH_PATHS: &[&str] = &[
     "/v1/chat/completions",
     "/v1/chat/completions/{completion_id}",
     "/v1/chat/completions/{completion_id}/messages",
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+
+    fn request(method: Method, uri: &str) -> Request {
+        Request::builder()
+            .method(method)
+            .uri(uri)
+            .body(Body::empty())
+            .expect("provider-native test request must be valid")
+    }
+
+    #[test]
+    fn provider_contract_accepts_declared_direct_and_aliased_routes() {
+        assert!(reject_unsupported_provider_route(&request(
+            Method::POST,
+            "/provider/google/v1beta/models/gemini-2.5-flash:generateContent",
+        ))
+        .is_none());
+        assert!(reject_unsupported_provider_route(&request(
+            Method::POST,
+            "/tencent-cloud/vidu/ent/v2/start-end2video",
+        ))
+        .is_none());
+    }
+
+    #[test]
+    fn provider_contract_rejects_unknown_paths_before_forwarding() {
+        let response = reject_unsupported_provider_route(&request(
+            Method::POST,
+            "/provider/google/v1beta/projects/project-1/locations/global",
+        ))
+        .expect("unknown provider-native route must be rejected");
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn provider_contract_rejects_undeclared_methods_with_allow_header() {
+        let response = reject_unsupported_provider_route(&request(
+            Method::DELETE,
+            "/provider/anthropic/v1/messages",
+        ))
+        .expect("undeclared provider-native method must be rejected");
+        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            response.headers().get(ALLOW),
+            Some(&HeaderValue::from_static("POST"))
+        );
+    }
+}

@@ -42,7 +42,6 @@ fn builtin_route_taxonomy_classifies_standard_ai_api_routes() {
         "openai.files",
         "openai.uploads",
         "openai.batches",
-        "openai.fine_tuning",
         "openai.realtime",
         "openai.videos",
         "openai.video",
@@ -51,11 +50,8 @@ fn builtin_route_taxonomy_classifies_standard_ai_api_routes() {
         "openai.assistants",
         "openai.threads",
         "openai.vector_stores",
-        "openai.evals",
         "openai.chatkit.sessions",
         "openai.containers",
-        "openai.skills",
-        "openai.administration",
         "openai_compatible.chat_completions",
         "openai_compatible.images.generations",
         "openai_compatible.audio.transcriptions",
@@ -107,18 +103,6 @@ fn builtin_route_taxonomy_classifies_standard_ai_api_routes() {
     );
     assert_eq!(AiRouteStrategy::CreateThenSticky, containers.route_strategy);
     assert_eq!(Some("container"), containers.sticky_object_type);
-
-    let administration = find_builtin_ai_route("openai.administration").unwrap();
-    assert_eq!("openai.administration", administration.api_code);
-    assert_eq!(RoutingCapability::Network, administration.capability);
-    assert_eq!(
-        AiRouteModelRequirement::Ignored,
-        administration.model_requirement
-    );
-    assert_eq!(
-        AiRouteStrategy::PrimaryChannel,
-        administration.route_strategy
-    );
 
     let kling = find_builtin_ai_route("kling.text_to_video").unwrap();
     assert_eq!("kling.text_to_video", kling.api_code);

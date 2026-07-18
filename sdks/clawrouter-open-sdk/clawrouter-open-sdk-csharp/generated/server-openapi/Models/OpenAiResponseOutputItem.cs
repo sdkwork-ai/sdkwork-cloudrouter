@@ -10,6 +10,6 @@ namespace Sdkwork.ClawRouter.Open.Models
         public string? Id { get; set; }
         public string? Role { get; set; }
         public string? Status { get; set; }
-        public string? Type { get; set; }
+        public string Type { get; set; }
     }
 }

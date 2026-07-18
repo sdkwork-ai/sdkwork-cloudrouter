@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiRunStep;
+use crate::models::{OpenAiRunStep};
 
 /// OpenAI-compatible paginated list of run steps.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

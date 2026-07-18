@@ -12,10 +12,10 @@ namespace Sdkwork.ClawRouter.Open.Models
         public Dictionary<string, double>? LogitBias { get; set; }
         public int? Logprobs { get; set; }
         public int? MaxTokens { get; set; }
-        public string? Model { get; set; }
+        public string Model { get; set; }
         public int? N { get; set; }
         public double? PresencePenalty { get; set; }
-        public string? Prompt { get; set; }
+        public string Prompt { get; set; }
         public int? Seed { get; set; }
         public string? Stop { get; set; }
         public bool? Stream { get; set; }

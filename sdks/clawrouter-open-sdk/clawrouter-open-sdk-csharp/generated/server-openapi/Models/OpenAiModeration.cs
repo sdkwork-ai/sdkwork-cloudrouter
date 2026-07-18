@@ -6,8 +6,8 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiModeration
     {
-        public string? Id { get; set; }
-        public string? Model { get; set; }
-        public List<OpenAiModerationResult>? Results { get; set; }
+        public string Id { get; set; }
+        public string Model { get; set; }
+        public List<OpenAiModerationResult> Results { get; set; }
     }
 }

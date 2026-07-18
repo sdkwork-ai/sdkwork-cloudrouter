@@ -9,7 +9,7 @@ namespace Sdkwork.ClawRouter.Open.Models
         public string? AspectRatio { get; set; }
         public string? CallbackUrl { get; set; }
         public string? Model { get; set; }
-        public string? Prompt { get; set; }
+        public string Prompt { get; set; }
         public int? Seed { get; set; }
         public string? Style { get; set; }
     }

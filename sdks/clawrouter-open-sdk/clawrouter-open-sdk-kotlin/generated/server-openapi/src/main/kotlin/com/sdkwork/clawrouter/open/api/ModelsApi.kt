@@ -14,12 +14,6 @@ class ModelsApi(private val client: HttpClient) {
         return client.convertValue(raw, object : TypeReference<OpenAiModelList>() {})
     }
 
-    /** Delete fine-tuned model */
-    suspend fun delete(model: String): DeleteResult? {
-        val raw = client.delete(ApiPaths.aiPath("/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}"))
-        return client.convertValue(raw, object : TypeReference<DeleteResult>() {})
-    }
-
     /** Retrieve model */
     suspend fun retrieve(model: String): OpenAiModel? {
         val raw = client.get(ApiPaths.aiPath("/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}"))

@@ -79,10 +79,6 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.openai.fine_tuning"
-        },
-        {
-          "itemType": "resource",
           "resourceCode": "api.openai.realtime"
         },
         {
@@ -119,23 +115,11 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.openai.evals"
-        },
-        {
-          "itemType": "resource",
           "resourceCode": "api.openai.chatkit.sessions"
         },
         {
           "itemType": "resource",
           "resourceCode": "api.openai.containers"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.skills"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.administration"
         }
       ]
     },
@@ -162,10 +146,6 @@
         {
           "itemType": "resource",
           "resourceCode": "api.openai.containers"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.skills"
         }
       ]
     },

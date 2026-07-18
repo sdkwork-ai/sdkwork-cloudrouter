@@ -193,17 +193,9 @@ fn validate_required_model(invocation: &Invocation) -> Result<(), InvocationErro
     Ok(())
 }
 
-fn model_from_json_value(value: &Value, path: &str) -> Result<Option<String>, InvocationError> {
+fn model_from_json_value(value: &Value, _path: &str) -> Result<Option<String>, InvocationError> {
     if let Some(model) = top_level_model_from_json_value(value)? {
         return Ok(Some(model));
-    }
-    for field in nested_model_search_fields(path) {
-        let Some(nested) = value.get(field) else {
-            continue;
-        };
-        if let Some(model) = find_nested_model(nested)? {
-            return Ok(Some(model));
-        }
     }
     Ok(None)
 }
@@ -224,47 +216,6 @@ fn top_level_model_from_json_value(value: &Value) -> Result<Option<String>, Invo
         }
     }
     Ok(None)
-}
-
-fn nested_model_search_fields(path: &str) -> &'static [&'static str] {
-    if path == "/v1/fine_tuning/alpha/graders/run"
-        || path == "/v1/fine_tuning/alpha/graders/validate"
-    {
-        return &["grader"];
-    }
-    if path == "/v1/evals" || path.starts_with("/v1/evals/") {
-        return &["data_source", "data_source_config", "testing_criteria"];
-    }
-    &[]
-}
-
-fn find_nested_model(value: &Value) -> Result<Option<String>, InvocationError> {
-    match value {
-        Value::Object(object) => {
-            if let Some(model) = object
-                .get("model")
-                .and_then(Value::as_str)
-                .and_then(non_empty_text)
-            {
-                return Ok(Some(model.to_owned()));
-            }
-            for (_key, value) in object.iter().filter(|(key, _)| key.as_str() != "metadata") {
-                if let Some(model) = find_nested_model(value)? {
-                    return Ok(Some(model));
-                }
-            }
-            Ok(None)
-        }
-        Value::Array(values) => {
-            for value in values {
-                if let Some(model) = find_nested_model(value)? {
-                    return Ok(Some(model));
-                }
-            }
-            Ok(None)
-        }
-        _ => Ok(None),
-    }
 }
 
 fn provider_native_catalog_key(invocation: &Invocation, model: &str) -> String {

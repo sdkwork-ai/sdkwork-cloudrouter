@@ -461,6 +461,7 @@ EMPTY_INTERFACE_PATTERN = re.compile(
 BUILD_SCRIPT = r'''#!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import ts from 'typescript';
 import { rollup } from 'rollup';
 
@@ -469,19 +470,61 @@ const srcDir = path.join(projectDir, 'src');
 const distDir = path.join(projectDir, 'dist');
 const tempDir = path.join(projectDir, '.sdkwork', 'build-runtime');
 const tempEsmDir = path.join(tempDir, 'esm');
+const domainTransportDir = path.join(projectDir, 'generated', 'domains', 'server-openapi');
+const domainsEntry = path.join(srcDir, 'domains', 'index.ts');
 
 async function main() {
   await removeDirectory(distDir);
   await removeDirectory(tempDir);
   await fs.mkdir(distDir, { recursive: true });
 
+  if (await pathExists(domainsEntry)) {
+    await stageDomainTransport();
+  }
   emitDeclarations();
   emitRuntimeModules();
   await removeTypeOnlyRuntimeReExports(path.join(tempEsmDir, 'index.js'));
-  await bundleRuntime('es', path.join(distDir, 'index.js'));
-  await bundleRuntime('cjs', path.join(distDir, 'index.cjs'));
+  await bundleRuntime(path.join(tempEsmDir, 'index.js'), 'es', path.join(distDir, 'index.js'));
+  await bundleRuntime(path.join(tempEsmDir, 'index.js'), 'cjs', path.join(distDir, 'index.cjs'));
+  if (await pathExists(domainsEntry)) {
+    await bundleRuntime(path.join(tempEsmDir, 'domains', 'index.js'), 'es', path.join(distDir, 'domains', 'index.js'));
+    await bundleRuntime(path.join(tempEsmDir, 'domains', 'index.js'), 'cjs', path.join(distDir, 'domains', 'index.cjs'));
+  }
 
   await removeDirectory(tempDir);
+}
+
+async function pathExists(target) {
+  try {
+    await fs.access(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function stageDomainTransport() {
+  const buildScript = path.join(domainTransportDir, 'custom', 'build-runtime.mjs');
+  if (!(await pathExists(buildScript))) {
+    throw new Error(`domain transport build script not found: ${buildScript}`);
+  }
+
+  const result = spawnSync(process.execPath, [buildScript], {
+    cwd: domainTransportDir,
+    stdio: 'inherit',
+  });
+  if (result.error) {
+    throw result.error;
+  }
+  if ((result.status ?? 1) !== 0) {
+    throw new Error(`domain transport build failed with status ${result.status ?? 1}`);
+  }
+
+  const generatedDist = path.join(domainTransportDir, 'dist');
+  if (!(await pathExists(path.join(generatedDist, 'index.d.ts')))) {
+    throw new Error(`domain transport build did not emit declarations: ${generatedDist}`);
+  }
+  await fs.cp(generatedDist, path.join(distDir, 'domains-generated'), { recursive: true });
 }
 
 async function removeDirectory(target) {
@@ -561,10 +604,10 @@ async function removeTypeOnlyRuntimeReExports(entryFile) {
   await fs.writeFile(entryFile, runtimeLines.join('\n'), 'utf-8');
 }
 
-async function bundleRuntime(format, file) {
+async function bundleRuntime(input, format, file) {
   const bundle = await rollup({
-    input: path.join(tempEsmDir, 'index.js'),
-    external: (source) => source.startsWith('@sdkwork/'),
+    input,
+    external: (source) => source.startsWith('@sdkwork/') || source.startsWith('#clawrouter-'),
     plugins: [relativeExtensionResolver()],
     onwarn(warning, warn) {
       if (warning.code === 'EMPTY_BUNDLE') {
@@ -650,12 +693,30 @@ class SdkRuntimeStandardizer:
             typescript_base = family / SDK_TYPESCRIPT_DIRECTORIES[sdk_family]
             generated_base = typescript_base / "generated" / "server-openapi"
             if generated_base.is_dir():
+                updated.extend(self._standardize_generated_http_clients(sdk_family, typescript_base))
                 updated.extend(self._sync_typescript_package_root_from_generated(sdk_family, typescript_base, generated_base))
             elif not typescript_base.is_dir():
                 raise FileNotFoundError(f"generated SDK directory is missing: {generated_base}")
             updated.extend(self._standardize_sdk_family(sdk_family, family, typescript_base))
             updated.extend(self._standardize_sdk(sdk_family, typescript_base))
         updated.extend(self.repair_domain_transport_package_manifests())
+        return updated
+
+    def _standardize_generated_http_clients(self, sdk_family: str, base: Path) -> list[Path]:
+        if sdk_family not in {"clawrouter-app-sdk", "clawrouter-backend-sdk"}:
+            return []
+
+        updated: list[Path] = []
+        generated_http_clients = {
+            base / "generated" / "server-openapi" / "src" / "http" / "client.ts",
+            *(base / "generated").glob("*/server-openapi/src/http/client.ts"),
+        }
+        for http_client_path in sorted(path for path in generated_http_clients if path.is_file()):
+            source = http_client_path.read_text(encoding="utf-8")
+            normalized = self._standardize_http_client_dual_token_headers(source)
+            if normalized != source:
+                http_client_path.write_text(normalized, encoding="utf-8", newline="\n")
+                updated.append(http_client_path)
         return updated
 
     def repair_domain_transport_package_manifests(self) -> list[Path]:
@@ -1575,6 +1636,9 @@ class SdkRuntimeStandardizer:
             "syncFamilyOpenApiSnapshots();\n"
             "for (const language of languages) {\n"
             "  runLanguage(language);\n"
+            "}\n"
+            "if (languages.includes('typescript')) {\n"
+            "  syncComposedTypeScriptFacade();\n"
             "}\n\n"
             "function parseLanguages(argv) {\n"
             "  const selected = [];\n"
@@ -1622,6 +1686,24 @@ class SdkRuntimeStandardizer:
             "    '--sdk-dir',\n"
             "    sdkFamily,\n"
             "    '--openapi-only',\n"
+            "  ], { cwd: workspaceRoot, stdio: 'inherit' });\n"
+            "  if (result.error) {\n"
+            "    throw result.error;\n"
+            "  }\n"
+            "  if ((result.status ?? 1) !== 0) {\n"
+            "    process.exit(result.status ?? 1);\n"
+            "  }\n"
+            "}\n\n"
+            "function syncComposedTypeScriptFacade() {\n"
+            "  const python = process.env.PYTHON_BIN || 'python';\n"
+            "  const result = spawnSync(python, [\n"
+            "    '-B',\n"
+            "    '-m',\n"
+            "    'tools.clawrouter_sdk_runtime_standardizer',\n"
+            "    '--root',\n"
+            "    workspaceRoot,\n"
+            "    '--sdk-dir',\n"
+            "    sdkFamily,\n"
             "  ], { cwd: workspaceRoot, stdio: 'inherit' });\n"
             "  if (result.error) {\n"
             "    throw result.error;\n"
@@ -1940,9 +2022,9 @@ class SdkRuntimeStandardizer:
         domains_entry = base / "src" / "domains" / "index.ts"
         if domains_entry.is_file():
             exports["./domains"] = {
-                "types": "./src/domains/index.ts",
-                "import": "./src/domains/index.ts",
-                "default": "./src/domains/index.ts",
+                "types": "./dist/domains/index.d.ts",
+                "import": "./dist/domains/index.js",
+                "require": "./dist/domains/index.cjs",
             }
         else:
             exports.pop("./domains", None)
@@ -2026,6 +2108,8 @@ class SdkRuntimeStandardizer:
         if http_client_path.is_file():
             source = http_client_path.read_text(encoding="utf-8")
             normalized = self._standardize_http_client_content_type(source)
+            if sdk_family in {"clawrouter-app-sdk", "clawrouter-backend-sdk"}:
+                normalized = self._standardize_http_client_dual_token_headers(normalized)
             if normalized != source:
                 http_client_path.write_text(normalized, encoding="utf-8", newline="\n")
                 updated.append(http_client_path)
@@ -2152,6 +2236,29 @@ class SdkRuntimeStandardizer:
             "return this.request<T>(path, { method: 'PATCH', body, params, headers: this.withContentType(headers, contentType) });",
         )
         return updated
+
+    def _standardize_http_client_dual_token_headers(self, source: str) -> str:
+        access_token_only = """    const accessToken = tokenManager?.getAccessToken?.();
+    if (!accessToken) {
+      return headers;
+    }
+
+    return {
+      ...(headers ?? {}),
+      [HttpClient.ACCESS_TOKEN_HEADER]: accessToken,
+    };"""
+        dual_token = """    const accessToken = tokenManager?.getAccessToken?.();
+    const authToken = tokenManager?.getAuthToken?.();
+    if (!accessToken && !authToken) {
+      return headers;
+    }
+
+    return {
+      ...(headers ?? {}),
+      ...(accessToken ? { [HttpClient.ACCESS_TOKEN_HEADER]: accessToken } : {}),
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };"""
+        return source.replace(access_token_only, dual_token, 1)
 
     def _standardize_union_array_types(self, source: str) -> str:
         """Fix old generator output where union arrays miss parentheses."""

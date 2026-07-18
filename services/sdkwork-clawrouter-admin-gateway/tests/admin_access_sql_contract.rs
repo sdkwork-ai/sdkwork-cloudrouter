@@ -1,6 +1,5 @@
-const ADMIN_API_SOURCE: &str = include_str!(
-    "../../../crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs"
-);
+const ADMIN_API_SOURCE: &str =
+    include_str!("../../../crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs");
 
 fn compact_sql(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")

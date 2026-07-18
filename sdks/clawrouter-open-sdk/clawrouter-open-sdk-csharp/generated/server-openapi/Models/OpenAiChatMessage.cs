@@ -10,7 +10,7 @@ namespace Sdkwork.ClawRouter.Open.Models
         public OpenAiFunctionCall? FunctionCall { get; set; }
         public string? Name { get; set; }
         public string? Refusal { get; set; }
-        public string? Role { get; set; }
+        public string Role { get; set; }
         public string? ToolCallId { get; set; }
         public List<OpenAiToolCall>? ToolCalls { get; set; }
     }

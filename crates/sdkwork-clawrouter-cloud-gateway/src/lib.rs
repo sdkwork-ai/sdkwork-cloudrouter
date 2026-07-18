@@ -38,6 +38,7 @@ pub use openai_passthrough_routes::{openai_compatible_passthrough_paths, openai_
 #[rustfmt::skip]
 pub use passthrough::{
     authenticated_provider_native_passthrough_router_with_adapter_config,
+    gateway_passthrough_router,
     provider_native_passthrough_providers,
     router_with_provider_passthrough_and_adapter_config,
     router_with_provider_passthrough_and_adapter_config_for_development,

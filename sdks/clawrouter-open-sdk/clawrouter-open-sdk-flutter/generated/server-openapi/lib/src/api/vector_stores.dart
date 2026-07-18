@@ -14,7 +14,7 @@ class VectorStoresApi {
   /// List vector stores
   Future<OpenAiVectorStoreList?> listVectorStore([int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('page_size', limit, 'form', true, false, null),
+      QueryParameterSpec('limit', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)
@@ -85,7 +85,7 @@ class VectorStoresApi {
   /// List vector store files
   Future<OpenAiVectorStoreFileList?> retrieveFile(String vectorStoreId, [int? limit, String? order, String? after, String? before]) async {
     final query = buildQueryString([
-      QueryParameterSpec('page_size', limit, 'form', true, false, null),
+      QueryParameterSpec('limit', limit, 'form', true, false, null),
       QueryParameterSpec('order', order, 'form', true, false, null),
       QueryParameterSpec('after', after, 'form', true, false, null),
       QueryParameterSpec('before', before, 'form', true, false, null)

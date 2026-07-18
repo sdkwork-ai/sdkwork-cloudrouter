@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiFileReferenceInput;
+use crate::models::{OpenAiFileReferenceInput};
 
 /// OpenAI-compatible open ai audio transcription request schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

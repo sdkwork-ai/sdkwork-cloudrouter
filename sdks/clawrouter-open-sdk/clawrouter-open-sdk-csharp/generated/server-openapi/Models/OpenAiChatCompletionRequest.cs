@@ -14,10 +14,10 @@ namespace Sdkwork.ClawRouter.Open.Models
         public bool? Logprobs { get; set; }
         public int? MaxCompletionTokens { get; set; }
         public int? MaxTokens { get; set; }
-        public List<OpenAiChatMessage>? Messages { get; set; }
+        public List<OpenAiChatMessage> Messages { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
         public List<string>? Modalities { get; set; }
-        public string? Model { get; set; }
+        public string Model { get; set; }
         public int? N { get; set; }
         public bool? ParallelToolCalls { get; set; }
         public OpenAiPredictionConfig? Prediction { get; set; }

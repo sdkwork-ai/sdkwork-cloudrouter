@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiNamedToolChoice
     {
-        public OpenAiNamedToolChoiceFunction? Function { get; set; }
-        public string? Type { get; set; }
+        public OpenAiNamedToolChoiceFunction Function { get; set; }
+        public string Type { get; set; }
     }
 }

@@ -2,7 +2,7 @@
 
 Status: active
 Owner: SDKWork maintainers
-Updated: 2026-07-14
+Updated: 2026-07-16
 Specs: ARCHITECTURE_DECISION_SPEC.md, DOCUMENTATION_SPEC.md
 
 This document is the **single entry point** for the Claw Router technical
@@ -33,8 +33,9 @@ traceability and are not release evidence.
 
 The active factual review is
 [REVIEW-20260714 Production Readiness Revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md).
-It records unclosed security, streaming, public-contract, persistence,
-concurrency, and PostgreSQL-evidence blockers. Architecture targets in this
+It records unclosed security, streaming, persistence, concurrency, and
+PostgreSQL-evidence blockers. The OpenAI public boundary and `route_explain`
+tenant authorization have worktree-level closure evidence, but architecture targets in this
 document remain requirements until the review rows are closed with fresh,
 clean-candidate verification evidence.
 
@@ -86,12 +87,15 @@ The system is a polyglot monorepo: Rust services + TypeScript PC application
 | Backend API | `/backend/v3/api/*` | admin-gateway | Admin UI (operator console) |
 | Platform API | `/openapi.json`, `/openapi/schema-tabs.json`, `/healthz`, `/readyz`, `/metrics` | claw-http | Ops + discovery |
 
-The compatibility prefixes above describe current route inventory, not an
-authorization grant. The production relay boundary must be an explicit
-inference/media `(provider, method, standardizedPath)` allowlist. Broad prefix
-or wildcard classification is a known P0 boundary defect and must not be used
-to claim that all currently reachable `/v1` or provider-native paths are
-commercially supported.
+The compatibility prefixes above describe route families, not an authorization
+grant. OpenAI-compatible runtime forwarding is constrained by the authored
+OpenAPI method/path contract; provider control-plane operations and model
+deletion are absent from the contract, classifier, taxonomy, seeds, and SDKs.
+Provider-native wildcard mounts are fail-closed against the embedded authored
+OpenAPI contract before authentication or upstream forwarding. Direct provider
+paths and provider-account aliases are accepted only when the standardized
+path template and HTTP method are declared; unknown paths return `404`, and
+wrong methods return `405` with the contract-derived `Allow` header.
 
 ## 2. Technology Choices
 

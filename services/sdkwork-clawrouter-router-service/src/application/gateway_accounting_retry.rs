@@ -372,6 +372,36 @@ impl GatewayUsageRecorder for RetryingGatewayUsageRecorder {
         })
     }
 
+    fn record_gateway_usage_batch<'a>(
+        &'a self,
+        commands: Vec<GatewayUsageRecordCommand>,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async move {
+            match tokio::time::timeout(
+                self.config.primary_timeout,
+                self.primary.record_gateway_usage_batch(commands),
+            )
+            .await
+            {
+                Ok(Ok(())) => Ok(()),
+                Ok(Err(error)) => {
+                    self.health.mark_dual_failure();
+                    Err(DomainError::new(format!(
+                        "atomic gateway usage batch persistence failed: {}",
+                        redact_error_message(&error)
+                    )))
+                }
+                Err(_) => {
+                    self.health.mark_dual_failure();
+                    Err(accounting_timeout_error(
+                        "usage batch",
+                        self.config.primary_timeout,
+                    ))
+                }
+            }
+        })
+    }
+
     fn record_gateway_trace_with_context<'a>(
         &'a self,
         command: GatewayRequestTraceCommand,

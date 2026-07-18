@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::ProviderJsonSchema;
+use crate::models::{ProviderJsonSchema};
 
 /// Anthropic Claude anthropic tool schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

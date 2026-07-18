@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiResponseFormat;
+use crate::models::{OpenAiResponseFormat};
 
 /// OpenAI-compatible open ai text config schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

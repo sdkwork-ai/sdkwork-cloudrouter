@@ -8,8 +8,7 @@ use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
     AdminApiKeyRateLimitCommandFuture, AdminApiKeyRateLimitItem, AdminApiKeyRateLimitListPage,
-    AdminApiKeyRateLimitStore, CreateAdminApiKeyRateLimitCommand,
-    ListAdminApiKeyRateLimitsQuery,
+    AdminApiKeyRateLimitStore, CreateAdminApiKeyRateLimitCommand, ListAdminApiKeyRateLimitsQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -142,21 +141,21 @@ impl AdminApiKeyRateLimitStore for TestApiKeyRateLimitStore {
         query: ListAdminApiKeyRateLimitsQuery,
     ) -> AdminApiKeyRateLimitCommandFuture<'a, AdminApiKeyRateLimitListPage> {
         Box::pin(async move {
-            let items = self
-                .items
-                .lock()
-                .unwrap()
-                .iter()
-                .filter(|item| {
-                    item.tenant_id == query.subject.tenant_id
-                        && item.organization_id == query.subject.organization_id
-                        && item.deleted_at.is_none()
-                        && query.q.as_ref().is_none_or(|q| {
-                            item.key_prefix.contains(q) || item.user.contains(q)
-                        })
-                })
-                .cloned()
-                .collect::<Vec<_>>();
+            let items =
+                self.items
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .filter(|item| {
+                        item.tenant_id == query.subject.tenant_id
+                            && item.organization_id == query.subject.organization_id
+                            && item.deleted_at.is_none()
+                            && query.q.as_ref().is_none_or(|q| {
+                                item.key_prefix.contains(q) || item.user.contains(q)
+                            })
+                    })
+                    .cloned()
+                    .collect::<Vec<_>>();
             let total = i64::try_from(items.len()).unwrap_or(i64::MAX);
             let items = items
                 .into_iter()

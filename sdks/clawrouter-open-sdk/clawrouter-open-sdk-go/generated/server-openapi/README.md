@@ -92,17 +92,12 @@ client.SetHeader("X-Custom-Header", "value")
 - `client.Container` - container API
 - `client.Conversation` - conversation API
 - `client.Embeddings` - embedding API
-- `client.Eval` - eval API
 - `client.Files` - file API
-- `client.FineTuning` - fine_tuning API
 - `client.Images` - image API
 - `client.Models` - model API
 - `client.Moderations` - moderation API
-- `client.Organization` - organization API
-- `client.Project` - project API
 - `client.Realtime` - realtime API
 - `client.Responses` - response API
-- `client.Skill` - skill API
 - `client.Threads` - thread API
 - `client.Uploads` - upload API
 - `client.VectorStores` - vector_store API
@@ -761,23 +756,6 @@ if err != nil {
 fmt.Println(result)
 ```
 
-### eval
-
-```go
-// List evals
-params := map[string]interface{}{
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before",
-}
-result, err := client.Eval.List(params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
 ### file
 
 ```go
@@ -789,23 +767,6 @@ params := map[string]interface{}{
     "before": "before",
 }
 result, err := client.Files.List(params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### fine_tuning
-
-```go
-// List fine-tuning jobs
-params := map[string]interface{}{
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before",
-}
-result, err := client.FineTuning.ListJob(params)
 if err != nil {
     panic(err)
 }
@@ -849,41 +810,6 @@ body := sdktypes.OpenAiModerationCreateRequest{
     Model: "model",
 }
 result, err := client.Moderations.Create(body)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### organization
-
-```go
-// List organization admin API keys
-params := map[string]interface{}{
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before",
-}
-result, err := client.Organization.GetListAdminApiKeys(params)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### project
-
-```go
-// List project roles
-projectId := "1"
-params := map[string]interface{}{
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before",
-}
-result, err := client.Project.GetListRoles(projectId, params)
 if err != nil {
     panic(err)
 }
@@ -1001,23 +927,6 @@ body := sdktypes.OpenAiResponsesRequest{
     User: "user",
 }
 result, err := client.Responses.Create(body)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### skill
-
-```go
-// List skills
-params := map[string]interface{}{
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before",
-}
-result, err := client.Skill.List(params)
 if err != nil {
     panic(err)
 }
@@ -1221,10 +1130,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

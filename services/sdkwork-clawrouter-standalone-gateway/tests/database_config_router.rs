@@ -1601,7 +1601,10 @@ async fn database_config_app_routing_channel_test_uses_injected_probe_and_record
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("https://api.openai.example/v1", captured[0].provider_base_url);
+    assert_eq!(
+        "https://api.openai.example/v1",
+        captured[0].provider_base_url
+    );
     assert_eq!(secret_ref, captured[0].provider_secret_ref);
     assert_eq!(None, captured[0].provider_secret_value);
     assert_eq!("gpt-4o-mini", captured[0].provider_model);
@@ -1733,7 +1736,10 @@ async fn database_config_app_routing_channel_test_records_masked_provider_failur
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("https://api.openai.example/v1", captured[0].provider_base_url);
+    assert_eq!(
+        "https://api.openai.example/v1",
+        captured[0].provider_base_url
+    );
     assert_eq!(secret_ref, captured[0].provider_secret_ref);
     assert_eq!(None, captured[0].provider_secret_value);
     assert_eq!("gpt-4o-mini", captured[0].provider_model);

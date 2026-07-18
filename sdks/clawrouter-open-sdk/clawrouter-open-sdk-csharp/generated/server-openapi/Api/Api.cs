@@ -24,17 +24,12 @@ namespace Sdkwork.ClawRouter.Open.Api
         public static ContainerApi? Container { get; set; }
         public static ConversationApi? Conversation { get; set; }
         public static EmbeddingsApi? Embeddings { get; set; }
-        public static EvalApi? Eval { get; set; }
         public static FilesApi? Files { get; set; }
-        public static FineTuningApi? FineTuning { get; set; }
         public static ImagesApi? Images { get; set; }
         public static ModelsApi? Models { get; set; }
         public static ModerationsApi? Moderations { get; set; }
-        public static OrganizationApi? Organization { get; set; }
-        public static ProjectApi? Project { get; set; }
         public static RealtimeApi? Realtime { get; set; }
         public static ResponsesApi? Responses { get; set; }
-        public static SkillApi? Skill { get; set; }
         public static ThreadsApi? Threads { get; set; }
         public static UploadsApi? Uploads { get; set; }
         public static VectorStoresApi? VectorStores { get; set; }

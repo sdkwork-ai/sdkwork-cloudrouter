@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiChatInputAudio
     {
-        public string? Data { get; set; }
-        public string? Format { get; set; }
+        public string Data { get; set; }
+        public string Format { get; set; }
     }
 }

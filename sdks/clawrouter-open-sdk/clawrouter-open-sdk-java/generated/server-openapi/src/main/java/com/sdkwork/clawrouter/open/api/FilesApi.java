@@ -16,7 +16,7 @@ public class FilesApi {
     /** List files */
     public OpenAiFileList list(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("page_size", limit, "form", true, false, null),
+            new QueryParameterSpec("limit", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)

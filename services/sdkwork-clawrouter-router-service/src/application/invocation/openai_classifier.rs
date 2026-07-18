@@ -161,11 +161,12 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         ));
     }
     if path.starts_with("/v1/responses/") {
-        return Ok(api(
+        return Ok(lookup_api(
             "openai/management/responses",
             "openai.responses",
             ResourceType::Response,
             RoutingCapability::Chat,
+            "response",
         ));
     }
     if method == Method::POST && path == "/v1/images/generations" {
@@ -259,14 +260,6 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         return Ok(free_endpoint(
             "openai/management/models",
             "openai.models",
-            RoutingCapability::Network,
-        ));
-    }
-    if method == Method::DELETE && path.starts_with("/v1/models/") {
-        return Ok(api(
-            "openai/management/models",
-            "openai.models",
-            ResourceType::ModelCall,
             RoutingCapability::Network,
         ));
     }
@@ -379,41 +372,6 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             "thread",
         ));
     }
-    if path == "/v1/evals" {
-        if method == Method::POST {
-            return Ok(create_model_optional_api(
-                "openai/management/evals",
-                "openai.evals",
-                ResourceType::Unknown,
-                RoutingCapability::Network,
-                "eval",
-            ));
-        }
-        return Ok(api(
-            "openai/management/evals",
-            "openai.evals",
-            ResourceType::Unknown,
-            RoutingCapability::Network,
-        ));
-    }
-    if method == Method::POST && path.starts_with("/v1/evals/") && path.ends_with("/runs") {
-        return Ok(parent_optional_api(
-            "openai/management/evals",
-            "openai.evals",
-            ResourceType::Unknown,
-            RoutingCapability::Network,
-            "eval",
-        ));
-    }
-    if path.starts_with("/v1/evals/") {
-        return Ok(lookup_api(
-            "openai/management/evals",
-            "openai.evals",
-            ResourceType::Unknown,
-            RoutingCapability::Network,
-            "eval",
-        ));
-    }
     if path == "/v1/assistants" {
         if method == Method::POST {
             return Ok(create_model_optional_api(
@@ -458,11 +416,12 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         ));
     }
     if path.starts_with("/v1/vector_stores/") {
-        return Ok(api(
+        return Ok(lookup_api(
             "openai/management/vector_stores",
             "openai.vector_stores",
             ResourceType::VectorStore,
             RoutingCapability::Embedding,
+            "vector_store",
         ));
     }
     if path == "/v1/batches" {
@@ -483,45 +442,12 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         ));
     }
     if path.starts_with("/v1/batches/") {
-        return Ok(api(
+        return Ok(lookup_api(
             "openai/management/batches",
             "openai.batches",
             ResourceType::Batch,
             RoutingCapability::Network,
-        ));
-    }
-    if path == "/v1/fine_tuning/jobs" {
-        if method == Method::POST {
-            return Ok(create_model_optional_api(
-                "openai/management/fine_tuning",
-                "openai.fine_tuning",
-                ResourceType::FineTuningJob,
-                RoutingCapability::Network,
-                "fine_tuning_job",
-            ));
-        }
-        return Ok(api(
-            "openai/management/fine_tuning",
-            "openai.fine_tuning",
-            ResourceType::FineTuningJob,
-            RoutingCapability::Network,
-        ));
-    }
-    if path.starts_with("/v1/fine_tuning/jobs/") || path.starts_with("/v1/fine_tuning/checkpoints/")
-    {
-        return Ok(api(
-            "openai/management/fine_tuning",
-            "openai.fine_tuning",
-            ResourceType::FineTuningJob,
-            RoutingCapability::Network,
-        ));
-    }
-    if path.starts_with("/v1/fine_tuning/") {
-        return Ok(api(
-            "openai/management/fine_tuning",
-            "openai.fine_tuning",
-            ResourceType::FineTuningJob,
-            RoutingCapability::Network,
+            "batch",
         ));
     }
     if path == "/v1/conversations" {
@@ -569,52 +495,12 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         ));
     }
     if path.starts_with("/v1/containers/") {
-        return Ok(api(
+        return Ok(lookup_api(
             "openai/management/containers",
             "openai.containers",
             ResourceType::Container,
             RoutingCapability::Network,
-        ));
-    }
-    if path == "/v1/skills" {
-        if method == Method::POST {
-            return Ok(create_api(
-                "openai/management/skills",
-                "openai.skills",
-                ResourceType::Unknown,
-                RoutingCapability::Network,
-                "skill",
-            ));
-        }
-        return Ok(api(
-            "openai/management/skills",
-            "openai.skills",
-            ResourceType::Unknown,
-            RoutingCapability::Network,
-        ));
-    }
-    if path.starts_with("/v1/skills/") {
-        return Ok(api(
-            "openai/management/skills",
-            "openai.skills",
-            ResourceType::Unknown,
-            RoutingCapability::Network,
-        ));
-    }
-    if path.starts_with("/v1/organization/") {
-        return Ok(api(
-            "openai/management/administration",
-            "openai.administration",
-            ResourceType::Unknown,
-            RoutingCapability::Network,
-        ));
-    }
-    if path.starts_with("/v1/projects/") {
-        return Ok(api(
-            "openai/management/administration",
-            "openai.administration",
-            ResourceType::Unknown,
-            RoutingCapability::Network,
+            "container",
         ));
     }
     if path == "/v1/videos" {
@@ -657,11 +543,12 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         ));
     }
     if path.starts_with("/v1/realtime/calls/") {
-        return Ok(api(
+        return Ok(lookup_api(
             "openai/management/realtime",
             "openai.realtime",
             ResourceType::RealtimeSession,
             RoutingCapability::Network,
+            "realtime_session",
         ));
     }
 
@@ -923,7 +810,6 @@ fn object_type_marker(object_type: &str) -> Option<&'static str> {
         "assistant" => Some("assistants"),
         "vector_store" => Some("vector_stores"),
         "batch" => Some("batches"),
-        "fine_tuning_job" => Some("jobs"),
         "conversation" => Some("conversations"),
         "container" => Some("containers"),
         "realtime_session" => Some("calls"),

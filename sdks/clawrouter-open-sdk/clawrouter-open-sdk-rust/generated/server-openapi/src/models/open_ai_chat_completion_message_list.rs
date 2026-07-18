@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiChatMessage;
+use crate::models::{OpenAiChatMessage};
 
 /// OpenAI-compatible paginated list of chat completion messages.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

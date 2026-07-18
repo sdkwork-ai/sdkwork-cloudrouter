@@ -8,7 +8,7 @@ namespace Sdkwork.ClawRouter.Open.Models
     {
         public OpenAiImageReferenceInputList? Image { get; set; }
         public OpenAiImageReferenceInput? Mask { get; set; }
-        public string? Model { get; set; }
-        public string? Prompt { get; set; }
+        public string Model { get; set; }
+        public string Prompt { get; set; }
     }
 }

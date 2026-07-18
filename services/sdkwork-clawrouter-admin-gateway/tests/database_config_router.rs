@@ -72,9 +72,9 @@ async fn database_config_router_uses_sqlite_catalog_for_backend_model_list() {
         Some(catalog.api_key_security_config().unwrap()),
         Some(trusted_subject_config()),
         Some(app_session_config()),
-        )
-        .await
-        .unwrap();
+    )
+    .await
+    .unwrap();
 
     let health = router
         .clone()
@@ -169,9 +169,9 @@ async fn database_config_router_requires_admin_subject_for_backend_model_managem
                 .header("authorization", catalog.gateway_authorization_header())
                 .body(Body::empty())
                 .unwrap(),
-    )
-    .await
-    .unwrap();
+        )
+        .await
+        .unwrap();
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     assert_eq!(
         Some("application/problem+json"),
@@ -1005,7 +1005,10 @@ async fn database_config_router_admin_channel_test_uses_injected_probe_and_recor
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("https://api.openai.example/v1", captured[0].provider_base_url);
+    assert_eq!(
+        "https://api.openai.example/v1",
+        captured[0].provider_base_url
+    );
     assert_eq!(secret_ref, captured[0].provider_secret_ref);
     assert_eq!(None, captured[0].provider_secret_value);
     assert_eq!("gpt-4o-mini", captured[0].provider_model);
@@ -1171,7 +1174,10 @@ async fn database_config_router_admin_channel_test_records_masked_provider_failu
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("https://api.openai.example/v1", captured[0].provider_base_url);
+    assert_eq!(
+        "https://api.openai.example/v1",
+        captured[0].provider_base_url
+    );
     assert_eq!(secret_ref, captured[0].provider_secret_ref);
     assert_eq!(None, captured[0].provider_secret_value);
     assert_eq!("gpt-4o-mini", captured[0].provider_model);

@@ -11,7 +11,7 @@
       "source": "sdks/clawrouter-open-sdk/openapi/clawrouter-open-sdk.openapi.json",
       "apiAuthority": "sdkwork-clawrouter-open-api",
       "sdkFamily": "clawrouter-open-sdk",
-      "sha256": "6d68501b7cc098c6e67335490be3b0919c56ce604e0b728568d93310bb387ff1"
+      "sha256": "e9990716db13330c17b18fceb5d9c17639387ba37fe0a61437f6b0bfa936b402"
     },
     {
       "surface": "app-api",

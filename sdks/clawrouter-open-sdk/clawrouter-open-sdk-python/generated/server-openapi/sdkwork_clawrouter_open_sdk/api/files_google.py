@@ -194,7 +194,7 @@ class FilesGoogleApi:
     def list_v1beta_files(self, page_size: Optional[int] = None, page_token: Optional[str] = None) -> GoogleFileListResponse:
         """Google Gemini list files"""
         query = build_query_string([
-            {'name': 'page_size', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
+            {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
         return self._client.get(_append_query_string(f"/v1/google/v1beta/files", query))

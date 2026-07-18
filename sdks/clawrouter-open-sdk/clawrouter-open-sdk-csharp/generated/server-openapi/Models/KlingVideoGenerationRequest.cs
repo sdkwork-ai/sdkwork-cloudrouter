@@ -15,6 +15,6 @@ namespace Sdkwork.ClawRouter.Open.Models
         public string? Mode { get; set; }
         public string? Model { get; set; }
         public string? NegativePrompt { get; set; }
-        public string? Prompt { get; set; }
+        public string Prompt { get; set; }
     }
 }

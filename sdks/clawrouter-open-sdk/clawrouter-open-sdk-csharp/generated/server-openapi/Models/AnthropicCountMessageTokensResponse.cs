@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class AnthropicCountMessageTokensResponse
     {
-        public int? InputTokens { get; set; }
+        public int InputTokens { get; set; }
     }
 }

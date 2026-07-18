@@ -21,7 +21,7 @@
 The actual HTTP handlers for `/v1/chat/completions`, `/v1/models`,
 `/v1/embeddings`, `/v1/responses/*`, `/v1/images/*`, `/v1/audio/*`,
 `/v1/videos/*`, `/v1/files`, `/v1/assistants`, `/v1/threads`,
-`/v1/batches`, `/v1/fine_tuning`, `/v1/realtime` and the OpenAI-compatible
+`/v1/batches`, `/v1/vector_stores/*`, `/v1/realtime` and the OpenAI-compatible
 passthrough path table are implemented in:
 
 - `crates/sdkwork-clawrouter-cloud-gateway/src/openai_passthrough_routes.rs`

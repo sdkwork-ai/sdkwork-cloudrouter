@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class AnthropicMessageBatchRequest
     {
-        public string? CustomId { get; set; }
-        public AnthropicMessageCreateRequest? Params { get; set; }
+        public string CustomId { get; set; }
+        public AnthropicMessageCreateRequest Params { get; set; }
     }
 }

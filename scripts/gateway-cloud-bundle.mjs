@@ -128,7 +128,7 @@ async function bundleCloudConfig(context) {
   await mkdir(configDir, { recursive: true });
 
   for (const configName of CLAW_ROUTER_CLOUD_GATEWAY_CONFIGS) {
-    const source = path.join(repoRoot, 'configs', configName);
+    const source = path.join(repoRoot, 'etc', configName);
     if (!existsSync(source)) {
       throw new Error(`Missing cloud gateway config: ${source}`);
     }
@@ -143,8 +143,8 @@ Profile: ${context.profile}
 These TOML files configure sdkwork-api-cloud-gateway for Claw Router cloud topology.
 Build and deploy the gateway binary from the sdkwork-api-cloud-gateway repository.
 
-Included configs:
-${CLAW_ROUTER_CLOUD_GATEWAY_CONFIGS.map((name) => `- configs/${name}`).join('\n')}
+Included configuration:
+${CLAW_ROUTER_CLOUD_GATEWAY_CONFIGS.map((name) => `- etc/${name}`).join('\n')}
 `;
   await writeFile(path.join(context.stageRoot, context.stageName, 'README.md'), readme, 'utf8');
 

@@ -7,6 +7,6 @@ namespace Sdkwork.ClawRouter.Open.Models
     public class OpenAiChatImageUrl
     {
         public string? Detail { get; set; }
-        public string? Url { get; set; }
+        public string Url { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import DeleteResult, OpenAiModel, OpenAiModelList
+from ..models import OpenAiModel, OpenAiModelList
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -84,10 +84,6 @@ class ModelsApi:
     def list(self) -> OpenAiModelList:
         """List models"""
         return self._client.get(f"/v1/models")
-
-    def delete(self, model: str) -> DeleteResult:
-        """Delete fine-tuned model"""
-        return self._client.delete(f"/v1/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}")
 
     def retrieve(self, model: str) -> OpenAiModel:
         """Retrieve model"""

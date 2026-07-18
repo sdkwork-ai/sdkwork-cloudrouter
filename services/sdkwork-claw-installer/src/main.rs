@@ -7,7 +7,7 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
     InstallationReport, InstallationStatus,
 };
 use sdkwork_iam_bootstrap::{
-    DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_IAM_TENANT_ID,
+    DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_IAM_TENANT_ID,
 };
 use sdkwork_models_database_host::connect_models_database;
 use serde::Serialize;
@@ -542,10 +542,9 @@ impl ResetAdminOptions {
     fn normalize_email(value: String) -> anyhow::Result<String> {
         let trimmed = value.trim().to_owned();
         if trimmed.is_empty() {
-            return Err(InstallerCliError::InvalidArgument(
-                "--email must not be blank".to_owned(),
-            )
-            .into());
+            return Err(
+                InstallerCliError::InvalidArgument("--email must not be blank".to_owned()).into(),
+            );
         }
         Ok(trimmed)
     }
@@ -627,13 +626,12 @@ fn bootstrap_credential_id(user_id: &str) -> String {
 /// This handles environments where IAM bootstrap assigned a non-canonical id
 /// (e.g. a snowflake id) or a different username than `admin`.
 async fn resolve_bootstrap_admin_user_id_sqlite(pool: &SqlitePool) -> anyhow::Result<String> {
-    let canonical: Option<(String,)> = sqlx::query_as(
-        "SELECT id FROM iam_user WHERE id = ? AND tenant_id = ? AND is_deleted = 0",
-    )
-    .bind(DEFAULT_BOOTSTRAP_ADMIN_USER_ID)
-    .bind(DEFAULT_IAM_TENANT_ID)
-    .fetch_optional(pool)
-    .await?;
+    let canonical: Option<(String,)> =
+        sqlx::query_as("SELECT id FROM iam_user WHERE id = ? AND tenant_id = ? AND is_deleted = 0")
+            .bind(DEFAULT_BOOTSTRAP_ADMIN_USER_ID)
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .fetch_optional(pool)
+            .await?;
     if let Some((id,)) = canonical {
         return Ok(id);
     }
@@ -843,7 +841,9 @@ async fn resolve_admin_username_sqlite(
     .bind(DEFAULT_IAM_TENANT_ID)
     .fetch_optional(pool)
     .await?;
-    Ok(row.map(|(username,)| username).unwrap_or_else(|| fallback.to_owned()))
+    Ok(row
+        .map(|(username,)| username)
+        .unwrap_or_else(|| fallback.to_owned()))
 }
 
 async fn resolve_admin_username_postgres(
@@ -858,7 +858,9 @@ async fn resolve_admin_username_postgres(
     .bind(DEFAULT_IAM_TENANT_ID)
     .fetch_optional(pool)
     .await?;
-    Ok(row.map(|(username,)| username).unwrap_or_else(|| fallback.to_owned()))
+    Ok(row
+        .map(|(username,)| username)
+        .unwrap_or_else(|| fallback.to_owned()))
 }
 
 fn next_arg<I>(args: &mut std::iter::Peekable<I>, name: &str) -> anyhow::Result<String>

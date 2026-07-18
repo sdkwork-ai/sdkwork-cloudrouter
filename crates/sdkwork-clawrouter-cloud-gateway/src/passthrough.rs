@@ -4,7 +4,8 @@ use crate::gateway_api_key_auth::{
 use crate::invocation_http::response_from_invocation_error;
 use crate::openai_passthrough_routes::{
     apply_openai_method_passthrough_routes, apply_openai_passthrough_routes,
-    apply_stored_chat_completion_passthrough_routes,
+    apply_stored_chat_completion_passthrough_routes, reject_unsupported_openai_method,
+    reject_unsupported_provider_route,
 };
 use crate::provider_passthrough_transport::{
     build_provider_passthrough_client, forward_provider_passthrough_to_target,
@@ -18,7 +19,7 @@ use axum::http::header::{HeaderName, HeaderValue, USER_AGENT};
 use axum::http::HeaderMap;
 use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{delete, MethodRouter};
+use axum::routing::MethodRouter;
 use axum::{Json, Router};
 use http_body_util::{BodyExt, LengthLimitError, Limited};
 use sdkwork_claw_config::{
@@ -65,6 +66,7 @@ type UsageRecorder = Arc<dyn GatewayUsageRecorder + Send + Sync>;
 const ADAPTER_USAGE_TYPE_BASE: i64 = 10_000;
 const TOKEN_BILLING_UNIT_SIZE_DECIMAL: &str = "1000000";
 const USAGE_AMOUNT_DECIMAL_DIGITS: u32 = 12;
+const MAX_ADAPTER_USAGE_LINES: usize = 64;
 const MODALITY_TEXT: i64 = 1;
 const MODALITY_IMAGE: i64 = 2;
 const MODALITY_AUDIO: i64 = 3;
@@ -87,6 +89,7 @@ struct ProviderPassthroughRuntime {
     response_timeout: Duration,
 }
 
+#[derive(Debug)]
 enum ProviderPassthroughError {
     RequestBodyTooLarge { limit: usize },
     InvalidRequest(String),
@@ -228,13 +231,14 @@ pub(crate) fn authenticated_gateway_passthrough_router_with_adapter_config_and_q
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    let runtime = ProviderPassthroughRuntime::from_config_with_adapter_and_body_max_bytes_and_transport(
-        config,
-        adapter_config,
-        body_max_bytes,
-        response_timeout,
-        http_pool_config,
-    );
+    let runtime =
+        ProviderPassthroughRuntime::from_config_with_adapter_and_body_max_bytes_and_transport(
+            config,
+            adapter_config,
+            body_max_bytes,
+            response_timeout,
+            http_pool_config,
+        );
     let state = AuthenticatedProviderPassthroughState {
         runtime,
         catalog,
@@ -329,10 +333,6 @@ where
         Router::new(),
         MethodRouter::new().fallback(authenticated_forward_openai_passthrough::<C>),
     ))
-    .route(
-        "/v1/models/{model}",
-        delete(authenticated_forward_openai_passthrough::<C>),
-    )
     .with_state(state)
 }
 
@@ -358,6 +358,9 @@ fn provider_passthrough_router_with_runtime(runtime: ProviderPassthroughRuntime)
 }
 
 async fn openai_passthrough_not_configured(request: Request) -> Response {
+    if let Some(response) = reject_unsupported_openai_method(&request) {
+        return response;
+    }
     passthrough_not_configured(
         "openai_passthrough_not_configured",
         "OpenAI-compatible passthrough route is declared but no upstream relay is configured.",
@@ -366,6 +369,9 @@ async fn openai_passthrough_not_configured(request: Request) -> Response {
 }
 
 async fn provider_passthrough_not_configured(request: Request) -> Response {
+    if let Some(response) = reject_unsupported_provider_route(&request) {
+        return response;
+    }
     passthrough_not_configured(
         "provider_passthrough_not_configured",
         "Provider-native passthrough route is declared but no upstream relay is configured.",
@@ -377,6 +383,9 @@ async fn forward_provider_passthrough(
     axum::extract::State(runtime): axum::extract::State<ProviderPassthroughRuntime>,
     request: Request,
 ) -> Response {
+    if let Some(response) = reject_unsupported_provider_route(&request) {
+        return response;
+    }
     match runtime.forward(request, None).await {
         Ok(response) => response,
         Err(error) => passthrough_forward_failed("provider_passthrough_relay_failed", error),
@@ -392,6 +401,9 @@ async fn authenticated_forward_provider_passthrough<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    if let Some(response) = reject_unsupported_provider_route(&request) {
+        return response;
+    }
     let context = match authenticate_passthrough_api_key(&state, &headers, &uri) {
         Ok(context) => context,
         Err(response) => return response,
@@ -424,6 +436,9 @@ async fn authenticated_forward_openai_passthrough<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    if let Some(response) = reject_unsupported_openai_method(&request) {
+        return response;
+    }
     if let Err(response) = authenticate_passthrough_api_key(&state, &headers, &uri) {
         return response;
     }
@@ -458,10 +473,7 @@ fn passthrough_relay_failed(_code: &'static str, message: String) -> Response {
     response_from_invocation_error(&error)
 }
 
-fn passthrough_forward_failed(
-    code: &'static str,
-    error: ProviderPassthroughError,
-) -> Response {
+fn passthrough_forward_failed(code: &'static str, error: ProviderPassthroughError) -> Response {
     match error {
         ProviderPassthroughError::RequestBodyTooLarge { limit } => passthrough_client_error(
             StatusCode::PAYLOAD_TOO_LARGE,
@@ -475,11 +487,7 @@ fn passthrough_forward_failed(
     }
 }
 
-fn passthrough_client_error(
-    status: StatusCode,
-    code: &'static str,
-    message: String,
-) -> Response {
+fn passthrough_client_error(status: StatusCode, code: &'static str, message: String) -> Response {
     (
         status,
         Json(json!({
@@ -682,7 +690,7 @@ impl ProviderPassthroughRuntime {
                             )
                         }
                     },
-            }),
+                }),
             body_max_bytes,
             response_timeout,
         }
@@ -813,10 +821,7 @@ impl ProviderPassthroughRuntime {
         self.forward_to_target(request, target, upstream_uri).await
     }
 
-    async fn forward_openai(
-        &self,
-        request: Request,
-    ) -> Result<Response, ProviderPassthroughError> {
+    async fn forward_openai(&self, request: Request) -> Result<Response, ProviderPassthroughError> {
         let target = self
             .providers
             .iter()
@@ -923,6 +928,7 @@ where
     if !(200..=299).contains(&response.status_code) || response.usage.usage_lines.is_empty() {
         return Ok(());
     }
+    validate_adapter_usage_line_count(response.usage.usage_lines.len())?;
     let commands = response
         .usage
         .usage_lines
@@ -940,14 +946,18 @@ where
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
-    for command in commands {
-        let meter_code = command.billing_meter_code.clone();
-        usage_recorder
-            .record_gateway_usage(command)
-            .await
-            .map_err(|error| {
-                format!("provider adapter usage recording failed for meter {meter_code}: {error}")
-            })?;
+    usage_recorder
+        .record_gateway_usage_batch(commands)
+        .await
+        .map_err(|error| format!("provider adapter usage batch recording failed: {error}"))
+}
+
+fn validate_adapter_usage_line_count(count: usize) -> Result<(), String> {
+    if count > MAX_ADAPTER_USAGE_LINES {
+        return Err(format!(
+            "provider adapter usage recording rejected {} lines; maximum is {}",
+            count, MAX_ADAPTER_USAGE_LINES
+        ));
     }
     Ok(())
 }
@@ -1956,6 +1966,14 @@ mod tests {
         let response = passthrough_forward_failed("provider_passthrough_relay_failed", error);
 
         assert_eq!(StatusCode::BAD_REQUEST, response.status());
+    }
+
+    #[test]
+    fn adapter_usage_line_count_has_a_hard_memory_boundary() {
+        assert!(validate_adapter_usage_line_count(MAX_ADAPTER_USAGE_LINES).is_ok());
+        let error = validate_adapter_usage_line_count(MAX_ADAPTER_USAGE_LINES + 1)
+            .expect_err("usage-line count above the fixed boundary must be rejected");
+        assert!(error.contains("maximum is 64"), "{error}");
     }
 
     #[test]

@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiIncompleteDetails
     {
-        public string? Reason { get; set; }
+        public string Reason { get; set; }
     }
 }

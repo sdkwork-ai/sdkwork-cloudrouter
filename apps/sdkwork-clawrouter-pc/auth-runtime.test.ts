@@ -56,12 +56,14 @@ async function loadPortalSessionModule(): Promise<PortalSessionModule> {
 async function loadSdkSessionAuthRuntime() {
   const {
     createClawRouterAppSdkClient,
+    getClawRouterAppSdkClient,
     handleClawRouterSdkSessionAuthError,
     isClawRouterSdkSessionAuthError,
     resetClawRouterSdkSessionAuthRedirectState,
   } = await loadSdkClientsModule();
   return {
     createClawRouterAppSdkClient,
+    getClawRouterAppSdkClient,
     handleClawRouterSdkSessionAuthError,
     isClawRouterSdkSessionAuthError,
     resetClawRouterSdkSessionAuthRedirectState,
@@ -1630,6 +1632,118 @@ test("generated SDK ProblemDetail invalid-session errors clear the app session",
   }
 });
 
+test("invalid IAM sessions clear local auth state even when unauthorized mode is debug", async () => {
+  const {
+    handleClawRouterSdkSessionAuthError,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
+  const redirects: string[] = [];
+  const sessionAuthEvents: Array<Record<string, unknown>> = [];
+  const restoreWindow = installPortalAuthRedirectWindow({
+    hash: "",
+    hostname: "127.0.0.1",
+    pathname: "/console/membership",
+    replace: (to) => redirects.push(to),
+    runtimeEnv: {
+      VITE_SDKWORK_SESSION_AUTH_UNAUTHORIZED_MODE: "debug",
+    },
+    search: "",
+    sessionAuthEvents,
+  });
+
+  try {
+    resetClawRouterSdkSessionAuthRedirectState();
+    storeAppSessionFromResult({
+      code: 0,
+      data: {
+        accessToken: "stale-access-token",
+        authToken: "stale-auth-token",
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      },
+    });
+
+    assert.equal(handleClawRouterSdkSessionAuthError({
+      code: 40103,
+      detail: "invalid or expired IAM session",
+      instance: "GET /app/v3/api/memberships/current",
+      operationId: "memberships.current.retrieve",
+      status: 401,
+      title: "Invalid token",
+    }), true);
+
+    assert.equal(loadStoredAppSessionToken(), null);
+    assert.deepEqual(redirects, []);
+    assert.deepEqual(sessionAuthEvents, []);
+  } finally {
+    clearStoredAppSessionToken();
+    resetClawRouterSdkSessionAuthRedirectState();
+    restoreWindow();
+  }
+});
+
+test("injected app SDK clients retain the invalid-session cleanup boundary", async () => {
+  const {
+    getClawRouterAppSdkClient,
+    resetClawRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
+  const host = globalThis as typeof globalThis & {
+    __SDKWORK_CLAW_ROUTER_APP_SDK_CLIENT__?: unknown;
+  };
+  const injectedDescriptor = Object.getOwnPropertyDescriptor(
+    host,
+    "__SDKWORK_CLAW_ROUTER_APP_SDK_CLIENT__",
+  );
+  const restoreWindow = installPortalAuthRedirectWindow({
+    hash: "",
+    hostname: "127.0.0.1",
+    pathname: "/console/membership",
+    replace: () => {},
+    search: "",
+  });
+  const invalidSessionProblem = {
+    code: 40103,
+    detail: "invalid or expired IAM session",
+    status: 401,
+    title: "Invalid token",
+  };
+
+  try {
+    resetClawRouterSdkSessionAuthRedirectState();
+    storeAppSessionFromResult({
+      code: 0,
+      data: {
+        accessToken: "stale-access-token",
+        authToken: "stale-auth-token",
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      },
+    });
+    Object.defineProperty(host, "__SDKWORK_CLAW_ROUTER_APP_SDK_CLIENT__", {
+      configurable: true,
+      value: {
+        http: {
+          request: async () => Promise.reject(invalidSessionProblem),
+        },
+      },
+    });
+
+    const client = getClawRouterAppSdkClient();
+    await assert.rejects(
+      () => client.http.request("/memberships/current"),
+      (error) => error === invalidSessionProblem,
+    );
+    assert.equal(loadStoredAppSessionToken(), null);
+  } finally {
+    clearStoredAppSessionToken();
+    resetClawRouterSdkSessionAuthRedirectState();
+    if (injectedDescriptor) {
+      Object.defineProperty(host, "__SDKWORK_CLAW_ROUTER_APP_SDK_CLIENT__", injectedDescriptor);
+    } else {
+      delete host.__SDKWORK_CLAW_ROUTER_APP_SDK_CLIENT__;
+    }
+    restoreWindow();
+  }
+});
+
 test("generated SDK auth errors clear stale sessions on public pages without forcing login", async () => {
   const {
     handleClawRouterSdkSessionAuthError,
@@ -1964,6 +2078,41 @@ test("generated SDK request boundary clears sessions for invalid IAM session Pro
     clearStoredAppSessionToken();
     resetClawRouterSdkSessionAuthRedirectState();
     restoreWindow();
+  }
+});
+
+test("dashboard SDK requests send the IAM dual-token headers", async () => {
+  const { createClawRouterAppSdkClient } = await loadSdkSessionAuthRuntime();
+  const previousFetch = globalThis.fetch;
+  let requestHeaders: Headers | undefined;
+
+  try {
+    storeAppSessionFromResult({
+      code: 0,
+      data: {
+        accessToken: "dashboard-access-token",
+        authToken: "dashboard-auth-token",
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      },
+    });
+    globalThis.fetch = async (_input, init) => {
+      requestHeaders = new Headers(init?.headers);
+      return new Response(JSON.stringify({ code: 0, data: {} }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    };
+
+    const client = createClawRouterAppSdkClient({
+      appBaseUrl: "https://example.test/app/v3/api",
+    });
+    await client.ai.dashboard.overview.retrieve({});
+
+    assert.equal(requestHeaders?.get("Access-Token"), "dashboard-access-token");
+    assert.equal(requestHeaders?.get("Authorization"), "Bearer dashboard-auth-token");
+  } finally {
+    globalThis.fetch = previousFetch;
+    clearStoredAppSessionToken();
   }
 });
 

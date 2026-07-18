@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class AnthropicMessageBatchCreateRequest
     {
-        public List<AnthropicMessageBatchRequest>? Requests { get; set; }
+        public List<AnthropicMessageBatchRequest> Requests { get; set; }
     }
 }

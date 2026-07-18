@@ -7,6 +7,6 @@ namespace Sdkwork.ClawRouter.Open.Models
     public class OpenAiPredictionConfig
     {
         public string? Content { get; set; }
-        public string? Type { get; set; }
+        public string Type { get; set; }
     }
 }

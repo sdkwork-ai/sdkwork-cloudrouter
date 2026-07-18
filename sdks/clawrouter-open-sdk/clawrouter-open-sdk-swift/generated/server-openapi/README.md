@@ -8,7 +8,7 @@ Add to `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/sdkwork/ai-sdk-swift", from: "0.1.0")
+    .package(url: "https://github.com/sdkwork/ClawRouterOpenSdk", from: "0.1.0")
 ]
 ```
 
@@ -85,17 +85,12 @@ client.setHeader("X-Custom-Header", value: "value")
 - `client.container` - container API
 - `client.conversation` - conversation API
 - `client.embeddings` - embedding API
-- `client.eval` - eval API
 - `client.files` - file API
-- `client.fineTuning` - fine_tuning API
 - `client.images` - image API
 - `client.models` - model API
 - `client.moderations` - moderation API
-- `client.organization` - organization API
-- `client.project` - project API
 - `client.realtime` - realtime API
 - `client.responses` - response API
-- `client.skill` - skill API
 - `client.threads` - thread API
 - `client.uploads` - upload API
 - `client.vectorStores` - vector_store API
@@ -400,20 +395,6 @@ let result = try await client.embeddings.create(body: body)
 print(result)
 ```
 
-### eval
-
-```swift
-// List evals
-let params: [String: Any] = [
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before"
-]
-let result = try await client.eval.list(params: params)
-print(result)
-```
-
 ### file
 
 ```swift
@@ -425,20 +406,6 @@ let params: [String: Any] = [
     "before": "before"
 ]
 let result = try await client.files.list(params: params)
-print(result)
-```
-
-### fine_tuning
-
-```swift
-// List fine-tuning jobs
-let params: [String: Any] = [
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before"
-]
-let result = try await client.fineTuning.listJob(params: params)
 print(result)
 ```
 
@@ -473,35 +440,6 @@ let body = OpenAiModerationCreateRequest(
     model: "model"
 )
 let result = try await client.moderations.create(body: body)
-print(result)
-```
-
-### organization
-
-```swift
-// List organization admin API keys
-let params: [String: Any] = [
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before"
-]
-let result = try await client.organization.getListAdminApiKeys(params: params)
-print(result)
-```
-
-### project
-
-```swift
-// List project roles
-let projectId = "1"
-let params: [String: Any] = [
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before"
-]
-let result = try await client.project.getListRoles(projectId: projectId, params: params)
 print(result)
 ```
 
@@ -550,20 +488,6 @@ let body = OpenAiResponsesRequest(
     user: "user"
 )
 let result = try await client.responses.create(body: body)
-print(result)
-```
-
-### skill
-
-```swift
-// List skills
-let params: [String: Any] = [
-    "limit": 1,
-    "order": "asc",
-    "after": "after",
-    "before": "before"
-]
-let result = try await client.skill.list(params: params)
 print(result)
 ```
 
@@ -715,10 +639,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

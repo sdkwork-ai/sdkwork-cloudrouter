@@ -2166,14 +2166,12 @@ dependencies = [
  "sync_wrapper",
  "tokio",
  "tokio-rustls",
- "tokio-util",
  "tower",
  "tower-http",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "wasm-streams",
  "web-sys",
  "webpki-roots 1.0.8",
 ]
@@ -2338,12 +2336,9 @@ name = "sdkwork-api-cloud-gateway"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-trait",
  "axum",
  "bytes",
- "futures-util",
  "http-body-util",
- "reqwest",
  "sdkwork-api-cloud-gateway-config",
  "sdkwork-api-cloud-gateway-observability",
  "sdkwork-api-cloud-gateway-registry",
@@ -2360,7 +2355,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tokio-tungstenite",
  "tower",
  "tower-http",
  "tracing",
@@ -2722,6 +2716,7 @@ dependencies = [
  "sdkwork-routes-iam-backend-api",
  "sdkwork-sdk-generator-client",
  "sdkwork-web-core",
+ "serde",
  "serde_json",
  "sha2",
  "sqlx",
@@ -3128,6 +3123,7 @@ dependencies = [
  "sdkwork-iam-context-service",
  "sdkwork-utils-rust",
  "sdkwork-web-axum",
+ "sdkwork-web-bootstrap",
  "sdkwork-web-core",
  "serde",
  "serde_json",
@@ -3372,6 +3368,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-order-integration-promotion"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-contract-service",
+ "sdkwork-database-sqlx",
+ "sdkwork-order-service",
+ "sdkwork-promotion-repository-sqlx",
+ "sdkwork-promotion-service",
+]
+
+[[package]]
 name = "sdkwork-order-repository-sqlx"
 version = "0.1.0"
 dependencies = [
@@ -3409,6 +3416,7 @@ dependencies = [
  "sdkwork-order-integration-account",
  "sdkwork-order-integration-membership",
  "sdkwork-order-integration-payment",
+ "sdkwork-order-integration-promotion",
  "sdkwork-order-service",
  "sqlx",
 ]
@@ -5096,19 +5104,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc1b4cb0cc549fcf58d7dfc081778139b3d283a081644e833e84682ad71cea24"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "wasm-streams"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15053d8d85c7eccdbefef60f06769760a563c7f0a9d6902a13d35c7800b0ad65"
-dependencies = [
- "futures-util",
- "js-sys",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]

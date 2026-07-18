@@ -21,17 +21,12 @@ public struct API {
     public static let container = ContainerApi.self
     public static let conversation = ConversationApi.self
     public static let embeddings = EmbeddingsApi.self
-    public static let eval = EvalApi.self
     public static let files = FilesApi.self
-    public static let fineTuning = FineTuningApi.self
     public static let images = ImagesApi.self
     public static let models = ModelsApi.self
     public static let moderations = ModerationsApi.self
-    public static let organization = OrganizationApi.self
-    public static let project = ProjectApi.self
     public static let realtime = RealtimeApi.self
     public static let responses = ResponsesApi.self
-    public static let skill = SkillApi.self
     public static let threads = ThreadsApi.self
     public static let uploads = UploadsApi.self
     public static let vectorStores = VectorStoresApi.self

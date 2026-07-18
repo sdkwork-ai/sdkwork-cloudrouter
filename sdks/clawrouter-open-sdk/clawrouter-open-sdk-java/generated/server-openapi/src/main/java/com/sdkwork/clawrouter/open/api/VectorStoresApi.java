@@ -16,7 +16,7 @@ public class VectorStoresApi {
     /** List vector stores */
     public OpenAiVectorStoreList listVectorStore(Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("page_size", limit, "form", true, false, null),
+            new QueryParameterSpec("limit", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)
@@ -64,7 +64,7 @@ public class VectorStoresApi {
     /** List vector store files */
     public OpenAiVectorStoreFileList retrieveFile(String vectorStoreId, Integer limit, String order, String after, String before) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("page_size", limit, "form", true, false, null),
+            new QueryParameterSpec("limit", limit, "form", true, false, null),
             new QueryParameterSpec("order", order, "form", true, false, null),
             new QueryParameterSpec("after", after, "form", true, false, null),
             new QueryParameterSpec("before", before, "form", true, false, null)

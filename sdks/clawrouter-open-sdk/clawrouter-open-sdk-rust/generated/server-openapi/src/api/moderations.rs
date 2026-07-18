@@ -15,13 +15,9 @@ impl ModerationsApi {
     }
 
     /// Create moderation
-    pub async fn create(
-        &self,
-        body: &OpenAiModerationCreateRequest,
-    ) -> Result<OpenAiModeration, SdkworkError> {
+    pub async fn create(&self, body: &OpenAiModerationCreateRequest) -> Result<OpenAiModeration, SdkworkError> {
         let path = ai_path(&"/moderations".to_string());
-        self.client
-            .post(&path, Some(body), None, None, Some("application/json"))
-            .await
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
+
 }

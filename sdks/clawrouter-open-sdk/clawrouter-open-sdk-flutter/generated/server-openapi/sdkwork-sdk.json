@@ -5,6 +5,8 @@
   "language": "flutter",
   "sdkType": "ai",
   "packageName": "clawrouter_open_sdk",
+  "transportPackageName": "clawrouter_open_sdk",
+  "consumerPackageName": "clawrouter_open_sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

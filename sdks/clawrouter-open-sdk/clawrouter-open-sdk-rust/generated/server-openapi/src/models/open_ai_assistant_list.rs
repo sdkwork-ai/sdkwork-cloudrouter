@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiAssistant;
+use crate::models::{OpenAiAssistant};
 
 /// OpenAI-compatible paginated list of assistants.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

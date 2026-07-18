@@ -85,17 +85,12 @@ client.set_header('X-Custom-Header', 'value')
 - `client.container` - container API
 - `client.conversation` - conversation API
 - `client.embeddings` - embedding API
-- `client.eval` - eval API
 - `client.files` - file API
-- `client.fine_tuning` - fine_tuning API
 - `client.images` - image API
 - `client.models` - model API
 - `client.moderations` - moderation API
-- `client.organization` - organization API
-- `client.project` - project API
 - `client.realtime` - realtime API
 - `client.responses` - response API
-- `client.skill` - skill API
 - `client.threads` - thread API
 - `client.uploads` - upload API
 - `client.vector_stores` - vector_store API
@@ -432,20 +427,6 @@ result = client.embeddings.create(body)
 print(result)
 ```
 
-### eval
-
-```python
-# List evals
-params = {
-    'limit': 1,
-    'order': 'asc',
-    'after': 'after',
-    'before': 'before',
-}
-result = client.eval.list(params)
-print(result)
-```
-
 ### file
 
 ```python
@@ -457,20 +438,6 @@ params = {
     'before': 'before',
 }
 result = client.files.list(params)
-print(result)
-```
-
-### fine_tuning
-
-```python
-# List fine-tuning jobs
-params = {
-    'limit': 1,
-    'order': 'asc',
-    'after': 'after',
-    'before': 'before',
-}
-result = client.fine_tuning.list_jobs(params)
 print(result)
 ```
 
@@ -505,35 +472,6 @@ body = {
     'model': 'model',
 }
 result = client.moderations.create(body)
-print(result)
-```
-
-### organization
-
-```python
-# List organization admin API keys
-params = {
-    'limit': 1,
-    'order': 'asc',
-    'after': 'after',
-    'before': 'before',
-}
-result = client.organization.get_list_admin_api_keys(params)
-print(result)
-```
-
-### project
-
-```python
-# List project roles
-project_id = '1'
-params = {
-    'limit': 1,
-    'order': 'asc',
-    'after': 'after',
-    'before': 'before',
-}
-result = client.project.get_list_roles(project_id, params)
 print(result)
 ```
 
@@ -599,20 +537,6 @@ body = {
     'user': 'user',
 }
 result = client.responses.create(body)
-print(result)
-```
-
-### skill
-
-```python
-# List skills
-params = {
-    'limit': 1,
-    'order': 'asc',
-    'after': 'after',
-    'before': 'before',
-}
-result = client.skill.list(params)
 print(result)
 ```
 
@@ -775,10 +699,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

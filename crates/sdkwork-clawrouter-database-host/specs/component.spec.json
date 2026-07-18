@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-clawrouter-database-host",
+    "displayName": "SDKWork Claw Router Database Host",
+    "version": "0.3.0",
+    "type": "rust-crate",
+    "root": "sdkwork-clawrouter/crates/sdkwork-clawrouter-database-host",
+    "domain": "platform",
+    "capability": "database-lifecycle",
+    "status": "standardizing",
+    "languages": ["rust"],
+    "generated": false,
+    "private": true,
+    "manifests": ["Cargo.toml"]
+  },
+  "canonicalSpecs": [
+    { "file": "COMPONENT_SPEC.md", "path": "../../../sdkwork-specs/COMPONENT_SPEC.md", "purpose": "Component contract." },
+    { "file": "DATABASE_FRAMEWORK_SPEC.md", "path": "../../../sdkwork-specs/DATABASE_FRAMEWORK_SPEC.md", "purpose": "Database lifecycle framework." },
+    { "file": "RUST_CODE_SPEC.md", "path": "../../../sdkwork-specs/RUST_CODE_SPEC.md", "purpose": "Rust source rules." }
+  ],
+  "contracts": {
+    "publicExports": ["sdkwork_clawrouter_database_host"],
+    "runtimeEntrypoints": [],
+    "sdkClients": [],
+    "events": [],
+    "configKeys": [],
+    "routeManifest": null
+  },
+  "integration": {
+    "authority": "Database lifecycle behavior is provided through the crate public API.",
+    "dependencyPolicy": "Consumers call public exports and inject typed database configuration.",
+    "sdkPolicy": "This crate does not own HTTP SDK clients.",
+    "languagePolicy": "Rust code follows the workspace manifests and Rust standards."
+  },
+  "verification": { "commands": ["cargo test -p sdkwork-clawrouter-database-host"] }
+}

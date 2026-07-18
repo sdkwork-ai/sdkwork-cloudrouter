@@ -149,7 +149,7 @@ function parseArgs(argv) {
 function printHelp() {
   console.log(`Usage: node scripts/claw-router-dev.mjs [options] [-- <workspace args>]
 
-Topology-aware Claw Router dev entry. Loads configs/topology profile env via @sdkwork/app-topology.
+Topology-aware Claw Router dev entry. Loads etc/topology profile env via @sdkwork/app-topology.
 
 Options:
   --deployment-profile <standalone|cloud>           Default: standalone

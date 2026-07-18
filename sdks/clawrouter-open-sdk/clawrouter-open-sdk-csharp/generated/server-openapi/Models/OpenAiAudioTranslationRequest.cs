@@ -6,8 +6,8 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiAudioTranslationRequest
     {
-        public OpenAiFileReferenceInput? File { get; set; }
-        public string? Model { get; set; }
+        public OpenAiFileReferenceInput File { get; set; }
+        public string Model { get; set; }
         public string? Prompt { get; set; }
         public string? ResponseFormat { get; set; }
     }

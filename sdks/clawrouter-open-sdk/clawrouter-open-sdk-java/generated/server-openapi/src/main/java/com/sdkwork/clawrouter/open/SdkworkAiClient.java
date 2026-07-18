@@ -21,17 +21,12 @@ import com.sdkwork.clawrouter.open.api.CompletionApi;
 import com.sdkwork.clawrouter.open.api.ContainerApi;
 import com.sdkwork.clawrouter.open.api.ConversationApi;
 import com.sdkwork.clawrouter.open.api.EmbeddingsApi;
-import com.sdkwork.clawrouter.open.api.EvalApi;
 import com.sdkwork.clawrouter.open.api.FilesApi;
-import com.sdkwork.clawrouter.open.api.FineTuningApi;
 import com.sdkwork.clawrouter.open.api.ImagesApi;
 import com.sdkwork.clawrouter.open.api.ModelsApi;
 import com.sdkwork.clawrouter.open.api.ModerationsApi;
-import com.sdkwork.clawrouter.open.api.OrganizationApi;
-import com.sdkwork.clawrouter.open.api.ProjectApi;
 import com.sdkwork.clawrouter.open.api.RealtimeApi;
 import com.sdkwork.clawrouter.open.api.ResponsesApi;
-import com.sdkwork.clawrouter.open.api.SkillApi;
 import com.sdkwork.clawrouter.open.api.ThreadsApi;
 import com.sdkwork.clawrouter.open.api.UploadsApi;
 import com.sdkwork.clawrouter.open.api.VectorStoresApi;
@@ -61,17 +56,12 @@ public class SdkworkAiClient {
     private ContainerApi container;
     private ConversationApi conversation;
     private EmbeddingsApi embeddings;
-    private EvalApi eval;
     private FilesApi files;
-    private FineTuningApi fineTuning;
     private ImagesApi images;
     private ModelsApi models;
     private ModerationsApi moderations;
-    private OrganizationApi organization;
-    private ProjectApi project;
     private RealtimeApi realtime;
     private ResponsesApi responses;
-    private SkillApi skill;
     private ThreadsApi threads;
     private UploadsApi uploads;
     private VectorStoresApi vectorStores;
@@ -101,17 +91,12 @@ public class SdkworkAiClient {
         this.container = new ContainerApi(httpClient);
         this.conversation = new ConversationApi(httpClient);
         this.embeddings = new EmbeddingsApi(httpClient);
-        this.eval = new EvalApi(httpClient);
         this.files = new FilesApi(httpClient);
-        this.fineTuning = new FineTuningApi(httpClient);
         this.images = new ImagesApi(httpClient);
         this.models = new ModelsApi(httpClient);
         this.moderations = new ModerationsApi(httpClient);
-        this.organization = new OrganizationApi(httpClient);
-        this.project = new ProjectApi(httpClient);
         this.realtime = new RealtimeApi(httpClient);
         this.responses = new ResponsesApi(httpClient);
-        this.skill = new SkillApi(httpClient);
         this.threads = new ThreadsApi(httpClient);
         this.uploads = new UploadsApi(httpClient);
         this.vectorStores = new VectorStoresApi(httpClient);
@@ -142,17 +127,12 @@ public class SdkworkAiClient {
         this.container = new ContainerApi(httpClient);
         this.conversation = new ConversationApi(httpClient);
         this.embeddings = new EmbeddingsApi(httpClient);
-        this.eval = new EvalApi(httpClient);
         this.files = new FilesApi(httpClient);
-        this.fineTuning = new FineTuningApi(httpClient);
         this.images = new ImagesApi(httpClient);
         this.models = new ModelsApi(httpClient);
         this.moderations = new ModerationsApi(httpClient);
-        this.organization = new OrganizationApi(httpClient);
-        this.project = new ProjectApi(httpClient);
         this.realtime = new RealtimeApi(httpClient);
         this.responses = new ResponsesApi(httpClient);
-        this.skill = new SkillApi(httpClient);
         this.threads = new ThreadsApi(httpClient);
         this.uploads = new UploadsApi(httpClient);
         this.vectorStores = new VectorStoresApi(httpClient);
@@ -238,16 +218,8 @@ public class SdkworkAiClient {
         return this.embeddings;
     }
 
-    public EvalApi getEval() {
-        return this.eval;
-    }
-
     public FilesApi getFiles() {
         return this.files;
-    }
-
-    public FineTuningApi getFineTuning() {
-        return this.fineTuning;
     }
 
     public ImagesApi getImages() {
@@ -262,24 +234,12 @@ public class SdkworkAiClient {
         return this.moderations;
     }
 
-    public OrganizationApi getOrganization() {
-        return this.organization;
-    }
-
-    public ProjectApi getProject() {
-        return this.project;
-    }
-
     public RealtimeApi getRealtime() {
         return this.realtime;
     }
 
     public ResponsesApi getResponses() {
         return this.responses;
-    }
-
-    public SkillApi getSkill() {
-        return this.skill;
     }
 
     public ThreadsApi getThreads() {

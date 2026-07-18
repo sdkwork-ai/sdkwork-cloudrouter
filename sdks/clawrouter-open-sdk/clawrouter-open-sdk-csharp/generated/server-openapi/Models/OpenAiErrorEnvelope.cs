@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiErrorEnvelope
     {
-        public OpenAiError? Error { get; set; }
+        public OpenAiError Error { get; set; }
     }
 }

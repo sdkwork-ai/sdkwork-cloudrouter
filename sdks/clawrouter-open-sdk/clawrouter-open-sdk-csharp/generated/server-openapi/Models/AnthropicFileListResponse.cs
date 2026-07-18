@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class AnthropicFileListResponse
     {
-        public List<AnthropicFile>? Data { get; set; }
+        public List<AnthropicFile> Data { get; set; }
         public string? FirstId { get; set; }
         public bool? HasMore { get; set; }
         public string? LastId { get; set; }

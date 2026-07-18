@@ -81,8 +81,8 @@ class HttpClient(
         return urlBuilder.build()
     }
 
-    private fun mergeHeaders(requestHeaders: Map<String, String>? = null): Headers {
-        val merged = headers.toMutableMap()
+    private fun mergeHeaders(requestHeaders: Map<String, String>? = null, skipAuth: Boolean = false): Headers {
+        val merged = if (!skipAuth) headers.toMutableMap() else mutableMapOf()
         requestHeaders?.forEach { (key, value) ->
             if (key.isNotBlank()) {
                 merged[key] = value
@@ -185,11 +185,12 @@ class HttpClient(
         body: Any? = null,
         params: Map<String, Any>? = null,
         requestHeaders: Map<String, String>? = null,
-        contentType: String? = null
+        contentType: String? = null,
+        skipAuth: Boolean = false
     ): Any? {
         val requestBuilder = Request.Builder()
             .url(buildUrl(path, params))
-            .headers(mergeHeaders(requestHeaders))
+            .headers(mergeHeaders(requestHeaders, skipAuth))
 
         val requestBody = if (body == null) null else createRequestBody(body, contentType)
         val request = requestBuilder
@@ -211,13 +212,14 @@ class HttpClient(
         params: Map<String, Any>? = null,
         requestHeaders: Map<String, String>? = null,
         contentType: String? = null,
-        typeReference: TypeReference<T>
+        typeReference: TypeReference<T>,
+        skipAuth: Boolean = false
     ): Sequence<T> {
         return sequence {
             val requestBody = if (body == null) null else createRequestBody(body, contentType)
             val request = Request.Builder()
                 .url(buildUrl(path, params))
-                .headers(mergeHeaders(requestHeaders))
+                .headers(mergeHeaders(requestHeaders, skipAuth))
                 .addHeader("Accept", "text/event-stream")
                 .method(method, requestBody)
                 .build()

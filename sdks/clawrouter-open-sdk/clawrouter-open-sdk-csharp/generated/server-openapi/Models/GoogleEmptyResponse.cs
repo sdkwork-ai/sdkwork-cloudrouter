@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class GoogleEmptyResponse
     {
-        public string? Object { get; set; }
+        public string Object { get; set; }
     }
 }

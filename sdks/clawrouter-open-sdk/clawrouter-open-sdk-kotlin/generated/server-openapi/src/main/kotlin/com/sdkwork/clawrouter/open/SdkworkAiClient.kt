@@ -21,17 +21,12 @@ import com.sdkwork.clawrouter.open.api.CompletionApi
 import com.sdkwork.clawrouter.open.api.ContainerApi
 import com.sdkwork.clawrouter.open.api.ConversationApi
 import com.sdkwork.clawrouter.open.api.EmbeddingsApi
-import com.sdkwork.clawrouter.open.api.EvalApi
 import com.sdkwork.clawrouter.open.api.FilesApi
-import com.sdkwork.clawrouter.open.api.FineTuningApi
 import com.sdkwork.clawrouter.open.api.ImagesApi
 import com.sdkwork.clawrouter.open.api.ModelsApi
 import com.sdkwork.clawrouter.open.api.ModerationsApi
-import com.sdkwork.clawrouter.open.api.OrganizationApi
-import com.sdkwork.clawrouter.open.api.ProjectApi
 import com.sdkwork.clawrouter.open.api.RealtimeApi
 import com.sdkwork.clawrouter.open.api.ResponsesApi
-import com.sdkwork.clawrouter.open.api.SkillApi
 import com.sdkwork.clawrouter.open.api.ThreadsApi
 import com.sdkwork.clawrouter.open.api.UploadsApi
 import com.sdkwork.clawrouter.open.api.VectorStoresApi
@@ -40,7 +35,7 @@ import com.sdkwork.clawrouter.open.api.VideosViduApi
 import com.sdkwork.clawrouter.open.api.ImagesViduApi
 import com.sdkwork.clawrouter.open.api.VideosVolcengineApi
 
-class SdkworkAiClient {
+open class SdkworkAiClient {
     private val httpClient: HttpClient
 
     lateinit var filesAnthropic: FilesAnthropicApi
@@ -62,17 +57,12 @@ class SdkworkAiClient {
     lateinit var container: ContainerApi
     lateinit var conversation: ConversationApi
     lateinit var embeddings: EmbeddingsApi
-    lateinit var eval: EvalApi
     lateinit var files: FilesApi
-    lateinit var fineTuning: FineTuningApi
     lateinit var images: ImagesApi
     lateinit var models: ModelsApi
     lateinit var moderations: ModerationsApi
-    lateinit var organization: OrganizationApi
-    lateinit var project: ProjectApi
     lateinit var realtime: RealtimeApi
     lateinit var responses: ResponsesApi
-    lateinit var skill: SkillApi
     lateinit var threads: ThreadsApi
     lateinit var uploads: UploadsApi
     lateinit var vectorStores: VectorStoresApi
@@ -102,17 +92,12 @@ class SdkworkAiClient {
         container = ContainerApi(httpClient)
         conversation = ConversationApi(httpClient)
         embeddings = EmbeddingsApi(httpClient)
-        eval = EvalApi(httpClient)
         files = FilesApi(httpClient)
-        fineTuning = FineTuningApi(httpClient)
         images = ImagesApi(httpClient)
         models = ModelsApi(httpClient)
         moderations = ModerationsApi(httpClient)
-        organization = OrganizationApi(httpClient)
-        project = ProjectApi(httpClient)
         realtime = RealtimeApi(httpClient)
         responses = ResponsesApi(httpClient)
-        skill = SkillApi(httpClient)
         threads = ThreadsApi(httpClient)
         uploads = UploadsApi(httpClient)
         vectorStores = VectorStoresApi(httpClient)
@@ -143,17 +128,12 @@ class SdkworkAiClient {
         container = ContainerApi(httpClient)
         conversation = ConversationApi(httpClient)
         embeddings = EmbeddingsApi(httpClient)
-        eval = EvalApi(httpClient)
         files = FilesApi(httpClient)
-        fineTuning = FineTuningApi(httpClient)
         images = ImagesApi(httpClient)
         models = ModelsApi(httpClient)
         moderations = ModerationsApi(httpClient)
-        organization = OrganizationApi(httpClient)
-        project = ProjectApi(httpClient)
         realtime = RealtimeApi(httpClient)
         responses = ResponsesApi(httpClient)
-        skill = SkillApi(httpClient)
         threads = ThreadsApi(httpClient)
         uploads = UploadsApi(httpClient)
         vectorStores = VectorStoresApi(httpClient)

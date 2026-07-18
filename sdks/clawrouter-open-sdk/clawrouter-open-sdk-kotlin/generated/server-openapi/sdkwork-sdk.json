@@ -5,6 +5,8 @@
   "language": "kotlin",
   "sdkType": "ai",
   "packageName": "com.sdkwork.clawrouter:clawrouter-open-sdk",
+  "transportPackageName": "com.sdkwork.clawrouter:clawrouter-open-sdk",
+  "consumerPackageName": "com.sdkwork.clawrouter:clawrouter-open-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

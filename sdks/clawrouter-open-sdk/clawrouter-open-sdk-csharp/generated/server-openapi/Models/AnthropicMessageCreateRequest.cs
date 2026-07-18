@@ -6,10 +6,10 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class AnthropicMessageCreateRequest
     {
-        public int? MaxTokens { get; set; }
-        public List<AnthropicMessageParam>? Messages { get; set; }
+        public int MaxTokens { get; set; }
+        public List<AnthropicMessageParam> Messages { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
-        public string? Model { get; set; }
+        public string Model { get; set; }
         public List<string>? StopSequences { get; set; }
         public bool? Stream { get; set; }
         public string? System { get; set; }

@@ -19,9 +19,9 @@
       "require": "./dist/index.cjs"
     },
     "./domains": {
-      "types": "./src/domains/index.ts",
-      "import": "./src/domains/index.ts",
-      "default": "./src/domains/index.ts"
+      "types": "./dist/domains/index.d.ts",
+      "import": "./dist/domains/index.js",
+      "require": "./dist/domains/index.cjs"
     }
   },
   "imports": {

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiConversationItem;
+use crate::models::{OpenAiConversationItem};
 
 /// OpenAI-compatible open ai conversation item list schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

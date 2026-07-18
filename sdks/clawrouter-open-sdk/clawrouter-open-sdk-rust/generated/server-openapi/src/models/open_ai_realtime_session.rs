@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiRealtimeClientSecretValue;
+use crate::models::{OpenAiRealtimeClientSecretValue};
 
 /// OpenAI-compatible realtime session object.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -147,9 +147,8 @@ mod tests {
         );
         assert!(source.contains(".register(order_module)"));
         assert!(source.contains(".register(membership_module)"));
-        assert!(source.contains(
-            "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool("
-        ));
+        assert!(source
+            .contains("sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool("));
         let forbidden_direct_route_crate = ["sdkwork_routes_order", "_app_api::"].concat();
         assert!(!source.contains(&forbidden_direct_route_crate));
     }

@@ -19,15 +19,6 @@ class ModelsApi {
     })();
   }
 
-  /// Delete fine-tuned model
-  Future<DeleteResult?> delete(String model) async {
-    final response = await _client.delete(ApiPaths.aiPath('/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}'));
-    return (() {
-      final map = sdkworkResponseAsMap(response);
-      return map == null ? null : DeleteResult.fromJson(map);
-    })();
-  }
-
   /// Retrieve model
   Future<OpenAiModel?> retrieve(String model) async {
     final response = await _client.get(ApiPaths.aiPath('/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}'));

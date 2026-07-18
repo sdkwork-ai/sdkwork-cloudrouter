@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiFunctionCall
     {
-        public string? Arguments { get; set; }
-        public string? Name { get; set; }
+        public string Arguments { get; set; }
+        public string Name { get; set; }
     }
 }

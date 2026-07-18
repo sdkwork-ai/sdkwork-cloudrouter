@@ -1695,7 +1695,11 @@ mod tests {
         let route = manifest
             .match_route(method, path)
             .unwrap_or_else(|| panic!("{method} {path} must be registered"));
-        assert_eq!(RouteAuth::Public, route.auth, "{method} {path} must be public");
+        assert_eq!(
+            RouteAuth::Public,
+            route.auth,
+            "{method} {path} must be public"
+        );
         assert!(
             resolve_public_path(
                 method,
@@ -1722,8 +1726,14 @@ mod tests {
         assert_public_route("GET", "/app/v3/api/memberships/packages");
         assert_public_route("GET", "/app/v3/api/memberships/packages/{packageId}");
         assert_public_route("GET", "/app/v3/api/memberships/package_groups");
-        assert_public_route("GET", "/app/v3/api/memberships/package_groups/{packageGroupId}");
-        assert_public_route("GET", "/app/v3/api/memberships/package_groups/{packageGroupId}/packages");
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}",
+        );
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+        );
     }
 
     #[test]
@@ -1757,4 +1767,3 @@ mod tests {
         assert_eq!(41, order.routes().len());
     }
 }
-

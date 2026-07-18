@@ -1,10 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{
-    OpenAiChatAudioConfig, OpenAiChatMessage, OpenAiFunctionCallChoice, OpenAiFunctionDefinition,
-    OpenAiPredictionConfig, OpenAiResponseFormat, OpenAiStreamOptions, OpenAiTool,
-    OpenAiToolChoice,
-};
+use crate::models::{OpenAiChatAudioConfig, OpenAiChatMessage, OpenAiFunctionCallChoice, OpenAiFunctionDefinition, OpenAiPredictionConfig, OpenAiResponseFormat, OpenAiStreamOptions, OpenAiTool, OpenAiToolChoice};
 
 /// OpenAI-compatible open ai chat completion request schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -79,17 +79,12 @@ client.setHeader('X-Custom-Header', 'value');
 - `client.container` - container API
 - `client.conversation` - conversation API
 - `client.embeddings` - embedding API
-- `client.eval` - eval API
 - `client.files` - file API
-- `client.fineTuning` - fine_tuning API
 - `client.images` - image API
 - `client.models` - model API
 - `client.moderations` - moderation API
-- `client.organization` - organization API
-- `client.project` - project API
 - `client.realtime` - realtime API
 - `client.responses` - response API
-- `client.skill` - skill API
 - `client.threads` - thread API
 - `client.uploads` - upload API
 - `client.vectorStores` - vector_store API
@@ -377,19 +372,6 @@ final result = await client.embeddings.create(body);
 print(result);
 ```
 
-### eval
-```dart
-// List evals
-final params = <String, dynamic>{
-  'limit': 1,
-  'order': 'asc',
-  'after': 'after',
-  'before': 'before',
-};
-final result = await client.eval.list(params);
-print(result);
-```
-
 ### file
 ```dart
 // List files
@@ -400,19 +382,6 @@ final params = <String, dynamic>{
   'before': 'before',
 };
 final result = await client.files.list(params);
-print(result);
-```
-
-### fine_tuning
-```dart
-// List fine-tuning jobs
-final params = <String, dynamic>{
-  'limit': 1,
-  'order': 'asc',
-  'after': 'after',
-  'before': 'before',
-};
-final result = await client.fineTuning.listJob(params);
 print(result);
 ```
 
@@ -444,33 +413,6 @@ final body = OpenAiModerationCreateRequest(
   model: 'model',
 );
 final result = await client.moderations.create(body);
-print(result);
-```
-
-### organization
-```dart
-// List organization admin API keys
-final params = <String, dynamic>{
-  'limit': 1,
-  'order': 'asc',
-  'after': 'after',
-  'before': 'before',
-};
-final result = await client.organization.getListAdminApiKeys(params);
-print(result);
-```
-
-### project
-```dart
-// List project roles
-final projectId = '1';
-final params = <String, dynamic>{
-  'limit': 1,
-  'order': 'asc',
-  'after': 'after',
-  'before': 'before',
-};
-final result = await client.project.getListRoles(projectId, params);
 print(result);
 ```
 
@@ -517,19 +459,6 @@ final body = OpenAiResponsesRequest(
   user: 'user',
 );
 final result = await client.responses.create(body);
-print(result);
-```
-
-### skill
-```dart
-// List skills
-final params = <String, dynamic>{
-  'limit': 1,
-  'order': 'asc',
-  'after': 'after',
-  'before': 'before',
-};
-final result = await client.skill.list(params);
 print(result);
 ```
 
@@ -675,10 +604,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

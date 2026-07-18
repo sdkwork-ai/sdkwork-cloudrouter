@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{
-    GoogleContent, GoogleGenerationConfig, GoogleSafetySetting, GoogleTool, GoogleToolConfig,
-};
+use crate::models::{GoogleContent, GoogleGenerationConfig, GoogleSafetySetting, GoogleTool, GoogleToolConfig};
 
 /// Google Gemini google generate content request schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

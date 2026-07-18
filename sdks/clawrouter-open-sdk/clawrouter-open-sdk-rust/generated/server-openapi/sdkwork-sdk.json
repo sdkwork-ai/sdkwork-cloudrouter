@@ -5,6 +5,8 @@
   "language": "rust",
   "sdkType": "ai",
   "packageName": "clawrouter-open-sdk",
+  "transportPackageName": "clawrouter-open-sdk",
+  "consumerPackageName": "clawrouter-open-sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

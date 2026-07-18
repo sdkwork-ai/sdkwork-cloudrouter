@@ -16,7 +16,7 @@ class FilesAnthropicApi {
     final query = buildQueryString([
       QueryParameterSpec('before_id', beforeId, 'form', true, false, null),
       QueryParameterSpec('after_id', afterId, 'form', true, false, null),
-      QueryParameterSpec('page_size', limit, 'form', true, false, null)
+      QueryParameterSpec('limit', limit, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/anthropic/v1/files'), query));
     return (() {

@@ -98,17 +98,12 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 - `client.getContainer()` - container API
 - `client.getConversation()` - conversation API
 - `client.getEmbeddings()` - embedding API
-- `client.getEval()` - eval API
 - `client.getFiles()` - file API
-- `client.getFineTuning()` - fine_tuning API
 - `client.getImages()` - image API
 - `client.getModels()` - model API
 - `client.getModerations()` - moderation API
-- `client.getOrganization()` - organization API
-- `client.getProject()` - project API
 - `client.getRealtime()` - realtime API
 - `client.getResponses()` - response API
-- `client.getSkill()` - skill API
 - `client.getThreads()` - thread API
 - `client.getUploads()` - upload API
 - `client.getVectorStores()` - vector_store API
@@ -396,19 +391,6 @@ OpenAiEmbeddingList result = client.getEmbeddings().create(body);
 System.out.println(result);
 ```
 
-### eval
-
-```java
-// List evals
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("limit", 1);
-params.put("order", "asc");
-params.put("after", "after");
-params.put("before", "before");
-OpenAiEvalList result = client.getEval().list(params);
-System.out.println(result);
-```
-
 ### file
 
 ```java
@@ -419,19 +401,6 @@ params.put("order", "asc");
 params.put("after", "after");
 params.put("before", "before");
 OpenAiFileList result = client.getFiles().list(params);
-System.out.println(result);
-```
-
-### fine_tuning
-
-```java
-// List fine-tuning jobs
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("limit", 1);
-params.put("order", "asc");
-params.put("after", "after");
-params.put("before", "before");
-OpenAiFineTuningJobList result = client.getFineTuning().listJob(params);
 System.out.println(result);
 ```
 
@@ -464,33 +433,6 @@ OpenAiModerationCreateRequest body = new OpenAiModerationCreateRequest();
 body.setInput("input");
 body.setModel("model");
 OpenAiModeration result = client.getModerations().create(body);
-System.out.println(result);
-```
-
-### organization
-
-```java
-// List organization admin API keys
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("limit", 1);
-params.put("order", "asc");
-params.put("after", "after");
-params.put("before", "before");
-OpenAiOrganizationAdminApiKeyList result = client.getOrganization().getListAdminApiKeys(params);
-System.out.println(result);
-```
-
-### project
-
-```java
-// List project roles
-String projectId = "1";
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("limit", 1);
-params.put("order", "asc");
-params.put("after", "after");
-params.put("before", "before");
-OpenAiRoleList result = client.getProject().getListRoles(projectId, params);
 System.out.println(result);
 ```
 
@@ -537,19 +479,6 @@ body.setTopP(23);
 body.setTruncation("auto");
 body.setUser("user");
 OpenAiResponse result = client.getResponses().create(body);
-System.out.println(result);
-```
-
-### skill
-
-```java
-// List skills
-Map<String, Object> params = new LinkedHashMap<>();
-params.put("limit", 1);
-params.put("order", "asc");
-params.put("after", "after");
-params.put("before", "before");
-OpenAiSkillList result = client.getSkill().list(params);
 System.out.println(result);
 ```
 
@@ -695,10 +624,12 @@ MIT
 
 ## Regeneration Contract
 
-- Generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
-- Each run also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
-- Apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
+- HTTP/OpenAPI generator-owned files are tracked in `.sdkwork/sdkwork-generator-manifest.json`.
+- HTTP/OpenAPI generation also writes `.sdkwork/sdkwork-generator-changes.json` so automation can inspect created, updated, deleted, unchanged, scaffolded, and backed-up files plus the classified impact areas, verification plan, and execution decision for the latest generation.
+- HTTP/OpenAPI apply mode also writes `.sdkwork/sdkwork-generator-report.json` with the full execution report, including `schemaVersion`, `generator`, stable artifact paths, and the execution handoff commands that match CLI `--json` output.
 - CLI JSON output also includes an execution handoff with concrete next commands, including reviewed apply commands for dry-run flows.
-- Put hand-written wrappers, adapters, and orchestration in `custom/`.
-- Files scaffolded under `custom/` are created once and preserved across regenerations.
-- If a generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- Put HTTP/OpenAPI hand-written wrappers, adapters, and orchestration in `custom/`.
+- Files scaffolded under `custom/` are created once and preserved across HTTP/OpenAPI regenerations.
+- If an HTTP/OpenAPI generated-owned file was modified locally, its previous content is copied to `.sdkwork/manual-backups/` before overwrite or removal.
+- RPC SDK source workspaces use convention-first evidence by default: RPC SDK family naming, language workspace naming, `rpc/*.manifest.json`, proto source references, generated client source, and native package manifests.
+- Use `sdkgen inspect --protocol rpc` to verify RPC convention evidence. Request persisted generator evidence only with `--emit-control-plane` for release, CI, audit, or migration workflows; evidence paths are derived by generator convention.

@@ -6,12 +6,13 @@
     "version": "0.1.0",
     "language": "python",
     "sdkType": "ai",
+    "protocol": "http",
     "packageName": "sdkwork-clawrouter-open-sdk"
   },
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -39,7 +40,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "bb2cbca963d88863cf4e8407eb89eb818360ed72a68bf19581207bbd4ce0190b"
+      "sha256": "aa62afef1d068c65c2ba9647245e02591fbcb0012f978fa37a9e9c66d50ffdb1"
     },
     {
       "path": "requirements.txt",
@@ -51,7 +52,7 @@
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/api/__init__.py",
-      "sha256": "4c265642a172a89ce1e65871d4ad1a458de7cf4aa9ed71341c203d7a38760898"
+      "sha256": "8424c95209ed8e19ce499513b6a092bd2301140cc370d6f873115da494d77cd9"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/api/assistants.py",
@@ -106,10 +107,6 @@
       "sha256": "36d65ca521dd249ac27d7293edaef1b8ca6f74f1e74725de3c35885eb731f3ae"
     },
     {
-      "path": "sdkwork_clawrouter_open_sdk/api/eval.py",
-      "sha256": "44467e60a9fb87354365843c0933a148199fe92cc5f421db93a4a57ef8a19484"
-    },
-    {
       "path": "sdkwork_clawrouter_open_sdk/api/files_anthropic.py",
       "sha256": "40ed91ba8afd534171e7ef7c621119043835048ae01de119dd259ce5f3fea0d5"
     },
@@ -120,10 +117,6 @@
     {
       "path": "sdkwork_clawrouter_open_sdk/api/files.py",
       "sha256": "9e9a454c35c394219b0793ad99762ce01a322db3f30a7f71e2b9d6b71168fbb8"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/api/fine_tuning.py",
-      "sha256": "8a7938abb16a861919b6a5a919ba15607abb97e3f73208bf5dbddffcaf78153d"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/api/images_midjourney.py",
@@ -143,19 +136,11 @@
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/api/models.py",
-      "sha256": "bdfdc5a29d45263747a9f253cf75bb81e2e32af76bb2e8397af0d8d0275b019e"
+      "sha256": "004f8f9cff1a2c028129b8b919486180542e4364f3767762642352b9e9a3335f"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/api/moderations.py",
       "sha256": "586a57263d6f70c6d5a1574c0148fe8ee2b1bc14ed6bcd46190994036eb28444"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/api/organization.py",
-      "sha256": "99dcf69a85d5b0af2ad83acf25cef50e7b87b990c71b7ce46f743248126b63b5"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/api/project.py",
-      "sha256": "a2eae03726b32f44fca626037cd83223dfcf4b3e11eecd92d82f56d90488cafc"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/api/realtime.py",
@@ -168,10 +153,6 @@
     {
       "path": "sdkwork_clawrouter_open_sdk/api/responses.py",
       "sha256": "429c03162f8574bf65d4fad5d5298a13ce907df5f82fa1ac8f9d99d61a163e5f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/api/skill.py",
-      "sha256": "5a081f71ab49a77781b30618c2ca855cb95274d295793ab2caa073cd9703b6a9"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/api/threads.py",
@@ -203,15 +184,15 @@
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/client.py",
-      "sha256": "10f6e2b9b93a5c32d4cd17449c373dac0c96eb662b7f40f6acf5fd5e23ac1c6c"
+      "sha256": "01f7764eb7a3795195e215b7a822a4cff3a651bd79b7c99309301e853b7e549f"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/http_client.py",
-      "sha256": "2f2d56fa537b032e1eee8825f89944b6ff78d919e5a1c684d21325cfcc7bc398"
+      "sha256": "d87702f152eee69d96a50549111b7b6ef1efc28d7ae6a3da4f0c17a469208ba6"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/__init__.py",
-      "sha256": "8c9f154cb4fadb210c486463baa6dd5a34042b616a21932bc8bd2828c0e81666"
+      "sha256": "5dd69bf356a82847656b71b9279c7c6590049157f0f65de404d11b2934d8d444"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/anthropic_content_block_param.py",
@@ -308,42 +289,6 @@
     {
       "path": "sdkwork_clawrouter_open_sdk/models/delete_result.py",
       "sha256": "a51f2b841a21de0e825eace785bd13a79bb368db52dc89d864b4cbce77bf3c05"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_audio_speeches_usage_item.py",
-      "sha256": "a9654ce5a4c9cb66454e2787da87abfd3ba12f384dc690d9bb7234241778982e"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_audio_transcriptions_usage_item.py",
-      "sha256": "57d88e522e9ce2bcae03a0c96f404fb36b65ea1bbfc9c6d873e01e7228273071"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_code_interpreter_sessions_usage_item.py",
-      "sha256": "938e3b3c102c6418df740a7eb79dffc065b42c6c32283b1b53ab92adf3d43961"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_completions_usage_item.py",
-      "sha256": "0e146e5aa4997f6a0df798c98f0b5d987c135ac2e9fb928969385cae38d9c308"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_costs_item.py",
-      "sha256": "5da83f195f8c1bbcf3b2b890cc5ad1febd2fd8e11d4642307bc3879331ca68b5"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_embeddings_usage_item.py",
-      "sha256": "4756f37847e168b6340529cfadaa2f5128a1ea92691808b5a85b8dc1461cda0f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_images_usage_item.py",
-      "sha256": "12bf44d475c775596192033453c4a7801d39059abafcbc416010b5e26d443b65"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_moderations_usage_item.py",
-      "sha256": "af9eac9de5e7decb582e39b3d1b9f1f69902063bc8624d94d0de063d72864e19"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/get_organization_vector_stores_usage_item.py",
-      "sha256": "e176981618a1600d4f208a06f507bc8236fbfa46929c5982a631b124c603b7bf"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/google_batch_embed_contents_request.py",
@@ -526,190 +471,6 @@
       "sha256": "35bf50b396c5ff2b25f6780a53f841e8f3490eddb0e694aa45015856e50cadc3"
     },
     {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_assistants_item.py",
-      "sha256": "18b00440d326f126cfe7430473fde6fe12e33e2b4e035adfee670dde56841dc9"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_batches_item.py",
-      "sha256": "e5d24ac788fadd154dad5fc62df6dc6c8d3c721ae28fab5c5244cf642a92388b"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_chat_completion_messages_item.py",
-      "sha256": "390b9dce764e8b36eab5419daa54a4c4047d8a2d9f4fd6e595282fc8465a9a67"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_chat_completions_item.py",
-      "sha256": "c827ad61369cb2ae488710f5b86a48de840c96f81fedd02d0c363aaead63e8ac"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_container_files_item.py",
-      "sha256": "9f465698f7501afec4b5e710bbf29938d8d36c96af5cd29057b8c8e0f20e37d7"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_containers_item.py",
-      "sha256": "341f82ae6f59156d4097f747daf557d95a8ed0d125630f1a416a4cc09ee0bd8b"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_eval_run_output_items_item.py",
-      "sha256": "92f12b044728dac0c36dfda7f5d6f45b09449f23995f4f3a3875143fa26c358e"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_eval_runs_item.py",
-      "sha256": "7d82a44299efc2008ed4e3f6d8bd56b4653a4aafb36b1ffc084c02ba10c40fb9"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_evals_item.py",
-      "sha256": "2e784b8c33128b4a8ed8b8802d83396692dd80e1d59488d88dad9b0cc30a6b20"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_files_item.py",
-      "sha256": "137fe600c58ca861cf9ce6c3fa060c93be1282e10773e480d110750419bd2108"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_fine_tuning_checkpoint_permissions_item.py",
-      "sha256": "5d128a48fb5e9e99916847a91ebf28207758a22db90434126f9db40b3b69a5f2"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_fine_tuning_job_checkpoints_item.py",
-      "sha256": "c8c55d52c305c3ecb4d48c43ea81c0b3dfb91bae1f5bff79f2b7d82d55bbf0c5"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_fine_tuning_job_events_item.py",
-      "sha256": "cb8cce7eab04731b6a2d4f89dd64de767233815da0593d9358b0ff3897a4cdba"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_fine_tuning_jobs_item.py",
-      "sha256": "274310867defc961632ae49108cc2c495ddb2231b93bd971a4b5302a254e8dd1"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_messages_item.py",
-      "sha256": "b541983c2e8d0a7ba0d90e2f966b781c8dffbd16726943108b1240ed927e1aa3"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_admin_api_keys_item.py",
-      "sha256": "67112652a4b79da1562fcac1f88e054539003704b243bbfe5f25d6388c55dde1"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_audit_logs_item.py",
-      "sha256": "c120a2f35bea43da2939e698084cc5744638b666eec4c07531f95162e46308f4"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_certificates_item.py",
-      "sha256": "73e5e317d335e66599d51b39276e79ce5e975da427703b5c1b45dc181bef8814"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_group_roles_item.py",
-      "sha256": "c389a83f546060099451cc056eaccd525c59e82811a3b3c2a48e3e358090aed9"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_group_users_item.py",
-      "sha256": "f07d41ae03443e1f188b56b0da5ecd8d0902bfe7f64b5b3aa39667d07a2481c8"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_groups_item.py",
-      "sha256": "cc035468d56001c464ae01b3071ee0ee2269e38d1ac83d97c3ecbc9e44335ad1"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_invites_item.py",
-      "sha256": "dd02c6695fb87a01e84609069922a5f428785cbe90e25ed76bb3e83b27ce9d14"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_projects_item.py",
-      "sha256": "abf71e3fd316e25a415424e1362b5befb2262ee6b4d1a5548c0246df4363b2c7"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_roles_item.py",
-      "sha256": "d7ca1efa9dc109fe283bb02802cd40d502eb5dd2ea1d78302c255f795994541d"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_user_roles_item.py",
-      "sha256": "9071c1cd3208241fd8d2a6d44e6bfd4c9e23a503e6160d7de873c1f5e3bf743f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_organization_users_item.py",
-      "sha256": "f13d826b68a0d1084f28daf5a23ab14a58c562a376fe5f3db8317cde68ab04df"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_api_keys_item.py",
-      "sha256": "16de08b3d0b39a484afe3b747cbaec309c4c62f2c59d0ef9b91b113e79fa0abd"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_certificates_item.py",
-      "sha256": "f1f4462bcaaf850b96424cdb5b50a67e9280e659ab6b817004cb4a6941bf514c"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_group_roles_item.py",
-      "sha256": "9b9d41d3f06155d81773e7da1e8d8f5b8dac922825f199c1535b6a447489c77b"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_groups_item.py",
-      "sha256": "4cee554addebbb0aec302d79920193e0f80bb5201cf695f4e256a30e3204eeed"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_rate_limits_item.py",
-      "sha256": "094d731815d9b9d034afac8370b9a18dbf5499e3874bbc273f7112ab2223dfe4"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_roles_item.py",
-      "sha256": "a65444a2c0e6abe44df275eee98a2591489bbd7a65d8ed1de8e576bf9480442f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_service_accounts_item.py",
-      "sha256": "232349a3ba33c07e68640b54793783088143830a8837ecd55af402a3aaf53224"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_user_roles_item.py",
-      "sha256": "bebf7a156b80289535dd869ee3c691758cdf2c90aece9b5dc03bb508d2990723"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_project_users_item.py",
-      "sha256": "6e9b9bb369f983c420f9dc09f6a3ba051f0ab6ced5b5d93cfecc598395cbb66a"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_response_input_items_item.py",
-      "sha256": "667541e3a7ea7c38e196a9843cb3697372df8d831fc68ea2597cad0377ace1f8"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_run_steps_item.py",
-      "sha256": "63ad07b31268dc42ce557caac206f5d8f5b9909de02fa3f63c7966bb63deb05f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_runs_item.py",
-      "sha256": "a395b3f34cfb976de892d40c677b70b712d4a43e0399783ca116ab336b6d9814"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_skill_versions_item.py",
-      "sha256": "0f141bd2c9c9798269189de0fb2961a64fe1caaf45a601764d02d71affb91f86"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_skills_item.py",
-      "sha256": "ac08c5446a9d0139d579645873ce6c80292307dcaf702a845fc228e3dd6bf5ad"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_vector_store_file_batch_files_item.py",
-      "sha256": "542475141e2a81261bd2252b0b3f5afe8431829ba087d3434f7e1f2765b0339c"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_vector_store_files_item.py",
-      "sha256": "9c97b5c7b1b14414a99cca52556281d8b4d9c07a98f712ff70dc9995763aae7f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_vector_stores_item.py",
-      "sha256": "30c26004b1e523ec816a069c126b84a526091cb4e21f1667495b398aed9647fb"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_videos_item.py",
-      "sha256": "11cb9fcd6d46245f7280fb63d341b338c2dad10934c65865dbcc291070463a36"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_voice_consents_item.py",
-      "sha256": "ea30109610bcc8622611a352934368ed61c6e0cc33245bea8f89fdc2ca80cc7c"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/list_voices_item.py",
-      "sha256": "bb8a55fcef48c9c6afe86624712744ec81867b90833e2787955bf78a29c698a1"
-    },
-    {
       "path": "sdkwork_clawrouter_open_sdk/models/midjourney_image_generation_request.py",
       "sha256": "6323ffcb4921d846743f3e2c52d35f34b33c2eb2207bb31f620792da675df05a"
     },
@@ -784,22 +545,6 @@
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_batch.py",
       "sha256": "04c07fe98ef2523a5384f78276a80dc2512efc2567eb644e13ad9a30cd957f37"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_certificate_activation_request.py",
-      "sha256": "660238186e81d6f7d500e46d7c2cf87ae264f5d9b1af3206c03053829db8b0cb"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_certificate_list.py",
-      "sha256": "b7e50df64ba01e5f829bcc4ee402d9199e36928da746c79fe49dd2f93a6a40c4"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_certificate_upload_multipart_request.py",
-      "sha256": "975ea7a1e59c809dea19715f9ba614f61c60653c8b6adb5806a76873fad2b72e"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_certificate.py",
-      "sha256": "a06bc027fd2e5f8dfbeec6fd6a12c5231e4c9f944f68a7568efbcf0c714c0391"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_chat_audio_config.py",
@@ -950,46 +695,6 @@
       "sha256": "220d13054d1e8f59a816c5f968a9d4af970c68fc9de337599539b6adf4ad3d37"
     },
     {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_create_request.py",
-      "sha256": "673cecaf8ceed0a0cf5557938f6533398add44e46ff556b061eed9ed67466eb0"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_list.py",
-      "sha256": "f506946782171e909071538003c8c8989e0e67b7e8cbd5edbc68c4280f450033"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_create_request.py",
-      "sha256": "902ec466a4387e661a4a6c142f69550f9dce6bc8a58c13eb5417ee68cac70550"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_list.py",
-      "sha256": "f6baad213178978ce99f14e9edf9f5a03cbf7ae9142368a93eac8cfe7b719e3f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_output_item_list.py",
-      "sha256": "761afa10646e3ad37ea6d651e84d041b334224e7579a3a672617f914cd36d6f9"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_output_item.py",
-      "sha256": "c1789165974051a52bb8e6dc9630f0e07ed012e20e4fe13b82858a63bf22aadc"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run_result_counts.py",
-      "sha256": "54e2931bcd3f51aeca3d9c4848f4e99b588065bc9872c5eafc9e579de2a22739"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_run.py",
-      "sha256": "919027f7d92faf3f97bb159139e1f6d9a53a92a3a19abb2b43c1d8600d39e929"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval_update_request.py",
-      "sha256": "8fc3d1dffb63c4f1bd65966c846f93eab4b758415c9121e9104e6bb42450146f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_eval.py",
-      "sha256": "e2341274fb08b6613b4bf00e72574243c1a0101f8da0b7736fdc8ddd01bee299"
-    },
-    {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_file_list.py",
       "sha256": "461e2cb55b8d2fe26746b7a7aa44dde7bd2d5b7386d99baaebd7c095e83d9211"
     },
@@ -1008,62 +713,6 @@
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_file.py",
       "sha256": "efce0a9118ff8d981b7d97c757ad3f6abb754097922ee91e2e9b02741b1b8843"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_checkpoint_permission_create_request.py",
-      "sha256": "59ea0559f65133a30684f17d429b0623a625fa8b9d93a2923919f43e16f7ab78"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_checkpoint_permission_list.py",
-      "sha256": "38c977eaa848a994de46c01e436e395e22869fe72ba7a8385745c53070351d33"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_checkpoint_permission.py",
-      "sha256": "d36d16ea0ae541a47fd531320fdd5adaa39bc30be81921b54b120e402c4fdeb1"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_grader_run_request.py",
-      "sha256": "ea0c38bad90f754337eebeac4d18849584953409e2a051740e5aa0c8e0dbca23"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_grader_run_result.py",
-      "sha256": "aacfc6a34f090e1ec2e7f6588169eab8bfdd07f305e3bd8d2ff49b36ff7d8af4"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_grader_validate_request.py",
-      "sha256": "ca174164b1e644b980bb644a860f1a5e2674deb71130e2e4677885581da061e9"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_grader_validation_result.py",
-      "sha256": "49dfbc23739197e7ac6b1c5c3ded92d1888267521bd5fd9442dd638733a7b6a7"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_checkpoint_list.py",
-      "sha256": "22431e84e960c4f7e28dbb68b758fbca3ae3cbfcae208d1d89a043b226c60152"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_checkpoint.py",
-      "sha256": "6d94a8cad9659aae0e8accdd04ac4f4a89c0dbb7694a1f9d517c7131ff06ea6a"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_create_request.py",
-      "sha256": "885f68e68dbcf0f085875d2d2268c0a82131b15a0b323f297fe2a837d0878364"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_event_list.py",
-      "sha256": "b716e037344dfa917c9f29a2d717ad0d40f3d71ad7a85f41c4dd039c758646d7"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_event.py",
-      "sha256": "fe8af9cfd3753bcd8350e5b24552efc337f3ef204138d5df61bbab681ef057e0"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job_list.py",
-      "sha256": "9caeb4c68046f44783ca38e87c056f3c83396da270d7fe584e11061de4f0b2ed"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_fine_tuning_job.py",
-      "sha256": "adb9f0e5d508b281c6c4836487465a4b0d6e6626b7609bf1e3302dfe7b97de2f"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_function_call_choice.py",
@@ -1087,7 +736,7 @@
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_generation_request.py",
-      "sha256": "51bc76c68a808c685054c059832bf3d282c0049be0cbab80df028081f9db56f8"
+      "sha256": "ddaf0955a3a3ae009bc9a5633cb9e0772414827c230d41852abdcff67c997c91"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_image_list.py",
@@ -1162,156 +811,8 @@
       "sha256": "851394125e367de0e23c12fa9d042a8574abccb98ad2f3ef8f0ccd2790c9851a"
     },
     {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_admin_api_key_create_request.py",
-      "sha256": "5dccbb37b9e6b04b92368fa018c70b5b7abaa03e9cc43201a463ef37be6fc8e0"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_admin_api_key_list.py",
-      "sha256": "6e57bffe8ca2f7f5e9a05ca4fb81483e5007d8655e98ede32f54f8585111f2d0"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_admin_api_key.py",
-      "sha256": "32ec1c4916d913b810027d6725889392cec7baa1b27d2e0f5c182b89787ff042"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_audit_log_list.py",
-      "sha256": "2579ff4b8386a46d89f1f13dda0d36b5dd6521bf78fe294d014b40685ef57093"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_audit_log.py",
-      "sha256": "ae312f4e9f2f4923a904d294e82b1690d8043f8d7f2b2ee537c58ce20c8ec7b6"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_cost_bucket.py",
-      "sha256": "d9eeac5c9558013197a887ffe0aa4840a0c06cbd7128ff26f8ed842267646e26"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_cost_list.py",
-      "sha256": "34c183b066cb7594380e68a766ea51825eef79bec3b34fe2abb368c7fb008761"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group_create_request.py",
-      "sha256": "3c998ae3f80d3ec4599b416b19126917fedd16fa86547d4cdaaee88390c04c4d"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group_list.py",
-      "sha256": "c3e8d7d0bfc8d0d71e29c8962782ec454611aeb6701c87a98300bba344dd844b"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group_update_request.py",
-      "sha256": "a5c80fec1cca9ef168c7491172c6e1308534e76b94c2bfff9624c5343fee1c0c"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group_user_create_request.py",
-      "sha256": "1406db7e2967333794f75c789b1410e23dbca6eded2cfe3f2ad41cd29640222f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_group.py",
-      "sha256": "999e66620535fa7907d64180a81f05a24b73a1a709a65a705d9ac9c01754c50d"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_invite_create_request.py",
-      "sha256": "e57b91157b66d150dae113f36a4ebc014c290373ba99f7e0e4d7921e4e4044f3"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_invite_list.py",
-      "sha256": "b3beae5f30dc4b87aab53987dcacd5b49165b52ab2148eef79b0957f2dd527a6"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_invite.py",
-      "sha256": "e40ce9fb35c8b07fae09c917278753a4def8d9cf0cbcbd153ef322bc08cd5ae1"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_usage_bucket.py",
-      "sha256": "2a2f4b646c30208e45c634591230e332fe3319b777a0ec886011cd79570e0425"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_usage_list.py",
-      "sha256": "4dad1356d3b559e8e1db5c7377e36725500043773e51ac64fd027c69a7ad7657"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_user_list.py",
-      "sha256": "f8c529a3f6fa6807b5282cb84090bb84b03fd560115d189e97e289d52e954bba"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_user_update_request.py",
-      "sha256": "53141ded6aafb04195d13425634c9c9d0a0587d6e4b2b0f11f5e5c8606c4ca6c"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_organization_user.py",
-      "sha256": "b87c2462befa5b8a3735775be15a4bbb97ac9471029db3ce9ec3bdbbdcad09fe"
-    },
-    {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_prediction_config.py",
       "sha256": "40841be0364a35daf88944719a1e31d8e084fa1d4c405bb64cf39d68cc01e5d2"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_api_key_list.py",
-      "sha256": "6c8a16ba7e1a271f686782cc1124c354066ccdf05f0a0f173a620f0f517a3f3f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_api_key.py",
-      "sha256": "e637087f6ca83dc817ca6729aa3d88ebabb21875d5d07befa847f17ac255fb31"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_create_request.py",
-      "sha256": "ddad01960fb30b7bedcf69186a51719fcc27fb34af7f3ae1919085cb1d18b4d5"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_group_create_request.py",
-      "sha256": "85af11b985e0d1422ca17dc8338f796889ffe381116e1aeadadbbc9ad971375c"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_list.py",
-      "sha256": "0c3337e321493b90448e5b3b299ecf9563d34ee94a13f1515028b61254ec1910"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_rate_limit_list.py",
-      "sha256": "db2cead695534c45f845728d6f022e4b5a66ecc70ddc37486b8ce57d3aa85d3c"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_rate_limit_update_request.py",
-      "sha256": "c7abf4a98ac7ef29ef2f8ab1dddd5e9a4ed399cac7a6c66a9db7ca7415890d0f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_rate_limit.py",
-      "sha256": "b34ffad173f7696e6001356f42f89145c2cc45ccca39953f2f82b0b76f4bb9ae"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_service_account_create_request.py",
-      "sha256": "ac8139acc58ad28ca19684814f1575a96b6004c47a2df8ca0803db4a023a4d85"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_service_account_list.py",
-      "sha256": "ef18f9efecb818778d3701e907aa8832ceaa050aad8af81b8b8bc1f51717997d"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_service_account.py",
-      "sha256": "de3f729dfddee6bd8de54c7aa3b0528f9bf431f8278713f4f360ff0180882093"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_update_request.py",
-      "sha256": "7b0d2f4431ebd59912bde719d70dc17d402ba0a7cb706843a48636ba88bd8377"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_user_create_request.py",
-      "sha256": "1e224cf637bfbce758d5da24d9971b7781251134b986f45e660f655ec2589648"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_user_list.py",
-      "sha256": "0c8d66bd50135c993d38b25cfe9b8721f5eda5204b0526e81af2928f2f1b92e5"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_user_update_request.py",
-      "sha256": "272bbe3ead239ae1e1a4cf001bda4cae0f50ea40e2e09c5189a575018c4f4757"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project_user.py",
-      "sha256": "74bb7d88d346db1b867dfd3b75c0afef88086b847f2d6178520bd168cc2587a5"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_project.py",
-      "sha256": "8e2e3516750698156d5c0495094a2ed96c7c196c074b239d70faee243ddeb769"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_prompt_reference.py",
@@ -1442,34 +943,6 @@
       "sha256": "c4b778ff0115dae187ff045ec8e938c0bfb8d8e3fed0f387a6a6329fd34ea449"
     },
     {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_assignment_create_request.py",
-      "sha256": "d876f962a4f03cd5fdd3912f9f7c5ec6459a8b9432f8fa0ea2021500df1c9eb7"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_assignment_list.py",
-      "sha256": "a0f63170eeb0f345f8f9fe879db5ff11770150e922dd1af31685517e65f29f77"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_assignment.py",
-      "sha256": "10c77829c8ccd2dc00822578b67dce9cb71802afb1151bda5f07aae349ae4dd8"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_create_request.py",
-      "sha256": "95683e0b1620a59f9c8fe0047c682cc93ce09bee6b9d45bb075c8130e82eedf9"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_list.py",
-      "sha256": "504e8ea5617ef74b46a0d3471ad4d282c0ef3c18cfe4079b9912fe73dabece12"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role_update_request.py",
-      "sha256": "d63b6f11bc65b593fdaddeadb46516d50ad88e593726e9484dbfc3ac15c7734f"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_role.py",
-      "sha256": "0eb3e761f4c9415eaceb5b63c5d23d21d2f646b35370555c849f42eda9c042ac"
-    },
-    {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run_create_request.py",
       "sha256": "43c38cc3e9d7fcf15771dfdd297c0703faff7d18de0a1bc22bf6e6cc53b14cc1"
     },
@@ -1496,34 +969,6 @@
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_run.py",
       "sha256": "029e3c4c43bce05504b0d351249fa3510825cf3df2151bf20166df33ed8d9f82"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_create_multipart_request.py",
-      "sha256": "606652b68b8a0cfcfcbefdf201ee8781ae64ea43206cbbf2e3e4eeb8d270d203"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_list.py",
-      "sha256": "2549d90318793dc1761c840bab1eef20e7c73ddb34035a37a142c6291a791b33"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_update_request.py",
-      "sha256": "13729c4f830038975070b764631415d2c30bcdb8923b609ba2c0c715f37fd66b"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_version_create_multipart_request.py",
-      "sha256": "caebc960d02f5aa1d9288dfd6a0ca4acc0d96df9e3feb93aa89c2582095fce51"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_version_list.py",
-      "sha256": "dd3e6cc74873066015d15f5996f8cfccb87edf8181fffaff025bcfa38c0d72d4"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill_version.py",
-      "sha256": "769e1f0f95bad4f3c1440f50bc9ad0af535edacd49724ef80726ccb216251d22"
-    },
-    {
-      "path": "sdkwork_clawrouter_open_sdk/models/open_ai_skill.py",
-      "sha256": "265d41a2c49550309d1c48e72baa2d63287b8f751ad1a99b9c46cb9a39e58524"
     },
     {
       "path": "sdkwork_clawrouter_open_sdk/models/open_ai_speech_create_request.py",
@@ -1827,7 +1272,7 @@
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "4aba770e79008f59ad91b9712096a29d5145007c30050715f3af51236cc027d8"
+      "sha256": "52f3424a488407bf52f0cab6c1ab7125aa7208dc0f70bb4393258c3d1820a65e"
     },
     {
       "path": "setup.py",

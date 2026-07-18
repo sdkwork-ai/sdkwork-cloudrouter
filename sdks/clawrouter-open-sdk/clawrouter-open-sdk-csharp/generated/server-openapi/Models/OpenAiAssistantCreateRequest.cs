@@ -9,7 +9,7 @@ namespace Sdkwork.ClawRouter.Open.Models
         public string? Description { get; set; }
         public string? Instructions { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
-        public string? Model { get; set; }
+        public string Model { get; set; }
         public string? Name { get; set; }
         public string? ResponseFormat { get; set; }
         public double? Temperature { get; set; }

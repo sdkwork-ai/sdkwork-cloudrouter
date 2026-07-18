@@ -188,6 +188,42 @@ impl GatewayUsageRecorder for PostgresGatewayUsageRecorder {
         })
     }
 
+    fn record_gateway_usage_batch<'a>(
+        &'a self,
+        commands: Vec<GatewayUsageRecordCommand>,
+    ) -> GatewayUsageRecordFuture<'a> {
+        Box::pin(async move {
+            if commands.is_empty() {
+                return Ok(());
+            }
+            let recorded_at = current_epoch_millis();
+            let mut records = Vec::with_capacity(commands.len());
+            for command in commands {
+                command.validate()?;
+                let context = GatewayAccountingRecordContext::from_usage(
+                    &command,
+                    self.attribution.clone(),
+                    recorded_at,
+                )?;
+                context.validate()?;
+                records.push((command, context));
+            }
+
+            let mut transaction = self.pool.begin().await.map_err(|error| {
+                store_error("failed to begin gateway usage batch transaction", error)
+            })?;
+            for (command, context) in &records {
+                let trace_command = command.trace_command();
+                upsert_trace(&mut transaction, &trace_command, context).await?;
+                upsert_usage_fact(&mut transaction, command, context).await?;
+            }
+            transaction.commit().await.map_err(|error| {
+                store_error("failed to commit gateway usage batch transaction", error)
+            })?;
+            Ok(())
+        })
+    }
+
     fn record_gateway_trace_with_context<'a>(
         &'a self,
         command: GatewayRequestTraceCommand,

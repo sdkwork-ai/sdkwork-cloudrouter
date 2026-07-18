@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiRealtimeCallMultipartRequest
     {
-        public string? Sdp { get; set; }
+        public string Sdp { get; set; }
         public string? Session { get; set; }
     }
 }

@@ -16,7 +16,7 @@ public class FilesGoogleApi {
     /** Google Gemini list files */
     public GoogleFileListResponse listV1betaFiles(Integer pageSize, String pageToken) throws Exception {
         String query = buildQueryString(List.of(
-            new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+            new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/files"), query));

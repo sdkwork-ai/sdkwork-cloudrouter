@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiResponseInputItem;
+use crate::models::{OpenAiResponseInputItem};
 
 /// OpenAI-compatible paginated list of response input items.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

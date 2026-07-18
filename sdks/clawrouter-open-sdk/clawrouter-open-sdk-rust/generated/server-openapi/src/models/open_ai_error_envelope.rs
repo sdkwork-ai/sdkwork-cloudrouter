@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiError;
+use crate::models::{OpenAiError};
 
 /// OpenAI-compatible open ai error envelope schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

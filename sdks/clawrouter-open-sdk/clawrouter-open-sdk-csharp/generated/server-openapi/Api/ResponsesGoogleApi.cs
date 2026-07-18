@@ -22,7 +22,7 @@ namespace Sdkwork.ClawRouter.Open.Api
         {
             var queryString = BuildQueryString(new[]
             {
-                new QueryParameterSpec("page_size", pageSize, "form", true, false, null),
+                new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
                 new QueryParameterSpec("pageToken", pageToken, "form", true, false, null),
             });
             return await _client.GetAsync<Sdkwork.ClawRouter.Open.Models.GoogleCachedContentListResponse>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/google/v1beta/cachedContents"), queryString));

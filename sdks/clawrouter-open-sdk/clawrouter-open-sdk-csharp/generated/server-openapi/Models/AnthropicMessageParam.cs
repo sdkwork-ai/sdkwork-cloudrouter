@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class AnthropicMessageParam
     {
-        public string? Content { get; set; }
-        public string? Role { get; set; }
+        public string Content { get; set; }
+        public string Role { get; set; }
     }
 }

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.deployment-reference",
+  "application": "sdkwork-clawrouter-standalone-gateway-service",
+  "authority": "../../etc/sdkwork.deployment.config.json",
+  "supportedProfiles": ["standalone"]
+}

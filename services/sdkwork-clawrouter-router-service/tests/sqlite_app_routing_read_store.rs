@@ -84,7 +84,10 @@ async fn sqlite_routing_api_keys_return_display_and_copyable_owner_key_material(
     assert_eq!(1, keys.items.len());
     assert_eq!("Owner Key", keys.items[0].name);
     assert_eq!("sk-owner********ABCD", keys.items[0].display_key);
-    assert_eq!(Some("sk-owner-secret".to_owned()), keys.items[0].copyable_key);
+    assert_eq!(
+        Some("sk-owner-secret".to_owned()),
+        keys.items[0].copyable_key
+    );
     assert_eq!("5", keys.items[0].total_usage);
 }
 

@@ -24,14 +24,6 @@ namespace Sdkwork.ClawRouter.Open.Api
         }
 
         /// <summary>
-        /// Delete fine-tuned model
-        /// </summary>
-        public async Task<Sdkwork.ClawRouter.Open.Models.DeleteResult?> DeleteAsync(string model)
-        {
-            return await _client.DeleteAsync<Sdkwork.ClawRouter.Open.Models.DeleteResult>(ApiPaths.AiPath($"/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}"));
-        }
-
-        /// <summary>
         /// Retrieve model
         /// </summary>
         public async Task<Sdkwork.ClawRouter.Open.Models.OpenAiModel?> RetrieveAsync(string model)

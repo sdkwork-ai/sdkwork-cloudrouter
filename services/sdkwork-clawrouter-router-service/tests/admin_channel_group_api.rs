@@ -46,7 +46,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
@@ -87,7 +87,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
-                    r#"{"groupName":"OpenAI enterprise","priceReferenceMode":"official_price","officialPriceMultiplier":1.5,"capacity":{"total":750},"status":"disabled","resourceGroupCodes":["api.openai.codex"],"resourceCodes":["api.openai.containers","api.openai.skills"]}"#,
+                    r#"{"groupName":"OpenAI enterprise","priceReferenceMode":"official_price","officialPriceMultiplier":1.5,"capacity":{"total":750},"status":"disabled","resourceGroupCodes":["api.openai.codex"],"resourceCodes":["api.openai.containers","api.openai.responses"]}"#,
                 ))
                 .unwrap(),
         )
@@ -116,7 +116,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         update_payload["data"]["item"]["resourceGroupCodes"]
     );
     assert_eq!(
-        serde_json::json!(["api.openai.containers", "api.openai.skills"]),
+        serde_json::json!(["api.openai.containers", "api.openai.responses"]),
         update_payload["data"]["item"]["resourceCodes"]
     );
 
@@ -142,7 +142,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         list_payload["data"]["items"][0]["resourceGroupCodes"]
     );
     assert_eq!(
-        serde_json::json!(["api.openai.containers", "api.openai.skills"]),
+        serde_json::json!(["api.openai.containers", "api.openai.responses"]),
         list_payload["data"]["items"][0]["resourceCodes"]
     );
 
@@ -159,9 +159,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, delete_response.status());
-    let delete_payload = json_payload(delete_response).await;
-    assert_eq!(true, delete_payload["data"]["deleted"]);
+    assert_eq!(StatusCode::NO_CONTENT, delete_response.status());
 
     let final_list_response = router
         .oneshot(

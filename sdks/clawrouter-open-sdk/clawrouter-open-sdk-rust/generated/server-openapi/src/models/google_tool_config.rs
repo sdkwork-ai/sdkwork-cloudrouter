@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::GoogleFunctionCallingConfig;
+use crate::models::{GoogleFunctionCallingConfig};
 
 /// Google Gemini google tool config schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

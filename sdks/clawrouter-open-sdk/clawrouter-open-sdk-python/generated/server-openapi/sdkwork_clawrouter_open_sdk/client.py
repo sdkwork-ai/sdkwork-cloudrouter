@@ -18,17 +18,12 @@ from .api.completion import CompletionApi
 from .api.container import ContainerApi
 from .api.conversation import ConversationApi
 from .api.embeddings import EmbeddingsApi
-from .api.eval import EvalApi
 from .api.files import FilesApi
-from .api.fine_tuning import FineTuningApi
 from .api.images import ImagesApi
 from .api.models import ModelsApi
 from .api.moderations import ModerationsApi
-from .api.organization import OrganizationApi
-from .api.project import ProjectApi
 from .api.realtime import RealtimeApi
 from .api.responses import ResponsesApi
-from .api.skill import SkillApi
 from .api.threads import ThreadsApi
 from .api.uploads import UploadsApi
 from .api.vector_stores import VectorStoresApi
@@ -62,17 +57,12 @@ class SdkworkAiClient:
         self.container: ContainerApi
         self.conversation: ConversationApi
         self.embeddings: EmbeddingsApi
-        self.eval: EvalApi
         self.files: FilesApi
-        self.fine_tuning: FineTuningApi
         self.images: ImagesApi
         self.models: ModelsApi
         self.moderations: ModerationsApi
-        self.organization: OrganizationApi
-        self.project: ProjectApi
         self.realtime: RealtimeApi
         self.responses: ResponsesApi
-        self.skill: SkillApi
         self.threads: ThreadsApi
         self.uploads: UploadsApi
         self.vector_stores: VectorStoresApi
@@ -101,17 +91,12 @@ class SdkworkAiClient:
         self.container = ContainerApi(self._client)
         self.conversation = ConversationApi(self._client)
         self.embeddings = EmbeddingsApi(self._client)
-        self.eval = EvalApi(self._client)
         self.files = FilesApi(self._client)
-        self.fine_tuning = FineTuningApi(self._client)
         self.images = ImagesApi(self._client)
         self.models = ModelsApi(self._client)
         self.moderations = ModerationsApi(self._client)
-        self.organization = OrganizationApi(self._client)
-        self.project = ProjectApi(self._client)
         self.realtime = RealtimeApi(self._client)
         self.responses = ResponsesApi(self._client)
-        self.skill = SkillApi(self._client)
         self.threads = ThreadsApi(self._client)
         self.uploads = UploadsApi(self._client)
         self.vector_stores = VectorStoresApi(self._client)

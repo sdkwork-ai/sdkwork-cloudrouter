@@ -6,7 +6,7 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiFileUploadRequest
     {
-        public string? File { get; set; }
-        public string? Purpose { get; set; }
+        public string File { get; set; }
+        public string Purpose { get; set; }
     }
 }

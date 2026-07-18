@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::AnthropicContentSource;
+use crate::models::{AnthropicContentSource};
 
 /// Anthropic Claude anthropic content block param schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

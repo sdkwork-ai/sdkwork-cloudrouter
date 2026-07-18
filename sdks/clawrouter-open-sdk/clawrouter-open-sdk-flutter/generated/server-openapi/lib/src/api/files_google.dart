@@ -14,7 +14,7 @@ class FilesGoogleApi {
   /// Google Gemini list files
   Future<GoogleFileListResponse?> listV1betaFiles([int? pageSize, String? pageToken]) async {
     final query = buildQueryString([
-      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('pageSize', pageSize, 'form', true, false, null),
       QueryParameterSpec('pageToken', pageToken, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/google/v1beta/files'), query));

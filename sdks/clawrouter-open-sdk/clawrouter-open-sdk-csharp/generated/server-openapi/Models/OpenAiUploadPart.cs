@@ -6,9 +6,9 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiUploadPart
     {
-        public int? CreatedAt { get; set; }
-        public string? Id { get; set; }
-        public string? Object { get; set; }
-        public string? UploadId { get; set; }
+        public int CreatedAt { get; set; }
+        public string Id { get; set; }
+        public string Object { get; set; }
+        public string UploadId { get; set; }
     }
 }

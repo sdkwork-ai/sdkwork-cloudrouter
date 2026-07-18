@@ -10,10 +10,10 @@ namespace Sdkwork.ClawRouter.Open.Models
         public string? CreatedAt { get; set; }
         public string? EndedAt { get; set; }
         public string? ExpiresAt { get; set; }
-        public string? Id { get; set; }
-        public string? ProcessingStatus { get; set; }
-        public AnthropicMessageBatchRequestCounts? RequestCounts { get; set; }
+        public string Id { get; set; }
+        public string ProcessingStatus { get; set; }
+        public AnthropicMessageBatchRequestCounts RequestCounts { get; set; }
         public string? ResultsUrl { get; set; }
-        public string? Type { get; set; }
+        public string Type { get; set; }
     }
 }

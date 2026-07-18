@@ -2429,6 +2429,9 @@ importers:
       '@sdkwork/order-backend-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-order/sdks/sdkwork-order-backend-sdk/sdkwork-order-backend-sdk-typescript
+      '@sdkwork/order-pc-checkout':
+        specifier: workspace:*
+        version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-checkout
       '@sdkwork/order-pc-order':
         specifier: workspace:*
         version: link:../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order
@@ -2989,6 +2992,9 @@ importers:
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons:
     dependencies:
+      '@sdkwork/account-sdk-ports':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-account/apps/sdkwork-account-common/packages/sdkwork-account-sdk-ports
       '@sdkwork/account-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-account/apps/sdkwork-account-common/packages/sdkwork-account-service
@@ -3040,6 +3046,9 @@ importers:
       '@sdkwork/iam-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-service
+      '@sdkwork/membership-sdk-ports':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-sdk-ports
       '@sdkwork/membership-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-service
@@ -3055,15 +3064,24 @@ importers:
       '@sdkwork/notification-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/notification/sdkwork-notification-pc-react
+      '@sdkwork/order-sdk-ports':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-sdk-ports
       '@sdkwork/order-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
       '@sdkwork/payment-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-service
+      '@sdkwork/payment-sdk-ports':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-sdk-ports
       '@sdkwork/promotion-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-promotion/apps/sdkwork-promotion-common/packages/sdkwork-promotion-service
+      '@sdkwork/promotion-sdk-ports':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-promotion/apps/sdkwork-promotion-common/packages/sdkwork-promotion-sdk-ports
       '@sdkwork/prompts-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-prompts/sdks/sdkwork-prompts-backend-sdk/sdkwork-prompts-backend-sdk-typescript

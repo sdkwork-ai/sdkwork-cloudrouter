@@ -6,6 +6,6 @@ namespace Sdkwork.ClawRouter.Open.Models
 {
     public class OpenAiNamedFunctionChoice
     {
-        public string? Name { get; set; }
+        public string Name { get; set; }
     }
 }

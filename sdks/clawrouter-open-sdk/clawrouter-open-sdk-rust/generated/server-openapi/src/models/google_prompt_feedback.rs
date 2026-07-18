@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::GoogleSafetyRating;
+use crate::models::{GoogleSafetyRating};
 
 /// Google Gemini google prompt feedback schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

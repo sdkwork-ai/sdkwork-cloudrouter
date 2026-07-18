@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiFunctionCall;
+use crate::models::{OpenAiFunctionCall};
 
 /// OpenAI-compatible open ai tool call schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -6,6 +6,7 @@
     "version": "0.1.0",
     "language": "go",
     "sdkType": "ai",
+    "protocol": "http",
     "packageName": "github.com/sdkwork/clawrouter-open-sdk"
   },
   "generatedFiles": [
@@ -70,10 +71,6 @@
       "sha256": "512e6d2f050d8c01e3b55645c5e3a78ae16efa77c6191a0e153375968cbfb09d"
     },
     {
-      "path": "api/eval.go",
-      "sha256": "dab9c610791eae22ddd6abb35dace755153fb9fdf9552d29edecf08634d9eb88"
-    },
-    {
       "path": "api/files_anthropic.go",
       "sha256": "0c2e018db2dccdccbc9f6a60501eecee49b4f51dfe435b72a8ca70818388df44"
     },
@@ -84,10 +81,6 @@
     {
       "path": "api/files.go",
       "sha256": "c042a5a91aaa50d5bdf60affb9cc0f7e83857474f0acba885ea557e7ef52a21a"
-    },
-    {
-      "path": "api/fine_tuning.go",
-      "sha256": "5e5a1f3ee8a92b2659e71885ef4e27953024de0aea228912b4dc341598b94852"
     },
     {
       "path": "api/images_midjourney.go",
@@ -107,23 +100,15 @@
     },
     {
       "path": "api/models.go",
-      "sha256": "b804b534fe8ebf6c7be5475a9d89e9155c93b854f830a9d40a5d9378f8d51dc6"
+      "sha256": "f71ce4fb902fb5aad224bf110e305a455358a3c00aafdba5e4e20e3deb88126d"
     },
     {
       "path": "api/moderations.go",
       "sha256": "bc7eef66be6b505fa08911aca7a90e207e18548079e2455403498de9979c2f17"
     },
     {
-      "path": "api/organization.go",
-      "sha256": "258c7c26226cd617dba688426a8e9e3c7511497cbcc057f9dd88c6b823411800"
-    },
-    {
       "path": "api/paths.go",
       "sha256": "1aed1fe1deb7dec07da9981d623298c4086ede449c4a8a7358efbe9bf4ed8f1a"
-    },
-    {
-      "path": "api/project.go",
-      "sha256": "b94ebb88e59f795ad4d61303111cda5a4b79244dd45da1f308e433b8c8b2aba8"
     },
     {
       "path": "api/realtime.go",
@@ -136,10 +121,6 @@
     {
       "path": "api/responses.go",
       "sha256": "a8d653f28ef0803443afd64344b2b9ceb4d80a69422c84762e29369539f72346"
-    },
-    {
-      "path": "api/skill.go",
-      "sha256": "8a4323e78ae77e5228e6af27eda061d08d221c20085e02313097a76445c7e752"
     },
     {
       "path": "api/threads.go",
@@ -171,7 +152,7 @@
     },
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "affb1f1b5400ac492e94e2d01f3104b8dd38b50329e371265d4f0945f2b0763c"
+      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
     },
     {
       "path": "bin/publish.ps1",
@@ -195,7 +176,7 @@
     },
     {
       "path": "http/client.go",
-      "sha256": "ac5f01ef342d75a462f6290495c4351fe1147cfd7ae988dd388f9fbd969949b5"
+      "sha256": "dcff165f048a4f79ab193c97c4e532d9a62c09d3b05d6905dcf23f1ad5898290"
     },
     {
       "path": "http/doc.go",
@@ -207,15 +188,15 @@
     },
     {
       "path": "README.md",
-      "sha256": "e7480f6b5f0d50778e36d2c3d1d0a09531952f5d79829f2341aabff3d4f0f42a"
+      "sha256": "94217f28a85f88d470459ab98c0391696c73ca1ba310fb32979be134f887bedb"
     },
     {
       "path": "sdk.go",
-      "sha256": "fe787282ae54d39f89abec6bbd7801de590654a556df46ac86ed179df06742ee"
+      "sha256": "a36a7bf6682ceef827495184cd6c17bfed1c4b106aea363c9f88ba8959639396"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "4e4382cc32ea4ba3d7540f9bd0d73ae2117e495bfe03ba6af9eece23f857dcd6"
+      "sha256": "ea0b1cd0ea69fe53bc3c0eea7f896a873b34b4b8d98d74838e31e87049014494"
     },
     {
       "path": "types/anthropic_content_block_param.go",
@@ -324,42 +305,6 @@
     {
       "path": "types/doc.go",
       "sha256": "f57e6c997687e343a4e15c9431d228b567f5208e4159f3b05df6cb2a825d852a"
-    },
-    {
-      "path": "types/get_organization_audio_speeches_usage_item.go",
-      "sha256": "68b0b4c38be72111e324473db052a91903c6ff935817b308ea6621e86bbcc46d"
-    },
-    {
-      "path": "types/get_organization_audio_transcriptions_usage_item.go",
-      "sha256": "5d1abf55123973bd6403b17b99e81fc741d7dfb85dfb4f4493c7a2450dfc9cb6"
-    },
-    {
-      "path": "types/get_organization_code_interpreter_sessions_usage_item.go",
-      "sha256": "87d668fcf4398edbea3953935ce880f621e5f37f3f9b6898c117ef876ffa9dda"
-    },
-    {
-      "path": "types/get_organization_completions_usage_item.go",
-      "sha256": "945f78f997da29a297d9ff3b3a55a1ea5b5aa8cf1cd3f556efde1cd403427d33"
-    },
-    {
-      "path": "types/get_organization_costs_item.go",
-      "sha256": "4fd96ef0ff3ce29dd89eaba2c5191d9da450256bcc526378ef725aa5477be877"
-    },
-    {
-      "path": "types/get_organization_embeddings_usage_item.go",
-      "sha256": "f414ff9d0ac36d4ae47999be36ad7e815e4176e60202482b232b2ae3e6a75b4d"
-    },
-    {
-      "path": "types/get_organization_images_usage_item.go",
-      "sha256": "af876b1ac85bb49f4d14d9369687a44152c734fa07342246bc1a1672f26122c2"
-    },
-    {
-      "path": "types/get_organization_moderations_usage_item.go",
-      "sha256": "91895b9a2749fb93b591c25bcd940ce15a8f5fdd8f42b7fc8d66d7902557adf1"
-    },
-    {
-      "path": "types/get_organization_vector_stores_usage_item.go",
-      "sha256": "e240b59847cb57540011d15e14a2eead569c2effa1d3da699471173c95eb0cfd"
     },
     {
       "path": "types/google_batch_embed_contents_request.go",
@@ -534,200 +479,12 @@
       "sha256": "a3620cde242946bb8558f4667209237f1687258bc8bd36f4c909081e376503e8"
     },
     {
-      "path": "types/json_object.go",
-      "sha256": "73ed267d4464a74da9a2e87597cf0f26ce674075a5867a12c973adc089682524"
-    },
-    {
       "path": "types/kling_video_generation_request.go",
       "sha256": "b9361b7695c024f11cc0ca4ad51c890b933a8c07c59af29d1c778013fabe057f"
     },
     {
       "path": "types/kling_video_generation_task.go",
       "sha256": "20aa7e360b48a66e25ea70fbe4b3d7ccaf987646f4021ee46ce640930982a0cd"
-    },
-    {
-      "path": "types/list_assistants_item.go",
-      "sha256": "a9b24280e3665c0261692c3838b20e78f9802ceeb4aed81ee64df8a0d062a5ee"
-    },
-    {
-      "path": "types/list_batches_item.go",
-      "sha256": "f757bae2e9c91dcf23c9bb31dae1e18e6c15f75469b0f52737b99122169ee5f5"
-    },
-    {
-      "path": "types/list_chat_completion_messages_item.go",
-      "sha256": "85debcc8db86dbcfc49f2abd8ce442b480271f4822b52d6422a190e4ac9bf162"
-    },
-    {
-      "path": "types/list_chat_completions_item.go",
-      "sha256": "f2953ca796befe888fcce5d5c99c49b5840bc56a1f8f435b81352590ca1673e7"
-    },
-    {
-      "path": "types/list_container_files_item.go",
-      "sha256": "6e51499218e67782258203474551b2688d9bb768458118056b30098929fd77f3"
-    },
-    {
-      "path": "types/list_containers_item.go",
-      "sha256": "e0fa5d6ccfcb939ccd85898dfba621d03bfcd4d64bed7e8e0b5028169942d7d7"
-    },
-    {
-      "path": "types/list_eval_run_output_items_item.go",
-      "sha256": "5ef76b1e6d743d04ac2b327a2dd7901941dbcebaf06f9a639362f97e572a4079"
-    },
-    {
-      "path": "types/list_eval_runs_item.go",
-      "sha256": "5c2eba4b2511376c38c533ffae4f8b104e4e83d12a5002c9bd87dbb817cad93e"
-    },
-    {
-      "path": "types/list_evals_item.go",
-      "sha256": "1843ff4a4d561ff19fe728a1635edb1b512db4e154ac7a52c12e3eeceb2b3c56"
-    },
-    {
-      "path": "types/list_files_item.go",
-      "sha256": "a8dea3e6d7ee7ac108efd6c071b6837c343a34b01366948bd9b5aeb299fa5d3a"
-    },
-    {
-      "path": "types/list_fine_tuning_checkpoint_permissions_item.go",
-      "sha256": "19642b7528adb1828f801b042e7b2e6a5497514a8d5199226f4c62b1a2607077"
-    },
-    {
-      "path": "types/list_fine_tuning_job_checkpoints_item.go",
-      "sha256": "94f2810b7e088b5c04bfe1d72c543c697341b4a9675f6a0de42aff5b768b0ae8"
-    },
-    {
-      "path": "types/list_fine_tuning_job_events_item.go",
-      "sha256": "177623d551e84dc15a9c980ff0d83d92c708f59b7b7f64c391a0b3d7f39c3619"
-    },
-    {
-      "path": "types/list_fine_tuning_jobs_item.go",
-      "sha256": "b23210d95e0ba22b48da660b70879d9ae3a70ce640ac1093748a441a4fd98279"
-    },
-    {
-      "path": "types/list_messages_item.go",
-      "sha256": "d3615dcc844c5b205401a2539a0856a5eb5a55294d4813fe788c4f80461db070"
-    },
-    {
-      "path": "types/list_organization_admin_api_keys_item.go",
-      "sha256": "09212d7127045bcdbb85457ecad815d8a22dbc0f6e721f58d278b772a628b435"
-    },
-    {
-      "path": "types/list_organization_audit_logs_item.go",
-      "sha256": "4474db3444c82b283a84aba010199076401cf48806a4df5f18f877f55be6f582"
-    },
-    {
-      "path": "types/list_organization_certificates_item.go",
-      "sha256": "e3f96dcb1cf4458815d49a7611b1450ea56c811d0993b2c66c4b24721caf6c1f"
-    },
-    {
-      "path": "types/list_organization_group_roles_item.go",
-      "sha256": "cc7045ce8f32cde9529b5941527f92e4a320f9689bb2e597774c18220ed17583"
-    },
-    {
-      "path": "types/list_organization_group_users_item.go",
-      "sha256": "52c9bab09b630bc20426d2eb0d239b2ca2e767fac607773b734a6ea4e13b7173"
-    },
-    {
-      "path": "types/list_organization_groups_item.go",
-      "sha256": "4faab23d50f23f4edc47d38ea53e690b230fc4a7925663787c224934271ce1e0"
-    },
-    {
-      "path": "types/list_organization_invites_item.go",
-      "sha256": "60b687be6f9b2159b48fdc12c41cb69a67d65598d3a9aecaed28cfb656ba93ad"
-    },
-    {
-      "path": "types/list_organization_projects_item.go",
-      "sha256": "677c493e9508a9e8a3286c057155400484b0723b10f94b571151df510d394539"
-    },
-    {
-      "path": "types/list_organization_roles_item.go",
-      "sha256": "a4ea5e5b26c5d4783682f9355eb7c3aad4fef3d758d5c78f038cfae31b0345e9"
-    },
-    {
-      "path": "types/list_organization_user_roles_item.go",
-      "sha256": "63798aa78e8475f3e40a7a5b1fc9ca777b83d7f43c7ea01236a5f9956e9ed98a"
-    },
-    {
-      "path": "types/list_organization_users_item.go",
-      "sha256": "af5f6ec704315ce46e54d57538acf5b2a238e722b9a23fc2d01edb56462e7022"
-    },
-    {
-      "path": "types/list_project_api_keys_item.go",
-      "sha256": "6315cf9dbcd00281942c4e0913cea95843681e8a04d6d1e1c8218005d98c2a78"
-    },
-    {
-      "path": "types/list_project_certificates_item.go",
-      "sha256": "52eed5b52e382af7e9ce0d0411bd13f91c22a09ebc48f5188c55438c36444f57"
-    },
-    {
-      "path": "types/list_project_group_roles_item.go",
-      "sha256": "2dfc0c4143417473b428a777fda0a98ae2c10e2d5148ebc527d5792b0c618f8b"
-    },
-    {
-      "path": "types/list_project_groups_item.go",
-      "sha256": "d04125d75f5abf5d8407df0f5f45857ba6f8a7c1717f40e80b13e8e6de66c4fa"
-    },
-    {
-      "path": "types/list_project_rate_limits_item.go",
-      "sha256": "b47bb8789ef5d373c7d6e5d06a0cc7321b648ce2550e20a73be2621c7b00fd88"
-    },
-    {
-      "path": "types/list_project_roles_item.go",
-      "sha256": "89ddb885e99941fc745e784bbcb52209223d8c33212916b1bfab2dd17f0e98b1"
-    },
-    {
-      "path": "types/list_project_service_accounts_item.go",
-      "sha256": "4d5a21639a4138ac55769c8dec304c3c1f635d9fc10792b0b4346b9728c38e4a"
-    },
-    {
-      "path": "types/list_project_user_roles_item.go",
-      "sha256": "e07f880be265c90b80d2ecfdacb0d2868f2d1a2d3044a9522d56e7fadd1c9a3f"
-    },
-    {
-      "path": "types/list_project_users_item.go",
-      "sha256": "3c5d3ba60543e1314bcb7c99a3b561c3f2d85fdbd7fae1c7ab851e1cae8f17dc"
-    },
-    {
-      "path": "types/list_response_input_items_item.go",
-      "sha256": "7b4a3f6f2389996f9b0145fef47c78a6054b693fc53cc2e3c71c52338965a300"
-    },
-    {
-      "path": "types/list_run_steps_item.go",
-      "sha256": "b4a52c793f31f71e173e7a5a1aef23a01038d72c4451a6f857dcce42950e547b"
-    },
-    {
-      "path": "types/list_runs_item.go",
-      "sha256": "207337f47246711266ddd88094d6498c74a78b77c564ef45719f008e9d3a0908"
-    },
-    {
-      "path": "types/list_skill_versions_item.go",
-      "sha256": "bca049c5f6e800bdcdb3927919709688df2dd8805fa4bca07876831f3c549a53"
-    },
-    {
-      "path": "types/list_skills_item.go",
-      "sha256": "e698f899fa12b74e81df5a01e43a5127f3e2a0e13824a4a30eb3213a4ba5064d"
-    },
-    {
-      "path": "types/list_vector_store_file_batch_files_item.go",
-      "sha256": "2854039fb77c609198076dde5e10fb72ea19e55c5d7642607a543773c36c1731"
-    },
-    {
-      "path": "types/list_vector_store_files_item.go",
-      "sha256": "17c542c1c7f7353dc913034d58987fa35f360e1510f0cb2883263390e18137d5"
-    },
-    {
-      "path": "types/list_vector_stores_item.go",
-      "sha256": "4b6d9618c264409b9801806dc7482de00bc2cef7ba263ce8defda33aa924cac7"
-    },
-    {
-      "path": "types/list_videos_item.go",
-      "sha256": "565a85ff77f1c8a88be8cafcd79493acbd49780fe5ad82d639fa4f8e7bdb73ad"
-    },
-    {
-      "path": "types/list_voice_consents_item.go",
-      "sha256": "7cb57cc6aad87fa558df567379daee059648b710ed3e3b479752811499957ceb"
-    },
-    {
-      "path": "types/list_voices_item.go",
-      "sha256": "9390dea203fcae389fa0fcd419f536310e686f860a325391cf4bb0077d60b552"
     },
     {
       "path": "types/midjourney_image_generation_request.go",
@@ -808,22 +565,6 @@
     {
       "path": "types/open_ai_binary_file_part.go",
       "sha256": "c566965f0302c154497254f1836920c8b03a582dbf17af950a06e311a47b8dab"
-    },
-    {
-      "path": "types/open_ai_certificate_activation_request.go",
-      "sha256": "5b695067618d39b9d22d971da13f47661da48bb05de94ec3b724c0d3bdc643c0"
-    },
-    {
-      "path": "types/open_ai_certificate_list.go",
-      "sha256": "7da61888a55562440c3377acb088ed6ce9fd92ef7d62fbb86fa50c8f453f681b"
-    },
-    {
-      "path": "types/open_ai_certificate_upload_multipart_request.go",
-      "sha256": "fb317f5ecbcfee81380af4d793de6779ac99b91ec04ada715a211f701cebd716"
-    },
-    {
-      "path": "types/open_ai_certificate.go",
-      "sha256": "af70672ecd0a0c40f211169cc3798fed9c1dab0389e2826a721e6e1bc7313851"
     },
     {
       "path": "types/open_ai_chat_audio_config.go",
@@ -974,46 +715,6 @@
       "sha256": "502531d8b1412b7a955bc8d6c08957235f724b217e8ae7289a18b0931c3275cc"
     },
     {
-      "path": "types/open_ai_eval_create_request.go",
-      "sha256": "c03c59ec99e1fd6782dda17f796182178b2318e165dd35e96a37cc962026d2bf"
-    },
-    {
-      "path": "types/open_ai_eval_list.go",
-      "sha256": "f03d533f326b9ea0a992bb4fa0d02e1577bca1c3eda6876f75ab226f56050011"
-    },
-    {
-      "path": "types/open_ai_eval_run_create_request.go",
-      "sha256": "1d9451df7789bafdd22fe4e159b1db7c334ea23e0407b0291519ce8fb3192cef"
-    },
-    {
-      "path": "types/open_ai_eval_run_list.go",
-      "sha256": "4baf26e36af108584d7701de5c0b3d86cd0077a58ae5812ced725b7157f74ad7"
-    },
-    {
-      "path": "types/open_ai_eval_run_output_item_list.go",
-      "sha256": "9c7c8a584ff8f8d00753d70f51d806495371f25b79293e6a1bea1e6dc1ee8532"
-    },
-    {
-      "path": "types/open_ai_eval_run_output_item.go",
-      "sha256": "4a264493398efd77c393e3c61475876289cbd0eee2478895509db6234e84e46a"
-    },
-    {
-      "path": "types/open_ai_eval_run_result_counts.go",
-      "sha256": "13253962e5e1c591c33420c8053e1071f1f0f53e07b188ba0d232e3c3ca2710e"
-    },
-    {
-      "path": "types/open_ai_eval_run.go",
-      "sha256": "e47137920059a88edb6dd98f0581736f090180c7e150765fd50af3b27562b390"
-    },
-    {
-      "path": "types/open_ai_eval_update_request.go",
-      "sha256": "4e6c3342e96a6687c43025c6962c7094128cc0859322e491c8de439d8b53768b"
-    },
-    {
-      "path": "types/open_ai_eval.go",
-      "sha256": "4868de41532e6ab62f3b2e5e0b2bf44ec0bb238ef760892cc52ad4a2ffa1747f"
-    },
-    {
       "path": "types/open_ai_file_list.go",
       "sha256": "9495f39aafd6ef73ea0f463fe3322472e1af5c4f6ec58eb642c2aac634c1107a"
     },
@@ -1032,62 +733,6 @@
     {
       "path": "types/open_ai_file.go",
       "sha256": "ec2f48b37f36c908bc4dca0e72a2150e0712e73573fc4fad59267ba7bca5ea34"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_checkpoint_permission_create_request.go",
-      "sha256": "4f57b4650d4f785a0bc4529e022981bb65579b1768cedd693565eccdb32bb7e2"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_checkpoint_permission_list.go",
-      "sha256": "264f1af773770f1cc07bdbbb2798ae62be4142c6d551b4c9db414d77d79de85d"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_checkpoint_permission.go",
-      "sha256": "d491a1812fb11b7600569d5e973afc4ec897a62ec3eabcb571c2053f4660b702"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_grader_run_request.go",
-      "sha256": "7cc52c09484bad29509814d2c8ac1480e37499901e3bd79a24309f95068d5d87"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_grader_run_result.go",
-      "sha256": "0b742c340f5ca73ebb2ba73ca9425680df921cc49cef24c595435f60eb72bd0e"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_grader_validate_request.go",
-      "sha256": "71b17a2d306f7baa3b79317c48321d168c45f411b94b8e7a823e156dc59644a3"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_grader_validation_result.go",
-      "sha256": "72bf3741003baf86fe52c51e202f741e4003cce2be9bf930011a177e5c2afe3e"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_job_checkpoint_list.go",
-      "sha256": "61c045ba71397aa8129d37bef86dd79765d3690ca4162b86068861282eebea17"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_job_checkpoint.go",
-      "sha256": "a23ed5a373888aa3d28fc4f779e1566c32802c0b2b44553beed2c977fc05c5d7"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_job_create_request.go",
-      "sha256": "1bda719af9c1be7f65063bd99f903f7bfb9b8215ea823b51f6323326b8bff637"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_job_event_list.go",
-      "sha256": "bdce60f5c4e582c2cc7e6677c6016ca3862c0e3a618151bccd614d261c836292"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_job_event.go",
-      "sha256": "27e033993139844a120f01d9d6b5201c8b5aa5f1c36f6b499c8ddcf988f2f023"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_job_list.go",
-      "sha256": "72e3b766b3fcca426f0b094ce0dba1e6ddaa9c28bba43212b6e4ca62930c3151"
-    },
-    {
-      "path": "types/open_ai_fine_tuning_job.go",
-      "sha256": "cfa3fe4e853adb09a29c49d148c850286b229bbb67db37db782effdecd7d9433"
     },
     {
       "path": "types/open_ai_function_call_choice.go",
@@ -1111,7 +756,7 @@
     },
     {
       "path": "types/open_ai_image_generation_request.go",
-      "sha256": "a97a97812e70b7b4c173ed4505bcd073ce6307a375ebd1f81e9ac602d014726f"
+      "sha256": "304e48f5034a5aaf36445d7965942fc03837ec4227a25f9687bd43fab516143b"
     },
     {
       "path": "types/open_ai_image_list.go",
@@ -1190,156 +835,8 @@
       "sha256": "920efc3c133b6fe558c54b1ee3d53bf3f514da3d0c181337dfe1b20f6f313bca"
     },
     {
-      "path": "types/open_ai_organization_admin_api_key_create_request.go",
-      "sha256": "d6b5ee7cc7248bb330e3da1051483295998f91b1653cb04b36106ee7a0b4af06"
-    },
-    {
-      "path": "types/open_ai_organization_admin_api_key_list.go",
-      "sha256": "85b896ffa1dd1ef49074125d4a0c1eb2050810128e85b946951b34379ef5f9ff"
-    },
-    {
-      "path": "types/open_ai_organization_admin_api_key.go",
-      "sha256": "23a9d239ed501fd6bf5e0bb3f4c1d5c15c60cfd369a0dfab76853ddb8a6d4ed3"
-    },
-    {
-      "path": "types/open_ai_organization_audit_log_list.go",
-      "sha256": "97b24f9d5e7dd3e4293b1e894af900e573d838b3680385e4c8319f40455a6341"
-    },
-    {
-      "path": "types/open_ai_organization_audit_log.go",
-      "sha256": "0aec31cfd865cb074eda1cc2478d6ec858c2b4a0d0c3b554f61e8103386f9b59"
-    },
-    {
-      "path": "types/open_ai_organization_cost_bucket.go",
-      "sha256": "6635aa6c8428252d990b3a66c1a892a40c2c9bf499e131817fa13266e62f097a"
-    },
-    {
-      "path": "types/open_ai_organization_cost_list.go",
-      "sha256": "4f9b8c04f87248e91a9fc08972ad5ef8b00f65def4223613e207577caa266c51"
-    },
-    {
-      "path": "types/open_ai_organization_group_create_request.go",
-      "sha256": "53e18d5e18477e8e684dfad35de8c7e80e80352e1fa1890e757d0e989e6392a6"
-    },
-    {
-      "path": "types/open_ai_organization_group_list.go",
-      "sha256": "ab3303732a6439f00ab8247570e1dea649ed732fa61df9a6e9c74c619076a282"
-    },
-    {
-      "path": "types/open_ai_organization_group_update_request.go",
-      "sha256": "6542626e41aa9ab02e4d0acc9a0ba8903c093733ee8e81694168286c8dd33720"
-    },
-    {
-      "path": "types/open_ai_organization_group_user_create_request.go",
-      "sha256": "84f2df13c87f059dbabdf5a6bad407b48c5706415a0ac7607463b3702674364b"
-    },
-    {
-      "path": "types/open_ai_organization_group.go",
-      "sha256": "9927d674c01916f866e18d8b3bb6b3a5c46a79229d3ade07de0dd962e5b06f17"
-    },
-    {
-      "path": "types/open_ai_organization_invite_create_request.go",
-      "sha256": "89ac90d4c7e016079cce74c1bb81a6cbb220acd4e67dbaee1f7b1be9bff9e697"
-    },
-    {
-      "path": "types/open_ai_organization_invite_list.go",
-      "sha256": "e51a065a90e6929238df0aeb32acae17b087a7714dec5ae8a67f0758d002a42c"
-    },
-    {
-      "path": "types/open_ai_organization_invite.go",
-      "sha256": "f1aa07284d0998644d95f8801e5a5ddf97b84999b69caaa94317cd66646279bf"
-    },
-    {
-      "path": "types/open_ai_organization_usage_bucket.go",
-      "sha256": "a967038c43447eda6eac855cde21a7deb2937c1fa6025a44bd98581cd89b0ca2"
-    },
-    {
-      "path": "types/open_ai_organization_usage_list.go",
-      "sha256": "4d75cabc7be20b75b104135739c682c7a19ee6147f3ddbe26fc3c8002f94491d"
-    },
-    {
-      "path": "types/open_ai_organization_user_list.go",
-      "sha256": "617d928ac723b0765c451195399989cd15a87a00e6a14c63c5597852b0f28a93"
-    },
-    {
-      "path": "types/open_ai_organization_user_update_request.go",
-      "sha256": "b60dc30247b6bcab548da34d1ade5452c3a923b73fbf7cf615a9009c34c0a423"
-    },
-    {
-      "path": "types/open_ai_organization_user.go",
-      "sha256": "f8edf83107f99e4cba395b7103664da5c97d677475293a0c356a2403991c07ac"
-    },
-    {
       "path": "types/open_ai_prediction_config.go",
       "sha256": "ad2f38e9901d1639c9abfd15b3ad738abf01d33f16ea47974cc179c07ab9c8be"
-    },
-    {
-      "path": "types/open_ai_project_api_key_list.go",
-      "sha256": "0e27f6a8d2a017c8d07fa97d24f3c02574cd13fbaad96b57390ee74dd609b3d2"
-    },
-    {
-      "path": "types/open_ai_project_api_key.go",
-      "sha256": "e4ce6a13f8e73a1ef5682457c80bd35fdb39fa5ed86aea89ca3841da26cf9f58"
-    },
-    {
-      "path": "types/open_ai_project_create_request.go",
-      "sha256": "c0c2f7496f21f373522c71053c0222e93d56867a7357373ab3e3035edb54d1b3"
-    },
-    {
-      "path": "types/open_ai_project_group_create_request.go",
-      "sha256": "5312613e59852d586907dbe40012f6c1bb7387c0c4e8f243164308a4bbf52815"
-    },
-    {
-      "path": "types/open_ai_project_list.go",
-      "sha256": "2fdd1b5c14529fd2cc4522902592168ce67aad74f43a47b707bbb0925e3556e9"
-    },
-    {
-      "path": "types/open_ai_project_rate_limit_list.go",
-      "sha256": "2b95f01232ea50e223fc560b81824bbade661d016455918e6932d80cd21cb737"
-    },
-    {
-      "path": "types/open_ai_project_rate_limit_update_request.go",
-      "sha256": "89abcd68e60552b2cd73f2f7c2aef3cd481a932ca776b106942e3e35cbff48b3"
-    },
-    {
-      "path": "types/open_ai_project_rate_limit.go",
-      "sha256": "f07defd3bb8e0229f80c7a49ce9af6ccaa805574d41f11ad6ef385274a4b3887"
-    },
-    {
-      "path": "types/open_ai_project_service_account_create_request.go",
-      "sha256": "28e8199022d26dd2c65fedcab3b73d136b3bad38926ac44ae5b72424ecf0620b"
-    },
-    {
-      "path": "types/open_ai_project_service_account_list.go",
-      "sha256": "f90b3b12a445cc23b33aaf191c4691610d74c00c32c1e74374dd8a3b1fec5532"
-    },
-    {
-      "path": "types/open_ai_project_service_account.go",
-      "sha256": "1b2a47f53a8213c11ba2777169f2a0f9a9a57662662b59d7150e668099df5688"
-    },
-    {
-      "path": "types/open_ai_project_update_request.go",
-      "sha256": "923e46419879af51fd812e788642f4c25f1725d57745f0a5528796c8cbc358c6"
-    },
-    {
-      "path": "types/open_ai_project_user_create_request.go",
-      "sha256": "f9090f15c6def442a3a326486ac0a42e57c3adfac63da269a48133a573534ab2"
-    },
-    {
-      "path": "types/open_ai_project_user_list.go",
-      "sha256": "7c5861bb2b912adaea54643755b9659a768281c5ada1474d920502c6f1f4be5d"
-    },
-    {
-      "path": "types/open_ai_project_user_update_request.go",
-      "sha256": "2cf660b56dac65aa727ebb48f17f6e6e34e53bde1e1299d8213529594293a728"
-    },
-    {
-      "path": "types/open_ai_project_user.go",
-      "sha256": "97e93e31337c874ee57e9a465012e9b091e52a95f49e6ea606c317ae83330bbf"
-    },
-    {
-      "path": "types/open_ai_project.go",
-      "sha256": "e5a9fd5677921752cfaf31f16e93dd41d90766f12e0f2d855b350616533b5270"
     },
     {
       "path": "types/open_ai_prompt_reference.go",
@@ -1470,34 +967,6 @@
       "sha256": "d15a745ac3b2400101b54153ccdc1b629cbd60afd83fb521bcac17c27d589811"
     },
     {
-      "path": "types/open_ai_role_assignment_create_request.go",
-      "sha256": "29110c74f3f4c33ea8282ce71df86c2d8fc6d79ac18c4a79ef4ee71002ebf8b3"
-    },
-    {
-      "path": "types/open_ai_role_assignment_list.go",
-      "sha256": "9e1a9cb950ea7e29f1bf6f34de74b3b180d634cc249d3c711b46734afa6ca6cf"
-    },
-    {
-      "path": "types/open_ai_role_assignment.go",
-      "sha256": "091fe446310986e3312e0b5972406dfa31ec63bfc8dfc097456ed1def71e707f"
-    },
-    {
-      "path": "types/open_ai_role_create_request.go",
-      "sha256": "2d435582e17ec04b839dd8da1cfea259111c5bab6be4baffa6859138fcd4865a"
-    },
-    {
-      "path": "types/open_ai_role_list.go",
-      "sha256": "cb20ae10b4130145406abd9adf4dc25bf5b82f719bb9f615fda79343f9325f15"
-    },
-    {
-      "path": "types/open_ai_role_update_request.go",
-      "sha256": "aa13b1e58d6be0525fdf5100a432d3a9efea3d6d81f49c0e10ccfd7723315efe"
-    },
-    {
-      "path": "types/open_ai_role.go",
-      "sha256": "e64c107ecdf6df6b1bae2cfb4e4a337b1c34e091d62b99f84c21a011f0901c02"
-    },
-    {
       "path": "types/open_ai_run_create_request.go",
       "sha256": "cd09c5c445b26336ee357b2dd3694124840932e08281d5f2a6e9df118229ba1a"
     },
@@ -1524,34 +993,6 @@
     {
       "path": "types/open_ai_run.go",
       "sha256": "131cb3868696982f84b1671d2f39ae6318745c9bc8ded51e9202d6c9b52e3820"
-    },
-    {
-      "path": "types/open_ai_skill_create_multipart_request.go",
-      "sha256": "d7fd23546a4d0c5487a462394ff1ea9407e2d216822ee2c80459503bd2755d5c"
-    },
-    {
-      "path": "types/open_ai_skill_list.go",
-      "sha256": "ec5f6d8cecd82efd10e53dfa84eca469d06278e7273b81e8fa9897ad72a8402d"
-    },
-    {
-      "path": "types/open_ai_skill_update_request.go",
-      "sha256": "54cbf2dfb3fab60439c5e8b370b97de8a3712782edb672295eed0d7d279ee986"
-    },
-    {
-      "path": "types/open_ai_skill_version_create_multipart_request.go",
-      "sha256": "50e56c4d34727e57d0e9e8e428be6052fc306143272912c0f8692e1e8f1c1193"
-    },
-    {
-      "path": "types/open_ai_skill_version_list.go",
-      "sha256": "40a08a486e95f8fba28e735aa2dd01c45601054a27e1ed6b9f6df5715d33448d"
-    },
-    {
-      "path": "types/open_ai_skill_version.go",
-      "sha256": "61f327eb047c57950e9a5e38cbcb59c3faf2e5e80dab7bc15547328a42c6c544"
-    },
-    {
-      "path": "types/open_ai_skill.go",
-      "sha256": "b834f295d72cfa1768486e6413c55e7bfc2b891b60e0e109206a801b19839a1e"
     },
     {
       "path": "types/open_ai_speech_create_request.go",
@@ -1796,10 +1237,6 @@
     {
       "path": "types/provider_metadata.go",
       "sha256": "20aabd8c5975baf75fc9f0b83724489ed90f52d05e0d041b5ca463d50038b996"
-    },
-    {
-      "path": "types/provider_multipart_request.go",
-      "sha256": "2d50c090e8db75192cab167c18835b65bb6f2d3abd678b9654955bea034a4a88"
     },
     {
       "path": "types/provider_task_error.go",

@@ -46,7 +46,6 @@ App/Backend API 的公共路径必须与 Java API 模块完全一致。claw-rout
 | `/v1/realtime/*` | Realtime sessions |
 | `/v1/batches` | 批处理 |
 | `/v1/vector_stores/*` | 向量存储 |
-| `/v1/fine_tuning/jobs` | 微调任务 |
 | `/v1/webhooks` | Webhook 管理或事件 |
 
 ### 2.4 Gateway 认证输入
@@ -226,4 +225,3 @@ Gateway：
 - [ ] Desktop、Server、Docker、K8S、中央 Java 服务之间只切换 base URL，不改 resource path。
 - [ ] Gateway 错误结构兼容 OpenAI 风格，不包装 `PlusApiResult<T>`。
 - [ ] 所有资金、密钥、配置发布写操作有幂等和审计。
-

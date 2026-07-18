@@ -10,11 +10,12 @@ SDKWork ClawRouter PC maintainers.
 Non-secret PC app config templates, local config schemas, documented defaults, and examples that are specific to this application surface.
 
 ## Forbidden Content
-Live secrets, local overrides, runtime user config, generated SDK transport output, logs, caches, and repository-wide config that belongs in root `configs/`.
+Live secrets, local overrides, runtime user config, generated SDK transport output, logs, caches, and repository-wide environment/runtime values that belong in root `etc/`.
 
 ## Related Specs
 - `../../../../sdkwork-specs/APP_PC_ARCHITECTURE_SPEC.md`
 - `../../../../sdkwork-specs/CONFIG_SPEC.md`
+- `../../../../sdkwork-specs/SOURCE_CONFIG_SPEC.md`
 - `../../../../sdkwork-specs/SDKWORK_WORKSPACE_SPEC.md`
 
 ## Verification

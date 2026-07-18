@@ -27,6 +27,9 @@ syncFamilyOpenApiSnapshots();
 for (const language of languages) {
   runLanguage(language);
 }
+if (languages.includes('typescript')) {
+  syncComposedTypeScriptFacade();
+}
 
 function parseLanguages(argv) {
   const selected = [];
@@ -75,6 +78,25 @@ function syncFamilyOpenApiSnapshots() {
     '--sdk-dir',
     sdkFamily,
     '--openapi-only',
+  ], { cwd: workspaceRoot, stdio: 'inherit' });
+  if (result.error) {
+    throw result.error;
+  }
+  if ((result.status ?? 1) !== 0) {
+    process.exit(result.status ?? 1);
+  }
+}
+
+function syncComposedTypeScriptFacade() {
+  const python = process.env.PYTHON_BIN || 'python';
+  const result = spawnSync(python, [
+    '-B',
+    '-m',
+    'tools.clawrouter_sdk_runtime_standardizer',
+    '--root',
+    workspaceRoot,
+    '--sdk-dir',
+    sdkFamily,
   ], { cwd: workspaceRoot, stdio: 'inherit' });
   if (result.error) {
     throw result.error;

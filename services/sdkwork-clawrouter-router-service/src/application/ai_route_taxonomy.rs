@@ -272,14 +272,6 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         AiRouteModelRequirement::Ignored,
         "batch",
     ),
-    sticky_optional(
-        "openai.fine_tuning",
-        "openai.fine_tuning",
-        RoutingCapability::Network,
-        BillingMeter::ApiRequest,
-        AiRouteModelRequirement::Optional,
-        "fine_tuning_job",
-    ),
     channel(
         "openai.models",
         "openai.models",
@@ -317,14 +309,6 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         "vector_store",
     ),
     sticky_optional(
-        "openai.evals",
-        "openai.evals",
-        RoutingCapability::Network,
-        BillingMeter::ApiRequest,
-        AiRouteModelRequirement::Optional,
-        "eval",
-    ),
-    sticky_optional(
         "openai.chatkit.sessions",
         "openai.chatkit.sessions",
         RoutingCapability::Chat,
@@ -339,20 +323,6 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::ApiRequest,
         AiRouteModelRequirement::Ignored,
         "container",
-    ),
-    sticky_optional(
-        "openai.skills",
-        "openai.skills",
-        RoutingCapability::Network,
-        BillingMeter::ApiRequest,
-        AiRouteModelRequirement::Ignored,
-        "skill",
-    ),
-    channel(
-        "openai.administration",
-        "openai.administration",
-        RoutingCapability::Network,
-        BillingMeter::ApiRequest,
     ),
     model(
         "openai_compatible.responses",

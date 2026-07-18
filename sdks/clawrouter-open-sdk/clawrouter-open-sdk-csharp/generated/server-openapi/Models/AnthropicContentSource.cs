@@ -9,7 +9,7 @@ namespace Sdkwork.ClawRouter.Open.Models
         public string? Data { get; set; }
         public string? FileId { get; set; }
         public string? MediaType { get; set; }
-        public string? Type { get; set; }
+        public string Type { get; set; }
         public string? Url { get; set; }
     }
 }

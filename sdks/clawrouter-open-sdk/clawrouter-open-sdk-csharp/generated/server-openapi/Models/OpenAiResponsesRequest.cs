@@ -9,12 +9,12 @@ namespace Sdkwork.ClawRouter.Open.Models
         public bool? Background { get; set; }
         public string? Conversation { get; set; }
         public List<string>? Include { get; set; }
-        public string? Input { get; set; }
+        public string Input { get; set; }
         public string? Instructions { get; set; }
         public int? MaxOutputTokens { get; set; }
         public int? MaxToolCalls { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
-        public string? Model { get; set; }
+        public string Model { get; set; }
         public bool? ParallelToolCalls { get; set; }
         public string? PreviousResponseId { get; set; }
         public OpenAiPromptReference? Prompt { get; set; }

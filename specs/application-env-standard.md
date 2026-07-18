@@ -46,10 +46,10 @@ Topology profile ids contain exactly the deployment profile and environment:
 
 | Profile id | Profile file |
 | --- | --- |
-| `standalone.development` | `configs/topology/standalone.development.env` |
-| `standalone.production` | `configs/topology/standalone.production.env` |
-| `cloud.development` | `configs/topology/cloud.development.env` |
-| `cloud.production` | `configs/topology/cloud.production.env` |
+| `standalone.development` | `etc/topology/standalone.development.env` |
+| `standalone.production` | `etc/topology/standalone.production.env` |
+| `cloud.development` | `etc/topology/cloud.development.env` |
+| `cloud.production` | `etc/topology/cloud.production.env` |
 
 Runtime target, database engine, process layout, and hosting details are not
 encoded in a topology profile id. `specs/topology.spec.json` is the machine

@@ -204,17 +204,6 @@ fn classifies_openai_modal_generation_and_management_resource_families() {
         ),
         (
             Method::GET,
-            "/v1/fine_tuning/jobs/ftjob_123/events",
-            "openai/management/fine_tuning",
-            "openai.fine_tuning",
-            ResourceType::FineTuningJob,
-            RoutingCapability::Network,
-            BillingMode::ApiRequest,
-            AiRouteModelRequirement::Ignored,
-            AiRouteStrategy::LookupSticky,
-        ),
-        (
-            Method::GET,
             "/v1/conversations",
             "openai/management/conversations",
             "openai.conversations",
@@ -271,6 +260,28 @@ fn classifies_openai_modal_generation_and_management_resource_families() {
 }
 
 #[test]
+fn rejects_provider_control_plane_routes() {
+    for (method, path) in [
+        (Method::GET, "/v1/evals"),
+        (Method::POST, "/v1/evals/eval_123/runs"),
+        (Method::GET, "/v1/fine_tuning/jobs/ftjob_123/events"),
+        (Method::GET, "/v1/skills/skill_123/content"),
+        (Method::GET, "/v1/organization/costs"),
+        (Method::GET, "/v1/projects/proj_123/api_keys"),
+        (Method::DELETE, "/v1/models/gpt-4o-mini"),
+    ] {
+        let error = OpenAiResourceClassifier::default()
+            .classify(&InvocationClassificationRequest::new(method.clone(), path))
+            .expect_err("provider control-plane route must not be classified");
+
+        assert_eq!(
+            sdkwork_clawrouter_router_service::application::InvocationErrorKind::ResourceClassification,
+            error.kind
+        );
+    }
+}
+
+#[test]
 fn classifies_extended_sticky_object_ids() {
     for (method, path, resource_type, expected_id) in [
         (
@@ -284,12 +295,6 @@ fn classifies_extended_sticky_object_ids() {
             "/v1/batches/batch_123/cancel",
             ResourceType::Batch,
             "batch_123",
-        ),
-        (
-            Method::GET,
-            "/v1/fine_tuning/jobs/ftjob_123/events",
-            ResourceType::FineTuningJob,
-            "ftjob_123",
         ),
         (
             Method::POST,

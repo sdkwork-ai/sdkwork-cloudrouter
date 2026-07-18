@@ -18,7 +18,7 @@ public class BatchesAnthropicApi {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("before_id", beforeId, "form", true, false, null),
             new QueryParameterSpec("after_id", afterId, "form", true, false, null),
-            new QueryParameterSpec("page_size", limit, "form", true, false, null)
+            new QueryParameterSpec("limit", limit, "form", true, false, null)
         ));
         Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/messages/batches"), query));
         return client.convertValue(raw, new TypeReference<AnthropicMessageBatchListResponse>() {});

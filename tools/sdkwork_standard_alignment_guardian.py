@@ -2245,7 +2245,7 @@ class SdkworkStandardAlignmentGuardian:
             )
 
         expected_profile_id = "standalone.production"
-        expected_relative_path = "configs/topology/standalone.production.env"
+        expected_relative_path = "etc/topology/standalone.production.env"
         relative_path = profile_files.get(expected_profile_id)
         if relative_path != expected_relative_path:
             return AlignmentCheck(
@@ -2258,7 +2258,7 @@ class SdkworkStandardAlignmentGuardian:
             )
 
         expected_parent = self._resolve_repository_path(
-            "configs/topology", require_dir=True
+            "etc/topology", require_dir=True
         )
         profile_path = self._resolve_repository_path(
             expected_relative_path, require_file=True
