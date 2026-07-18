@@ -62,11 +62,15 @@ pub async fn merge_federated_commerce_app_routers(
 /// handles init, migration, and seeding automatically based on each module's
 /// own `database.manifest.json` and env overrides.
 async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String> {
+    let payment_module = sdkwork_payment_database_host::database_module()
+        .map_err(|e| format!("load payment database module failed: {e}"))?;
     let order_module = sdkwork_order_gateway_assembly::ApplicationAssembly::database_module()
         .map_err(|e| format!("load order database module failed: {e}"))?;
     let membership_module = sdkwork_membership_database_host::database_module()
         .map_err(|e| format!("load membership database module failed: {e}"))?;
     let registry = DatabaseModuleRegistry::builder()
+        .register(payment_module)
+        .map_err(|e| format!("register payment database module failed: {e}"))?
         .register(order_module)
         .map_err(|e| format!("register order database module failed: {e}"))?
         .register(membership_module)
@@ -135,6 +139,9 @@ mod tests {
     fn federated_commerce_consumes_complete_order_gateway_assembly() {
         let source = include_str!("commerce_runtime.rs");
 
+        let payment = source
+            .find("sdkwork_payment_database_host::database_module()")
+            .expect("payment database module registration");
         let order = source
             .find("sdkwork_order_gateway_assembly::ApplicationAssembly::database_module()")
             .expect("order assembly database module registration");
@@ -142,9 +149,14 @@ mod tests {
             .find("sdkwork_membership_database_host::database_module()")
             .expect("membership database module registration");
         assert!(
+            payment < order,
+            "payment database must bootstrap before order"
+        );
+        assert!(
             order < membership,
             "order database must bootstrap before membership"
         );
+        assert!(source.contains(".register(payment_module)"));
         assert!(source.contains(".register(order_module)"));
         assert!(source.contains(".register(membership_module)"));
         assert!(source

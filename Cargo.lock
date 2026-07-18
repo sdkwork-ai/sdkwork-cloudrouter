@@ -3597,6 +3597,7 @@ dependencies = [
  "sdkwork-invoice-service-host",
  "sdkwork-membership-database-host",
  "sdkwork-order-gateway-assembly",
+ "sdkwork-payment-database-host",
  "sdkwork-payment-providers",
  "sdkwork-payment-service-host",
  "sdkwork-routes-account-app-api",
