@@ -1,4 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
+import { readBootstrapAccessTokenEnvFile } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/node-bootstrap.mjs';
+import { createSdkworkCredentialEntryBootstrapVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
 import react from '@vitejs/plugin-react';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
@@ -13,29 +15,6 @@ import {
 } from './scripts/lib/portal-workspace-package-resolver.mjs';
 import { createPortalOptimizeDepsEsbuildPlugin } from './scripts/lib/portal-optimize-deps-esbuild-resolver.mjs';
 import { readGenerationAssetConfigStubReplacement } from './scripts/lib/portal-generation-asset-config-stub.mjs';
-
-function readBootstrapLocalEnv(configDir: string, mode: string): Record<string, string> {
-  if (mode !== 'development') {
-    return {};
-  }
-  const bootstrapPath = path.join(configDir, `.env.${mode}.bootstrap.local`);
-  if (!fs.existsSync(bootstrapPath)) {
-    return {};
-  }
-  const parsed: Record<string, string> = {};
-  for (const line of fs.readFileSync(bootstrapPath, 'utf8').split(/\r?\n/u)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) {
-      continue;
-    }
-    const separatorIndex = trimmed.indexOf('=');
-    if (separatorIndex <= 0) {
-      continue;
-    }
-    parsed[trimmed.slice(0, separatorIndex).trim()] = trimmed.slice(separatorIndex + 1).trim();
-  }
-  return parsed;
-}
 
 const TYPESCRIPT_SOURCE_PATTERN = /\.(?:ts|tsx|mts|cts)$/;
 const SOURCE_MAP_PATTERN = /\n?\/\/# sourceMappingURL=.*$/;
@@ -541,22 +520,19 @@ export default defineConfig(({mode}) => {
     sdkworkPaymentRoot,
     sdkworkOrderRoot,
   ];
-	  const env = loadEnv(mode, configDir, '');
-  if (mode === 'development') {
-    Object.assign(env, readBootstrapLocalEnv(configDir, mode));
-  }
-  const bootstrapAccessTokenDefine = mode === 'development'
-    ? {
-        'process.env.SDKWORK_ACCESS_TOKEN': JSON.stringify(
-          env.SDKWORK_ACCESS_TOKEN ?? process.env.SDKWORK_ACCESS_TOKEN ?? '',
-        ),
-      }
-    : {};
+	const env = loadEnv(mode, configDir, '');
+  const bootstrapAccessToken = process.env.SDKWORK_ACCESS_TOKEN
+    ?? (mode === 'development'
+      ? readBootstrapAccessTokenEnvFile(
+          path.join(configDir, '.env.development.bootstrap.local'),
+        )
+      : undefined);
   return {
-    define: {
-      ...bootstrapAccessTokenDefine,
-    },
-        plugins: [
+    plugins: [
+      createSdkworkCredentialEntryBootstrapVitePlugin({
+        accessToken: bootstrapAccessToken,
+        environment: mode,
+      }),
       clawrouterRuntimeEnvPlugin(),
       react(),
       clawrouterNodeEnvTransform(),

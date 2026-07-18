@@ -123,6 +123,7 @@
     "@sdkwork/host-tauri-pc-react": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
     "@sdkwork/iam-contracts": "workspace:*",
+    "@sdkwork/iam-credential-entry": "workspace:*",
     "@sdkwork/iam-core-pc-react": "workspace:*",
     "@sdkwork/iam-react": "workspace:*",
     "@sdkwork/iam-runtime": "workspace:*",

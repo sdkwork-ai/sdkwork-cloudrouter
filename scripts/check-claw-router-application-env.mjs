@@ -234,11 +234,14 @@ function assertApplicationEnvStandardDocumentsOnlyCurrentLifecycleKeys() {
 function assertViteDevelopmentOnlyBootstrapToken() {
   const viteConfigPath = path.join(PORTAL_ROOT, 'vite.config.ts');
   const source = readFileSync(viteConfigPath, 'utf8');
-  if (!source.includes("mode === 'development'")) {
-    throw new Error('vite.config.ts must gate SDKWORK_ACCESS_TOKEN define to development mode only');
+  if (!source.includes('sdkwork-iam-credential-entry/src/vite.ts')) {
+    throw new Error('vite.config.ts must consume the shared IAM credential-entry Vite plugin');
   }
-  if (!source.includes("'process.env.SDKWORK_ACCESS_TOKEN'")) {
-    throw new Error('vite.config.ts must define process.env.SDKWORK_ACCESS_TOKEN for development bootstrap');
+  if (!source.includes('createSdkworkCredentialEntryBootstrapVitePlugin')) {
+    throw new Error('vite.config.ts must delegate bootstrap handoff to the shared IAM Vite plugin');
+  }
+  if (source.includes("'process.env.SDKWORK_ACCESS_TOKEN'")) {
+    throw new Error('vite.config.ts must not use the ineffective Vite process.env token define');
   }
 }
 

@@ -1,7 +1,7 @@
 import type { SdkworkBackendConfig } from '../types/common';
 import type { RequestOptions, QueryParams } from '@sdkwork/sdk-common';
 import type { AuthTokenManager } from '@sdkwork/sdk-common';
-import { BaseHttpClient, withRetry } from '@sdkwork/sdk-common';
+import { BaseHttpClient, buildAuthHeaders, withRetry } from '@sdkwork/sdk-common';
 
 type HttpRequestOptions = RequestOptions & {
   method?: string;
@@ -231,14 +231,14 @@ export class HttpClient extends BaseHttpClient {
   private applySdkworkAuthHeaders(headers?: Record<string, string>): Record<string, string> | undefined {
     const authConfig = this.getInternalAuthConfig();
     const tokenManager = authConfig.tokenManager;
-    const accessToken = tokenManager?.getAccessToken?.();
-    if (!accessToken) {
+    const authHeaders = buildAuthHeaders('dual-token', undefined, tokenManager);
+    if (Object.keys(authHeaders).length === 0) {
       return headers;
     }
 
     return {
       ...(headers ?? {}),
-      [HttpClient.ACCESS_TOKEN_HEADER]: accessToken,
+      ...authHeaders,
     };
   }
 

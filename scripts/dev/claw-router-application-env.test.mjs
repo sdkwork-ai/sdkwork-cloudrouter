@@ -182,7 +182,7 @@ test('ensureClawRouterBrowserDevelopmentEnv writes .env.development and preserve
     const bootstrapLocal = loadEnvFile(path.join(applicationRoot, '.env.development.bootstrap.local'));
     assert.equal(
       typeof bootstrapLocal.SDKWORK_ACCESS_TOKEN === 'string'
-        && bootstrapLocal.SDKWORK_ACCESS_TOKEN.startsWith('v2.'),
+        && bootstrapLocal.SDKWORK_ACCESS_TOKEN.startsWith('eyJ'),
       true,
     );
     assert.equal(result.mergedEnv[CLAW_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi], 'http://127.0.0.1:3999');
@@ -602,10 +602,11 @@ test('ensureClawRouterBrowserDevelopmentEnv refreshes stale bootstrap access tok
     });
     const bootstrapLocal = loadEnvFile(path.join(appRoot, '.env.development.bootstrap.local'));
     assert.notEqual(bootstrapLocal.SDKWORK_ACCESS_TOKEN, staleToken);
-    assert.match(bootstrapLocal.SDKWORK_ACCESS_TOKEN, /^v2\./u);
+    assert.match(bootstrapLocal.SDKWORK_ACCESS_TOKEN, /^eyJ/u);
     const encodedPayload = bootstrapLocal.SDKWORK_ACCESS_TOKEN.split('.')[1];
     const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
     assert.equal(payload.token_version, 1);
+    assert.equal(payload.environment, 'development');
     assert.equal(result.mergedEnv.SDKWORK_ACCESS_TOKEN, '');
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });

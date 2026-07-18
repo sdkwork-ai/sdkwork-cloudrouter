@@ -35,15 +35,13 @@ import {
   sanitizeReleaseHostEnvRecord,
 } from '../lib/claw-router-edge-env-contract.mjs';
 import {
-  DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT,
-  signLocalAppSessionAccessToken,
-} from './sign-local-app-session-access-token.mjs';
+  buildBootstrapAccessTokenEnvRecord,
+} from '../../../sdkwork-iam/scripts/dev/create-dev-bootstrap-access-token-env.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEFAULT_REPOSITORY_ROOT = path.resolve(__dirname, '..', '..');
 const DEFAULT_PORTAL_RELATIVE_DIR = path.join('apps', 'sdkwork-clawrouter-pc');
-const DEFAULT_DEV_APP_SESSION_SECRET = 'sdkwork-clawrouter-local-dev-secret-20260507';
 const DEFAULT_DEV_PROXY_GATEWAY_TARGET = 'http://127.0.0.1:3900';
 
 export { CLAW_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER };
@@ -139,58 +137,35 @@ function ensureClawRouterBootstrapLocalEnv({
   return { bootstrapLocalPath, changed, bootstrapEnv };
 }
 
-function resolveBootstrapPermissionScope(manifest) {
-  const scopes = manifest?.backend?.accessTokenPermissionScope;
-  if (Array.isArray(scopes) && scopes.length > 0) {
-    return scopes.map((scope) => String(scope).trim()).filter(Boolean);
-  }
-  return [...DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.permissionScope];
-}
-
-export function buildClawRouterBootstrapSessionTokenEnv({
+export function buildClawRouterCredentialEntryBootstrapEnv({
   env = process.env,
   workspaceRoot = DEFAULT_REPOSITORY_ROOT,
   environment,
-  deploymentMode = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
-  sessionId = DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.sessionId,
+  deploymentMode = 'local',
+  sessionId = 'bootstrap-local-development',
   runtimeTarget = 'browser',
 } = {}) {
   if (environment !== 'development') {
     throw new Error('local bootstrap token generation requires an explicit development lifecycle');
   }
   const manifest = readApplicationManifest(workspaceRoot);
-  const appSessionSecret = normalizeText(env.SDKWORK_CLAW_APP_SESSION_SECRET)
-    ?? DEFAULT_DEV_APP_SESSION_SECRET;
-  const tenantId = Number.parseInt(
-    String(manifest?.backend?.tenantId ?? DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.tenantId),
-    10,
-  );
-  const organizationId = Number.parseInt(
-    String(manifest?.backend?.organizationId ?? DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.organizationId),
-    10,
-  );
-  const appId = normalizeText(manifest?.app?.key) ?? DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.appId;
-  const tokenParams = {
-    appSessionSecret,
-    tenantId,
-    organizationId,
-    userId: DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.userId,
-    appId,
-    sessionId: runtimeTarget === 'server' ? 'bootstrap-release-host' : sessionId,
-    permissionScope: resolveBootstrapPermissionScope(manifest),
+  return buildBootstrapAccessTokenEnvRecord(env.SDKWORK_ACCESS_TOKEN, {
+    manifest,
     environment,
     deploymentMode,
-    authLevel: DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.authLevel,
-  };
-
-  return {
-    SDKWORK_ACCESS_TOKEN: signLocalAppSessionAccessToken(tokenParams),
-  };
+    runtimeTarget,
+    sessionId,
+  });
 }
 
-/** @deprecated Use buildClawRouterBootstrapSessionTokenEnv */
+/** @deprecated Use buildClawRouterCredentialEntryBootstrapEnv. */
+export function buildClawRouterBootstrapSessionTokenEnv(params = {}) {
+  return buildClawRouterCredentialEntryBootstrapEnv(params);
+}
+
+/** @deprecated Use buildClawRouterCredentialEntryBootstrapEnv. */
 export function buildClawRouterBootstrapAccessTokenEnv(params = {}) {
-  return buildClawRouterBootstrapSessionTokenEnv(params);
+  return buildClawRouterCredentialEntryBootstrapEnv(params);
 }
 
 export const CLAW_ROUTER_BROWSER_PRODUCTION_ENV_KEY_ORDER = Object.freeze([
@@ -337,11 +312,11 @@ export function ensureClawRouterBrowserDevelopmentEnv({
     mkdirSync(path.dirname(result.profileFilePath), { recursive: true });
     writeFileSync(result.profileFilePath, formattedContent, 'utf8');
   }
-  const bootstrapCredentials = buildClawRouterBootstrapSessionTokenEnv({
+  const bootstrapCredentials = buildClawRouterCredentialEntryBootstrapEnv({
     env,
     workspaceRoot,
     environment: 'development',
-    deploymentMode: DEFAULT_LOCAL_DEV_APP_SESSION_SUBJECT.deploymentMode,
+    deploymentMode: 'local',
     runtimeTarget: 'browser',
   });
   const bootstrapLocal = ensureClawRouterBootstrapLocalEnv({

@@ -644,12 +644,32 @@ test("portal scripts run dependency preflight before Vite entrypoints", () => {
   assert.equal(portalPackage.scripts.build, "pnpm deps:check && node scripts/build-portal.mjs");
 });
 
-test("development mode injects bootstrap access token while production build does not", async () => {
-  const developmentConfig = await resolvePortalViteConfig("development", "serve");
-  const productionConfig = await resolvePortalViteConfig("production", "build");
+test("development mode uses the shared credential-entry plugin while production does not", async () => {
+  const previousAccessToken = process.env.SDKWORK_ACCESS_TOKEN;
+  process.env.SDKWORK_ACCESS_TOKEN = "development-bootstrap-token";
+  try {
+    const developmentConfig = await resolvePortalViteConfig("development", "serve");
+    const productionConfig = await resolvePortalViteConfig("production", "build");
+    const developmentPlugins = Array.isArray(developmentConfig.plugins)
+      ? developmentConfig.plugins.flat()
+      : [];
+    const productionPlugins = Array.isArray(productionConfig.plugins)
+      ? productionConfig.plugins.flat()
+      : [];
 
-  assert.ok(developmentConfig.define?.["process.env.SDKWORK_ACCESS_TOKEN"]);
-  assert.equal(productionConfig.define?.["process.env.SDKWORK_ACCESS_TOKEN"], undefined);
+    assert.ok(developmentPlugins.some((plugin) => (
+      hasPluginName(plugin, "sdkwork-iam-credential-entry-bootstrap")
+    )));
+    assert.equal(productionPlugins.some((plugin) => (
+      hasPluginName(plugin, "sdkwork-iam-credential-entry-bootstrap")
+    )), false);
+  } finally {
+    if (previousAccessToken === undefined) {
+      delete process.env.SDKWORK_ACCESS_TOKEN;
+    } else {
+      process.env.SDKWORK_ACCESS_TOKEN = previousAccessToken;
+    }
+  }
 });
 
 test("production Vite config never probes a bootstrap token overlay", async () => {

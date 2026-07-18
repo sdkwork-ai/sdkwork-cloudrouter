@@ -130,7 +130,9 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertIn("headers: this.withContentType(headers, contentType)", http_client)
 
     def test_standardizes_app_and_backend_http_clients_to_dual_token_headers(self) -> None:
-        source = """export class HttpClient {
+        source = """import { BaseHttpClient, withRetry } from '@sdkwork/sdk-common';
+
+export class HttpClient {
   private applySdkworkAuthHeaders(headers?: Record<string, string>): Record<string, string> | undefined {
     const authConfig = this.getInternalAuthConfig();
     const tokenManager = authConfig.tokenManager;
@@ -150,16 +152,20 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
 
         normalized = standardizer._standardize_http_client_dual_token_headers(source)
 
-        self.assertIn("const authToken = tokenManager?.getAuthToken?.();", normalized)
-        self.assertIn("...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),", normalized)
-        self.assertIn("...(accessToken ? { [HttpClient.ACCESS_TOKEN_HEADER]: accessToken } : {}),", normalized)
+        self.assertIn("import { BaseHttpClient, buildAuthHeaders, withRetry }", normalized)
+        self.assertIn("buildAuthHeaders('dual-token', undefined, tokenManager)", normalized)
+        self.assertIn("...authHeaders", normalized)
+        self.assertNotIn("tokenManager?.getAccessToken?.()", normalized)
+        self.assertNotIn("Authorization: `Bearer ${authToken}`", normalized)
         self.assertEqual(normalized, standardizer._standardize_http_client_dual_token_headers(normalized))
 
     def test_standardizes_primary_and_domain_generated_http_clients(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             base = self.sdk_base(root, "clawrouter-app-sdk")
-            source = """export class HttpClient {
+            source = """import { BaseHttpClient, withRetry } from '@sdkwork/sdk-common';
+
+export class HttpClient {
   private applySdkworkAuthHeaders(headers?: Record<string, string>): Record<string, string> | undefined {
     const authConfig = this.getInternalAuthConfig();
     const tokenManager = authConfig.tokenManager;
@@ -190,7 +196,9 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
 
             self.assertEqual(set(clients), set(updated))
             for client in clients:
-                self.assertIn("Authorization: `Bearer ${authToken}`", client.read_text(encoding="utf-8"))
+                normalized = client.read_text(encoding="utf-8")
+                self.assertIn("buildAuthHeaders('dual-token', undefined, tokenManager)", normalized)
+                self.assertNotIn("Authorization: `Bearer ${authToken}`", normalized)
 
     def test_standardizes_generated_sdk_runtime_build_metadata_idempotently(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

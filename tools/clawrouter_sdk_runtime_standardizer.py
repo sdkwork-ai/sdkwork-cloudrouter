@@ -2238,6 +2238,11 @@ class SdkRuntimeStandardizer:
         return updated
 
     def _standardize_http_client_dual_token_headers(self, source: str) -> str:
+        updated = source.replace(
+            "import { BaseHttpClient, withRetry } from '@sdkwork/sdk-common';",
+            "import { BaseHttpClient, buildAuthHeaders, withRetry } from '@sdkwork/sdk-common';",
+            1,
+        )
         access_token_only = """    const accessToken = tokenManager?.getAccessToken?.();
     if (!accessToken) {
       return headers;
@@ -2258,7 +2263,17 @@ class SdkRuntimeStandardizer:
       ...(accessToken ? { [HttpClient.ACCESS_TOKEN_HEADER]: accessToken } : {}),
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     };"""
-        return source.replace(access_token_only, dual_token, 1)
+        shared_dual_token = """    const authHeaders = buildAuthHeaders('dual-token', undefined, tokenManager);
+    if (Object.keys(authHeaders).length === 0) {
+      return headers;
+    }
+
+    return {
+      ...(headers ?? {}),
+      ...authHeaders,
+    };"""
+        updated = updated.replace(access_token_only, shared_dual_token, 1)
+        return updated.replace(dual_token, shared_dual_token, 1)
 
     def _standardize_union_array_types(self, source: str) -> str:
         """Fix old generator output where union arrays miss parentheses."""
