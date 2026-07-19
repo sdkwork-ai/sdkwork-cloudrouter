@@ -17,7 +17,6 @@ sdkwork-claw-health.workspace = true
 sdkwork-claw-paas-plugin.workspace = true
 sdkwork-claw-security.workspace = true
 sdkwork_iam_context_service.workspace = true
-sdkwork-iam-database-host.workspace = true
 sdkwork-iam-web-adapter.workspace = true
 sdkwork-iam-bootstrap.workspace = true
 sdkwork-utils-rust.workspace = true

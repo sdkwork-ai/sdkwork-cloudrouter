@@ -33,7 +33,6 @@ import {
   AccountModelMappingService,
   ChannelAiResourceService,
   ChannelService,
-  ProviderSecretService,
   ChannelModelCatalogService,
   type AccountModelMappingInput,
   type AiResource,
@@ -42,7 +41,6 @@ import {
   type ChannelItem,
   type ChannelModelCatalogItem,
   type ChannelUpdateInput,
-  type ProviderSecretItem,
   isCatalogModelKey,
   normalizeModelCatalogKey,
   providerCodeForVendor,
@@ -62,7 +60,6 @@ import {
   type ChannelFormValues,
 } from './channelForm';
 import {
-  channelAiResourceCapabilityCodes,
   deriveChannelTargetVendorCodes,
   isAiResourceGroupVisibleForChannelVendorScope,
   isAiResourceVisibleForChannelVendorScope,
@@ -70,7 +67,6 @@ import {
   reconcileChannelVendorSelection,
 } from './channelVendorSelection.ts';
 import { AdminTableShell, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
-import { copyTextToClipboard } from '@sdkwork/clawroutes-pc-commons/clipboard';
 
 type ToastState = { message: string; type: 'success' | 'info' | 'error' } | null;
 type AccountDrawerMode = 'create' | 'copy' | 'edit';
@@ -3010,31 +3006,12 @@ function ChannelSelectorPagination({
   );
 }
 
-function findProviderSecretForCredential(credential: ChannelCredentialItem, providerSecrets: ProviderSecretItem[]): ProviderSecretItem | null {
-  const secretRef = credential.secretRef?.trim();
-  if (!secretRef) {
-    return null;
-  }
-  return (
-    providerSecrets.find((secret) => secret.secretRef === secretRef) ??
-    null
-  );
-}
-
 function CredentialDetailsModal({
   channel,
-  providerSecrets,
-  isLoading,
-  loadError,
-  onRetry,
   onCopyCredentialApiKey,
   onClose,
 }: {
   channel: ChannelItem;
-  providerSecrets: ProviderSecretItem[];
-  isLoading: boolean;
-  loadError: string | null;
-  onRetry: () => void;
   onCopyCredentialApiKey: (credential: ChannelCredentialItem) => void;
   onClose: () => void;
 }) {
@@ -3088,32 +3065,9 @@ function CredentialDetailsModal({
             </div>
           </section>
 
-          {isLoading ? (
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-black dark:text-slate-300">
-              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
-              {t('admin.channel.credentials.loadingDetails')}
-            </div>
-          ) : loadError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold">{t('admin.channel.credentials.loadErrorTitle')}</div>
-                  <div className="mt-1 break-words">{loadError}</div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onRetry}
-                className="mt-3 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 dark:border-red-500/20 dark:bg-transparent dark:text-red-300 dark:hover:bg-red-500/10"
-              >
-                {t('common.actions.retry')}
-              </button>
-            </div>
-          ) : channel.credentials.length > 0 ? (
+          {channel.credentials.length > 0 ? (
             <section className="space-y-3">
               {channel.credentials.map((credential, index) => {
-                const linkedSecret = findProviderSecretForCredential(credential, providerSecrets);
                 const hasApiKey = Boolean(credential.apiKey?.trim());
                 const apiKeyDisplayValue = apiKeyVisible
                   ? credential.apiKey ?? ''
@@ -3151,19 +3105,6 @@ function CredentialDetailsModal({
                         copyDisabled={!hasApiKey}
                       />
                     </div>
-                    {linkedSecret && (
-                      <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-xs dark:border-emerald-500/20 dark:bg-emerald-500/10">
-                        <div className="mb-2 flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
-                          <CheckCircle className="h-3.5 w-3.5" />
-                          {t('admin.channel.credentials.linkedTitle')}
-                        </div>
-                        <div className="grid gap-2 sm:grid-cols-3">
-                          <CredentialDetailField label={t('admin.channel.fields.providerCode')} value={linkedSecret.providerCode} monospace />
-                          <CredentialDetailField label={t('admin.channel.fields.accountCode')} value={linkedSecret.accountCode} monospace />
-                          <CredentialDetailField label={t('admin.channel.fields.authType')} value={linkedSecret.authType} />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -3295,17 +3236,14 @@ export function ChannelAdmin() {
   const [viewingCredentialChannel, setViewingCredentialChannel] = useState<ChannelItem | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
   const [loading, setLoading] = useState(true);
-  const [providerSecretLoading, setProviderSecretLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pendingChannelId, setPendingChannelId] = useState<string | null>(null);
   const [pendingChannelAction, setPendingChannelAction] = useState<PendingChannelAction | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation | null>(null);
   const [confirmDeleteBusy, setConfirmDeleteBusy] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [providerSecretLoadError, setProviderSecretLoadError] = useState<string | null>(null);
   const [channels, setChannels] = useState<ChannelItem[]>([]);
   const [totalChannels, setTotalChannels] = useState(0);
-  const [providerSecrets, setProviderSecrets] = useState<ProviderSecretItem[]>([]);
   const pageSize = 8;
 
   const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -3350,37 +3288,6 @@ export function ChannelAdmin() {
       }
     }
   }, [currentPage, pageSize, search, t]);
-
-  const loadProviderSecrets = useCallback(async (isActive: () => boolean = () => true) => {
-    setProviderSecretLoading(true);
-    setProviderSecretLoadError(null);
-    try {
-      const secretData = await ProviderSecretService.fetchProviderSecrets();
-      if (isActive()) {
-        setProviderSecrets(secretData);
-      }
-    } catch (err) {
-      if (isActive()) {
-        setProviderSecretLoadError(getLoadErrorMessage(err, t('admin.channel.errors.credentialsLoadFallback')));
-      }
-    } finally {
-      if (isActive()) {
-        setProviderSecretLoading(false);
-      }
-    }
-  }, [t]);
-
-  const loadData = useCallback(async (isActive: () => boolean = () => true) => {
-    await loadProviderSecrets(isActive);
-  }, [loadProviderSecrets]);
-
-  useEffect(() => {
-    let active = true;
-    void loadData(() => active);
-    return () => {
-      active = false;
-    };
-  }, [loadData]);
 
   useEffect(() => {
     let active = true;
@@ -3846,10 +3753,6 @@ export function ChannelAdmin() {
       {viewingCredentialChannel && (
         <CredentialDetailsModal
           channel={viewingCredentialChannel}
-          providerSecrets={providerSecrets}
-          isLoading={providerSecretLoading}
-          loadError={providerSecretLoadError}
-          onRetry={() => void loadProviderSecrets()}
           onCopyCredentialApiKey={handleCopyCredentialApiKey}
           onClose={() => setViewingCredentialChannel(null)}
         />

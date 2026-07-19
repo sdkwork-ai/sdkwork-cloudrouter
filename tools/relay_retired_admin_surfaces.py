@@ -24,6 +24,11 @@ RELAY_RETIRED_ADMIN_PORTAL_ROUTE_PREFIXES: tuple[str, ...] = (
     "/admin/storage",
     "/admin/drive",
     "/admin/messaging",
+    "/admin/system/after_sales",
+    "/admin/system/marketing",
+    "/admin/system/shops",
+    "/console/system/after_sales",
+    "/console/system/shops",
 )
 
 # Inferred UI routes in frontend-field-contracts.yaml (API path → /admin/{segment}/...).
@@ -50,7 +55,12 @@ RELAY_RETIRED_ADMIN_OPERATION_ROUTE_PREFIXES: tuple[str, ...] = (
     "/admin/shipments",
     "/admin/shops",
     "/admin/storage",
+    "/admin/system/after_sales",
+    "/admin/system/marketing",
+    "/admin/system/shops",
     "/admin/wallet",
+    "/console/system/after_sales",
+    "/console/system/shops",
 )
 
 
@@ -101,3 +111,14 @@ def is_relay_retired_admin_source(source: str) -> bool:
 
 def is_route_manifest_bootstrap_source(source: str) -> bool:
     return source.replace("\\", "/") == ROUTE_MANIFEST_BOOTSTRAP_SOURCE
+
+
+def is_backend_route_manifest_source(source: str) -> bool:
+    """Return whether a contract entry is owned by the backend route manifest.
+
+    These entries describe backend API authority operations. They are consumed by
+    OpenAPI/SDK generation, but are intentionally absent from the frontend service
+    operation scan because no browser service implementation owns them.
+    """
+    normalized = source.replace("\\", "/")
+    return normalized.endswith("/http_route_manifest.rs") or normalized.endswith(".route-manifest.json")

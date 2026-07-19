@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "@sdkwork/clawrouter-pc-admin-core": "workspace:*",
-    "@sdkwork/clawroutes-pc-commons": "workspace:*"
+    "@sdkwork/clawroutes-pc-commons": "workspace:*",
+    "@sdkwork/models-backend-sdk": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

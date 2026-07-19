@@ -2,7 +2,14 @@ use std::sync::Arc;
 
 use crate::api::paths::ai_path;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{OpenAiRealtimeCall, OpenAiRealtimeCallActionRequest, OpenAiRealtimeCallCreateRequest, OpenAiRealtimeCallReferRequest, OpenAiRealtimeClientSecret, OpenAiRealtimeClientSecretCreateRequest, OpenAiRealtimeSession, OpenAiRealtimeSessionCreateRequest, OpenAiRealtimeTranscriptionSession, OpenAiRealtimeTranscriptionSessionCreateRequest, OpenAiRealtimeTranslationSession, OpenAiRealtimeTranslationSessionCreateRequest};
+use crate::models::{
+    OpenAiRealtimeCall, OpenAiRealtimeCallActionRequest, OpenAiRealtimeCallCreateRequest,
+    OpenAiRealtimeCallReferRequest, OpenAiRealtimeClientSecret,
+    OpenAiRealtimeClientSecretCreateRequest, OpenAiRealtimeSession,
+    OpenAiRealtimeSessionCreateRequest, OpenAiRealtimeTranscriptionSession,
+    OpenAiRealtimeTranscriptionSessionCreateRequest, OpenAiRealtimeTranslationSession,
+    OpenAiRealtimeTranslationSessionCreateRequest,
+};
 
 #[derive(Clone)]
 pub struct RealtimeApi {
@@ -15,59 +22,119 @@ impl RealtimeApi {
     }
 
     /// Create realtime call
-    pub async fn create_call(&self, body: &OpenAiRealtimeCallCreateRequest) -> Result<String, SdkworkError> {
+    pub async fn create_call(
+        &self,
+        body: &OpenAiRealtimeCallCreateRequest,
+    ) -> Result<String, SdkworkError> {
         let path = ai_path(&"/realtime/calls".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Accept realtime call
-    pub async fn create_calls_accept(&self, call_id: &str, body: &OpenAiRealtimeCallActionRequest) -> Result<OpenAiRealtimeCall, SdkworkError> {
-        let path = ai_path(&format!("/realtime/calls/{}/accept", serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    pub async fn create_calls_accept(
+        &self,
+        call_id: &str,
+        body: &OpenAiRealtimeCallActionRequest,
+    ) -> Result<OpenAiRealtimeCall, SdkworkError> {
+        let path = ai_path(&format!(
+            "/realtime/calls/{}/accept",
+            serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))
+        ));
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Hang up realtime call
-    pub async fn create_calls_hangup(&self, call_id: &str, body: &OpenAiRealtimeCallActionRequest) -> Result<OpenAiRealtimeCall, SdkworkError> {
-        let path = ai_path(&format!("/realtime/calls/{}/hangup", serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    pub async fn create_calls_hangup(
+        &self,
+        call_id: &str,
+        body: &OpenAiRealtimeCallActionRequest,
+    ) -> Result<OpenAiRealtimeCall, SdkworkError> {
+        let path = ai_path(&format!(
+            "/realtime/calls/{}/hangup",
+            serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))
+        ));
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Refer realtime call
-    pub async fn create_calls_refer(&self, call_id: &str, body: &OpenAiRealtimeCallReferRequest) -> Result<OpenAiRealtimeCall, SdkworkError> {
-        let path = ai_path(&format!("/realtime/calls/{}/refer", serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    pub async fn create_calls_refer(
+        &self,
+        call_id: &str,
+        body: &OpenAiRealtimeCallReferRequest,
+    ) -> Result<OpenAiRealtimeCall, SdkworkError> {
+        let path = ai_path(&format!(
+            "/realtime/calls/{}/refer",
+            serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))
+        ));
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Reject realtime call
-    pub async fn create_calls_reject(&self, call_id: &str, body: &OpenAiRealtimeCallActionRequest) -> Result<OpenAiRealtimeCall, SdkworkError> {
-        let path = ai_path(&format!("/realtime/calls/{}/reject", serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    pub async fn create_calls_reject(
+        &self,
+        call_id: &str,
+        body: &OpenAiRealtimeCallActionRequest,
+    ) -> Result<OpenAiRealtimeCall, SdkworkError> {
+        let path = ai_path(&format!(
+            "/realtime/calls/{}/reject",
+            serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))
+        ));
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Create realtime client secret
-    pub async fn create_client_secret(&self, body: &OpenAiRealtimeClientSecretCreateRequest) -> Result<OpenAiRealtimeClientSecret, SdkworkError> {
+    pub async fn create_client_secret(
+        &self,
+        body: &OpenAiRealtimeClientSecretCreateRequest,
+    ) -> Result<OpenAiRealtimeClientSecret, SdkworkError> {
         let path = ai_path(&"/realtime/client_secrets".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Create realtime session
-    pub async fn create_session(&self, body: &OpenAiRealtimeSessionCreateRequest) -> Result<OpenAiRealtimeSession, SdkworkError> {
+    pub async fn create_session(
+        &self,
+        body: &OpenAiRealtimeSessionCreateRequest,
+    ) -> Result<OpenAiRealtimeSession, SdkworkError> {
         let path = ai_path(&"/realtime/sessions".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Create realtime transcription session
-    pub async fn create_transcription_session(&self, body: &OpenAiRealtimeTranscriptionSessionCreateRequest) -> Result<OpenAiRealtimeTranscriptionSession, SdkworkError> {
+    pub async fn create_transcription_session(
+        &self,
+        body: &OpenAiRealtimeTranscriptionSessionCreateRequest,
+    ) -> Result<OpenAiRealtimeTranscriptionSession, SdkworkError> {
         let path = ai_path(&"/realtime/transcription_sessions".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Create realtime translation session
-    pub async fn create_translation(&self, body: &OpenAiRealtimeTranslationSessionCreateRequest) -> Result<OpenAiRealtimeTranslationSession, SdkworkError> {
+    pub async fn create_translation(
+        &self,
+        body: &OpenAiRealtimeTranslationSessionCreateRequest,
+    ) -> Result<OpenAiRealtimeTranslationSession, SdkworkError> {
         let path = ai_path(&"/realtime/translations".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }
 
 struct PathParameterSpec<'a> {
@@ -78,7 +145,11 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
+        Self {
+            name,
+            style,
+            explode,
+        }
     }
 }
 
@@ -87,15 +158,32 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    let style = if spec.style.is_empty() {
+        "simple"
+    } else {
+        spec.style
+    };
     match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+        serde_json::Value::Array(values) => {
+            serialize_path_array(spec.name, &values, style, spec.explode)
+        }
+        serde_json::Value::Object(values) => {
+            serialize_path_object(spec.name, &values, style, spec.explode)
+        }
+        value => format!(
+            "{}{}",
+            path_primitive_prefix(spec.name, style),
+            percent_encode(&primitive_to_string(&value))
+        ),
     }
 }
 
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+fn serialize_path_array(
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -106,7 +194,11 @@ fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, e
     }
     if style == "matrix" {
         if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+            return serialized
+                .iter()
+                .map(|item| format!(";{}={}", name, item))
+                .collect::<Vec<_>>()
+                .join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -167,8 +259,6 @@ fn path_primitive_prefix(name: &str, style: &str) -> String {
         path_prefix(name, style)
     }
 }
-
-
 
 fn primitive_to_string(value: &serde_json::Value) -> String {
     match value {

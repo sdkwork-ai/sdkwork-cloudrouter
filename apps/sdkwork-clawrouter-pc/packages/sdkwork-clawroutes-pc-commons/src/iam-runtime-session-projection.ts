@@ -142,6 +142,7 @@ function toIamAppContext(context: PortalSessionAppContext | undefined): IamAppCo
     environment: toIamEnvironment(context.environment),
     organizationId: context.organizationId,
     permissionScope: [...(context.permissionScope ?? [])],
+    standardRoleCodes: [...(context.standardRoleCodes ?? [])],
     sessionId: context.sessionId,
     tenantId: context.tenantId,
     userId: context.userId,

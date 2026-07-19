@@ -88,7 +88,7 @@ use sdkwork_routes_models_catalog_backend_api::{
     admin_model_rankings_router_with_read_store_and_refresh_store,
 };
 use sdkwork_web_axum::problem_response_for_request;
-use sdkwork_web_core::WebFrameworkError;
+use sdkwork_web_core::{WebFrameworkError, WebRequestContext};
 use sqlx::{PgPool, SqlitePool};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1776,42 +1776,33 @@ fn layer_with_admin_subject_boundary(config: AdminSubjectBoundaryConfig, router:
 }
 
 async fn admin_web_framework_access_boundary(
-    State(config): State<AdminSubjectBoundaryConfig>,
+    State(_config): State<AdminSubjectBoundaryConfig>,
     request: Request<Body>,
     next: Next,
 ) -> Response {
-    let subject = match sdkwork_clawrouter_router_service::api::admin_sql_subject::resolve_optional_admin_sql_subject(
-        request.headers(),
-        request.extensions(),
-        true,
-    ) {
-        Ok(Some(subject)) => subject,
-        Ok(None) => {
-            return admin_unauthorized_response(
-                &request,
-                "authenticated admin subject is required".to_owned(),
-            )
-        }
-        Err(response) => return response,
+    let Some(context) = request.extensions().get::<WebRequestContext>() else {
+        return admin_unauthorized_response(
+            &request,
+            "authenticated admin context is required".to_owned(),
+        );
     };
-    let trusted = sdkwork_clawrouter_router_service::api::admin_sql_subject::trusted_request_subject_from_admin_scope(
-        subject,
-    );
-
-    match config.access_checker.has_admin_access(trusted).await {
-        Ok(true) => next.run(request).await,
-        Ok(false) => admin_forbidden_response(&request, "admin access is required".to_owned()),
-        Err(error) => {
-            tracing::warn!(
-                tenant_id = trusted.tenant_id,
-                organization_id = trusted.organization_id,
-                user_id = trusted.user_id,
-                error = %error,
-                "failed to verify admin access"
-            );
-            admin_internal_error_response(&request, "failed to verify admin access".to_owned())
-        }
+    if context.principal().is_none() {
+        return admin_unauthorized_response(
+            &request,
+            "authenticated admin principal is required".to_owned(),
+        );
     }
+    if has_web_framework_admin_access(context) {
+        return next.run(request).await;
+    }
+    admin_forbidden_response(
+        &request,
+        "clawrouter.admin.access permission is required".to_owned(),
+    )
+}
+
+fn has_web_framework_admin_access(context: &WebRequestContext) -> bool {
+    context.principal().is_some() && context.has_permission("clawrouter.admin.access")
 }
 
 async fn admin_request_subject_boundary(
@@ -2049,12 +2040,17 @@ pub async fn serve_with_runtime_config(
 #[cfg(test)]
 mod tests {
     use super::{
-        admin_forbidden_response, has_sqlite_admin_access, router_from_env, router_without_database,
+        admin_forbidden_response, has_sqlite_admin_access, has_web_framework_admin_access,
+        router_from_env, router_without_database,
     };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use sdkwork_claw_config::DeploymentMode;
     use sdkwork_claw_http::TrustedRequestSubject;
+    use sdkwork_web_core::{
+        ServerRequestId, WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode,
+        WebEnvironment, WebLoginScope, WebRequestContext, WebRequestPrincipal, WebTransportFacts,
+    };
     use sqlx::sqlite::SqlitePoolOptions;
     use std::sync::{Mutex, OnceLock};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -2161,6 +2157,52 @@ mod tests {
                     .unwrap(),
                 "ordinary, inactive, and missing memberships must remain forbidden"
             );
+        }
+    }
+
+    #[test]
+    fn web_framework_admin_access_uses_canonical_permission_scope() {
+        assert!(has_web_framework_admin_access(&web_context(vec![
+            "clawrouter.admin.access"
+        ])));
+        assert!(has_web_framework_admin_access(&web_context(vec!["*"])));
+        assert!(!has_web_framework_admin_access(&web_context(vec![
+            "clawrouter.console.access"
+        ])));
+    }
+
+    fn web_context(permission_scope: Vec<&str>) -> WebRequestContext {
+        let principal = WebRequestPrincipal::builder()
+            .tenant_id("100001")
+            .organization_id(Some("100002".to_owned()))
+            .login_scope(WebLoginScope::Organization)
+            .user_id("2")
+            .session_id(Some("session-test".to_owned()))
+            .app_id("sdkwork-clawrouter")
+            .environment(WebEnvironment::Test)
+            .deployment_mode(WebDeploymentMode::Local)
+            .auth_level(WebAuthLevel::Password)
+            .permission_scope(permission_scope.into_iter().map(str::to_owned).collect())
+            .build();
+        WebRequestContext {
+            request_id: ServerRequestId("request-test".to_owned()),
+            api_surface: WebApiSurface::BackendApi,
+            auth_mode: WebAuthMode::DualToken,
+            transport: WebTransportFacts {
+                path: "/backend/v3/api/system/dashboard/admin/overview".to_owned(),
+                method: "GET".to_owned(),
+                auth_token_present: true,
+                access_token_present: true,
+                api_key_present: false,
+                oauth_bearer_present: false,
+                agent_token_present: false,
+            },
+            principal: Some(principal),
+            locale: None,
+            client_kind: None,
+            operation: None,
+            trace_id: None,
+            idempotency_key: None,
         }
     }
 

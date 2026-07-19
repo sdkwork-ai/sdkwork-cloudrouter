@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiPromptReference, OpenAiReasoningConfig, OpenAiTextConfig, OpenAiTool, OpenAiToolChoice};
+use crate::models::{
+    OpenAiPromptReference, OpenAiReasoningConfig, OpenAiTextConfig, OpenAiTool, OpenAiToolChoice,
+};
 
 /// OpenAI-compatible open ai responses request schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -1,6 +1,13 @@
 use std::sync::Arc;
 
-use crate::api::{FilesAnthropicApi, ChatAnthropicApi, BatchesAnthropicApi, ResponsesGoogleApi, FilesGoogleApi, EmbeddingsGoogleApi, ChatGoogleApi, VideosKlingApi, ImagesMidjourneyApi, ImagesNanoBananaApi, AudioSunoApi, AssistantsApi, AudioApi, BatchesApi, ChatApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi, FilesApi, ImagesApi, ModelsApi, ModerationsApi, RealtimeApi, ResponsesApi, ThreadsApi, UploadsApi, VectorStoresApi, VideoApi, VideosViduApi, ImagesViduApi, VideosVolcengineApi};
+use crate::api::{
+    AssistantsApi, AudioApi, AudioSunoApi, BatchesAnthropicApi, BatchesApi, ChatAnthropicApi,
+    ChatApi, ChatGoogleApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi,
+    EmbeddingsGoogleApi, FilesAnthropicApi, FilesApi, FilesGoogleApi, ImagesApi,
+    ImagesMidjourneyApi, ImagesNanoBananaApi, ImagesViduApi, ModelsApi, ModerationsApi,
+    RealtimeApi, ResponsesApi, ResponsesGoogleApi, ThreadsApi, UploadsApi, VectorStoresApi,
+    VideoApi, VideosKlingApi, VideosViduApi, VideosVolcengineApi,
+};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -44,130 +51,130 @@ impl SdkworkAiClient {
     }
 
     pub fn files_anthropic(&self) -> FilesAnthropicApi {
-            FilesAnthropicApi::new(Arc::clone(&self.http))
-        }
+        FilesAnthropicApi::new(Arc::clone(&self.http))
+    }
 
     pub fn chat_anthropic(&self) -> ChatAnthropicApi {
-            ChatAnthropicApi::new(Arc::clone(&self.http))
-        }
+        ChatAnthropicApi::new(Arc::clone(&self.http))
+    }
 
     pub fn batches_anthropic(&self) -> BatchesAnthropicApi {
-            BatchesAnthropicApi::new(Arc::clone(&self.http))
-        }
+        BatchesAnthropicApi::new(Arc::clone(&self.http))
+    }
 
     pub fn responses_google(&self) -> ResponsesGoogleApi {
-            ResponsesGoogleApi::new(Arc::clone(&self.http))
-        }
+        ResponsesGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn files_google(&self) -> FilesGoogleApi {
-            FilesGoogleApi::new(Arc::clone(&self.http))
-        }
+        FilesGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn embeddings_google(&self) -> EmbeddingsGoogleApi {
-            EmbeddingsGoogleApi::new(Arc::clone(&self.http))
-        }
+        EmbeddingsGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn chat_google(&self) -> ChatGoogleApi {
-            ChatGoogleApi::new(Arc::clone(&self.http))
-        }
+        ChatGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_kling(&self) -> VideosKlingApi {
-            VideosKlingApi::new(Arc::clone(&self.http))
-        }
+        VideosKlingApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_midjourney(&self) -> ImagesMidjourneyApi {
-            ImagesMidjourneyApi::new(Arc::clone(&self.http))
-        }
+        ImagesMidjourneyApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_nano_banana(&self) -> ImagesNanoBananaApi {
-            ImagesNanoBananaApi::new(Arc::clone(&self.http))
-        }
+        ImagesNanoBananaApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_suno(&self) -> AudioSunoApi {
-            AudioSunoApi::new(Arc::clone(&self.http))
-        }
+        AudioSunoApi::new(Arc::clone(&self.http))
+    }
 
     pub fn assistants(&self) -> AssistantsApi {
-            AssistantsApi::new(Arc::clone(&self.http))
-        }
+        AssistantsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio(&self) -> AudioApi {
-            AudioApi::new(Arc::clone(&self.http))
-        }
+        AudioApi::new(Arc::clone(&self.http))
+    }
 
     pub fn batches(&self) -> BatchesApi {
-            BatchesApi::new(Arc::clone(&self.http))
-        }
+        BatchesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn chat(&self) -> ChatApi {
-            ChatApi::new(Arc::clone(&self.http))
-        }
+        ChatApi::new(Arc::clone(&self.http))
+    }
 
     pub fn completion(&self) -> CompletionApi {
-            CompletionApi::new(Arc::clone(&self.http))
-        }
+        CompletionApi::new(Arc::clone(&self.http))
+    }
 
     pub fn container(&self) -> ContainerApi {
-            ContainerApi::new(Arc::clone(&self.http))
-        }
+        ContainerApi::new(Arc::clone(&self.http))
+    }
 
     pub fn conversation(&self) -> ConversationApi {
-            ConversationApi::new(Arc::clone(&self.http))
-        }
+        ConversationApi::new(Arc::clone(&self.http))
+    }
 
     pub fn embeddings(&self) -> EmbeddingsApi {
-            EmbeddingsApi::new(Arc::clone(&self.http))
-        }
+        EmbeddingsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn files(&self) -> FilesApi {
-            FilesApi::new(Arc::clone(&self.http))
-        }
+        FilesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images(&self) -> ImagesApi {
-            ImagesApi::new(Arc::clone(&self.http))
-        }
+        ImagesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn models(&self) -> ModelsApi {
-            ModelsApi::new(Arc::clone(&self.http))
-        }
+        ModelsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn moderations(&self) -> ModerationsApi {
-            ModerationsApi::new(Arc::clone(&self.http))
-        }
+        ModerationsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn realtime(&self) -> RealtimeApi {
-            RealtimeApi::new(Arc::clone(&self.http))
-        }
+        RealtimeApi::new(Arc::clone(&self.http))
+    }
 
     pub fn responses(&self) -> ResponsesApi {
-            ResponsesApi::new(Arc::clone(&self.http))
-        }
+        ResponsesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn threads(&self) -> ThreadsApi {
-            ThreadsApi::new(Arc::clone(&self.http))
-        }
+        ThreadsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn uploads(&self) -> UploadsApi {
-            UploadsApi::new(Arc::clone(&self.http))
-        }
+        UploadsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn vector_stores(&self) -> VectorStoresApi {
-            VectorStoresApi::new(Arc::clone(&self.http))
-        }
+        VectorStoresApi::new(Arc::clone(&self.http))
+    }
 
     pub fn video(&self) -> VideoApi {
-            VideoApi::new(Arc::clone(&self.http))
-        }
+        VideoApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_vidu(&self) -> VideosViduApi {
-            VideosViduApi::new(Arc::clone(&self.http))
-        }
+        VideosViduApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_vidu(&self) -> ImagesViduApi {
-            ImagesViduApi::new(Arc::clone(&self.http))
-        }
+        ImagesViduApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_volcengine(&self) -> VideosVolcengineApi {
-            VideosVolcengineApi::new(Arc::clone(&self.http))
-        }
+        VideosVolcengineApi::new(Arc::clone(&self.http))
+    }
 }

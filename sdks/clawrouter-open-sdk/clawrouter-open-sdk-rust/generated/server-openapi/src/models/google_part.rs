@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{GoogleBlob, GoogleCodeExecutionResult, GoogleExecutableCode, GoogleFileData, GoogleFunctionCall, GoogleFunctionResponse};
+use crate::models::{
+    GoogleBlob, GoogleCodeExecutionResult, GoogleExecutableCode, GoogleFileData,
+    GoogleFunctionCall, GoogleFunctionResponse,
+};
 
 /// Google Gemini google part schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

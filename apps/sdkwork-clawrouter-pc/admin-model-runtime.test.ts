@@ -2373,7 +2373,7 @@ test("admin model catalog sync action lives in the vendor sidebar header", () =>
 });
 
 test("admin model resource management is registered as a model management menu route", () => {
-  const appSource = readFileSync(resolve(PORTAL_ROOT, "src/App.tsx"), "utf8");
+  const adminHostSource = readFileSync(resolve(PORTAL_ROOT, "src/admin/clawRouterAdminHostMount.tsx"), "utf8");
   const registrySource = readFileSync(resolve(PORTAL_ROOT, "packages/sdkwork-clawrouter-pc-admin-shell/src/adminModuleRegistry.ts"), "utf8");
   const packageSource = readFileSync(
     resolve(PORTAL_ROOT, "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/index.tsx"),
@@ -2384,8 +2384,8 @@ test("admin model resource management is registered as a model management menu r
     "utf8",
   );
 
-  assert.match(appSource, /const ResourceAdmin = lazyRoute\(\(\) => import\('@sdkwork\/models-pc-admin-resource'\), 'ResourceAdmin'\)/);
-  assert.match(appSource, /<Route path="model\/resources" element=\{<ResourceAdmin \/>\} \/>/);
+  assert.match(adminHostSource, /const ResourceAdmin = lazyAdminRoute\(\(\) => import\('@sdkwork\/models-pc-admin-resource'\), 'ResourceAdmin'\)/);
+  assert.match(adminHostSource, /route\('model\/resources', 'sdkwork-models', '@sdkwork\/models-pc-admin-resource', \['sdkwork-models-backend-sdk'\]/);
   assert.match(registrySource, /path: '\/admin\/model\/resources'/);
   assert.match(registrySource, /labelKey: 'admin\.menu\.modelResources'/);
   assert.match(registrySource, /icon: Boxes/);

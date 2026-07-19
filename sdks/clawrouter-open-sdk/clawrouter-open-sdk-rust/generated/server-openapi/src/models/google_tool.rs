@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{GoogleCodeExecutionTool, GoogleFunctionDeclaration, GoogleSearchTool, GoogleUrlContextTool};
+use crate::models::{
+    GoogleCodeExecutionTool, GoogleFunctionDeclaration, GoogleSearchTool, GoogleUrlContextTool,
+};
 
 /// Google Gemini google tool schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

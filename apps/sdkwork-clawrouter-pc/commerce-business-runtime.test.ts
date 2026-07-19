@@ -88,10 +88,10 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   assert.doesNotMatch(modalSource, /createTokenPlanCommerceModal\("redeem"\)/);
   assert.doesNotMatch(modalSource, /createTokenPlanCommerceModal\("points-purchase"\)/);
   assert.doesNotMatch(modalSource, /登录后将跳转到控制台钱包完成操作/);
-  assert.match(providerSource, /recharges:\s*client\.recharges/);
+  assert.match(providerSource, /recharges:\s*orderClient\.recharges/);
   assert.match(providerSource, /const orderAppService = createSdkworkOrderAppService/);
   assert.match(providerSource, /configureSdkworkOrderAppServiceProvider\(\(\) => orderAppService\)/);
-  assert.match(providerSource, /memberships:\s*client\.memberships/);
+  assert.match(providerSource, /memberships:\s*membershipClient\.memberships/);
   assert.match(providerSource, /createSdkworkMembershipCheckoutService/);
   assert.match(providerSource, /createSdkworkCouponRechargeService/);
   assert.match(providerSource, /getClawRouterCouponRechargeService/);
@@ -210,15 +210,20 @@ test("console coupons page passes resolved locale", () => {
   assert.match(localeSource, /normalizeSdkworkCouponLocale/);
 });
 
-test("app bootstrap wires T1 domain service providers to Claw Router app SDK domains", () => {
+test("app bootstrap wires T1 domain service providers from independent owner SDKs", () => {
   const mainSource = readPortalFile("./src/main.tsx");
   const providersSource = readPortalFile("./packages/sdkwork-clawroutes-pc-commons/src/domain-service-providers.ts");
 
-  assert.match(mainSource, /configureClawRouterDomainServiceProviders/);
-  assert.match(mainSource, /getClawRouterAppSdkClient/);
+  assert.match(mainSource, /configureClawRouterDomainServiceProviders\(\)/);
+  assert.doesNotMatch(mainSource, /getClawRouterAppSdkClient/);
   assert.doesNotMatch(mainSource, /configureSdkworkCommerceServiceProvider/);
   assert.match(providersSource, /createSdkworkOrderAppService/);
-  assert.match(providersSource, /buildOrderCommercePort\(getAppDomainClient\(\)\)/);
+  assert.match(
+    providersSource,
+    /buildOrderCommercePort\(catalogClient, membershipClient, orderClient, paymentClient\)/,
+  );
+  assert.match(providersSource, /getSdkworkOrderAppSdkClient\(\)/);
+  assert.match(providersSource, /getSdkworkPaymentAppSdkClient\(\)/);
   assert.match(providersSource, /configureSdkworkOrderSessionTokenProvider\(readSessionTokens\)/);
   assert.doesNotMatch(providersSource, /createTokenManager|Authorization|Access-Token/);
 });

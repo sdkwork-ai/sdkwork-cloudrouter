@@ -1,0 +1,3437 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.openapi.contract-overrides",
+  "owner": "sdkwork-clawrouter",
+  "surface": "backend-api",
+  "authority": "sdkwork-clawrouter.backend",
+  "schemas": {
+    "AdminAnalyticsOverview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "insights",
+        "modalityDistribution",
+        "modelDistribution",
+        "modelRankings",
+        "rankingSize",
+        "summary",
+        "timeRange",
+        "trend",
+        "userRankings"
+      ],
+      "properties": {
+        "endTime": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "endTime field on AdminAnalyticsOverview."
+        },
+        "insights": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "insights field on AdminAnalyticsOverview."
+        },
+        "modalityDistribution": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "modalityDistribution field on AdminAnalyticsOverview."
+        },
+        "modelDistribution": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "modelDistribution field on AdminAnalyticsOverview."
+        },
+        "modelRankings": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "modelRankings field on AdminAnalyticsOverview."
+        },
+        "rankingSize": {
+          "type": "number",
+          "description": "rankingSize field on AdminAnalyticsOverview."
+        },
+        "startTime": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "startTime field on AdminAnalyticsOverview."
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "summary field on AdminAnalyticsOverview."
+        },
+        "timeRange": {
+          "type": "string",
+          "enum": [
+            "hourly",
+            "daily",
+            "weekly",
+            "monthly",
+            "yearly"
+          ],
+          "description": "timeRange field on AdminAnalyticsOverview."
+        },
+        "trend": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "trend field on AdminAnalyticsOverview."
+        },
+        "userRankings": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "userRankings field on AdminAnalyticsOverview."
+        }
+      },
+      "description": "AdminAnalyticsOverview contract."
+    },
+    "AdminAuthSettingsResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "leftRailMode",
+        "loginMethods",
+        "oauthLoginEnabled",
+        "oauthProviders",
+        "oauthRegion",
+        "qrLoginEnabled",
+        "qrLoginType",
+        "recoveryMethods",
+        "registerMethods",
+        "verificationPolicy",
+        "wechat"
+      ],
+      "properties": {
+        "leftRailMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "highlights-only",
+            "qr-only"
+          ],
+          "description": "leftRailMode field on AdminAuthSettingsResponse."
+        },
+        "loginMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "password",
+              "emailCode",
+              "phoneCode",
+              "sessionBridge"
+            ]
+          },
+          "description": "loginMethods field on AdminAuthSettingsResponse."
+        },
+        "oauthLoginEnabled": {
+          "type": "boolean",
+          "description": "oauthLoginEnabled field on AdminAuthSettingsResponse."
+        },
+        "oauthProviders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "oauthProviders field on AdminAuthSettingsResponse."
+        },
+        "oauthRegion": {
+          "type": "string",
+          "enum": [
+            "mainland",
+            "overseas"
+          ],
+          "description": "oauthRegion field on AdminAuthSettingsResponse."
+        },
+        "qrLoginEnabled": {
+          "type": "boolean",
+          "description": "qrLoginEnabled field on AdminAuthSettingsResponse."
+        },
+        "qrLoginType": {
+          "type": "string",
+          "enum": [
+            "web",
+            "official",
+            "mini"
+          ],
+          "description": "qrLoginType field on AdminAuthSettingsResponse."
+        },
+        "recoveryMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "email",
+              "phone"
+            ]
+          },
+          "description": "recoveryMethods field on AdminAuthSettingsResponse."
+        },
+        "registerMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "email",
+              "phone"
+            ]
+          },
+          "description": "registerMethods field on AdminAuthSettingsResponse."
+        },
+        "verificationPolicy": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "verificationPolicy field on AdminAuthSettingsResponse."
+        },
+        "wechat": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "wechat field on AdminAuthSettingsResponse."
+        }
+      },
+      "description": "AdminAuthSettingsResponse contract."
+    },
+    "AdminAuthSettingsUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "leftRailMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "highlights-only",
+            "qr-only"
+          ],
+          "description": "leftRailMode field on AdminAuthSettingsUpdateRequest."
+        },
+        "loginMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "password",
+              "emailCode",
+              "phoneCode",
+              "sessionBridge"
+            ]
+          },
+          "description": "loginMethods field on AdminAuthSettingsUpdateRequest.",
+          "minItems": 1
+        },
+        "oauthLoginEnabled": {
+          "type": "boolean",
+          "description": "oauthLoginEnabled field on AdminAuthSettingsUpdateRequest."
+        },
+        "oauthProviders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "oauthProviders field on AdminAuthSettingsUpdateRequest."
+        },
+        "oauthRegion": {
+          "type": "string",
+          "enum": [
+            "mainland",
+            "overseas"
+          ],
+          "description": "oauthRegion field on AdminAuthSettingsUpdateRequest."
+        },
+        "qrLoginEnabled": {
+          "type": "boolean",
+          "description": "qrLoginEnabled field on AdminAuthSettingsUpdateRequest."
+        },
+        "qrLoginType": {
+          "type": "string",
+          "enum": [
+            "web",
+            "official",
+            "mini"
+          ],
+          "description": "qrLoginType field on AdminAuthSettingsUpdateRequest."
+        },
+        "recoveryMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "email",
+              "phone"
+            ]
+          },
+          "description": "recoveryMethods field on AdminAuthSettingsUpdateRequest.",
+          "minItems": 1
+        },
+        "registerMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "email",
+              "phone"
+            ]
+          },
+          "description": "registerMethods field on AdminAuthSettingsUpdateRequest.",
+          "minItems": 1
+        },
+        "verificationPolicy": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "verificationPolicy field on AdminAuthSettingsUpdateRequest."
+        },
+        "wechat": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "wechat field on AdminAuthSettingsUpdateRequest."
+        }
+      },
+      "description": "AdminAuthSettingsUpdateRequest contract."
+    },
+    "AdminChannelBindingPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminChannelBindingPage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on AdminChannelBindingPage."
+        }
+      },
+      "description": "AdminChannelBindingPage contract."
+    },
+    "AdminChannelBindingReplaceRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminChannelBindingReplaceRequest."
+        }
+      },
+      "description": "AdminChannelBindingReplaceRequest contract."
+    },
+    "AdminChannelCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "credentials",
+        "name",
+        "vendor"
+      ],
+      "properties": {
+        "accessType": {
+          "type": "string",
+          "description": "accessType field on AdminChannelCreateRequest."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "llm",
+              "image",
+              "audio",
+              "music",
+              "sfx",
+              "video"
+            ]
+          },
+          "description": "capabilities field on AdminChannelCreateRequest."
+        },
+        "channelType": {
+          "type": "string",
+          "enum": [
+            "official",
+            "relay"
+          ],
+          "description": "channelType field on AdminChannelCreateRequest."
+        },
+        "circuitBreakerPolicy": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "circuitBreakerPolicy field on AdminChannelCreateRequest."
+        },
+        "credentialRotation": {
+          "type": "string",
+          "enum": [
+            "default",
+            "priority",
+            "round_robin",
+            "weighted_round_robin",
+            "random"
+          ],
+          "description": "credentialRotation field on AdminChannelCreateRequest."
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "credentials field on AdminChannelCreateRequest."
+        },
+        "expiresAt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "expiresAt field on AdminChannelCreateRequest."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminChannelCreateRequest."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminChannelCreateRequest."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "protocol field on AdminChannelCreateRequest."
+        },
+        "resourceCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceCodes field on AdminChannelCreateRequest."
+        },
+        "retryPolicy": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "retryPolicy field on AdminChannelCreateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "error",
+            "disabled"
+          ],
+          "description": "status field on AdminChannelCreateRequest."
+        },
+        "timeoutMs": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "timeoutMs field on AdminChannelCreateRequest."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "vendor field on AdminChannelCreateRequest."
+        },
+        "weight": {
+          "type": "string",
+          "description": "weight field on AdminChannelCreateRequest."
+        }
+      },
+      "description": "AdminChannelCreateRequest contract."
+    },
+    "AdminChannelGroupCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capacity",
+        "groupCode",
+        "groupName",
+        "groupType",
+        "priceReferenceMode",
+        "status"
+      ],
+      "properties": {
+        "capacity": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "capacity field on AdminChannelGroupCreateRequest."
+        },
+        "groupCode": {
+          "type": "string",
+          "description": "groupCode field on AdminChannelGroupCreateRequest."
+        },
+        "groupName": {
+          "type": "string",
+          "description": "groupName field on AdminChannelGroupCreateRequest."
+        },
+        "groupType": {
+          "type": "string",
+          "enum": [
+            "public",
+            "dedicated"
+          ],
+          "description": "groupType field on AdminChannelGroupCreateRequest."
+        },
+        "officialPriceMultiplier": {
+          "type": "number",
+          "description": "officialPriceMultiplier field on AdminChannelGroupCreateRequest."
+        },
+        "priceReferenceMode": {
+          "type": "string",
+          "enum": [
+            "multiplier",
+            "official_price"
+          ],
+          "description": "priceReferenceMode field on AdminChannelGroupCreateRequest."
+        },
+        "rateMultiplier": {
+          "type": "number",
+          "description": "rateMultiplier field on AdminChannelGroupCreateRequest."
+        },
+        "resourceCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceCodes field on AdminChannelGroupCreateRequest."
+        },
+        "resourceGroupCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceGroupCodes field on AdminChannelGroupCreateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminChannelGroupCreateRequest."
+        }
+      },
+      "description": "AdminChannelGroupCreateRequest contract."
+    },
+    "AdminChannelGroupItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accountCount",
+        "capacity",
+        "groupCode",
+        "groupName",
+        "groupType",
+        "id",
+        "officialPriceMultiplier",
+        "priceReferenceMode",
+        "providerCode",
+        "rateMultiplier",
+        "resourceCodes",
+        "resourceGroupCodes",
+        "status",
+        "usage"
+      ],
+      "properties": {
+        "accountCount": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "accountCount field on AdminChannelGroupItem."
+        },
+        "capacity": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "capacity field on AdminChannelGroupItem."
+        },
+        "groupCode": {
+          "type": "string",
+          "description": "groupCode field on AdminChannelGroupItem."
+        },
+        "groupName": {
+          "type": "string",
+          "description": "groupName field on AdminChannelGroupItem."
+        },
+        "groupType": {
+          "type": "string",
+          "enum": [
+            "public",
+            "dedicated"
+          ],
+          "description": "groupType field on AdminChannelGroupItem."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminChannelGroupItem."
+        },
+        "officialPriceMultiplier": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {}
+          ],
+          "description": "officialPriceMultiplier field on AdminChannelGroupItem."
+        },
+        "priceReferenceMode": {
+          "type": "string",
+          "enum": [
+            "multiplier",
+            "official_price"
+          ],
+          "description": "priceReferenceMode field on AdminChannelGroupItem."
+        },
+        "providerCode": {
+          "type": "string",
+          "description": "providerCode field on AdminChannelGroupItem."
+        },
+        "rateMultiplier": {
+          "type": "number",
+          "description": "rateMultiplier field on AdminChannelGroupItem."
+        },
+        "resourceCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceCodes field on AdminChannelGroupItem."
+        },
+        "resourceGroupCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceGroupCodes field on AdminChannelGroupItem."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminChannelGroupItem."
+        },
+        "usage": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "usage field on AdminChannelGroupItem."
+        }
+      },
+      "description": "AdminChannelGroupItem contract."
+    },
+    "AdminChannelGroupPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminChannelGroupPage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on AdminChannelGroupPage."
+        }
+      },
+      "description": "AdminChannelGroupPage contract."
+    },
+    "AdminChannelGroupUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "capacity": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "capacity field on AdminChannelGroupUpdateRequest."
+        },
+        "groupCode": {
+          "type": "string",
+          "description": "groupCode field on AdminChannelGroupUpdateRequest."
+        },
+        "groupName": {
+          "type": "string",
+          "description": "groupName field on AdminChannelGroupUpdateRequest."
+        },
+        "groupType": {
+          "type": "string",
+          "enum": [
+            "public",
+            "dedicated"
+          ],
+          "description": "groupType field on AdminChannelGroupUpdateRequest."
+        },
+        "officialPriceMultiplier": {
+          "type": "number",
+          "description": "officialPriceMultiplier field on AdminChannelGroupUpdateRequest."
+        },
+        "priceReferenceMode": {
+          "type": "string",
+          "enum": [
+            "multiplier",
+            "official_price"
+          ],
+          "description": "priceReferenceMode field on AdminChannelGroupUpdateRequest."
+        },
+        "rateMultiplier": {
+          "type": "number",
+          "description": "rateMultiplier field on AdminChannelGroupUpdateRequest."
+        },
+        "resourceCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceCodes field on AdminChannelGroupUpdateRequest."
+        },
+        "resourceGroupCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceGroupCodes field on AdminChannelGroupUpdateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminChannelGroupUpdateRequest."
+        }
+      },
+      "description": "AdminChannelGroupUpdateRequest contract."
+    },
+    "AdminChannelItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accessType",
+        "balance",
+        "capabilities",
+        "channelId",
+        "channelType",
+        "createdAt",
+        "credentialRotation",
+        "credentials",
+        "errors",
+        "id",
+        "isMultimodal",
+        "name",
+        "protocol",
+        "resourceCodes",
+        "status",
+        "vendor",
+        "weight"
+      ],
+      "properties": {
+        "accessType": {
+          "type": "string",
+          "description": "accessType field on AdminChannelItem."
+        },
+        "balance": {
+          "type": "string",
+          "description": "balance field on AdminChannelItem."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "capabilities field on AdminChannelItem."
+        },
+        "channelId": {
+          "type": "string",
+          "description": "channelId field on AdminChannelItem."
+        },
+        "channelType": {
+          "type": "string",
+          "enum": [
+            "official",
+            "relay"
+          ],
+          "description": "channelType field on AdminChannelItem."
+        },
+        "circuitBreakerPolicy": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "circuitBreakerPolicy field on AdminChannelItem."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "createdAt field on AdminChannelItem."
+        },
+        "credentialRotation": {
+          "type": "string",
+          "enum": [
+            "default",
+            "priority",
+            "round_robin",
+            "weighted_round_robin",
+            "random"
+          ],
+          "description": "credentialRotation field on AdminChannelItem."
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "credentials field on AdminChannelItem."
+        },
+        "errors": {
+          "type": "number",
+          "description": "errors field on AdminChannelItem."
+        },
+        "expiresAt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "expiresAt field on AdminChannelItem."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminChannelItem."
+        },
+        "isMultimodal": {
+          "type": "boolean",
+          "description": "isMultimodal field on AdminChannelItem."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminChannelItem."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "protocol field on AdminChannelItem."
+        },
+        "resourceCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceCodes field on AdminChannelItem."
+        },
+        "retryPolicy": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "retryPolicy field on AdminChannelItem."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "error",
+            "disabled"
+          ],
+          "description": "status field on AdminChannelItem."
+        },
+        "timeoutMs": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "timeoutMs field on AdminChannelItem."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "vendor field on AdminChannelItem."
+        },
+        "weight": {
+          "type": "string",
+          "description": "weight field on AdminChannelItem."
+        }
+      },
+      "description": "AdminChannelItem contract."
+    },
+    "AdminChannelPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminChannelPage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on AdminChannelPage."
+        }
+      },
+      "description": "AdminChannelPage contract."
+    },
+    "AdminChannelUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accessType": {
+          "type": "string",
+          "description": "accessType field on AdminChannelUpdateRequest."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "llm",
+              "image",
+              "audio",
+              "music",
+              "sfx",
+              "video"
+            ]
+          },
+          "description": "capabilities field on AdminChannelUpdateRequest."
+        },
+        "channelType": {
+          "type": "string",
+          "enum": [
+            "official",
+            "relay"
+          ],
+          "description": "channelType field on AdminChannelUpdateRequest."
+        },
+        "circuitBreakerPolicy": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "circuitBreakerPolicy field on AdminChannelUpdateRequest."
+        },
+        "credentialRotation": {
+          "type": "string",
+          "enum": [
+            "default",
+            "priority",
+            "round_robin",
+            "weighted_round_robin",
+            "random"
+          ],
+          "description": "credentialRotation field on AdminChannelUpdateRequest."
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "credentials field on AdminChannelUpdateRequest."
+        },
+        "expiresAt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "expiresAt field on AdminChannelUpdateRequest."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminChannelUpdateRequest."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminChannelUpdateRequest."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "protocol field on AdminChannelUpdateRequest."
+        },
+        "resourceCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "resourceCodes field on AdminChannelUpdateRequest."
+        },
+        "retryPolicy": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "retryPolicy field on AdminChannelUpdateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "error",
+            "disabled"
+          ],
+          "description": "status field on AdminChannelUpdateRequest."
+        },
+        "timeoutMs": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "timeoutMs field on AdminChannelUpdateRequest."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "vendor field on AdminChannelUpdateRequest."
+        },
+        "weight": {
+          "type": "string",
+          "description": "weight field on AdminChannelUpdateRequest."
+        }
+      },
+      "description": "AdminChannelUpdateRequest contract."
+    },
+    "AdminChannelVerifyResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channelId",
+        "item",
+        "latency",
+        "status",
+        "success"
+      ],
+      "properties": {
+        "channelId": {
+          "type": "string",
+          "description": "channelId field on AdminChannelVerifyResult."
+        },
+        "item": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "item field on AdminChannelVerifyResult."
+        },
+        "latency": {
+          "type": "string",
+          "description": "latency field on AdminChannelVerifyResult."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "error",
+            "disabled"
+          ],
+          "description": "status field on AdminChannelVerifyResult."
+        },
+        "success": {
+          "type": "boolean",
+          "description": "success field on AdminChannelVerifyResult."
+        }
+      },
+      "description": "AdminChannelVerifyResult contract."
+    },
+    "AdminFirewallRuleCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "type",
+        "value"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "reason field on AdminFirewallRuleCreateRequest."
+        },
+        "type": {
+          "type": "string",
+          "description": "type field on AdminFirewallRuleCreateRequest."
+        },
+        "value": {
+          "type": "string",
+          "description": "value field on AdminFirewallRuleCreateRequest."
+        }
+      },
+      "description": "AdminFirewallRuleCreateRequest contract."
+    },
+    "AdminIpLimitCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blockDuration",
+        "rpm",
+        "rps",
+        "ruleName",
+        "targetIp"
+      ],
+      "properties": {
+        "blockDuration": {
+          "type": "string",
+          "description": "blockDuration field on AdminIpLimitCreateRequest."
+        },
+        "rpm": {
+          "type": "number",
+          "description": "rpm field on AdminIpLimitCreateRequest."
+        },
+        "rps": {
+          "type": "number",
+          "description": "rps field on AdminIpLimitCreateRequest."
+        },
+        "ruleName": {
+          "type": "string",
+          "description": "ruleName field on AdminIpLimitCreateRequest."
+        },
+        "targetIp": {
+          "type": "string",
+          "description": "targetIp field on AdminIpLimitCreateRequest."
+        }
+      },
+      "description": "AdminIpLimitCreateRequest contract."
+    },
+    "AdminModelLimitCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channelGroup",
+        "model",
+        "rpm",
+        "tpm"
+      ],
+      "properties": {
+        "channelGroup": {
+          "type": "string",
+          "description": "channelGroup field on AdminModelLimitCreateRequest."
+        },
+        "model": {
+          "type": "string",
+          "description": "model field on AdminModelLimitCreateRequest."
+        },
+        "rpm": {
+          "type": "number",
+          "description": "rpm field on AdminModelLimitCreateRequest."
+        },
+        "tpm": {
+          "type": "string",
+          "description": "tpm field on AdminModelLimitCreateRequest."
+        }
+      },
+      "description": "AdminModelLimitCreateRequest contract."
+    },
+    "AdminProviderSecretCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "providerCode",
+        "secretRef"
+      ],
+      "properties": {
+        "authType": {
+          "type": "string",
+          "description": "authType field on AdminProviderSecretCreateRequest."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminProviderSecretCreateRequest."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminProviderSecretCreateRequest."
+        },
+        "providerCode": {
+          "type": "string",
+          "description": "providerCode field on AdminProviderSecretCreateRequest."
+        },
+        "secretRef": {
+          "type": "string",
+          "description": "secretRef field on AdminProviderSecretCreateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminProviderSecretCreateRequest."
+        }
+      },
+      "description": "AdminProviderSecretCreateRequest contract."
+    },
+    "AdminProviderSecretItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accountCode",
+        "authType",
+        "createdAt",
+        "id",
+        "maskedLabel",
+        "name",
+        "providerCode",
+        "secretRef",
+        "status",
+        "updatedAt"
+      ],
+      "properties": {
+        "accountCode": {
+          "type": "string",
+          "description": "accountCode field on AdminProviderSecretItem."
+        },
+        "authType": {
+          "type": "string",
+          "description": "authType field on AdminProviderSecretItem."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "createdAt field on AdminProviderSecretItem."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminProviderSecretItem."
+        },
+        "maskedLabel": {
+          "type": "string",
+          "description": "maskedLabel field on AdminProviderSecretItem."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminProviderSecretItem."
+        },
+        "providerCode": {
+          "type": "string",
+          "description": "providerCode field on AdminProviderSecretItem."
+        },
+        "secretRef": {
+          "type": "string",
+          "description": "secretRef field on AdminProviderSecretItem."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminProviderSecretItem."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "updatedAt field on AdminProviderSecretItem."
+        }
+      },
+      "description": "AdminProviderSecretItem contract."
+    },
+    "AdminProviderSecretPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminProviderSecretPage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on AdminProviderSecretPage."
+        }
+      },
+      "description": "AdminProviderSecretPage contract."
+    },
+    "AdminProviderSecretUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "authType": {
+          "type": "string",
+          "description": "authType field on AdminProviderSecretUpdateRequest."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminProviderSecretUpdateRequest."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminProviderSecretUpdateRequest."
+        },
+        "providerCode": {
+          "type": "string",
+          "description": "providerCode field on AdminProviderSecretUpdateRequest."
+        },
+        "secretRef": {
+          "type": "string",
+          "description": "secretRef field on AdminProviderSecretUpdateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminProviderSecretUpdateRequest."
+        }
+      },
+      "description": "AdminProviderSecretUpdateRequest contract."
+    },
+    "AdminRecordPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo",
+        "total"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminRecordPage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on AdminRecordPage."
+        },
+        "total": {
+          "type": "number",
+          "description": "total field on AdminRecordPage."
+        }
+      },
+      "description": "AdminRecordPage contract."
+    },
+    "AdminRuntimeRegionSettingsResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currentRegionCode",
+        "currentRegionName",
+        "remark"
+      ],
+      "properties": {
+        "currentRegionCode": {
+          "type": "string",
+          "description": "currentRegionCode field on AdminRuntimeRegionSettingsResponse."
+        },
+        "currentRegionName": {
+          "type": "string",
+          "description": "currentRegionName field on AdminRuntimeRegionSettingsResponse."
+        },
+        "remark": {
+          "type": "string",
+          "description": "remark field on AdminRuntimeRegionSettingsResponse."
+        }
+      },
+      "description": "AdminRuntimeRegionSettingsResponse contract."
+    },
+    "AdminRuntimeRegionSettingsUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currentRegionCode",
+        "currentRegionName",
+        "remark"
+      ],
+      "properties": {
+        "currentRegionCode": {
+          "type": "string",
+          "description": "currentRegionCode field on AdminRuntimeRegionSettingsUpdateRequest."
+        },
+        "currentRegionName": {
+          "type": "string",
+          "description": "currentRegionName field on AdminRuntimeRegionSettingsUpdateRequest."
+        },
+        "remark": {
+          "type": "string",
+          "description": "remark field on AdminRuntimeRegionSettingsUpdateRequest."
+        }
+      },
+      "description": "AdminRuntimeRegionSettingsUpdateRequest contract."
+    },
+    "AdminRuntimeRouteExplainRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "apiKeyId"
+      ],
+      "properties": {
+        "apiCode": {
+          "type": "string",
+          "description": "apiCode field on AdminRuntimeRouteExplainRequest."
+        },
+        "apiKeyId": {
+          "type": "string",
+          "description": "apiKeyId field on AdminRuntimeRouteExplainRequest."
+        },
+        "billingMeter": {
+          "type": "string",
+          "description": "billingMeter field on AdminRuntimeRouteExplainRequest."
+        },
+        "capability": {
+          "type": "string",
+          "enum": [
+            "chat",
+            "image",
+            "audio",
+            "music",
+            "video",
+            "embedding",
+            "rerank",
+            "network"
+          ],
+          "description": "capability field on AdminRuntimeRouteExplainRequest."
+        },
+        "catalogKey": {
+          "type": "string",
+          "description": "catalogKey field on AdminRuntimeRouteExplainRequest."
+        },
+        "channelGroupId": {
+          "type": "string",
+          "description": "channelGroupId field on AdminRuntimeRouteExplainRequest."
+        },
+        "model": {
+          "type": "string",
+          "description": "model field on AdminRuntimeRouteExplainRequest."
+        },
+        "resourceCode": {
+          "type": "string",
+          "description": "resourceCode field on AdminRuntimeRouteExplainRequest."
+        },
+        "routeKey": {
+          "type": "string",
+          "description": "routeKey field on AdminRuntimeRouteExplainRequest."
+        }
+      },
+      "description": "AdminRuntimeRouteExplainRequest contract."
+    },
+    "AdminRuntimeRouteExplainResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "description": "AdminRuntimeRouteExplainResponse contract."
+    },
+    "AdminServiceNodeCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "ip",
+        "name"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "domain field on AdminServiceNodeCreateRequest."
+        },
+        "ip": {
+          "type": "string",
+          "description": "ip field on AdminServiceNodeCreateRequest."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminServiceNodeCreateRequest."
+        },
+        "remark": {
+          "type": "string",
+          "description": "remark field on AdminServiceNodeCreateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "description": "status field on AdminServiceNodeCreateRequest."
+        }
+      },
+      "description": "AdminServiceNodeCreateRequest contract."
+    },
+    "AdminServiceNodeItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "healthStatus",
+        "id",
+        "ip",
+        "name",
+        "remark",
+        "status",
+        "updatedAt"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "domain field on AdminServiceNodeItem."
+        },
+        "healthStatus": {
+          "type": "string",
+          "enum": [
+            "online",
+            "warning",
+            "offline",
+            "unknown"
+          ],
+          "description": "healthStatus field on AdminServiceNodeItem."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminServiceNodeItem."
+        },
+        "ip": {
+          "type": "string",
+          "description": "ip field on AdminServiceNodeItem."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminServiceNodeItem."
+        },
+        "remark": {
+          "type": "string",
+          "description": "remark field on AdminServiceNodeItem."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "description": "status field on AdminServiceNodeItem."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "updatedAt field on AdminServiceNodeItem."
+        }
+      },
+      "description": "AdminServiceNodeItem contract."
+    },
+    "AdminServiceNodePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminServiceNodePage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on AdminServiceNodePage."
+        }
+      },
+      "description": "AdminServiceNodePage contract."
+    },
+    "AdminServiceNodeStatusUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "description": "status field on AdminServiceNodeStatusUpdateRequest."
+        }
+      },
+      "description": "AdminServiceNodeStatusUpdateRequest contract."
+    },
+    "AdminServiceNodeUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "domain field on AdminServiceNodeUpdateRequest."
+        },
+        "ip": {
+          "type": "string",
+          "description": "ip field on AdminServiceNodeUpdateRequest."
+        },
+        "name": {
+          "type": "string",
+          "description": "name field on AdminServiceNodeUpdateRequest."
+        },
+        "remark": {
+          "type": "string",
+          "description": "remark field on AdminServiceNodeUpdateRequest."
+        }
+      },
+      "description": "AdminServiceNodeUpdateRequest contract."
+    },
+    "AdminSiteChannelPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminSiteChannelPage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on AdminSiteChannelPage."
+        }
+      },
+      "description": "AdminSiteChannelPage contract."
+    },
+    "AdminSiteConnectionCheckResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkedAt",
+        "healthStatus",
+        "latencyMs",
+        "message",
+        "siteId",
+        "status"
+      ],
+      "properties": {
+        "checkedAt": {
+          "type": "string",
+          "description": "checkedAt field on AdminSiteConnectionCheckResult."
+        },
+        "healthStatus": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "healthy",
+            "degraded",
+            "unhealthy"
+          ],
+          "description": "healthStatus field on AdminSiteConnectionCheckResult."
+        },
+        "latencyMs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {}
+          ],
+          "description": "latencyMs field on AdminSiteConnectionCheckResult."
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "message field on AdminSiteConnectionCheckResult."
+        },
+        "siteId": {
+          "type": "string",
+          "description": "siteId field on AdminSiteConnectionCheckResult."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failed"
+          ],
+          "description": "status field on AdminSiteConnectionCheckResult."
+        }
+      },
+      "description": "AdminSiteConnectionCheckResult contract."
+    },
+    "AdminSiteCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseUrl",
+        "displayName",
+        "siteName"
+      ],
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "description": "baseUrl field on AdminSiteCreateRequest."
+        },
+        "credentialRef": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "credentialRef field on AdminSiteCreateRequest."
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "description field on AdminSiteCreateRequest."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "displayName field on AdminSiteCreateRequest."
+        },
+        "docsUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "docsUrl field on AdminSiteCreateRequest."
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "domains field on AdminSiteCreateRequest."
+        },
+        "environment": {
+          "type": "string",
+          "enum": [
+            "production",
+            "sandbox"
+          ],
+          "description": "environment field on AdminSiteCreateRequest."
+        },
+        "logo": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "logo field on AdminSiteCreateRequest."
+        },
+        "maskedLabel": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "maskedLabel field on AdminSiteCreateRequest."
+        },
+        "ownerKind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "ownerKind field on AdminSiteCreateRequest."
+        },
+        "regionCode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "regionCode field on AdminSiteCreateRequest."
+        },
+        "siteCode": {
+          "type": "string",
+          "description": "siteCode field on AdminSiteCreateRequest."
+        },
+        "siteName": {
+          "type": "string",
+          "description": "siteName field on AdminSiteCreateRequest."
+        },
+        "siteType": {
+          "type": "string",
+          "enum": [
+            "relay"
+          ],
+          "description": "siteType field on AdminSiteCreateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminSiteCreateRequest."
+        },
+        "vendorCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "vendorCodes field on AdminSiteCreateRequest."
+        },
+        "websiteUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "websiteUrl field on AdminSiteCreateRequest."
+        }
+      },
+      "description": "AdminSiteCreateRequest contract."
+    },
+    "AdminSiteItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseUrl",
+        "consecutiveErrorCount",
+        "description",
+        "displayName",
+        "docsUrl",
+        "domains",
+        "environment",
+        "healthStatus",
+        "id",
+        "lastCheckedAt",
+        "lastLatencyMs",
+        "lastSyncAt",
+        "logo",
+        "ownerKind",
+        "regionCode",
+        "siteCode",
+        "siteName",
+        "siteType",
+        "sortOrder",
+        "status",
+        "vendorCodes",
+        "websiteUrl"
+      ],
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "description": "baseUrl field on AdminSiteItem."
+        },
+        "consecutiveErrorCount": {
+          "type": "number",
+          "description": "consecutiveErrorCount field on AdminSiteItem."
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "description field on AdminSiteItem."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "displayName field on AdminSiteItem."
+        },
+        "docsUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "docsUrl field on AdminSiteItem."
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "domains field on AdminSiteItem."
+        },
+        "environment": {
+          "type": "string",
+          "enum": [
+            "production",
+            "sandbox"
+          ],
+          "description": "environment field on AdminSiteItem."
+        },
+        "healthStatus": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "healthy",
+            "degraded",
+            "unhealthy"
+          ],
+          "description": "healthStatus field on AdminSiteItem."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on AdminSiteItem."
+        },
+        "lastCheckedAt": {
+          "type": "string",
+          "description": "lastCheckedAt field on AdminSiteItem."
+        },
+        "lastLatencyMs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {}
+          ],
+          "description": "lastLatencyMs field on AdminSiteItem."
+        },
+        "lastSyncAt": {
+          "type": "string",
+          "description": "lastSyncAt field on AdminSiteItem."
+        },
+        "logo": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "logo field on AdminSiteItem."
+        },
+        "ownerKind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "ownerKind field on AdminSiteItem."
+        },
+        "regionCode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "regionCode field on AdminSiteItem."
+        },
+        "siteCode": {
+          "type": "string",
+          "description": "siteCode field on AdminSiteItem."
+        },
+        "siteName": {
+          "type": "string",
+          "description": "siteName field on AdminSiteItem."
+        },
+        "siteType": {
+          "type": "string",
+          "enum": [
+            "relay"
+          ],
+          "description": "siteType field on AdminSiteItem."
+        },
+        "sortOrder": {
+          "type": "number",
+          "description": "sortOrder field on AdminSiteItem."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminSiteItem."
+        },
+        "vendorCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "vendorCodes field on AdminSiteItem."
+        },
+        "websiteUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "websiteUrl field on AdminSiteItem."
+        }
+      },
+      "description": "AdminSiteItem contract."
+    },
+    "AdminSitePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on AdminSitePage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on AdminSitePage."
+        }
+      },
+      "description": "AdminSitePage contract."
+    },
+    "AdminSiteSettingsResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accentColor",
+        "brandColor",
+        "customCss",
+        "description",
+        "docsUrl",
+        "footerCopyright",
+        "icpRecordNumber",
+        "icpRecordUrl",
+        "policeRecordNumber",
+        "policeRecordUrl",
+        "privacyUrl",
+        "seoDescription",
+        "seoTitle",
+        "shortName",
+        "siteName",
+        "supportUrl",
+        "termsUrl"
+      ],
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "description": "accentColor field on AdminSiteSettingsResponse."
+        },
+        "brandColor": {
+          "type": "string",
+          "description": "brandColor field on AdminSiteSettingsResponse."
+        },
+        "customCss": {
+          "type": "string",
+          "description": "customCss field on AdminSiteSettingsResponse."
+        },
+        "description": {
+          "type": "string",
+          "description": "description field on AdminSiteSettingsResponse."
+        },
+        "docsUrl": {
+          "type": "string",
+          "description": "docsUrl field on AdminSiteSettingsResponse."
+        },
+        "favicon": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "favicon field on AdminSiteSettingsResponse."
+        },
+        "footerCopyright": {
+          "type": "string",
+          "description": "footerCopyright field on AdminSiteSettingsResponse."
+        },
+        "icon": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "icon field on AdminSiteSettingsResponse."
+        },
+        "icpRecordNumber": {
+          "type": "string",
+          "description": "icpRecordNumber field on AdminSiteSettingsResponse."
+        },
+        "icpRecordUrl": {
+          "type": "string",
+          "description": "icpRecordUrl field on AdminSiteSettingsResponse."
+        },
+        "logo": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "logo field on AdminSiteSettingsResponse."
+        },
+        "policeRecordNumber": {
+          "type": "string",
+          "description": "policeRecordNumber field on AdminSiteSettingsResponse."
+        },
+        "policeRecordUrl": {
+          "type": "string",
+          "description": "policeRecordUrl field on AdminSiteSettingsResponse."
+        },
+        "privacyUrl": {
+          "type": "string",
+          "description": "privacyUrl field on AdminSiteSettingsResponse."
+        },
+        "seoDescription": {
+          "type": "string",
+          "description": "seoDescription field on AdminSiteSettingsResponse."
+        },
+        "seoTitle": {
+          "type": "string",
+          "description": "seoTitle field on AdminSiteSettingsResponse."
+        },
+        "shortName": {
+          "type": "string",
+          "description": "shortName field on AdminSiteSettingsResponse."
+        },
+        "siteName": {
+          "type": "string",
+          "description": "siteName field on AdminSiteSettingsResponse."
+        },
+        "supportUrl": {
+          "type": "string",
+          "description": "supportUrl field on AdminSiteSettingsResponse."
+        },
+        "termsUrl": {
+          "type": "string",
+          "description": "termsUrl field on AdminSiteSettingsResponse."
+        }
+      },
+      "description": "AdminSiteSettingsResponse contract."
+    },
+    "AdminSiteSettingsUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accentColor": {
+          "type": "string",
+          "description": "accentColor field on AdminSiteSettingsUpdateRequest."
+        },
+        "brandColor": {
+          "type": "string",
+          "description": "brandColor field on AdminSiteSettingsUpdateRequest."
+        },
+        "customCss": {
+          "type": "string",
+          "description": "customCss field on AdminSiteSettingsUpdateRequest."
+        },
+        "description": {
+          "type": "string",
+          "description": "description field on AdminSiteSettingsUpdateRequest."
+        },
+        "docsUrl": {
+          "type": "string",
+          "description": "docsUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "favicon": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "favicon field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerCopyright": {
+          "type": "string",
+          "description": "footerCopyright field on AdminSiteSettingsUpdateRequest."
+        },
+        "icon": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "icon field on AdminSiteSettingsUpdateRequest."
+        },
+        "icpRecordNumber": {
+          "type": "string",
+          "description": "icpRecordNumber field on AdminSiteSettingsUpdateRequest."
+        },
+        "icpRecordUrl": {
+          "type": "string",
+          "description": "icpRecordUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "logo": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "logo field on AdminSiteSettingsUpdateRequest."
+        },
+        "policeRecordNumber": {
+          "type": "string",
+          "description": "policeRecordNumber field on AdminSiteSettingsUpdateRequest."
+        },
+        "policeRecordUrl": {
+          "type": "string",
+          "description": "policeRecordUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "privacyUrl": {
+          "type": "string",
+          "description": "privacyUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "seoDescription": {
+          "type": "string",
+          "description": "seoDescription field on AdminSiteSettingsUpdateRequest."
+        },
+        "seoTitle": {
+          "type": "string",
+          "description": "seoTitle field on AdminSiteSettingsUpdateRequest."
+        },
+        "shortName": {
+          "type": "string",
+          "description": "shortName field on AdminSiteSettingsUpdateRequest."
+        },
+        "siteName": {
+          "type": "string",
+          "description": "siteName field on AdminSiteSettingsUpdateRequest."
+        },
+        "supportUrl": {
+          "type": "string",
+          "description": "supportUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "termsUrl": {
+          "type": "string",
+          "description": "termsUrl field on AdminSiteSettingsUpdateRequest."
+        }
+      },
+      "description": "AdminSiteSettingsUpdateRequest contract."
+    },
+    "AdminSiteUpdateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "description": "baseUrl field on AdminSiteUpdateRequest."
+        },
+        "credentialRef": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "credentialRef field on AdminSiteUpdateRequest."
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "description field on AdminSiteUpdateRequest."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "displayName field on AdminSiteUpdateRequest."
+        },
+        "docsUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "docsUrl field on AdminSiteUpdateRequest."
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "domains field on AdminSiteUpdateRequest."
+        },
+        "environment": {
+          "type": "string",
+          "enum": [
+            "production",
+            "sandbox"
+          ],
+          "description": "environment field on AdminSiteUpdateRequest."
+        },
+        "logo": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {}
+          ],
+          "description": "logo field on AdminSiteUpdateRequest."
+        },
+        "maskedLabel": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "maskedLabel field on AdminSiteUpdateRequest."
+        },
+        "ownerKind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "ownerKind field on AdminSiteUpdateRequest."
+        },
+        "regionCode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "regionCode field on AdminSiteUpdateRequest."
+        },
+        "siteCode": {
+          "type": "string",
+          "description": "siteCode field on AdminSiteUpdateRequest."
+        },
+        "siteName": {
+          "type": "string",
+          "description": "siteName field on AdminSiteUpdateRequest."
+        },
+        "siteType": {
+          "type": "string",
+          "enum": [
+            "relay"
+          ],
+          "description": "siteType field on AdminSiteUpdateRequest."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled"
+          ],
+          "description": "status field on AdminSiteUpdateRequest."
+        },
+        "vendorCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "vendorCodes field on AdminSiteUpdateRequest."
+        },
+        "websiteUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "websiteUrl field on AdminSiteUpdateRequest."
+        }
+      },
+      "description": "AdminSiteUpdateRequest contract."
+    },
+    "AdminTokenLimitCreateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "burst",
+        "keyPrefix",
+        "rpd",
+        "rps",
+        "user"
+      ],
+      "properties": {
+        "burst": {
+          "type": "number",
+          "description": "burst field on AdminTokenLimitCreateRequest."
+        },
+        "keyPrefix": {
+          "type": "string",
+          "description": "keyPrefix field on AdminTokenLimitCreateRequest."
+        },
+        "rpd": {
+          "type": "number",
+          "description": "rpd field on AdminTokenLimitCreateRequest."
+        },
+        "rps": {
+          "type": "number",
+          "description": "rps field on AdminTokenLimitCreateRequest."
+        },
+        "user": {
+          "type": "string",
+          "description": "user field on AdminTokenLimitCreateRequest."
+        }
+      },
+      "description": "AdminTokenLimitCreateRequest contract."
+    },
+    "CacheNamespaceKeyPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "instanceName",
+        "items",
+        "namespace",
+        "pageInfo",
+        "returnedItems",
+        "scanComplete",
+        "scannedItems"
+      ],
+      "properties": {
+        "instanceName": {
+          "type": "string",
+          "description": "instanceName field on CacheNamespaceKeyPage."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on CacheNamespaceKeyPage."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "namespace field on CacheNamespaceKeyPage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on CacheNamespaceKeyPage."
+        },
+        "returnedItems": {
+          "type": "string",
+          "description": "returnedItems field on CacheNamespaceKeyPage."
+        },
+        "scanComplete": {
+          "type": "boolean",
+          "description": "scanComplete field on CacheNamespaceKeyPage."
+        },
+        "scannedItems": {
+          "type": "string",
+          "description": "scannedItems field on CacheNamespaceKeyPage."
+        }
+      },
+      "description": "CacheNamespaceKeyPage contract."
+    },
+    "CacheOperationOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cacheKey",
+        "deletedEntries",
+        "instanceName",
+        "namespace",
+        "operation",
+        "refreshedEntries",
+        "status"
+      ],
+      "properties": {
+        "cacheKey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "cacheKey field on CacheOperationOutcome."
+        },
+        "deletedEntries": {
+          "type": "string",
+          "description": "deletedEntries field on CacheOperationOutcome."
+        },
+        "instanceName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "instanceName field on CacheOperationOutcome."
+        },
+        "namespace": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "namespace field on CacheOperationOutcome."
+        },
+        "operation": {
+          "type": "string",
+          "description": "operation field on CacheOperationOutcome."
+        },
+        "refreshedEntries": {
+          "type": "string",
+          "description": "refreshedEntries field on CacheOperationOutcome."
+        },
+        "status": {
+          "type": "string",
+          "description": "status field on CacheOperationOutcome."
+        }
+      },
+      "description": "CacheOperationOutcome contract."
+    },
+    "CacheOverview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "instances",
+        "namespacePolicies",
+        "summary"
+      ],
+      "properties": {
+        "instances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "instances field on CacheOverview."
+        },
+        "namespacePolicies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "namespacePolicies field on CacheOverview."
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "summary field on CacheOverview."
+        }
+      },
+      "description": "CacheOverview contract."
+    },
+    "ChannelsVerifyResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "data",
+        "traceId"
+      ],
+      "properties": {
+        "code": {
+          "type": "number",
+          "enum": [
+            0
+          ],
+          "description": "code field on ChannelsVerifyResult."
+        },
+        "data": {
+          "$ref": "#/components/schemas/AdminChannelVerifyResult",
+          "description": "data field on ChannelsVerifyResult."
+        },
+        "traceId": {
+          "type": "string",
+          "description": "traceId field on ChannelsVerifyResult."
+        }
+      },
+      "description": "ChannelsVerifyResult contract."
+    },
+    "BasePlusVO": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id field on BasePlusVO."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "createdAt field on BasePlusVO."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "updatedAt field on BasePlusVO."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "createdBy field on BasePlusVO."
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "updatedBy field on BasePlusVO."
+        }
+      },
+      "description": "BasePlusVO contract."
+    },
+    "BasePlusEntity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deleted": {
+          "type": "boolean",
+          "description": "deleted field on BasePlusEntity."
+        }
+      },
+      "description": "BasePlusEntity contract."
+    },
+    "QueryListForm": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "q": {
+          "type": "string",
+          "description": "q field on QueryListForm."
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "status field on QueryListForm."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "startTime field on QueryListForm."
+        },
+        "endTime": {
+          "type": "string",
+          "description": "endTime field on QueryListForm."
+        },
+        "orderBy": {
+          "type": "string",
+          "description": "orderBy field on QueryListForm."
+        },
+        "orderDirection": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "description": "orderDirection field on QueryListForm."
+        }
+      },
+      "description": "QueryListForm contract."
+    },
+    "SdkworkBackendConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseUrl"
+      ],
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "description": "baseUrl field on SdkworkBackendConfig."
+        },
+        "authToken": {
+          "type": "string",
+          "description": "authToken field on SdkworkBackendConfig."
+        },
+        "accessToken": {
+          "type": "string",
+          "description": "accessToken field on SdkworkBackendConfig."
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "tenantId field on SdkworkBackendConfig."
+        },
+        "organizationId": {
+          "type": "string",
+          "description": "organizationId field on SdkworkBackendConfig."
+        },
+        "platform": {
+          "type": "string",
+          "description": "platform field on SdkworkBackendConfig."
+        },
+        "tokenManager": {
+          "description": "tokenManager field on SdkworkBackendConfig."
+        },
+        "timeout": {
+          "type": "number",
+          "description": "timeout field on SdkworkBackendConfig."
+        },
+        "authMode": {
+          "description": "authMode field on SdkworkBackendConfig."
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "headers field on SdkworkBackendConfig."
+        }
+      },
+      "description": "SdkworkBackendConfig contract."
+    },
+    "FieldError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "number",
+          "description": "code field on FieldError."
+        },
+        "field": {
+          "type": "string",
+          "description": "field field on FieldError."
+        },
+        "i18nKey": {
+          "type": "string",
+          "description": "i18nKey field on FieldError."
+        },
+        "message": {
+          "type": "string",
+          "description": "message field on FieldError."
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "params field on FieldError."
+        }
+      },
+      "description": "FieldError contract."
+    },
+    "FirewallRuleItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "reason",
+        "time",
+        "type",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id field on FirewallRuleItem."
+        },
+        "reason": {
+          "type": "string",
+          "description": "reason field on FirewallRuleItem."
+        },
+        "time": {
+          "type": "string",
+          "description": "time field on FirewallRuleItem."
+        },
+        "type": {
+          "type": "string",
+          "description": "type field on FirewallRuleItem."
+        },
+        "value": {
+          "type": "string",
+          "description": "value field on FirewallRuleItem."
+        }
+      },
+      "description": "FirewallRuleItem contract."
+    },
+    "FirewallRulePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on FirewallRulePage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on FirewallRulePage."
+        }
+      },
+      "description": "FirewallRulePage contract."
+    },
+    "IpLimitRuleItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blockDuration",
+        "id",
+        "rpm",
+        "rps",
+        "ruleName",
+        "status",
+        "targetIp"
+      ],
+      "properties": {
+        "blockDuration": {
+          "type": "string",
+          "description": "blockDuration field on IpLimitRuleItem."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on IpLimitRuleItem."
+        },
+        "rpm": {
+          "type": "number",
+          "description": "rpm field on IpLimitRuleItem."
+        },
+        "rps": {
+          "type": "number",
+          "description": "rps field on IpLimitRuleItem."
+        },
+        "ruleName": {
+          "type": "string",
+          "description": "ruleName field on IpLimitRuleItem."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive"
+          ],
+          "description": "status field on IpLimitRuleItem."
+        },
+        "targetIp": {
+          "type": "string",
+          "description": "targetIp field on IpLimitRuleItem."
+        }
+      },
+      "description": "IpLimitRuleItem contract."
+    },
+    "IpLimitRulePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on IpLimitRulePage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on IpLimitRulePage."
+        }
+      },
+      "description": "IpLimitRulePage contract."
+    },
+    "JsonNull": {
+      "description": "JsonNull contract."
+    },
+    "JsonObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "description": "JsonObject contract."
+    },
+    "JsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        },
+        {
+          "$ref": "#/components/schemas/JsonObject"
+        },
+        {
+          "$ref": "#/components/schemas/JsonNull"
+        }
+      ],
+      "description": "JsonValue contract."
+    },
+    "ModelLimitRuleItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channelGroup",
+        "channelGroupId",
+        "channelGroupName",
+        "id",
+        "model",
+        "rpm",
+        "status",
+        "tpm"
+      ],
+      "properties": {
+        "channelGroup": {
+          "type": "string",
+          "description": "channelGroup field on ModelLimitRuleItem."
+        },
+        "channelGroupId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "channelGroupId field on ModelLimitRuleItem."
+        },
+        "channelGroupName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "channelGroupName field on ModelLimitRuleItem."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on ModelLimitRuleItem."
+        },
+        "model": {
+          "type": "string",
+          "description": "model field on ModelLimitRuleItem."
+        },
+        "rpm": {
+          "type": "number",
+          "description": "rpm field on ModelLimitRuleItem."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive"
+          ],
+          "description": "status field on ModelLimitRuleItem."
+        },
+        "tpm": {
+          "type": "number",
+          "description": "tpm field on ModelLimitRuleItem."
+        }
+      },
+      "description": "ModelLimitRuleItem contract."
+    },
+    "ModelLimitRulePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on ModelLimitRulePage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on ModelLimitRulePage."
+        }
+      },
+      "description": "ModelLimitRulePage contract."
+    },
+    "MonitorAlertPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on MonitorAlertPage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on MonitorAlertPage."
+        }
+      },
+      "description": "MonitorAlertPage contract."
+    },
+    "MonitorNodePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on MonitorNodePage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on MonitorNodePage."
+        }
+      },
+      "description": "MonitorNodePage contract."
+    },
+    "MonitorPerformancePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on MonitorPerformancePage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on MonitorPerformancePage."
+        }
+      },
+      "description": "MonitorPerformancePage contract."
+    },
+    "PageInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "hasMore": {
+          "type": "boolean",
+          "description": "hasMore field on PageInfo."
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "offset",
+            "cursor"
+          ],
+          "description": "mode field on PageInfo."
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {}
+          ],
+          "description": "nextCursor field on PageInfo."
+        },
+        "page": {
+          "type": "number",
+          "description": "page field on PageInfo."
+        },
+        "pageSize": {
+          "type": "number",
+          "description": "pageSize field on PageInfo."
+        },
+        "totalItems": {
+          "type": "string",
+          "description": "totalItems field on PageInfo."
+        },
+        "totalPages": {
+          "type": "number",
+          "description": "totalPages field on PageInfo."
+        }
+      },
+      "description": "PageInfo contract."
+    },
+    "ProblemDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "status",
+        "title",
+        "traceId",
+        "type"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/components/schemas/SdkWorkPlatformErrorCode",
+          "description": "code field on ProblemDetail."
+        },
+        "detail": {
+          "type": "string",
+          "description": "detail field on ProblemDetail."
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/FieldError"
+          },
+          "description": "errors field on ProblemDetail."
+        },
+        "i18nKey": {
+          "type": "string",
+          "description": "i18nKey field on ProblemDetail."
+        },
+        "instance": {
+          "type": "string",
+          "description": "instance field on ProblemDetail."
+        },
+        "locale": {
+          "type": "string",
+          "description": "locale field on ProblemDetail."
+        },
+        "status": {
+          "type": "number",
+          "description": "status field on ProblemDetail."
+        },
+        "title": {
+          "type": "string",
+          "description": "title field on ProblemDetail."
+        },
+        "traceId": {
+          "type": "string",
+          "description": "traceId field on ProblemDetail."
+        },
+        "type": {
+          "type": "string",
+          "description": "type field on ProblemDetail."
+        }
+      },
+      "description": "ProblemDetail contract."
+    },
+    "SdkWorkApiResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "data",
+        "traceId"
+      ],
+      "properties": {
+        "code": {
+          "type": "number",
+          "enum": [
+            0
+          ],
+          "description": "code field on SdkWorkApiResponse."
+        },
+        "data": {
+          "description": "data field on SdkWorkApiResponse."
+        },
+        "traceId": {
+          "type": "string",
+          "description": "traceId field on SdkWorkApiResponse."
+        }
+      },
+      "description": "SdkWorkApiResponse contract."
+    },
+    "SdkWorkPlatformErrorCode": {
+      "type": "number",
+      "description": "SdkWorkPlatformErrorCode contract."
+    },
+    "TokenLimitRuleItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "burst",
+        "id",
+        "keyPrefix",
+        "rpd",
+        "rps",
+        "status",
+        "user"
+      ],
+      "properties": {
+        "burst": {
+          "type": "number",
+          "description": "burst field on TokenLimitRuleItem."
+        },
+        "id": {
+          "type": "string",
+          "description": "id field on TokenLimitRuleItem."
+        },
+        "keyPrefix": {
+          "type": "string",
+          "description": "keyPrefix field on TokenLimitRuleItem."
+        },
+        "rpd": {
+          "type": "number",
+          "description": "rpd field on TokenLimitRuleItem."
+        },
+        "rps": {
+          "type": "number",
+          "description": "rps field on TokenLimitRuleItem."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "exhausted"
+          ],
+          "description": "status field on TokenLimitRuleItem."
+        },
+        "user": {
+          "type": "string",
+          "description": "user field on TokenLimitRuleItem."
+        }
+      },
+      "description": "TokenLimitRuleItem contract."
+    },
+    "TokenLimitRulePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "pageInfo"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "items field on TokenLimitRulePage."
+        },
+        "pageInfo": {
+          "$ref": "#/components/schemas/PageInfo",
+          "description": "pageInfo field on TokenLimitRulePage."
+        }
+      },
+      "description": "TokenLimitRulePage contract."
+    }
+  },
+  "operations": {
+    "GET /backend/v3/api/ai/channel_groups/{channelGroupId}/channel_bindings": {
+      "responseSchema": "AdminChannelBindingPage"
+    },
+    "PUT /backend/v3/api/ai/channel_groups/{channelGroupId}/channel_bindings": {
+      "requestSchema": "AdminChannelBindingReplaceRequest",
+      "responseSchema": "AdminChannelBindingPage"
+    },
+    "GET /backend/v3/api/ai/channel_groups": {
+      "responseSchema": "AdminChannelGroupPage"
+    },
+    "POST /backend/v3/api/ai/channel_groups": {
+      "requestSchema": "AdminChannelGroupCreateRequest",
+      "responseSchema": "AdminChannelGroupItem"
+    },
+    "PATCH /backend/v3/api/ai/channel_groups/{channelGroupId}": {
+      "requestSchema": "AdminChannelGroupUpdateRequest",
+      "responseSchema": "AdminChannelGroupItem"
+    },
+    "GET /backend/v3/api/integration/provider_secrets": {
+      "responseSchema": "AdminProviderSecretPage"
+    },
+    "POST /backend/v3/api/integration/provider_secrets": {
+      "requestSchema": "AdminProviderSecretCreateRequest",
+      "responseSchema": "AdminProviderSecretItem"
+    },
+    "PUT /backend/v3/api/integration/provider_secrets": {
+      "requestSchema": "AdminProviderSecretUpdateRequest",
+      "responseSchema": "AdminProviderSecretItem"
+    },
+    "GET /backend/v3/api/integration/channels": {
+      "responseSchema": "AdminChannelPage"
+    },
+    "POST /backend/v3/api/integration/channels": {
+      "requestSchema": "AdminChannelCreateRequest",
+      "responseSchema": "AdminChannelItem"
+    },
+    "PUT /backend/v3/api/integration/channels": {
+      "requestSchema": "AdminChannelUpdateRequest",
+      "responseSchema": "AdminChannelItem"
+    },
+    "POST /backend/v3/api/integration/channels/{channelId}/verify": {
+      "responseSchema": "AdminChannelVerifyResult"
+    },
+    "POST /backend/v3/api/sites/{siteId}/test_connection": {
+      "responseSchema": "AdminSiteConnectionCheckResult"
+    },
+    "POST /backend/v3/api/sites/{siteId}/health_check": {
+      "responseSchema": "AdminSiteConnectionCheckResult"
+    },
+    "POST /backend/v3/api/sites": {
+      "requestSchema": "AdminSiteCreateRequest",
+      "responseSchema": "AdminSiteItem"
+    },
+    "PATCH /backend/v3/api/sites/{siteId}": {
+      "requestSchema": "AdminSiteUpdateRequest",
+      "responseSchema": "AdminSiteItem"
+    },
+    "GET /backend/v3/api/system/site/settings": {
+      "responseSchema": "AdminSiteSettingsResponse"
+    },
+    "PATCH /backend/v3/api/system/site/settings": {
+      "requestSchema": "AdminSiteSettingsUpdateRequest",
+      "responseSchema": "AdminSiteSettingsResponse"
+    },
+    "PUT /backend/v3/api/system/service_nodes/{nodeId}/status": {
+      "requestSchema": "AdminServiceNodeStatusUpdateRequest",
+      "responseSchema": "AdminServiceNodeItem"
+    },
+    "GET /backend/v3/api/system/service_nodes": {
+      "responseSchema": "AdminServiceNodePage"
+    },
+    "POST /backend/v3/api/system/service_nodes": {
+      "requestSchema": "AdminServiceNodeCreateRequest",
+      "responseSchema": "AdminServiceNodeItem"
+    },
+    "PUT /backend/v3/api/system/service_nodes/{nodeId}": {
+      "requestSchema": "AdminServiceNodeUpdateRequest",
+      "responseSchema": "AdminServiceNodeItem"
+    },
+    "GET /backend/v3/api/system/runtime_region/settings": {
+      "responseSchema": "AdminRuntimeRegionSettingsResponse"
+    },
+    "PATCH /backend/v3/api/system/runtime_region/settings": {
+      "requestSchema": "AdminRuntimeRegionSettingsUpdateRequest",
+      "responseSchema": "AdminRuntimeRegionSettingsResponse"
+    },
+    "GET /backend/v3/api/system/records": {
+      "responseSchema": "AdminRecordPage"
+    },
+    "GET /backend/v3/api/system/rate_limits/models": {
+      "responseSchema": "ModelLimitRulePage"
+    },
+    "POST /backend/v3/api/system/rate_limits/models": {
+      "requestSchema": "AdminModelLimitCreateRequest",
+      "responseSchema": "ModelLimitRuleItem"
+    },
+    "GET /backend/v3/api/system/rate_limits/ip": {
+      "responseSchema": "IpLimitRulePage"
+    },
+    "POST /backend/v3/api/system/rate_limits/ip": {
+      "requestSchema": "AdminIpLimitCreateRequest",
+      "responseSchema": "IpLimitRuleItem"
+    },
+    "GET /backend/v3/api/system/rate_limits/api_keys": {
+      "responseSchema": "TokenLimitRulePage"
+    },
+    "POST /backend/v3/api/system/rate_limits/api_keys": {
+      "requestSchema": "AdminTokenLimitCreateRequest",
+      "responseSchema": "TokenLimitRuleItem"
+    },
+    "GET /backend/v3/api/system/monitor/performance": {
+      "responseSchema": "MonitorPerformancePage"
+    },
+    "GET /backend/v3/api/system/monitor/nodes": {
+      "responseSchema": "MonitorNodePage"
+    },
+    "GET /backend/v3/api/system/monitor/alerts": {
+      "responseSchema": "MonitorAlertPage"
+    },
+    "GET /backend/v3/api/system/firewalls/rules": {
+      "responseSchema": "FirewallRulePage"
+    },
+    "POST /backend/v3/api/system/firewalls/rules": {
+      "requestSchema": "AdminFirewallRuleCreateRequest",
+      "responseSchema": "FirewallRuleItem"
+    },
+    "GET /backend/v3/api/system/cache/overview": {
+      "responseSchema": "CacheOverview"
+    },
+    "GET /backend/v3/api/system/cache/namespaces/{namespace}/keys": {
+      "responseSchema": "CacheNamespaceKeyPage"
+    },
+    "POST /backend/v3/api/system/cache/namespaces/{namespace}/refresh": {
+      "responseSchema": "CacheOperationOutcome"
+    },
+    "POST /backend/v3/api/system/cache/instances/{instanceName}/refresh": {
+      "responseSchema": "CacheOperationOutcome"
+    },
+    "POST /backend/v3/api/system/cache/refresh": {
+      "responseSchema": "CacheOperationOutcome"
+    },
+    "GET /backend/v3/api/system/auth/settings": {
+      "responseSchema": "AdminAuthSettingsResponse"
+    },
+    "PATCH /backend/v3/api/system/auth/settings": {
+      "requestSchema": "AdminAuthSettingsUpdateRequest",
+      "responseSchema": "AdminAuthSettingsResponse"
+    },
+    "GET /backend/v3/api/system/analytics/admin/overview": {
+      "responseSchema": "AdminAnalyticsOverview"
+    }
+  }
+}

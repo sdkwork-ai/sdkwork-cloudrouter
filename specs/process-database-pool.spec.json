@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.process-database-pool",
+  "profile": {
+    "exampleFile": ".env.postgres.example",
+    "database": "sdkwork_ai_dev",
+    "schema": "sdkwork_ai_dev"
+  },
+  "processes": [
+    {
+      "id": "sdkwork-clawrouter-standalone-gateway",
+      "entrypoint": "services/sdkwork-clawrouter-standalone-gateway/src/main.rs",
+      "poolOwner": "services/sdkwork-clawrouter-standalone-gateway/src/main.rs",
+      "driver": "sqlx::PgPool",
+      "poolCount": 1,
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
+      "productionSourceRoots": ["services/sdkwork-clawrouter-standalone-gateway/src"],
+      "consumers": [
+        {"module": "clawrouter app routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/routes.rs"]},
+        {"module": "invoice and commerce", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs"]}
+      ],
+      "temporaryDriverExceptions": []
+    },
+    {
+      "id": "sdkwork-clawrouter-admin-gateway",
+      "entrypoint": "services/sdkwork-clawrouter-admin-gateway/src/main.rs",
+      "poolOwner": "services/sdkwork-clawrouter-admin-gateway/src/main.rs",
+      "driver": "sqlx::PgPool",
+      "poolCount": 1,
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
+      "productionSourceRoots": ["services/sdkwork-clawrouter-admin-gateway/src"],
+      "consumers": [
+        {"module": "clawrouter backend routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs"]},
+        {"module": "invoice runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-backend-api/src/invoice_runtime.rs"]}
+      ],
+      "temporaryDriverExceptions": []
+    },
+    {
+      "id": "sdkwork-clawrouter-cloud-gateway",
+      "entrypoint": "crates/sdkwork-clawrouter-cloud-gateway/src/main.rs",
+      "poolOwner": "crates/sdkwork-clawrouter-cloud-gateway/src/main.rs",
+      "driver": "sqlx::PgPool",
+      "poolCount": 1,
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
+      "productionSourceRoots": ["crates/sdkwork-clawrouter-cloud-gateway/src"],
+      "consumers": [
+        {"module": "clawrouter router runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs"]},
+        {"module": "sdkwork-iam", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-clawrouter-cloud-gateway/src/iam_embedded.rs"]}
+      ],
+      "temporaryDriverExceptions": []
+    },
+    {
+      "id": "sdkwork-clawrouter-all-in-one-edge",
+      "entrypoint": "crates/sdkwork-clawrouter-standalone-gateway-lib/src/main.rs",
+      "poolOwner": "crates/sdkwork-clawrouter-standalone-gateway-lib/src/main.rs",
+      "driver": "sqlx::PgPool",
+      "poolCount": 1,
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
+      "productionSourceRoots": ["crates/sdkwork-clawrouter-standalone-gateway-lib/src"],
+      "consumers": [
+        {"module": "cloud gateway all-in-one runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs"]}
+      ],
+      "temporaryDriverExceptions": []
+    },
+    {
+      "id": "clawrouterctl",
+      "entrypoint": "services/sdkwork-claw-installer/src/main.rs",
+      "poolOwner": "services/sdkwork-claw-installer/src/main.rs",
+      "driver": "sqlx::PgPool",
+      "poolCount": 1,
+      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
+      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
+      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
+      "productionSourceRoots": ["services/sdkwork-claw-installer/src"],
+      "consumers": [
+        {"module": "clawrouter installer lifecycle", "poolMode": "injected", "evidence": ["services/sdkwork-claw-installer/src/main.rs"]},
+        {"module": "models database lifecycle", "poolMode": "injected", "evidence": ["services/sdkwork-claw-installer/src/main.rs"]}
+      ],
+      "temporaryDriverExceptions": []
+    }
+  ],
+  "verification": [
+    "node ../sdkwork-specs/tools/check-process-shared-database-pool.mjs --root .",
+    "cargo check -p sdkwork-clawrouter-cloud-gateway",
+    "cargo check -p sdkwork-clawrouter-standalone-gateway"
+  ]
+}

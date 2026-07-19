@@ -222,7 +222,7 @@ pub fn http_route_manifest() -> HttpRouteManifest {
     HttpRouteManifest::new(HTTP_ROUTES)
 }
 ${appManifestAlias}${appManifestTests}
-`;
+`.trimEnd() + "\n";
 }
 
 async function processTarget(target, mode) {

@@ -109,14 +109,15 @@ test('admin model mapping service is backend SDK backed', () => {
 });
 
 test('admin model mapping page exposes route, navigation, and core layout markers', () => {
-  const appSource = readPortalFile('src/App.tsx');
+  const adminHostSource = readPortalFile('src/admin/clawRouterAdminHostMount.tsx');
   const registrySource = readPortalFile('packages/sdkwork-clawrouter-pc-admin-shell/src/adminModuleRegistry.ts');
   const modelAdminSource = readPortalFile('../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/index.tsx');
   const coreI18nSource = readPortalFile('packages/sdkwork-clawrouter-pc-i18n/src/resources/admin/core-navigation.ts');
   const modelI18nSource = readPortalFile('packages/sdkwork-clawrouter-pc-i18n/src/resources/admin/model.ts');
 
-  assert.ok(appSource.includes('path="model/mappings"'), 'missing admin model mapping route');
-  assert.ok(appSource.includes('ModelMappingAdmin'), 'missing ModelMappingAdmin route component');
+  assert.ok(adminHostSource.includes("route('model/mappings', 'sdkwork-models'"), 'missing admin model mapping contribution');
+  assert.ok(adminHostSource.includes("['sdkwork-models-backend-sdk']"), 'missing models backend SDK ownership');
+  assert.ok(adminHostSource.includes('ModelMappingAdmin'), 'missing ModelMappingAdmin route component');
   assert.ok(registrySource.includes('/admin/model/mappings'), 'missing admin registry mapping route');
   assert.ok(registrySource.includes('admin.menu.modelMappings'), 'missing admin registry mapping i18n key');
   assert.ok(coreI18nSource.includes('"admin.menu.modelMappings"'), 'missing core navigation i18n mapping key');

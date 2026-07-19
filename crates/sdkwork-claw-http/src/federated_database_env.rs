@@ -1,7 +1,7 @@
 use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
 use std::path::{Path, PathBuf};
 
-/// Ensures IAM database env is materialized from the claw unified postgres profile when needed.
+/// Ensures IAM database env is materialized from the canonical Claw database config.
 pub fn ensure_iam_database_env_for_claw_database(database_config: &DatabaseConfig) {
     if std::env::var("SDKWORK_IAM_DATABASE_URL")
         .ok()
@@ -11,12 +11,7 @@ pub fn ensure_iam_database_env_for_claw_database(database_config: &DatabaseConfi
         return;
     }
 
-    if database_config.engine != DatabaseEngine::Postgres {
-        return;
-    }
-
-    let app_root = resolve_clawrouter_app_root();
-    sdkwork_iam_database_host::unified_postgres_env::apply_unified_claw_postgres_env(&app_root);
+    materialize_capability_database_env("IAM", database_config);
 }
 
 /// Materialize federated T1 capability database env from the active claw database profile.
@@ -173,6 +168,9 @@ fn resolve_clawrouter_app_root() -> PathBuf {
 mod tests {
     use super::{ensure_iam_database_env_for_claw_database, resolve_clawrouter_app_root};
     use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
+    use std::sync::{Mutex, OnceLock};
+
+    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
     #[test]
     fn resolve_clawrouter_app_root_returns_path() {
@@ -182,6 +180,7 @@ mod tests {
 
     #[test]
     fn ensure_iam_database_env_skips_when_iam_url_already_set() {
+        let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         let prior = std::env::var("SDKWORK_IAM_DATABASE_URL").ok();
         std::env::set_var(
             "SDKWORK_IAM_DATABASE_URL",
@@ -200,6 +199,46 @@ mod tests {
         match prior {
             Some(value) => std::env::set_var("SDKWORK_IAM_DATABASE_URL", value),
             None => std::env::remove_var("SDKWORK_IAM_DATABASE_URL"),
+        }
+    }
+
+    #[test]
+    fn ensure_iam_database_env_materializes_sqlite_process_identity() {
+        let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+        let keys = [
+            "SDKWORK_IAM_DATABASE_URL",
+            "SDKWORK_IAM_DATABASE_ENGINE",
+            "SDKWORK_IAM_DATABASE_MAX_CONNECTIONS",
+        ];
+        let previous = keys.map(|key| (key, std::env::var(key).ok()));
+        for key in keys {
+            std::env::remove_var(key);
+        }
+        let config = DatabaseConfig {
+            engine: DatabaseEngine::Sqlite,
+            url: "sqlite://target/dev/clawrouter.sqlite".to_owned(),
+            max_connections: 1,
+        };
+
+        ensure_iam_database_env_for_claw_database(&config);
+
+        assert_eq!(
+            std::env::var("SDKWORK_IAM_DATABASE_URL").unwrap(),
+            config.url
+        );
+        assert_eq!(
+            std::env::var("SDKWORK_IAM_DATABASE_ENGINE").unwrap(),
+            "sqlite"
+        );
+        assert_eq!(
+            std::env::var("SDKWORK_IAM_DATABASE_MAX_CONNECTIONS").unwrap(),
+            "1"
+        );
+        for (key, value) in previous {
+            match value {
+                Some(value) => std::env::set_var(key, value),
+                None => std::env::remove_var(key),
+            }
         }
     }
 }

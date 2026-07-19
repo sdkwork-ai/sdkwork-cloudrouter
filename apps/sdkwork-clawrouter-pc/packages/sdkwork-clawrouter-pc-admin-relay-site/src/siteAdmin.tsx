@@ -566,7 +566,9 @@ function SiteFormModal({ site, vendors, onSubmit, onClose }: { site: SiteItem | 
           selectedVendorCodes={selectedVendorCodes}
           onSelectionChange={setSelectedVendorCodes}
           onSelect={(vendor) => {
-            selectVendorCode(vendor.vendorCode);
+            if (vendor.vendorCode) {
+              selectVendorCode(vendor.vendorCode);
+            }
           }}
           onClose={() => setIsVendorPickerOpen(false)}
         />
@@ -779,4 +781,3 @@ function parseJsonStringArrayFormValue(formData: FormData, name: string): string
   }
   return [];
 }
-

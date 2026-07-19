@@ -8,7 +8,6 @@ import {
   ChannelAiResourceService,
   ChannelModelCatalogService,
   ChannelService,
-  ProviderSecretService,
 } from "./packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts";
 import {
   createAiResourceInputFromForm,
@@ -18,9 +17,6 @@ import {
   createChannelEditDraft,
   createChannelStatusUpdateInput,
   createChannelUpdateInputFromForm,
-  createProviderSecretInputFromForm,
-  createProviderSecretStatusUpdateInput,
-  createProviderSecretUpdateInputFromForm,
   resolveAuthTypeFormValue,
   resolveAuthTypeSubmitValue,
   resolveChannelSelectFormValue,
@@ -1843,8 +1839,9 @@ test("admin channel credentials are viewed from account row actions instead of a
   assert.doesNotMatch(source, /name="secretRef"/);
   assert.doesNotMatch(source, /setSecretRef/);
   assert.doesNotMatch(source, /availableSecrets/);
-  assert.match(source, /providerSecrets=\{providerSecrets\}/);
-  assert.match(source, /findProviderSecretForCredential\(credential, providerSecrets\)/);
+  assert.doesNotMatch(source, /providerSecrets=\{providerSecrets\}/);
+  assert.doesNotMatch(source, /findProviderSecretForCredential/);
+  assert.doesNotMatch(source, /ProviderSecretService\.fetchProviderSecrets\(\)/);
   assert.doesNotMatch(source, /name="apiKey"/);
   assert.match(source, /admin\.channel\.fields\.apiKey/);
   assert.match(source, /admin\.channel\.placeholders\.apiKey/);
@@ -1855,7 +1852,6 @@ test("admin channel credentials are viewed from account row actions instead of a
   assert.doesNotMatch(source, /createProviderSecretInputFromForm/);
   assert.match(source, /function CredentialDetailsModal/);
   assert.match(source, /viewingCredentialChannel/);
-  assert.match(source, /findProviderSecretForCredential/);
   assert.match(source, /admin\.channel\.actions\.viewCredential/);
 });
 
@@ -2383,47 +2379,6 @@ test("admin channel mapping catalog rejects cloud region segments but accepts re
   }), false);
 });
 
-test("admin provider secret create input does not reuse returned credential fields", () => {
-  const input = createProviderSecretInputFromForm({
-    providerCode: " openai ",
-    name: " OpenAI Primary ",
-    authType: " api-key ",
-    secretRef: " vault://providers/openai/main ",
-    status: "active",
-  });
-
-  assert.deepEqual(input, {
-    providerCode: "openai",
-    name: "OpenAI Primary",
-    authType: "api-key",
-    secretRef: "vault://providers/openai/main",
-    status: "active",
-  });
-  for (const field of ["id", "accountCode", "maskedLabel", "createdAt", "updatedAt"]) {
-    assert.equal(field in input, false);
-  }
-});
-
-test("admin provider secret update input is a dedicated command", () => {
-  const input = createProviderSecretUpdateInputFromForm({
-    providerCode: " anthropic ",
-    name: " Anthropic Backup ",
-    authType: " ",
-    secretRef: " secret://providers/anthropic/backup ",
-    status: "disabled",
-  });
-
-  assert.deepEqual(input, {
-    providerCode: "anthropic",
-    name: "Anthropic Backup",
-    secretRef: "secret://providers/anthropic/backup",
-    status: "disabled",
-  });
-  for (const field of ["id", "accountCode", "maskedLabel", "createdAt", "updatedAt"]) {
-    assert.equal(field in input, false);
-  }
-});
-
 test("admin channel auth type helpers preserve unknown backend auth types", () => {
   const knownAuthTypes = [
     { id: "api-key", title: "Standard API Key" },
@@ -2538,15 +2493,6 @@ test("admin channel select helpers preserve custom vendors and protocols", () =>
   assert.throws(
     () => resolveChannelSelectSubmitValue(" ", protocolsList, "protocol"),
     /protocol is required/,
-  );
-});
-
-test("admin provider secret status update input is a minimal command", () => {
-  assert.deepEqual(createProviderSecretStatusUpdateInput("disabled"), { status: "disabled" });
-  assert.deepEqual(createProviderSecretStatusUpdateInput("active"), { status: "active" });
-  assert.throws(
-    () => createProviderSecretStatusUpdateInput("unexpected"),
-    /Unsupported provider credential status: unexpected/,
   );
 });
 
@@ -3051,117 +2997,6 @@ test("admin channel service accepts relay account resource selections without mo
   );
 });
 
-test("admin provider secret service calls generated backend SDK paths and normalizes secret data", async () => {
-  await withBackendSdkFetch(
-    (url, init) => {
-      const method = init?.method ?? "GET";
-      if (url === "/backend/v3/api/integration/provider_secrets?provider_code=openai&status=disabled" && method === "GET") {
-        return {
-          items: [
-            {
-              id: "secret-1",
-              providerCode: "openai",
-              accountCode: "main",
-              name: "OpenAI Primary",
-              authType: "api-key",
-              secretRef: "vault://providers/openai/main",
-              status: "disabled",
-              createdAt: "2026-05-05T08:00:00Z",
-              updatedAt: "2026-05-05T08:30:00Z",
-            },
-          ],
-        };
-      }
-      if (url === "/backend/v3/api/integration/provider_secrets" && method === "POST") {
-        return {
-          item: {
-            id: "secret-2",
-            providerCode: "anthropic",
-            accountCode: "backup",
-            name: "Anthropic Backup",
-            authType: "api-key",
-            secretRef: "vault://providers/anthropic/backup",
-            maskedLabel: "ref:***backup",
-            status: "active",
-            createdAt: "2026-05-05T08:00:00Z",
-            updatedAt: "2026-05-05T08:00:00Z",
-          },
-        };
-      }
-      if (url === "/backend/v3/api/integration/provider_secrets" && method === "PUT") {
-        return {
-          item: {
-            id: "secret-2",
-            providerCode: "anthropic",
-            accountCode: "backup",
-            name: "Anthropic Updated",
-            authType: "api-key",
-            secretRef: "vault://providers/anthropic/updated",
-            status: "disabled",
-            createdAt: "2026-05-05T08:00:00Z",
-            updatedAt: "2026-05-05T09:00:00Z",
-          },
-        };
-      }
-      if (url === "/backend/v3/api/integration/provider_secrets/secret-2" && method === "DELETE") {
-        return { deleted: true };
-      }
-      throw new Error(`Unexpected SDK request ${method} ${url}`);
-    },
-    async (captured) => {
-      const secrets = await ProviderSecretService.fetchProviderSecrets({
-        providerCode: " openai ",
-        status: "disabled",
-      });
-      const created = await ProviderSecretService.addProviderSecret({
-        providerCode: " anthropic ",
-        name: " Anthropic Backup ",
-        authType: "api-key",
-        secretRef: " vault://providers/anthropic/backup ",
-        status: "active",
-      });
-      const updated = await ProviderSecretService.updateProviderSecret("secret-2", {
-        name: "Anthropic Updated",
-        secretRef: " vault://providers/anthropic/updated ",
-        status: "disabled",
-      });
-      const deleted = await ProviderSecretService.deleteProviderSecret("secret-2");
-
-      assert.equal(secrets[0].id, "secret-1");
-      assert.equal(secrets[0].maskedLabel, "ref:***main");
-      assert.equal(created.id, "secret-2");
-      assert.equal(updated?.maskedLabel, "ref:***updated");
-      assert.equal(deleted, true);
-      assert.deepEqual(
-        captured.map((request) => `${request.method} ${request.url}`),
-        [
-          "GET /backend/v3/api/integration/provider_secrets?provider_code=openai&status=disabled",
-          "POST /backend/v3/api/integration/provider_secrets",
-          "PUT /backend/v3/api/integration/provider_secrets",
-          "DELETE /backend/v3/api/integration/provider_secrets/secret-2",
-        ],
-      );
-      assert.equal(captured[0].body, "");
-      assert.deepEqual(JSON.parse(captured[1].body), {
-        providerCode: "anthropic",
-        name: "Anthropic Backup",
-        authType: "api-key",
-        secretRef: "vault://providers/anthropic/backup",
-        status: "active",
-      });
-      assert.deepEqual(JSON.parse(captured[2].body), {
-        id: "secret-2",
-        name: "Anthropic Updated",
-        secretRef: "vault://providers/anthropic/updated",
-        status: "disabled",
-      });
-      for (const request of captured) {
-        assert.equal(request.headers["x-request-id"], undefined);
-      }
-    },
-  );
-});
-
 test("admin channel service rejects invalid commands before calling generated backend SDK", async () => {
   await withBackendSdkFetch(
     () => {
@@ -3215,26 +3050,6 @@ test("admin channel service rejects invalid commands before calling generated ba
           }),
         /weight must be a positive integer/,
       );
-      await assert.rejects(
-        () =>
-          ProviderSecretService.addProviderSecret({
-            providerCode: "",
-            name: "OpenAI Primary",
-            authType: "api-key",
-            secretRef: "vault://providers/openai/main",
-          }),
-        /providerCode is required/,
-      );
-      await assert.rejects(
-        () =>
-          ProviderSecretService.addProviderSecret({
-            providerCode: "openai",
-            name: "OpenAI Primary",
-            authType: "api-key",
-            secretRef: "",
-          }),
-        /secretRef is required/,
-      );
       assert.equal(captured.length, 0);
     },
   );
@@ -3257,14 +3072,6 @@ test("admin channel service rejects unsafe SDK path ids before calling generated
       await assert.rejects(
         () => ChannelService.testChannel("channel?debug=true"),
         /channelId must be a safe path segment/,
-      );
-      await assert.rejects(
-        () => ProviderSecretService.updateProviderSecret("secret/2", { name: "Updated" }),
-        /providerSecretId must be a safe path segment/,
-      );
-      await assert.rejects(
-        () => ProviderSecretService.deleteProviderSecret("secret?debug=true"),
-        /providerSecretId must be a safe path segment/,
       );
       assert.equal(captured.length, 0);
     },
@@ -3517,23 +3324,6 @@ test("admin channel delete fails closed when backend omits delete confirmation",
   );
 });
 
-test("admin provider secret delete fails closed when backend omits delete confirmation", async () => {
-  await withBackendSdkFetch(
-    (url, init) => {
-      if (url === "/backend/v3/api/integration/provider_secrets/secret-2" && init?.method === "DELETE") {
-        return {};
-      }
-      throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
-    },
-    async () => {
-      await assert.rejects(
-        () => ProviderSecretService.deleteProviderSecret("secret-2"),
-        /Provider credential delete confirmation is required/,
-      );
-    },
-  );
-});
-
 test("admin channel list fails closed when backend returns incomplete retry policy", async () => {
   await withBackendSdkFetch(
     (url, init) => {
@@ -3608,116 +3398,6 @@ test("admin channel list fails closed when backend returns unsupported retry sta
       await assert.rejects(
         () => ChannelService.fetchChannels(),
         /Channel retryPolicy\.retryableStatusCodes contains unsupported status: 418/,
-      );
-    },
-  );
-});
-
-test("admin provider secret list fails closed when backend omits stable credential ids", async () => {
-  await withBackendSdkFetch(
-    (url, init) => {
-      if (url === "/backend/v3/api/integration/provider_secrets" && init?.method === "GET") {
-        return {
-          items: [
-            {
-              providerCode: "openai",
-              accountCode: "main",
-              name: "OpenAI Primary",
-              authType: "api-key",
-              secretRef: "vault://providers/openai/main",
-              status: "active",
-              createdAt: "2026-05-05T08:00:00Z",
-              updatedAt: "2026-05-05T08:00:00Z",
-            },
-          ],
-        };
-      }
-      throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
-    },
-    async () => {
-      await assert.rejects(
-        () => ProviderSecretService.fetchProviderSecrets(),
-        /Provider credential id is required/,
-      );
-    },
-  );
-});
-
-test("admin provider secret list fails closed when backend returns malformed credential rows", async () => {
-  await withBackendSdkFetch(
-    (url, init) => {
-      if (url === "/backend/v3/api/integration/provider_secrets" && init?.method === "GET") {
-        return {
-          items: ["malformed-provider-secret-row"],
-        };
-      }
-      throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
-    },
-    async () => {
-      await assert.rejects(
-        () => ProviderSecretService.fetchProviderSecrets(),
-        /Provider credential record is required/,
-      );
-    },
-  );
-});
-
-test("admin provider secret list fails closed when backend omits secret references", async () => {
-  await withBackendSdkFetch(
-    (url, init) => {
-      if (url === "/backend/v3/api/integration/provider_secrets" && init?.method === "GET") {
-        return {
-          items: [
-            {
-              id: "secret-1",
-              providerCode: "openai",
-              accountCode: "main",
-              name: "OpenAI Primary",
-              authType: "api-key",
-              status: "active",
-              createdAt: "2026-05-05T08:00:00Z",
-              updatedAt: "2026-05-05T08:00:00Z",
-            },
-          ],
-        };
-      }
-      throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
-    },
-    async () => {
-      await assert.rejects(
-        () => ProviderSecretService.fetchProviderSecrets(),
-        /Provider credential secret reference is required/,
-      );
-    },
-  );
-});
-
-test("admin provider secret list fails closed when backend returns unsupported credential status", async () => {
-  await withBackendSdkFetch(
-    (url, init) => {
-      if (url === "/backend/v3/api/integration/provider_secrets" && init?.method === "GET") {
-        return {
-          items: [
-            {
-              id: "secret-1",
-              providerCode: "openai",
-              accountCode: "main",
-              name: "OpenAI Primary",
-              authType: "api-key",
-              secretRef: "vault://providers/openai/main",
-              status: "archived",
-              createdAt: "2026-05-05T08:00:00Z",
-              updatedAt: "2026-05-05T08:00:00Z",
-            },
-          ],
-        };
-      }
-      throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
-    },
-    async () => {
-      await assert.rejects(
-        () => ProviderSecretService.fetchProviderSecrets(),
-        /Unsupported provider credential status: archived/,
       );
     },
   );

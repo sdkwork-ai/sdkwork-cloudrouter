@@ -1601,6 +1601,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                 DatabaseConfig::startup_help_text(profile)
             ))
         })?;
+    sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&database_config);
     let api_key_security_config = require_api_key_security_config(
         ApiKeySecurityConfig::from_env_or_runtime_toml(runtime_toml_ref)
             .map_err(GatewayRouterError::Config)?,

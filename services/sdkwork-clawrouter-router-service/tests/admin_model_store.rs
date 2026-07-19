@@ -231,6 +231,38 @@ async fn sqlite_admin_model_store_lists_catalog_region_prices_for_dual_region_ve
 }
 
 #[tokio::test]
+async fn sqlite_admin_model_store_filters_multiple_vendor_codes_before_pagination() {
+    let pool = schema_sqlite_pool().await;
+    install_admin_model_catalog(&pool, &["deepseek", "minimax", "moonshot"]).await;
+    let subject = AdminModelSubject {
+        tenant_id: 100001,
+        organization_id: 0,
+        operator_id: 99,
+        operator_type: 1,
+    };
+    let mut query = list_all_admin_models_query(subject);
+    query.vendor_codes = vec!["deepseek".to_owned(), "moonshot".to_owned()];
+    query.page_size = Some(200);
+
+    let page = SqliteAdminModelStore::new(pool)
+        .list_models(query)
+        .await
+        .unwrap();
+    let listed_vendor_codes = page
+        .items
+        .iter()
+        .map(|item| item.vendor_code.as_str())
+        .collect::<BTreeSet<_>>();
+
+    assert!(!page.items.is_empty());
+    assert_eq!(
+        listed_vendor_codes,
+        BTreeSet::from(["deepseek", "moonshot"])
+    );
+    assert_eq!(page.total_count, page.items.len() as i64);
+}
+
+#[tokio::test]
 async fn sqlite_admin_model_store_lists_catalog_prices_for_latest_media_meters() {
     let pool = schema_sqlite_pool().await;
     install_admin_model_catalog(&pool, &["black_forest_labs", "kuaishou", "openai"]).await;
@@ -1845,7 +1877,7 @@ fn list_all_admin_models_query(subject: AdminModelSubject) -> ListAdminAiModelsQ
     ListAdminAiModelsQuery {
         subject,
         vendor_id: None,
-        vendor_code: None,
+        vendor_codes: Vec::new(),
         q: None,
         model_types: None,
         page_size: None,

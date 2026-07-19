@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{GooglePart};
+use crate::models::GooglePart;
 
 /// Google Gemini google content schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

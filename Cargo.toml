@@ -215,8 +215,8 @@ sdkwork_inventory_service = { package = "sdkwork-inventory-service", path = "../
 sdkwork_inventory_repository_sqlx = { package = "sdkwork-inventory-repository-sqlx", path = "../sdkwork-inventory/crates/sdkwork-inventory-repository-sqlx" }
 sdkwork_order_service = { package = "sdkwork-order-service", path = "../sdkwork-order/crates/sdkwork-order-service" }
 sdkwork_order_repository_sqlx = { package = "sdkwork-order-repository-sqlx", path = "../sdkwork-order/crates/sdkwork-order-repository-sqlx" }
-sdkwork_promotion_service = { package = "sdkwork-promotion-service", path = "../sdkwork-promotion/crates/sdkwork-promotion-service" }
-sdkwork_promotion_repository_sqlx = { package = "sdkwork-promotion-repository-sqlx", path = "../sdkwork-promotion/crates/sdkwork-promotion-repository-sqlx" }
+sdkwork_commerce_promotion_service = { package = "sdkwork-commerce-promotion-service", path = "../sdkwork-promotion/crates/sdkwork-commerce-promotion-service" }
+sdkwork_commerce_promotion_repository_sqlx = { package = "sdkwork-commerce-promotion-repository-sqlx", path = "../sdkwork-promotion/crates/sdkwork-commerce-promotion-repository-sqlx" }
 sdkwork_shop_service = { package = "sdkwork-shop-service", path = "../sdkwork-shop/crates/sdkwork-shop-service" }
 sdkwork_shop_repository_sqlx = { package = "sdkwork-shop-repository-sqlx", path = "../sdkwork-shop/crates/sdkwork-shop-repository-sqlx" }
 sdkwork_payment_repository_sqlx = { package = "sdkwork-payment-repository-sqlx", path = "../sdkwork-payment/crates/sdkwork-payment-repository-sqlx" }

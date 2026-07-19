@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-export class ChatTurnResponsesApi {
+export class ChatConversationsTurnsResponseApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
@@ -9,27 +9,29 @@ export class ChatTurnResponsesApi {
   }
 
 
-/** Create */
+/** Complete chat turn response */
   async create(conversationId: string, turnId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/turns/${serializePathParameter(turnId, { name: 'turnId', style: 'simple', explode: false })}/response`));
   }
 }
 
-export class ChatTurnsApi {
+export class ChatConversationsTurnsApi {
   private client: HttpClient;
+  public readonly response: ChatConversationsTurnsResponseApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.response = new ChatConversationsTurnsResponseApi(client);
   }
 
 
-/** Create */
+/** Create chat turn */
   async create(conversationId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/turns`));
   }
 }
 
-export class ChatConversationMessagesApi {
+export class ChatConversationsMessagesApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
@@ -37,7 +39,7 @@ export class ChatConversationMessagesApi {
   }
 
 
-/** List */
+/** List chat messages */
   async list(conversationId: string): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/messages`));
   }
@@ -45,23 +47,27 @@ export class ChatConversationMessagesApi {
 
 export class ChatConversationsApi {
   private client: HttpClient;
+  public readonly messages: ChatConversationsMessagesApi;
+  public readonly turns: ChatConversationsTurnsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.messages = new ChatConversationsMessagesApi(client);
+    this.turns = new ChatConversationsTurnsApi(client);
   }
 
 
-/** List */
+/** List chat conversations */
   async list(): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/chat/conversations`));
   }
 
-/** Create */
+/** Create chat conversation */
   async create(): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/chat/conversations`));
   }
 
-/** Retrieve */
+/** Retrieve chat conversation */
   async retrieve(conversationId: string): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}`));
   }
@@ -70,16 +76,10 @@ export class ChatConversationsApi {
 export class ChatApi {
   private client: HttpClient;
   public readonly conversations: ChatConversationsApi;
-  public readonly conversationMessages: ChatConversationMessagesApi;
-  public readonly turns: ChatTurnsApi;
-  public readonly turnResponses: ChatTurnResponsesApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.conversations = new ChatConversationsApi(client);
-    this.conversationMessages = new ChatConversationMessagesApi(client);
-    this.turns = new ChatTurnsApi(client);
-    this.turnResponses = new ChatTurnResponsesApi(client);
   }
 
 }

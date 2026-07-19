@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import unittest
 from pathlib import Path
@@ -39,14 +40,18 @@ def source_files() -> list[Path]:
     roots = [PORTAL_ROOT / "src", PACKAGES_ROOT]
     files: list[Path] = []
     for root in roots:
-        for pattern in ("*.ts", "*.tsx", "*.mts", "*.mjs"):
-            files.extend(root.rglob(pattern))
+        for current_root, directories, filenames in os.walk(root):
+            directories[:] = [name for name in directories if name not in {"node_modules", "dist"}]
+            current = Path(current_root)
+            files.extend(
+                current / filename
+                for filename in filenames
+                if Path(filename).suffix in {".ts", ".tsx", ".mts", ".mjs"}
+            )
     return sorted(
         path
         for path in files
-        if "node_modules" not in path.parts
-        and "dist" not in path.parts
-        and not path.name.endswith(".d.ts")
+        if not path.name.endswith(".d.ts")
     )
 
 
@@ -117,6 +122,22 @@ class AdminSdkBoundaryStandardTest(unittest.TestCase):
 
         self.assertEqual([], violations)
 
+    def test_admin_services_do_not_bypass_generated_backend_sdk_resources(self) -> None:
+        violations: list[str] = []
+
+        for path in source_files():
+            if not is_admin_package_source(path):
+                continue
+            source = read_text(path)
+            if re.search(r"getClawRouterBackendSdkClient\(\)\.http\b|\bbackendApiPath\b", source):
+                violations.append(path.relative_to(ROOT).as_posix())
+
+        self.assertEqual(
+            [],
+            violations,
+            "Admin services must call generated backend SDK resources instead of the raw HTTP escape hatch.",
+        )
+
     def test_specs_define_backend_admin_package_boundary_and_common_sdk_root(self) -> None:
         expectations = {
             "APP_SDK_INTEGRATION_SPEC.md": [
@@ -135,7 +156,8 @@ class AdminSdkBoundaryStandardTest(unittest.TestCase):
             ],
             "SDK_SPEC.md": [
                 "backend-admin package boundaries",
-                "MUST NOT silently inherit the product app SDK or backend SDK base URL",
+                "Dependency SDK composition belongs in service bootstrap",
+                "generated transport remains owner-only",
             ],
         }
 
@@ -145,10 +167,13 @@ class AdminSdkBoundaryStandardTest(unittest.TestCase):
                 for marker in markers:
                     self.assertIn(marker, source)
 
-    def test_portal_session_backend_access_check_is_narrowly_scoped(self) -> None:
+    def test_portal_session_admin_access_check_uses_iam_session_rbac(self) -> None:
         source = read_text(PACKAGES_ROOT / "sdkwork-clawroutes-pc-commons" / "src" / "portal-session.ts")
-        self.assertIn("getClawRouterBackendSdkClient", source)
-        self.assertIn("backendClient.system.installation.status.retrieve()", source)
+        self.assertIn("getSdkworkAppbaseAppSdkClient", source)
+        self.assertIn("auth.sessions.current.retrieve()", source)
+        self.assertIn("hasPortalAdminSurfaceAccess", source)
+        self.assertNotIn("getClawRouterBackendSdkClient", source)
+        self.assertNotIn("installation.status.retrieve", source)
 
         forbidden_business_namespaces = (
             ".platform.",

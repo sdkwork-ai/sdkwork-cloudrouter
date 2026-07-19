@@ -26,6 +26,7 @@ use sdkwork_clawrouter_standalone_gateway_lib::SERVICE_NAME;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    sdkwork_database_sqlx::enable_process_shared_database_pool();
     let runtime_toml = sdkwork_claw_config::RuntimeTomlConfig::from_env_config_file()
         .map_err(anyhow::Error::msg)?;
     let config = runtime_config_from_env_or_toml(

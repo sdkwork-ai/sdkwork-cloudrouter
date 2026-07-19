@@ -51,6 +51,9 @@ catalogs:
     react-router-dom:
       specifier: ^7.14.0
       version: 7.18.0
+    tsx:
+      specifier: ^4.21.0
+      version: 4.22.4
     typescript:
       specifier: ~5.8.2
       version: 5.8.3
@@ -165,6 +168,10 @@ importers:
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.22.4
 
   ../sdkwork-agents/sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript:
     dependencies:
@@ -461,6 +468,12 @@ importers:
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+
+  ../sdkwork-catalog/sdks/sdkwork-catalog-app-sdk/sdkwork-catalog-app-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
 
   ../sdkwork-core/sdkwork-core-pc-react:
     dependencies:
@@ -793,9 +806,6 @@ importers:
       '@sdkwork/iam-app-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript
-      '@sdkwork/runtime-bootstrap':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap
       '@sdkwork/sdk-common':
         specifier: ^1.0.2
         version: 1.0.3
@@ -1033,18 +1043,15 @@ importers:
       '@sdkwork/membership-app-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-membership-app-sdk/sdkwork-membership-app-sdk-typescript
+      '@sdkwork/membership-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-membership-backend-sdk/sdkwork-membership-backend-sdk-typescript
       '@sdkwork/membership-contracts':
         specifier: workspace:*
         version: link:../sdkwork-membership-contracts
       '@sdkwork/membership-sdk-ports':
         specifier: workspace:*
         version: link:../sdkwork-membership-sdk-ports
-      '@sdkwork/order-app-sdk':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-order/sdks/sdkwork-order-app-sdk/sdkwork-order-app-sdk-typescript
-      '@sdkwork/order-service':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
@@ -1117,12 +1124,6 @@ importers:
       '@sdkwork/membership-service':
         specifier: workspace:*
         version: link:../../../sdkwork-membership-common/packages/sdkwork-membership-service
-      '@sdkwork/order-pc-checkout':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-checkout
-      '@sdkwork/order-pc-recharge':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge
       '@sdkwork/promotion-pc-coupon':
         specifier: workspace:*
         version: link:../../../../../sdkwork-promotion/apps/sdkwork-promotion-pc/packages/sdkwork-promotion-pc-coupon
@@ -1235,6 +1236,38 @@ importers:
         specifier: ^5.9.0
         version: 5.9.3
 
+  ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-catalog:
+    dependencies:
+      '@sdkwork/models':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-models-sdk/sdkwork-models-sdk-typescript
+      '@sdkwork/models-pc-core':
+        specifier: workspace:*
+        version: link:../sdkwork-models-pc-core
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.3
+        version: 18.3.31
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+  ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-core:
+    dependencies:
+      '@sdkwork/models':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-models-sdk/sdkwork-models-sdk-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+    devDependencies:
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
   ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-picker:
     dependencies:
       lucide-react:
@@ -1265,6 +1298,15 @@ importers:
       '@sdkwork/sdk-common':
         specifier: ^1.0.2
         version: 1.0.3
+
+  ../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-typescript:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.0
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
 
   ../sdkwork-music/apps/sdkwork-music-pc/packages/sdkwork-music-pc-generation:
     dependencies:
@@ -1533,6 +1575,9 @@ importers:
 
   ../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-admin-core:
     dependencies:
+      '@sdkwork/i18n-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
       '@sdkwork/payment-contracts':
         specifier: workspace:*
         version: link:../../../sdkwork-payment-common/packages/sdkwork-payment-contracts
@@ -1703,6 +1748,12 @@ importers:
         specifier: 'catalog:'
         version: 19.2.4
 
+  ../sdkwork-payment/sdks/sdkwork-payment-app-sdk/sdkwork-payment-app-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+
   ../sdkwork-payment/sdks/sdkwork-payment-backend-sdk/sdkwork-payment-backend-sdk-typescript:
     dependencies:
       '@sdkwork/sdk-common':
@@ -1715,6 +1766,9 @@ importers:
 
   ../sdkwork-promotion/apps/sdkwork-promotion-common/packages/sdkwork-promotion-service:
     dependencies:
+      '@sdkwork/promotion-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-promotion-backend-sdk/sdkwork-promotion-backend-sdk-typescript
       '@sdkwork/promotion-contracts':
         specifier: workspace:*
         version: link:../sdkwork-promotion-contracts
@@ -1946,6 +2000,18 @@ importers:
       react-router-dom:
         specifier: 'catalog:'
         version: 7.18.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+
+  ../sdkwork-promotion/sdks/sdkwork-promotion-app-sdk/sdkwork-promotion-app-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+
+  ../sdkwork-promotion/sdks/sdkwork-promotion-backend-sdk/sdkwork-promotion-backend-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
 
   ../sdkwork-prompts/sdks/sdkwork-prompts-backend-sdk/sdkwork-prompts-backend-sdk-typescript:
     dependencies:
@@ -2390,12 +2456,12 @@ importers:
       '@sdkwork/iam-contracts':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts
-      '@sdkwork/iam-credential-entry':
-        specifier: workspace:*
-        version: link:../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry
       '@sdkwork/iam-core-pc-react':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-core-pc-react
+      '@sdkwork/iam-credential-entry':
+        specifier: workspace:*
+        version: link:../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry
       '@sdkwork/iam-react':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-react
@@ -2689,6 +2755,9 @@ importers:
       '@sdkwork/clawroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
+      '@sdkwork/models-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core:
     dependencies:
@@ -2698,9 +2767,6 @@ importers:
       '@sdkwork/clawroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
-      '@sdkwork/models-backend-sdk':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard:
     dependencies:
@@ -2876,18 +2942,33 @@ importers:
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-core:
     dependencies:
+      '@sdkwork/account-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript
+      '@sdkwork/catalog-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-catalog/sdks/sdkwork-catalog-app-sdk/sdkwork-catalog-app-sdk-typescript
       '@sdkwork/clawrouter-app-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript
-      '@sdkwork/clawrouter-backend-sdk':
-        specifier: workspace:*
-        version: link:../../../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript
       '@sdkwork/drive-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript
       '@sdkwork/generations-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-generations/sdks/sdkwork-generations-app-sdk/sdkwork-generations-app-sdk-typescript
+      '@sdkwork/membership-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-membership/sdks/sdkwork-membership-app-sdk/sdkwork-membership-app-sdk-typescript
+      '@sdkwork/order-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-order/sdks/sdkwork-order-app-sdk/sdkwork-order-app-sdk-typescript
+      '@sdkwork/payment-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-payment/sdks/sdkwork-payment-app-sdk/sdkwork-payment-app-sdk-typescript
+      '@sdkwork/promotion-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-promotion/sdks/sdkwork-promotion-app-sdk/sdkwork-promotion-app-sdk-typescript
     devDependencies:
       typescript:
         specifier: ~5.8.2
@@ -3073,18 +3154,18 @@ importers:
       '@sdkwork/order-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
-      '@sdkwork/payment-service':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-service
       '@sdkwork/payment-sdk-ports':
         specifier: workspace:*
         version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-sdk-ports
-      '@sdkwork/promotion-service':
+      '@sdkwork/payment-service':
         specifier: workspace:*
-        version: link:../../../../../sdkwork-promotion/apps/sdkwork-promotion-common/packages/sdkwork-promotion-service
+        version: link:../../../../../sdkwork-payment/apps/sdkwork-payment-common/packages/sdkwork-payment-service
       '@sdkwork/promotion-sdk-ports':
         specifier: workspace:*
         version: link:../../../../../sdkwork-promotion/apps/sdkwork-promotion-common/packages/sdkwork-promotion-sdk-ports
+      '@sdkwork/promotion-service':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-promotion/apps/sdkwork-promotion-common/packages/sdkwork-promotion-service
       '@sdkwork/prompts-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-prompts/sdks/sdkwork-prompts-backend-sdk/sdkwork-prompts-backend-sdk-typescript
@@ -9482,7 +9563,7 @@ snapshots:
 
   '@types/qrcode@1.5.6':
     dependencies:
-      '@types/node': 25.9.4
+      '@types/node': 22.20.0
 
   '@types/react-dom@18.3.7(@types/react@18.3.31)':
     dependencies:

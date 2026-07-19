@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiBatch};
+use crate::models::OpenAiBatch;
 
 /// OpenAI-compatible paginated list of batches.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

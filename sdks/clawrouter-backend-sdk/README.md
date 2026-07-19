@@ -42,14 +42,7 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | Workspace | Role | Mode | API prefix | Generated transport policy |
 | --- | --- | --- | --- | --- |
 | `sdkwork-iam-backend-sdk` | `appbase-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-backend-wallet-capability` | `wallet-backend-capability` | `internal-capability` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-backend-membership-capability` | `membership-backend-capability` | `internal-capability` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-backend-promotion-capability` | `promotion-backend-capability` | `internal-capability` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-backend-catalog-capability` | `catalog-backend-capability` | `internal-capability` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-backend-order-capability` | `order-backend-capability` | `internal-capability` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-backend-payment-capability` | `payment-backend-capability` | `internal-capability` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-backend-inventory-capability` | `inventory-backend-capability` | `internal-capability` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-backend-finance-capability` | `finance-backend-capability` | `internal-capability` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-models-backend-sdk` | `models-backend-catalog-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 
 Package names:
 
@@ -63,22 +56,12 @@ Package names:
 - `kotlin`: `com.sdkwork:sdkwork-iam-backend-sdk`
 - `go`: `github.com/sdkwork/sdkwork-iam-backend-sdk`
 - `python`: `sdkwork-iam-backend-sdk`
-- `clawrouter-backend-wallet-capability`
-- `typescript`: `clawrouter-backend-domain-transport-generated-typescript`
-- `clawrouter-backend-membership-capability`
-- `typescript`: `clawrouter-backend-domain-transport-generated-typescript`
-- `clawrouter-backend-promotion-capability`
-- `typescript`: `clawrouter-backend-domain-transport-generated-typescript`
-- `clawrouter-backend-catalog-capability`
-- `typescript`: `clawrouter-backend-domain-transport-generated-typescript`
-- `clawrouter-backend-order-capability`
-- `typescript`: `clawrouter-backend-domain-transport-generated-typescript`
-- `clawrouter-backend-payment-capability`
-- `typescript`: `clawrouter-backend-domain-transport-generated-typescript`
-- `clawrouter-backend-inventory-capability`
-- `typescript`: `clawrouter-backend-domain-transport-generated-typescript`
-- `clawrouter-backend-finance-capability`
-- `typescript`: `clawrouter-backend-domain-transport-generated-typescript`
+- `sdkwork-models-backend-sdk`
+- `typescript`: `@sdkwork/models-backend-sdk`
+- `rust`: `sdkwork-models-backend-sdk`
+- `java`: `com.sdkwork:sdkwork-models-backend-sdk`
+- `go`: `github.com/sdkwork/sdkwork-models-backend-sdk`
+- `python`: `sdkwork-models-backend-sdk`
 
 Regenerate this SDK family from the project root:
 

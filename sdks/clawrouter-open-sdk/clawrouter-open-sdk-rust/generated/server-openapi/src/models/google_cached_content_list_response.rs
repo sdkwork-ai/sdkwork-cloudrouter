@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{GoogleCachedContent};
+use crate::models::GoogleCachedContent;
 
 /// Google Gemini google cached content list response schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

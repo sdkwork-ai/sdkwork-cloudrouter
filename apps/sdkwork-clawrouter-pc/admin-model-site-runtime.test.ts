@@ -68,7 +68,7 @@ test("admin model site service is SDK-backed and uses confirmed route surface", 
 });
 
 test("admin model page exposes site management route and navigation markers", () => {
-  const appSource = readPortalFile("src/App.tsx");
+  const adminHostSource = readPortalFile("src/admin/clawRouterAdminHostMount.tsx");
   const registrySource = readPortalFile("packages/sdkwork-clawrouter-pc-admin-shell/src/adminModuleRegistry.ts");
   const siteAdminSource = readSiteAdminSource();
   const relaySitePackageSource = readPortalFile("packages/sdkwork-clawrouter-pc-admin-relay-site/src/index.tsx");
@@ -77,10 +77,11 @@ test("admin model page exposes site management route and navigation markers", ()
   const siteAdminRenderSource = siteAdminSource.slice(siteAdminSource.indexOf("return ("));
 
   for (const token of [
-    'path="model/sites"',
+    "route('model/sites', 'sdkwork-clawrouter'",
+    "'clawrouter-backend-sdk', 'sdkwork-models-backend-sdk'",
     "SiteAdmin",
   ]) {
-    assert.ok(appSource.includes(token), `missing app route marker: ${token}`);
+    assert.ok(adminHostSource.includes(token), `missing admin host contribution marker: ${token}`);
   }
 
   assert.ok(relaySitePackageSource.includes("export { SiteAdmin } from './siteAdmin'"), "relay site package should export gateway-owned SiteAdmin");

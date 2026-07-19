@@ -145,5 +145,5 @@ export function getActiveModuleFromPath(pathname: string): AdminModuleId {
 }
 
 export function getAdminModuleMenu(moduleId: AdminModuleId): AdminModuleMenu {
-  return ADMIN_MODULE_MENUS.find((menu) => menu.moduleId === moduleId) ?? ADMIN_MODULE_MENUS[0];
+  return ADMIN_MODULE_MENUS.find((menu) => menu.moduleId === moduleId) ?? ADMIN_MODULE_MENUS[0]!;
 }

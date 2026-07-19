@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{GoogleSchema};
+use crate::models::GoogleSchema;
 
 /// Google Gemini google function declaration schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

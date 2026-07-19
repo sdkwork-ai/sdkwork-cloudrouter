@@ -98,7 +98,6 @@ async fn load_auth_settings(
           AND organization_id = ?
           AND status = 1
           AND source_table = ?
-          AND deleted_at IS NULL
         ORDER BY published_at DESC, created_at DESC, id DESC
         LIMIT 1
         "#,

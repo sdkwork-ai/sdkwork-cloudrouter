@@ -15,9 +15,13 @@ impl ImagesViduApi {
     }
 
     /// Vidu reference to image
-    pub async fn create_ent_v2_reference2image(&self, body: &ViduReferenceToImageRequest) -> Result<ViduImageGenerationTask, SdkworkError> {
+    pub async fn create_ent_v2_reference2image(
+        &self,
+        body: &ViduReferenceToImageRequest,
+    ) -> Result<ViduImageGenerationTask, SdkworkError> {
         let path = ai_path(&"/vidu/ent/v2/reference2image".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

@@ -1,21 +1,14 @@
-import { CancelledError, ForbiddenError, TimeoutError, type RequestConfig } from '@sdkwork/sdk-common';
 import { readApiRecord } from './api-result.ts';
 import { clearStoredAppSessionToken, loadStoredAppSessionToken, shouldRefreshStoredAppSession, storeAppSessionFromResult } from './app-session-token.ts';
 import { resetClawRouterIamRuntime } from './iam-runtime.ts';
-import { getClawRouterBackendSdkClient, getSdkworkAppbaseAppSdkClient, resetClawRouterSdkClients } from './sdk-clients.ts';
+import {
+  getSdkworkAppbaseAppSdkClient,
+  isClawRouterSdkSessionAuthError,
+  resetClawRouterSdkClients,
+} from './sdk-clients.ts';
 import { hasPortalAdminSurfaceAccess, readPortalPermissionScope } from './portal-permission-scope.ts';
 
 export type PortalAdminAccessState = 'anonymous' | 'checking' | 'allowed' | 'forbidden' | 'error';
-
-const PORTAL_ADMIN_ACCESS_CHECK_TIMEOUT_MS = 8_000;
-
-export interface VerifyCurrentPortalAdminAccessOptions {
-  timeoutMs?: number;
-}
-
-type BackendRequestInterceptorClient = {
-  addRequestInterceptor(interceptor: (config: RequestConfig) => RequestConfig | Promise<RequestConfig>): () => void;
-};
 
 export interface PortalSessionResponse extends Record<string, unknown> {
   accessToken: string;
@@ -108,79 +101,23 @@ export async function revokeCurrentPortalSession(): Promise<void> {
   }
 }
 
-export async function verifyCurrentPortalAdminAccess(
-  options: VerifyCurrentPortalAdminAccessOptions = {},
-): Promise<PortalAdminAccessState> {
-  // Proactively refresh if the token is within the refresh threshold, so
-  // admin route guards do not bounce the user to login on a soon-to-expire
-  // token.
-  await refreshPortalSessionIfNeeded();
-
-  const session = await fetchCurrentPortalSession();
-  if (!session) {
-    return 'anonymous';
-  }
-
-  if (!hasPortalAdminSurfaceAccess(readPortalPermissionScope())) {
-    return 'forbidden';
-  }
-
+export async function verifyCurrentPortalAdminAccess(): Promise<PortalAdminAccessState> {
   try {
-    await retrieveInstallationStatusForAdminAccess(options.timeoutMs);
-    return 'allowed';
-  } catch (error) {
-    if (error instanceof ForbiddenError || readErrorHttpStatus(error) === 403 || readErrorCode(error) === 'FORBIDDEN') {
-      return 'forbidden';
+    await refreshPortalSessionIfNeeded();
+
+    const session = await fetchCurrentPortalSession();
+    if (!session) {
+      return 'anonymous';
     }
+
+    return hasPortalAdminSurfaceAccess(readPortalPermissionScope()) ? 'allowed' : 'forbidden';
+  } catch (error) {
     if (isPortalSessionAuthError(error)) {
       clearPortalSessionState();
       return 'anonymous';
     }
     return 'error';
   }
-}
-
-async function retrieveInstallationStatusForAdminAccess(timeoutMs?: number): Promise<void> {
-  const timeout = normalizeAdminAccessCheckTimeout(timeoutMs);
-  const sdkRequestTimeout = timeout + 1_000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    controller.abort();
-  }, timeout);
-  const backendClient = getClawRouterBackendSdkClient({ timeout: sdkRequestTimeout });
-  const httpClient = backendClient.http as unknown as BackendRequestInterceptorClient;
-  const removeInterceptor = httpClient.addRequestInterceptor((config: RequestConfig) => ({
-    ...config,
-    signal: config.signal ?? controller.signal,
-    timeout: config.timeout ?? sdkRequestTimeout,
-  }));
-
-  try {
-    await backendClient.system.installation.status.retrieve();
-  } catch (error) {
-    if (controller.signal.aborted && isAdminAccessCheckAbort(error)) {
-      throw new TimeoutError(`Admin access check timed out after ${timeout}ms`, timeout);
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
-    removeInterceptor();
-  }
-}
-
-function normalizeAdminAccessCheckTimeout(timeoutMs: number | undefined): number {
-  return typeof timeoutMs === 'number' && Number.isFinite(timeoutMs) && timeoutMs > 0
-    ? Math.max(1, Math.floor(timeoutMs))
-    : PORTAL_ADMIN_ACCESS_CHECK_TIMEOUT_MS;
-}
-
-function isAdminAccessCheckAbort(error: unknown): boolean {
-  return (
-    error instanceof TimeoutError
-    || error instanceof CancelledError
-    || readErrorCode(error) === 'TIMEOUT'
-    || readErrorCode(error) === 'CANCELLED'
-  );
 }
 
 export function clearPortalSessionState(): void {
@@ -190,25 +127,7 @@ export function clearPortalSessionState(): void {
 }
 
 function isPortalSessionAuthError(error: unknown): boolean {
-  const status = readErrorHttpStatus(error);
-  const code = readErrorCode(error);
-  return status === 401 || code === 'UNAUTHORIZED' || code === 'TOKEN_EXPIRED' || code === 'TOKEN_INVALID';
-}
-
-function readErrorHttpStatus(error: unknown): number | undefined {
-  if (!isRecord(error)) {
-    return undefined;
-  }
-  const value = error.httpStatus;
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-function readErrorCode(error: unknown): string | undefined {
-  if (!isRecord(error)) {
-    return undefined;
-  }
-  const value = error.code;
-  return typeof value === 'string' ? value : undefined;
+  return isClawRouterSdkSessionAuthError(error);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

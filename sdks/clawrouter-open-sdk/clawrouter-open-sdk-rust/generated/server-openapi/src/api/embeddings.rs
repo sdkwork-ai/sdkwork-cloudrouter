@@ -15,9 +15,13 @@ impl EmbeddingsApi {
     }
 
     /// Create embeddings
-    pub async fn create(&self, body: &OpenAiEmbeddingsRequest) -> Result<OpenAiEmbeddingList, SdkworkError> {
+    pub async fn create(
+        &self,
+        body: &OpenAiEmbeddingsRequest,
+    ) -> Result<OpenAiEmbeddingList, SdkworkError> {
         let path = ai_path(&"/embeddings".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

@@ -127,9 +127,12 @@ test('clawrouter portal no longer declares legacy commerce facade packages', () 
 
   assert.doesNotMatch(sdkClientsSource, /@sdkwork\/commerce-service/);
   assert.doesNotMatch(sdkClientsSource, /getSdkworkCommerceService/);
-  assert.match(sdkClientsSource, /getClawRouterAppDomainTransportSdkClient/);
-  assert.match(sdkClientsSource, /getClawRouterBackendDomainTransportSdkClient/);
+  assert.doesNotMatch(sdkClientsSource, /DomainTransport|createAppDomainCanonicalFacade/);
+  assert.doesNotMatch(sdkClientsSource, /BackendDomainDependencyOverlay|facade\.catalog\.spus|attachManagementAlias/);
   assert.doesNotMatch(sdkClientsSource, /getClawRouterBackendSdkClient\(\)\.commerce/);
+  for (const capability of ['Account', 'Catalog', 'Membership', 'Order', 'Payment', 'Promotion']) {
+    assert.match(sdkClientsSource, new RegExp(`getSdkwork${capability}AppSdkClient`));
+  }
 
   for (const workspaceEntry of packageJson.workspaces) {
     assert.doesNotMatch(workspaceEntry, /packages\/common\/commerce/);
@@ -160,19 +163,21 @@ test('legacy sdkwork-commerce SDK family directories are removed', () => {
   }
 });
 
-test('domain transport lives under clawrouter SDK families', () => {
+test('clawrouter SDKs remain owner-only without cross-domain transport subpaths', () => {
   assert.equal(
     existsSync(new URL('../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/domains/index.ts', import.meta.url)),
-    true,
+    false,
   );
   assert.equal(
     existsSync(new URL('../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/domains/index.ts', import.meta.url)),
-    true,
+    false,
   );
 
   const externalClientsSource = readPortalFile('./packages/sdkwork-clawrouter-pc-core/src/sdk/external-dependency-clients.ts');
-  assert.match(externalClientsSource, /@sdkwork\/clawrouter-app-sdk\/domains/);
-  assert.match(externalClientsSource, /@sdkwork\/clawrouter-backend-sdk\/domains/);
+  for (const ownerPackage of ['account', 'catalog', 'membership', 'order', 'payment', 'promotion']) {
+    assert.match(externalClientsSource, new RegExp(`@sdkwork/${ownerPackage}-app-sdk`));
+  }
+  assert.doesNotMatch(externalClientsSource, /@sdkwork\/clawrouter-(?:app|backend)-sdk\/domains/);
   assert.doesNotMatch(externalClientsSource, /domain-transport-generated-typescript/);
   assert.doesNotMatch(externalClientsSource, /commerce-capability/);
   assert.doesNotMatch(externalClientsSource, /sdks\/sdkwork-commerce-/);
@@ -182,10 +187,14 @@ test('console bootstrap wires T1 domain service providers from clawroutes common
   const mainSource = readPortalFile('./src/main.tsx');
   const providerSource = readPortalFile('./packages/sdkwork-clawroutes-pc-commons/src/domain-service-providers.ts');
 
-  assert.match(mainSource, /configureClawRouterDomainServiceProviders/);
-  assert.match(mainSource, /getClawRouterAppSdkClient/);
+  assert.match(mainSource, /configureClawRouterDomainServiceProviders\(\)/);
+  assert.doesNotMatch(mainSource, /getClawRouterAppSdkClient/);
   assert.match(providerSource, /buildAccountCommercePort/);
-  assert.match(providerSource, /client\.wallet/);
+  assert.match(providerSource, /accountClient\.wallet/);
+  assert.match(providerSource, /catalogClient\.cart/);
+  assert.match(providerSource, /paymentClient\.commerce\.refunds/);
+  assert.match(providerSource, /client\.commerce\.payments/);
+  assert.match(providerSource, /client\.promotions/);
   assert.doesNotMatch(providerSource, /getClawRouterAppSdkClient\(\)\.commerce/);
 });
 
@@ -211,6 +220,9 @@ test('frontend field contract excludes retired relay-external admin operation ro
     '/admin/storage',
     '/admin/reports',
     '/admin/iam',
+    '/admin/system/after_sales',
+    '/admin/system/marketing',
+    '/admin/system/shops',
   ]) {
     assert.doesNotMatch(
       contractSource,
@@ -219,8 +231,8 @@ test('frontend field contract excludes retired relay-external admin operation ro
     );
   }
 
-  assert.match(contractSource, /^- route: \/admin\/ai\//m);
-  assert.match(contractSource, /^- route: \/admin\/system\//m);
+  assert.match(contractSource, /^- route: \/admin\/channel$/m);
+  assert.match(contractSource, /^- route: \/admin\/cache$/m);
 });
 
 test('backend SDK exposes system settings resources for admin control-plane pages', () => {

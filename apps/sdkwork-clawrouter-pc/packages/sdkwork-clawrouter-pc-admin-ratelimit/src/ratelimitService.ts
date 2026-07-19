@@ -4,9 +4,7 @@ import {
   optionalBoundedPositiveInteger as optionalQueryPageSize,
   optionalPositiveInteger as optionalQueryPage,
   optionalText as optionalQueryText,
-  pruneUndefinedQueryParams,
   readApiRecord,
-  readBoolean,
   readRequiredApiItems,
   readRequiredApiItem,
   readRequiredNonNegativeNumber,
@@ -16,10 +14,7 @@ import {
   readString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
-import {
-  backendApiPath,
-  getClawRouterBackendSdkClient,
-} from '@sdkwork/clawrouter-pc-admin-core/sdk';
+import { getClawRouterBackendSdkClient } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
   AdminFirewallRuleCreateRequest,
   AdminIpLimitCreateRequest,
@@ -115,8 +110,7 @@ const MAX_RATE_LIMIT_LIST_QUERY_TEXT_LENGTH = 128;
 export class RateLimitService {
   static async fetchIpLimits(filters: RateLimitListFilters = {}): Promise<RateLimitListPage<IpLimitRule>> {
     return fetchOffsetListPage(
-      '/system/rate_limits/ip',
-      filters,
+      () => getClawRouterBackendSdkClient().system.rateLimits.ip.list(toOffsetListSdkParams(filters)),
       normalizeIpLimit,
       'Failed to fetch IP limits',
     );
@@ -132,8 +126,7 @@ export class RateLimitService {
 
   static async fetchTokenLimits(filters: RateLimitListFilters = {}): Promise<RateLimitListPage<TokenLimitRule>> {
     return fetchOffsetListPage(
-      '/system/rate_limits/api_keys',
-      filters,
+      () => getClawRouterBackendSdkClient().system.rateLimits.apiKeys.list(toOffsetListSdkParams(filters)),
       normalizeTokenLimit,
       'Failed to fetch token limits',
     );
@@ -149,8 +142,7 @@ export class RateLimitService {
 
   static async fetchModelLimits(filters: RateLimitListFilters = {}): Promise<RateLimitListPage<ModelLimitRule>> {
     return fetchOffsetListPage(
-      '/system/rate_limits/models',
-      filters,
+      () => getClawRouterBackendSdkClient().system.rateLimits.models.list(toOffsetListSdkParams(filters)),
       normalizeModelLimit,
       'Failed to fetch model limits',
     );
@@ -166,8 +158,7 @@ export class RateLimitService {
 
   static async fetchFirewalls(filters: RateLimitListFilters = {}): Promise<RateLimitListPage<FirewallRule>> {
     return fetchOffsetListPage(
-      '/system/firewalls/rules',
-      filters,
+      () => getClawRouterBackendSdkClient().system.firewalls.rules.list(toOffsetListSdkParams(filters)),
       normalizeFirewall,
       'Failed to fetch firewall rules',
     );
@@ -182,24 +173,19 @@ export class RateLimitService {
   }
 
   static async removeFirewall(id: string): Promise<boolean> {
-    const result = await getClawRouterBackendSdkClient().system.firewalls.rules.delete(
+    await getClawRouterBackendSdkClient().system.firewalls.rules.delete(
       requiredSafePathSegment(id, 'firewallRuleId'),
     );
-    ensureDeleteResult(result, 'Firewall rule delete confirmation is required');
     return true;
   }
 }
 
 async function fetchOffsetListPage<T>(
-  path: string,
-  filters: RateLimitListFilters,
+  loadPage: () => Promise<unknown>,
   mapItem: (value: unknown) => T,
   errorMessage: string,
 ): Promise<RateLimitListPage<T>> {
-  const result = await getClawRouterBackendSdkClient().http.get<unknown>(
-    backendApiPath(path),
-    toOffsetListHttpParams(filters),
-  );
+  const result = await loadPage();
   ensureSdkworkApiSuccess(result, errorMessage);
   const data = readApiRecord(result);
   return {
@@ -208,16 +194,20 @@ async function fetchOffsetListPage<T>(
   };
 }
 
-function toOffsetListHttpParams(filters: RateLimitListFilters = {}): Record<string, string> | undefined {
+function toOffsetListSdkParams(filters: RateLimitListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} | undefined {
   const page = optionalQueryPage(filters.page, 'page');
   const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', MAX_RATE_LIMIT_LIST_PAGE_SIZE);
   const q = optionalQueryText(filters.q ?? filters.searchQuery, 'q', MAX_RATE_LIMIT_LIST_QUERY_TEXT_LENGTH);
-  const params = pruneUndefinedQueryParams({
+  const params = {
     page,
-    page_size: pageSize,
+    pageSize,
     q,
-  });
-  return Object.keys(params).length > 0 ? params : undefined;
+  };
+  return Object.values(params).some((value) => value !== undefined) ? params : undefined;
 }
 
 function readListPageTotal(data: ApiRecord, message: string): number {
@@ -273,7 +263,7 @@ function toCreateModelLimitRequest(rule: ModelLimitCreateInput): AdminModelLimit
     model: requiredText(rule.model, 'model'),
     channelGroup: requiredText(rule.channelGroup, 'channelGroup'),
     rpm: positiveInteger(rule.rpm, 'rpm'),
-    tpm: positiveInteger(rule.tpm, 'tpm'),
+    tpm: String(positiveInteger(rule.tpm, 'tpm')),
   };
 }
 
@@ -298,13 +288,6 @@ function positiveInteger(value: number, fieldName: string): number {
     throw new Error(`${fieldName} must be a positive integer`);
   }
   return value;
-}
-
-function ensureDeleteResult(result: unknown, message: string): void {
-  ensureSdkworkApiSuccess(result, message);
-  if (readBoolean(readApiRecord(result), 'deleted') !== true) {
-    throw new Error(message);
-  }
 }
 
 function normalizeIpLimit(value: unknown): IpLimitRule {

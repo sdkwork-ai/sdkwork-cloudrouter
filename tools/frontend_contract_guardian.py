@@ -127,6 +127,12 @@ class FrontendContractGuardian:
             "SdkworkWalletPage",
         }
     )
+    ADMIN_HOST_MOUNT_COMPONENT = "ClawRouterAdminHostRoutes"
+    ADMIN_HOST_MOUNT_RELATIVE = "apps/sdkwork-clawrouter-pc/src/admin/clawRouterAdminHostMount.tsx"
+    ADMIN_HOST_ROUTE_CONTRIBUTION_PATTERN = re.compile(
+        r"\broute\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"][^'\"]+['\"]\s*,\s*['\"]([^'\"]+)['\"]",
+        re.MULTILINE,
+    )
     COMMERCE_HOST_MOUNT_RELATIVE = "apps/sdkwork-clawrouter-pc/src/console-business/consoleBusinessHostMount.tsx"
     COMMERCE_HOST_CATALOG_RELATIVES = (
         # REMOVED: sdkwork-commerce reference
@@ -622,6 +628,7 @@ class FrontendContractGuardian:
         wildcard_mounts: set[str] = set()
         route_stack: list[str] = []
         commerce_mount_prefix: str | None = None
+        admin_mount_prefix: str | None = None
 
         for line in self.app_path.read_text(encoding="utf-8").splitlines():
             if commerce_mount_prefix is None and any(
@@ -630,6 +637,10 @@ class FrontendContractGuardian:
                 parent = route_stack[-1] if route_stack else ""
                 if parent == "/console" or parent.startswith("/console/"):
                     commerce_mount_prefix = parent
+            if admin_mount_prefix is None and self.ADMIN_HOST_MOUNT_COMPONENT in line:
+                parent = route_stack[-1] if route_stack else ""
+                if parent == "/admin" or parent.startswith("/admin/"):
+                    admin_mount_prefix = parent
 
             for match in self.ROUTE_PATTERN.finditer(line):
                 attrs = match.group(1)
@@ -664,6 +675,9 @@ class FrontendContractGuardian:
         routes.update(self._contracted_child_routes_for_wildcard_mounts(wildcard_mounts))
         if commerce_mount_prefix is not None:
             routes.update(self._commerce_host_routes_for_prefix(commerce_mount_prefix))
+        if admin_mount_prefix is not None:
+            admin_routes, _ = self._extract_admin_host_route_data(admin_mount_prefix)
+            routes.update(admin_routes)
         shell_routes, _ = self._extract_app_shell_route_data()
         routes.update(shell_routes)
         return sorted(routes)
@@ -2099,6 +2113,7 @@ class FrontendContractGuardian:
         wildcard_mount_packages: dict[str, str] = {}
         route_stack: list[str] = []
         commerce_mount_prefix: str | None = None
+        admin_mount_prefix: str | None = None
         for line in source.splitlines():
             if commerce_mount_prefix is None and any(
                 component in line for component in self.COMMERCE_HOST_MOUNT_COMPONENTS
@@ -2106,6 +2121,10 @@ class FrontendContractGuardian:
                 parent = route_stack[-1] if route_stack else ""
                 if parent == "/console" or parent.startswith("/console/"):
                     commerce_mount_prefix = parent
+            if admin_mount_prefix is None and self.ADMIN_HOST_MOUNT_COMPONENT in line:
+                parent = route_stack[-1] if route_stack else ""
+                if parent == "/admin" or parent.startswith("/admin/"):
+                    admin_mount_prefix = parent
 
             for match in self.ROUTE_PATTERN.finditer(line):
                 attrs = match.group(1)
@@ -2158,10 +2177,28 @@ class FrontendContractGuardian:
             for logical_route in self._commerce_host_logical_routes():
                 route_packages.setdefault(logical_route, "@sdkwork/commerce-pc-wallet")
 
+        if admin_mount_prefix is not None:
+            _, admin_packages = self._extract_admin_host_route_data(admin_mount_prefix)
+            route_packages.update(admin_packages)
+
         _, shell_packages = self._extract_app_shell_route_data()
         route_packages.update(shell_packages)
 
         return route_packages
+
+    def _extract_admin_host_route_data(self, mount_prefix: str) -> tuple[set[str], dict[str, str]]:
+        host_path = self.root / self.ADMIN_HOST_MOUNT_RELATIVE
+        if not host_path.exists():
+            return set(), {}
+
+        routes: set[str] = set()
+        route_packages: dict[str, str] = {}
+        source = host_path.read_text(encoding="utf-8")
+        for match in self.ADMIN_HOST_ROUTE_CONTRIBUTION_PATTERN.finditer(source):
+            route_path = self._join_route(mount_prefix, match.group(1))
+            routes.add(route_path)
+            route_packages[route_path] = self._root_package_name(match.group(2))
+        return routes, route_packages
 
     def _app_shell_layout_path(self) -> Path:
         return self.root / self.APP_SHELL_LAYOUT_RELATIVE

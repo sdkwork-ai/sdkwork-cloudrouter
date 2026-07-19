@@ -122,9 +122,9 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertIn("line.trim() === \"export * from './types';\"", build_runtime)
                 self.assertIn("source.split(/\\r?\\n/u)", build_runtime)
                 self.assertIn("runtimeLines.join('\\n')", build_runtime)
-                self.assertIn("await stageDomainTransport();", build_runtime)
-                self.assertIn("path.join(distDir, 'domains', 'index.js')", build_runtime)
-                self.assertIn("path.join(distDir, 'domains-generated')", build_runtime)
+                self.assertNotIn("stageDomainTransport", build_runtime)
+                self.assertNotIn("generated/domains", build_runtime)
+                self.assertNotIn("domains-generated", build_runtime)
                 http_client = (base / "src" / "http" / "client.ts").read_text(encoding="utf-8")
                 self.assertIn("contentType?: string", http_client)
                 self.assertIn("headers: this.withContentType(headers, contentType)", http_client)
@@ -159,7 +159,7 @@ export class HttpClient {
         self.assertNotIn("Authorization: `Bearer ${authToken}`", normalized)
         self.assertEqual(normalized, standardizer._standardize_http_client_dual_token_headers(normalized))
 
-    def test_standardizes_primary_and_domain_generated_http_clients(self) -> None:
+    def test_standardizes_primary_generated_http_client(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             base = self.sdk_base(root, "clawrouter-app-sdk")
@@ -181,10 +181,7 @@ export class HttpClient {
   }
 }
 """
-            clients = (
-                base / "generated" / "server-openapi" / "src" / "http" / "client.ts",
-                base / "generated" / "domains" / "server-openapi" / "src" / "http" / "client.ts",
-            )
+            clients = (base / "generated" / "server-openapi" / "src" / "http" / "client.ts",)
             for client in clients:
                 client.parent.mkdir(parents=True, exist_ok=True)
                 client.write_text(source, encoding="utf-8")
@@ -219,7 +216,7 @@ export class HttpClient {
             }
             self.assertEqual(set(), touched)
 
-    def test_repairs_empty_federated_domain_transport_package_manifest(self) -> None:
+    def test_removes_retired_domain_transport_directories(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             base = self.write_minimal_typescript_sdk(
@@ -227,30 +224,18 @@ export class HttpClient {
                 "clawrouter-backend-sdk",
                 "@sdkwork/clawrouter-backend-sdk",
             )
-            domain_transport = base / "generated" / "domains" / "server-openapi"
-            domain_transport.mkdir(parents=True)
-            package_path = domain_transport / "package.json"
-            package_path.write_text("", encoding="utf-8")
-
-            updated = self.standardizer(
-                root,
-                sdk_directories=("clawrouter-backend-sdk",),
-            ).repair_domain_transport_package_manifests()
-
-            self.assertEqual([package_path], updated)
-            package = json.loads(package_path.read_text(encoding="utf-8"))
-            self.assertEqual(
-                "sdkwork-clawrouter-backend-sdk-domains-generated-typescript",
-                package["name"],
+            retired_roots = (
+                base / "generated" / "domains",
+                base / "src" / "domains",
+                base / "dist" / "domains-generated",
             )
-            self.assertEqual("module", package["type"])
-            self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["build"])
+            for retired_root in retired_roots:
+                retired_root.mkdir(parents=True)
 
-            second_run = self.standardizer(
-                root,
-                sdk_directories=("clawrouter-backend-sdk",),
-            ).repair_domain_transport_package_manifests()
-            self.assertEqual([], second_run)
+            updated = self.standardizer(root, ("clawrouter-backend-sdk",)).run()
+
+            self.assertTrue(set(retired_roots).issubset(set(updated)))
+            self.assertTrue(all(not retired_root.exists() for retired_root in retired_roots))
 
     def test_syncs_typescript_package_root_from_generated_server_openapi(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -359,9 +344,8 @@ export class HttpClient {
             self.assertEqual("./dist/index.d.ts", package["exports"]["."]["types"])
             self.assertEqual("./dist/index.js", package["exports"]["."]["import"])
             self.assertEqual("./dist/index.cjs", package["exports"]["."]["require"])
-            self.assertEqual("./dist/domains/index.d.ts", package["exports"]["./domains"]["types"])
-            self.assertEqual("./dist/domains/index.js", package["exports"]["./domains"]["import"])
-            self.assertEqual("./dist/domains/index.cjs", package["exports"]["./domains"]["require"])
+            self.assertFalse((base / "src" / "domains").exists())
+            self.assertNotIn("./domains", package["exports"])
             self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["build"])
             root_metadata = json.loads((base / "sdkwork-sdk.json").read_text(encoding="utf-8"))
             self.assertEqual("@sdkwork/clawrouter-backend-sdk", root_metadata["packageName"])
@@ -658,18 +642,9 @@ export class HttpClient {
                 )
                 self.assertIn("'tools.clawrouter_sdk_runtime_standardizer'", composed_sync_body)
                 self.assertNotIn("'--openapi-only'", composed_sync_body)
-                self.assertIn(
-                    "const domainTransportInputPath = `sdks/${sdkFamily}/openapi/${domainTransportName}.openapi.json`;",
-                    generate_script,
-                )
-                self.assertIn(
-                    "const domainTransportOutputPath = `sdks/${sdkFamily}/${sdkFamily}-typescript/generated/domains/server-openapi`;",
-                    generate_script,
-                )
-                self.assertIn("function runDomainTransportGeneration() {", generate_script)
-                self.assertIn("runDomainTransportGeneration();", generate_script)
-                self.assertIn("'-i', domainTransportInputPath", generate_script)
-                self.assertIn("'-o', domainTransportOutputPath", generate_script)
+                self.assertNotIn("domainTransport", generate_script)
+                self.assertNotIn("generated/domains", generate_script)
+                self.assertNotIn("domain-transport", generate_script)
 
     def test_verify_script_checks_family_generation_input_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

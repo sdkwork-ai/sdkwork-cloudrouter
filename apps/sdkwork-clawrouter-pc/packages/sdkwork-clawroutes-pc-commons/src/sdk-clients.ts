@@ -26,7 +26,7 @@ import {
   type SdkworkBackendConfig as SdkworkAgentBackendConfig,
 } from '@sdkwork/agents-backend-sdk';
 import {
-  SdkworkBackendClient as SdkworkPromptsBackendClient,
+  SdkworkPromptsBackendClient,
   createClient as createPromptsBackendSdkClient,
   type SdkworkBackendConfig as SdkworkPromptsBackendConfig,
 } from '@sdkwork/prompts-backend-sdk';
@@ -44,12 +44,18 @@ import {
   type SdkworkDriveAppClient,
 } from '@sdkwork/drive-app-sdk';
 import {
-  ClawRouterAppDomainTransportSdkClient as ClawRouterAppDomainTransportClient,
-  type ClawRouterAppDomainTransportSdkConfig as ClawRouterAppDomainTransportConfig,
-} from '@sdkwork/clawrouter-pc-core/sdk';
-import {
-  ClawRouterBackendDomainTransportSdkClient as ClawRouterBackendDomainTransportClient,
-  type ClawRouterBackendDomainTransportSdkConfig as ClawRouterBackendDomainTransportConfig,
+  SdkworkAccountAppSdkClient as AccountAppClient,
+  type SdkworkAccountAppSdkConfig as AccountAppConfig,
+  SdkworkCatalogAppSdkClient as CatalogAppClient,
+  type SdkworkCatalogAppSdkConfig as CatalogAppConfig,
+  SdkworkMembershipAppSdkClient as MembershipAppClient,
+  type SdkworkMembershipAppSdkConfig as MembershipAppConfig,
+  SdkworkOrderAppSdkClient as OrderAppClient,
+  type SdkworkOrderAppSdkConfig as OrderAppConfig,
+  SdkworkPaymentAppSdkClient as PaymentAppClient,
+  type SdkworkPaymentAppSdkConfig as PaymentAppConfig,
+  SdkworkPromotionAppSdkClient as PromotionAppClient,
+  type SdkworkPromotionAppSdkConfig as PromotionAppConfig,
 } from '@sdkwork/clawrouter-pc-core/sdk';
 import {
   clearStoredAppSessionToken,
@@ -59,7 +65,10 @@ import {
 import { resetClawRouterIamRuntime } from './iam-runtime.ts';
 import { buildPortalAuthLoginRedirect, isProtectedPortalPath } from './portal-auth.ts';
 import { normalizeGeneratedSdkBaseUrl } from './sdk-base-url.ts';
-import { attachSdkworkSdkSessionAuthBoundary } from '@sdkwork/auth-runtime-pc-react/attachSdkworkSdkSessionAuthBoundary';
+import {
+  attachSdkworkSdkSessionAuthBoundary,
+  type SdkworkSdkClientWithHttp,
+} from '@sdkwork/auth-runtime-pc-react/attachSdkworkSdkSessionAuthBoundary';
 import {
   handleSdkworkSessionAuthUnauthorizedError,
   resetSdkworkSessionAuthRedirectState,
@@ -398,20 +407,6 @@ export interface SdkworkDriveAppSdkClientOptions {
   timeout?: number;
 }
 
-export interface ClawRouterAppDomainTransportSdkClientOptions {
-  appBaseUrl?: string;
-  platform?: string;
-  tokenManager?: AuthTokenManager;
-  timeout?: number;
-}
-
-export interface ClawRouterBackendDomainTransportSdkClientOptions {
-  backendBaseUrl?: string;
-  platform?: string;
-  tokenManager?: AuthTokenManager;
-  timeout?: number;
-}
-
 export interface SdkworkAppbaseBackendSdkClientOptions {
   backendBaseUrl?: string;
   platform?: string;
@@ -426,100 +421,8 @@ export interface ClawRouterAiSdkClientOptions {
   timeout?: number;
 }
 
-export type ClawRouterAppSdkClient = SdkworkAppClient & AppDomainDependencyOverlay;
-type PublicSdkResource<TResource> = TResource extends (...args: infer TArgs) => infer TResult
-  ? (...args: TArgs) => TResult
-  : TResource extends object
-    ? { readonly [K in keyof TResource]: PublicSdkResource<TResource[K]> }
-    : TResource;
-type BackendDomainTransportPublicResource = PublicSdkResource<ClawRouterBackendDomainTransportClient>;
-type BackendDomainDependencyOverlay = BackendDomainTransportPublicResource & {
-  readonly orders: BackendDomainTransportPublicResource['orders'] & {
-    readonly list: BackendDomainTransportPublicResource['orders']['management']['list'];
-    readonly retrieve: BackendDomainTransportPublicResource['orders']['management']['retrieve'];
-    readonly events: BackendDomainTransportPublicResource['orders']['events'] & {
-      readonly list: BackendDomainTransportPublicResource['orders']['events']['management']['list'];
-    };
-  };
-  readonly refunds: BackendDomainTransportPublicResource['refunds'] & {
-    readonly list: BackendDomainTransportPublicResource['refunds']['management']['list'];
-    readonly retrieve: BackendDomainTransportPublicResource['refunds']['management']['retrieve'];
-  };
-  readonly fulfillments: BackendDomainTransportPublicResource['fulfillments'] & {
-    readonly list: BackendDomainTransportPublicResource['fulfillments']['management']['list'];
-    readonly retrieve: BackendDomainTransportPublicResource['fulfillments']['management']['retrieve'];
-  };
-  readonly invoices: BackendDomainTransportPublicResource['invoices'] & {
-    readonly list: BackendDomainTransportPublicResource['invoices']['management']['list'];
-    readonly retrieve: BackendDomainTransportPublicResource['invoices']['management']['retrieve'];
-  };
-  readonly inventory: BackendDomainTransportPublicResource['inventory'];
-  readonly memberships: BackendDomainTransportPublicResource['memberships'] & {
-    readonly plans: BackendDomainTransportPublicResource['memberships']['plans'] & {
-      readonly list: BackendDomainTransportPublicResource['memberships']['plans']['management']['list'];
-    };
-    readonly packages: BackendDomainTransportPublicResource['memberships']['packages'] & {
-      readonly list: BackendDomainTransportPublicResource['memberships']['packages']['management']['list'];
-    };
-    readonly packageGroups: BackendDomainTransportPublicResource['memberships']['packageGroups'] & {
-      readonly list: BackendDomainTransportPublicResource['memberships']['packageGroups']['management']['list'];
-    };
-  };
-  readonly payments: BackendDomainTransportPublicResource['payments'] & {
-    readonly methods: BackendDomainTransportPublicResource['payments']['methods'] & {
-      readonly list: BackendDomainTransportPublicResource['payments']['methods']['management']['list'];
-    };
-  };
-  readonly recharges: BackendDomainTransportPublicResource['recharges'] & {
-    readonly orders: BackendDomainTransportPublicResource['recharges']['orders'] & {
-      readonly list: BackendDomainTransportPublicResource['recharges']['orders']['management']['list'];
-      readonly retrieve: BackendDomainTransportPublicResource['recharges']['orders']['management']['retrieve'];
-    };
-    readonly packages: BackendDomainTransportPublicResource['recharges']['packages'] & {
-      readonly list: BackendDomainTransportPublicResource['recharges']['packages']['management']['list'];
-    };
-    readonly settings: BackendDomainTransportPublicResource['recharges']['settings'] & {
-      readonly retrieve: BackendDomainTransportPublicResource['recharges']['settings']['management']['retrieve'];
-    };
-  };
-  readonly wallet: BackendDomainTransportPublicResource['wallet'] & {
-    readonly accounts: BackendDomainTransportPublicResource['wallet']['accounts'] & {
-      readonly list: BackendDomainTransportPublicResource['wallet']['accounts']['management']['list'];
-    };
-    readonly ledgerEntries: BackendDomainTransportPublicResource['wallet']['ledgerEntries'] & {
-      readonly list: BackendDomainTransportPublicResource['wallet']['ledgerEntries']['management']['list'];
-    };
-    readonly exchangeRules: BackendDomainTransportPublicResource['wallet']['exchangeRules'] & {
-      readonly list: BackendDomainTransportPublicResource['wallet']['exchangeRules']['management']['list'];
-    };
-    readonly adjustments: BackendDomainTransportPublicResource['wallet']['adjustments'] & {
-      readonly create: BackendDomainTransportPublicResource['wallet']['adjustments']['management']['create'];
-    };
-  };
-};
-type AppDomainTransportPublicResource = PublicSdkResource<ClawRouterAppDomainTransportClient>;
-type AppDomainDependencyOverlay = Pick<
-  AppDomainTransportPublicResource,
-  | 'accounts'
-  | 'wallet'
-  | 'memberships'
-  | 'promotions'
-  | 'orders'
-  | 'payments'
-  | 'catalog'
-  | 'cart'
-  | 'checkout'
-  | 'billing'
-  | 'recharges'
-  | 'addresses'
-  | 'invoices'
-  | 'refunds'
-  | 'fulfillments'
-  | 'shipments'
-  | 'afterSales'
-  | 'shops'
->;
-export type ClawRouterBackendSdkClient = SdkworkBackendClient & BackendDomainDependencyOverlay;
+export type ClawRouterAppSdkClient = SdkworkAppClient;
+export type ClawRouterBackendSdkClient = SdkworkBackendClient;
 export type SdkworkAppbaseAppSdkClient = SdkworkAppbaseAppClient;
 export type SdkworkAppbaseBackendSdkClient = SdkworkAppbaseBackendClient;
 export type SdkworkGenerationsAppSdkClient = SdkworkGenerationsAppClient;
@@ -528,8 +431,18 @@ export type SdkworkAgentAppSdkClient = SdkworkAgentAppClient;
 export type SdkworkAgentBackendSdkClient = SdkworkAgentBackendClient;
 export type SdkworkPromptsBackendSdkClient = SdkworkPromptsBackendClient;
 export type SdkworkDriveAppSdkClient = SdkworkDriveAppClient;
-export type ClawRouterAppDomainTransportSdkClient = ClawRouterAppDomainTransportClient;
-export type ClawRouterBackendDomainTransportSdkClient = ClawRouterBackendDomainTransportClient;
+export type SdkworkAccountAppSdkClient = AccountAppClient;
+export type SdkworkCatalogAppSdkClient = CatalogAppClient;
+export type SdkworkMembershipAppSdkClient = MembershipAppClient;
+export type SdkworkOrderAppSdkClient = OrderAppClient;
+export type SdkworkPaymentAppSdkClient = PaymentAppClient;
+export type SdkworkPromotionAppSdkClient = PromotionAppClient;
+export type SdkworkAccountAppSdkClientOptions = ClawRouterAppSdkClientOptions;
+export type SdkworkCatalogAppSdkClientOptions = ClawRouterAppSdkClientOptions;
+export type SdkworkMembershipAppSdkClientOptions = ClawRouterAppSdkClientOptions;
+export type SdkworkOrderAppSdkClientOptions = ClawRouterAppSdkClientOptions;
+export type SdkworkPaymentAppSdkClientOptions = ClawRouterAppSdkClientOptions;
+export type SdkworkPromotionAppSdkClientOptions = ClawRouterAppSdkClientOptions;
 export type ClawRouterAiSdkClient = SdkworkAiClient;
 
 type ClawRouterSdkRuntimeHost = typeof globalThis & {
@@ -542,17 +455,13 @@ type ClawRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_AGENT_APP_SDK_CLIENT__?: SdkworkAgentAppSdkClient | null;
   __SDKWORK_AGENT_BACKEND_SDK_CLIENT__?: SdkworkAgentBackendSdkClient | null;
   __SDKWORK_DRIVE_APP_SDK_CLIENT__?: SdkworkDriveAppSdkClient | null;
-  __SDKWORK_CLAWROUTER_APP_DOMAIN_TRANSPORT_SDK_CLIENT__?: ClawRouterAppDomainTransportSdkClient | null;
-  __SDKWORK_CLAWROUTER_BACKEND_DOMAIN_TRANSPORT_SDK_CLIENT__?: ClawRouterBackendDomainTransportSdkClient | null;
+  __SDKWORK_ACCOUNT_APP_SDK_CLIENT__?: SdkworkAccountAppSdkClient | null;
+  __SDKWORK_CATALOG_APP_SDK_CLIENT__?: SdkworkCatalogAppSdkClient | null;
+  __SDKWORK_MEMBERSHIP_APP_SDK_CLIENT__?: SdkworkMembershipAppSdkClient | null;
+  __SDKWORK_ORDER_APP_SDK_CLIENT__?: SdkworkOrderAppSdkClient | null;
+  __SDKWORK_PAYMENT_APP_SDK_CLIENT__?: SdkworkPaymentAppSdkClient | null;
+  __SDKWORK_PROMOTION_APP_SDK_CLIENT__?: SdkworkPromotionAppSdkClient | null;
   __SDKWORK_CLAW_ROUTER_AI_SDK_CLIENT__?: ClawRouterAiSdkClient | null;
-};
-
-const CLAW_ROUTER_SDK_SESSION_AUTH_BOUNDARY = '__sdkworkClawRouterSdkSessionAuthBoundary';
-
-type ClawRouterSdkHttpRequestBoundary = {
-  request<T>(path: string, options?: unknown): Promise<T>;
-  streamJson?<T>(path: string, options?: unknown): AsyncIterable<T>;
-  [CLAW_ROUTER_SDK_SESSION_AUTH_BOUNDARY]?: true;
 };
 
 type ClawRouterSdkClientWithHttp = {
@@ -583,8 +492,12 @@ let agentBackendClient: SdkworkAgentBackendClient | null = null;
 let promptsBackendClient: SdkworkPromptsBackendClient | null = null;
 let driveAppClient: SdkworkDriveAppClient | null = null;
 let driveBackendClient: DriveBackendSdkClient | null = null;
-let appDomainTransportClient: ClawRouterAppDomainTransportClient | null = null;
-let backendDomainTransportClient: ClawRouterBackendDomainTransportSdkClient | null = null;
+let accountAppClient: AccountAppClient | null = null;
+let catalogAppClient: CatalogAppClient | null = null;
+let membershipAppClient: MembershipAppClient | null = null;
+let orderAppClient: OrderAppClient | null = null;
+let paymentAppClient: PaymentAppClient | null = null;
+let promotionAppClient: PromotionAppClient | null = null;
 let aiClient: SdkworkAiClient | null = null;
 let aiClientSessionKey: string | undefined;
 let clawRouterGlobalTokenManager: AuthTokenManager | null = null;
@@ -592,23 +505,11 @@ let clawRouterSessionAuthRedirectTarget: string | null = null;
 
 
 export function createClawRouterAppSdkClient(options: ClawRouterAppSdkClientOptions = {}): ClawRouterAppSdkClient {
-  const client = attachClawRouterSdkSessionAuthBoundary(new SdkworkAppClient(buildAppConfig(options)));
-  return attachAppDomainTransportDependency(client, createClawRouterAppDomainTransportSdkClient({
-    appBaseUrl: options.appBaseUrl,
-    platform: options.platform,
-    tokenManager: options.tokenManager,
-    timeout: options.timeout,
-  }));
+  return attachClawRouterSdkSessionAuthBoundary(new SdkworkAppClient(buildAppConfig(options)));
 }
 
 export function createClawRouterBackendSdkClient(options: ClawRouterBackendSdkClientOptions = {}): ClawRouterBackendSdkClient {
-  const client = attachClawRouterSdkSessionAuthBoundary(new SdkworkBackendClient(buildBackendConfig(options)));
-  return attachBackendDomainTransportDependency(client, createClawRouterBackendDomainTransportSdkClient({
-    backendBaseUrl: options.backendBaseUrl,
-    platform: options.platform,
-    tokenManager: options.tokenManager,
-    timeout: options.timeout,
-  }));
+  return attachClawRouterSdkSessionAuthBoundary(new SdkworkBackendClient(buildBackendConfig(options)));
 }
 
 export function createSdkworkAppbaseAppSdkClient(
@@ -659,18 +560,40 @@ export function createSdkworkDriveAppSdkClient(
   return attachClawRouterSdkSessionAuthBoundary(createDriveAppClient(buildDriveAppConfig(options)));
 }
 
-export function createClawRouterAppDomainTransportSdkClient(
-  options: ClawRouterAppDomainTransportSdkClientOptions = {},
-): ClawRouterAppDomainTransportClient {
-  return attachClawRouterSdkSessionAuthBoundary(new ClawRouterAppDomainTransportClient(buildAppDomainTransportConfig(options)));
+export function createSdkworkAccountAppSdkClient(
+  options: SdkworkAccountAppSdkClientOptions = {},
+): AccountAppClient {
+  return attachClawRouterSdkSessionAuthBoundary(new AccountAppClient(buildAccountAppConfig(options)));
 }
 
-export function createClawRouterBackendDomainTransportSdkClient(
-  options: ClawRouterBackendDomainTransportSdkClientOptions = {},
-): ClawRouterBackendDomainTransportSdkClient {
-  return attachClawRouterSdkSessionAuthBoundary(
-    new ClawRouterBackendDomainTransportClient(buildBackendDomainTransportConfig(options)),
-  );
+export function createSdkworkCatalogAppSdkClient(
+  options: SdkworkCatalogAppSdkClientOptions = {},
+): CatalogAppClient {
+  return attachClawRouterSdkSessionAuthBoundary(new CatalogAppClient(buildCatalogAppConfig(options)));
+}
+
+export function createSdkworkMembershipAppSdkClient(
+  options: SdkworkMembershipAppSdkClientOptions = {},
+): MembershipAppClient {
+  return attachClawRouterSdkSessionAuthBoundary(new MembershipAppClient(buildMembershipAppConfig(options)));
+}
+
+export function createSdkworkOrderAppSdkClient(
+  options: SdkworkOrderAppSdkClientOptions = {},
+): OrderAppClient {
+  return attachClawRouterSdkSessionAuthBoundary(new OrderAppClient(buildOrderAppConfig(options)));
+}
+
+export function createSdkworkPaymentAppSdkClient(
+  options: SdkworkPaymentAppSdkClientOptions = {},
+): PaymentAppClient {
+  return attachClawRouterSdkSessionAuthBoundary(new PaymentAppClient(buildPaymentAppConfig(options)));
+}
+
+export function createSdkworkPromotionAppSdkClient(
+  options: SdkworkPromotionAppSdkClientOptions = {},
+): PromotionAppClient {
+  return attachClawRouterSdkSessionAuthBoundary(new PromotionAppClient(buildPromotionAppConfig(options)));
 }
 
 export function createClawRouterAiSdkClient(options: ClawRouterAiSdkClientOptions = {}): SdkworkAiClient {
@@ -897,36 +820,70 @@ export function getSdkworkDriveAppSdkClient(
   return driveAppClient;
 }
 
-export function getClawRouterAppDomainTransportSdkClient(
-  options: ClawRouterAppDomainTransportSdkClientOptions = {},
-): ClawRouterAppDomainTransportClient {
+export function getSdkworkAccountAppSdkClient(
+  options: SdkworkAccountAppSdkClientOptions = {},
+): AccountAppClient {
   if (hasRuntimeOverrides(options)) {
-    return createClawRouterAppDomainTransportSdkClient(options);
+    return createSdkworkAccountAppSdkClient(options);
   }
-  const injected = readInjectedAppDomainTransportSdkClient();
+  const injected = readInjectedAccountAppSdkClient();
   if (injected) {
     return attachClawRouterSdkSessionAuthBoundary(injected);
   }
-  if (!appDomainTransportClient) {
-    appDomainTransportClient = createClawRouterAppDomainTransportSdkClient();
+  if (!accountAppClient) {
+    accountAppClient = createSdkworkAccountAppSdkClient();
   }
-  return appDomainTransportClient;
+  return accountAppClient;
 }
 
-export function getClawRouterBackendDomainTransportSdkClient(
-  options: ClawRouterBackendDomainTransportSdkClientOptions = {},
-): ClawRouterBackendDomainTransportSdkClient {
-  if (hasRuntimeOverrides(options)) {
-    return createClawRouterBackendDomainTransportSdkClient(options);
-  }
-  const injected = readInjectedBackendDomainTransportSdkClient();
-  if (injected) {
-    return attachClawRouterSdkSessionAuthBoundary(injected);
-  }
-  if (!backendDomainTransportClient) {
-    backendDomainTransportClient = createClawRouterBackendDomainTransportSdkClient();
-  }
-  return backendDomainTransportClient;
+export function getSdkworkCatalogAppSdkClient(
+  options: SdkworkCatalogAppSdkClientOptions = {},
+): CatalogAppClient {
+  if (hasRuntimeOverrides(options)) return createSdkworkCatalogAppSdkClient(options);
+  const injected = readInjectedCatalogAppSdkClient();
+  if (injected) return attachClawRouterSdkSessionAuthBoundary(injected);
+  if (!catalogAppClient) catalogAppClient = createSdkworkCatalogAppSdkClient();
+  return catalogAppClient;
+}
+
+export function getSdkworkMembershipAppSdkClient(
+  options: SdkworkMembershipAppSdkClientOptions = {},
+): MembershipAppClient {
+  if (hasRuntimeOverrides(options)) return createSdkworkMembershipAppSdkClient(options);
+  const injected = readInjectedMembershipAppSdkClient();
+  if (injected) return attachClawRouterSdkSessionAuthBoundary(injected);
+  if (!membershipAppClient) membershipAppClient = createSdkworkMembershipAppSdkClient();
+  return membershipAppClient;
+}
+
+export function getSdkworkOrderAppSdkClient(
+  options: SdkworkOrderAppSdkClientOptions = {},
+): OrderAppClient {
+  if (hasRuntimeOverrides(options)) return createSdkworkOrderAppSdkClient(options);
+  const injected = readInjectedOrderAppSdkClient();
+  if (injected) return attachClawRouterSdkSessionAuthBoundary(injected);
+  if (!orderAppClient) orderAppClient = createSdkworkOrderAppSdkClient();
+  return orderAppClient;
+}
+
+export function getSdkworkPaymentAppSdkClient(
+  options: SdkworkPaymentAppSdkClientOptions = {},
+): PaymentAppClient {
+  if (hasRuntimeOverrides(options)) return createSdkworkPaymentAppSdkClient(options);
+  const injected = readInjectedPaymentAppSdkClient();
+  if (injected) return attachClawRouterSdkSessionAuthBoundary(injected);
+  if (!paymentAppClient) paymentAppClient = createSdkworkPaymentAppSdkClient();
+  return paymentAppClient;
+}
+
+export function getSdkworkPromotionAppSdkClient(
+  options: SdkworkPromotionAppSdkClientOptions = {},
+): PromotionAppClient {
+  if (hasRuntimeOverrides(options)) return createSdkworkPromotionAppSdkClient(options);
+  const injected = readInjectedPromotionAppSdkClient();
+  if (injected) return attachClawRouterSdkSessionAuthBoundary(injected);
+  if (!promotionAppClient) promotionAppClient = createSdkworkPromotionAppSdkClient();
+  return promotionAppClient;
 }
 
 export function getClawRouterAiSdkClient(options: ClawRouterAiSdkClientOptions = {}): SdkworkAiClient {
@@ -963,8 +920,12 @@ function resetClawRouterSdkClientCaches(): void {
   promptsBackendClient = null;
   driveAppClient = null;
   driveBackendClient = null;
-  appDomainTransportClient = null;
-  backendDomainTransportClient = null;
+  accountAppClient = null;
+  catalogAppClient = null;
+  membershipAppClient = null;
+  orderAppClient = null;
+  paymentAppClient = null;
+  promotionAppClient = null;
   aiClient = null;
   aiClientSessionKey = undefined;
 }
@@ -1038,7 +999,10 @@ export function handleClawRouterSdkSessionAuthError(error: unknown): boolean {
 }
 
 function attachClawRouterSdkSessionAuthBoundary<TClient extends ClawRouterSdkClientWithHttp>(client: TClient): TClient {
-  return attachSdkworkSdkSessionAuthBoundary(client, resolveClawRouterSessionAuthHandlerOptions());
+  return attachSdkworkSdkSessionAuthBoundary(
+    client as unknown as SdkworkSdkClientWithHttp,
+    resolveClawRouterSessionAuthHandlerOptions(),
+  ) as unknown as TClient;
 }
 
 function readBrowserWindow(): BrowserWindowWithLocation | undefined {
@@ -1218,13 +1182,11 @@ function buildMemoryAppConfig(options: SdkworkMemoryAppSdkClientOptions): Sdkwor
 
 function buildAgentAppConfig(options: SdkworkAgentAppSdkClientOptions): SdkworkAgentAppConfig {
   return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
+    baseUrl:
       options.appBaseUrl
       ?? readClawRouterRuntimeEnv('VITE_SDKWORK_AGENT_APP_API_BASE_URL')
       ?? readClawRouterRuntimeEnv('VITE_CLAWROUTER_APP_API_BASE_URL')
       ?? APP_API_PREFIX,
-      APP_API_PREFIX,
-    ),
     platform: options.platform ?? 'web',
     tokenManager: resolveClawRouterSdkTokenManager(options.tokenManager),
     timeout: options.timeout,
@@ -1292,44 +1254,47 @@ function buildDriveBackendConfig(options: DriveBackendSdkClientOptions): Sdkwork
   };
 }
 
-function buildAppDomainTransportConfig(options: ClawRouterAppDomainTransportSdkClientOptions): ClawRouterAppDomainTransportConfig {
+function buildAccountAppConfig(options: SdkworkAccountAppSdkClientOptions): AccountAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL');
+}
+
+function buildCatalogAppConfig(options: SdkworkCatalogAppSdkClientOptions): CatalogAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_CATALOG_APP_API_BASE_URL');
+}
+
+function buildMembershipAppConfig(options: SdkworkMembershipAppSdkClientOptions): MembershipAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_MEMBERSHIP_APP_API_BASE_URL');
+}
+
+function buildOrderAppConfig(options: SdkworkOrderAppSdkClientOptions): OrderAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_ORDER_APP_API_BASE_URL');
+}
+
+function buildPaymentAppConfig(options: SdkworkPaymentAppSdkClientOptions): PaymentAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_PAYMENT_APP_API_BASE_URL');
+}
+
+function buildPromotionAppConfig(options: SdkworkPromotionAppSdkClientOptions): PromotionAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_PROMOTION_APP_API_BASE_URL');
+}
+
+function buildDependencyAppConfig(
+  options: ClawRouterAppSdkClientOptions,
+  baseUrlEnvName: string,
+): SdkworkAppConfig {
   return {
     baseUrl: normalizeGeneratedSdkBaseUrl(
-      resolveRequiredAppDomainTransportBaseUrl(options),
+      options.appBaseUrl
+        ?? readClawRouterRuntimeEnv(baseUrlEnvName)
+        ?? readClawRouterRuntimeEnv('VITE_CLAWROUTER_APP_API_BASE_URL')
+        ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
+        ?? APP_API_PREFIX,
       APP_API_PREFIX,
     ),
     platform: options.platform ?? 'web',
     tokenManager: resolveClawRouterSdkTokenManager(options.tokenManager),
     timeout: options.timeout,
   };
-}
-
-export function resolveRequiredAppDomainTransportBaseUrl(options: ClawRouterAppDomainTransportSdkClientOptions): string {
-  return options.appBaseUrl
-    ?? readClawRouterRuntimeEnv('VITE_CLAWROUTER_APP_API_BASE_URL')
-    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
-    ?? APP_API_PREFIX;
-}
-
-function buildBackendDomainTransportConfig(
-  options: ClawRouterBackendDomainTransportSdkClientOptions,
-): ClawRouterBackendDomainTransportConfig {
-  return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
-      resolveRequiredBackendDomainTransportBaseUrl(options),
-      BACKEND_API_PREFIX,
-    ),
-    platform: options.platform ?? 'web-admin',
-    tokenManager: resolveClawRouterSdkTokenManager(options.tokenManager),
-    timeout: options.timeout,
-  };
-}
-
-export function resolveRequiredBackendDomainTransportBaseUrl(options: ClawRouterBackendDomainTransportSdkClientOptions): string {
-  return options.backendBaseUrl
-    ?? readClawRouterRuntimeEnv('VITE_CLAWROUTER_BACKEND_API_BASE_URL')
-    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', BACKEND_API_PREFIX)
-    ?? BACKEND_API_PREFIX;
 }
 
 function deriveDependencySurfaceBaseUrl(rootEnvName: string, apiPrefix: string): string | undefined {
@@ -1364,8 +1329,12 @@ function hasRuntimeOverrides(
     | SdkworkAgentAppSdkClientOptions
     | SdkworkAgentBackendSdkClientOptions
     | SdkworkDriveAppSdkClientOptions
-    | ClawRouterAppDomainTransportSdkClientOptions
-    | ClawRouterBackendDomainTransportSdkClientOptions
+    | SdkworkAccountAppSdkClientOptions
+    | SdkworkCatalogAppSdkClientOptions
+    | SdkworkMembershipAppSdkClientOptions
+    | SdkworkOrderAppSdkClientOptions
+    | SdkworkPaymentAppSdkClientOptions
+    | SdkworkPromotionAppSdkClientOptions
     | ClawRouterAiSdkClientOptions,
 ): boolean {
   return Object.keys(options).length > 0;
@@ -1461,193 +1430,32 @@ function readInjectedDriveAppSdkClient(): SdkworkDriveAppSdkClient | undefined {
   return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_DRIVE_APP_SDK_CLIENT__ ?? undefined;
 }
 
-function readInjectedAppDomainTransportSdkClient(): ClawRouterAppDomainTransportSdkClient | undefined {
-  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_CLAWROUTER_APP_DOMAIN_TRANSPORT_SDK_CLIENT__ ?? undefined;
+function readInjectedAccountAppSdkClient(): SdkworkAccountAppSdkClient | undefined {
+  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_ACCOUNT_APP_SDK_CLIENT__ ?? undefined;
 }
 
-function readInjectedBackendDomainTransportSdkClient(): ClawRouterBackendDomainTransportSdkClient | undefined {
-  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_CLAWROUTER_BACKEND_DOMAIN_TRANSPORT_SDK_CLIENT__ ?? undefined;
+function readInjectedCatalogAppSdkClient(): SdkworkCatalogAppSdkClient | undefined {
+  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_CATALOG_APP_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedMembershipAppSdkClient(): SdkworkMembershipAppSdkClient | undefined {
+  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_MEMBERSHIP_APP_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedOrderAppSdkClient(): SdkworkOrderAppSdkClient | undefined {
+  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_ORDER_APP_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedPaymentAppSdkClient(): SdkworkPaymentAppSdkClient | undefined {
+  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_PAYMENT_APP_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedPromotionAppSdkClient(): SdkworkPromotionAppSdkClient | undefined {
+  return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_PROMOTION_APP_SDK_CLIENT__ ?? undefined;
 }
 
 function readInjectedAiSdkClient(): ClawRouterAiSdkClient | undefined {
   return (globalThis as ClawRouterSdkRuntimeHost).__SDKWORK_CLAW_ROUTER_AI_SDK_CLIENT__ ?? undefined;
-}
-
-const BACKEND_DOMAIN_TRANSPORT_KEYS = [
-  'wallet',
-  'memberships',
-  'promotions',
-  'catalog',
-  'orders',
-  'payments',
-  'inventory',
-  'recharges',
-  'refunds',
-  'fulfillments',
-  'shipments',
-  'afterSales',
-  'invoices',
-  'commerceReports',
-  'reports',
-  'audit',
-  'shops',
-  'entitlements',
-] as const;
-
-const APP_DOMAIN_TRANSPORT_KEYS = [
-  'accounts',
-  'wallet',
-  'memberships',
-  'promotions',
-  'orders',
-  'payments',
-  'catalog',
-  'cart',
-  'checkout',
-  'billing',
-  'recharges',
-  'addresses',
-  'invoices',
-  'refunds',
-  'fulfillments',
-  'shipments',
-  'afterSales',
-  'shops',
-] as const;
-
-function attachAppDomainTransportDependency(
-  client: SdkworkAppClient,
-  transportClient: ClawRouterAppDomainTransportClient,
-): ClawRouterAppSdkClient {
-  const facade = createAppDomainCanonicalFacade(transportClient);
-  let composed = client as ClawRouterAppSdkClient;
-  for (const key of APP_DOMAIN_TRANSPORT_KEYS) {
-    const value = (facade as Record<string, unknown>)[key];
-    if (value !== undefined) {
-      composed = attachReadOnlyProperty(composed, key, value) as ClawRouterAppSdkClient;
-    }
-  }
-  return composed;
-}
-
-function attachBackendDomainTransportDependency(
-  client: SdkworkBackendClient,
-  transportClient: ClawRouterBackendDomainTransportSdkClient,
-): ClawRouterBackendSdkClient {
-  const facade = createBackendDomainCanonicalFacade(
-    transportClient as unknown as BackendDomainDependencyOverlay,
-  );
-  let composed = client as ClawRouterBackendSdkClient;
-  for (const key of BACKEND_DOMAIN_TRANSPORT_KEYS) {
-    const value = (facade as Record<string, unknown>)[key];
-    if (value !== undefined) {
-      composed = attachReadOnlyProperty(composed, key, value) as ClawRouterBackendSdkClient;
-    }
-  }
-  return composed;
-}
-
-function createAppDomainCanonicalFacade(client: ClawRouterAppDomainTransportClient): ClawRouterAppDomainTransportClient {
-  const facade = client as ClawRouterAppDomainTransportClient & Record<string, unknown>;
-  const invoices = readDomainObject(facade.invoices);
-  if (invoices) {
-    attachNestedCreateAlias(invoices, 'submit', 'submissions');
-    attachNestedCreateAlias(invoices, 'cancel', 'cancellations');
-  }
-  return client;
-}
-
-function createBackendDomainCanonicalFacade(domainTransport: BackendDomainDependencyOverlay): BackendDomainDependencyOverlay {
-  const facade = domainTransport as BackendDomainDependencyOverlay & Record<string, unknown>;
-  attachManagementAlias(facade.catalog.spus, 'list');
-  attachManagementAlias(facade.orders, 'list');
-  attachManagementAlias(facade.orders, 'retrieve');
-  attachManagementAlias(facade.orders.events, 'list');
-  attachManagementAlias(facade.refunds, 'list');
-  attachManagementAlias(facade.refunds, 'retrieve');
-  attachManagementAlias(facade.fulfillments, 'list');
-  attachManagementAlias(facade.fulfillments, 'retrieve');
-  attachManagementAlias(facade.invoices, 'list');
-  attachManagementAlias(facade.invoices, 'retrieve');
-  attachManagementAlias(facade.payments.methods, 'list');
-  attachManagementAlias(facade.memberships.plans, 'list');
-  attachManagementAlias(facade.memberships.packages, 'list');
-  attachManagementAlias(facade.memberships.packageGroups, 'list');
-  attachManagementAlias(facade.recharges.packages, 'list');
-  attachManagementAlias(facade.recharges.settings, 'retrieve');
-  attachManagementAlias(facade.recharges.orders, 'list');
-  attachManagementAlias(facade.recharges.orders, 'retrieve');
-  attachManagementAlias(facade.wallet.accounts, 'list');
-  attachManagementAlias(facade.wallet.ledgerEntries, 'list');
-  attachManagementAlias(facade.wallet.exchangeRules, 'list');
-  attachManagementAlias(facade.wallet.adjustments, 'create');
-  const inventory = readDomainObject(facade.inventory);
-  if (inventory && !readDomainResourceProperty(inventory, 'ledgerEntries')) {
-    const movements = readDomainResourceProperty(inventory, 'movements');
-    if (movements) {
-      attachReadOnlyProperty(inventory, 'ledgerEntries', movements);
-    }
-  }
-  return domainTransport;
-}
-
-function readDomainObject(value: unknown): Record<string, unknown> | undefined {
-  return isDomainObjectResource(value) ? value as Record<string, unknown> : undefined;
-}
-
-function attachManagementAlias(resource: unknown, methodName: string): void {
-  if (!isDomainObjectResource(resource)) {
-    return;
-  }
-  const record = resource as Record<string, unknown>;
-  if (typeof record[methodName] === 'function') {
-    return;
-  }
-  const management = record.management;
-  if (!isDomainObjectResource(management)) {
-    return;
-  }
-  const method = (management as Record<string, unknown>)[methodName];
-  if (typeof method !== 'function') {
-    return;
-  }
-  attachReadOnlyProperty(record, methodName, method.bind(management));
-}
-
-function attachNestedCreateAlias(resource: Record<string, unknown>, methodName: string, nestedResourceName: string): void {
-  if (typeof resource[methodName] === 'function') {
-    return;
-  }
-  const nestedResource = resource[nestedResourceName];
-  if (!isDomainObjectResource(nestedResource)) {
-    return;
-  }
-  const create = (nestedResource as Record<string, unknown>).create;
-  if (typeof create !== 'function') {
-    return;
-  }
-  attachReadOnlyProperty(resource, methodName, create.bind(nestedResource));
-}
-
-function attachReadOnlyProperty<TTarget extends object, TKey extends PropertyKey, TValue>(
-  target: TTarget,
-  key: TKey,
-  value: TValue,
-): TTarget & { readonly [K in TKey]: TValue } {
-  Object.defineProperty(target, key, {
-    configurable: true,
-    enumerable: true,
-    value,
-  });
-  return target as TTarget & { readonly [K in TKey]: TValue };
-}
-
-function isDomainObjectResource(value: unknown): value is object {
-  return Boolean(value) && typeof value === 'object';
-}
-
-function readDomainResourceProperty(value: object, property: PropertyKey): unknown {
-  return (value as Record<PropertyKey, unknown>)[property];
 }
 
 subscribeStoredAppSessionChange(() => {

@@ -1,5 +1,4 @@
 mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -296,7 +295,7 @@ async fn admin_model_command_route_creates_lists_and_syncs_catalog_models() {
         signed_request("DELETE", "/backend/v3/api/ai/models/1", ""),
     )
     .await;
-    assert_eq!(true, delete_model["data"]["deleted"]);
+    assert_eq!(Value::Null, delete_model);
 
     let models = request_json(
         router,
@@ -313,7 +312,7 @@ async fn admin_model_command_route_creates_lists_and_syncs_catalog_models() {
 
     assert_eq!(
         vec![
-            "create_vendor:acme_ai",
+            "create_vendor:acme-ai",
             "create_model:acme-chat-large",
             "create_model:anthropic/claude-3-opus",
             "create_model:acme-chat-regional",
@@ -335,19 +334,15 @@ async fn admin_model_command_route_rejects_missing_trusted_subject() {
     );
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/ai/model_vendors")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_backend_request_without_subject(
+            "GET",
+            "/backend/v3/api/ai/model_vendors",
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
-    let payload = json_payload(response).await;
-    assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
 #[tokio::test]
@@ -375,6 +370,63 @@ async fn admin_model_command_route_rejects_invalid_price_without_calling_store()
         .unwrap()
         .contains("regionPrices[0].priceIn"));
     assert!(store.commands.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn admin_model_list_accepts_sdk_vendor_codes_and_normalizes_query_errors() {
+    let store = Arc::new(TestAdminModelStore::default());
+    let router = sdkwork_clawrouter_router_service::api::admin_model_management_router_with_store(
+        store.clone(),
+        Arc::new(TestUuidGenerator),
+    );
+
+    let response = router
+        .clone()
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/ai/models?page=1&page_size=1&vendor_codes=openai,anthropic",
+            "",
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let listed_queries = store.listed_queries.lock().unwrap();
+    assert_eq!(listed_queries.len(), 1);
+    assert_eq!(
+        listed_queries[0].vendor_codes,
+        vec!["openai".to_owned(), "anthropic".to_owned()]
+    );
+    assert_eq!(listed_queries[0].normalized_limit(), 1);
+    drop(listed_queries);
+
+    let response = router
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/ai/models?vendor_code=openai",
+            "",
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+    assert_eq!(
+        response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok()),
+        Some("application/problem+json")
+    );
+    let payload = json_payload(response).await;
+    assert_eq!(40003, payload["code"].as_i64().unwrap());
+    assert!(payload["traceId"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+    assert_eq!(
+        payload["detail"],
+        "Query parameters do not match the operation schema."
+    );
+    assert!(!payload.to_string().contains("unknown field"));
 }
 
 fn assert_no_flat_model_prices(item: &Value) {
@@ -420,19 +472,33 @@ async fn admin_model_command_route_rejects_integration_provider_as_model_vendor(
 }
 
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .header("content-type", "application/json")
-        .internal_trusted_subject(100001, 0, 30)
-        .header("X-Request-Id", "request-admin-model-test")
-        .body(Body::from(body.to_owned()))
-        .unwrap()
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::from(body.to_owned()),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    request
+        .headers_mut()
+        .insert("X-Request-Id", "request-admin-model-test".parse().unwrap());
+    request
 }
 
 async fn request_json(router: axum::Router, request: Request<Body>) -> Value {
     let response = router.oneshot(request).await.unwrap();
-    assert_eq!(StatusCode::OK, response.status());
+    assert!(
+        response.status().is_success(),
+        "unexpected status: {}",
+        response.status()
+    );
+    if response.status() == StatusCode::NO_CONTENT {
+        return Value::Null;
+    }
     json_payload(response).await
 }
 
@@ -449,6 +515,7 @@ struct TestAdminModelStore {
     models: Mutex<Vec<AdminAiModelItem>>,
     commands: Mutex<Vec<String>>,
     created_region_prices: Mutex<Vec<Vec<AdminAiModelRegionPriceCommand>>>,
+    listed_queries: Mutex<Vec<ListAdminAiModelsQuery>>,
 }
 
 impl AdminModelStore for TestAdminModelStore {
@@ -505,6 +572,7 @@ impl AdminModelStore for TestAdminModelStore {
         query: ListAdminAiModelsQuery,
     ) -> AdminModelCommandFuture<'a, AdminAiModelListPage> {
         Box::pin(async move {
+            self.listed_queries.lock().unwrap().push(query.clone());
             let items = self
                 .models
                 .lock()

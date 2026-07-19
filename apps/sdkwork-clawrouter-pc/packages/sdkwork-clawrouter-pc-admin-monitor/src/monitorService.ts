@@ -4,7 +4,6 @@ import {
   optionalBoundedPositiveInteger as optionalQueryPageSize,
   optionalPositiveInteger as optionalQueryPage,
   optionalText as optionalQueryText,
-  pruneUndefinedQueryParams,
   readApiRecord,
   readRequiredApiItems,
   readRequiredNonNegativeNumber,
@@ -12,10 +11,7 @@ import {
   readString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
-import {
-  backendApiPath,
-  getClawRouterBackendSdkClient,
-} from '@sdkwork/clawrouter-pc-admin-core/sdk';
+import { getClawRouterBackendSdkClient } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 
 export interface SysNode {
   id: string;
@@ -65,8 +61,7 @@ const MAX_MONITOR_LIST_QUERY_TEXT_LENGTH = 128;
 export class MonitorService {
   static async fetchNodes(filters: MonitorListFilters = {}): Promise<MonitorListPage<SysNode>> {
     return fetchOffsetListPage(
-      '/system/monitor/nodes',
-      filters,
+      () => getClawRouterBackendSdkClient().system.monitor.nodes.list(toOffsetListSdkParams(filters)),
       normalizeNode,
       'Failed to fetch system nodes',
     );
@@ -74,8 +69,7 @@ export class MonitorService {
 
   static async fetchAlerts(filters: MonitorListFilters = {}): Promise<MonitorListPage<Alert>> {
     return fetchOffsetListPage(
-      '/system/monitor/alerts',
-      filters,
+      () => getClawRouterBackendSdkClient().system.monitor.alerts.list(toOffsetListSdkParams(filters)),
       normalizeAlert,
       'Failed to fetch alerts',
     );
@@ -83,8 +77,7 @@ export class MonitorService {
 
   static async fetchPerformanceData(filters: MonitorListFilters = {}): Promise<MonitorListPage<PerformanceDatum>> {
     return fetchOffsetListPage(
-      '/system/monitor/performance',
-      filters,
+      () => getClawRouterBackendSdkClient().system.monitor.performance.list(toOffsetListSdkParams(filters)),
       normalizePerformanceDatum,
       'Failed to fetch performance data',
     );
@@ -92,15 +85,11 @@ export class MonitorService {
 }
 
 async function fetchOffsetListPage<T>(
-  path: string,
-  filters: MonitorListFilters,
+  loadPage: () => Promise<unknown>,
   mapItem: (value: unknown) => T,
   errorMessage: string,
 ): Promise<MonitorListPage<T>> {
-  const result = await getClawRouterBackendSdkClient().http.get<unknown>(
-    backendApiPath(path),
-    toOffsetListHttpParams(filters),
-  );
+  const result = await loadPage();
   ensureSdkworkApiSuccess(result, errorMessage);
   const data = readApiRecord(result);
   return {
@@ -109,16 +98,20 @@ async function fetchOffsetListPage<T>(
   };
 }
 
-function toOffsetListHttpParams(filters: MonitorListFilters = {}): Record<string, string> | undefined {
+function toOffsetListSdkParams(filters: MonitorListFilters = {}): {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+} | undefined {
   const page = optionalQueryPage(filters.page, 'page');
   const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', MAX_MONITOR_LIST_PAGE_SIZE);
   const q = optionalQueryText(filters.q ?? filters.searchQuery, 'q', MAX_MONITOR_LIST_QUERY_TEXT_LENGTH);
-  const params = pruneUndefinedQueryParams({
+  const params = {
     page,
-    page_size: pageSize,
+    pageSize,
     q,
-  });
-  return Object.keys(params).length > 0 ? params : undefined;
+  };
+  return Object.values(params).some((value) => value !== undefined) ? params : undefined;
 }
 
 function readListPageTotal(data: ApiRecord, message: string): number {

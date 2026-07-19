@@ -16,7 +16,6 @@ except ImportError as exc:  # pragma: no cover
 else:
     _YAML_IMPORT_ERROR = None
 
-from tools.bootstrap_frontend_contract_from_route_manifest import bootstrap_contract
 from tools.relay_retired_admin_surfaces import (
     is_relay_retired_admin_operation_route,
     is_relay_retired_admin_portal_route,
@@ -97,6 +96,41 @@ FIELD_MODEL_SOURCE_ALIASES: dict[str, str] = {
     "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts": (
         "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts"
     ),
+}
+
+NON_API_ORCHESTRATION_OPERATIONS = frozenset(
+    {
+        (
+            "apps/sdkwork-clawrouter-pc/packages/"
+            "sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
+            "replaceAccountMappings",
+        ),
+    }
+)
+
+RETIRED_DEPENDENCY_API_OPERATIONS = frozenset(
+    {
+        ("app", "POST", "/app/v3/api/auth/verification_codes"),
+        ("app", "POST", "/app/v3/api/auth/verification_codes/verify"),
+    }
+)
+
+OPERATION_ID_OVERRIDES = {
+    (
+        "apps/sdkwork-clawrouter-pc/packages/"
+        "sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts",
+        "fetchClawRouterAuthSettings",
+    ): "auth.settings.retrieve",
+    (
+        "apps/sdkwork-clawrouter-pc/packages/"
+        "sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts",
+        "updateClawRouterAuthSettings",
+    ): "auth.settings.update",
+    (
+        "apps/sdkwork-clawrouter-pc/packages/"
+        "sdkwork-clawrouter-pc-console-settings/src/settingsService.ts",
+        "fetchSettings",
+    ): "users.settings.retrieve",
 }
 
 
@@ -180,16 +214,40 @@ def _contract_operation_key(entry: dict[str, Any]) -> str | None:
     return f"{source}#{operation}"
 
 
+def _is_retired_dependency_api_operation(entry: dict[str, Any]) -> bool:
+    api_surface = entry.get("api_surface")
+    api_method = entry.get("api_method")
+    api_path = entry.get("api_path")
+    return (
+        isinstance(api_surface, str)
+        and isinstance(api_method, str)
+        and isinstance(api_path, str)
+        and (api_surface, api_method.upper(), api_path) in RETIRED_DEPENDENCY_API_OPERATIONS
+    )
+
+
 def _merge_contract_operations(
     service_operations: list[dict[str, Any]],
-    bootstrap_operations: list[dict[str, Any]],
+    authority_operations: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     merged: dict[str, dict[str, Any]] = {}
-    for entry in bootstrap_operations:
+    for entry in authority_operations:
+        if is_route_manifest_bootstrap_source(str(entry.get("source", ""))):
+            continue
+        if _is_retired_dependency_api_operation(entry):
+            continue
+        route = entry.get("route")
+        if isinstance(route, str) and (
+            is_relay_retired_admin_operation_route(route)
+            or is_relay_retired_admin_portal_route(route)
+        ):
+            continue
         key = _contract_operation_key(entry)
         if key is not None:
             merged[key] = entry
     for entry in service_operations:
+        if _is_retired_dependency_api_operation(entry):
+            continue
         key = _contract_operation_key(entry)
         if key is not None:
             merged[key] = entry
@@ -346,6 +404,11 @@ def _operation_from_audit_entry(entry: dict[str, Any]) -> dict[str, Any] | None:
         or ["ops_audit_log"],
         "response_schema": {"name": "NoData", "properties": {}},
     }
+    operation_id_override = OPERATION_ID_OVERRIDES.get((source.replace("\\", "/"), operation))
+    if operation_id_override is not None:
+        contract_entry["operation_id"] = operation_id_override
+    if (source.replace("\\", "/"), operation) in NON_API_ORCHESTRATION_OPERATIONS:
+        contract_entry["openapi_exposed"] = False
     if api_method.upper() == "GET":
         contract_entry["query_parameters"] = []
     if api_method.upper() in {"POST", "PUT", "PATCH"}:
@@ -390,13 +453,19 @@ def hydrate_frontend_contract(root: Path) -> dict[str, Any]:
         if not isinstance(existing, dict):
             existing = {}
 
-    payload = bootstrap_contract(root)
-    if isinstance(existing.get("routes"), list):
-        payload["routes"] = _expand_route_tables(existing["routes"])
+    if not existing:
+        raise FileNotFoundError(
+            "frontend contract authority is missing; materialize authored contract fragments "
+            "before hydrating source audits"
+        )
+    payload = existing
+    schema = payload.get("schema")
+    if isinstance(schema, dict):
+        schema["source"] = "tools/hydrate_frontend_contract_relay_surfaces.py"
+    if isinstance(payload.get("routes"), list):
+        payload["routes"] = _expand_route_tables(payload["routes"])
     else:
         payload["routes"] = _expand_route_tables([])
-    if isinstance(existing.get("x_response_entities"), dict):
-        payload["x_response_entities"] = existing["x_response_entities"]
 
     route_tables = _route_tables(payload)
 

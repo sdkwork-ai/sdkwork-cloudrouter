@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
-export class RuntimeInvocationEventStreamsApi {
+export class RuntimeInvocationsEventsStreamApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
@@ -9,32 +9,34 @@ export class RuntimeInvocationEventStreamsApi {
   }
 
 
-/** List */
+/** Stream runtime events */
   async list(invocationId: string): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events/stream`));
   }
 }
 
-export class RuntimeInvocationEventsApi {
+export class RuntimeInvocationsEventsApi {
   private client: HttpClient;
+  public readonly stream: RuntimeInvocationsEventsStreamApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.stream = new RuntimeInvocationsEventsStreamApi(client);
   }
 
 
-/** List */
+/** List runtime events */
   async list(invocationId: string): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`));
   }
 
-/** Create */
+/** Create runtime event */
   async create(invocationId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`));
   }
 }
 
-export class RuntimeArtifactsApi {
+export class RuntimeInvocationsArtifactsApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
@@ -42,12 +44,12 @@ export class RuntimeArtifactsApi {
   }
 
 
-/** List */
+/** List runtime artifacts */
   async list(invocationId: string): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`));
   }
 
-/** Create */
+/** Create runtime artifact */
   async create(invocationId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`));
   }
@@ -55,28 +57,32 @@ export class RuntimeArtifactsApi {
 
 export class RuntimeInvocationsApi {
   private client: HttpClient;
+  public readonly artifacts: RuntimeInvocationsArtifactsApi;
+  public readonly events: RuntimeInvocationsEventsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.artifacts = new RuntimeInvocationsArtifactsApi(client);
+    this.events = new RuntimeInvocationsEventsApi(client);
   }
 
 
-/** List */
+/** List runtime invocations */
   async list(): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations`));
   }
 
-/** Create */
+/** Create runtime invocation */
   async create(): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations`));
   }
 
-/** Retrieve */
+/** Retrieve runtime invocation */
   async retrieve(invocationId: string): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`));
   }
 
-/** Complete */
+/** Complete runtime invocation */
   async complete(invocationId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/complete`));
   }
@@ -85,16 +91,10 @@ export class RuntimeInvocationsApi {
 export class RuntimeApi {
   private client: HttpClient;
   public readonly invocations: RuntimeInvocationsApi;
-  public readonly artifacts: RuntimeArtifactsApi;
-  public readonly invocationEvents: RuntimeInvocationEventsApi;
-  public readonly invocationEventStreams: RuntimeInvocationEventStreamsApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.invocations = new RuntimeInvocationsApi(client);
-    this.artifacts = new RuntimeArtifactsApi(client);
-    this.invocationEvents = new RuntimeInvocationEventsApi(client);
-    this.invocationEventStreams = new RuntimeInvocationEventStreamsApi(client);
   }
 
 }

@@ -12,6 +12,7 @@ path = "src/main.rs"
 anyhow.workspace = true
 sdkwork-claw-config.workspace = true
 sdkwork-routes-clawrouter-app-api.workspace = true
+sdkwork-database-sqlx.workspace = true
 tokio.workspace = true
 
 [dev-dependencies]

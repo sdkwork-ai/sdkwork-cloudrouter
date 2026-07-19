@@ -1,6 +1,6 @@
 pub mod base;
-pub mod paths;
 pub mod files_anthropic;
+pub mod paths;
 pub use files_anthropic::FilesAnthropicApi;
 pub mod chat_anthropic;
 pub use chat_anthropic::ChatAnthropicApi;

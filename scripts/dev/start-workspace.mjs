@@ -354,6 +354,17 @@ export function clawRouterDevCargoTargetDir(workspaceRoot) {
     ?? path.join(workspaceRoot, 'target', 'dev-workspace');
 }
 
+export function clawRouterDevInstallerBinaryPath(
+  workspaceRoot,
+  platform = process.platform,
+) {
+  return path.join(
+    clawRouterDevCargoTargetDir(workspaceRoot),
+    'debug',
+    platform === 'win32' ? 'clawrouterctl.exe' : 'clawrouterctl',
+  );
+}
+
 function clawRouterDevCargoEnv(workspaceRoot, baseEnv = process.env) {
   return {
     ...baseEnv,
@@ -750,6 +761,10 @@ function serviceEnv(settings, bindEnvName, bindValue, {
       process.env.SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET ?? DEFAULT_DEV_SECRET,
     SDKWORK_CLAW_INSTALL_ENVIRONMENT:
       process.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT ?? 'development',
+    SDKWORK_ENVIRONMENT:
+      process.env.SDKWORK_ENVIRONMENT
+      ?? process.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT
+      ?? 'development',
     SDKWORK_CLAW_INSTALL_SEED_PROFILE:
       process.env.SDKWORK_CLAW_INSTALL_SEED_PROFILE ?? 'commercial',
   };
@@ -904,8 +919,8 @@ export function buildWorkspaceCommandPlan(settings, {
   const blockingRuntimeSteps = [
     {
       name: 'installer',
-      command: cargoCommand(platform),
-      args: cargoRunPackageArgs('sdkwork-claw-installer', ['ensure']),
+      command: clawRouterDevInstallerBinaryPath(workspaceRoot, platform),
+      args: ['ensure'],
       cwd: workspaceRoot,
       env: clawRouterDevCargoEnv(
         workspaceRoot,
@@ -919,13 +934,13 @@ export function buildWorkspaceCommandPlan(settings, {
     },
     {
       name: 'model-catalog-refresh',
-      command: cargoCommand(platform),
-      args: cargoRunPackageArgs('sdkwork-claw-installer', [
+      command: clawRouterDevInstallerBinaryPath(workspaceRoot, platform),
+      args: [
         'refresh-catalog',
         '--catalog-root',
         settings.modelsCatalogRoot,
         '--force',
-      ]),
+      ],
       cwd: workspaceRoot,
       env: clawRouterDevCargoEnv(
         workspaceRoot,

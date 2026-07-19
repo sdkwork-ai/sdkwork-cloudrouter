@@ -9,12 +9,12 @@ export class IamUsersSettingsApi {
   }
 
 
-/** Retrieve */
+/** List settings */
   async retrieve(): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/iam/users/settings`));
   }
 
-/** Update */
+/** Update settings */
   async update(): Promise<Record<string, never>> {
     return this.client.put<Record<string, never>>(appApiPath(`/iam/users/settings`));
   }
@@ -39,22 +39,22 @@ export class IamApiKeysApi {
   }
 
 
-/** List */
+/** List keys */
   async list(): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/iam/api_keys`));
   }
 
-/** Create */
+/** Create key */
   async create(): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/iam/api_keys`));
   }
 
-/** Delete */
+/** Delete key */
   async delete(apiKeyId: string): Promise<void> {
     return this.client.delete<void>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`));
   }
 
-/** Update */
+/** Update key */
   async update(apiKeyId: string): Promise<Record<string, never>> {
     return this.client.patch<Record<string, never>>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`));
   }

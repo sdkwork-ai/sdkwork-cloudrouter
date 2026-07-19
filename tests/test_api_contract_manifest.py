@@ -978,8 +978,8 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
                       properties: {}
                   - route: /admin/ai/route_explain
                     source: apps/sdkwork-clawrouter-pc/packages/demo/src/routeExplainService.ts
-                    operation: explain
-                    operation_id: routeExplain.create
+                    operation: fetchRuntimeRouteExplain
+                    operation_id: routeExplain.list
                     kind: action
                     api_surface: backend
                     api_method: POST
@@ -1041,6 +1041,30 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
                 "sites.testConnection",
                 operations_by_route["/admin/sites/{siteId}/test_connection"]["operation_id"],
             )
+
+    def test_normalizes_stale_by_id_resource_prefix_from_route_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            contract = self.write_contract(
+                root,
+                """
+                frontend_operations:
+                  - route: /admin/group
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/groupService.ts
+                    operation: deleteGroup
+                    operation_id: ai.channel.groups.byId.delete
+                    kind: delete
+                    api_surface: backend
+                    api_method: DELETE
+                    api_path: /backend/v3/api/ai/channel_groups/{channelGroupId}
+                    read_sources: [ai_channel_group]
+                    write_tables: [ai_channel_group]
+                """,
+            )
+
+            manifest = ApiContractManifestGenerator(root=root, contract_path=contract).generate()
+
+            self.assertEqual("channelGroups.delete", manifest["operations"][0]["operation_id"])
 
     def test_project_backend_read_operations_use_get_collection_paths(self) -> None:
         root = Path(__file__).resolve().parents[1]

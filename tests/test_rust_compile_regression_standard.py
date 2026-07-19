@@ -55,6 +55,41 @@ class RustCompileRegressionStandardTest(unittest.TestCase):
         self.assertIn("fn invalid_usage_logs_timestamp_error", source)
         self.assertNotIn("invalid_usage_logs_timestamp(field_name).unwrap_err()", source)
 
+    def test_invoice_routes_reuse_the_process_database_identity_without_iam_env_rewrites(self) -> None:
+        for crate in [
+            "sdkwork-routes-clawrouter-app-api",
+            "sdkwork-routes-clawrouter-backend-api",
+        ]:
+            crate_root = ROOT / "crates" / crate
+            source = (crate_root / "src" / "invoice_runtime.rs").read_text(encoding="utf-8")
+            cargo = (crate_root / "Cargo.toml").read_text(encoding="utf-8")
+
+            with self.subTest(crate=crate):
+                self.assertIn("bootstrap_invoice_database_from_env()", source)
+                self.assertNotIn("apply_unified_claw_postgres_env", source)
+                self.assertNotIn("sdkwork_iam_database_host", source)
+                self.assertNotIn("sdkwork-iam-database-host", cargo)
+                self.assertNotIn("sdkwork-iam-embedded-application-bootstrap", cargo)
+
+        runtime = (
+            ROOT / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs"
+        ).read_text(encoding="utf-8")
+        context_body = runtime.split("async fn all_in_one_runtime_context_from_env", 1)[1].split(
+            "let api_key_security_config", 1
+        )[0]
+        self.assertIn(
+            "materialize_federated_database_env_from_claw_config(&database_config)",
+            context_body,
+        )
+        iam_embedded = (
+            ROOT / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "iam_embedded.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("process_shared_database_pool()", iam_embedded)
+        self.assertIn("bootstrap_iam_database(process_pool)", iam_embedded)
+        self.assertIn("if sqlite_runtime", iam_embedded)
+        self.assertNotIn("bootstrap_iam_database_from_env", iam_embedded)
+        self.assertNotIn("apply_unified_claw_postgres_env", iam_embedded)
+
 
 if __name__ == "__main__":
     unittest.main()

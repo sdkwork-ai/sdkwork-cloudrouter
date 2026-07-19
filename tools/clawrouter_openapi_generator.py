@@ -42,6 +42,9 @@ class ClawRouterOpenApiGenerator:
         "app": "clawrouter-models-catalog-app-openapi.json",
         "backend": "clawrouter-models-catalog-backend-openapi.json",
     }
+    BACKEND_CONTRACT_OVERRIDES = Path(
+        "apis/backend-api/clawrouter/clawrouter-backend-contract-overrides.json"
+    )
     MODELS_CATALOG_SOURCE_MARKERS = (
         "../sdkwork-models/",
         "sdkwork-models-pc-admin-catalog",
@@ -60,54 +63,38 @@ class ClawRouterOpenApiGenerator:
         "/backend/v3/api/ai/resources",
         "/backend/v3/api/ai/resource_groups",
     )
-    DOMAIN_TRANSPORT_DOMAINS = frozenset({"commerce", "promotion"})
-    DOMAIN_TRANSPORT_OUTPUTS = {
-        "app": Path("sdks/clawrouter-app-sdk/openapi/clawrouter-app-domain-transport.openapi.json"),
-        "backend": Path("sdks/clawrouter-backend-sdk/openapi/clawrouter-backend-domain-transport.openapi.json"),
-    }
-    DOMAIN_TRANSPORT_INFO = {
-        "app": {
-            "title": "SDKWork Claw Router App Domain Transport API",
-            "description": (
-                "Claw Router app domain transport for wallet, membership, promotion, catalog, "
-                "order, and payment modules."
-            ),
-            "sdk_family": "clawrouter-app-domain-transport",
-            "api_authority": "sdkwork-clawrouter.app",
-            "audience": "App, desktop, mobile, H5, and user-facing clients.",
-        },
-        "backend": {
-            "title": "SDKWork Claw Router Backend Domain Transport API",
-            "description": (
-                "Claw Router backend domain transport for wallet, membership, promotion, catalog, "
-                "order, payment, inventory, and finance modules."
-            ),
-            "sdk_family": "clawrouter-backend-domain-transport",
-            "api_authority": "sdkwork-clawrouter.backend",
-            "audience": "Admin, management, and operator-facing clients.",
-        },
-    }
-    ORDER_APP_ASSEMBLY_MANIFEST = Path(
-        "../sdkwork-order/crates/sdkwork-order-gateway-assembly/assembly-manifest.json"
-    )
-    ORDER_APP_CONSUMER_COMPONENT = Path(
-        "crates/sdkwork-routes-clawrouter-app-api/specs/component.spec.json"
-    )
-    ORDER_APP_OPENAPI_AUTHORITY = Path(
-        "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
-    )
-    ORDER_APP_ROUTE_CRATE = "sdkwork-routes-order-app-api"
-    COMMERCE_DEPENDENCY_OPENAPI_CANDIDATES = {
+    DEPENDENCY_PATH_PREFIXES = {
         "app": (
-            "generated/openapi/commerce-app-api.openapi.json",
-            "apis/app-api/commerce/commerce-app-api.openapi.json",
+            "/app/v3/api/accounts",
+            "/app/v3/api/addresses",
+            "/app/v3/api/after_sales",
+            "/app/v3/api/ai/model_rankings",
+            "/app/v3/api/ai/model_vendors",
+            "/app/v3/api/ai/models",
+            "/app/v3/api/billing",
+            "/app/v3/api/cart",
+            "/app/v3/api/catalog",
+            "/app/v3/api/checkout",
+            "/app/v3/api/fulfillments",
+            "/app/v3/api/memberships",
+            "/app/v3/api/orders",
+            "/app/v3/api/payments",
+            "/app/v3/api/promotions",
+            "/app/v3/api/recharges",
+            "/app/v3/api/refunds",
+            "/app/v3/api/shipments",
+            "/app/v3/api/wallet",
+            "/app/v3/api/withdrawals",
         ),
         "backend": (
-            "generated/openapi/commerce-backend-api.openapi.json",
-            "apis/backend-api/commerce/commerce-backend-api.openapi.json",
+            "/backend/v3/api/ai/model_mappings",
+            "/backend/v3/api/ai/model_rankings",
+            "/backend/v3/api/ai/model_vendors",
+            "/backend/v3/api/ai/models",
+            "/backend/v3/api/ai/resource_groups",
+            "/backend/v3/api/ai/resources",
         ),
     }
-    COMMERCE_DEPENDENCY_DOMAINS = {"commerce", "promotion"}
     TITLES = {
         "app": "SDKWork Claw Router App API",
         "backend": "SDKWork Claw Router Backend API",
@@ -238,13 +225,208 @@ class ClawRouterOpenApiGenerator:
             "paths": paths,
             "components": components,
         }
-        spec = self._merge_commerce_dependency_surface_spec(
-            self._merge_models_catalog_surface_spec(spec, surface),
-            surface,
-        )
-        if surface == "app" and self._declares_order_assembly_app_dependency():
-            spec = self._exclude_order_assembly_app_operations(spec)
+        spec = self._merge_models_catalog_surface_spec(spec, surface)
+        spec = self._exclude_dependency_operations(spec, surface)
+        spec = self._apply_contract_overrides(spec, surface)
         return self._align_envelope_document(spec)
+
+    def _apply_contract_overrides(
+        self,
+        payload: dict[str, Any],
+        surface: str,
+    ) -> dict[str, Any]:
+        if surface != "backend":
+            return payload
+        override_path = self.root / self.BACKEND_CONTRACT_OVERRIDES
+        if not override_path.is_file():
+            return payload
+        overrides = json.loads(override_path.read_text(encoding="utf-8"))
+        if overrides.get("kind") != "sdkwork.openapi.contract-overrides":
+            raise ValueError(f"invalid backend contract override kind: {override_path}")
+        if overrides.get("owner") != "sdkwork-clawrouter" or overrides.get("surface") != "backend-api":
+            raise ValueError(f"invalid backend contract override ownership: {override_path}")
+
+        result = copy.deepcopy(payload)
+        components = result.setdefault("components", {})
+        schemas = components.setdefault("schemas", {})
+        override_schemas = overrides.get("schemas")
+        if not isinstance(override_schemas, dict):
+            raise ValueError(f"backend contract override schemas must be an object: {override_path}")
+        for schema_name, schema in override_schemas.items():
+            if isinstance(schema_name, str) and isinstance(schema, dict):
+                schemas.setdefault(schema_name, copy.deepcopy(schema))
+
+        operation_overrides = overrides.get("operations")
+        if not isinstance(operation_overrides, dict):
+            raise ValueError(f"backend contract override operations must be an object: {override_path}")
+        for operation_key, contract in operation_overrides.items():
+            if not isinstance(operation_key, str) or not isinstance(contract, dict):
+                raise ValueError(f"invalid backend operation override in {override_path}")
+            try:
+                method, api_path = operation_key.split(" ", 1)
+            except ValueError as exc:
+                raise ValueError(f"invalid backend operation override key: {operation_key}") from exc
+            operation = (result.get("paths") or {}).get(api_path, {}).get(method.lower())
+            if not isinstance(operation, dict):
+                raise ValueError(
+                    f"stale backend contract override operation is not exposed: {operation_key}"
+                )
+
+            request_schema = contract.get("requestSchema")
+            if isinstance(request_schema, str):
+                if request_schema not in schemas:
+                    raise ValueError(f"backend request override schema is missing: {request_schema}")
+                operation["requestBody"] = {
+                    "required": True,
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": f"#/components/schemas/{request_schema}"},
+                        }
+                    },
+                }
+
+            response_schema = contract.get("responseSchema")
+            if isinstance(response_schema, str):
+                if response_schema not in schemas:
+                    raise ValueError(f"backend response override schema is missing: {response_schema}")
+                self._apply_response_data_schema_override(
+                    operation=operation,
+                    schemas=schemas,
+                    response_schema=response_schema,
+                )
+
+        self._prune_unreachable_component_schemas(result.get("paths") or {}, components)
+        return result
+
+    def _apply_response_data_schema_override(
+        self,
+        *,
+        operation: dict[str, Any],
+        schemas: dict[str, Any],
+        response_schema: str,
+    ) -> None:
+        responses = operation.get("responses")
+        if not isinstance(responses, dict):
+            raise ValueError(f"operation has no responses for {response_schema}")
+        for status, response in responses.items():
+            if not str(status).startswith("2") or not isinstance(response, dict):
+                continue
+            response_document = (((response.get("content") or {}).get("application/json") or {}).get("schema"))
+            if not isinstance(response_document, dict):
+                continue
+            result_schema = self._local_schema_ref_name(response_document.get("$ref"))
+            if result_schema is None or not isinstance(schemas.get(result_schema), dict):
+                raise ValueError(f"operation response wrapper is missing for {response_schema}")
+            wrapper = schemas[result_schema]
+            for branch in wrapper.get("allOf", []):
+                if not isinstance(branch, dict):
+                    continue
+                properties = branch.get("properties")
+                if not isinstance(properties, dict) or "data" not in properties:
+                    continue
+                properties["data"] = {
+                    "allOf": [{"$ref": f"#/components/schemas/{response_schema}"}],
+                    "description": f"Typed {response_schema} response data.",
+                }
+                return
+        raise ValueError(f"operation success response data is missing for {response_schema}")
+
+    def _local_schema_ref_name(self, value: Any) -> str | None:
+        prefix = "#/components/schemas/"
+        return value[len(prefix):] if isinstance(value, str) and value.startswith(prefix) else None
+
+    def _exclude_dependency_operations(self, payload: dict[str, Any], surface: str) -> dict[str, Any]:
+        if not self._has_declared_sdk_dependencies(surface):
+            return payload
+        filtered = copy.deepcopy(payload)
+        paths = filtered.get("paths")
+        if not isinstance(paths, dict):
+            return filtered
+        dependency_operations = self._dependency_operation_keys(surface)
+        prefixes = self.DEPENDENCY_PATH_PREFIXES[surface]
+        for api_path in list(paths):
+            path_item = paths.get(api_path)
+            if not isinstance(path_item, dict):
+                continue
+            for method in list(path_item):
+                if (api_path, method.lower()) in dependency_operations:
+                    del path_item[method]
+            if not any(
+                method.lower() in {"get", "post", "put", "patch", "delete"}
+                for method in path_item
+            ) or any(api_path == prefix or api_path.startswith(f"{prefix}/") for prefix in prefixes):
+                del paths[api_path]
+        components = filtered.get("components")
+        if isinstance(components, dict):
+            self._prune_unreachable_component_schemas(paths, components)
+        return filtered
+
+    def _dependency_operation_keys(self, surface: str) -> set[tuple[str, str]]:
+        manifest = self._surface_sdk_manifest(surface)
+        dependencies = manifest.get("sdkDependencies")
+        if not isinstance(dependencies, list):
+            return set()
+
+        operations: set[tuple[str, str]] = set()
+        suffix = f"-{surface}-sdk"
+        for dependency in dependencies:
+            if not isinstance(dependency, dict) or dependency.get("dependencyMode") != "consumer-sdk":
+                continue
+            workspace = self._string(dependency.get("workspace"))
+            if not workspace.endswith(suffix):
+                continue
+            owner_workspace = workspace[: -len(suffix)]
+            family_root = self.root.parent / owner_workspace / "sdks" / workspace
+            dependency_manifest_path = family_root / "sdk-manifest.json"
+            if not dependency_manifest_path.is_file():
+                continue
+            dependency_manifest = json.loads(
+                dependency_manifest_path.read_text(encoding="utf-8")
+            )
+            authority_spec = self._string(dependency_manifest.get("authoritySpec"))
+            generation_input = self._string(dependency_manifest.get("generationInputSpec"))
+            spec_path = family_root / (authority_spec or generation_input)
+            if not spec_path.is_file():
+                continue
+            spec = self._load_openapi_document(spec_path)
+            for api_path, path_item in (spec.get("paths") or {}).items():
+                if not isinstance(api_path, str) or not isinstance(path_item, dict):
+                    continue
+                for method, operation in path_item.items():
+                    if method.lower() in {"get", "post", "put", "patch", "delete"} and isinstance(
+                        operation, dict
+                    ):
+                        operations.add((api_path, method.lower()))
+        return operations
+
+    def _surface_sdk_manifest(self, surface: str) -> dict[str, Any]:
+        family = f"clawrouter-{surface}-sdk"
+        manifest_path = self.root / "sdks" / family / "sdk-manifest.json"
+        if not manifest_path.is_file():
+            return {}
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+
+    def _load_openapi_document(self, path: Path) -> dict[str, Any]:
+        content = path.read_text(encoding="utf-8")
+        if path.suffix.lower() == ".json":
+            payload = json.loads(content)
+        else:
+            if yaml is None:
+                raise RuntimeError("PyYAML is required") from _YAML_IMPORT_ERROR
+            payload = yaml.safe_load(content) or {}
+        if not isinstance(payload, dict):
+            raise ValueError(f"OpenAPI authority must be an object: {path}")
+        return payload
+
+    def _has_declared_sdk_dependencies(self, surface: str) -> bool:
+        manifest = self._surface_sdk_manifest(surface)
+        dependencies = manifest.get("sdkDependencies")
+        return isinstance(dependencies, list) and any(
+            isinstance(dependency, dict)
+            and dependency.get("dependencyMode") == "consumer-sdk"
+            for dependency in dependencies
+        )
 
     def _envelope_align_script_path(self) -> Path:
         return self.root.parent / "sdkwork-specs" / "tools" / "align-openapi-response-envelope.mjs"
@@ -309,80 +491,6 @@ class ClawRouterOpenApiGenerator:
             payload = self._align_envelope_document(payload)
         normalized = self._strip_standard_extensions(payload)
         return json.dumps(normalized, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-
-    def _commerce_dependency_root(self) -> Path:
-        # REMOVED: sdkwork-commerce repository dissolved - no commerce dependency root
-        return self.root / ".sdkwork" / "dependencies" / "commerce-migration-placeholder"
-
-    def _commerce_dependency_openapi_path(self, surface: str) -> Path | None:
-        commerce_root = self._commerce_dependency_root()
-        for relative in self.COMMERCE_DEPENDENCY_OPENAPI_CANDIDATES[surface]:
-            candidate = commerce_root / relative
-            if candidate.is_file():
-                return candidate
-        return None
-
-    def _load_commerce_dependency_spec(self, surface: str) -> dict[str, Any] | None:
-        path = self._commerce_dependency_openapi_path(surface)
-        if path is None:
-            return None
-        return json.loads(path.read_text(encoding="utf-8"))
-
-    def _is_commerce_dependency_operation(self, operation: dict[str, Any]) -> bool:
-        return self._string(operation.get("x-sdkwork-domain")) in self.COMMERCE_DEPENDENCY_DOMAINS
-
-    def _extract_commerce_dependency_surface_spec(self, surface: str) -> dict[str, Any]:
-        spec = self._load_commerce_dependency_spec(surface)
-        if spec is None:
-            return {"paths": {}, "components": {}, "tags": []}
-
-        paths: dict[str, Any] = {}
-        for api_path, path_item in spec.get("paths", {}).items():
-            if not isinstance(path_item, dict):
-                continue
-            filtered_methods: dict[str, Any] = {}
-            for method, operation in path_item.items():
-                if method not in {"get", "post", "patch", "delete", "put"}:
-                    continue
-                if isinstance(operation, dict) and self._is_commerce_dependency_operation(operation):
-                    filtered_methods[method] = copy.deepcopy(operation)
-            if filtered_methods:
-                paths[api_path] = filtered_methods
-
-        return {
-            "paths": paths,
-            "components": copy.deepcopy(spec.get("components", {})),
-            "tags": copy.deepcopy(spec.get("tags", [])),
-        }
-
-    def _merge_commerce_dependency_surface_spec(self, spec: dict[str, Any], surface: str) -> dict[str, Any]:
-        commerce = self._extract_commerce_dependency_surface_spec(surface)
-        merged = copy.deepcopy(spec)
-        merged_paths = dict(merged.get("paths", {}))
-        for api_path, methods in commerce.get("paths", {}).items():
-            merged_paths.setdefault(api_path, {}).update(methods)
-        merged["paths"] = merged_paths
-
-        merged_components = copy.deepcopy(merged.get("components", {}))
-        commerce_components = commerce.get("components", {})
-        for section, values in commerce_components.items():
-            if not isinstance(values, dict):
-                continue
-            merged_components.setdefault(section, {})
-            merged_components[section].update(values)
-        merged["components"] = merged_components
-
-        merged_tags = list(merged.get("tags", []))
-        seen = {self._string(tag.get("name")) for tag in merged_tags if isinstance(tag, dict)}
-        for tag in commerce.get("tags", []):
-            if not isinstance(tag, dict):
-                continue
-            name = self._string(tag.get("name"))
-            if name and name not in seen:
-                merged_tags.append(tag)
-                seen.add(name)
-        merged["tags"] = merged_tags
-        return merged
 
     def _merge_models_catalog_surface_spec(self, spec: dict[str, Any], surface: str) -> dict[str, Any]:
         catalog = self.generate_models_catalog(surface)
@@ -473,6 +581,7 @@ class ClawRouterOpenApiGenerator:
                 for operation in manifest.get("operations", [])
                 if isinstance(operation, dict)
                 and operation.get("api_surface") == surface
+                and operation.get("openapi_exposed", True) is not False
                 and self._is_models_catalog_operation(operation, surface)
             ]
         )
@@ -561,14 +670,6 @@ class ClawRouterOpenApiGenerator:
                 newline="\n",
             )
             outputs[f"models-catalog-{surface}"] = models_catalog_output
-            domain_transport_output = self.domain_transport_output_path(surface)
-            domain_transport_output.parent.mkdir(parents=True, exist_ok=True)
-            domain_transport_output.write_text(
-                self.render_domain_transport_json(surface),
-                encoding="utf-8",
-                newline="\n",
-            )
-            outputs[f"domain-transport-{surface}"] = domain_transport_output
         return outputs
 
     def check(self) -> ClawRouterOpenApiCheckResult:
@@ -584,11 +685,17 @@ class ClawRouterOpenApiGenerator:
                 if actual != expected:
                     messages.append(f"clawrouter {surface} OpenAPI spec is stale: {output}")
                 api_authority_output = self.api_authority_output_path(surface)
-                api_authority_expected = self.render_json(surface)
+                api_authority_expected = self._normalized_openapi_text(surface, from_disk=False)
                 if not api_authority_output.exists():
                     messages.append(f"clawrouter {surface} API authority OpenAPI spec is missing: {api_authority_output}")
                     continue
-                api_authority_actual = api_authority_output.read_text(encoding="utf-8")
+                api_authority_payload = json.loads(api_authority_output.read_text(encoding="utf-8"))
+                api_authority_actual = json.dumps(
+                    self._strip_standard_extensions(api_authority_payload),
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                ) + "\n"
                 if api_authority_actual != api_authority_expected:
                     messages.append(
                         f"clawrouter {surface} API authority OpenAPI spec is stale: {api_authority_output}"
@@ -604,18 +711,6 @@ class ClawRouterOpenApiGenerator:
                 if models_catalog_actual != models_catalog_expected:
                     messages.append(
                         f"clawrouter models catalog {surface} OpenAPI spec is stale: {models_catalog_output}"
-                    )
-                domain_transport_output = self.domain_transport_output_path(surface)
-                domain_transport_expected = self.render_domain_transport_json(surface)
-                if not domain_transport_output.exists():
-                    messages.append(
-                        f"clawrouter domain transport {surface} OpenAPI spec is missing: {domain_transport_output}"
-                    )
-                    continue
-                domain_transport_actual = domain_transport_output.read_text(encoding="utf-8")
-                if domain_transport_actual != domain_transport_expected:
-                    messages.append(
-                        f"clawrouter domain transport {surface} OpenAPI spec is stale: {domain_transport_output}"
                     )
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             messages.append(str(exc))
@@ -635,210 +730,6 @@ class ClawRouterOpenApiGenerator:
         if surface not in self.MODELS_CATALOG_OUTPUTS:
             raise ValueError(f"unsupported OpenAPI surface: {surface}")
         return self.output_dir / self.MODELS_CATALOG_OUTPUTS[surface]
-
-    def domain_transport_output_path(self, surface: str) -> Path:
-        if surface not in self.DOMAIN_TRANSPORT_OUTPUTS:
-            raise ValueError(f"unsupported OpenAPI surface: {surface}")
-        return self.root / self.DOMAIN_TRANSPORT_OUTPUTS[surface]
-
-    def render_domain_transport_json(self, surface: str) -> str:
-        source = self.generate(surface)
-        payload = self._extract_domain_transport_spec(source, surface)
-        if surface == "app" and self._declares_order_assembly_app_dependency():
-            payload = self._merge_order_assembly_app_transport(payload)
-        return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-
-    def _declares_order_assembly_app_dependency(self) -> bool:
-        component_path = self.root / self.ORDER_APP_CONSUMER_COMPONENT
-        if not component_path.is_file():
-            return False
-        component = json.loads(component_path.read_text(encoding="utf-8"))
-        contracts = component.get("contracts")
-        dependency_surfaces = (
-            contracts.get("dependencyApiSurfaces") if isinstance(contracts, dict) else None
-        )
-        return isinstance(dependency_surfaces, list) and any(
-            isinstance(dependency, dict)
-            and dependency.get("workspace") == "sdkwork-order"
-            and dependency.get("apiAuthority") == "sdkwork-order-app-api"
-            and dependency.get("surface") == "app-api"
-            and dependency.get("runtimeMode") == "embedded"
-            for dependency in dependency_surfaces
-        )
-
-    def _load_order_assembly_app_openapi(self) -> dict[str, Any]:
-        assembly_path = self.root / self.ORDER_APP_ASSEMBLY_MANIFEST
-        authority_path = self.root / self.ORDER_APP_OPENAPI_AUTHORITY
-        if not assembly_path.is_file():
-            raise FileNotFoundError(
-                f"sdkwork-order gateway assembly manifest is missing: {assembly_path}"
-            )
-        if not authority_path.is_file():
-            raise FileNotFoundError(
-                f"sdkwork-order app OpenAPI authority is missing: {authority_path}"
-            )
-
-        assembly = json.loads(assembly_path.read_text(encoding="utf-8"))
-        route_crates = assembly.get("routeCrates")
-        if not isinstance(route_crates, list) or not any(
-            isinstance(route_crate, dict)
-            and route_crate.get("packageName") == self.ORDER_APP_ROUTE_CRATE
-            and route_crate.get("surface") == "app-api"
-            and route_crate.get("hasGatewayMount") is True
-            for route_crate in route_crates
-        ):
-            raise ValueError(
-                "sdkwork-order gateway assembly does not declare the complete app-api route mount"
-            )
-
-        authority = json.loads(authority_path.read_text(encoding="utf-8"))
-        info = authority.get("info")
-        if not isinstance(info, dict) or info.get("x-sdkwork-api-authority") != "sdkwork-order-app-api":
-            raise ValueError(
-                "sdkwork-order app OpenAPI does not declare sdkwork-order-app-api authority"
-            )
-        return authority
-
-    def _merge_order_assembly_app_transport(self, payload: dict[str, Any]) -> dict[str, Any]:
-        order = self._load_order_assembly_app_openapi()
-        merged = copy.deepcopy(payload)
-        merged_paths = dict(merged.get("paths") or {})
-        used_tags = {
-            self._string(tag.get("name"))
-            for tag in merged.get("tags", [])
-            if isinstance(tag, dict)
-        }
-        for api_path, path_item in (order.get("paths") or {}).items():
-            if not isinstance(path_item, dict):
-                continue
-            methods = {
-                method: copy.deepcopy(operation)
-                for method, operation in path_item.items()
-                if method in {"get", "post", "put", "patch", "delete"}
-                and isinstance(operation, dict)
-            }
-            if not methods:
-                continue
-            for operation in methods.values():
-                operation["x-sdkwork-owner"] = "sdkwork-order"
-                operation["x-sdkwork-api-authority"] = "sdkwork-order-app-api"
-                operation["x-sdkwork-api-surface"] = "app-api"
-                operation["x-sdkwork-source-route-crate"] = self.ORDER_APP_ROUTE_CRATE
-            merged_paths.setdefault(api_path, {}).update(methods)
-            for operation in methods.values():
-                for tag in operation.get("tags", []):
-                    if isinstance(tag, str) and tag.strip():
-                        used_tags.add(tag.strip())
-        merged["paths"] = merged_paths
-
-        merged_components = copy.deepcopy(merged.get("components") or {})
-        for section, values in (order.get("components") or {}).items():
-            if not isinstance(values, dict):
-                continue
-            merged_components.setdefault(section, {})
-            merged_components[section].update(copy.deepcopy(values))
-        merged["components"] = merged_components
-        self._prune_unreachable_component_schemas(merged_paths, merged_components)
-
-        merged["tags"] = [
-            {
-                "name": tag,
-                "description": f"{self._tag_label(tag)} API resources.",
-                "x-sdk-nested-resource-surface": True,
-            }
-            for tag in sorted(tag for tag in used_tags if tag)
-        ]
-        merged_info = merged.setdefault("info", {})
-        merged_info["x-sdkwork-dependency-api-authorities"] = [
-            {
-                "apiAuthority": "sdkwork-order-app-api",
-                "assembly": "sdkwork-order-gateway-assembly",
-                "routeCrate": self.ORDER_APP_ROUTE_CRATE,
-            }
-        ]
-        return merged
-
-    def _exclude_order_assembly_app_operations(self, payload: dict[str, Any]) -> dict[str, Any]:
-        order = self._load_order_assembly_app_openapi()
-        order_operations = {
-            (api_path, method)
-            for api_path, path_item in (order.get("paths") or {}).items()
-            if isinstance(path_item, dict)
-            for method, operation in path_item.items()
-            if method in {"get", "post", "put", "patch", "delete"}
-            and isinstance(operation, dict)
-        }
-        filtered = copy.deepcopy(payload)
-        paths = filtered.get("paths")
-        if not isinstance(paths, dict):
-            return filtered
-        for api_path in list(paths.keys()):
-            path_item = paths.get(api_path)
-            if not isinstance(path_item, dict):
-                continue
-            for method in list(path_item.keys()):
-                if (api_path, method) in order_operations:
-                    del path_item[method]
-            if not any(method in {"get", "post", "put", "patch", "delete"} for method in path_item):
-                del paths[api_path]
-        components = filtered.get("components")
-        if isinstance(components, dict):
-            self._prune_unreachable_component_schemas(paths, components)
-        return filtered
-
-    def _extract_domain_transport_spec(self, source: dict[str, Any], surface: str) -> dict[str, Any]:
-        metadata = self.DOMAIN_TRANSPORT_INFO[surface]
-        paths: dict[str, Any] = {}
-        used_tags: set[str] = set()
-        for path_key, path_item in (source.get("paths") or {}).items():
-            if not isinstance(path_item, dict):
-                continue
-            filtered_methods: dict[str, Any] = {}
-            for method, operation in path_item.items():
-                if method.startswith("x-") or not isinstance(operation, dict):
-                    continue
-                domain = self._string(operation.get("x-sdkwork-domain")) or self._string(operation.get("x-sdk-domain"))
-                if domain not in self.DOMAIN_TRANSPORT_DOMAINS:
-                    continue
-                filtered_methods[method] = copy.deepcopy(operation)
-                for tag in operation.get("tags", []):
-                    if isinstance(tag, str) and tag.strip():
-                        used_tags.add(tag.strip())
-            if filtered_methods:
-                paths[path_key] = filtered_methods
-
-        components = copy.deepcopy(source.get("components") or {})
-        self._prune_unreachable_component_schemas(paths, components)
-
-        source_info = source.get("info")
-        version = "1.0.0"
-        if isinstance(source_info, dict):
-            version = self._string(source_info.get("version")) or version
-
-        return {
-            "openapi": source.get("openapi", "3.1.2"),
-            "info": {
-                "title": metadata["title"],
-                "version": version,
-                "description": metadata["description"],
-                "x-sdkwork-api-authority": metadata["api_authority"],
-                "x-sdkwork-sdk-family": metadata["sdk_family"],
-                "x-sdkwork-audience": metadata["audience"],
-                "x-sdkwork-owner": "sdkwork-clawrouter",
-            },
-            "servers": copy.deepcopy(source.get("servers") or []),
-            "tags": [
-                {
-                    "name": tag,
-                    "description": f"{self._tag_label(tag)} API resources.",
-                    "x-sdk-nested-resource-surface": True,
-                }
-                for tag in sorted(used_tags)
-            ],
-            "security": copy.deepcopy(source.get("security") or []),
-            "paths": paths,
-            "components": components,
-        }
 
     def _prune_unreachable_component_schemas(self, paths: dict[str, Any], components: dict[str, Any]) -> None:
         schemas = components.get("schemas")

@@ -1,6 +1,6 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
-
+import type { AdminSiteConnectionCheckResult, AdminSiteCreateRequest, AdminSiteItem, AdminSiteUpdateRequest } from '../types';
 export class SitesTestConnectionApi {
   private client: HttpClient;
 
@@ -9,9 +9,9 @@ export class SitesTestConnectionApi {
   }
 
 
-/** Create */
-  async create(siteId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/test_connection`));
+/** Test site connection */
+  async create(siteId: string): Promise<AdminSiteConnectionCheckResult> {
+    return this.client.post<AdminSiteConnectionCheckResult>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/test_connection`));
   }
 }
 
@@ -23,13 +23,13 @@ export class SitesHealthCheckApi {
   }
 
 
-/** Create */
-  async create(siteId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/health_check`));
+/** Health check site */
+  async create(siteId: string): Promise<AdminSiteConnectionCheckResult> {
+    return this.client.post<AdminSiteConnectionCheckResult>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/health_check`));
   }
 }
 
-export class SitesSiteChannelsApi {
+export class SitesChannelsApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
@@ -37,55 +37,44 @@ export class SitesSiteChannelsApi {
   }
 
 
-/** List */
+/** List site channels */
   async list(siteId: string): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/channels`));
   }
 }
 
-export class SitesSiteCatalogApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/sites`));
-  }
-}
-
 export class SitesApi {
   private client: HttpClient;
-  public readonly siteCatalog: SitesSiteCatalogApi;
-  public readonly siteChannels: SitesSiteChannelsApi;
+  public readonly channels: SitesChannelsApi;
   public readonly healthCheck: SitesHealthCheckApi;
   public readonly testConnection: SitesTestConnectionApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.siteCatalog = new SitesSiteCatalogApi(client);
-    this.siteChannels = new SitesSiteChannelsApi(client);
+    this.channels = new SitesChannelsApi(client);
     this.healthCheck = new SitesHealthCheckApi(client);
     this.testConnection = new SitesTestConnectionApi(client);
   }
 
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/sites`));
+/** List sites */
+  async list(): Promise<Record<string, never>> {
+    return this.client.get<Record<string, never>>(backendApiPath(`/sites`));
   }
 
-/** Delete */
+/** Create site */
+  async create(body: AdminSiteCreateRequest): Promise<AdminSiteItem> {
+    return this.client.post<AdminSiteItem>(backendApiPath(`/sites`), body, undefined, undefined, 'application/json');
+  }
+
+/** Delete site */
   async delete(siteId: string): Promise<void> {
     return this.client.delete<void>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`));
   }
 
-/** Update */
-  async update(siteId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`));
+/** Update site */
+  async update(siteId: string, body: AdminSiteUpdateRequest): Promise<AdminSiteItem> {
+    return this.client.patch<AdminSiteItem>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 }
 

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiTokenLogprob};
+use crate::models::OpenAiTokenLogprob;
 
 /// OpenAI-compatible open ai choice logprobs schema exposed by Claw Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -95,6 +95,10 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/order-app-sdk',
   '@sdkwork/account-app-sdk',
   '@sdkwork/account-backend-sdk',
+  '@sdkwork/catalog-app-sdk',
+  '@sdkwork/membership-app-sdk',
+  '@sdkwork/payment-app-sdk',
+  '@sdkwork/promotion-app-sdk',
   '@sdkwork/assets-core',
   '@sdkwork/utils',
   '@sdkwork/iam-contracts',
@@ -112,8 +116,6 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/generations-app-sdk',
   '@sdkwork/generations-pc-asset-config',
   '@sdkwork/drive-backend-sdk',
-  '@sdkwork/clawrouter-app-sdk/domains',
-  '@sdkwork/clawrouter-backend-sdk/domains',
 ];
 
 const PORTAL_RUNTIME_URL_ENV = [

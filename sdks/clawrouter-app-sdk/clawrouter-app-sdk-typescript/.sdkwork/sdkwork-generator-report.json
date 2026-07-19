@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "ac941a0b917822db2135ea2fab97957bbcaf80d0ee32f966173d29f0941d7dbd",
+  "changeFingerprint": "62e21a440beca7b8328e3f9228d06600d16b187cc2b0b9f0257c64825851fa1b",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -34,6 +34,7 @@
           "src/api/chat.ts",
           "src/api/iam.ts",
           "src/api/index.ts",
+          "src/api/memory.ts",
           "src/api/notification.ts",
           "src/api/paths.ts",
           "src/api/runtime.ts",
@@ -47,18 +48,20 @@
         "paths": [
           "src/types/common.ts",
           "src/types/field-error.ts",
-          "src/types/gateway-trace.ts",
-          "src/types/gateway-traces-page.ts",
           "src/types/index.ts",
           "src/types/json-null.ts",
           "src/types/json-object.ts",
           "src/types/json-value.ts",
-          "src/types/model-catalog-page.ts",
-          "src/types/model-rankings-page.ts",
           "src/types/page-info.ts",
           "src/types/problem-detail.ts",
           "src/types/sdk-work-api-response.ts",
-          "src/types/sdk-work-platform-error-code.ts"
+          "src/types/sdk-work-command-data.ts",
+          "src/types/sdk-work-command-response.ts",
+          "src/types/sdk-work-list-response.ts",
+          "src/types/sdk-work-page-data.ts",
+          "src/types/sdk-work-platform-error-code.ts",
+          "src/types/sdk-work-resource-data.ts",
+          "src/types/sdk-work-resource-response.ts"
         ]
       },
       {
@@ -226,10 +229,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 127,
-    "models": 98,
-    "apis": 6,
-    "types": 100
+    "totalFiles": 86,
+    "models": 56,
+    "apis": 7,
+    "types": 58
   },
   "warnings": [
     {
@@ -251,6 +254,10 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/iam.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/memory.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -288,12 +295,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 41,
+    "writtenFiles": 44,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "ac941a0b917822db2135ea2fab97957bbcaf80d0ee32f966173d29f0941d7dbd",
+    "changeFingerprint": "62e21a440beca7b8328e3f9228d06600d16b187cc2b0b9f0257c64825851fa1b",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -311,6 +318,7 @@
         "src/api/chat.ts",
         "src/api/iam.ts",
         "src/api/index.ts",
+        "src/api/memory.ts",
         "src/api/notification.ts",
         "src/api/paths.ts",
         "src/api/runtime.ts",
@@ -322,18 +330,20 @@
         "src/sdk.ts",
         "src/types/common.ts",
         "src/types/field-error.ts",
-        "src/types/gateway-trace.ts",
-        "src/types/gateway-traces-page.ts",
         "src/types/index.ts",
         "src/types/json-null.ts",
         "src/types/json-object.ts",
         "src/types/json-value.ts",
-        "src/types/model-catalog-page.ts",
-        "src/types/model-rankings-page.ts",
         "src/types/page-info.ts",
         "src/types/problem-detail.ts",
         "src/types/sdk-work-api-response.ts",
+        "src/types/sdk-work-command-data.ts",
+        "src/types/sdk-work-command-response.ts",
+        "src/types/sdk-work-list-response.ts",
+        "src/types/sdk-work-page-data.ts",
         "src/types/sdk-work-platform-error-code.ts",
+        "src/types/sdk-work-resource-data.ts",
+        "src/types/sdk-work-resource-response.ts",
         "tsconfig.json"
       ],
       "updatedGeneratedFiles": [],
@@ -367,6 +377,7 @@
             "src/api/chat.ts",
             "src/api/iam.ts",
             "src/api/index.ts",
+            "src/api/memory.ts",
             "src/api/notification.ts",
             "src/api/paths.ts",
             "src/api/runtime.ts",
@@ -380,18 +391,20 @@
           "paths": [
             "src/types/common.ts",
             "src/types/field-error.ts",
-            "src/types/gateway-trace.ts",
-            "src/types/gateway-traces-page.ts",
             "src/types/index.ts",
             "src/types/json-null.ts",
             "src/types/json-object.ts",
             "src/types/json-value.ts",
-            "src/types/model-catalog-page.ts",
-            "src/types/model-rankings-page.ts",
             "src/types/page-info.ts",
             "src/types/problem-detail.ts",
             "src/types/sdk-work-api-response.ts",
-            "src/types/sdk-work-platform-error-code.ts"
+            "src/types/sdk-work-command-data.ts",
+            "src/types/sdk-work-command-response.ts",
+            "src/types/sdk-work-list-response.ts",
+            "src/types/sdk-work-page-data.ts",
+            "src/types/sdk-work-platform-error-code.ts",
+            "src/types/sdk-work-resource-data.ts",
+            "src/types/sdk-work-resource-response.ts"
           ]
         },
         {

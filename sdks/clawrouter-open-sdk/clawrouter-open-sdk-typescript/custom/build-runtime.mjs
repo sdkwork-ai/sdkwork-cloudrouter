@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import ts from 'typescript';
 import { rollup } from 'rollup';
 
@@ -10,61 +9,17 @@ const srcDir = path.join(projectDir, 'src');
 const distDir = path.join(projectDir, 'dist');
 const tempDir = path.join(projectDir, '.sdkwork', 'build-runtime');
 const tempEsmDir = path.join(tempDir, 'esm');
-const domainTransportDir = path.join(projectDir, 'generated', 'domains', 'server-openapi');
-const domainsEntry = path.join(srcDir, 'domains', 'index.ts');
-
 async function main() {
   await removeDirectory(distDir);
   await removeDirectory(tempDir);
   await fs.mkdir(distDir, { recursive: true });
 
-  if (await pathExists(domainsEntry)) {
-    await stageDomainTransport();
-  }
   emitDeclarations();
   emitRuntimeModules();
   await removeTypeOnlyRuntimeReExports(path.join(tempEsmDir, 'index.js'));
   await bundleRuntime(path.join(tempEsmDir, 'index.js'), 'es', path.join(distDir, 'index.js'));
   await bundleRuntime(path.join(tempEsmDir, 'index.js'), 'cjs', path.join(distDir, 'index.cjs'));
-  if (await pathExists(domainsEntry)) {
-    await bundleRuntime(path.join(tempEsmDir, 'domains', 'index.js'), 'es', path.join(distDir, 'domains', 'index.js'));
-    await bundleRuntime(path.join(tempEsmDir, 'domains', 'index.js'), 'cjs', path.join(distDir, 'domains', 'index.cjs'));
-  }
-
   await removeDirectory(tempDir);
-}
-
-async function pathExists(target) {
-  try {
-    await fs.access(target);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function stageDomainTransport() {
-  const buildScript = path.join(domainTransportDir, 'custom', 'build-runtime.mjs');
-  if (!(await pathExists(buildScript))) {
-    throw new Error(`domain transport build script not found: ${buildScript}`);
-  }
-
-  const result = spawnSync(process.execPath, [buildScript], {
-    cwd: domainTransportDir,
-    stdio: 'inherit',
-  });
-  if (result.error) {
-    throw result.error;
-  }
-  if ((result.status ?? 1) !== 0) {
-    throw new Error(`domain transport build failed with status ${result.status ?? 1}`);
-  }
-
-  const generatedDist = path.join(domainTransportDir, 'dist');
-  if (!(await pathExists(path.join(generatedDist, 'index.d.ts')))) {
-    throw new Error(`domain transport build did not emit declarations: ${generatedDist}`);
-  }
-  await fs.cp(generatedDist, path.join(distDir, 'domains-generated'), { recursive: true });
 }
 
 async function removeDirectory(target) {

@@ -236,6 +236,7 @@ function readPortalSessionContext(record: Record<string, unknown>): PortalSessio
   const authLevel = readString(context, 'authLevel');
   const dataScope = readStringArray(context.dataScope);
   const permissionScope = readStringArray(context.permissionScope);
+  const standardRoleCodes = readStringArray(context.standardRoleCodes);
 
   return {
     tenantId,
@@ -248,6 +249,7 @@ function readPortalSessionContext(record: Record<string, unknown>): PortalSessio
     ...(authLevel ? { authLevel } : {}),
     ...(dataScope ? { dataScope } : {}),
     ...(permissionScope ? { permissionScope } : {}),
+    ...(standardRoleCodes ? { standardRoleCodes } : {}),
   };
 }
 
@@ -272,6 +274,7 @@ function toPortalIamBridgeContext(context: PortalSessionAppContext): PortalIamBr
     environment: toIamEnvironment(context.environment),
     organizationId: context.organizationId,
     permissionScope: [...(context.permissionScope ?? [])],
+    standardRoleCodes: [...(context.standardRoleCodes ?? [])],
     sessionId: context.sessionId ?? '',
     tenantId: context.tenantId,
     userId: context.userId,

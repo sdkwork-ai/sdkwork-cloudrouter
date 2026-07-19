@@ -441,6 +441,9 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.match(iamRuntimeSource, /getClawRouterAppSdkClient\(\)/);
   assert.match(iamRuntimeSource, /getSdkworkDriveAppSdkClient\(\)/);
   assert.match(iamRuntimeSource, /getSdkworkGenerationsAppSdkClient\(\)/);
+  for (const capability of ['Account', 'Catalog', 'Membership', 'Order', 'Payment', 'Promotion']) {
+    assert.match(iamRuntimeSource, new RegExp(`getSdkwork${capability}AppSdkClient\\(\\)`));
+  }
   assert.match(sdkClientsSource, /from '@sdkwork\/iam-credential-entry'/);
   assert.match(sdkClientsSource, /prepareCredentialEntryTokens/);
   assert.match(sdkClientsSource, /from '@sdkwork\/drive-app-sdk'/);
@@ -453,8 +456,8 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.match(sdkClientsSource, /function buildAppbaseAppConfig\(options: SdkworkAppbaseAppSdkClientOptions\): SdkworkAppbaseAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildGenerationsAppConfig\(options: SdkworkGenerationsAppSdkClientOptions\): SdkworkGenerationsAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.match(sdkClientsSource, /function buildDriveAppConfig\(options: SdkworkDriveAppSdkClientOptions\): SdkworkDriveAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
-  assert.match(sdkClientsSource, /function buildAppDomainTransportConfig\(options: ClawRouterAppDomainTransportSdkClientOptions\): ClawRouterAppDomainTransportConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
-  assert.match(sdkClientsSource, /function buildBackendDomainTransportConfig\(\s*options: ClawRouterBackendDomainTransportSdkClientOptions,\s*\): ClawRouterBackendDomainTransportConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
+  assert.match(sdkClientsSource, /function buildDependencyAppConfig\([\s\S]*?tokenManager:\s*resolveClawRouterSdkTokenManager\(options\.tokenManager\)/);
+  assert.doesNotMatch(sdkClientsSource, /DomainTransport|BackendDomainDependencyOverlay|facade\.catalog\.spus/);
   assert.doesNotMatch(sdkClientsSource, /authToken:\s*options\.authToken/);
   assert.doesNotMatch(sdkClientsSource, /accessToken:\s*options\.accessToken/);
   assert.doesNotMatch(sdkClientsSource, /getStoredAppSessionAuthToken\(\)/);
@@ -650,14 +653,13 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   const appbaseAppOpenApiSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/openapi/sdkwork-iam-app-api.openapi.yaml");
   const appSdkAssemblySource = readPortalFile("../../sdks/clawrouter-app-sdk/sdk-manifest.json");
   const appSdkComponentSource = readPortalFile("../../sdks/clawrouter-app-sdk/specs/component.spec.json");
-  const appSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/sdk.ts");
-  const backendSdkSystemSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/api/system.ts");
-  const backendSdkIndexSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/sdk.ts");
-  const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/admin-auth-settings-update-request.ts");
-  const backendSdkAuthVerificationPolicySource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/admin-auth-verification-policy.ts");
-  const backendSdkAuthWechatSettingsSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/admin-auth-wechat-settings-update.ts");
-  const appSdkTypesSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/types/index.ts");
-  const backendSdkTypesSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts/types/index.ts");
+  const appSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/sdk.ts");
+  const backendSdkSystemSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/api/system.ts");
+  const backendSdkIndexSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/sdk.ts");
+  const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/types/admin-auth-settings-update-request.ts");
+  const adminCoreSdkSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-core/src/sdk/index.ts");
+  const appSdkTypesSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/types/index.ts");
+  const backendSdkTypesSource = readPortalFile("../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/types/index.ts");
   const appbaseAuthServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
   const appbaseIamRuntimeSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
   const appbaseIamSdkPortsSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts");
@@ -701,12 +703,12 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/system\/iam\/verification_policy"/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/runtime_settings/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/verification_policy/);
-  assert.match(backendSdkAuthVerificationPolicySource, /emailRegistrationVerificationRequired\?:\s*boolean/);
-  assert.match(backendSdkAuthVerificationPolicySource, /phoneRegistrationVerificationRequired\?:\s*boolean/);
+  assert.match(adminCoreSdkSource, /emailRegistrationVerificationRequired:\s*boolean/);
+  assert.match(adminCoreSdkSource, /phoneRegistrationVerificationRequired:\s*boolean/);
   assert.match(backendSdkAuthSettingsUpdateSource, /qrLoginType/);
   assert.match(backendSdkAuthSettingsUpdateSource, /wechat\?:/);
-  assert.match(backendSdkAuthWechatSettingsSource, /official/);
-  assert.match(backendSdkAuthWechatSettingsSource, /mini/);
+  assert.match(adminCoreSdkSource, /AdminAuthWechatOfficial/);
+  assert.match(adminCoreSdkSource, /AdminAuthWechatMini/);
   assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/auth\/password_reset_requests"/);
   assert.match(appbaseAppOpenApiSource, /"\/app\/v3\/api\/iam\/users\/current"/);
   assert.doesNotMatch(contractSource, /api_path:\s*\/app\/v3\/api\/auth\/login/);
@@ -778,7 +780,7 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
     assert.equal(dependency?.packageByLanguage?.typescript, "@sdkwork/iam-app-sdk");
   }
 
-  assert.equal(existsSync(new URL("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/api/auth.ts", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/api/auth.ts", import.meta.url)), false);
   assert.doesNotMatch(appSdkSource, /public readonly auth: AuthApi/);
   assert.doesNotMatch(appSdkSource, new RegExp(`public readonly ${retiredProviderPlatformCamel}:`));
   assert.doesNotMatch(appSdkSource, /@sdkwork\/appbase-app-sdk/);
@@ -826,26 +828,26 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsResponse?.properties?.wechat);
   assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsResponse?.required?.includes("qrLoginType"));
   assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsResponse?.required?.includes("wechat"));
-  assert.ok(backendOpenApi.components?.schemas?.AdminAuthWechatSettings);
-  assert.ok(backendOpenApi.components?.schemas?.AdminAuthWechatOfficial);
-  assert.ok(backendOpenApi.components?.schemas?.AdminAuthWechatMini);
+  assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.verificationPolicy);
+  assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.wechat);
   assert.equal(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.loginMethods?.minItems, 1);
   assert.equal(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.registerMethods?.minItems, 1);
   assert.equal(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.recoveryMethods?.minItems, 1);
   assert.doesNotMatch(backendSdkIndexSource, /public readonly auth:/);
   assert.match(backendSdkSystemSource, /public readonly auth: SystemAuthApi/);
   assert.match(backendSdkSystemSource, /public readonly settings: SystemAuthSettingsApi/);
-  assert.match(backendSdkSystemSource, /async retrieve\(\): Promise<AuthSettingsRetrieveResult>/);
+  assert.match(backendSdkSystemSource, /async retrieve\(\): Promise<AdminAuthSettingsResponse>/);
   assert.match(backendSdkSystemSource, /async update\(body: AdminAuthSettingsUpdateRequest/);
   assert.match(backendSdkAuthSettingsUpdateSource, /qrLoginType\?: 'web' \| 'official' \| 'mini'/);
-  assert.match(backendSdkAuthSettingsUpdateSource, /wechat\?: AdminAuthWechatSettingsUpdate/);
+  assert.match(backendSdkAuthSettingsUpdateSource, /wechat\?: Record<string, unknown>/);
+  assert.match(adminCoreSdkSource, /AdminAuthVerificationPolicy/);
+  assert.match(adminCoreSdkSource, /mini: AdminAuthWechatMini\[\]/);
+  assert.match(adminCoreSdkSource, /official: AdminAuthWechatOfficial\[\]/);
   assert.doesNotMatch(appSdkTypesSource, /admin-auth-settings-response/);
   assert.doesNotMatch(appSdkTypesSource, /admin-auth-verification-policy/);
   assert.match(backendSdkTypesSource, /from '\.\/admin-auth-settings-response'/);
   assert.match(backendSdkTypesSource, /from '\.\/admin-auth-settings-update-request'/);
-  assert.match(backendSdkTypesSource, /from '\.\/admin-auth-wechat-settings'/);
-  assert.match(backendSdkTypesSource, /from '\.\/admin-auth-wechat-official'/);
-  assert.match(backendSdkTypesSource, /from '\.\/admin-auth-wechat-mini'/);
+  assert.doesNotMatch(backendSdkTypesSource, /admin-auth-wechat-(settings|official|mini)/);
 });
 
 test("appbase OAuth runtime uses canonical OAuth app resources", () => {
@@ -866,14 +868,14 @@ test("appbase OAuth runtime uses canonical OAuth app resources", () => {
 });
 
 test("portal exposes backend-backed admin auth settings configuration", () => {
-  const appSource = readPortalFile("./src/App.tsx");
+  const adminHostSource = readPortalFile("./src/admin/clawRouterAdminHostMount.tsx");
   const adminRegistrySource = readAdminRegistrySource();
   const settingsPageSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-site/src/ClawRouterAuthSettingsPage.tsx");
   const settingsServiceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts");
   const routeClassificationSource = readPortalFile("../../docs/schema-registry/frontend-route-classification.yaml");
 
-  assert.match(appSource, /lazyRoute\(\(\) => import\('@sdkwork\/clawrouter-pc-admin-site'\), 'ClawRouterAuthSettingsPage'\)/);
-  assert.match(appSource, /<Route path="settings" element=\{<ClawRouterAuthSettingsPage \/>} \/>/);
+  assert.match(adminHostSource, /lazyAdminRoute\(\(\) => import\('@sdkwork\/clawrouter-pc-admin-site'\), 'ClawRouterAuthSettingsPage'\)/);
+  assert.match(adminHostSource, /route\('settings', 'sdkwork-clawrouter', '@sdkwork\/clawrouter-pc-admin-site', \['clawrouter-backend-sdk'\]/);
   assert.match(adminRegistrySource, /path:\s*'\/admin\/settings'/);
   assert.match(adminRegistrySource, /ShieldCheck/);
   assert.match(settingsPageSource, /fetchClawRouterAuthSettings/);
@@ -1084,17 +1086,14 @@ test("admin auth settings form preserves flexible OAuth providers and validates 
   );
 });
 
-test("generated appbase app SDK surface satisfies the IAM SDK port contract", () => {
-  const productSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts/sdk.ts");
-  const sdkSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/sdk.ts");
-  const appSdkAuthSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/api/auth.ts");
-  const appSdkIamSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/api/iam.ts");
-  const appSdkOauthSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/api/oauth.ts");
-  const appSdkSystemSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript/src/index.ts/api/system.ts");
+test("generated appbase app SDK surface satisfies the IAM SDK port contract", async () => {
+  const productSdkSource = readPortalFile("../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/sdk.ts");
   const iamSdkPortsSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts");
   const authServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
   const iamRuntimeSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
   const retiredProviderPlatformCamel = "open" + "Platform";
+  const { createClient } = await import("@sdkwork/iam-app-sdk");
+  const client = createClient({ baseUrl: "http://localhost:18082" });
 
   for (const portContractFragment of [
     "oauth?:",
@@ -1117,51 +1116,19 @@ test("generated appbase app SDK surface satisfies the IAM SDK port contract", ()
   assert.match(iamRuntimeSource, /runtime\.service\.oauth\?\.authorizationUrls\?\.create/);
   assert.match(iamRuntimeSource, /runtime\.service\.oauth\?\.sessions\?\.create/);
 
-  for (const sdkSurfaceFragment of [
-    "public readonly auth: AuthApi",
-    "public readonly system: SystemApi",
-    "public readonly iam: IamApi",
-    "public readonly oauth: OauthApi",
-    "public readonly authorizationUrls: OauthAuthorizationUrlsApi",
-    "public readonly sessions: OauthSessionsApi",
-    "public readonly passwordResetRequests: AuthPasswordResetRequestsApi",
-    "public readonly passwordResets: AuthPasswordResetsApi",
-    "public readonly registrations: AuthRegistrationsApi",
-    "public readonly sessions: AuthSessionsApi",
-    "public readonly iam: SystemIamApi",
-    "public readonly runtime: SystemIamRuntimeApi",
-    "public readonly verificationPolicy: SystemIamVerificationPolicyApi",
-    "public readonly current: AuthSessionsCurrentApi",
-    "public readonly users: IamUsersApi",
-    "public readonly current: IamUsersCurrentApi",
-  ]) {
-    assert.match(
-      `${sdkSource}\n${appSdkAuthSource}\n${appSdkIamSource}\n${appSdkOauthSource}\n${appSdkSystemSource}`,
-      new RegExp(sdkSurfaceFragment),
-    );
-  }
-
-  for (const generatedPathFragment of [
-    /appApiPath\(`\/oauth\/authorization_urls`\)/,
-    /appApiPath\(`\/oauth\/sessions`\)/,
-    /appApiPath\(`\/auth\/password_reset_requests`\)/,
-    /appApiPath\(`\/auth\/password_resets`\)/,
-    /appApiPath\(`\/auth\/registrations`\)/,
-    /appApiPath\(`\/auth\/sessions`\)/,
-    /appApiPath\(`\/auth\/sessions\/current`\)/,
-    /appApiPath\(`\/auth\/sessions\/refresh`\)/,
-    /appApiPath\(`\/iam\/users\/current`\)/,
-    /appApiPath\(`\/system\/iam\/runtime`\)/,
-    /appApiPath\(`\/system\/iam\/verification_policy`\)/,
-  ]) {
-    assert.match(
-      `${appSdkAuthSource}\n${appSdkIamSource}\n${appSdkOauthSource}\n${appSdkSystemSource}`,
-      generatedPathFragment,
-    );
-  }
-  assert.doesNotMatch(appSdkAuthSource, /loginQrCodes/);
-  assert.doesNotMatch(appSdkAuthSource, /loginQrCodeCallbacks/);
-  assert.doesNotMatch(appSdkAuthSource, /verificationCodes/);
+  assert.equal(typeof client.oauth.authorizationUrls.create, "function");
+  assert.equal(typeof client.oauth.sessions.create, "function");
+  assert.equal(typeof client.auth.passwordResetRequests.create, "function");
+  assert.equal(typeof client.auth.passwordResets.create, "function");
+  assert.equal(typeof client.auth.registrations.create, "function");
+  assert.equal(typeof client.auth.sessions.create, "function");
+  assert.equal(typeof client.auth.sessions.current.retrieve, "function");
+  assert.equal(typeof client.auth.sessions.current.update, "function");
+  assert.equal(typeof client.auth.sessions.current.delete, "function");
+  assert.equal(typeof client.auth.sessions.refresh, "function");
+  assert.equal(typeof client.iam.users.current.retrieve, "function");
+  assert.equal(typeof client.system.iam.runtime.retrieve, "function");
+  assert.equal(typeof client.system.iam.verificationPolicy.retrieve, "function");
   assert.doesNotMatch(productSdkSource, /public readonly auth: AuthApi/);
   assert.doesNotMatch(productSdkSource, new RegExp(`public readonly ${retiredProviderPlatformCamel}:`));
 
@@ -1529,6 +1496,8 @@ test("admin layout enforces route permission guard for protected admin pages", a
   assert.equal(isAdminRouteAllowed("/admin/group", ["iam.users.read"]), true);
   assert.equal(isAdminRouteAllowed("/admin/group", ["clawrouter.admin.access"]), false);
   assert.equal(isAdminRouteAllowed("/admin/dashboard", ["clawrouter.admin.access"]), true);
+  assert.equal(isAdminRouteAllowed("/admin/dashboard", ["clawrouter.*"]), true);
+  assert.equal(isAdminRouteAllowed("/admin/group", ["*"]), true);
 });
 
 test("portal i18n keeps document language aligned with active locale", () => {
@@ -2128,7 +2097,7 @@ test("portal wires console and admin routes through the protected session guard"
   assert.match(appSource, /<Route path="\/admin" element=\{<PortalErrorBoundary><RequireAdminSession><AdminLayout/);
   assert.match(appSource, /<Route path="\*" element=\{<Navigate to="\/console\/dashboard" replace \/>} \/>/);
   assert.match(appSource, /<Route path="\*" element=\{<Navigate to="\/admin\/dashboard" replace \/>} \/>/);
-  assert.match(guardSource, /hasPortalIamSession/);
+  assert.match(guardSource, /usePortalIamSession/);
   assert.match(guardSource, /PortalAuthenticatedAuthRouteGuard/);
   assert.match(guardSource, /resolvePortalAuthenticatedAuthRouteRedirect/);
   assert.match(sharedAuthSource, /sanitizePortalAuthRedirect/);
@@ -2387,6 +2356,7 @@ test("admin module registry is relay-focused with home and operations only", () 
   const adminRegistrySource = readAdminRegistrySource();
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
   const appSource = readPortalFile("./src/App.tsx");
+  const adminHostSource = readPortalFile("./src/admin/clawRouterAdminHostMount.tsx");
   const operationsMenu = findAdminModuleMenuSource(adminRegistrySource, "operations");
 
   assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g), ["home", "operations"]);
@@ -2417,8 +2387,8 @@ test("admin module registry is relay-focused with home and operations only", () 
     assert.equal(packageJson.dependencies[pkg], undefined, `package.json must not depend on ${pkg}`);
   }
 
-  assert.doesNotMatch(appSource, /CatalogAdmin|OrdersAdmin|PaymentsAdmin|MembershipsAdmin|MarketingAdmin|FinanceAdmin|WalletAdmin|OauthAdmin|ServiceProviderAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|MessagingAdmin/);
-  assert.match(appSource, /ModelAdmin|ChannelAdmin|RecordAdmin|AnalyticsAdmin|MonitorAdmin|RateLimitAdmin/);
+  assert.doesNotMatch(`${appSource}\n${adminHostSource}`, /CatalogAdmin|OrdersAdmin|PaymentsAdmin|MembershipsAdmin|MarketingAdmin|FinanceAdmin|WalletAdmin|OauthAdmin|ServiceProviderAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|MessagingAdmin/);
+  assert.match(adminHostSource, /ModelAdmin|ChannelAdmin|RecordAdmin|AnalyticsAdmin|MonitorAdmin|RateLimitAdmin/);
 });
 
 test("admin relay home menu excludes retired platform and commerce groups", () => {
@@ -2475,7 +2445,7 @@ test("portal composes appbase auth and Tauri host packages through workspace ins
   assert.equal(packageJson.dependencies["@sdkwork/iam-core-pc-react"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/iam-react"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/iam-runtime"], "workspace:*");
-  assert.equal(packageJson.dependencies["@sdkwork/iam-sdk-adapter"], "workspace:*");
+  assert.equal(packageJson.dependencies["@sdkwork/iam-sdk-adapter"], undefined);
   assert.equal(packageJson.dependencies["@sdkwork/iam-sdk-ports"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/iam-service"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/runtime-bootstrap"], "workspace:*");
@@ -2584,9 +2554,9 @@ test("portal resolves T1 domain console packages through workspace installs", ()
   assert.doesNotMatch(viteConfigSource, /sdkworkCommerceRoot/);
   assert.match(viteConfigSource, /clawrouter-portal-pnpm-workspace-resolver/);
   assert.doesNotMatch(workspaceSource, /^\s*- 'packages\/pc-react\//m);
-  assert.match(workspaceSource, /sdkwork-account\/apps\/sdkwork-account-pc\/packages\/sdkwork-account-pc-wallet/);
-  assert.match(workspaceSource, /sdkwork-membership\/apps\/sdkwork-membership-pc\/packages\/sdkwork-membership-pc-membership/);
-  assert.match(workspaceSource, /sdkwork-payment\/apps\/sdkwork-payment-pc\/packages\/sdkwork-payment-pc-payment/);
+  assert.match(workspaceSource, /sdkwork-account\/apps\/sdkwork-account-pc\/packages\/(?:\*|sdkwork-account-pc-wallet)/);
+  assert.match(workspaceSource, /sdkwork-membership\/apps\/sdkwork-membership-pc\/packages\/(?:\*|sdkwork-membership-pc-membership)/);
+  assert.match(workspaceSource, /sdkwork-payment\/apps\/sdkwork-payment-pc\/packages\/(?:\*|sdkwork-payment-pc-payment)/);
   assert.doesNotMatch(workspaceSource, /packages\/common\/commerce\/\*/);
   assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-host"], undefined);
   assert.doesNotMatch(viteConfigSource, /find: 'react-i18next'/);

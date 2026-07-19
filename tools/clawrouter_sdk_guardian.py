@@ -315,21 +315,17 @@ class ClawRouterSdkGuardian:
                     f"{expected.family_directory} bin/generate-sdk.mjs must not declare sdkgenInputPath "
                     "because generation uses the authority OpenAPI"
                 )
-            if expected.family_directory in {"clawrouter-app-sdk", "clawrouter-backend-sdk"}:
-                domain_generation_markers = (
-                    "const domainTransportInputPath = `sdks/${sdkFamily}/openapi/${domainTransportName}.openapi.json`;",
-                    "const domainTransportOutputPath = `sdks/${sdkFamily}/${sdkFamily}-typescript/generated/domains/server-openapi`;",
-                    "function runDomainTransportGeneration()",
-                    "runDomainTransportGeneration();",
-                    "'-i', domainTransportInputPath",
-                    "'-o', domainTransportOutputPath",
-                )
-                for marker in domain_generation_markers:
-                    if marker not in generate_script:
-                        messages.append(
-                            f"{expected.family_directory} bin/generate-sdk.mjs must regenerate federated "
-                            f"domain transport ({marker})"
-                        )
+            for marker in (
+                "domainTransport",
+                "generated/domains",
+                "app-domain-transport",
+                "backend-domain-transport",
+            ):
+                if marker in generate_script:
+                    messages.append(
+                        f"{expected.family_directory} bin/generate-sdk.mjs must not aggregate "
+                        f"dependency domain transport ({marker})"
+                    )
             if f"sdks/${{sdkFamily}}/${{sdkFamily}}-${{language}}/generated/server-openapi" not in generate_script:
                 messages.append(
                     f"{expected.family_directory} bin/generate-sdk.mjs must generate non-TypeScript SDKs "

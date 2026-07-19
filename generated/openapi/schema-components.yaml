@@ -4291,6 +4291,21 @@ components:
         provider_native_model:
           type: string
           maxLength: 256
+        gateway_instance_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        gateway_instance_code_snapshot:
+          type: string
+          maxLength: 128
+        gateway_region_code_snapshot:
+          type: string
+          maxLength: 64
+        gateway_node_name_snapshot:
+          type: string
+          maxLength: 128
         region_code:
           type: string
           maxLength: 64
@@ -4310,8 +4325,8 @@ components:
           type: string
           maxLength: 128
         error_type:
-          type: integer
-          format: int32
+          type: string
+          maxLength: 128
         started_at:
           type: string
           format: date-time

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "kind": "sdkwork.iam.module",
   "moduleId": "clawrouter",
-  "catalogVersion": "1.0.0",
+  "catalogVersion": "1.1.0",
   "domain": "clawrouter",
   "owner": "sdkwork-clawrouter",
   "displayName": "SDKWork Claw Router Gateway",
@@ -62,7 +62,20 @@
   },
   "roles": {
     "domainStandardRoles": [],
-    "roleGrantExtensions": [],
+    "roleGrantExtensions": [
+      {
+        "roleCode": "org_admin",
+        "patterns": [
+          "clawrouter.*"
+        ]
+      },
+      {
+        "roleCode": "platform_system_admin",
+        "patterns": [
+          "clawrouter.*"
+        ]
+      }
+    ],
     "roleExclusions": []
   },
   "directory": {

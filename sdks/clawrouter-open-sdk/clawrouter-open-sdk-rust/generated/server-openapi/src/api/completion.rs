@@ -15,9 +15,13 @@ impl CompletionApi {
     }
 
     /// Create completion
-    pub async fn create(&self, body: &OpenAiCompletionCreateRequest) -> Result<OpenAiCompletion, SdkworkError> {
+    pub async fn create(
+        &self,
+        body: &OpenAiCompletionCreateRequest,
+    ) -> Result<OpenAiCompletion, SdkworkError> {
         let path = ai_path(&"/completions".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

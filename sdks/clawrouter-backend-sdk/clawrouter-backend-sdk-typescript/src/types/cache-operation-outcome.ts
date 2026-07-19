@@ -1,17 +1,17 @@
-/** Cache operation outcome schema exposed by Claw Router. */
+/** CacheOperationOutcome contract. */
 export interface CacheOperationOutcome {
-  /** Cache key field on cache operation outcome. */
-  cacheKey: string | null;
-  /** Deleted entries field on cache operation outcome. */
+  /** cacheKey field on CacheOperationOutcome. */
+  cacheKey: string | unknown;
+  /** deletedEntries field on CacheOperationOutcome. */
   deletedEntries: string;
-  /** Instance name field on cache operation outcome. */
-  instanceName: string | null;
-  /** Namespace field on cache operation outcome. */
-  namespace: string | null;
-  /** Operation field on cache operation outcome. */
+  /** instanceName field on CacheOperationOutcome. */
+  instanceName: string | unknown;
+  /** namespace field on CacheOperationOutcome. */
+  namespace: string | unknown;
+  /** operation field on CacheOperationOutcome. */
   operation: string;
-  /** Refreshed entries field on cache operation outcome. */
+  /** refreshedEntries field on CacheOperationOutcome. */
   refreshedEntries: string;
-  /** Status field on cache operation outcome. */
+  /** status field on CacheOperationOutcome. */
   status: string;
 }

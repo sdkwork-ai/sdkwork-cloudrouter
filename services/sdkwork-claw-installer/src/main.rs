@@ -20,6 +20,7 @@ const SDKWORK_CLAW_ADMIN_RESET_PASSWORD_ENV: &str = "SDKWORK_CLAW_ADMIN_RESET_PA
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    sdkwork_database_sqlx::enable_process_shared_database_pool();
     match run().await {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {

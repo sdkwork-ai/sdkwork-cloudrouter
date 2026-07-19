@@ -168,36 +168,36 @@
         }
       },
       {
-        "workspace": "clawrouter-app-wallet-capability",
-        "role": "wallet-app-capability",
+        "workspace": "sdkwork-account-app-sdk",
+        "role": "account-app-capability",
         "required": true,
-        "dependencyMode": "internal-capability",
+        "dependencyMode": "consumer-sdk",
         "apiPrefix": "/app/v3/api",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
-          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+          "typescript": "@sdkwork/account-app-sdk"
         }
       },
       {
-        "workspace": "clawrouter-app-membership-capability",
+        "workspace": "sdkwork-membership-app-sdk",
         "role": "membership-app-capability",
         "required": true,
-        "dependencyMode": "internal-capability",
+        "dependencyMode": "consumer-sdk",
         "apiPrefix": "/app/v3/api",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
-          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+          "typescript": "@sdkwork/membership-app-sdk"
         }
       },
       {
-        "workspace": "clawrouter-app-promotion-capability",
-        "role": "promotion-app-capability",
+        "workspace": "sdkwork-catalog-app-sdk",
+        "role": "catalog-app-capability",
         "required": true,
-        "dependencyMode": "internal-capability",
+        "dependencyMode": "consumer-sdk",
         "apiPrefix": "/app/v3/api",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
-          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+          "typescript": "@sdkwork/catalog-app-sdk"
         }
       },
       {
@@ -212,25 +212,36 @@
         }
       },
       {
-        "workspace": "clawrouter-app-payment-capability",
+        "workspace": "sdkwork-payment-app-sdk",
         "role": "payment-app-capability",
         "required": true,
-        "dependencyMode": "internal-capability",
+        "dependencyMode": "consumer-sdk",
         "apiPrefix": "/app/v3/api",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
-          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+          "typescript": "@sdkwork/payment-app-sdk"
         }
       },
       {
-        "workspace": "clawrouter-app-catalog-capability",
-        "role": "catalog-app-capability",
+        "workspace": "sdkwork-promotion-app-sdk",
+        "role": "promotion-app-capability",
         "required": true,
-        "dependencyMode": "internal-capability",
+        "dependencyMode": "consumer-sdk",
         "apiPrefix": "/app/v3/api",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
-          "typescript": "clawrouter-app-domain-transport-generated-typescript"
+          "typescript": "@sdkwork/promotion-app-sdk"
+        }
+      },
+      {
+        "workspace": "sdkwork-models-app-sdk",
+        "role": "models-app-catalog-capability",
+        "required": true,
+        "dependencyMode": "consumer-sdk",
+        "apiPrefix": "/app/v3/api",
+        "generatedTransportImportPolicy": "forbidden",
+        "packageByLanguage": {
+          "typescript": "@sdkwork/models-app-sdk"
         }
       }
     ],

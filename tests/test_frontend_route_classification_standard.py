@@ -132,6 +132,32 @@ class FrontendRouteClassificationStandardTest(unittest.TestCase):
                 self.assertIsInstance(manifest_route, dict, f"{route} must exist in schema manifest.")
                 self.assertEqual(manifest_route.get("route_scope"), entry.get("route_scope"))
 
+    def test_admin_host_contributions_are_part_of_the_portal_route_authority(self) -> None:
+        guardian = FrontendContractGuardian(root=ROOT)
+        actual_routes = set(guardian.extract_portal_routes())
+        actual_route_packages = guardian.extract_portal_route_packages()
+        expected_packages = {
+            "/admin/analytics": "@sdkwork/clawrouter-pc-admin-analytics",
+            "/admin/cache": "@sdkwork/clawrouter-pc-admin-cache",
+            "/admin/channel": "@sdkwork/clawrouter-pc-admin-channel",
+            "/admin/dashboard": "@sdkwork/clawrouter-pc-admin-dashboard",
+            "/admin/group": "@sdkwork/clawrouter-pc-admin-group",
+            "/admin/model": "@sdkwork/models-pc-admin-catalog",
+            "/admin/model/mappings": "@sdkwork/models-pc-admin-catalog",
+            "/admin/model/resources": "@sdkwork/models-pc-admin-resource",
+            "/admin/model/sites": "@sdkwork/clawrouter-pc-admin-relay-site",
+            "/admin/monitor": "@sdkwork/clawrouter-pc-admin-monitor",
+            "/admin/ratelimit": "@sdkwork/clawrouter-pc-admin-ratelimit",
+            "/admin/record": "@sdkwork/clawrouter-pc-admin-record",
+            "/admin/runtime-region": "@sdkwork/clawrouter-pc-admin-runtime-region",
+            "/admin/service-nodes": "@sdkwork/clawrouter-pc-admin-service-nodes",
+            "/admin/settings": "@sdkwork/clawrouter-pc-admin-site",
+            "/admin/site": "@sdkwork/clawrouter-pc-admin-site",
+        }
+
+        self.assertTrue(set(expected_packages) <= actual_routes)
+        self.assertEqual(expected_packages, {route: actual_route_packages[route] for route in expected_packages})
+
     def test_sdk_backed_routes_have_frontend_operation_contract_and_expected_sdk_surface(self) -> None:
         classification = self._classification()
         manifest_routes = self._manifest()["routes"]

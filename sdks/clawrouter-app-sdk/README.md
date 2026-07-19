@@ -42,12 +42,13 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | Workspace | Role | Mode | API prefix | Generated transport policy |
 | --- | --- | --- | --- | --- |
 | `sdkwork-iam-app-sdk` | `appbase-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-app-wallet-capability` | `wallet-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-app-membership-capability` | `membership-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-app-promotion-capability` | `promotion-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-account-app-sdk` | `account-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-membership-app-sdk` | `membership-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-catalog-app-sdk` | `catalog-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-order-app-sdk` | `order-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-app-payment-capability` | `payment-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
-| `clawrouter-app-catalog-capability` | `catalog-app-capability` | `internal-capability` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-payment-app-sdk` | `payment-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-promotion-app-sdk` | `promotion-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-models-app-sdk` | `models-app-catalog-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 
 Package names:
 
@@ -61,18 +62,20 @@ Package names:
 - `kotlin`: `com.sdkwork:sdkwork-iam-app-sdk`
 - `go`: `github.com/sdkwork/sdkwork-iam-app-sdk`
 - `python`: `sdkwork-iam-app-sdk`
-- `clawrouter-app-wallet-capability`
-- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
-- `clawrouter-app-membership-capability`
-- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
-- `clawrouter-app-promotion-capability`
-- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
+- `sdkwork-account-app-sdk`
+- `typescript`: `@sdkwork/account-app-sdk`
+- `sdkwork-membership-app-sdk`
+- `typescript`: `@sdkwork/membership-app-sdk`
+- `sdkwork-catalog-app-sdk`
+- `typescript`: `@sdkwork/catalog-app-sdk`
 - `sdkwork-order-app-sdk`
 - `typescript`: `@sdkwork/order-app-sdk`
-- `clawrouter-app-payment-capability`
-- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
-- `clawrouter-app-catalog-capability`
-- `typescript`: `clawrouter-app-domain-transport-generated-typescript`
+- `sdkwork-payment-app-sdk`
+- `typescript`: `@sdkwork/payment-app-sdk`
+- `sdkwork-promotion-app-sdk`
+- `typescript`: `@sdkwork/promotion-app-sdk`
+- `sdkwork-models-app-sdk`
+- `typescript`: `@sdkwork/models-app-sdk`
 
 Regenerate this SDK family from the project root:
 

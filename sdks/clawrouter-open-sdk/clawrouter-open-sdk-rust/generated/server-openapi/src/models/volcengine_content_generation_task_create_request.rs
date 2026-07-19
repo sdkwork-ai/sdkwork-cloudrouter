@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{VolcengineContentPart};
+use crate::models::VolcengineContentPart;
 
 /// Volcengine Ark volcengine content generation task create request schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

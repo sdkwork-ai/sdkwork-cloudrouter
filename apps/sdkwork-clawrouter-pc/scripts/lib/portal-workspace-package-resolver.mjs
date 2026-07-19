@@ -342,10 +342,6 @@ function isTransportPackageManifest(packageJson) {
 
 function resolveComposedFacadeRootFromTransportPackageRoot(packageRoot) {
   const normalized = normalizePackageRootPath(packageRoot);
-  if (normalized.endsWith('/generated/domains/server-openapi')) {
-    const composedRoot = path.resolve(packageRoot, '../../..');
-    return fs.existsSync(path.join(composedRoot, 'package.json')) ? composedRoot : null;
-  }
   if (normalized.endsWith('/generated/server-openapi')) {
     const composedRoot = path.resolve(packageRoot, '../..');
     return fs.existsSync(path.join(composedRoot, 'package.json')) ? composedRoot : null;

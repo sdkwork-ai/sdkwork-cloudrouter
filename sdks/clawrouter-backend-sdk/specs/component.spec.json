@@ -168,91 +168,18 @@
         }
       },
       {
-        "workspace": "clawrouter-backend-wallet-capability",
-        "role": "wallet-backend-capability",
+        "workspace": "sdkwork-models-backend-sdk",
+        "role": "models-backend-catalog-capability",
         "required": true,
-        "dependencyMode": "internal-capability",
+        "dependencyMode": "consumer-sdk",
         "apiPrefix": "/backend/v3/api",
         "generatedTransportImportPolicy": "forbidden",
         "packageByLanguage": {
-          "typescript": "clawrouter-backend-domain-transport-generated-typescript"
-        }
-      },
-      {
-        "workspace": "clawrouter-backend-membership-capability",
-        "role": "membership-backend-capability",
-        "required": true,
-        "dependencyMode": "internal-capability",
-        "apiPrefix": "/backend/v3/api",
-        "generatedTransportImportPolicy": "forbidden",
-        "packageByLanguage": {
-          "typescript": "clawrouter-backend-domain-transport-generated-typescript"
-        }
-      },
-      {
-        "workspace": "clawrouter-backend-promotion-capability",
-        "role": "promotion-backend-capability",
-        "required": true,
-        "dependencyMode": "internal-capability",
-        "apiPrefix": "/backend/v3/api",
-        "generatedTransportImportPolicy": "forbidden",
-        "packageByLanguage": {
-          "typescript": "clawrouter-backend-domain-transport-generated-typescript"
-        }
-      },
-      {
-        "workspace": "clawrouter-backend-catalog-capability",
-        "role": "catalog-backend-capability",
-        "required": true,
-        "dependencyMode": "internal-capability",
-        "apiPrefix": "/backend/v3/api",
-        "generatedTransportImportPolicy": "forbidden",
-        "packageByLanguage": {
-          "typescript": "clawrouter-backend-domain-transport-generated-typescript"
-        }
-      },
-      {
-        "workspace": "clawrouter-backend-order-capability",
-        "role": "order-backend-capability",
-        "required": true,
-        "dependencyMode": "internal-capability",
-        "apiPrefix": "/backend/v3/api",
-        "generatedTransportImportPolicy": "forbidden",
-        "packageByLanguage": {
-          "typescript": "clawrouter-backend-domain-transport-generated-typescript"
-        }
-      },
-      {
-        "workspace": "clawrouter-backend-payment-capability",
-        "role": "payment-backend-capability",
-        "required": true,
-        "dependencyMode": "internal-capability",
-        "apiPrefix": "/backend/v3/api",
-        "generatedTransportImportPolicy": "forbidden",
-        "packageByLanguage": {
-          "typescript": "clawrouter-backend-domain-transport-generated-typescript"
-        }
-      },
-      {
-        "workspace": "clawrouter-backend-inventory-capability",
-        "role": "inventory-backend-capability",
-        "required": true,
-        "dependencyMode": "internal-capability",
-        "apiPrefix": "/backend/v3/api",
-        "generatedTransportImportPolicy": "forbidden",
-        "packageByLanguage": {
-          "typescript": "clawrouter-backend-domain-transport-generated-typescript"
-        }
-      },
-      {
-        "workspace": "clawrouter-backend-finance-capability",
-        "role": "finance-backend-capability",
-        "required": true,
-        "dependencyMode": "internal-capability",
-        "apiPrefix": "/backend/v3/api",
-        "generatedTransportImportPolicy": "forbidden",
-        "packageByLanguage": {
-          "typescript": "clawrouter-backend-domain-transport-generated-typescript"
+          "typescript": "@sdkwork/models-backend-sdk",
+          "rust": "sdkwork-models-backend-sdk",
+          "java": "com.sdkwork:sdkwork-models-backend-sdk",
+          "go": "github.com/sdkwork/sdkwork-models-backend-sdk",
+          "python": "sdkwork-models-backend-sdk"
         }
       }
     ],

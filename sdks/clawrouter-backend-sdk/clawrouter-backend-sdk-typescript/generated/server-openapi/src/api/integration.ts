@@ -1,6 +1,9 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
 
+import type { AdminChannelCreateRequest, AdminChannelItem, AdminChannelPage, AdminChannelUpdateRequest, AdminChannelVerifyResult, AdminProviderSecretCreateRequest, AdminProviderSecretItem, AdminProviderSecretPage, AdminProviderSecretUpdateRequest } from '../types';
+
+
 export class IntegrationProviderSecretsApi {
   private client: HttpClient;
 
@@ -9,22 +12,22 @@ export class IntegrationProviderSecretsApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/integration/provider_secrets`));
+/** List provider secrets */
+  async list(): Promise<AdminProviderSecretPage> {
+    return this.client.get<AdminProviderSecretPage>(backendApiPath(`/integration/provider_secrets`));
   }
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/integration/provider_secrets`));
+/** Create provider secret */
+  async create(body: AdminProviderSecretCreateRequest): Promise<AdminProviderSecretItem> {
+    return this.client.post<AdminProviderSecretItem>(backendApiPath(`/integration/provider_secrets`), body, undefined, undefined, 'application/json');
   }
 
-/** Update */
-  async update(): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/integration/provider_secrets`));
+/** Update provider secret */
+  async update(body: AdminProviderSecretUpdateRequest): Promise<AdminProviderSecretItem> {
+    return this.client.put<AdminProviderSecretItem>(backendApiPath(`/integration/provider_secrets`), body, undefined, undefined, 'application/json');
   }
 
-/** Delete */
+/** Delete provider secret */
   async delete(secretId: string): Promise<void> {
     return this.client.delete<void>(backendApiPath(`/integration/provider_secrets/${serializePathParameter(secretId, { name: 'secretId', style: 'simple', explode: false })}`));
   }
@@ -38,29 +41,29 @@ export class IntegrationChannelsApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/integration/channels`));
+/** List channels */
+  async list(): Promise<AdminChannelPage> {
+    return this.client.get<AdminChannelPage>(backendApiPath(`/integration/channels`));
   }
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/integration/channels`));
+/** Create channel */
+  async create(body: AdminChannelCreateRequest): Promise<AdminChannelItem> {
+    return this.client.post<AdminChannelItem>(backendApiPath(`/integration/channels`), body, undefined, undefined, 'application/json');
   }
 
-/** Update */
-  async update(): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/integration/channels`));
+/** Update channel */
+  async update(body: AdminChannelUpdateRequest): Promise<AdminChannelItem> {
+    return this.client.put<AdminChannelItem>(backendApiPath(`/integration/channels`), body, undefined, undefined, 'application/json');
   }
 
-/** Delete */
+/** Delete channel */
   async delete(channelId: string): Promise<void> {
     return this.client.delete<void>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
   }
 
-/** Verify */
-  async verify(channelId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}/verify`));
+/** Test channel */
+  async verify(channelId: string): Promise<AdminChannelVerifyResult> {
+    return this.client.post<AdminChannelVerifyResult>(backendApiPath(`/integration/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}/verify`));
   }
 }
 

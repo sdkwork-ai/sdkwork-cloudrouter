@@ -47,6 +47,42 @@ class FrontendOperationAuditTest(unittest.TestCase):
         fragment.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return fragment
 
+    def test_backend_route_manifest_operations_are_not_required_to_have_frontend_services(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_contract(
+                root,
+                """
+                routes:
+                  - route: /admin/channel
+                    required_tables: [integration_provider_account, ops_audit_log]
+                frontend_operations:
+                  - route: /admin/channel
+                    source: crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs
+                    operation: fetchProviderSecrets
+                    kind: read
+                    api_surface: backend
+                    api_method: GET
+                    api_path: /backend/v3/api/integration/provider_secrets
+                    read_sources: [integration_provider_account]
+                    write_tables: []
+                  - route: /admin/channel
+                    source: crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs
+                    operation: addProviderSecret
+                    kind: create
+                    api_surface: backend
+                    api_method: POST
+                    api_path: /backend/v3/api/integration/provider_secrets
+                    request_body_required: false
+                    read_sources: [integration_provider_account]
+                    write_tables: [integration_provider_account, ops_audit_log]
+                """,
+            )
+
+            result = FrontendOperationAudit(root=root).validate()
+
+            self.assertTrue(result.ok, result.messages)
+
     def test_extracts_class_static_and_object_service_operations(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

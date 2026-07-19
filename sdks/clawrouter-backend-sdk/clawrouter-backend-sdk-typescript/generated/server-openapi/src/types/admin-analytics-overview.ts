@@ -1,25 +1,25 @@
-/** Admin analytics overview schema exposed by Claw Router. */
+/** AdminAnalyticsOverview contract. */
 export interface AdminAnalyticsOverview {
-  /** End time field on admin analytics overview. */
-  endTime?: string | null;
-  /** Insights field on admin analytics overview. */
+  /** endTime field on AdminAnalyticsOverview. */
+  endTime?: string | unknown;
+  /** insights field on AdminAnalyticsOverview. */
   insights: Record<string, unknown>[];
-  /** Modality distribution field on admin analytics overview. */
+  /** modalityDistribution field on AdminAnalyticsOverview. */
   modalityDistribution: Record<string, unknown>[];
-  /** Model distribution field on admin analytics overview. */
+  /** modelDistribution field on AdminAnalyticsOverview. */
   modelDistribution: Record<string, unknown>[];
-  /** Model rankings field on admin analytics overview. */
+  /** modelRankings field on AdminAnalyticsOverview. */
   modelRankings: Record<string, unknown>;
-  /** Ranking size field on admin analytics overview. */
+  /** rankingSize field on AdminAnalyticsOverview. */
   rankingSize: number;
-  /** Start time field on admin analytics overview. */
-  startTime?: string | null;
-  /** Summary field on admin analytics overview. */
+  /** startTime field on AdminAnalyticsOverview. */
+  startTime?: string | unknown;
+  /** summary field on AdminAnalyticsOverview. */
   summary: Record<string, unknown>;
-  /** Time range field on admin analytics overview. */
+  /** timeRange field on AdminAnalyticsOverview. */
   timeRange: 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-  /** Trend field on admin analytics overview. */
+  /** trend field on AdminAnalyticsOverview. */
   trend: Record<string, unknown>[];
-  /** User rankings field on admin analytics overview. */
+  /** userRankings field on AdminAnalyticsOverview. */
   userRankings: Record<string, unknown>;
 }

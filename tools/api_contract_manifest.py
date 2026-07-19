@@ -869,6 +869,7 @@ class ApiContractManifestGenerator:
         if (
             self._valid_standard_operation_id(explicit)
             and self._operation_id_final_action(explicit) == expected_action
+            and ".byId." not in explicit
         ):
             return explicit
         segments = self._relative_path_segments(api_surface, api_path)
@@ -935,9 +936,9 @@ class ApiContractManifestGenerator:
                     return explicit_action
                 if normalized in self.ACTION_SEGMENTS:
                     return path_action
-            operation_action = self._operation_action(fallback_operation, kind, api_method)
-            if operation_action and operation_action != "create":
-                return operation_action
+                suffix_action = self._lower_camel_segment(normalized.split("_")[-1])
+                if suffix_action in self.ACTION_SEGMENTS:
+                    return suffix_action
             return "create"
         if method in {"PUT", "PATCH"}:
             return "update"

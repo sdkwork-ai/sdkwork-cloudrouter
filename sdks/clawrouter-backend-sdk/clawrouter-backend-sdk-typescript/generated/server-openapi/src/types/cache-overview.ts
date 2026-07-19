@@ -1,9 +1,9 @@
-/** Cache overview schema exposed by Claw Router. */
+/** CacheOverview contract. */
 export interface CacheOverview {
-  /** Instances field on cache overview. */
+  /** instances field on CacheOverview. */
   instances: Record<string, unknown>[];
-  /** Namespace policies field on cache overview. */
+  /** namespacePolicies field on CacheOverview. */
   namespacePolicies: Record<string, unknown>[];
-  /** Summary field on cache overview. */
+  /** summary field on CacheOverview. */
   summary: Record<string, unknown>;
 }

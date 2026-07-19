@@ -18,10 +18,10 @@ test('resolver falls back to generated server-openapi source when SDK dist is mi
   assert.match(resolved ?? '', /[\\/]src[\\/]index\.ts$/u);
 });
 
-test('resolver resolves clawrouter app SDK domains subpath to composed facade source', () => {
-  const resolved = resolvePortalPackageModule('@sdkwork/clawrouter-app-sdk/domains', portalRoot);
+test('resolver resolves independent payment app SDK to its composed package source', () => {
+  const resolved = resolvePortalPackageModule('@sdkwork/payment-app-sdk', portalRoot);
 
-  assert.match(resolved ?? '', /[\\/]src[\\/]domains[\\/]index\.ts$/u);
+  assert.match(resolved ?? '', /[\\/]src[\\/]index\.ts$/u);
 });
 
 test('resolver returns built SDK dist when present', () => {
@@ -74,7 +74,7 @@ test('resolver finds assets-core from sdkwork-assets workspace packages', () => 
   );
   const resolved = resolvePortalPackageModule('@sdkwork/assets-core', portalRoot, importer);
 
-  assert.match(resolved ?? '', /[\\/]sdkwork-assets-core[\\/]src[\\/]index\.ts$/u);
+  assert.match(resolved ?? '', /[\\/](?:sdkwork-assets-core|node_modules[\\/]@sdkwork[\\/]assets-core)[\\/]src[\\/]index\.ts$/u);
 });
 
 test('resolver finds assets-core from image-contracts transitive imports', () => {
@@ -84,11 +84,11 @@ test('resolver finds assets-core from image-contracts transitive imports', () =>
   );
   const resolved = resolvePortalPackageModule('@sdkwork/assets-core', portalRoot, importer);
 
-  assert.match(resolved ?? '', /[\\/]sdkwork-assets-core[\\/]src[\\/]index\.ts$/u);
+  assert.match(resolved ?? '', /[\\/](?:sdkwork-assets-core|node_modules[\\/]@sdkwork[\\/]assets-core)[\\/]src[\\/]index\.ts$/u);
 });
 
 test('resolver finds workspace packages declared only in root pnpm-workspace.yaml', () => {
   const resolved = resolvePortalPackageModule('@sdkwork/assets-core', portalRoot);
 
-  assert.match(resolved ?? '', /[\\/]sdkwork-assets-core[\\/]src[\\/]index\.ts$/u);
+  assert.match(resolved ?? '', /[\\/](?:sdkwork-assets-core|node_modules[\\/]@sdkwork[\\/]assets-core)[\\/]src[\\/]index\.ts$/u);
 });

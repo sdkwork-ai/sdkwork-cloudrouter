@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AnthropicFile};
+use crate::models::AnthropicFile;
 
 /// Anthropic Claude anthropic file list response schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -160,14 +160,19 @@ test("admin ratelimit page does not expose unsupported row menus and dashboard l
     new URL("./packages/sdkwork-clawrouter-pc-admin-ratelimit/src/index.tsx", import.meta.url),
     "utf8",
   );
+  const querySource = readFileSync(
+    new URL("./packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitQueries.ts", import.meta.url),
+    "utf8",
+  );
 
   assert.doesNotMatch(source, /MoreVertical/);
   assert.doesNotMatch(source, /<button className="text-slate-400 hover:text-red-500"/);
-  assert.match(source, /Promise\.all\(\[/);
-  assert.match(source, /RateLimitService\.fetchIpLimits\(\{/);
-  assert.match(source, /RateLimitService\.fetchTokenLimits\(\{/);
-  assert.match(source, /RateLimitService\.fetchModelLimits\(\{/);
-  assert.match(source, /RateLimitService\.fetchFirewalls\(\{/);
+  assert.match(source, /useRateLimitDashboardQuery/);
+  assert.match(querySource, /Promise\.all\(\[/);
+  assert.match(querySource, /RateLimitService\.fetchIpLimits\(dashboardSampleFilters\)/);
+  assert.match(querySource, /RateLimitService\.fetchTokenLimits\(dashboardSampleFilters\)/);
+  assert.match(querySource, /RateLimitService\.fetchModelLimits\(dashboardSampleFilters\)/);
+  assert.match(querySource, /RateLimitService\.fetchFirewalls\(dashboardSampleFilters\)/);
   assert.match(source, /BottomPagination/);
   assert.match(source, /activeIpLimits/);
   assert.match(source, /exhaustedTokenLimits/);
@@ -488,7 +493,7 @@ test("admin ratelimit service rejects unsafe firewall path ids before calling ge
   );
 });
 
-test("admin firewall delete fails closed unless backend confirms deletion", async () => {
+test("admin firewall delete follows standard 204 success semantics without a response body", async () => {
   for (const response of [{}, { deleted: false }]) {
     await withBackendSdkFetch(
       (url, init) => {
@@ -498,10 +503,7 @@ test("admin firewall delete fails closed unless backend confirms deletion", asyn
         throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
       },
       async () => {
-        await assert.rejects(
-          () => RateLimitService.removeFirewall("firewall-2"),
-          /Firewall rule delete confirmation is required/,
-        );
+        assert.equal(await RateLimitService.removeFirewall("firewall-2"), true);
       },
     );
   }

@@ -128,6 +128,7 @@
     "check:alignment:audit:facts:check": "node scripts/refresh-standard-alignment-audit.mjs --check",
     "db:materialize:contract": "python -B -m tools.database_contract_materializer --root .",
     "db:validate": "node ../sdkwork-specs/tools/check-database-framework-standard.mjs --root .",
+    "db:pool:validate": "node ../sdkwork-specs/tools/check-process-shared-database-pool.mjs --root .",
     "check:database-ownership": "node scripts/check-database-ownership.mjs",
     "check:application-env": "node --test scripts/lib/claw-router-browser-env-contract.test.mjs scripts/lib/claw-router-edge-env-contract.test.mjs scripts/dev/claw-router-application-env.test.mjs scripts/dev/ensure-claw-router-env.test.mjs scripts/write-release-env.test.mjs scripts/release-environment-validation.test.mjs && node scripts/check-claw-router-application-env.mjs",
     "check:gateway-request-identity": "node scripts/check-claw-router-gateway-request-identity.mjs",

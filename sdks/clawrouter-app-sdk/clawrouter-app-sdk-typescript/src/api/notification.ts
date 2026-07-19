@@ -9,7 +9,7 @@ export class NotificationPopupSeenApi {
   }
 
 
-/** Create */
+/** Mark popup seen */
   async create(notificationId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/popup_seen`));
   }
@@ -23,7 +23,7 @@ export class NotificationAcknowledgeApi {
   }
 
 
-/** Create */
+/** Acknowledge */
   async create(notificationId: string): Promise<Record<string, never>> {
     return this.client.post<Record<string, never>>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/acknowledge`));
   }
@@ -41,7 +41,7 @@ export class NotificationApi {
   }
 
 
-/** List */
+/** List notifications */
   async list(): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(appApiPath(`/notification/notifications`));
   }

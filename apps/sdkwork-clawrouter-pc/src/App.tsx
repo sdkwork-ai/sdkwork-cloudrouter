@@ -22,6 +22,7 @@ import { PortalErrorBoundary } from '@sdkwork/clawroutes-pc-commons';
 import { ClawRouterConsoleBusinessHostRoutes } from './console-business/consoleBusinessHostMount';
 import { ClawRouterConsoleBusinessNavbarActions } from './console-business/consoleBusinessNavbar';
 import { applySdkCommerceThemeVariables } from './console-business/consoleCommerceTheme';
+import { ClawRouterAdminHostRoutes } from './admin/clawRouterAdminHostMount';
 
 const Home = lazyRoute(() => import('@sdkwork/clawrouter-pc-home'), 'Home');
 const Models = lazyRoute(() => import('@sdkwork/clawrouter-pc-models/models'), 'Models');
@@ -34,7 +35,6 @@ const SdkReference = lazyRoute(() => import('@sdkwork/documents-pc-sdk-reference
 const Playground = lazyRoute(() => import('@sdkwork/clawrouter-pc-playground'), 'Playground');
 const ClawRouterTokenPlanPage = lazyRoute(() => import('./token-plan/ClawRouterTokenPlanPage'), 'ClawRouterTokenPlanPage');
 const ClawRouterAuthRoutes = lazyRoute(() => import('./auth/ClawRouterAuthRoutes'), 'ClawRouterAuthRoutes');
-const ClawRouterAuthSettingsPage = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-site'), 'ClawRouterAuthSettingsPage');
 
 const DashboardView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-dashboard'), 'DashboardView');
 const UsageView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-usage'), 'UsageView');
@@ -44,22 +44,6 @@ const UserView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-user'), 
 const SettingsView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-settings'), 'SettingsView');
 const AccountView = lazyRoute(() => import('./console-business/ConsoleAccountView'), 'ConsoleAccountView');
 const SettlementsView = lazyRoute(() => import('./console-business/ConsoleSettlementsView'), 'ConsoleSettlementsView');
-
-const DashboardAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-dashboard'), 'DashboardAdmin');
-const AnalyticsAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-analytics'), 'AnalyticsAdmin');
-const CacheAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-cache'), 'CacheAdmin');
-const GroupAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-group'), 'GroupAdmin');
-const ModelAdmin = lazyRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelAdmin');
-const ModelMappingAdmin = lazyRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelMappingAdmin');
-const ResourceAdmin = lazyRoute(() => import('@sdkwork/models-pc-admin-resource'), 'ResourceAdmin');
-const SiteAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-relay-site'), 'SiteAdmin');
-const ChannelAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-channel'), 'ChannelAdmin');
-const RecordAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-record'), 'RecordAdmin');
-const MonitorAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-monitor'), 'MonitorAdmin');
-const RateLimitAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-ratelimit'), 'RateLimitAdmin');
-const ServiceNodesAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-service-nodes'), 'ServiceNodesAdmin');
-const RuntimeRegionAdmin = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-runtime-region'), 'RuntimeRegionAdmin');
-const ClawRouterSiteSettingsPage = lazyRoute(() => import('@sdkwork/clawrouter-pc-admin-site'), 'ClawRouterSiteSettingsPage');
 
 function lazyRoute<TProps extends object = Record<string, unknown>>(
   loader: () => Promise<Record<string, unknown>>,
@@ -186,22 +170,7 @@ export default function App() {
             {/* Admin Routes */}
             <Route path="/admin" element={<PortalErrorBoundary><RequireAdminSession><AdminLayout isDark={isDark} toggleTheme={toggleTheme} /></RequireAdminSession></PortalErrorBoundary>}>
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardAdmin />} />
-              <Route path="analytics" element={<AnalyticsAdmin />} />
-              <Route path="group" element={<GroupAdmin />} />
-              <Route path="model" element={<ModelAdmin />} />
-              <Route path="model/resources" element={<ResourceAdmin />} />
-              <Route path="model/sites" element={<SiteAdmin />} />
-              <Route path="model/mappings" element={<ModelMappingAdmin />} />
-              <Route path="channel" element={<ChannelAdmin />} />
-              <Route path="record" element={<RecordAdmin />} />
-              <Route path="monitor" element={<MonitorAdmin />} />
-              <Route path="cache" element={<CacheAdmin />} />
-              <Route path="ratelimit" element={<RateLimitAdmin />} />
-              <Route path="service-nodes" element={<ServiceNodesAdmin />} />
-              <Route path="settings" element={<ClawRouterAuthSettingsPage />} />
-              <Route path="runtime-region" element={<RuntimeRegionAdmin />} />
-              <Route path="site" element={<ClawRouterSiteSettingsPage />} />
+              {ClawRouterAdminHostRoutes()}
               <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
             </Route>
 

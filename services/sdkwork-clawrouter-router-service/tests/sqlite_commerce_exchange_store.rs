@@ -3,8 +3,8 @@ use sdkwork_clawrouter_router_service::ports::{
     AdminMarketingStore, AdminMarketingSubject, ListAdminExchangeRulesQuery,
     UpdateAdminExchangeRuleCommand,
 };
-use sdkwork_promotion_repository_sqlx::SqliteCommerceExchangeStore;
-use sdkwork_promotion_service::{AppCommerceExchangeRuleQuery, AppCommerceSubject};
+use sdkwork_commerce_promotion_repository_sqlx::SqliteCommerceExchangeStore;
+use sdkwork_commerce_promotion_service::{AppCommerceExchangeRuleQuery, AppCommerceSubject};
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::Row;
 

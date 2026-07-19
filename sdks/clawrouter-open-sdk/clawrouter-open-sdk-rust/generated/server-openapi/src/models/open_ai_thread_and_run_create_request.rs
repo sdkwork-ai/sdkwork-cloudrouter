@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiThreadCreateRequest};
+use crate::models::OpenAiThreadCreateRequest;
 
 /// OpenAI-compatible request to create a thread and start a run.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

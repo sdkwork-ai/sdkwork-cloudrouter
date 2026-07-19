@@ -1,5 +1,6 @@
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    sdkwork_database_sqlx::enable_process_shared_database_pool();
     let runtime_toml = sdkwork_claw_config::RuntimeTomlConfig::from_env_config_file()
         .map_err(anyhow::Error::msg)?;
     let config = sdkwork_claw_config::RuntimeConfig::from_optional_parts(

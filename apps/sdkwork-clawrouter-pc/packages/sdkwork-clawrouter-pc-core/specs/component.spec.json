@@ -122,40 +122,9 @@
     "routeManifest": null,
     "sdkDependencies": [
       {
-        "workspace": "clawrouter-app-catalog-capability",
-        "surface": "app-api",
-        "credentialMode": "authenticated-app-api"
-      },
-      {
-        "workspace": "clawrouter-app-membership-capability",
-        "surface": "app-api",
-        "credentialMode": "authenticated-app-api"
-      },
-      {
-        "workspace": "clawrouter-app-order-capability",
-        "surface": "app-api",
-        "credentialMode": "authenticated-app-api"
-      },
-      {
-        "workspace": "clawrouter-app-payment-capability",
-        "surface": "app-api",
-        "credentialMode": "authenticated-app-api"
-      },
-      {
-        "workspace": "clawrouter-app-promotion-capability",
-        "surface": "app-api",
-        "credentialMode": "authenticated-app-api"
-      },
-      {
         "workspace": "clawrouter-app-sdk",
         "surface": "app-api",
         "credentialMode": "authenticated-app-api"
-      },
-      {
-        "workspace": "clawrouter-app-wallet-capability",
-        "surface": "app-api",
-        "credentialMode": "authenticated-app-api",
-        "permissionModuleId": "clawrouter"
       },
       {
         "workspace": "clawrouter-open-sdk",
@@ -163,19 +132,19 @@
         "credentialMode": "protected-open-api-flexible"
       },
       {
+        "workspace": "sdkwork-account-app-sdk",
+        "surface": "app-api",
+        "credentialMode": "authenticated-app-api"
+      },
+      {
         "workspace": "sdkwork-agents-app-sdk",
         "surface": "app-api",
         "credentialMode": "authenticated-app-api"
       },
       {
-        "workspace": "sdkwork-clawrouter-app-sdk",
+        "workspace": "sdkwork-catalog-app-sdk",
         "surface": "app-api",
         "credentialMode": "authenticated-app-api"
-      },
-      {
-        "workspace": "sdkwork-clawrouter-open-sdk",
-        "surface": "open-api",
-        "credentialMode": "protected-open-api-flexible"
       },
       {
         "workspace": "sdkwork-documents-app-sdk",
@@ -206,6 +175,26 @@
         "workspace": "sdkwork-models-app-sdk",
         "surface": "app-api",
         "credentialMode": "authenticated-app-api"
+      },
+      {
+        "workspace": "sdkwork-membership-app-sdk",
+        "surface": "app-api",
+        "credentialMode": "authenticated-app-api"
+      },
+      {
+        "workspace": "sdkwork-order-app-sdk",
+        "surface": "app-api",
+        "credentialMode": "authenticated-app-api"
+      },
+      {
+        "workspace": "sdkwork-payment-app-sdk",
+        "surface": "app-api",
+        "credentialMode": "authenticated-app-api"
+      },
+      {
+        "workspace": "sdkwork-promotion-app-sdk",
+        "surface": "app-api",
+        "credentialMode": "authenticated-app-api"
       }
     ],
     "permissionComposition": {
@@ -214,6 +203,12 @@
         "manifestRef": "../../../specs/iam.module.manifest.json"
       },
       "moduleCatalogRefs": [
+        {
+          "moduleId": "account",
+          "manifestRef": "../../../../../../sdkwork-account/specs/iam.module.manifest.json",
+          "inheritPermissions": true,
+          "inheritRoles": true
+        },
         {
           "moduleId": "agents",
           "manifestRef": "../../../../../../sdkwork-agents/specs/iam.module.manifest.json",
@@ -289,12 +284,6 @@
         {
           "moduleId": "promotion",
           "manifestRef": "../../../../../../sdkwork-promotion/specs/iam.module.manifest.json",
-          "inheritPermissions": true,
-          "inheritRoles": true
-        },
-        {
-          "moduleId": "clawrouter",
-          "manifestRef": "../../../specs/iam.module.manifest.json",
           "inheritPermissions": true,
           "inheritRoles": true
         }

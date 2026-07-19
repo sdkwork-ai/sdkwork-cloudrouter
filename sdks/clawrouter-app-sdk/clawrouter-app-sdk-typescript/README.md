@@ -57,6 +57,7 @@ const client = new SdkworkAppClient({
 - `client.ai` - ai API
 - `client.chat` - chat API
 - `client.iam` - iam API
+- `client.memory` - memory API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
 - `client.system` - system API
@@ -66,43 +67,50 @@ const client = new SdkworkAppClient({
 ### ai
 
 ```typescript
-// List
+// List groups
 const result = await client.ai.channelGroups.list();
 ```
 
 ### chat
 
 ```typescript
-// List
+// List chat conversations
 const result = await client.chat.conversations.list();
 ```
 
 ### iam
 
 ```typescript
-// List
+// List keys
 const result = await client.iam.apiKeys.list();
+```
+
+### memory
+
+```typescript
+// List memory spaces
+const result = await client.memory.spaces.list();
 ```
 
 ### notification
 
 ```typescript
-// List
+// List notifications
 const result = await client.notification.list();
 ```
 
 ### runtime
 
 ```typescript
-// List
+// List runtime invocations
 const result = await client.runtime.invocations.list();
 ```
 
 ### system
 
 ```typescript
-// List
-const result = await client.system.shops.list();
+// List site branding
+const result = await client.system.site.runtime.list();
 ```
 
 ## Error Handling

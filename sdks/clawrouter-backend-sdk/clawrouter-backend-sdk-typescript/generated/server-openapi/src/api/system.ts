@@ -1,6 +1,6 @@
 import { backendApiPath } from './paths';
 import type { HttpClient } from '../http/client';
-import type { AdminAnalyticsOverview, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview } from '../types';
+import type { AdminAnalyticsOverview, AdminAuthSettingsResponse, AdminAuthSettingsUpdateRequest, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRecordPage, AdminRuntimeRegionSettingsResponse, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeItem, AdminServiceNodePage, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsResponse, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview, FirewallRuleItem, FirewallRulePage, IpLimitRuleItem, IpLimitRulePage, ModelLimitRuleItem, ModelLimitRulePage, MonitorAlertPage, MonitorNodePage, MonitorPerformancePage, TokenLimitRuleItem, TokenLimitRulePage } from '../types';
 export class SystemSiteSettingsApi {
   private client: HttpClient;
 
@@ -9,14 +9,14 @@ export class SystemSiteSettingsApi {
   }
 
 
-/** Retrieve */
-  async retrieve(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/site/settings`));
+/** List settings */
+  async list(): Promise<AdminSiteSettingsResponse> {
+    return this.client.get<AdminSiteSettingsResponse>(backendApiPath(`/system/site/settings`));
   }
 
-/** Update */
-  async update(): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/site/settings`));
+/** Update settings */
+  async update(body: AdminSiteSettingsUpdateRequest): Promise<AdminSiteSettingsResponse> {
+    return this.client.patch<AdminSiteSettingsResponse>(backendApiPath(`/system/site/settings`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -31,330 +31,6 @@ export class SystemSiteApi {
 
 }
 
-export class SystemShopsVerificationsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Update */
-  async update(shopId: string, verificationId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/verifications/${serializePathParameter(verificationId, { name: 'verificationId', style: 'simple', explode: false })}`));
-  }
-}
-
-export class SystemShopsShippingTemplatesApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Upsert */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/shipping_templates`));
-  }
-}
-
-export class SystemShopsSettlementProfileApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Update */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile`));
-  }
-
-/** Approve */
-  async approve(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile/approve`));
-  }
-
-/** Reject */
-  async reject(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/settlement_profile/reject`));
-  }
-}
-
-export class SystemShopsServiceAreasApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/service_areas`));
-  }
-
-/** Update */
-  async update(shopId: string, serviceAreaId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/service_areas/${serializePathParameter(serviceAreaId, { name: 'serviceAreaId', style: 'simple', explode: false })}`));
-  }
-}
-
-export class SystemShopsRiskSignalsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/risk_signals`));
-  }
-
-/** Resolve */
-  async resolve(shopId: string, riskSignalId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/risk_signals/${serializePathParameter(riskSignalId, { name: 'riskSignalId', style: 'simple', explode: false })}/resolve`));
-  }
-}
-
-export class SystemShopsReturnAddressesApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Upsert */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/return_addresses`));
-  }
-}
-
-export class SystemShopsQualificationsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Upsert */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/qualifications`));
-  }
-}
-
-export class SystemShopsPoliciesApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/policies`));
-  }
-
-/** Update */
-  async update(shopId: string, policyId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/policies/${serializePathParameter(policyId, { name: 'policyId', style: 'simple', explode: false })}`));
-  }
-}
-
-export class SystemShopsFulfillmentProfileApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Update */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/fulfillment_profile`));
-  }
-}
-
-export class SystemShopsDepositAccountApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Update */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/deposit_account`));
-  }
-
-/** Review */
-  async review(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/deposit_account/review`));
-  }
-}
-
-export class SystemShopsCustomerServicesApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Upsert */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/customer_services`));
-  }
-}
-
-export class SystemShopsChannelsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/channels`));
-  }
-
-/** Update */
-  async update(shopId: string, channelId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/channels/${serializePathParameter(channelId, { name: 'channelId', style: 'simple', explode: false })}`));
-  }
-}
-
-export class SystemShopsCategoryBindingsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Upsert */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/category_bindings`));
-  }
-}
-
-export class SystemShopsBusinessHoursApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Update */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/business_hours`));
-  }
-}
-
-export class SystemShopsBrandAuthorizationsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Upsert */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/brand_authorizations`));
-  }
-}
-
-export class SystemShopsApi {
-  private client: HttpClient;
-  public readonly brandAuthorizations: SystemShopsBrandAuthorizationsApi;
-  public readonly businessHours: SystemShopsBusinessHoursApi;
-  public readonly categoryBindings: SystemShopsCategoryBindingsApi;
-  public readonly channels: SystemShopsChannelsApi;
-  public readonly customerServices: SystemShopsCustomerServicesApi;
-  public readonly depositAccount: SystemShopsDepositAccountApi;
-  public readonly fulfillmentProfile: SystemShopsFulfillmentProfileApi;
-  public readonly policies: SystemShopsPoliciesApi;
-  public readonly qualifications: SystemShopsQualificationsApi;
-  public readonly returnAddresses: SystemShopsReturnAddressesApi;
-  public readonly riskSignals: SystemShopsRiskSignalsApi;
-  public readonly serviceAreas: SystemShopsServiceAreasApi;
-  public readonly settlementProfile: SystemShopsSettlementProfileApi;
-  public readonly shippingTemplates: SystemShopsShippingTemplatesApi;
-  public readonly verifications: SystemShopsVerificationsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.brandAuthorizations = new SystemShopsBrandAuthorizationsApi(client);
-    this.businessHours = new SystemShopsBusinessHoursApi(client);
-    this.categoryBindings = new SystemShopsCategoryBindingsApi(client);
-    this.channels = new SystemShopsChannelsApi(client);
-    this.customerServices = new SystemShopsCustomerServicesApi(client);
-    this.depositAccount = new SystemShopsDepositAccountApi(client);
-    this.fulfillmentProfile = new SystemShopsFulfillmentProfileApi(client);
-    this.policies = new SystemShopsPoliciesApi(client);
-    this.qualifications = new SystemShopsQualificationsApi(client);
-    this.returnAddresses = new SystemShopsReturnAddressesApi(client);
-    this.riskSignals = new SystemShopsRiskSignalsApi(client);
-    this.serviceAreas = new SystemShopsServiceAreasApi(client);
-    this.settlementProfile = new SystemShopsSettlementProfileApi(client);
-    this.shippingTemplates = new SystemShopsShippingTemplatesApi(client);
-    this.verifications = new SystemShopsVerificationsApi(client);
-  }
-
-
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops`));
-  }
-
-/** Update */
-  async update(shopId: string): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}`));
-  }
-
-/** Approve */
-  async approve(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/approve`));
-  }
-
-/** Close */
-  async close(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/close`));
-  }
-
-/** Reject */
-  async reject(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/reject`));
-  }
-
-/** Resume */
-  async resume(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/resume`));
-  }
-
-/** Create review */
-  async submitReview(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/submit_review`));
-  }
-
-/** Suspend */
-  async suspend(shopId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/shops/${serializePathParameter(shopId, { name: 'shopId', style: 'simple', explode: false })}/suspend`));
-  }
-}
-
 export class SystemServiceNodesStatusApi {
   private client: HttpClient;
 
@@ -363,9 +39,9 @@ export class SystemServiceNodesStatusApi {
   }
 
 
-/** Update */
-  async update(nodeId: string): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/status`));
+/** Update node status */
+  async update(nodeId: string, body: AdminServiceNodeStatusUpdateRequest): Promise<AdminServiceNodeItem> {
+    return this.client.put<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/status`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -379,24 +55,24 @@ export class SystemServiceNodesApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/service_nodes`));
+/** List nodes */
+  async list(): Promise<AdminServiceNodePage> {
+    return this.client.get<AdminServiceNodePage>(backendApiPath(`/system/service_nodes`));
   }
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/service_nodes`));
+/** Create node */
+  async create(body: AdminServiceNodeCreateRequest): Promise<AdminServiceNodeItem> {
+    return this.client.post<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes`), body, undefined, undefined, 'application/json');
   }
 
-/** Delete */
+/** Delete node */
   async delete(nodeId: string): Promise<void> {
     return this.client.delete<void>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
   }
 
-/** Update */
-  async update(nodeId: string): Promise<Record<string, never>> {
-    return this.client.put<Record<string, never>>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`));
+/** Update node */
+  async update(nodeId: string, body: AdminServiceNodeUpdateRequest): Promise<AdminServiceNodeItem> {
+    return this.client.put<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -408,14 +84,14 @@ export class SystemRuntimeRegionSettingsApi {
   }
 
 
-/** Retrieve */
-  async retrieve(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/runtime_region/settings`));
+/** List settings */
+  async list(): Promise<AdminRuntimeRegionSettingsResponse> {
+    return this.client.get<AdminRuntimeRegionSettingsResponse>(backendApiPath(`/system/runtime_region/settings`));
   }
 
-/** Update */
-  async update(): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/runtime_region/settings`));
+/** Update settings */
+  async update(body: AdminRuntimeRegionSettingsUpdateRequest): Promise<AdminRuntimeRegionSettingsResponse> {
+    return this.client.patch<AdminRuntimeRegionSettingsResponse>(backendApiPath(`/system/runtime_region/settings`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -438,9 +114,9 @@ export class SystemRecordsApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/records`));
+/** List logs */
+  async list(): Promise<AdminRecordPage> {
+    return this.client.get<AdminRecordPage>(backendApiPath(`/system/records`));
   }
 }
 
@@ -452,14 +128,14 @@ export class SystemRateLimitsModelsApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/rate_limits/models`));
+/** List model limits */
+  async list(): Promise<ModelLimitRulePage> {
+    return this.client.get<ModelLimitRulePage>(backendApiPath(`/system/rate_limits/models`));
   }
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/rate_limits/models`));
+/** Create model limit */
+  async create(body: AdminModelLimitCreateRequest): Promise<ModelLimitRuleItem> {
+    return this.client.post<ModelLimitRuleItem>(backendApiPath(`/system/rate_limits/models`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -471,14 +147,14 @@ export class SystemRateLimitsIpApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/rate_limits/ip`));
+/** List IP limits */
+  async list(): Promise<IpLimitRulePage> {
+    return this.client.get<IpLimitRulePage>(backendApiPath(`/system/rate_limits/ip`));
   }
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/rate_limits/ip`));
+/** Create IP limit */
+  async create(body: AdminIpLimitCreateRequest): Promise<IpLimitRuleItem> {
+    return this.client.post<IpLimitRuleItem>(backendApiPath(`/system/rate_limits/ip`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -490,14 +166,14 @@ export class SystemRateLimitsApiKeysApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/rate_limits/api_keys`));
+/** List token limits */
+  async list(): Promise<TokenLimitRulePage> {
+    return this.client.get<TokenLimitRulePage>(backendApiPath(`/system/rate_limits/api_keys`));
   }
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/rate_limits/api_keys`));
+/** Create token limit */
+  async create(body: AdminTokenLimitCreateRequest): Promise<TokenLimitRuleItem> {
+    return this.client.post<TokenLimitRuleItem>(backendApiPath(`/system/rate_limits/api_keys`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -524,9 +200,9 @@ export class SystemMonitorPerformanceApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/monitor/performance`));
+/** List performance data */
+  async list(): Promise<MonitorPerformancePage> {
+    return this.client.get<MonitorPerformancePage>(backendApiPath(`/system/monitor/performance`));
   }
 }
 
@@ -538,9 +214,9 @@ export class SystemMonitorNodesApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/monitor/nodes`));
+/** List nodes */
+  async list(): Promise<MonitorNodePage> {
+    return this.client.get<MonitorNodePage>(backendApiPath(`/system/monitor/nodes`));
   }
 }
 
@@ -552,9 +228,9 @@ export class SystemMonitorAlertsApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/monitor/alerts`));
+/** List alerts */
+  async list(): Promise<MonitorAlertPage> {
+    return this.client.get<MonitorAlertPage>(backendApiPath(`/system/monitor/alerts`));
   }
 }
 
@@ -573,31 +249,6 @@ export class SystemMonitorApi {
 
 }
 
-export class SystemMarketingReferralStatsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/marketing/referral_stats`));
-  }
-}
-
-export class SystemMarketingApi {
-  private client: HttpClient;
-  public readonly referralStats: SystemMarketingReferralStatsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.referralStats = new SystemMarketingReferralStatsApi(client);
-  }
-
-}
-
 export class SystemInstallationStatusApi {
   private client: HttpClient;
 
@@ -606,8 +257,8 @@ export class SystemInstallationStatusApi {
   }
 
 
-/** Retrieve */
-  async retrieve(): Promise<Record<string, never>> {
+/** List installation status */
+  async list(): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(backendApiPath(`/system/installation/status`));
   }
 }
@@ -631,17 +282,17 @@ export class SystemFirewallsRulesApi {
   }
 
 
-/** List */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/firewalls/rules`));
+/** List firewalls */
+  async list(): Promise<FirewallRulePage> {
+    return this.client.get<FirewallRulePage>(backendApiPath(`/system/firewalls/rules`));
   }
 
-/** Create */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/firewalls/rules`));
+/** Create firewall */
+  async create(body: AdminFirewallRuleCreateRequest): Promise<FirewallRuleItem> {
+    return this.client.post<FirewallRuleItem>(backendApiPath(`/system/firewalls/rules`), body, undefined, undefined, 'application/json');
   }
 
-/** Delete */
+/** Delete firewall */
   async delete(ruleId: string): Promise<void> {
     return this.client.delete<void>(backendApiPath(`/system/firewalls/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`));
   }
@@ -666,8 +317,8 @@ export class SystemDashboardAdminOverviewApi {
   }
 
 
-/** Retrieve */
-  async retrieve(): Promise<Record<string, never>> {
+/** List dashboard data */
+  async list(): Promise<Record<string, never>> {
     return this.client.get<Record<string, never>>(backendApiPath(`/system/dashboard/admin/overview`));
   }
 }
@@ -702,15 +353,10 @@ export class SystemCacheOverviewApi {
   }
 
 
-/** Retrieve */
-  async retrieve(): Promise<CacheOverview> {
+/** List overview */
+  async list(): Promise<CacheOverview> {
     return this.client.get<CacheOverview>(backendApiPath(`/system/cache/overview`));
   }
-}
-
-export interface SystemCacheNamespacesKeysListParams {
-  pageSize?: number;
-  cursor?: string;
 }
 
 export class SystemCacheNamespacesKeysApi {
@@ -721,16 +367,12 @@ export class SystemCacheNamespacesKeysApi {
   }
 
 
-/** List */
-  async list(namespace_: string, params?: SystemCacheNamespacesKeysListParams): Promise<CacheNamespaceKeyPage> {
-    const query = buildQueryString([
-      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
-      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.get<CacheNamespaceKeyPage>(appendQueryString(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys`), query));
+/** List keys */
+  async list(namespace_: string): Promise<CacheNamespaceKeyPage> {
+    return this.client.get<CacheNamespaceKeyPage>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys`));
   }
 
-/** Delete */
+/** Delete key */
   async delete(namespace_: string, key: string): Promise<void> {
     return this.client.delete<void>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys/${serializePathParameter(key, { name: 'key', style: 'simple', explode: false })}`));
   }
@@ -746,12 +388,12 @@ export class SystemCacheNamespacesApi {
   }
 
 
-/** Delete */
+/** Delete namespace */
   async delete(namespace_: string): Promise<void> {
     return this.client.delete<void>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}`));
   }
 
-/** Create */
+/** Refresh namespace */
   async refresh(namespace_: string): Promise<CacheOperationOutcome> {
     return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/refresh`));
   }
@@ -765,12 +407,12 @@ export class SystemCacheInstancesApi {
   }
 
 
-/** Delete */
+/** Delete instance */
   async delete(instanceName: string): Promise<void> {
     return this.client.delete<void>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}`));
   }
 
-/** Create */
+/** Refresh instance */
   async refresh(instanceName: string): Promise<CacheOperationOutcome> {
     return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}/refresh`));
   }
@@ -790,7 +432,7 @@ export class SystemCacheApi {
   }
 
 
-/** Create */
+/** Refresh all */
   async refresh(): Promise<CacheOperationOutcome> {
     return this.client.post<CacheOperationOutcome>(backendApiPath(`/system/cache/refresh`));
   }
@@ -804,14 +446,14 @@ export class SystemAuthSettingsApi {
   }
 
 
-/** Retrieve */
-  async retrieve(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/system/auth/settings`));
+/** List claw router auth settings */
+  async retrieve(): Promise<AdminAuthSettingsResponse> {
+    return this.client.get<AdminAuthSettingsResponse>(backendApiPath(`/system/auth/settings`));
   }
 
-/** Update */
-  async update(): Promise<Record<string, never>> {
-    return this.client.patch<Record<string, never>>(backendApiPath(`/system/auth/settings`));
+/** Update claw router auth settings */
+  async update(body: AdminAuthSettingsUpdateRequest): Promise<AdminAuthSettingsResponse> {
+    return this.client.patch<AdminAuthSettingsResponse>(backendApiPath(`/system/auth/settings`), body, undefined, undefined, 'application/json');
   }
 }
 
@@ -826,13 +468,6 @@ export class SystemAuthApi {
 
 }
 
-export interface SystemAnalyticsAdminOverviewRetrieveParams {
-  timeRange?: 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-  startTime?: string;
-  endTime?: string;
-  rankingSize?: number;
-}
-
 export class SystemAnalyticsAdminOverviewApi {
   private client: HttpClient;
 
@@ -841,15 +476,9 @@ export class SystemAnalyticsAdminOverviewApi {
   }
 
 
-/** Retrieve */
-  async retrieve(params?: SystemAnalyticsAdminOverviewRetrieveParams): Promise<AdminAnalyticsOverview> {
-    const query = buildQueryString([
-      { name: 'time_range', value: params?.timeRange, style: 'form', explode: true, allowReserved: false },
-      { name: 'start_time', value: params?.startTime, style: 'form', explode: true, allowReserved: false },
-      { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
-      { name: 'ranking_size', value: params?.rankingSize, style: 'form', explode: true, allowReserved: false },
-    ]);
-    return this.client.get<AdminAnalyticsOverview>(appendQueryString(backendApiPath(`/system/analytics/admin/overview`), query));
+/** List overview */
+  async list(): Promise<AdminAnalyticsOverview> {
+    return this.client.get<AdminAnalyticsOverview>(backendApiPath(`/system/analytics/admin/overview`));
   }
 }
 
@@ -875,65 +504,34 @@ export class SystemAnalyticsApi {
 
 }
 
-export class SystemAfterSalesReviewsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Create */
-  async create(afterSalesRequestId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/system/after_sales/requests/${serializePathParameter(afterSalesRequestId, { name: 'afterSalesRequestId', style: 'simple', explode: false })}/reviews`));
-  }
-}
-
-export class SystemAfterSalesApi {
-  private client: HttpClient;
-  public readonly reviews: SystemAfterSalesReviewsApi;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-    this.reviews = new SystemAfterSalesReviewsApi(client);
-  }
-
-}
-
 export class SystemApi {
   private client: HttpClient;
-  public readonly afterSales: SystemAfterSalesApi;
   public readonly analytics: SystemAnalyticsApi;
   public readonly auth: SystemAuthApi;
   public readonly cache: SystemCacheApi;
   public readonly dashboard: SystemDashboardApi;
   public readonly firewalls: SystemFirewallsApi;
   public readonly installation: SystemInstallationApi;
-  public readonly marketing: SystemMarketingApi;
   public readonly monitor: SystemMonitorApi;
   public readonly rateLimits: SystemRateLimitsApi;
   public readonly records: SystemRecordsApi;
   public readonly runtimeRegion: SystemRuntimeRegionApi;
   public readonly serviceNodes: SystemServiceNodesApi;
-  public readonly shops: SystemShopsApi;
   public readonly site: SystemSiteApi;
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.afterSales = new SystemAfterSalesApi(client);
     this.analytics = new SystemAnalyticsApi(client);
     this.auth = new SystemAuthApi(client);
     this.cache = new SystemCacheApi(client);
     this.dashboard = new SystemDashboardApi(client);
     this.firewalls = new SystemFirewallsApi(client);
     this.installation = new SystemInstallationApi(client);
-    this.marketing = new SystemMarketingApi(client);
     this.monitor = new SystemMonitorApi(client);
     this.rateLimits = new SystemRateLimitsApi(client);
     this.records = new SystemRecordsApi(client);
     this.runtimeRegion = new SystemRuntimeRegionApi(client);
     this.serviceNodes = new SystemServiceNodesApi(client);
-    this.shops = new SystemShopsApi(client);
     this.site = new SystemSiteApi(client);
   }
 
@@ -1021,156 +619,4 @@ function serializePathPrimitive(value: unknown): string {
     return JSON.stringify(value);
   }
   return String(value);
-}
-interface QueryParameterSpec {
-  name: string;
-  value: unknown;
-  style: string;
-  explode: boolean;
-  allowReserved: boolean;
-  contentType?: string;
-}
-
-function buildQueryString(parameters: QueryParameterSpec[]): string {
-  const pairs: string[] = [];
-  for (const parameter of parameters) {
-    appendSerializedParameter(pairs, parameter);
-  }
-  return pairs.join('&');
-}
-
-function appendSerializedParameter(pairs: string[], parameter: QueryParameterSpec): void {
-  if (parameter.value === undefined || parameter.value === null) {
-    return;
-  }
-
-  if (parameter.contentType) {
-    pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(JSON.stringify(parameter.value), parameter.allowReserved)}`);
-    return;
-  }
-
-  const style = parameter.style || 'form';
-  if (style === 'deepObject') {
-    appendDeepObjectParameter(pairs, parameter.name, parameter.value, parameter.allowReserved);
-    return;
-  }
-
-  if (Array.isArray(parameter.value)) {
-    appendArrayParameter(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
-    return;
-  }
-
-  if (typeof parameter.value === 'object') {
-    appendObjectParameter(pairs, parameter.name, parameter.value as Record<string, unknown>, style, parameter.explode, parameter.allowReserved);
-    return;
-  }
-
-  pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(serializePrimitive(parameter.value), parameter.allowReserved)}`);
-}
-
-function appendArrayParameter(
-  pairs: string[],
-  name: string,
-  value: unknown[],
-  style: string,
-  explode: boolean,
-  allowReserved: boolean,
-): void {
-  const values = value
-    .filter((item) => item !== undefined && item !== null)
-    .map((item) => serializePrimitive(item));
-  if (values.length === 0) {
-    return;
-  }
-
-  if (style === 'form' && explode) {
-    for (const item of values) {
-      pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(item, allowReserved)}`);
-    }
-    return;
-  }
-
-  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(values.join(','), allowReserved)}`);
-}
-
-function appendObjectParameter(
-  pairs: string[],
-  name: string,
-  value: Record<string, unknown>,
-  style: string,
-  explode: boolean,
-  allowReserved: boolean,
-): void {
-  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
-  if (entries.length === 0) {
-    return;
-  }
-
-  if (style === 'form' && explode) {
-    for (const [key, entryValue] of entries) {
-      pairs.push(`${encodeQueryComponent(key)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
-    }
-    return;
-  }
-
-  const serialized = entries.flatMap(([key, entryValue]) => [key, serializePrimitive(entryValue)]).join(',');
-  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serialized, allowReserved)}`);
-}
-
-function appendDeepObjectParameter(
-  pairs: string[],
-  name: string,
-  value: unknown,
-  allowReserved: boolean,
-): void {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serializePrimitive(value), allowReserved)}`);
-    return;
-  }
-
-  for (const [key, entryValue] of Object.entries(value as Record<string, unknown>)) {
-    if (entryValue === undefined || entryValue === null) {
-      continue;
-    }
-    pairs.push(`${encodeQueryComponent(`${name}[${key}]`)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
-  }
-}
-
-function serializePrimitive(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  if (typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  return String(value);
-}
-
-function encodeQueryComponent(value: string): string {
-  return encodeURIComponent(value);
-}
-
-function encodeQueryValue(value: string, allowReserved: boolean): string {
-  const encoded = encodeURIComponent(value);
-  if (!allowReserved) {
-    return encoded;
-  }
-  return encoded.replace(/%3A/gi, ':')
-    .replace(/%2F/gi, '/')
-    .replace(/%3F/gi, '?')
-    .replace(/%23/gi, '#')
-    .replace(/%5B/gi, '[')
-    .replace(/%5D/gi, ']')
-    .replace(/%40/gi, '@')
-    .replace(/%21/gi, '!')
-    .replace(/%24/gi, '$')
-    .replace(/%26/gi, '&')
-    .replace(/%27/gi, "'")
-    .replace(/%28/gi, '(')
-    .replace(/%29/gi, ')')
-    .replace(/%2A/gi, '*')
-    .replace(/%2B/gi, '+')
-    .replace(/%2C/gi, ',')
-    .replace(/%3B/gi, ';')
-    .replace(/%3D/gi, '=');
 }

@@ -16,11 +16,11 @@ import {
   readRequiredString,
   readString,
   readStringArray,
+  getModelsBackendSdkClient,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import {
   getClawRouterBackendSdkClient,
-  getModelsBackendSdkClient,
 } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import {
   isCanonicalModelCatalogKey,
@@ -28,29 +28,74 @@ import {
   parseModelCatalogIdentity,
 } from '@sdkwork/clawroutes-pc-commons/model-catalog-identity';
 import type {
-  AdminAiResourceCreateRequest,
-  AdminAiResourceGroupItem,
-  AdminAiResourceItem,
-  AdminAiResourceMemberInput,
-  AdminAiResourceMemberItem,
-  AdminAiResourceUpdateRequest,
   AdminChannelCreateRequest,
   AdminChannelCredentialInput,
   AdminChannelUpdateRequest,
-  AdminProviderSecretCreateRequest,
-  AdminProviderSecretUpdateRequest,
-  IntegrationProviderSecretsListParams,
   ProviderCircuitBreakerPolicy,
   ProviderRetryPolicy,
 } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
+  AdminAiResourceCreateRequest,
+  AdminAiResourceMemberInput,
+  AdminAiResourceUpdateRequest,
   AdminModelMappingCreateRequest,
-  AdminModelMappingRule,
   AdminModelMappingRuleBindingInput,
   AdminModelMappingRuleItemInput,
   AdminModelMappingUpdateRequest,
   AiModelMappingsListParams,
-} from '@sdkwork/clawrouter-pc-admin-core/sdk';
+} from '@sdkwork/models-backend-sdk';
+
+interface AdminAiResourceMemberItem {
+  parentResourceCode: string;
+  memberResourceCode: string;
+  memberRole: 'included' | 'optional' | 'fallback';
+  required: boolean;
+  sortOrder: string | null;
+}
+
+interface AdminAiResourceItem {
+  id: string;
+  resourceCode: string;
+  resourceType: 'vendor' | 'modality' | 'api_endpoint' | 'model_api' | 'bundle';
+  displayName: string;
+  vendorCode: string | null;
+  modalityCode: string | null;
+  apiEndpointCode: string | null;
+  catalogKey: string | null;
+  model: string | null;
+  providerNativeModel: string | null;
+  compositionMode: 'single' | 'any' | 'all';
+  status: 'active' | 'disabled' | 'inactive';
+  sortOrder: string | null;
+  members: AdminAiResourceMemberItem[];
+}
+
+interface AdminAiResourceGroupItem {
+  id: string;
+  groupCode: string;
+  groupName: string;
+  groupType: 'api_group';
+  selectionMode: 'manual' | 'all' | 'any' | 'dynamic_all_api';
+  status: 'active' | 'disabled' | 'inactive';
+  dynamic: boolean;
+  resourceCount: number;
+  vendorCodes: string[];
+  capability?: string | null;
+  capabilities: string[];
+  sortOrder: string | null;
+  description: string | null;
+}
+
+interface AdminModelMappingRule extends AdminModelMappingCreateRequest {
+  id: string;
+  bindingType: string;
+  sourceVendorId: string | null;
+  targetVendorId: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  bindings: AdminModelMappingRuleBindingInput[];
+  mappingItems: AdminModelMappingRuleItemInput[];
+}
 
 type ChannelType = NonNullable<AdminChannelCreateRequest['channelType']>;
 export type CredentialRotationStrategy = NonNullable<AdminChannelCreateRequest['credentialRotation']>;
@@ -249,35 +294,6 @@ export interface ChannelTestResult {
   item: ChannelItem;
 }
 
-export interface ProviderSecretItem {
-  id: string;
-  providerCode: string;
-  accountCode: string;
-  name: string;
-  authType: string;
-  secretRef: string;
-  maskedLabel: string;
-  status: 'active' | 'disabled';
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ProviderSecretInput {
-  providerCode: string;
-  name: string;
-  authType: string;
-  secretRef: string;
-  status?: 'active' | 'disabled';
-}
-
-export type ProviderSecretUpdateInput = {
-  providerCode?: string;
-  name?: string;
-  authType?: string;
-  secretRef?: string;
-  status?: 'active' | 'disabled';
-};
-
 const MAX_CHANNEL_LIST_PAGE_SIZE = 200;
 const MAX_CHANNEL_LIST_QUERY_TEXT_LENGTH = 128;
 const MAX_AI_RESOURCE_LIST_PAGE_SIZE = 200;
@@ -449,8 +465,8 @@ export class AccountModelMappingService {
       mapping.mappingItems
         .filter((item) => item.enabled)
         .map((item) => ({
-          sourceModel: item.sourceModel,
-          targetModel: item.targetCatalogKey ?? item.targetModel,
+          sourceModel: requiredText(item.sourceModel ?? undefined, 'sourceModel'),
+          targetModel: requiredText(item.targetCatalogKey ?? item.targetModel ?? undefined, 'targetModel'),
           targetVendorCode: mapping.targetVendorCode,
         }))
     ));
@@ -485,43 +501,6 @@ export class AccountModelMappingService {
     await Promise.all(Array.from(existingByTargetVendor.values()).map((mapping) => (
       deleteAccountModelMapping(String(mapping.id))
     )));
-  }
-}
-
-export class ProviderSecretService {
-  static async fetchProviderSecrets(filter: Partial<Pick<ProviderSecretItem, 'providerCode' | 'status'>> = {}): Promise<ProviderSecretItem[]> {
-    const result = await channelBackendClient().integration.providerSecrets.list(toProviderSecretListRequest(filter));
-    ensureSdkworkApiSuccess(result, 'Failed to fetch provider credentials');
-    return readRequiredApiItems(result, 'Failed to fetch provider credentials')
-      .map(normalizeProviderSecret);
-  }
-
-  static async addProviderSecret(secret: ProviderSecretInput): Promise<ProviderSecretItem> {
-    const result = await channelBackendClient().integration.providerSecrets.create(
-      toCreateProviderSecretRequest(secret),
-    );
-    ensureSdkworkApiSuccess(result, 'Failed to add provider credential');
-    return normalizeProviderSecret(readRequiredApiItem(result, 'Created provider credential response is missing data'));
-  }
-
-  static async updateProviderSecret(
-    id: string,
-    updates: ProviderSecretUpdateInput,
-  ): Promise<ProviderSecretItem> {
-    const providerSecretId = requiredSafePathSegment(id, 'providerSecretId');
-    const result = await channelBackendClient().integration.providerSecrets.update(
-      toUpdateProviderSecretRequest(providerSecretId, updates),
-    );
-    ensureSdkworkApiSuccess(result, 'Failed to update provider credential');
-    return normalizeProviderSecret(readRequiredApiItem(result, 'Updated provider credential response is missing data'));
-  }
-
-  static async deleteProviderSecret(id: string): Promise<boolean> {
-    const result = await channelBackendClient().integration.providerSecrets.delete(
-      requiredSafePathSegment(id, 'providerSecretId'),
-    );
-    ensureDeleteResult(result, 'Provider credential delete confirmation is required');
-    return true;
   }
 }
 
@@ -700,15 +679,15 @@ function readModelMappingRule(value: unknown): AdminModelMappingRule {
     bindingType,
     sourceVendorCode,
     targetVendorCode,
-    sourceVendorId: readOptionalNullableString(item, 'sourceVendorId'),
-    targetVendorId: readOptionalNullableString(item, 'targetVendorId'),
+    sourceVendorId: readOptionalNullableString(item, 'sourceVendorId') ?? null,
+    targetVendorId: readOptionalNullableString(item, 'targetVendorId') ?? null,
     mappingMode: 'alias',
     matchType: 'exact',
     enabled: readRequiredBoolean(item, 'enabled', 'Model mapping enabled flag is required'),
     bindings: item.bindings as AdminModelMappingRule['bindings'],
     mappingItems: item.mappingItems as AdminModelMappingRule['mappingItems'],
-    createdAt: readOptionalNullableString(item, 'createdAt'),
-    updatedAt: readOptionalNullableString(item, 'updatedAt'),
+    createdAt: readOptionalNullableString(item, 'createdAt') ?? null,
+    updatedAt: readOptionalNullableString(item, 'updatedAt') ?? null,
   };
 }
 
@@ -740,39 +719,6 @@ function toCredentialInput(credential: ChannelCredentialInput, index: number): A
     priority: optionalBoundedPositiveIntegerString(credential.priority, `credentials[${index}].priority`, 1_000_000),
     weight: optionalBoundedPositiveIntegerString(credential.weight, `credentials[${index}].weight`, 10_000),
     status: credential.status === undefined ? undefined : credentialStatusValue(credential.status),
-  });
-}
-
-function toProviderSecretListRequest(
-  filter: Partial<Pick<ProviderSecretItem, 'providerCode' | 'status'>>,
-): IntegrationProviderSecretsListParams {
-  return pruneUndefined({
-    providerCode: optionalText(filter.providerCode),
-    status: filter.status,
-  });
-}
-
-function toCreateProviderSecretRequest(secret: ProviderSecretInput): AdminProviderSecretCreateRequest {
-  return pruneUndefined({
-    providerCode: requiredText(secret.providerCode, 'providerCode'),
-    name: requiredText(secret.name, 'name'),
-    authType: optionalText(secret.authType),
-    secretRef: requiredText(secret.secretRef, 'secretRef'),
-    status: secret.status,
-  });
-}
-
-function toUpdateProviderSecretRequest(
-  id: string,
-  updates: ProviderSecretUpdateInput,
-): AdminProviderSecretUpdateRequest {
-  return pruneUndefined({
-    id,
-    providerCode: updates.providerCode === undefined ? undefined : requiredText(updates.providerCode, 'providerCode'),
-    name: updates.name === undefined ? undefined : requiredText(updates.name, 'name'),
-    authType: optionalText(updates.authType),
-    secretRef: updates.secretRef === undefined ? undefined : requiredText(updates.secretRef, 'secretRef'),
-    status: updates.status,
   });
 }
 
@@ -915,10 +861,10 @@ function toAiResourceMemberInputs(
 ): AdminAiResourceMemberInput[] {
   return members.map((member, index) => pruneUndefined({
     memberResourceCode: requiredAiResourceCode(
-      member.memberResourceCode,
+      member.memberResourceCode ?? undefined,
       `members[${index}].memberResourceCode`,
     ),
-    memberRole: member.memberRole === undefined
+    memberRole: member.memberRole == null
       ? undefined
       : aiResourceMemberRole(member.memberRole),
     required: member.required,
@@ -1077,16 +1023,6 @@ function requiredText(value: string | undefined, fieldName: string): string {
   return normalized;
 }
 
-function optionalInteger(value: number | undefined): number | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  if (!Number.isSafeInteger(value) || value < 1) {
-    throw new Error('value must be a positive integer');
-  }
-  return value;
-}
-
 function optionalPositiveIntegerString(value: number | undefined, fieldName: string): string | undefined {
   if (value === undefined) {
     return undefined;
@@ -1116,13 +1052,6 @@ function optionalBoundedPositiveIntegerString(
   return normalized === undefined ? undefined : String(normalized);
 }
 
-function optionalNullableInteger(value: number | null | undefined): number | null | undefined {
-  if (value === null) {
-    return null;
-  }
-  return optionalInteger(value);
-}
-
 function optionalNullablePositiveIntegerString(
   value: number | null | undefined,
   fieldName: string,
@@ -1131,19 +1060,6 @@ function optionalNullablePositiveIntegerString(
     return null;
   }
   return optionalPositiveIntegerString(value, fieldName);
-}
-
-function optionalNullableNonNegativeInteger(value: number | null | undefined): number | null | undefined {
-  if (value === null) {
-    return null;
-  }
-  if (value === undefined) {
-    return undefined;
-  }
-  if (!Number.isSafeInteger(value) || value < 0) {
-    throw new Error('value must be a non-negative integer');
-  }
-  return value;
 }
 
 function optionalNullableNonNegativeIntegerString(
@@ -1782,34 +1698,4 @@ function readCredentialStatus(item: ApiRecord): ChannelCredentialItem['status'] 
 
 function readChannelType(item: ApiRecord): ChannelType {
   return channelTypeValue(readRequiredString(item, 'channelType', 'Channel type is required'));
-}
-
-function normalizeProviderSecret(value: unknown): ProviderSecretItem {
-  const item = readRequiredRecord(value, 'Provider credential record is required');
-  const secretRef = readRequiredString(item, 'secretRef', 'Provider credential secret reference is required');
-  return {
-    id: readRequiredString(item, 'id', 'Provider credential id is required'),
-    providerCode: readRequiredString(item, 'providerCode', 'Provider credential provider code is required'),
-    accountCode: readRequiredString(item, 'accountCode', 'Provider credential account code is required'),
-    name: readRequiredString(item, 'name', 'Provider credential name is required'),
-    authType: readRequiredString(item, 'authType', 'Provider credential auth type is required'),
-    secretRef,
-    maskedLabel: readString(item, 'maskedLabel') || maskSecretRef(secretRef),
-    status: readProviderSecretStatus(item),
-    createdAt: readRequiredString(item, 'createdAt', 'Provider credential created time is required'),
-    updatedAt: readRequiredString(item, 'updatedAt', 'Provider credential updated time is required'),
-  };
-}
-
-function readProviderSecretStatus(item: ApiRecord): 'active' | 'disabled' {
-  const status = readString(item, 'status');
-  if (status === 'active' || status === 'disabled') {
-    return status;
-  }
-  throw new Error(status ? `Unsupported provider credential status: ${status}` : 'Provider credential status is required');
-}
-
-function maskSecretRef(value: string): string {
-  const leaf = value.split('/').filter(Boolean).pop();
-  return leaf ? `ref:***${leaf}` : 'ref:***';
 }

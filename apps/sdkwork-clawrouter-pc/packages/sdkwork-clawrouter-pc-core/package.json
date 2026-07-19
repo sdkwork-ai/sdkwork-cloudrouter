@@ -47,9 +47,14 @@
     "vite": "^6.2.0"
   },
   "dependencies": {
+    "@sdkwork/account-app-sdk": "workspace:*",
+    "@sdkwork/catalog-app-sdk": "workspace:*",
     "@sdkwork/clawrouter-app-sdk": "workspace:*",
-    "@sdkwork/clawrouter-backend-sdk": "workspace:*",
     "@sdkwork/drive-backend-sdk": "workspace:*",
-    "@sdkwork/generations-app-sdk": "workspace:*"
+    "@sdkwork/generations-app-sdk": "workspace:*",
+    "@sdkwork/membership-app-sdk": "workspace:*",
+    "@sdkwork/order-app-sdk": "workspace:*",
+    "@sdkwork/payment-app-sdk": "workspace:*",
+    "@sdkwork/promotion-app-sdk": "workspace:*"
   }
 }

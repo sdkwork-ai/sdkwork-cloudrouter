@@ -1,19 +1,19 @@
 import type { PageInfo } from './page-info';
 
-/** Cache namespace key page schema exposed by Claw Router. */
+/** CacheNamespaceKeyPage contract. */
 export interface CacheNamespaceKeyPage {
-  /** Instance name field on cache namespace key page. */
+  /** instanceName field on CacheNamespaceKeyPage. */
   instanceName: string;
-  /** Items field on cache namespace key page. */
+  /** items field on CacheNamespaceKeyPage. */
   items: Record<string, unknown>[];
-  /** Namespace field on cache namespace key page. */
+  /** namespace field on CacheNamespaceKeyPage. */
   namespace: string;
-  /** Page info field on cache namespace key page. */
+  /** pageInfo field on CacheNamespaceKeyPage. */
   pageInfo: PageInfo;
-  /** Returned items field on cache namespace key page. */
+  /** returnedItems field on CacheNamespaceKeyPage. */
   returnedItems: string;
-  /** Scan complete field on cache namespace key page. */
+  /** scanComplete field on CacheNamespaceKeyPage. */
   scanComplete: boolean;
-  /** Scanned items field on cache namespace key page. */
+  /** scannedItems field on CacheNamespaceKeyPage. */
   scannedItems: string;
 }

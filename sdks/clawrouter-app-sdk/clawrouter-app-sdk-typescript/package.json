@@ -17,11 +17,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./domains": {
-      "types": "./dist/domains/index.d.ts",
-      "import": "./dist/domains/index.js",
-      "require": "./dist/domains/index.cjs"
     }
   },
   "imports": {

@@ -8,7 +8,7 @@ use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::{Row, SqlitePool};
 
 const PROMOTION_REPOSITORY_TEST_SCHEMA: &str = include_str!(
-    "../../../../sdkwork-promotion/crates/sdkwork-promotion-repository-sqlx/test_migrations/0001_promotion_repository_test.sql"
+    "../../../../sdkwork-promotion/crates/sdkwork-commerce-promotion-repository-sqlx/test_migrations/0001_promotion_repository_test.sql"
 );
 
 #[tokio::test]

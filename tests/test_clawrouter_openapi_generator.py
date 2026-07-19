@@ -1376,6 +1376,269 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             )
             self.assertNotIn("code", schemas["CacheNamespacesKeysListResult"].get("properties", {}))
             self.assertNotIn("msg", schemas["CacheNamespacesKeysListResult"].get("properties", {}))
+    def test_backend_contract_overrides_restore_typed_request_and_response_data(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest_path = self.write_manifest(root)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for method, kind, operation, operation_id in (
+                ("GET", "read", "fetchAuthSettings", "auth.settings.retrieve"),
+                ("PATCH", "update", "updateAuthSettings", "auth.settings.update"),
+            ):
+                manifest["operations"].append(
+                    {
+                        "api_surface": "backend",
+                        "api_method": method,
+                        "api_path": "/backend/v3/api/system/auth/settings",
+                        "operation": operation,
+                        "operation_id": operation_id,
+                        "tag": "system",
+                        "sdk_domain": "system",
+                        "kind": kind,
+                        "module": "admin-settings",
+                        "path_params": [],
+                        "source": "apps/portal/authSettingsService.ts",
+                        "read_sources": ["ops_config_snapshot"],
+                        "write_tables": ["ops_config_snapshot"] if method == "PATCH" else [],
+                        "query_parameters_declared": True,
+                        "query_parameters": [],
+                    }
+                )
+            manifest_path.write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            override_path = root / ClawRouterOpenApiGenerator.BACKEND_CONTRACT_OVERRIDES
+            override_path.parent.mkdir(parents=True, exist_ok=True)
+            override_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "kind": "sdkwork.openapi.contract-overrides",
+                        "owner": "sdkwork-clawrouter",
+                        "surface": "backend-api",
+                        "authority": "sdkwork-clawrouter.backend",
+                        "schemas": {
+                            "AuthSettingsUpdateRequest": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["enabled"],
+                                "properties": {
+                                    "enabled": {
+                                        "type": "boolean",
+                                        "description": "Whether authentication is enabled.",
+                                    }
+                                },
+                                "description": "Authentication settings update request.",
+                            },
+                            "AuthSettingsResponse": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["enabled"],
+                                "properties": {
+                                    "enabled": {
+                                        "type": "boolean",
+                                        "description": "Whether authentication is enabled.",
+                                    }
+                                },
+                                "description": "Authentication settings response.",
+                            },
+                        },
+                        "operations": {
+                            "GET /backend/v3/api/system/auth/settings": {
+                                "responseSchema": "AuthSettingsResponse"
+                            },
+                            "PATCH /backend/v3/api/system/auth/settings": {
+                                "requestSchema": "AuthSettingsUpdateRequest",
+                                "responseSchema": "AuthSettingsResponse",
+                            },
+                        },
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            backend_spec = ClawRouterOpenApiGenerator(root=root).generate("backend")
+            get_operation = backend_spec["paths"]["/backend/v3/api/system/auth/settings"]["get"]
+            patch_operation = backend_spec["paths"]["/backend/v3/api/system/auth/settings"]["patch"]
+            schemas = backend_spec["components"]["schemas"]
+
+            self.assertEqual(
+                {"$ref": "#/components/schemas/AuthSettingsUpdateRequest"},
+                patch_operation["requestBody"]["content"]["application/json"]["schema"],
+            )
+            for operation in (get_operation, patch_operation):
+                result_ref = operation["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+                result_schema = schemas[result_ref.rsplit("/", 1)[-1]]
+                data_schema = result_schema["allOf"][1]["properties"]["data"]
+                self.assertEqual(
+                    [{"$ref": "#/components/schemas/AuthSettingsResponse"}],
+                    data_schema["allOf"],
+                )
+            self.assertIn("AuthSettingsUpdateRequest", schemas)
+            self.assertIn("AuthSettingsResponse", schemas)
+
+    def test_dependency_sdk_authority_operations_are_subtracted_exactly(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace_root = Path(tmp)
+            root = workspace_root / "sdkwork-clawrouter"
+            manifest_path = self.write_manifest(root)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["operations"].extend(
+                [
+                    {
+                        "api_surface": "app",
+                        "api_method": "POST",
+                        "api_path": "/app/v3/api/auth/sessions",
+                        "operation": "signIn",
+                        "operation_id": "sessions.create",
+                        "tag": "iam",
+                        "sdk_domain": "iam",
+                        "kind": "create",
+                        "module": "auth",
+                        "path_params": [],
+                        "source": "apps/portal/authController.ts",
+                        "read_sources": ["iam_user"],
+                        "write_tables": ["iam_session"],
+                    },
+                    {
+                        "api_surface": "app",
+                        "api_method": "GET",
+                        "api_path": "/app/v3/api/iam/api_keys",
+                        "operation": "fetchApiKeys",
+                        "operation_id": "apiKeys.list",
+                        "tag": "iam",
+                        "sdk_domain": "iam",
+                        "kind": "read",
+                        "module": "console-api-keys",
+                        "path_params": [],
+                        "source": "apps/portal/apiKeyService.ts",
+                        "read_sources": ["iam_gateway_api_key"],
+                        "write_tables": [],
+                        "query_parameters_declared": True,
+                        "query_parameters": [],
+                    },
+                ]
+            )
+            manifest_path.write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            app_sdk_root = root / "sdks" / "clawrouter-app-sdk"
+            app_sdk_root.mkdir(parents=True, exist_ok=True)
+            (app_sdk_root / "sdk-manifest.json").write_text(
+                json.dumps(
+                    {
+                        "sdkDependencies": [
+                            {
+                                "workspace": "sdkwork-iam-app-sdk",
+                                "dependencyMode": "consumer-sdk",
+                            }
+                        ]
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            dependency_root = workspace_root / "sdkwork-iam" / "sdks" / "sdkwork-iam-app-sdk"
+            dependency_openapi = dependency_root / "openapi" / "sdkwork-iam-app-api.openapi.json"
+            dependency_openapi.parent.mkdir(parents=True, exist_ok=True)
+            (dependency_root / "sdk-manifest.json").write_text(
+                json.dumps(
+                    {"authoritySpec": "openapi/sdkwork-iam-app-api.openapi.json"},
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            dependency_openapi.write_text(
+                json.dumps(
+                    {
+                        "openapi": "3.1.0",
+                        "paths": {
+                            "/app/v3/api/auth/sessions": {
+                                "post": {"operationId": "sessions.create"}
+                            }
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            app_spec = ClawRouterOpenApiGenerator(root=root).generate("app")
+
+            self.assertNotIn("/app/v3/api/auth/sessions", app_spec["paths"])
+            self.assertIn("/app/v3/api/iam/api_keys", app_spec["paths"])
+
+    def test_backend_contract_overrides_reject_stale_operation_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_manifest(root)
+            override_path = root / ClawRouterOpenApiGenerator.BACKEND_CONTRACT_OVERRIDES
+            override_path.parent.mkdir(parents=True, exist_ok=True)
+            override_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "kind": "sdkwork.openapi.contract-overrides",
+                        "owner": "sdkwork-clawrouter",
+                        "surface": "backend-api",
+                        "authority": "sdkwork-clawrouter.backend",
+                        "schemas": {},
+                        "operations": {
+                            "GET /backend/v3/api/system/retired": {}
+                        },
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "stale backend contract override operation"):
+                ClawRouterOpenApiGenerator(root=root).generate("backend")
+
+    def test_models_catalog_excludes_operations_marked_not_openapi_exposed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest_path = self.write_manifest(root)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["operations"].append(
+                {
+                    "api_surface": "app",
+                    "api_method": "GET",
+                    "api_path": "/app/v3/api/ai/internal_model_probe",
+                    "operation": "fetchInternalModelProbe",
+                    "operation_id": "internalModelProbe.retrieve",
+                    "tag": "ai",
+                    "sdk_domain": "ai",
+                    "kind": "read",
+                    "module": "models",
+                    "path_params": [],
+                    "source": "../sdkwork-models/apps/internalModelProbe.ts",
+                    "read_sources": ["ai_model"],
+                    "write_tables": [],
+                    "openapi_exposed": False,
+                }
+            )
+            manifest_path.write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            catalog = ClawRouterOpenApiGenerator(root=root).generate_models_catalog("app")
+
+            self.assertNotIn("/app/v3/api/ai/internal_model_probe", catalog["paths"])
+
     def test_writes_and_checks_specs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1392,11 +1655,15 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                     "api-authority-backend": root / "apis" / "backend-api" / "clawrouter" / "clawrouter-backend-api.openapi.json",
                     "models-catalog-app": root / "generated" / "openapi" / "clawrouter-models-catalog-app-openapi.json",
                     "models-catalog-backend": root / "generated" / "openapi" / "clawrouter-models-catalog-backend-openapi.json",
-                    "domain-transport-app": root / "sdks" / "clawrouter-app-sdk" / "openapi" / "clawrouter-app-domain-transport.openapi.json",
-                    "domain-transport-backend": root / "sdks" / "clawrouter-backend-sdk" / "openapi" / "clawrouter-backend-domain-transport.openapi.json",
                 },
                 outputs,
             )
+            self.assertTrue(generator.check().ok)
+
+            authority = outputs["api-authority-app"]
+            authority_payload = json.loads(authority.read_text(encoding="utf-8"))
+            authority_payload["info"]["x-sdkwork-test-marker"] = "standard-extension"
+            authority.write_text(json.dumps(authority_payload, indent=2) + "\n", encoding="utf-8")
             self.assertTrue(generator.check().ok)
 
             outputs["app"].write_text("{}\n", encoding="utf-8")

@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/clawrouter-pc-admin-shell",
+    "displayName": "SDKWork Claw Router Admin Shell",
+    "version": "0.0.1",
+    "type": "node-package",
+    "root": "sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-shell",
+    "domain": "platform",
+    "declaredDomain": null,
+    "capability": "admin-shell",
+    "surface": "backend-admin",
+    "status": "standardizing",
+    "languages": [
+      "typescript"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "package.json"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "COMPONENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/COMPONENT_SPEC.md",
+      "purpose": "Local component specs directory and manifest rules."
+    },
+    {
+      "file": "SDK_SPEC.md",
+      "path": "../../../../../sdkwork-specs/SDK_SPEC.md",
+      "purpose": "Backend-admin SDK boundaries and dependency composition rules."
+    },
+    {
+      "file": "IAM_SPEC.md",
+      "path": "../../../../../sdkwork-specs/IAM_SPEC.md",
+      "purpose": "Canonical role, permission, and effective-scope rules."
+    },
+    {
+      "file": "IAM_LOGIN_INTEGRATION_SPEC.md",
+      "path": "../../../../../sdkwork-specs/IAM_LOGIN_INTEGRATION_SPEC.md",
+      "purpose": "Authenticated session and admin access integration rules."
+    },
+    {
+      "file": "SECURITY_SPEC.md",
+      "path": "../../../../../sdkwork-specs/SECURITY_SPEC.md",
+      "purpose": "Authorization enforcement and secure frontend behavior."
+    },
+    {
+      "file": "FRONTEND_SPEC.md",
+      "path": "../../../../../sdkwork-specs/FRONTEND_SPEC.md",
+      "purpose": "Frontend shell, service, and SDK responsibility boundaries."
+    },
+    {
+      "file": "BACKEND_UI_SPEC.md",
+      "path": "../../../../../sdkwork-specs/BACKEND_UI_SPEC.md",
+      "purpose": "Backend-admin package and navigation architecture."
+    },
+    {
+      "file": "TEST_SPEC.md",
+      "path": "../../../../../sdkwork-specs/TEST_SPEC.md",
+      "purpose": "Authorization and component-contract verification rules."
+    },
+    {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Authored source and module-boundary rules."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical role, permission, component, and package naming."
+    },
+    {
+      "file": "TYPESCRIPT_CODE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/TYPESCRIPT_CODE_SPEC.md",
+      "purpose": "TypeScript package rules."
+    }
+  ],
+  "contracts": {
+    "publicExports": [
+      "src/index.ts"
+    ],
+    "runtimeEntrypoints": [
+      "package.json#scripts.typecheck"
+    ],
+    "sdkClients": [],
+    "sdkDependencies": [],
+    "dependencyApiExports": [],
+    "dependencyApiSurfaces": [],
+    "events": [],
+    "configKeys": [],
+    "routeManifest": null,
+    "permissionComposition": {
+      "inheritanceMode": "application-effective-scope",
+      "applicationModule": {
+        "manifestRef": "../../../specs/iam.module.manifest.json"
+      },
+      "consumerPolicy": {
+        "forbidLocalPermissionCatalogForDependencyDomains": true,
+        "allowFrontendHintsWithoutServerDuplication": true
+      }
+    }
+  },
+  "integration": {
+    "authority": "Root SDKWork specs and the application IAM module manifest remain authoritative.",
+    "dependencyPolicy": "The shell consumes effective permission scope through public IAM contracts and does not define dependency-domain permissions.",
+    "sdkPolicy": "The shell does not construct SDK clients; authenticated clients are supplied by the shared backend-admin runtime boundary.",
+    "languagePolicy": "TypeScript package code follows TYPESCRIPT_CODE_SPEC.md."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --filter @sdkwork/clawrouter-pc-admin-shell typecheck",
+      "python -B -m unittest -v tests.test_admin_sdk_boundary_standard"
+    ]
+  },
+  "metadata": {
+    "managedBy": "codex",
+    "standardVersion": "2026-07-19"
+  }
+}

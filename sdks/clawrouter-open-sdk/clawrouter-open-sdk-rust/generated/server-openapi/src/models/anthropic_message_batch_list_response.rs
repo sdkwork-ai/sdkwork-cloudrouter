@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AnthropicMessageBatch};
+use crate::models::AnthropicMessageBatch;
 
 /// Anthropic Claude anthropic message batch list response schema exposed by Claw Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

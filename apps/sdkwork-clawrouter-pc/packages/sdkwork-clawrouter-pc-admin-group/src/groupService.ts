@@ -16,11 +16,11 @@ import {
   readRequiredString,
   readString,
   readStringArray,
+  getModelsBackendSdkClient,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import {
   getClawRouterBackendSdkClient,
-  getModelsBackendSdkClient,
 } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
   AdminChannelGroupCreateRequest,
@@ -440,7 +440,7 @@ export class GroupService {
   static async fetchRuntimeRouteExplain(
     request: GroupRuntimeRouteExplainRequest,
   ): Promise<GroupRuntimeRouteExplainResult> {
-    const result = await getClawRouterBackendSdkClient().ai.routeExplain.create(
+    const result = await getClawRouterBackendSdkClient().ai.routeExplain.explain(
       toRuntimeRouteExplainRequest(request),
     );
     ensureSdkworkApiSuccess(result, 'Failed to fetch runtime route explain');
@@ -642,9 +642,12 @@ function toRuntimeRouteExplainRequest(
   });
 }
 
-function toCapacityRequest(total: number): { total: number } | undefined {
+function toCapacityRequest(total: number): Record<string, unknown> & { total: number } {
   const normalized = optionalPositiveInteger(total, 'capacity.total');
-  return normalized === undefined ? undefined : { total: normalized };
+  if (normalized === undefined) {
+    throw new Error('capacity.total is required');
+  }
+  return { total: normalized };
 }
 
 function toPriceReferenceMode(value: GroupPriceReferenceMode): GroupPriceReferenceMode {

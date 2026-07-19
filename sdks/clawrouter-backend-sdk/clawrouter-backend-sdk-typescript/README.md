@@ -64,29 +64,29 @@ const client = new SdkworkBackendClient({
 ### ai
 
 ```typescript
-// List
+// List groups
 const result = await client.ai.channelGroups.list();
 ```
 
 ### integration
 
 ```typescript
-// List
+// List channels
 const result = await client.integration.channels.list();
 ```
 
 ### sites
 
 ```typescript
-// List
-const result = await client.sites.siteCatalog.list();
+// List sites
+const result = await client.sites.list();
 ```
 
 ### system
 
 ```typescript
-// Retrieve
-const result = await client.system.auth.settings.retrieve();
+// List overview
+const result = await client.system.analytics.admin.overview.list();
 ```
 
 ## Error Handling

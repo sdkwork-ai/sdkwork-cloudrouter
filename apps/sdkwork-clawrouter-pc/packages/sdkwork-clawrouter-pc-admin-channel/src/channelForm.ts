@@ -8,9 +8,7 @@ import type {
   ChannelCreateInput,
   ChannelUpdateInput,
   CredentialRotationStrategy,
-  ProviderSecretInput,
   AccountModelMappingInput,
-  ProviderSecretUpdateInput,
 } from './channelService';
 
 export type ChannelFormValues = {
@@ -42,14 +40,6 @@ export type ChannelCredentialFormValue = {
   priority?: number | string | null;
   weight?: number | string | null;
   status?: string;
-};
-
-export type ProviderSecretFormValues = {
-  providerCode: string;
-  name: string;
-  authType: string;
-  secretRef: string;
-  status: string;
 };
 
 export type AiResourceFormValues = {
@@ -227,30 +217,6 @@ export function defaultChannelCredentialFormValue(): ChannelCredentialFormValue 
     weight: 100,
     status: 'active',
   };
-}
-
-export function createProviderSecretInputFromForm(values: ProviderSecretFormValues): ProviderSecretInput {
-  return omitUndefined({
-    providerCode: values.providerCode.trim(),
-    name: values.name.trim(),
-    authType: optionalText(values.authType) ?? 'api-key',
-    secretRef: values.secretRef.trim(),
-    status: providerSecretStatus(values.status),
-  });
-}
-
-export function createProviderSecretUpdateInputFromForm(values: ProviderSecretFormValues): ProviderSecretUpdateInput {
-  return omitUndefined({
-    providerCode: optionalText(values.providerCode),
-    name: optionalText(values.name),
-    authType: optionalText(values.authType),
-    secretRef: optionalText(values.secretRef),
-    status: providerSecretStatus(values.status),
-  });
-}
-
-export function createProviderSecretStatusUpdateInput(status: string): ProviderSecretUpdateInput {
-  return { status: providerSecretStatus(status) };
 }
 
 export function createAiResourceEditDraft(resource: AiResource): AiResourceFormValues {
@@ -546,14 +512,6 @@ function channelStatus(value: string): NonNullable<ChannelCreateInput['status']>
     return normalized;
   }
   throw new Error(normalized ? `Unsupported channel status: ${normalized}` : 'Channel status is required');
-}
-
-function providerSecretStatus(value: string): NonNullable<ProviderSecretInput['status']> {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'active' || normalized === 'disabled') {
-    return normalized;
-  }
-  throw new Error(normalized ? `Unsupported provider credential status: ${normalized}` : 'Provider credential status is required');
 }
 
 function providerEndpointBaseUrl(value: string | undefined): string {

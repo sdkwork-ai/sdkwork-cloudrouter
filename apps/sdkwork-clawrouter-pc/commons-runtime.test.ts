@@ -32,6 +32,8 @@ import { normalizeGeneratedSdkBaseUrl } from "./packages/sdkwork-clawroutes-pc-c
 import { formatRechargeCurrencyAmount } from "./packages/sdkwork-clawroutes-pc-commons/src/recharge-math.ts";
 import {
   createClawRouterAiSdkClient,
+  createClawRouterBackendSdkClient,
+  createSdkworkAgentAppSdkClient,
   getClawRouterAiSdkClient,
   getClawRouterGlobalTokenManager,
   prepareClawRouterCredentialEntryTokens,
@@ -236,6 +238,40 @@ test("normalizeGeneratedSdkBaseUrl preserves raw origins and unrelated root-rela
   assert.equal(normalizeGeneratedSdkBaseUrl("https://tenant.example.com", "/app/v3/api"), "https://tenant.example.com");
   assert.equal(normalizeGeneratedSdkBaseUrl("/tenant-a", "/app/v3/api"), "/tenant-a");
   assert.equal(normalizeGeneratedSdkBaseUrl("", "/app/v3/api"), "");
+});
+
+test("agents app SDK factory preserves the canonical app-api surface URL", async () => {
+  const requestedUrls: string[] = [];
+  globalThis.fetch = async (input) => {
+    requestedUrls.push(String(input));
+    return new Response(
+      JSON.stringify({
+        code: 0,
+        data: {
+          items: [],
+          pageInfo: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+        },
+      }),
+      { headers: { "content-type": "application/json" }, status: 200 },
+    );
+  };
+
+  try {
+    const sameOriginClient = createSdkworkAgentAppSdkClient();
+    await sameOriginClient.ai.agents.list({ scope: "market", page: 1, pageSize: 20 });
+
+    const hostedClient = createSdkworkAgentAppSdkClient({
+      appBaseUrl: "https://tenant.example.com/router/app/v3/api",
+    });
+    await hostedClient.ai.agents.list({ scope: "market", page: 1, pageSize: 20 });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.deepEqual(requestedUrls, [
+    "/app/v3/api/ai/agents?scope=market&page=1&page_size=20",
+    "https://tenant.example.com/router/app/v3/api/ai/agents?scope=market&page=1&page_size=20",
+  ]);
 });
 
 test("media resource helpers keep structural media as objects", () => {
@@ -624,7 +660,7 @@ test("portal notification service fetches console announcements without frontend
   assert.ok(navbarSource.includes("const notificationService = useMemo(() => createPortalNotificationService(), [])"));
 });
 
-test("portal notification and commerce dependency SDK facades expose component-compatible structural adapters", () => {
+test("portal notification facade remains typed and backend SDK construction has no cross-domain compatibility overlay", () => {
   const notificationSource = readFileSync(
     new URL("./packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts", import.meta.url),
     "utf8",
@@ -644,18 +680,37 @@ test("portal notification and commerce dependency SDK facades expose component-c
   }
 
   for (const marker of [
-    "type BackendDomainDependencyOverlay =",
-    "function createBackendDomainCanonicalFacade(domainTransport: BackendDomainDependencyOverlay)",
-    "attachManagementAlias(facade.wallet.accounts, 'list')",
-    "createBackendDomainCanonicalFacade(",
+    "BackendDomainDependencyOverlay",
+    "createBackendDomainCanonicalFacade",
+    "attachManagementAlias",
+    "facade.catalog.spus",
+    "ClawRouterBackendDomainTransportSdkClient",
   ]) {
-    assert.ok(sdkClientsSource.includes(marker), `missing backend domain transport facade marker: ${marker}`);
+    assert.equal(sdkClientsSource.includes(marker), false, `retired backend aggregation marker must be absent: ${marker}`);
   }
+
+  assert.match(
+    sdkClientsSource,
+    /createClawRouterBackendSdkClient[\s\S]*?new SdkworkBackendClient\(buildBackendConfig\(options\)\)/,
+  );
 
   assert.doesNotMatch(
     sdkClientsSource,
     /TCommerce extends SdkworkBackendClient\['commerce'\] & SdkworkCommerceGeneratedBackendClient/,
   );
+});
+
+test("clawrouter backend client constructs without loading business-domain SDK resources", () => {
+  const client = createClawRouterBackendSdkClient({
+    backendBaseUrl: "http://127.0.0.1:18081/backend/v3/api",
+  });
+  const resources = client as unknown as Record<string, unknown>;
+
+  assert.equal(resources.catalog, undefined);
+  assert.equal(resources.orders, undefined);
+  assert.equal(resources.wallet, undefined);
+  assert.equal(typeof client.system.monitor.nodes.list, "function");
+  assert.equal(typeof client.system.rateLimits.ip.list, "function");
 });
 
 test("iam directory app operations keep one canonical params shape before the appbase SDK boundary", () => {
@@ -1271,6 +1326,7 @@ test("createAppSession stores dual IAM tokens returned as generated SDK data obj
             environment: "dev",
             organizationId: "org-2026",
             permissionScope: ["clawrouter.console.access"],
+            standardRoleCodes: ["org_admin"],
             sessionId: "session-2026",
             tenantId: "tenant-2026",
             userId: "user-2026",
@@ -1300,6 +1356,7 @@ test("createAppSession stores dual IAM tokens returned as generated SDK data obj
     assert.equal(result.refreshToken, "refresh-token-2026");
     assert.equal(result.sessionId, "session-2026");
     assert.equal(result.context?.tenantId, "tenant-2026");
+    assert.deepEqual(loadStoredAppSessionToken()?.context?.standardRoleCodes, ["org_admin"]);
     assert.equal(hasStoredPortalSession(), true);
   } finally {
     clearStoredAppSessionToken();
@@ -1413,11 +1470,12 @@ function portalAdminSessionPayload(
   };
 }
 
-test("portal admin access check denies non-admin sessions and clears expired sessions", async () => {
-  for (const [adminStatus, expectedState, shouldKeepTokens] of [
-    [200, "allowed", true],
-    [403, "forbidden", true],
-    [401, "anonymous", false],
+test("portal admin access check authorizes the effective IAM permission scope without a business endpoint probe", async () => {
+  for (const [permissionScope, expectedState] of [
+    [["*"], "allowed"],
+    [["clawrouter.*"], "allowed"],
+    [["clawrouter.admin.access"], "allowed"],
+    [["clawrouter.console.access"], "forbidden"],
   ] as const) {
     const captured: { url: string; method: string }[] = [];
     Object.defineProperty(globalThis, "window", {
@@ -1432,25 +1490,18 @@ test("portal admin access check denies non-admin sessions and clears expired ses
         return new Response(
           JSON.stringify({
             code: "2000",
-            data: portalAdminSessionPayload(`access-${adminStatus}`, `auth-${adminStatus}`, `session-${adminStatus}`),
+            data: portalAdminSessionPayload(
+              `access-${expectedState}-${permissionScope[0]}`,
+              `auth-${expectedState}-${permissionScope[0]}`,
+              `session-${expectedState}-${permissionScope[0]}`,
+              { permissionScope: [...permissionScope] },
+            ),
           }),
           {
             status: 200,
             headers: { "content-type": "application/json" },
           },
         );
-      }
-      if (url === "/backend/v3/api/system/installation/status") {
-        if (adminStatus === 200) {
-          return new Response(JSON.stringify({ code: "2000", data: { status: "installed" } }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          });
-        }
-        return new Response(JSON.stringify({ code: String(adminStatus), msg: "admin access denied" }), {
-          status: adminStatus,
-          headers: { "content-type": "application/json" },
-        });
       }
       throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
     }) as typeof fetch;
@@ -1463,13 +1514,10 @@ test("portal admin access check denies non-admin sessions and clears expired ses
       assert.equal(state, expectedState);
       assert.deepEqual(
         captured.map((request) => `${request.method} ${request.url}`),
-        [
-          "GET /app/v3/api/auth/sessions/current",
-          "GET /backend/v3/api/system/installation/status",
-        ],
+        ["GET /app/v3/api/auth/sessions/current"],
       );
-      assert.equal(getStoredAppSessionAuthToken(), shouldKeepTokens ? `auth-${adminStatus}` : undefined);
-      assert.equal(getStoredAppSessionAccessToken(), shouldKeepTokens ? `access-${adminStatus}` : undefined);
+      assert.equal(getStoredAppSessionAuthToken(), `auth-${expectedState}-${permissionScope[0]}`);
+      assert.equal(getStoredAppSessionAccessToken(), `access-${expectedState}-${permissionScope[0]}`);
     } finally {
       clearStoredAppSessionToken();
       resetClawRouterSdkClients();
@@ -1483,7 +1531,60 @@ test("portal admin access check denies non-admin sessions and clears expired ses
   }
 });
 
-test("portal admin access check allows admin sessions when system status succeeds", async () => {
+test("portal admin access check clears an expired IAM session", async () => {
+  const captured: { url: string; method: string }[] = [];
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    enumerable: true,
+    value: {
+      dispatchEvent: () => true,
+      location: {
+        hash: "",
+        hostname: "localhost",
+        pathname: "/admin/dashboard",
+        replace: () => undefined,
+        search: "",
+      },
+    },
+  });
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    captured.push({ url, method: init?.method ?? "GET" });
+    if (url === "/app/v3/api/auth/sessions/current") {
+      return new Response(JSON.stringify({ code: "401", msg: "session expired" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
+  }) as typeof fetch;
+  clearStoredAppSessionToken();
+  resetClawRouterSdkClients();
+  storeAppSessionFromResult(portalAdminSessionPayload("access-expired", "auth-expired", "session-expired"));
+
+  try {
+    const state = await verifyCurrentPortalAdminAccess();
+
+    assert.equal(state, "anonymous");
+    assert.deepEqual(
+      captured.map((request) => `${request.method} ${request.url}`),
+      ["GET /app/v3/api/auth/sessions/current"],
+    );
+    assert.equal(getStoredAppSessionAuthToken(), undefined);
+    assert.equal(getStoredAppSessionAccessToken(), undefined);
+  } finally {
+    clearStoredAppSessionToken();
+    resetClawRouterSdkClients();
+    globalThis.fetch = originalFetch;
+    if (originalWindowDescriptor) {
+      Object.defineProperty(globalThis, "window", originalWindowDescriptor);
+    } else {
+      delete (globalThis as { window?: Window }).window;
+    }
+  }
+});
+
+test("portal admin access check reports a current-session service failure", async () => {
   const captured: { url: string; method: string }[] = [];
   Object.defineProperty(globalThis, "window", {
     configurable: true,
@@ -1494,20 +1595,8 @@ test("portal admin access check allows admin sessions when system status succeed
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     captured.push({ url, method: init?.method ?? "GET" });
     if (url === "/app/v3/api/auth/sessions/current") {
-      return new Response(
-        JSON.stringify({
-          code: "2000",
-          data: portalAdminSessionPayload("access-admin", "auth-admin", "session-admin"),
-        }),
-        {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        },
-      );
-    }
-    if (url === "/backend/v3/api/system/installation/status") {
-      return new Response(JSON.stringify({ code: "2000", data: { status: "installed" } }), {
-        status: 200,
+      return new Response(JSON.stringify({ code: "4000", msg: "Invalid current-session response" }), {
+        status: 400,
         headers: { "content-type": "application/json" },
       });
     }
@@ -1519,94 +1608,11 @@ test("portal admin access check allows admin sessions when system status succeed
   try {
     const state = await verifyCurrentPortalAdminAccess();
 
-    assert.equal(state, "allowed");
-    assert.deepEqual(
-      captured.map((request) => `${request.method} ${request.url}`),
-      [
-        "GET /app/v3/api/auth/sessions/current",
-        "GET /backend/v3/api/system/installation/status",
-      ],
-    );
-    assert.equal(getStoredAppSessionAuthToken(), "auth-admin");
-    assert.equal(getStoredAppSessionAccessToken(), "access-admin");
-  } finally {
-    clearStoredAppSessionToken();
-    resetClawRouterSdkClients();
-    globalThis.fetch = originalFetch;
-    if (originalWindowDescriptor) {
-      Object.defineProperty(globalThis, "window", originalWindowDescriptor);
-    } else {
-      delete (globalThis as { window?: Window }).window;
-    }
-  }
-});
-
-test("portal admin access check returns error when system status request stalls", async () => {
-  const captured: { url: string; method: string }[] = [];
-  let statusRequestAborted = false;
-  Object.defineProperty(globalThis, "window", {
-    configurable: true,
-    enumerable: true,
-    value: {},
-  });
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-    captured.push({ url, method: init?.method ?? "GET" });
-    if (url === "/app/v3/api/auth/sessions/current") {
-      return new Response(
-        JSON.stringify({
-          code: "2000",
-          data: portalAdminSessionPayload(
-            "access-admin-stalled-status",
-            "auth-admin-stalled-status",
-            "session-admin-stalled-status",
-          ),
-        }),
-        {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        },
-      );
-    }
-    if (url === "/backend/v3/api/system/installation/status") {
-      return new Promise<Response>((_resolve, reject) => {
-        const abort = () => {
-          statusRequestAborted = true;
-          const error = new Error("aborted");
-          error.name = "AbortError";
-          reject(error);
-        };
-        if (init?.signal?.aborted) {
-          abort();
-          return;
-        }
-        init?.signal?.addEventListener("abort", abort, { once: true });
-      });
-    }
-    throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
-  }) as typeof fetch;
-  clearStoredAppSessionToken();
-  resetClawRouterSdkClients();
-
-  try {
-    const state = await Promise.race([
-      verifyCurrentPortalAdminAccess({ timeoutMs: 10 }),
-      new Promise<never>((_resolve, reject) => {
-        setTimeout(() => reject(new Error("admin access check did not settle")), 80);
-      }),
-    ]);
-
     assert.equal(state, "error");
-    assert.equal(statusRequestAborted, true);
     assert.deepEqual(
       captured.map((request) => `${request.method} ${request.url}`),
-      [
-        "GET /app/v3/api/auth/sessions/current",
-        "GET /backend/v3/api/system/installation/status",
-      ],
+      ["GET /app/v3/api/auth/sessions/current"],
     );
-    assert.equal(getStoredAppSessionAuthToken(), "auth-admin-stalled-status");
-    assert.equal(getStoredAppSessionAccessToken(), "access-admin-stalled-status");
   } finally {
     clearStoredAppSessionToken();
     resetClawRouterSdkClients();
@@ -1619,16 +1625,16 @@ test("portal admin access check returns error when system status request stalls"
   }
 });
 
-test("portal admin access check uses the generated backend SDK system status method", () => {
+test("portal admin access check uses IAM session RBAC without a backend business probe", () => {
   const source = readFileSync(
     new URL("./packages/sdkwork-clawroutes-pc-commons/src/portal-session.ts", import.meta.url),
     "utf8",
   );
 
-  assert.match(source, /system\.installation\.status\.retrieve\(\)/);
   assert.match(source, /hasPortalAdminSurfaceAccess/);
-  assert.doesNotMatch(source, /system\.dashboardAdminOverviewRetrieve\(\)/);
-  assert.doesNotMatch(source, /system\.dashboard\.admin\.overview\.retrieve/);
+  assert.match(source, /auth\.sessions\.current\.retrieve\(\)/);
+  assert.doesNotMatch(source, /getClawRouterBackendSdkClient/);
+  assert.doesNotMatch(source, /installation\.status\.retrieve/);
 });
 
 test("BusinessStatePanel resolves invalid or missing kind before reading style metadata", () => {

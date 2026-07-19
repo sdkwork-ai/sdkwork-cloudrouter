@@ -50,24 +50,6 @@ SDK_PACKAGE_NAMES = {
     "clawrouter-backend-sdk": "@sdkwork/clawrouter-backend-sdk",
     "clawrouter-open-sdk": "@sdkwork/clawrouter-open-sdk",
 }
-SDK_DOMAIN_TRANSPORT_PACKAGE_NAMES = {
-    "clawrouter-app-sdk": "sdkwork-clawrouter-app-sdk-domains-generated-typescript",
-    "clawrouter-backend-sdk": "sdkwork-clawrouter-backend-sdk-domains-generated-typescript",
-}
-SDK_DOMAIN_TRANSPORT_DESCRIPTIONS = {
-    "clawrouter-app-sdk": (
-        "Generator-owned TypeScript transport for federated app domains on "
-        "sdkwork-clawrouter-app-sdk."
-    ),
-    "clawrouter-backend-sdk": (
-        "Generator-owned TypeScript transport for federated backend domains on "
-        "sdkwork-clawrouter-backend-sdk."
-    ),
-}
-SDK_DOMAIN_TRANSPORT_NAMES = {
-    "clawrouter-app-sdk": "clawrouter-app-domain-transport",
-    "clawrouter-backend-sdk": "clawrouter-backend-domain-transport",
-}
 SDK_LANGUAGE_PACKAGE_NAMES = {
     "clawrouter-app-sdk": {
         "typescript": "@sdkwork/clawrouter-app-sdk",
@@ -198,36 +180,36 @@ SDK_DEPENDENCIES = {
             },
         },
         {
-            "workspace": "clawrouter-app-wallet-capability",
-            "role": "wallet-app-capability",
+            "workspace": "sdkwork-account-app-sdk",
+            "role": "account-app-capability",
             "required": True,
-            "dependencyMode": "internal-capability",
+            "dependencyMode": "consumer-sdk",
             "apiPrefix": "/app/v3/api",
             "generatedTransportImportPolicy": "forbidden",
             "packageByLanguage": {
-                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+                "typescript": "@sdkwork/account-app-sdk",
             },
         },
         {
-            "workspace": "clawrouter-app-membership-capability",
+            "workspace": "sdkwork-membership-app-sdk",
             "role": "membership-app-capability",
             "required": True,
-            "dependencyMode": "internal-capability",
+            "dependencyMode": "consumer-sdk",
             "apiPrefix": "/app/v3/api",
             "generatedTransportImportPolicy": "forbidden",
             "packageByLanguage": {
-                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+                "typescript": "@sdkwork/membership-app-sdk",
             },
         },
         {
-            "workspace": "clawrouter-app-promotion-capability",
-            "role": "promotion-app-capability",
+            "workspace": "sdkwork-catalog-app-sdk",
+            "role": "catalog-app-capability",
             "required": True,
-            "dependencyMode": "internal-capability",
+            "dependencyMode": "consumer-sdk",
             "apiPrefix": "/app/v3/api",
             "generatedTransportImportPolicy": "forbidden",
             "packageByLanguage": {
-                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+                "typescript": "@sdkwork/catalog-app-sdk",
             },
         },
         {
@@ -242,25 +224,36 @@ SDK_DEPENDENCIES = {
             },
         },
         {
-            "workspace": "clawrouter-app-payment-capability",
+            "workspace": "sdkwork-payment-app-sdk",
             "role": "payment-app-capability",
             "required": True,
-            "dependencyMode": "internal-capability",
+            "dependencyMode": "consumer-sdk",
             "apiPrefix": "/app/v3/api",
             "generatedTransportImportPolicy": "forbidden",
             "packageByLanguage": {
-                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+                "typescript": "@sdkwork/payment-app-sdk",
             },
         },
         {
-            "workspace": "clawrouter-app-catalog-capability",
-            "role": "catalog-app-capability",
+            "workspace": "sdkwork-promotion-app-sdk",
+            "role": "promotion-app-capability",
             "required": True,
-            "dependencyMode": "internal-capability",
+            "dependencyMode": "consumer-sdk",
             "apiPrefix": "/app/v3/api",
             "generatedTransportImportPolicy": "forbidden",
             "packageByLanguage": {
-                "typescript": "clawrouter-app-domain-transport-generated-typescript",
+                "typescript": "@sdkwork/promotion-app-sdk",
+            },
+        },
+        {
+            "workspace": "sdkwork-models-app-sdk",
+            "role": "models-app-catalog-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/models-app-sdk",
             },
         },
     ],
@@ -285,91 +278,18 @@ SDK_DEPENDENCIES = {
             },
         },
         {
-            "workspace": "clawrouter-backend-wallet-capability",
-            "role": "wallet-backend-capability",
+            "workspace": "sdkwork-models-backend-sdk",
+            "role": "models-backend-catalog-capability",
             "required": True,
-            "dependencyMode": "internal-capability",
+            "dependencyMode": "consumer-sdk",
             "apiPrefix": "/backend/v3/api",
             "generatedTransportImportPolicy": "forbidden",
             "packageByLanguage": {
-                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
-            },
-        },
-        {
-            "workspace": "clawrouter-backend-membership-capability",
-            "role": "membership-backend-capability",
-            "required": True,
-            "dependencyMode": "internal-capability",
-            "apiPrefix": "/backend/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
-            },
-        },
-        {
-            "workspace": "clawrouter-backend-promotion-capability",
-            "role": "promotion-backend-capability",
-            "required": True,
-            "dependencyMode": "internal-capability",
-            "apiPrefix": "/backend/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
-            },
-        },
-        {
-            "workspace": "clawrouter-backend-catalog-capability",
-            "role": "catalog-backend-capability",
-            "required": True,
-            "dependencyMode": "internal-capability",
-            "apiPrefix": "/backend/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
-            },
-        },
-        {
-            "workspace": "clawrouter-backend-order-capability",
-            "role": "order-backend-capability",
-            "required": True,
-            "dependencyMode": "internal-capability",
-            "apiPrefix": "/backend/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
-            },
-        },
-        {
-            "workspace": "clawrouter-backend-payment-capability",
-            "role": "payment-backend-capability",
-            "required": True,
-            "dependencyMode": "internal-capability",
-            "apiPrefix": "/backend/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
-            },
-        },
-        {
-            "workspace": "clawrouter-backend-inventory-capability",
-            "role": "inventory-backend-capability",
-            "required": True,
-            "dependencyMode": "internal-capability",
-            "apiPrefix": "/backend/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
-            },
-        },
-        {
-            "workspace": "clawrouter-backend-finance-capability",
-            "role": "finance-backend-capability",
-            "required": True,
-            "dependencyMode": "internal-capability",
-            "apiPrefix": "/backend/v3/api",
-            "generatedTransportImportPolicy": "forbidden",
-            "packageByLanguage": {
-                "typescript": "clawrouter-backend-domain-transport-generated-typescript",
+                "typescript": "@sdkwork/models-backend-sdk",
+                "rust": "sdkwork-models-backend-sdk",
+                "java": "com.sdkwork:sdkwork-models-backend-sdk",
+                "go": "github.com/sdkwork/sdkwork-models-backend-sdk",
+                "python": "sdkwork-models-backend-sdk",
             },
         },
     ],
@@ -461,7 +381,6 @@ EMPTY_INTERFACE_PATTERN = re.compile(
 BUILD_SCRIPT = r'''#!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import ts from 'typescript';
 import { rollup } from 'rollup';
 
@@ -470,61 +389,17 @@ const srcDir = path.join(projectDir, 'src');
 const distDir = path.join(projectDir, 'dist');
 const tempDir = path.join(projectDir, '.sdkwork', 'build-runtime');
 const tempEsmDir = path.join(tempDir, 'esm');
-const domainTransportDir = path.join(projectDir, 'generated', 'domains', 'server-openapi');
-const domainsEntry = path.join(srcDir, 'domains', 'index.ts');
-
 async function main() {
   await removeDirectory(distDir);
   await removeDirectory(tempDir);
   await fs.mkdir(distDir, { recursive: true });
 
-  if (await pathExists(domainsEntry)) {
-    await stageDomainTransport();
-  }
   emitDeclarations();
   emitRuntimeModules();
   await removeTypeOnlyRuntimeReExports(path.join(tempEsmDir, 'index.js'));
   await bundleRuntime(path.join(tempEsmDir, 'index.js'), 'es', path.join(distDir, 'index.js'));
   await bundleRuntime(path.join(tempEsmDir, 'index.js'), 'cjs', path.join(distDir, 'index.cjs'));
-  if (await pathExists(domainsEntry)) {
-    await bundleRuntime(path.join(tempEsmDir, 'domains', 'index.js'), 'es', path.join(distDir, 'domains', 'index.js'));
-    await bundleRuntime(path.join(tempEsmDir, 'domains', 'index.js'), 'cjs', path.join(distDir, 'domains', 'index.cjs'));
-  }
-
   await removeDirectory(tempDir);
-}
-
-async function pathExists(target) {
-  try {
-    await fs.access(target);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function stageDomainTransport() {
-  const buildScript = path.join(domainTransportDir, 'custom', 'build-runtime.mjs');
-  if (!(await pathExists(buildScript))) {
-    throw new Error(`domain transport build script not found: ${buildScript}`);
-  }
-
-  const result = spawnSync(process.execPath, [buildScript], {
-    cwd: domainTransportDir,
-    stdio: 'inherit',
-  });
-  if (result.error) {
-    throw result.error;
-  }
-  if ((result.status ?? 1) !== 0) {
-    throw new Error(`domain transport build failed with status ${result.status ?? 1}`);
-  }
-
-  const generatedDist = path.join(domainTransportDir, 'dist');
-  if (!(await pathExists(path.join(generatedDist, 'index.d.ts')))) {
-    throw new Error(`domain transport build did not emit declarations: ${generatedDist}`);
-  }
-  await fs.cp(generatedDist, path.join(distDir, 'domains-generated'), { recursive: true });
 }
 
 async function removeDirectory(target) {
@@ -699,7 +574,6 @@ class SdkRuntimeStandardizer:
                 raise FileNotFoundError(f"generated SDK directory is missing: {generated_base}")
             updated.extend(self._standardize_sdk_family(sdk_family, family, typescript_base))
             updated.extend(self._standardize_sdk(sdk_family, typescript_base))
-        updated.extend(self.repair_domain_transport_package_manifests())
         return updated
 
     def _standardize_generated_http_clients(self, sdk_family: str, base: Path) -> list[Path]:
@@ -717,65 +591,6 @@ class SdkRuntimeStandardizer:
             if normalized != source:
                 http_client_path.write_text(normalized, encoding="utf-8", newline="\n")
                 updated.append(http_client_path)
-        return updated
-
-    def repair_domain_transport_package_manifests(self) -> list[Path]:
-        updated: list[Path] = []
-        for sdk_family in self.sdk_directories:
-            package_name = SDK_DOMAIN_TRANSPORT_PACKAGE_NAMES.get(sdk_family)
-            if package_name is None:
-                continue
-            package_root = (
-                self.root
-                / "sdks"
-                / sdk_family
-                / SDK_TYPESCRIPT_DIRECTORIES[sdk_family]
-                / "generated"
-                / "domains"
-                / "server-openapi"
-            )
-            if not package_root.is_dir():
-                continue
-            package_path = package_root / "package.json"
-            package = self._read_json_or_none(package_path)
-            if package:
-                continue
-            self._write_json(
-                package_path,
-                {
-                    "name": package_name,
-                    "version": "0.1.0",
-                    "private": True,
-                    "description": SDK_DOMAIN_TRANSPORT_DESCRIPTIONS[sdk_family],
-                    "author": "SDKWork Team",
-                    "license": "MIT",
-                    "type": "module",
-                    "main": "./dist/index.cjs",
-                    "module": "./dist/index.js",
-                    "types": "./dist/index.d.ts",
-                    "files": ["dist"],
-                    "exports": {
-                        ".": {
-                            "types": "./dist/index.d.ts",
-                            "import": "./dist/index.js",
-                            "require": "./dist/index.cjs",
-                        }
-                    },
-                    "scripts": {
-                        "build": "node custom/build-runtime.mjs",
-                        "dev": "node custom/build-runtime.mjs",
-                        "prepublishOnly": "npm run build",
-                    },
-                    "dependencies": {"@sdkwork/sdk-common": SDK_COMMON_VERSION},
-                    "devDependencies": {
-                        "@types/node": SDK_TYPES_NODE_VERSION,
-                        "typescript": SDK_TYPESCRIPT_VERSION,
-                        "rollup": SDK_ROLLUP_VERSION,
-                    },
-                    "keywords": ["sdk", "api", SDK_TYPES[sdk_family], "sdkwork"],
-                },
-            )
-            updated.append(package_path)
         return updated
 
     def sync_openapi_snapshots(self) -> list[Path]:
@@ -955,20 +770,6 @@ class SdkRuntimeStandardizer:
 
     def _dependency_authority_path(self, workspace: str) -> Path:
         iam_root = self._dependency_root("sdkwork-iam")
-        commerce_app_authority = (
-            self.root
-            / "sdks"
-            / "clawrouter-app-sdk"
-            / "openapi"
-            / "clawrouter-app-domain-transport.openapi.json"
-        )
-        commerce_backend_authority = (
-            self.root
-            / "sdks"
-            / "clawrouter-backend-sdk"
-            / "openapi"
-            / "clawrouter-backend-domain-transport.openapi.json"
-        )
         mapping = {
             "sdkwork-iam-app-sdk": iam_root
             / "sdks"
@@ -980,24 +781,46 @@ class SdkRuntimeStandardizer:
             / "sdkwork-iam-backend-sdk"
             / "openapi"
             / "sdkwork-iam-backend-api.openapi.yaml",
+            "sdkwork-models-backend-sdk": self._dependency_root("sdkwork-models")
+            / "sdks"
+            / "sdkwork-models-backend-sdk"
+            / "openapi"
+            / "sdkwork-models-backend-api.openapi.json",
+            "sdkwork-models-app-sdk": self._dependency_root("sdkwork-models")
+            / "sdks"
+            / "sdkwork-models-app-sdk"
+            / "openapi"
+            / "sdkwork-models-app-api.openapi.json",
+            "sdkwork-account-app-sdk": self._dependency_root("sdkwork-account")
+            / "sdks"
+            / "sdkwork-account-app-sdk"
+            / "openapi"
+            / "account-app-api.openapi.json",
+            "sdkwork-membership-app-sdk": self._dependency_root("sdkwork-membership")
+            / "sdks"
+            / "sdkwork-membership-app-sdk"
+            / "openapi"
+            / "sdkwork-membership-app-api.openapi.json",
             "sdkwork-order-app-sdk": self._dependency_root("sdkwork-order")
             / "sdks"
             / "sdkwork-order-app-sdk"
             / "openapi"
             / "sdkwork-order-app-api.openapi.json",
-            "clawrouter-app-wallet-capability": commerce_app_authority,
-            "clawrouter-app-membership-capability": commerce_app_authority,
-            "clawrouter-app-promotion-capability": commerce_app_authority,
-            "clawrouter-app-payment-capability": commerce_app_authority,
-            "clawrouter-app-catalog-capability": commerce_app_authority,
-            "clawrouter-backend-wallet-capability": commerce_backend_authority,
-            "clawrouter-backend-membership-capability": commerce_backend_authority,
-            "clawrouter-backend-promotion-capability": commerce_backend_authority,
-            "clawrouter-backend-catalog-capability": commerce_backend_authority,
-            "clawrouter-backend-order-capability": commerce_backend_authority,
-            "clawrouter-backend-payment-capability": commerce_backend_authority,
-            "clawrouter-backend-inventory-capability": commerce_backend_authority,
-            "clawrouter-backend-finance-capability": commerce_backend_authority,
+            "sdkwork-catalog-app-sdk": self._dependency_root("sdkwork-catalog")
+            / "sdks"
+            / "sdkwork-catalog-app-sdk"
+            / "openapi"
+            / "sdkwork-catalog-app-api.openapi.json",
+            "sdkwork-payment-app-sdk": self._dependency_root("sdkwork-payment")
+            / "sdks"
+            / "sdkwork-payment-app-sdk"
+            / "openapi"
+            / "sdkwork-payment-app-api.openapi.json",
+            "sdkwork-promotion-app-sdk": self._dependency_root("sdkwork-promotion")
+            / "sdks"
+            / "sdkwork-promotion-app-sdk"
+            / "openapi"
+            / "sdkwork-promotion-app-api.openapi.json",
         }
         return mapping.get(
             workspace,
@@ -1566,49 +1389,6 @@ class SdkRuntimeStandardizer:
             if sdk_family in {"clawrouter-app-sdk", "clawrouter-backend-sdk"}
             else ""
         )
-        domain_transport_constants = ""
-        domain_transport_after_generation = ""
-        domain_transport_function = ""
-        if sdk_family in SDK_DOMAIN_TRANSPORT_NAMES:
-            domain_transport_constants = (
-                f"const domainTransportName = '{SDK_DOMAIN_TRANSPORT_NAMES[sdk_family]}';\n"
-                "const domainTransportInputPath = `sdks/${sdkFamily}/openapi/${domainTransportName}.openapi.json`;\n"
-                f"const domainTransportPackageName = '{SDK_DOMAIN_TRANSPORT_PACKAGE_NAMES[sdk_family]}';\n"
-                "const domainTransportOutputPath = `sdks/${sdkFamily}/${sdkFamily}-typescript/generated/domains/server-openapi`;\n"
-            )
-            domain_transport_after_generation = (
-                "  if (language === 'typescript') {\n"
-                "    runDomainTransportGeneration();\n"
-                "  }\n"
-            )
-            domain_transport_function = (
-                "function runDomainTransportGeneration() {\n"
-                "  rmSync(path.join(workspaceRoot, domainTransportOutputPath), { recursive: true, force: true });\n"
-                "  const result = spawnSync(command, [\n"
-                "    'tools/clawrouter_strict_sdk_generate.mjs',\n"
-                "    'generate',\n"
-                "    '-i', domainTransportInputPath,\n"
-                "    '-o', domainTransportOutputPath,\n"
-                "    '-n', domainTransportName,\n"
-                "    '-t', sdkType,\n"
-                "    '-l', 'typescript',\n"
-                "    '--base-url', baseUrl,\n"
-                "    '--api-prefix', apiPrefix,\n"
-                "    '--package-name', domainTransportPackageName,\n"
-                "    '--description', `${description} federated domain transport`,\n"
-                "    '--fixed-sdk-version', '0.1.0',\n"
-                "    '--no-sync-published-version',\n"
-                "    '--standard-profile', 'sdkwork-v3',\n"
-                "  ], { cwd: workspaceRoot, stdio: 'inherit' });\n"
-                "  if (result.error) {\n"
-                "    throw result.error;\n"
-                "  }\n"
-                "  if ((result.status ?? 1) !== 0) {\n"
-                "    process.exit(result.status ?? 1);\n"
-                "  }\n"
-                "  cleanGeneratedOutputAt(domainTransportOutputPath);\n"
-                "}\n\n"
-            )
         return (
             "#!/usr/bin/env node\n"
             "import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';\n"
@@ -1622,7 +1402,6 @@ class SdkRuntimeStandardizer:
             f"const sdkFamily = '{sdk_family}';\n"
             f"const sdkType = '{sdk_type}';\n"
             "const authorityInputPath = `sdks/${sdkFamily}/openapi/${sdkFamily}.openapi.json`;\n"
-            f"{domain_transport_constants}"
             f"{sdkgen_input_path_line}"
             f"const baseUrl = '{base_url}';\n"
             f"const apiPrefix = '{api_prefix}';\n"
@@ -1738,9 +1517,7 @@ class SdkRuntimeStandardizer:
             "    process.exit(result.status ?? 1);\n"
             "  }\n"
             "  cleanGeneratedOutput(language);\n"
-            f"{domain_transport_after_generation}"
             "}\n\n"
-            f"{domain_transport_function}"
             "function strictTypeScriptArgs() {\n"
             "  return [\n"
             "    'tools/clawrouter_strict_sdk_generate.mjs',\n"
@@ -1996,8 +1773,20 @@ class SdkRuntimeStandardizer:
                         updated.append(stale_path)
         return updated
 
+    def _render_build_script(self, sdk_family: str) -> str:
+        return BUILD_SCRIPT
+
     def _standardize_sdk(self, sdk_family: str, base: Path) -> list[Path]:
         updated: list[Path] = []
+        for retired_domains_root in (
+            base / "generated" / "domains",
+            base / "src" / "domains",
+            base / "dist" / "domains",
+            base / "dist" / "domains-generated",
+        ):
+            if retired_domains_root.exists():
+                shutil.rmtree(retired_domains_root)
+                updated.append(retired_domains_root)
         package_path = base / "package.json"
         package = self._read_json(package_path)
         package["name"] = SDK_PACKAGE_NAMES[sdk_family]
@@ -2019,15 +1808,12 @@ class SdkRuntimeStandardizer:
             "import": "./dist/index.js",
             "require": "./dist/index.cjs",
         }
-        domains_entry = base / "src" / "domains" / "index.ts"
-        if domains_entry.is_file():
-            exports["./domains"] = {
-                "types": "./dist/domains/index.d.ts",
-                "import": "./dist/domains/index.js",
-                "require": "./dist/domains/index.cjs",
-            }
-        else:
-            exports.pop("./domains", None)
+        exports.pop("./domains", None)
+        imports = package.get("imports")
+        if isinstance(imports, dict):
+            imports.pop("#clawrouter-backend-domains-generated", None)
+            if not imports:
+                package.pop("imports", None)
         package["publishConfig"] = {
             "access": "public",
             "registry": "https://registry.npmjs.org/",
@@ -2064,8 +1850,9 @@ class SdkRuntimeStandardizer:
 
         build_script_path = base / "custom" / "build-runtime.mjs"
         build_script_path.parent.mkdir(parents=True, exist_ok=True)
-        if not build_script_path.is_file() or build_script_path.read_text(encoding="utf-8") != BUILD_SCRIPT:
-            build_script_path.write_text(BUILD_SCRIPT, encoding="utf-8", newline="\n")
+        build_script = self._render_build_script(sdk_family)
+        if not build_script_path.is_file() or build_script_path.read_text(encoding="utf-8") != build_script:
+            build_script_path.write_text(build_script, encoding="utf-8", newline="\n")
             updated.append(build_script_path)
 
         custom_readme_path = base / "custom" / "README.md"

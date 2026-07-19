@@ -1,267 +1,6 @@
 {
   "components": {
     "schemas": {
-      "AiResourceGroupResourcesPage": {
-        "additionalProperties": false,
-        "description": "Ai resource group resources page schema exposed by Claw Router.",
-        "name": "AiResourceGroupResourcesPage",
-        "properties": {
-          "items": {
-            "description": "Items field on ai resource group resources page.",
-            "items": {
-              "additionalProperties": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/JsonValue"
-                  }
-                ],
-                "description": "Items field on ai resource group resources page."
-              },
-              "description": "Items field on ai resource group resources page.",
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "pageInfo": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PageInfo"
-              }
-            ],
-            "description": "Page info field on ai resource group resources page."
-          }
-        },
-        "required": [
-          "items",
-          "pageInfo"
-        ],
-        "type": "object"
-      },
-      "AiResourceGroupsCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resource groups create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resource groups create result schema exposed by Claw Router.",
-        "x-operation-id": "aiResourceGroups.create"
-      },
-      "AiResourceGroupsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resource groups list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resource groups list result schema exposed by Claw Router.",
-        "x-operation-id": "aiResourceGroups.list"
-      },
-      "AiResourceGroupsResourcesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resource groups resources list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/AiResourceGroupResourcesPage"
-                  }
-                ],
-                "description": "Data field on ai resource groups resources list result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resource groups resources list result schema exposed by Claw Router.",
-        "x-operation-id": "aiResourceGroups.resources.list"
-      },
-      "AiResourceGroupsUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resource groups update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resource groups update result schema exposed by Claw Router.",
-        "x-operation-id": "aiResourceGroups.update"
-      },
-      "AiResourcesCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resources create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resources create result schema exposed by Claw Router.",
-        "x-operation-id": "aiResources.create"
-      },
-      "AiResourcesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resources list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/AiResourcesPage"
-                  }
-                ],
-                "description": "Data field on ai resources list result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resources list result schema exposed by Claw Router.",
-        "x-operation-id": "aiResources.list"
-      },
-      "AiResourcesPage": {
-        "additionalProperties": false,
-        "description": "Ai resources page schema exposed by Claw Router.",
-        "name": "AiResourcesPage",
-        "properties": {
-          "items": {
-            "description": "Items field on ai resources page.",
-            "items": {
-              "additionalProperties": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/JsonValue"
-                  }
-                ],
-                "description": "Items field on ai resources page."
-              },
-              "description": "Items field on ai resources page.",
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "pageInfo": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PageInfo"
-              }
-            ],
-            "description": "Page info field on ai resources page."
-          }
-        },
-        "required": [
-          "items",
-          "pageInfo"
-        ],
-        "type": "object"
-      },
-      "AiResourcesUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by ai resources update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Ai resources update result schema exposed by Claw Router.",
-        "x-operation-id": "aiResources.update"
-      },
       "FieldError": {
         "additionalProperties": false,
         "properties": {
@@ -366,83 +105,14 @@
           }
         ]
       },
-      "ModelCatalogPage": {
-        "additionalProperties": false,
-        "description": "Model catalog page schema exposed by Claw Router.",
-        "name": "ModelCatalogPage",
-        "properties": {
-          "groups": {
-            "description": "Groups field on model catalog page.",
-            "items": {
-              "additionalProperties": false,
-              "description": "Groups field on model catalog page.",
-              "properties": {
-                "key": {
-                  "description": "Key field on model catalog page.",
-                  "type": "string"
-                },
-                "label": {
-                  "description": "Label field on model catalog page.",
-                  "type": "string"
-                },
-                "modelCount": {
-                  "description": "Model count field on model catalog page.",
-                  "format": "int64",
-                  "pattern": "^[0-9]+$",
-                  "type": "string",
-                  "x-sdkwork-int64-string": true,
-                  "x-sdkwork-rust-type": "i64"
-                }
-              },
-              "required": [
-                "key",
-                "label",
-                "modelCount"
-              ],
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "items": {
-            "description": "Items field on model catalog page.",
-            "items": {
-              "additionalProperties": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/JsonValue"
-                  }
-                ],
-                "description": "Items field on model catalog page."
-              },
-              "description": "Items field on model catalog page.",
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "pageInfo": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PageInfo"
-              }
-            ],
-            "description": "Page info field on model catalog page."
-          }
-        },
-        "required": [
-          "items",
-          "groups",
-          "pageInfo"
-        ],
-        "type": "object"
-      },
-      "ModelMappingsCollectionUpdateResult": {
+      "ModelMappingOptionsListResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by model mappings collection update result.",
+            "description": "Object schema used by model mapping options list result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -459,8 +129,8 @@
             "type": "object"
           }
         ],
-        "description": "Model mappings collection update result schema exposed by Claw Router.",
-        "x-operation-id": "modelMappings.collection.update"
+        "description": "Model mapping options list result schema exposed by Claw Router.",
+        "x-operation-id": "modelMappingOptions.list"
       },
       "ModelMappingsCreateResult": {
         "allOf": [
@@ -570,42 +240,6 @@
         "description": "Model mappings update result schema exposed by Claw Router.",
         "x-operation-id": "modelMappings.update"
       },
-      "ModelRankingRefreshJobHistoryPage": {
-        "additionalProperties": false,
-        "description": "Model ranking refresh job history page schema exposed by Claw Router.",
-        "name": "ModelRankingRefreshJobHistoryPage",
-        "properties": {
-          "items": {
-            "description": "Items field on model ranking refresh job history page.",
-            "items": {
-              "additionalProperties": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/JsonValue"
-                  }
-                ],
-                "description": "Items field on model ranking refresh job history page."
-              },
-              "description": "Items field on model ranking refresh job history page.",
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "pageInfo": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PageInfo"
-              }
-            ],
-            "description": "Page info field on model ranking refresh job history page."
-          }
-        },
-        "required": [
-          "items",
-          "pageInfo"
-        ],
-        "type": "object"
-      },
       "ModelRankingsJobsListResult": {
         "allOf": [
           {
@@ -618,10 +252,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/ModelRankingRefreshJobHistoryPage"
+                    "$ref": "#/components/schemas/NoData"
                   }
                 ],
-                "description": "Data field on model rankings jobs list result."
+                "description": "No business data returned by this operation."
               }
             },
             "required": [
@@ -645,10 +279,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/ModelRankingsPage"
+                    "$ref": "#/components/schemas/NoData"
                   }
                 ],
-                "description": "Data field on model rankings list result."
+                "description": "No business data returned by this operation."
               }
             },
             "required": [
@@ -659,72 +293,6 @@
         ],
         "description": "Model rankings list result schema exposed by Claw Router.",
         "x-operation-id": "modelRankings.list"
-      },
-      "ModelRankingsPage": {
-        "additionalProperties": false,
-        "description": "Model rankings page schema exposed by Claw Router.",
-        "name": "ModelRankingsPage",
-        "properties": {
-          "history": {
-            "description": "History field on model rankings page.",
-            "items": {
-              "additionalProperties": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/JsonValue"
-                  }
-                ],
-                "description": "History field on model rankings page."
-              },
-              "description": "History field on model rankings page.",
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "items": {
-            "description": "Items field on model rankings page.",
-            "items": {
-              "additionalProperties": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/JsonValue"
-                  }
-                ],
-                "description": "Items field on model rankings page."
-              },
-              "description": "Items field on model rankings page.",
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "pageInfo": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PageInfo"
-              }
-            ],
-            "description": "Page info field on model rankings page."
-          },
-          "source": {
-            "additionalProperties": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/JsonValue"
-                }
-              ],
-              "description": "Source field on model rankings page."
-            },
-            "description": "Source field on model rankings page.",
-            "type": "object"
-          }
-        },
-        "required": [
-          "items",
-          "history",
-          "source",
-          "pageInfo"
-        ],
-        "type": "object"
       },
       "ModelRankingsRefreshResult": {
         "allOf": [
@@ -753,22 +321,22 @@
         "description": "Model rankings refresh result schema exposed by Claw Router.",
         "x-operation-id": "modelRankings.refresh"
       },
-      "ModelRankingsStatusRetrieveResult": {
+      "ModelRankingsStatusListResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by model rankings status retrieve result.",
+            "description": "Object schema used by model rankings status list result.",
             "properties": {
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/ModelCatalogPage"
+                    "$ref": "#/components/schemas/NoData"
                   }
                 ],
-                "description": "Data field on model rankings status retrieve result."
+                "description": "No business data returned by this operation."
               }
             },
             "required": [
@@ -777,8 +345,8 @@
             "type": "object"
           }
         ],
-        "description": "Model rankings status retrieve result schema exposed by Claw Router.",
-        "x-operation-id": "modelRankings.status.retrieve"
+        "description": "Model rankings status list result schema exposed by Claw Router.",
+        "x-operation-id": "modelRankings.status.list"
       },
       "ModelVendorsCreateResult": {
         "allOf": [
@@ -873,10 +441,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/ModelCatalogPage"
+                    "$ref": "#/components/schemas/NoData"
                   }
                 ],
-                "description": "Data field on models list result."
+                "description": "No business data returned by this operation."
               }
             },
             "required": [
@@ -888,14 +456,14 @@
         "description": "Models list result schema exposed by Claw Router.",
         "x-operation-id": "models.list"
       },
-      "ModelsRefreshResult": {
+      "ModelsSyncResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by models refresh result.",
+            "description": "Object schema used by models sync result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -912,8 +480,8 @@
             "type": "object"
           }
         ],
-        "description": "Models refresh result schema exposed by Claw Router.",
-        "x-operation-id": "models.refresh"
+        "description": "Models sync result schema exposed by Claw Router.",
+        "x-operation-id": "models.sync"
       },
       "ModelsUpdateResult": {
         "allOf": [
@@ -1042,6 +610,195 @@
           "traceId"
         ],
         "type": "object"
+      },
+      "ResourceGroupsCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by resource groups create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Resource groups create result schema exposed by Claw Router.",
+        "x-operation-id": "resourceGroups.create"
+      },
+      "ResourceGroupsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by resource groups list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Resource groups list result schema exposed by Claw Router.",
+        "x-operation-id": "resourceGroups.list"
+      },
+      "ResourceGroupsResourcesListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by resource groups resources list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Resource groups resources list result schema exposed by Claw Router.",
+        "x-operation-id": "resourceGroups.resources.list"
+      },
+      "ResourceGroupsUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by resource groups update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Resource groups update result schema exposed by Claw Router.",
+        "x-operation-id": "resourceGroups.update"
+      },
+      "ResourcesCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by resources create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Resources create result schema exposed by Claw Router.",
+        "x-operation-id": "resources.create"
+      },
+      "ResourcesListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by resources list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Resources list result schema exposed by Claw Router.",
+        "x-operation-id": "resources.list"
+      },
+      "ResourcesUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by resources update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Resources update result schema exposed by Claw Router.",
+        "x-operation-id": "resources.update"
       },
       "SdkWorkApiResponse": {
         "additionalProperties": false,
@@ -1208,9 +965,92 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.2",
   "paths": {
+    "/backend/v3/api/ai/model_mapping_options": {
+      "get": {
+        "description": "List model options catalog. Reads ai_model_mapping_rule. Writes none. File targets none.",
+        "operationId": "modelMappingOptions.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelMappingOptionsListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List model options catalog",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_model_mapping_rule"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-models-backend-api",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-models",
+        "x-sdkwork-resource": "modelMappingOptions",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+        "x-write-tables": []
+      }
+    },
     "/backend/v3/api/ai/model_mappings": {
       "get": {
-        "description": "List. Reads ai. Writes none. File targets none.",
+        "description": "List model mappings. Reads ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item. Writes none. File targets none.",
         "operationId": "modelMappings.list",
         "parameters": [],
         "responses": {
@@ -1271,14 +1111,16 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List model mappings",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_model_mapping_rule",
+          "ai_model_mapping_rule_binding",
+          "ai_model_mapping_rule_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -1287,11 +1129,11 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelMappings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Create model mapping. Reads ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item. Writes ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item, ops_audit_log. File targets none.",
         "operationId": "modelMappings.create",
         "parameters": [],
         "responses": {
@@ -1352,14 +1194,16 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Create model mapping",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_model_mapping_rule",
+          "ai_model_mapping_rule_binding",
+          "ai_model_mapping_rule_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -1368,98 +1212,18 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelMappings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
-          "ops_audit_log"
-        ]
-      },
-      "put": {
-        "description": "Replace. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "modelMappings.collection.update",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModelMappingsCollectionUpdateResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Replace",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "update",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-api-authority": "sdkwork-models-backend-api",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "modelMappings.collection",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [
+          "ai_model_mapping_rule",
+          "ai_model_mapping_rule_binding",
+          "ai_model_mapping_rule_item",
           "ops_audit_log"
         ]
       }
     },
     "/backend/v3/api/ai/model_mappings/resolve": {
       "post": {
-        "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Resolve model mapping. Reads ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item. Writes ops_audit_log. File targets none.",
         "operationId": "modelMappings.resolve",
         "parameters": [],
         "responses": {
@@ -1520,14 +1284,16 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Resolve model mapping",
         "tags": [
           "ai"
         ],
-        "x-contract-kind": "create",
+        "x-contract-kind": "action",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_model_mapping_rule",
+          "ai_model_mapping_rule_binding",
+          "ai_model_mapping_rule_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -1536,7 +1302,7 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelMappings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
           "ops_audit_log"
         ]
@@ -1544,7 +1310,7 @@
     },
     "/backend/v3/api/ai/model_mappings/{mappingId}": {
       "delete": {
-        "description": "Delete. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Delete model mapping. Reads ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item. Writes ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item, ops_audit_log. File targets none.",
         "operationId": "modelMappings.delete",
         "parameters": [
           {
@@ -1608,14 +1374,16 @@
             "AuthToken": []
           }
         ],
-        "summary": "Delete",
+        "summary": "Delete model mapping",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "delete",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_model_mapping_rule",
+          "ai_model_mapping_rule_binding",
+          "ai_model_mapping_rule_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -1624,13 +1392,16 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelMappings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
+          "ai_model_mapping_rule",
+          "ai_model_mapping_rule_binding",
+          "ai_model_mapping_rule_item",
           "ops_audit_log"
         ]
       },
       "patch": {
-        "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Update model mapping. Reads ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item. Writes ai_model_mapping_rule, ai_model_mapping_rule_binding, ai_model_mapping_rule_item, ops_audit_log. File targets none.",
         "operationId": "modelMappings.update",
         "parameters": [
           {
@@ -1701,14 +1472,16 @@
             "AuthToken": []
           }
         ],
-        "summary": "Update",
+        "summary": "Update model mapping",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_model_mapping_rule",
+          "ai_model_mapping_rule_binding",
+          "ai_model_mapping_rule_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -1717,67 +1490,20 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelMappings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
+          "ai_model_mapping_rule",
+          "ai_model_mapping_rule_binding",
+          "ai_model_mapping_rule_item",
           "ops_audit_log"
         ]
       }
     },
     "/backend/v3/api/ai/model_rankings": {
       "get": {
-        "description": "List. Reads ai. Writes none. File targets none.",
+        "description": "List model rankings. Reads ai_pricing_import_snapshot. Writes none. File targets none.",
         "operationId": "modelRankings.list",
-        "parameters": [
-          {
-            "description": "Ranking snapshot scope.",
-            "in": "query",
-            "name": "rank_scope",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Vendor code filter.",
-            "in": "query",
-            "name": "vendor_code",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Model modality filter.",
-            "in": "query",
-            "name": "modality",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Free-text ranking search query.",
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Number of ranking rows returned in the current page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 200,
-              "format": "int32",
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "content": {
@@ -1836,14 +1562,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List model rankings",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_pricing_import_snapshot"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -1852,38 +1578,15 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelRankings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/model_rankings/jobs": {
       "get": {
-        "description": "List. Reads ai. Writes none. File targets none.",
+        "description": "List model ranking refresh jobs. Reads ops_job_execution. Writes none. File targets none.",
         "operationId": "modelRankings.jobs.list",
-        "parameters": [
-          {
-            "description": "Ranking snapshot scope.",
-            "in": "query",
-            "name": "rank_scope",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Number of refresh jobs returned in the current page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 20,
-              "format": "int32",
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "content": {
@@ -1942,14 +1645,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List model ranking refresh jobs",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ops_job_execution"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -1958,13 +1661,13 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelRankings.jobs",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/model_rankings/refresh": {
       "post": {
-        "description": "Refresh. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Trigger model ranking refresh. Reads ai_usage. Writes ops_job_execution. File targets none.",
         "operationId": "modelRankings.refresh",
         "parameters": [],
         "responses": {
@@ -2025,14 +1728,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "Refresh",
+        "summary": "Trigger model ranking refresh",
         "tags": [
           "ai"
         ],
-        "x-contract-kind": "create",
+        "x-contract-kind": "action",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_usage"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2041,137 +1744,23 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelRankings",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
-          "ops_audit_log"
+          "ops_job_execution"
         ]
       }
     },
     "/backend/v3/api/ai/model_rankings/status": {
       "get": {
-        "description": "Retrieve. Reads ai. Writes none. File targets none.",
-        "operationId": "modelRankings.status.retrieve",
-        "parameters": [
-          {
-            "description": "One-based page index.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "format": "int32",
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Number of models returned in the current page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 20,
-              "format": "int32",
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Free-text model search query.",
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Billing meter code filter.",
-            "in": "query",
-            "name": "billing_meter",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Comma-separated vendor code filter.",
-            "explode": false,
-            "in": "query",
-            "name": "vendor_codes",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          },
-          {
-            "description": "Comma-separated modality filter.",
-            "explode": false,
-            "in": "query",
-            "name": "modalities",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          },
-          {
-            "description": "Comma-separated capability filter.",
-            "explode": false,
-            "in": "query",
-            "name": "capabilities",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          },
-          {
-            "description": "Comma-separated model category filter.",
-            "explode": false,
-            "in": "query",
-            "name": "categories",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          },
-          {
-            "description": "Comma-separated channel group filter.",
-            "explode": false,
-            "in": "query",
-            "name": "groups",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          }
-        ],
+        "description": "List model ranking refresh status. Reads ops_job_execution. Writes none. File targets none.",
+        "operationId": "modelRankings.status.list",
+        "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelRankingsStatusRetrieveResult"
+                  "$ref": "#/components/schemas/ModelRankingsStatusListResult"
                 }
               }
             },
@@ -2224,14 +1813,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "Retrieve",
+        "summary": "List model ranking refresh status",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ops_job_execution"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2240,13 +1829,13 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelRankings.status",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/model_vendors": {
       "get": {
-        "description": "List. Reads ai. Writes none. File targets none.",
+        "description": "List vendors. Reads ai_pricing_import_snapshot. Writes none. File targets none.",
         "operationId": "modelVendors.list",
         "parameters": [],
         "responses": {
@@ -2307,14 +1896,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List vendors",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_pricing_import_snapshot"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2323,11 +1912,11 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelVendors",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Create vendor. Reads ai_pricing_import_snapshot. Writes ops_audit_log. File targets none.",
         "operationId": "modelVendors.create",
         "parameters": [],
         "responses": {
@@ -2388,14 +1977,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Create vendor",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_pricing_import_snapshot"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2404,7 +1993,7 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "modelVendors",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
           "ops_audit_log"
         ]
@@ -2412,123 +2001,9 @@
     },
     "/backend/v3/api/ai/models": {
       "get": {
-        "description": "List. Reads ai. Writes none. File targets none.",
+        "description": "List all models. Reads ai_pricing_import_snapshot. Writes none. File targets none.",
         "operationId": "models.list",
-        "parameters": [
-          {
-            "description": "One-based page index.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "format": "int32",
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Number of models returned in the current page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 20,
-              "format": "int32",
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Free-text model search query.",
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Billing meter code filter.",
-            "in": "query",
-            "name": "billing_meter",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Comma-separated vendor code filter.",
-            "explode": false,
-            "in": "query",
-            "name": "vendor_codes",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          },
-          {
-            "description": "Comma-separated modality filter.",
-            "explode": false,
-            "in": "query",
-            "name": "modalities",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          },
-          {
-            "description": "Comma-separated capability filter.",
-            "explode": false,
-            "in": "query",
-            "name": "capabilities",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          },
-          {
-            "description": "Comma-separated model category filter.",
-            "explode": false,
-            "in": "query",
-            "name": "categories",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          },
-          {
-            "description": "Comma-separated channel group filter.",
-            "explode": false,
-            "in": "query",
-            "name": "groups",
-            "required": false,
-            "schema": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "style": "form"
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "content": {
@@ -2587,14 +2062,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List all models",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_pricing_import_snapshot"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2603,11 +2078,11 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "models",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Create model. Reads ai_pricing_import_snapshot. Writes ops_audit_log. File targets none.",
         "operationId": "models.create",
         "parameters": [],
         "responses": {
@@ -2668,14 +2143,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Create model",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_pricing_import_snapshot"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2684,23 +2159,23 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "models",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
           "ops_audit_log"
         ]
       }
     },
-    "/backend/v3/api/ai/models/refresh": {
+    "/backend/v3/api/ai/models/sync": {
       "post": {
-        "description": "Refresh. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "models.refresh",
+        "description": "Sync vendors and models. Reads ai_pricing_import_snapshot. Writes ai_pricing_import_snapshot, ops_audit_log. File targets none.",
+        "operationId": "models.sync",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelsRefreshResult"
+                  "$ref": "#/components/schemas/ModelsSyncResult"
                 }
               }
             },
@@ -2753,14 +2228,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "Refresh",
+        "summary": "Sync vendors and models",
         "tags": [
           "ai"
         ],
-        "x-contract-kind": "create",
+        "x-contract-kind": "action",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_pricing_import_snapshot"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2769,15 +2244,16 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "models",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
+          "ai_pricing_import_snapshot",
           "ops_audit_log"
         ]
       }
     },
     "/backend/v3/api/ai/models/{modelId}": {
       "delete": {
-        "description": "Delete. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Delete model. Reads ai_pricing_import_snapshot. Writes ops_audit_log. File targets none.",
         "operationId": "models.delete",
         "parameters": [
           {
@@ -2841,14 +2317,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "Delete",
+        "summary": "Delete model",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "delete",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_pricing_import_snapshot"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2857,13 +2333,13 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "models",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
           "ops_audit_log"
         ]
       },
       "patch": {
-        "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
+        "description": "Update model. Reads ai_pricing_import_snapshot. Writes ops_audit_log. File targets none.",
         "operationId": "models.update",
         "parameters": [
           {
@@ -2934,14 +2410,14 @@
             "AuthToken": []
           }
         ],
-        "summary": "Update",
+        "summary": "Update model",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_pricing_import_snapshot"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -2950,7 +2426,7 @@
         "x-sdkwork-owner": "sdkwork-models",
         "x-sdkwork-resource": "models",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
           "ops_audit_log"
         ]
@@ -2958,15 +2434,15 @@
     },
     "/backend/v3/api/ai/resource_groups": {
       "get": {
-        "description": "List. Reads ai. Writes none. File targets none.",
-        "operationId": "aiResourceGroups.list",
+        "description": "List resource groups. Reads ai_resource_group, ai_resource_group_item. Writes none. File targets none.",
+        "operationId": "resourceGroups.list",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiResourceGroupsListResult"
+                  "$ref": "#/components/schemas/ResourceGroupsListResult"
                 }
               }
             },
@@ -3019,35 +2495,36 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List resource groups",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_resource_group",
+          "ai_resource_group_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "aiResourceGroups",
+        "x-sdkwork-resource": "resourceGroups",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "aiResourceGroups.create",
+        "description": "Create resource group. Reads ai_resource_group, ai_resource_group_item. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
+        "operationId": "resourceGroups.create",
         "parameters": [],
         "responses": {
           "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiResourceGroupsCreateResult"
+                  "$ref": "#/components/schemas/ResourceGroupsCreateResult"
                 }
               }
             },
@@ -3100,72 +2577,41 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Create resource group",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_resource_group",
+          "ai_resource_group_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "aiResourceGroups",
+        "x-sdkwork-resource": "resourceGroups",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
         "x-write-tables": [
+          "ai_resource_group",
+          "ai_resource_group_item",
           "ops_audit_log"
         ]
       }
     },
     "/backend/v3/api/ai/resource_groups/{groupIdOrCode}/resources": {
       "get": {
-        "description": "List. Reads ai. Writes none. File targets none.",
-        "operationId": "aiResourceGroups.resources.list",
+        "description": "List resource group resources. Reads ai_resource_group, ai_resource_group_item, ai_resource. Writes none. File targets none.",
+        "operationId": "resourceGroups.resources.list",
         "parameters": [
           {
             "description": "Group id or code path parameter.",
             "in": "path",
             "name": "groupIdOrCode",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "One-based page index.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "format": "int32",
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Number of resources returned in the current page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 20,
-              "format": "int32",
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Free-text resource search query.",
-            "in": "query",
-            "name": "q",
-            "required": false,
             "schema": {
               "type": "string"
             }
@@ -3176,7 +2622,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiResourceGroupsResourcesListResult"
+                  "$ref": "#/components/schemas/ResourceGroupsResourcesListResult"
                 }
               }
             },
@@ -3229,30 +2675,32 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List resource group resources",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_resource_group",
+          "ai_resource_group_item",
+          "ai_resource"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "aiResourceGroups.resources",
+        "x-sdkwork-resource": "resourceGroups.resources",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
         "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/resource_groups/{groupId}": {
       "delete": {
-        "description": "Delete. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "aiResourceGroups.delete",
+        "description": "Delete resource group. Reads ai_resource_group. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
+        "operationId": "resourceGroups.delete",
         "parameters": [
           {
             "description": "Group id path parameter.",
@@ -3315,30 +2763,32 @@
             "AuthToken": []
           }
         ],
-        "summary": "Delete",
+        "summary": "Delete resource group",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "delete",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_resource_group"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "aiResourceGroups",
+        "x-sdkwork-resource": "resourceGroups",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
         "x-write-tables": [
+          "ai_resource_group",
+          "ai_resource_group_item",
           "ops_audit_log"
         ]
       },
       "patch": {
-        "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "aiResourceGroups.update",
+        "description": "Update resource group. Reads ai_resource_group, ai_resource_group_item. Writes ai_resource_group, ai_resource_group_item, ops_audit_log. File targets none.",
+        "operationId": "resourceGroups.update",
         "parameters": [
           {
             "description": "Group id path parameter.",
@@ -3355,7 +2805,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiResourceGroupsUpdateResult"
+                  "$ref": "#/components/schemas/ResourceGroupsUpdateResult"
                 }
               }
             },
@@ -3408,74 +2858,42 @@
             "AuthToken": []
           }
         ],
-        "summary": "Update",
+        "summary": "Update resource group",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_resource_group",
+          "ai_resource_group_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "aiResourceGroups",
+        "x-sdkwork-resource": "resourceGroups",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
         "x-write-tables": [
+          "ai_resource_group",
+          "ai_resource_group_item",
           "ops_audit_log"
         ]
       }
     },
     "/backend/v3/api/ai/resources": {
       "get": {
-        "description": "List. Reads ai. Writes none. File targets none.",
-        "operationId": "aiResources.list",
-        "parameters": [
-          {
-            "description": "One-based page index.",
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "format": "int32",
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Number of resources returned in the current page.",
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 20,
-              "format": "int32",
-              "maximum": 200,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Free-text resource search query.",
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "description": "List assignable resources. Reads ai_resource, ai_resource_group_item. Writes none. File targets none.",
+        "operationId": "resources.list",
+        "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiResourcesListResult"
+                  "$ref": "#/components/schemas/ResourcesListResult"
                 }
               }
             },
@@ -3528,35 +2946,36 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "List assignable resources",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_resource",
+          "ai_resource_group_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "aiResources",
+        "x-sdkwork-resource": "resources",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "aiResources.create",
+        "description": "Create ai resource. Reads ai_resource, ai_resource_group_item. Writes ai_resource, ai_resource_group_item, ops_audit_log. File targets none.",
+        "operationId": "resources.create",
         "parameters": [],
         "responses": {
           "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiResourcesCreateResult"
+                  "$ref": "#/components/schemas/ResourcesCreateResult"
                 }
               }
             },
@@ -3609,32 +3028,35 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Create ai resource",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_resource",
+          "ai_resource_group_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "aiResources",
+        "x-sdkwork-resource": "resources",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
         "x-write-tables": [
+          "ai_resource",
+          "ai_resource_group_item",
           "ops_audit_log"
         ]
       }
     },
     "/backend/v3/api/ai/resources/{resourceId}": {
       "put": {
-        "description": "Update. Reads ai. Writes ops_audit_log. File targets none.",
-        "operationId": "aiResources.update",
+        "description": "Update ai resource. Reads ai_resource, ai_resource_group_item. Writes ai_resource, ai_resource_group_item, ops_audit_log. File targets none.",
+        "operationId": "resources.update",
         "parameters": [
           {
             "description": "Resource id path parameter.",
@@ -3651,7 +3073,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AiResourcesUpdateResult"
+                  "$ref": "#/components/schemas/ResourcesUpdateResult"
                 }
               }
             },
@@ -3704,24 +3126,27 @@
             "AuthToken": []
           }
         ],
-        "summary": "Update",
+        "summary": "Update ai resource",
         "tags": [
           "ai"
         ],
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai"
+          "ai_resource",
+          "ai_resource_group_item"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-models-backend-api",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-models",
-        "x-sdkwork-resource": "aiResources",
+        "x-sdkwork-resource": "resources",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
         "x-write-tables": [
+          "ai_resource",
+          "ai_resource_group_item",
           "ops_audit_log"
         ]
       }

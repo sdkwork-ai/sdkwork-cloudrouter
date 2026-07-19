@@ -37,10 +37,19 @@ import {
 
 import { loadStoredAppSessionToken } from './app-session-token.ts';
 import {
-  type ClawRouterAppSdkClient,
+  getSdkworkAccountAppSdkClient,
+  getSdkworkCatalogAppSdkClient,
+  getSdkworkMembershipAppSdkClient,
+  getSdkworkOrderAppSdkClient,
+  getSdkworkPaymentAppSdkClient,
+  getSdkworkPromotionAppSdkClient,
+  type SdkworkAccountAppSdkClient,
+  type SdkworkCatalogAppSdkClient,
+  type SdkworkMembershipAppSdkClient,
+  type SdkworkOrderAppSdkClient,
+  type SdkworkPaymentAppSdkClient,
+  type SdkworkPromotionAppSdkClient,
 } from './sdk-clients.ts';
-
-type AppDomainClientReader = () => ClawRouterAppSdkClient;
 
 let pointsRechargeService: SdkworkPointsRechargeService | null = null;
 let membershipCheckoutService: SdkworkMembershipCheckoutService | null = null;
@@ -55,63 +64,80 @@ function readClawRouterDomainSessionTokens() {
   };
 }
 
-function buildAccountCommercePort(client: ClawRouterAppSdkClient): AccountAppSdkClient['commerce'] {
+function buildAccountCommercePort(
+  accountClient: SdkworkAccountAppSdkClient,
+  orderClient: SdkworkOrderAppSdkClient,
+): AccountAppSdkClient['commerce'] {
   return {
-    accounts: client.accounts,
-    recharges: client.recharges,
-    wallet: client.wallet,
+    accounts: accountClient.accounts,
+    recharges: orderClient.recharges,
+    wallet: accountClient.wallet,
   } as unknown as AccountAppSdkClient['commerce'];
 }
 
-function buildMembershipCommercePort(client: ClawRouterAppSdkClient): MembershipAppSdkClient['commerce'] {
+function buildMembershipCommercePort(
+  membershipClient: SdkworkMembershipAppSdkClient,
+  orderClient: SdkworkOrderAppSdkClient,
+): MembershipAppSdkClient['commerce'] {
   return {
-    memberships: client.memberships,
-    recharges: client.recharges,
+    memberships: membershipClient.memberships,
+    recharges: orderClient.recharges,
   } as MembershipAppSdkClient['commerce'];
 }
 
-function buildPaymentCommercePort(client: ClawRouterAppSdkClient): PaymentAppSdkClient['commerce'] {
+function buildPaymentCommercePort(client: SdkworkPaymentAppSdkClient): PaymentAppSdkClient['commerce'] {
   return {
-    payments: client.payments,
+    payments: client.commerce.payments,
   } as unknown as PaymentAppSdkClient['commerce'];
 }
 
-function buildOrderCommercePort(client: ClawRouterAppSdkClient): OrderAppSdkClient['commerce'] {
+function buildOrderCommercePort(
+  catalogClient: SdkworkCatalogAppSdkClient,
+  membershipClient: SdkworkMembershipAppSdkClient,
+  orderClient: SdkworkOrderAppSdkClient,
+  paymentClient: SdkworkPaymentAppSdkClient,
+): OrderAppSdkClient['commerce'] {
   return {
-    memberships: client.memberships,
-    cart: client.cart,
-    checkout: client.checkout,
-    orders: client.orders,
-    refunds: client.refunds,
-    fulfillments: client.fulfillments,
-    shipments: client.shipments,
-    afterSales: client.afterSales,
-    recharges: client.recharges,
-  } as OrderAppSdkClient['commerce'];
+    memberships: membershipClient.memberships,
+    cart: catalogClient.cart,
+    checkout: orderClient.checkout,
+    orders: orderClient.orders,
+    refunds: paymentClient.commerce.refunds,
+    fulfillments: orderClient.fulfillments,
+    shipments: orderClient.shipments,
+    afterSales: orderClient.afterSales,
+    recharges: orderClient.recharges,
+  } as unknown as OrderAppSdkClient['commerce'];
 }
 
-function buildPromotionCommercePort(client: ClawRouterAppSdkClient): PromotionAppSdkClient['commerce'] {
+function buildPromotionCommercePort(client: SdkworkPromotionAppSdkClient): PromotionAppSdkClient['commerce'] {
   return {
     promotions: client.promotions,
   } as unknown as PromotionAppSdkClient['commerce'];
 }
 
-export function configureClawRouterDomainServiceProviders(
-  getAppDomainClient: AppDomainClientReader,
-): void {
+export function configureClawRouterDomainServiceProviders(): void {
   const readSessionTokens = readClawRouterDomainSessionTokens;
+  const accountClient = getSdkworkAccountAppSdkClient();
+  const catalogClient = getSdkworkCatalogAppSdkClient();
+  const membershipClient = getSdkworkMembershipAppSdkClient();
+  const orderClient = getSdkworkOrderAppSdkClient();
+  const paymentClient = getSdkworkPaymentAppSdkClient();
+  const promotionClient = getSdkworkPromotionAppSdkClient();
   const orderAppService = createSdkworkOrderAppService({
-    appClient: { commerce: buildOrderCommercePort(getAppDomainClient()) } as OrderAppSdkClient,
+    appClient: {
+      commerce: buildOrderCommercePort(catalogClient, membershipClient, orderClient, paymentClient),
+    } as OrderAppSdkClient,
   });
 
   configureSdkworkAccountAppServiceProvider(() => createSdkworkAccountAppService({
-    appClient: { commerce: buildAccountCommercePort(getAppDomainClient()) } as AccountAppSdkClient,
+    appClient: { commerce: buildAccountCommercePort(accountClient, orderClient) } as AccountAppSdkClient,
   }));
   configureSdkworkMembershipAppServiceProvider(() => createSdkworkMembershipAppService({
-    appClient: { commerce: buildMembershipCommercePort(getAppDomainClient()) } as MembershipAppSdkClient,
+    appClient: { commerce: buildMembershipCommercePort(membershipClient, orderClient) } as MembershipAppSdkClient,
   }));
   configureSdkworkPaymentAppServiceProvider(() => createSdkworkPaymentAppService({
-    appClient: { commerce: buildPaymentCommercePort(getAppDomainClient()) } as PaymentAppSdkClient,
+    appClient: { commerce: buildPaymentCommercePort(paymentClient) } as PaymentAppSdkClient,
   }));
   configureSdkworkOrderAppServiceProvider(() => orderAppService);
   membershipCheckoutService = createSdkworkMembershipCheckoutService({
@@ -124,7 +150,7 @@ export function configureClawRouterDomainServiceProviders(
     appService: orderAppService,
   });
   configureSdkworkPromotionAppServiceProvider(() => createSdkworkPromotionAppService({
-    appClient: { commerce: buildPromotionCommercePort(getAppDomainClient()) } as PromotionAppSdkClient,
+    appClient: { commerce: buildPromotionCommercePort(promotionClient) } as PromotionAppSdkClient,
   }));
 
   configureSdkworkAccountSessionTokenProvider(readSessionTokens);

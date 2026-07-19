@@ -143,12 +143,6 @@
       "@sdkwork/generations-app-sdk": [
         "./src/typecheck-shims.d.ts"
       ],
-      "@sdkwork/clawrouter-app-sdk/domains": [
-        "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/domains/index.ts"
-      ],
-      "@sdkwork/clawrouter-backend-sdk/domains": [
-        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/domains/index.ts"
-      ],
       "@sdkwork/memory-app-sdk": [
         "./src/typecheck-shims.d.ts"
       ],

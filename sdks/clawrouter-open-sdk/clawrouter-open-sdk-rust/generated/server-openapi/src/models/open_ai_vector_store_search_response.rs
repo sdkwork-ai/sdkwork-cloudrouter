@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiVectorStoreSearchResult};
+use crate::models::OpenAiVectorStoreSearchResult;
 
 /// OpenAI-compatible vector store search response.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

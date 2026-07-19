@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{GoogleDynamicRetrievalConfig};
+use crate::models::GoogleDynamicRetrievalConfig;
 
 /// Google Search grounding tool configuration.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -3,7 +3,12 @@ use std::sync::Arc;
 use crate::api::paths::ai_path;
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{DeleteResult, OpenAiAudioTranscription, OpenAiAudioTranscriptionRequest, OpenAiAudioTranslation, OpenAiAudioTranslationRequest, OpenAiSpeechCreateRequest, OpenAiVoice, OpenAiVoiceConsent, OpenAiVoiceConsentCreateRequest, OpenAiVoiceConsentList, OpenAiVoiceCreateRequest, OpenAiVoiceList};
+use crate::models::{
+    DeleteResult, OpenAiAudioTranscription, OpenAiAudioTranscriptionRequest,
+    OpenAiAudioTranslation, OpenAiAudioTranslationRequest, OpenAiSpeechCreateRequest, OpenAiVoice,
+    OpenAiVoiceConsent, OpenAiVoiceConsentCreateRequest, OpenAiVoiceConsentList,
+    OpenAiVoiceCreateRequest, OpenAiVoiceList,
+};
 
 #[derive(Clone)]
 pub struct AudioApi {
@@ -16,25 +21,46 @@ impl AudioApi {
     }
 
     /// Create speech
-    pub async fn create_speech(&self, body: &OpenAiSpeechCreateRequest) -> Result<String, SdkworkError> {
+    pub async fn create_speech(
+        &self,
+        body: &OpenAiSpeechCreateRequest,
+    ) -> Result<String, SdkworkError> {
         let path = ai_path(&"/audio/speech".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Create transcription
-    pub async fn create_transcription(&self, body: &OpenAiAudioTranscriptionRequest) -> Result<OpenAiAudioTranscription, SdkworkError> {
+    pub async fn create_transcription(
+        &self,
+        body: &OpenAiAudioTranscriptionRequest,
+    ) -> Result<OpenAiAudioTranscription, SdkworkError> {
         let path = ai_path(&"/audio/transcriptions".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Create translation
-    pub async fn create_translation(&self, body: &OpenAiAudioTranslationRequest) -> Result<OpenAiAudioTranslation, SdkworkError> {
+    pub async fn create_translation(
+        &self,
+        body: &OpenAiAudioTranslationRequest,
+    ) -> Result<OpenAiAudioTranslation, SdkworkError> {
         let path = ai_path(&"/audio/translations".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// List voice consents
-    pub async fn list_voice_consents(&self, limit: Option<i64>, order: Option<&str>, after: Option<&str>, before: Option<&str>) -> Result<OpenAiVoiceConsentList, SdkworkError> {
+    pub async fn list_voice_consents(
+        &self,
+        limit: Option<i64>,
+        order: Option<&str>,
+        after: Option<&str>,
+        before: Option<&str>,
+    ) -> Result<OpenAiVoiceConsentList, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("limit", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
@@ -46,19 +72,39 @@ impl AudioApi {
     }
 
     /// Create voice consent
-    pub async fn create_voice_consent(&self, body: &OpenAiVoiceConsentCreateRequest) -> Result<OpenAiVoiceConsent, SdkworkError> {
+    pub async fn create_voice_consent(
+        &self,
+        body: &OpenAiVoiceConsentCreateRequest,
+    ) -> Result<OpenAiVoiceConsent, SdkworkError> {
         let path = ai_path(&"/audio/voice_consents".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Delete voice consent
-    pub async fn delete_voice_consents(&self, consent_id: &str) -> Result<DeleteResult, SdkworkError> {
-        let path = ai_path(&format!("/audio/voice_consents/{}", serialize_path_parameter(consent_id, PathParameterSpec::new("consent_id", "simple", false))));
+    pub async fn delete_voice_consents(
+        &self,
+        consent_id: &str,
+    ) -> Result<DeleteResult, SdkworkError> {
+        let path = ai_path(&format!(
+            "/audio/voice_consents/{}",
+            serialize_path_parameter(
+                consent_id,
+                PathParameterSpec::new("consent_id", "simple", false)
+            )
+        ));
         self.client.delete(&path, None, None).await
     }
 
     /// List voices
-    pub async fn list_voices(&self, limit: Option<i64>, order: Option<&str>, after: Option<&str>, before: Option<&str>) -> Result<OpenAiVoiceList, SdkworkError> {
+    pub async fn list_voices(
+        &self,
+        limit: Option<i64>,
+        order: Option<&str>,
+        after: Option<&str>,
+        before: Option<&str>,
+    ) -> Result<OpenAiVoiceList, SdkworkError> {
         let query = build_query_string(&[
             QueryParameterSpec::new("limit", limit, "form", true, false, None),
             QueryParameterSpec::new("order", order, "form", true, false, None),
@@ -70,11 +116,15 @@ impl AudioApi {
     }
 
     /// Create voice
-    pub async fn create_voice(&self, body: &OpenAiVoiceCreateRequest) -> Result<OpenAiVoice, SdkworkError> {
+    pub async fn create_voice(
+        &self,
+        body: &OpenAiVoiceCreateRequest,
+    ) -> Result<OpenAiVoice, SdkworkError> {
         let path = ai_path(&"/audio/voices".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }
 
 struct PathParameterSpec<'a> {
@@ -85,7 +135,11 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
+        Self {
+            name,
+            style,
+            explode,
+        }
     }
 }
 
@@ -94,15 +148,32 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    let style = if spec.style.is_empty() {
+        "simple"
+    } else {
+        spec.style
+    };
     match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+        serde_json::Value::Array(values) => {
+            serialize_path_array(spec.name, &values, style, spec.explode)
+        }
+        serde_json::Value::Object(values) => {
+            serialize_path_object(spec.name, &values, style, spec.explode)
+        }
+        value => format!(
+            "{}{}",
+            path_primitive_prefix(spec.name, style),
+            percent_encode(&primitive_to_string(&value))
+        ),
     }
 }
 
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+fn serialize_path_array(
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -113,7 +184,11 @@ fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, e
     }
     if style == "matrix" {
         if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+            return serialized
+                .iter()
+                .map(|item| format!(";{}={}", name, item))
+                .collect::<Vec<_>>()
+                .join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -175,7 +250,6 @@ fn path_primitive_prefix(name: &str, style: &str) -> String {
     }
 }
 
-
 struct QueryParameterSpec<'a> {
     name: &'a str,
     value: serde_json::Value,
@@ -226,12 +300,36 @@ fn append_serialized_parameter(pairs: &mut Vec<String>, parameter: &QueryParamet
         return;
     }
 
-    let style = if parameter.style.is_empty() { "form" } else { parameter.style };
+    let style = if parameter.style.is_empty() {
+        "form"
+    } else {
+        parameter.style
+    };
     match &parameter.value {
-        serde_json::Value::Array(values) => append_array_parameter(pairs, parameter.name, values, style, parameter.explode, parameter.allow_reserved),
-        serde_json::Value::Object(values) if style == "deepObject" => append_deep_object_parameter(pairs, parameter.name, values, parameter.allow_reserved),
-        serde_json::Value::Object(values) => append_object_parameter(pairs, parameter.name, values, style, parameter.explode, parameter.allow_reserved),
-        value => pairs.push(format!("{}={}", percent_encode(parameter.name), encode_query_value(&primitive_to_string(value), parameter.allow_reserved))),
+        serde_json::Value::Array(values) => append_array_parameter(
+            pairs,
+            parameter.name,
+            values,
+            style,
+            parameter.explode,
+            parameter.allow_reserved,
+        ),
+        serde_json::Value::Object(values) if style == "deepObject" => {
+            append_deep_object_parameter(pairs, parameter.name, values, parameter.allow_reserved)
+        }
+        serde_json::Value::Object(values) => append_object_parameter(
+            pairs,
+            parameter.name,
+            values,
+            style,
+            parameter.explode,
+            parameter.allow_reserved,
+        ),
+        value => pairs.push(format!(
+            "{}={}",
+            percent_encode(parameter.name),
+            encode_query_value(&primitive_to_string(value), parameter.allow_reserved)
+        )),
     }
 }
 
@@ -243,17 +341,29 @@ fn append_array_parameter(
     explode: bool,
     allow_reserved: bool,
 ) {
-    let serialized = values.iter().filter(|value| !value.is_null()).map(primitive_to_string).collect::<Vec<_>>();
+    let serialized = values
+        .iter()
+        .filter(|value| !value.is_null())
+        .map(primitive_to_string)
+        .collect::<Vec<_>>();
     if serialized.is_empty() {
         return;
     }
     if style == "form" && explode {
         for item in serialized {
-            pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&item, allow_reserved)));
+            pairs.push(format!(
+                "{}={}",
+                percent_encode(name),
+                encode_query_value(&item, allow_reserved)
+            ));
         }
         return;
     }
-    pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&serialized.join(","), allow_reserved)));
+    pairs.push(format!(
+        "{}={}",
+        percent_encode(name),
+        encode_query_value(&serialized.join(","), allow_reserved)
+    ));
 }
 
 fn append_object_parameter(
@@ -270,14 +380,22 @@ fn append_object_parameter(
             continue;
         }
         if style == "form" && explode {
-            pairs.push(format!("{}={}", percent_encode(key), encode_query_value(&primitive_to_string(value), allow_reserved)));
+            pairs.push(format!(
+                "{}={}",
+                percent_encode(key),
+                encode_query_value(&primitive_to_string(value), allow_reserved)
+            ));
         } else {
             serialized.push(key.clone());
             serialized.push(primitive_to_string(value));
         }
     }
     if !serialized.is_empty() {
-        pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&serialized.join(","), allow_reserved)));
+        pairs.push(format!(
+            "{}={}",
+            percent_encode(name),
+            encode_query_value(&serialized.join(","), allow_reserved)
+        ));
     }
 }
 
@@ -289,7 +407,11 @@ fn append_deep_object_parameter(
 ) {
     for (key, value) in values {
         if !value.is_null() {
-            pairs.push(format!("{}={}", percent_encode(&format!("{}[{}]", name, key)), encode_query_value(&primitive_to_string(value), allow_reserved)));
+            pairs.push(format!(
+                "{}={}",
+                percent_encode(&format!("{}[{}]", name, key)),
+                encode_query_value(&primitive_to_string(value), allow_reserved)
+            ));
         }
     }
 }
@@ -300,11 +422,24 @@ fn encode_query_value(value: &str, allow_reserved: bool) -> String {
         return encoded;
     }
     for (escaped, reserved) in [
-        ("%3A", ":"), ("%2F", "/"), ("%3F", "?"), ("%23", "#"),
-        ("%5B", "["), ("%5D", "]"), ("%40", "@"), ("%21", "!"),
-        ("%24", "$"), ("%26", "&"), ("%27", "'"), ("%28", "("),
-        ("%29", ")"), ("%2A", "*"), ("%2B", "+"), ("%2C", ","),
-        ("%3B", ";"), ("%3D", "="),
+        ("%3A", ":"),
+        ("%2F", "/"),
+        ("%3F", "?"),
+        ("%23", "#"),
+        ("%5B", "["),
+        ("%5D", "]"),
+        ("%40", "@"),
+        ("%21", "!"),
+        ("%24", "$"),
+        ("%26", "&"),
+        ("%27", "'"),
+        ("%28", "("),
+        ("%29", ")"),
+        ("%2A", "*"),
+        ("%2B", "+"),
+        ("%2C", ","),
+        ("%3B", ";"),
+        ("%3D", "="),
     ] {
         encoded = encoded.replace(escaped, reserved);
     }

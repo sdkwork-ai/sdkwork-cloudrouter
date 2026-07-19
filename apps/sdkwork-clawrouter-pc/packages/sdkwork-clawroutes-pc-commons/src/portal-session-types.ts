@@ -9,6 +9,7 @@ export interface PortalSessionAppContext {
   authLevel?: string;
   dataScope?: string[];
   permissionScope?: string[];
+  standardRoleCodes?: string[];
 }
 
 export interface PortalIamBridgeSession {

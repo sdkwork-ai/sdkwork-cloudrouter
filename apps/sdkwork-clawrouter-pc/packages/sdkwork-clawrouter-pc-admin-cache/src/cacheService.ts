@@ -120,12 +120,12 @@ export class AdminCacheService {
   }
 
   static async refreshAll(): Promise<CacheOperationOutcome> {
-    const result = await getClawRouterBackendSdkClient().system.cache.refresh.create();
+    const result = await getClawRouterBackendSdkClient().system.cache.refresh();
     return normalizeOperation(readRequiredRecord(result, 'Cache refresh outcome is required'));
   }
 
   static async refreshInstance(instanceName: string): Promise<CacheOperationOutcome> {
-    const result = await getClawRouterBackendSdkClient().system.cache.instances.refresh.create(instanceName);
+    const result = await getClawRouterBackendSdkClient().system.cache.instances.refresh(instanceName);
     return normalizeOperation(readRequiredRecord(result, 'Cache instance refresh outcome is required'));
   }
 
@@ -135,7 +135,7 @@ export class AdminCacheService {
   }
 
   static async refreshNamespace(namespace: string): Promise<CacheOperationOutcome> {
-    const result = await getClawRouterBackendSdkClient().system.cache.namespaces.refresh.create(namespace);
+    const result = await getClawRouterBackendSdkClient().system.cache.namespaces.refresh(namespace);
     return normalizeOperation(readRequiredRecord(result, 'Cache namespace refresh outcome is required'));
   }
 

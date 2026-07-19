@@ -13,14 +13,35 @@ use crate::runtime::GatewayRouterError;
 
 pub async fn ensure_clawrouter_embedded_iam_bootstrap() -> Result<(), GatewayRouterError> {
     let app_root = resolve_clawrouter_app_root();
-    sdkwork_iam_database_host::unified_postgres_env::apply_unified_claw_postgres_env(&app_root);
-    sdkwork_iam_database_host::bootstrap_iam_database_from_env()
-        .await
-        .map_err(|error| {
-            GatewayRouterError::Config(format!(
-                "failed to bootstrap IAM database lifecycle: {error}"
-            ))
-        })?;
+    let process_pool = sdkwork_database_sqlx::process_shared_database_pool().ok_or_else(|| {
+        GatewayRouterError::Config(
+            "process-shared database pool must be installed before embedded IAM bootstrap"
+                .to_owned(),
+        )
+    })?;
+    let sqlite_runtime = process_pool.as_sqlite().is_some();
+    if sdkwork_iam_database_host::installed_iam_database_host().is_none() {
+        sdkwork_iam_database_host::bootstrap_iam_database(process_pool.clone())
+            .await
+            .map_err(|error| {
+                GatewayRouterError::Config(format!(
+                    "failed to bootstrap IAM database lifecycle: {error}"
+                ))
+            })?;
+    }
+    sdkwork_iam_database_host::materialize_iam_application_modules(
+        &process_pool,
+        &[app_root.join("apps/sdkwork-clawrouter-pc/specs/iam.module.manifest.json")],
+    )
+    .await
+    .map_err(|error| {
+        GatewayRouterError::Config(format!(
+            "failed to materialize Claw Router IAM application module: {error}"
+        ))
+    })?;
+    if sqlite_runtime {
+        return Ok(());
+    }
     ensure_tenant_application_from_app_root_with_env_and_fallback(
         resolve_bootstrap_environment().as_str(),
         app_root,

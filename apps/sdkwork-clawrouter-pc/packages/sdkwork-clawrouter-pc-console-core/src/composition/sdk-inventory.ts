@@ -8,12 +8,11 @@ export function listSdkworkConsoleCoreSdkInventory(): readonly SdkworkSdkInvento
   return [
     { workspace: 'clawrouter-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
     { workspace: 'sdkwork-iam-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
-    { workspace: 'clawrouter-app-wallet-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
-    { workspace: 'clawrouter-app-membership-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
-    { workspace: 'clawrouter-app-promotion-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
-    { workspace: 'clawrouter-app-order-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
-    { workspace: 'clawrouter-app-payment-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
-    { workspace: 'clawrouter-app-catalog-capability', surface: 'app-api', credentialMode: 'authenticated-app-api' },
-    { workspace: 'clawrouter-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api', exportSubpath: 'domains' },
+    { workspace: 'sdkwork-account-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'sdkwork-catalog-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'sdkwork-membership-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'sdkwork-order-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'sdkwork-payment-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+    { workspace: 'sdkwork-promotion-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
   ] as const;
 }

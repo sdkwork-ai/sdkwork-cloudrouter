@@ -2,7 +2,6 @@ import { hasPermissionInScope } from '@sdkwork/iam-contracts';
 
 import {
   ADMIN_MODULE_MENUS,
-  type AdminMenuGroup,
   type AdminMenuItem,
   type AdminModuleId,
   type AdminModuleMenu,
@@ -47,7 +46,7 @@ export function getFilteredAdminModuleMenu(
   moduleId: AdminModuleId,
   permissionScope: readonly string[],
 ): AdminModuleMenu {
-  const menu = ADMIN_MODULE_MENUS.find((entry) => entry.moduleId === moduleId) ?? ADMIN_MODULE_MENUS[0];
+  const menu = ADMIN_MODULE_MENUS.find((entry) => entry.moduleId === moduleId) ?? ADMIN_MODULE_MENUS[0]!;
   return filterAdminModuleMenu(menu, permissionScope);
 }
 

@@ -1,5 +1,5 @@
 /**
- * Console business surface ownership (Claw Router domain transport SDK clients).
+ * Console business surface ownership composed from independent owner SDK clients.
  *
  * | User-facing capability | Domain workspace   | PC package                      | Console route        |
  * |------------------------|--------------------|---------------------------------|----------------------|

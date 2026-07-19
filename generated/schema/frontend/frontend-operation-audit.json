@@ -1,6 +1,480 @@
 {
   "operations": [
     {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/models",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "addModel",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/model_vendors",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "addVendor",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/model_mappings",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createModelMapping",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item"
+      ],
+      "route": "/admin/model/mappings",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/ai/models/{modelId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteModel",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/ai/model_mappings/{mappingId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteModelMapping",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item"
+      ],
+      "route": "/admin/model/mappings",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/models",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchAllModels",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/models",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchInitializedCatalog",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/model_mappings",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchModelMappings",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item"
+      ],
+      "route": "/admin/model/mappings",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/model_mapping_options",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchModelOptionsCatalog",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_model_mapping_rule"
+      ],
+      "route": "/admin/model/mappings",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/model_rankings/jobs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchModelRankingRefreshJobs",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_job_execution"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/model_rankings/status",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchModelRankingRefreshStatus",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_job_execution"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/model_rankings",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchModelRankings",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/models",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchModels",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/models",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchModelsPage",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/model_vendors",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchVendors",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/model_mappings/resolve",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "resolveModelMapping",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item"
+      ],
+      "route": "/admin/model/mappings",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/models/refresh",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "syncVendorsAndModels",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ai_pricing_import_snapshot",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/model_rankings/refresh",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "triggerModelRankingRefresh",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_usage"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ops_job_execution"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/models/{modelId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateModel",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_pricing_import_snapshot"
+      ],
+      "route": "/admin/model",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/model_mappings/{mappingId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateModelMapping",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item"
+      ],
+      "route": "/admin/model/mappings",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "write_tables": [
+        "ai_model_mapping_rule",
+        "ai_model_mapping_rule_binding",
+        "ai_model_mapping_rule_item",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/resource_groups",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createResourceGroup",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_resource_group",
+        "ai_resource_group_item"
+      ],
+      "route": "/admin/model/resources",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "write_tables": [
+        "ai_resource_group",
+        "ai_resource_group_item",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/ai/resource_groups/{groupId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteResourceGroup",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_resource_group"
+      ],
+      "route": "/admin/model/resources",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "write_tables": [
+        "ai_resource_group",
+        "ai_resource_group_item",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchAssignableResources",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_resource",
+        "ai_resource_group_item"
+      ],
+      "route": "/admin/model/resources",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/resource_groups/{groupIdOrCode}/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchResourceGroupResources",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_resource_group",
+        "ai_resource_group_item",
+        "ai_resource"
+      ],
+      "route": "/admin/model/resources",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "fetchResourceGroupResourcesForUpdate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "fetchResourceGroupResourcesPage",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/resource_groups",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchResourceGroups",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_resource_group",
+        "ai_resource_group_item"
+      ],
+      "route": "/admin/model/resources",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/resource_groups/{groupId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateResourceGroup",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_resource_group",
+        "ai_resource_group_item"
+      ],
+      "route": "/admin/model/resources",
+      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
+      "write_tables": [
+        "ai_resource_group",
+        "ai_resource_group_item",
+        "ops_audit_log"
+      ]
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/system/analytics/admin/overview",
       "api_surface": "backend",
@@ -182,25 +656,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/backend/v3/api/integration/provider_secrets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "addProviderSecret",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_channel"
-      ],
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
-      "write_tables": [
-        "ai_channel",
-        "ops_config_snapshot",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/backend/v3/api/ai/resources",
       "api_surface": "backend",
       "file_targets": [],
@@ -242,25 +697,6 @@
       ]
     },
     {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/integration/provider_secrets/{secretId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteProviderSecret",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_channel"
-      ],
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
-      "write_tables": [
-        "ai_channel",
-        "ops_config_snapshot",
-        "ops_audit_log"
-      ]
-    },
-    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/model_mappings",
       "api_surface": "backend",
@@ -278,32 +714,28 @@
       "write_tables": []
     },
     {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/resource_groups",
-      "api_surface": "backend",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
-      "operation": "fetchAiResourceGroups",
+      "kind": null,
+      "operation": "fetchAiResourceGroupsPage",
       "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/channel",
+      "read_sources": [],
+      "route": null,
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
       "write_tables": []
     },
     {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/resources",
-      "api_surface": "backend",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
-      "operation": "fetchAiResources",
+      "kind": null,
+      "operation": "fetchAiResourcesPage",
       "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/channel",
+      "read_sources": [],
+      "route": null,
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
       "write_tables": []
     },
@@ -327,32 +759,15 @@
       "write_tables": []
     },
     {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/models",
-      "api_surface": "backend",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
-      "operation": "fetchModels",
+      "kind": null,
+      "operation": "fetchModelsPage",
       "operation_scope": null,
-      "read_sources": [
-        "ops_audit_log"
-      ],
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/integration/provider_secrets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchProviderSecrets",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_channel"
-      ],
-      "route": "/admin/channel",
+      "read_sources": [],
+      "route": null,
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
       "write_tables": []
     },
@@ -443,25 +858,6 @@
         "ai_channel",
         "ai_channel_credential",
         "ai_channel_resource",
-        "ops_config_snapshot",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PUT",
-      "api_path": "/backend/v3/api/integration/provider_secrets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateProviderSecret",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_channel"
-      ],
-      "route": "/admin/channel",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts",
-      "write_tables": [
-        "ai_channel",
         "ops_config_snapshot",
         "ops_audit_log"
       ]
@@ -1238,84 +1634,6 @@
       ]
     },
     {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
-      "operation": "acknowledge",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
-      "operation": "fetchNotifications",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
-      "operation": "list",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
-      "operation": "markPopupSeen",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/notificationService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
-      "operation": "createAppSession",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/sessionService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
-      "operation": "revokeAppSession",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-commons/src/sessionService.ts",
-      "write_tables": []
-    },
-    {
       "api_method": "POST",
       "api_path": "/app/v3/api/iam/api_keys",
       "api_surface": "app",
@@ -1563,6 +1881,19 @@
       ],
       "route": "/console/user",
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-user/src/userService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "fetchModelByCatalogRouteId",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts",
       "write_tables": []
     },
     {
@@ -2626,21 +2957,17 @@
       ]
     },
     {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/auth/verification_codes",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "create",
+      "kind": null,
       "operation": "sendVerifyCode",
       "operation_scope": null,
-      "read_sources": [
-        "iam_user_identity"
-      ],
-      "route": "/auth/login",
+      "read_sources": [],
+      "route": null,
       "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
-      "write_tables": [
-        "iam_security_event"
-      ]
+      "write_tables": []
     },
     {
       "api_method": "POST",
@@ -2783,21 +3110,17 @@
       ]
     },
     {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/auth/verification_codes/verify",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "create",
+      "kind": null,
       "operation": "verifyCode",
       "operation_scope": null,
-      "read_sources": [
-        "ops_config_snapshot"
-      ],
-      "route": "/auth/login",
+      "read_sources": [],
+      "route": null,
       "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts",
-      "write_tables": [
-        "iam_security_event"
-      ]
+      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -2828,459 +3151,11 @@
       "route": "/auth/login",
       "source": "apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthSettingsService.ts",
       "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/models",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "addModel",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/model_vendors",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "addVendor",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/model_mappings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createModelMapping",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item"
-      ],
-      "route": "/admin/model/mappings",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/ai/models/{modelId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteModel",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/ai/model_mappings/{mappingId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteModelMapping",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item"
-      ],
-      "route": "/admin/model/mappings",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/models",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchAllModels",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/models",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchInitializedCatalog",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/model_mappings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchModelMappings",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item"
-      ],
-      "route": "/admin/model/mappings",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/model_mapping_options",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchModelOptionsCatalog",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_model_mapping_rule"
-      ],
-      "route": "/admin/model/mappings",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/model_rankings/jobs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchModelRankingRefreshJobs",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_job_execution"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/model_rankings/status",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchModelRankingRefreshStatus",
-      "operation_scope": null,
-      "read_sources": [
-        "ops_job_execution"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/model_rankings",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchModelRankings",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/models",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchModels",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/models",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchModelsPage",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/model_vendors",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchVendors",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/model_mappings/resolve",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "resolveModelMapping",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item"
-      ],
-      "route": "/admin/model/mappings",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/models/refresh",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "syncVendorsAndModels",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ai_pricing_import_snapshot",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/model_rankings/refresh",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "triggerModelRankingRefresh",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_usage"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ops_job_execution"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/ai/models/{modelId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateModel",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_pricing_import_snapshot"
-      ],
-      "route": "/admin/model",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/ai/model_mappings/{mappingId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateModelMapping",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item"
-      ],
-      "route": "/admin/model/mappings",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-      "write_tables": [
-        "ai_model_mapping_rule",
-        "ai_model_mapping_rule_binding",
-        "ai_model_mapping_rule_item",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/ai/resource_groups",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createResourceGroup",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_resource_group",
-        "ai_resource_group_item"
-      ],
-      "route": "/admin/model/resources",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
-      "write_tables": [
-        "ai_resource_group",
-        "ai_resource_group_item",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "DELETE",
-      "api_path": "/backend/v3/api/ai/resource_groups/{groupId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "delete",
-      "operation": "deleteResourceGroup",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_resource_group"
-      ],
-      "route": "/admin/model/resources",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
-      "write_tables": [
-        "ai_resource_group",
-        "ai_resource_group_item",
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/resources",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchAssignableResources",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_resource",
-        "ai_resource_group_item"
-      ],
-      "route": "/admin/model/resources",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/resource_groups/{groupIdOrCode}/resources",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchResourceGroupResources",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_resource_group",
-        "ai_resource_group_item",
-        "ai_resource"
-      ],
-      "route": "/admin/model/resources",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/ai/resource_groups",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchResourceGroups",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_resource_group",
-        "ai_resource_group_item"
-      ],
-      "route": "/admin/model/resources",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/ai/resource_groups/{groupId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "update",
-      "operation": "updateResourceGroup",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_resource_group",
-        "ai_resource_group_item"
-      ],
-      "route": "/admin/model/resources",
-      "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts",
-      "write_tables": [
-        "ai_resource_group",
-        "ai_resource_group_item",
-        "ops_audit_log"
-      ]
     }
   ],
   "summary": {
-    "operation_count": 189,
-    "source_file_count": 38,
-    "write_operation_count": 91
+    "operation_count": 182,
+    "source_file_count": 36,
+    "write_operation_count": 86
   }
 }

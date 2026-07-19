@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiContainer};
+use crate::models::OpenAiContainer;
 
 /// OpenAI-compatible paginated list of containers.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

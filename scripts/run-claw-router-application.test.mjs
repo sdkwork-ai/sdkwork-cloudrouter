@@ -2355,6 +2355,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     const prebuildStep = plan.steps.find((step) => step.name === 'rust-prebuild');
     const installerStep = plan.steps.find((step) => step.name === 'installer');
     const refreshStep = plan.steps.find((step) => step.name === 'model-catalog-refresh');
+    const installerBinary = module.clawRouterDevInstallerBinaryPath(workspaceRoot);
     assert.deepEqual(prebuildStep.args, [
       'build',
       '-p',
@@ -2367,29 +2368,22 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       prebuildStep.env.CARGO_TARGET_DIR,
       path.join(workspaceRoot, 'target', 'dev-workspace'),
     );
-    assert.deepEqual(installerStep.args, [
-      'run',
-      '-p',
-      'sdkwork-claw-installer',
-      '--',
-      'ensure',
-    ]);
+    assert.equal(installerStep.command, installerBinary);
+    assert.deepEqual(installerStep.args, ['ensure']);
     assert.equal(installerStep.blocking, true);
     assert.equal(installerStep.env.SDKWORK_CLAW_DATABASE_URL, settings.databaseUrl);
     assert.equal(installerStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '10');
     assert.equal(installerStep.env.SDKWORK_CLAW_STARTUP_INSTALL_MODE, 'ensure');
     assert.equal(installerStep.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1000');
     assert.equal(installerStep.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT, 'development');
+    assert.equal(installerStep.env.SDKWORK_ENVIRONMENT, 'development');
     assert.equal(installerStep.env.SDKWORK_CLAW_INSTALL_SEED_PROFILE, 'commercial');
     assert.equal(
       installerStep.env.SDKWORK_MODELS_CATALOG_ROOT,
       path.join(workspaceRoot, '..', 'sdkwork-models'),
     );
+    assert.equal(refreshStep.command, installerBinary);
     assert.deepEqual(refreshStep.args, [
-      'run',
-      '-p',
-      'sdkwork-claw-installer',
-      '--',
       'refresh-catalog',
       '--catalog-root',
       path.join(workspaceRoot, '..', 'sdkwork-models'),

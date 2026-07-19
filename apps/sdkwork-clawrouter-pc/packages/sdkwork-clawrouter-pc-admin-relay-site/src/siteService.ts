@@ -152,7 +152,6 @@ export class SiteService {
   static async testSiteConnection(siteId: string): Promise<SiteConnectionCheckResult> {
     const result = await getClawRouterBackendSdkClient().sites.testConnection.create(
       requiredSafePathSegment(siteId, 'siteId'),
-      {},
     );
     ensureSdkworkApiSuccess(result, 'Failed to test site connection');
     return normalizeSiteConnectionCheckResult(readApiRecord(result));
@@ -161,7 +160,6 @@ export class SiteService {
   static async healthCheckSite(siteId: string): Promise<SiteConnectionCheckResult> {
     const result = await getClawRouterBackendSdkClient().sites.healthCheck.create(
       requiredSafePathSegment(siteId, 'siteId'),
-      {},
     );
     ensureSdkworkApiSuccess(result, 'Failed to health check site');
     return normalizeSiteConnectionCheckResult(readApiRecord(result));

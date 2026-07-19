@@ -10,6 +10,7 @@ from typing import Any
 
 from tools.frontend_contract_loader import default_frontend_contract_path, load_frontend_field_contract
 from tools.relay_retired_admin_surfaces import (
+    is_backend_route_manifest_source,
     is_relay_retired_admin_source,
     is_route_manifest_bootstrap_source,
 )
@@ -354,7 +355,10 @@ class FrontendOperationAudit:
                 continue
             source = entry.get("source")
             operation = entry.get("operation")
-            if isinstance(source, str) and is_route_manifest_bootstrap_source(source):
+            if isinstance(source, str) and (
+                is_route_manifest_bootstrap_source(source)
+                or is_backend_route_manifest_source(source)
+            ):
                 continue
             if isinstance(source, str) and is_relay_retired_admin_source(source):
                 continue
@@ -479,7 +483,11 @@ class FrontendOperationAudit:
 
         for key in sorted(actual):
             source = key.split("#", 1)[0]
-            if is_relay_retired_admin_source(source) or self._is_operation_audit_exempt_source(source):
+            if (
+                is_backend_route_manifest_source(source)
+                or is_relay_retired_admin_source(source)
+                or self._is_operation_audit_exempt_source(source)
+            ):
                 continue
             resolved = self._resolve_operation_alias(key)
             if resolved in expected or key in expected:
@@ -494,7 +502,11 @@ class FrontendOperationAudit:
             messages.append(f"frontend operation missing from contract: {key}")
         for key in sorted(expected):
             source = key.split("#", 1)[0]
-            if is_route_manifest_bootstrap_source(source) or is_relay_retired_admin_source(source):
+            if (
+                is_route_manifest_bootstrap_source(source)
+                or is_backend_route_manifest_source(source)
+                or is_relay_retired_admin_source(source)
+            ):
                 continue
             if key not in actual:
                 messages.append(f"frontend operation contract references missing operation: {key}")

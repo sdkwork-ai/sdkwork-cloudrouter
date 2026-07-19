@@ -17,18 +17,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./domains": {
-      "types": "./dist/domains/index.d.ts",
-      "import": "./dist/domains/index.js",
-      "require": "./dist/domains/index.cjs"
-    }
-  },
-  "imports": {
-    "#clawrouter-backend-domains-generated": {
-      "types": "./dist/domains-generated/index.d.ts",
-      "import": "./dist/domains-generated/index.js",
-      "require": "./dist/domains-generated/index.cjs"
     }
   },
   "scripts": {
