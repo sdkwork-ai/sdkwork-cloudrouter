@@ -3128,6 +3128,40 @@ gateway_invocation_body_max_bytes = 37
             .expect("embedded SDKWork API Gateway router should build");
     }
 
+    #[tokio::test]
+    async fn embedded_gateway_routes_membership_order_creation_to_product_app_api() {
+        use axum::body::Body;
+        use axum::http::{Request, StatusCode};
+        use axum::routing::post;
+        use tower::ServiceExt;
+
+        let app_router = Router::new().route(
+            "/app/v3/api/memberships/orders",
+            post(|| async { StatusCode::IM_A_TEAPOT }),
+        );
+        let mut config = GatewayRuntimeConfig::default();
+        config.mode = GatewayMode::Embedded;
+        config.dependency_surfaces = vec![claw_router_gateway_dependency_surfaces()[5].clone()];
+        let router =
+            sdkwork_api_cloud_gateway::build_sdkwork_api_cloud_gateway_router_with_embedded_routers(
+                config,
+                [(CLAW_ROUTER_APP_API_SERVICE_ID.to_owned(), app_router)],
+            )
+            .expect("embedded SDKWork API Gateway router should build");
+        let response = router
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/app/v3/api/memberships/orders")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::IM_A_TEAPOT, response.status());
+    }
+
     #[test]
     fn gateway_dependency_surfaces_resolve_product_api_keys_before_broad_iam_catch_all() {
         use sdkwork_api_cloud_gateway_config::APPBASE_APP_API_SERVICE_ID;
@@ -3171,6 +3205,14 @@ gateway_invocation_body_max_bytes = 37
         assert_eq!(
             iam_user_route.service_id, APPBASE_APP_API_SERVICE_ID,
             "generic iam paths must route to sdkwork-iam app-api"
+        );
+
+        let membership_order_route = registry
+            .resolve("POST", "/app/v3/api/memberships/orders")
+            .expect("membership order creation route should resolve");
+        assert_eq!(
+            membership_order_route.service_id, CLAW_ROUTER_APP_API_SERVICE_ID,
+            "order-owned membership checkout must route to clawrouter product app-api"
         );
     }
 

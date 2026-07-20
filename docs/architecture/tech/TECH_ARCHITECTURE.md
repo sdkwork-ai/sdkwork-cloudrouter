@@ -31,6 +31,11 @@ and release assertions require fresh evidence from a clean candidate commit.
 The historical `standard-alignment-audit` documents are retained for
 traceability and are not release evidence.
 
+Cloud ingress ownership is defined by
+[ADR-20260720](../decisions/ADR-20260720-dedicated-cloud-ingress.md): the shared
+platform gateway remains a dependency surface while the application-owned
+Claw Router cloud gateway owns provider routing and public ingress.
+
 The active factual review is
 [REVIEW-20260714 Production Readiness Revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md).
 It records unclosed security, streaming, persistence, concurrency, and

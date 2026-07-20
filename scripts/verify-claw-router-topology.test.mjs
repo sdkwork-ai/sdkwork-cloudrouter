@@ -25,14 +25,14 @@ async function readJson(relativePath) {
   return JSON.parse(await read(relativePath));
 }
 
-test('declares v4 topology spec and profile env files for sdkwork-clawrouter', async () => {
+test('declares v5 topology spec and profile env files for sdkwork-clawrouter', async () => {
   assert.equal(await exists('specs/topology.spec.json'), true);
   assert.equal(await exists('scripts/lib/claw-router-topology.mjs'), true);
   assert.equal(await exists('scripts/claw-router-dev.mjs'), true);
   assert.equal(await exists('docs/topology-standard.md'), true);
 
   const spec = await readJson('specs/topology.spec.json');
-  assert.equal(spec.schemaVersion, 4);
+  assert.equal(spec.schemaVersion, 5);
   assert.equal(spec.kind, 'sdkwork.app.topology');
   assert.equal(spec.appId, 'sdkwork-clawrouter');
   assert.equal(spec.archetype, 'application-http-gateway');
@@ -71,7 +71,7 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
   assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--deployment-profile standalone/u);
   assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--target browser/u);
   assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--database postgres/u);
-  assert.match(packageJson.scripts['dev:browser:postgres:cloud'], /--deployment-profile cloud/u);
+  assert.match(packageJson.scripts['dev:browser:cloud'], /--deployment-profile cloud/u);
   assert.equal(packageJson.scripts['dev:desktop'], 'pnpm dev:desktop:postgres:standalone');
   assert.match(packageJson.scripts['dev:desktop:postgres:standalone'], /--target desktop/u);
   assert.match(packageJson.scripts['topology:validate'], /sdkwork-topology\.mjs validate/);
@@ -85,9 +85,24 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
 test('declares cloud gateway config bundles referenced by topology spec', async () => {
   const spec = await readJson('specs/topology.spec.json');
   for (const configFile of spec.packaging.cloudConfigFiles) {
-    const configPath = path.join('configs', configFile);
+    const configPath = path.join('etc', configFile);
     assert.equal(await exists(configPath), true, `${configPath} should exist`);
   }
+});
+
+test('v5 topology adapter resolves two-segment development profiles', async () => {
+  const {
+    resolveDevProfileId,
+    runtime,
+  } = await import('./lib/claw-router-topology.mjs');
+
+  assert.equal('serviceLayoutValues' in runtime, false);
+  assert.equal(resolveDevProfileId('standalone'), 'standalone.development');
+  assert.equal(resolveDevProfileId('cloud'), 'cloud.development');
+  assert.throws(
+    () => resolveDevProfileId('private'),
+    /deploymentProfile must be one of: standalone, cloud/u,
+  );
 });
 
 test('start-workspace loads topology profile env from adapter', async () => {
@@ -98,7 +113,7 @@ test('start-workspace loads topology profile env from adapter', async () => {
   assert.match(workspaceScript, /waitForWorkspaceHealthSurfaces/);
   assert.match(workspaceScript, /bridgeTopologyBindEnvToLegacyRustEnv/);
   assert.match(workspaceScript, /--deployment-profile/);
-  assert.match(workspaceScript, /--service-layout/);
+  assert.match(workspaceScript, /--service-layout is retired/);
   assert.match(workspaceScript, /--topology is retired/);
 });
 
@@ -233,6 +248,10 @@ test('parseWorkspaceArgs rejects retired topology CLI flags', async () => {
     () => parseWorkspaceArgs(['--all-in-one']),
     /--all-in-one is retired/u,
   );
+  assert.throws(
+    () => parseWorkspaceArgs(['--service-layout', 'split-services']),
+    /--service-layout is retired/u,
+  );
 });
 
 test('sdkwork.workflow.json references topology cloud-config packaging target', async () => {
@@ -265,7 +284,7 @@ test('claw-router dev orchestrator loads topology profile and forwards workspace
   const devScript = await read('scripts/lib/claw-router-dev-main.mjs');
   assert.match(devScript, /loadTopologyProfileForWorkspace/);
   assert.match(devScript, /--deployment-profile/);
-  assert.match(devScript, /--service-layout/);
+  assert.match(devScript, /--service-layout is retired/);
   assert.match(devScript, /--target/);
   assert.match(devScript, /--database/);
   assert.match(devScript, /run-claw-router-application\.mjs/);

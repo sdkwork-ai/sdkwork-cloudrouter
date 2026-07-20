@@ -1,6 +1,7 @@
 use std::sync::OnceLock;
 
 use sdkwork_claw_config::{DeploymentMode, RuntimeTomlConfig};
+use sdkwork_database_config::claw_database::postgres_url_with_search_path;
 use sdkwork_database_config::DatabaseConfig as StandardDatabaseConfig;
 use sdkwork_database_config::DatabaseEngine as StandardDatabaseEngine;
 use sdkwork_database_config::SqliteJournalMode;
@@ -17,9 +18,15 @@ pub(crate) fn to_standard_database_config(
         sdkwork_claw_config::DatabaseEngine::Sqlite => StandardDatabaseEngine::Sqlite,
         sdkwork_claw_config::DatabaseEngine::Postgres => StandardDatabaseEngine::Postgres,
     };
+    let url = match config.engine {
+        sdkwork_claw_config::DatabaseEngine::Postgres => {
+            postgres_url_with_search_path(&config.url, "SDKWORK_CLAW")
+        }
+        sdkwork_claw_config::DatabaseEngine::Sqlite => config.url.clone(),
+    };
     StandardDatabaseConfig {
         engine,
-        url: config.url.clone(),
+        url,
         max_connections: config.max_connections,
         sqlite: sdkwork_database_config::SqliteConfig {
             journal_mode: SqliteJournalMode::Wal,
@@ -244,6 +251,29 @@ fn next_runtime_id(generator: &SnowflakeIdGenerator, context: &str) -> DomainRes
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn standard_postgres_config_materializes_the_claw_schema_search_path() {
+        let previous_schema = std::env::var("SDKWORK_CLAW_DATABASE_SCHEMA").ok();
+        std::env::set_var("SDKWORK_CLAW_DATABASE_SCHEMA", "sdkwork_ai_dev");
+        let config = sdkwork_claw_config::DatabaseConfig {
+            engine: sdkwork_claw_config::DatabaseEngine::Postgres,
+            url: "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
+                .to_owned(),
+            max_connections: 10,
+        };
+
+        let standard = to_standard_database_config(&config);
+
+        match previous_schema {
+            Some(value) => std::env::set_var("SDKWORK_CLAW_DATABASE_SCHEMA", value),
+            None => std::env::remove_var("SDKWORK_CLAW_DATABASE_SCHEMA"),
+        }
+        assert_eq!(
+            standard.url,
+            "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable&options=-c%20search_path%3Dsdkwork_ai_dev%2Cpublic"
+        );
+    }
 
     #[test]
     fn startup_validation_requires_an_explicit_server_snowflake_node_id() {

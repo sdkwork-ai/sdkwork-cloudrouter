@@ -91,7 +91,11 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   assert.match(providerSource, /recharges:\s*orderClient\.recharges/);
   assert.match(providerSource, /const orderAppService = createSdkworkOrderAppService/);
   assert.match(providerSource, /configureSdkworkOrderAppServiceProvider\(\(\) => orderAppService\)/);
-  assert.match(providerSource, /memberships:\s*membershipClient\.memberships/);
+  assert.match(providerSource, /memberships:\s*orderClient\.memberships/);
+  assert.doesNotMatch(
+    providerSource,
+    /function buildOrderCommercePort\(\s*(?:catalogClient|membershipClient|paymentClient):/,
+  );
   assert.match(providerSource, /createSdkworkMembershipCheckoutService/);
   assert.match(providerSource, /createSdkworkCouponRechargeService/);
   assert.match(providerSource, /getClawRouterCouponRechargeService/);
@@ -220,7 +224,7 @@ test("app bootstrap wires T1 domain service providers from independent owner SDK
   assert.match(providersSource, /createSdkworkOrderAppService/);
   assert.match(
     providersSource,
-    /buildOrderCommercePort\(catalogClient, membershipClient, orderClient, paymentClient\)/,
+    /buildOrderCommercePort\(orderClient\)/,
   );
   assert.match(providersSource, /getSdkworkOrderAppSdkClient\(\)/);
   assert.match(providersSource, /getSdkworkPaymentAppSdkClient\(\)/);

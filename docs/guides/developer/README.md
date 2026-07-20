@@ -151,7 +151,7 @@ Services must:
 
 ### Naming
 
-- Root scripts follow `<command>[:runtimeTarget][:database][:serviceLayout][:deploymentProfile][:tier]` grammar.
+- Root scripts follow `<command>[:runtimeTarget][:database][:deploymentProfile][:tier]` grammar.
 - No application-code prefixes (`clawrouter:dev` is forbidden; use `dev`).
 - Use `api`, not `apis`, for new root scripts.
 

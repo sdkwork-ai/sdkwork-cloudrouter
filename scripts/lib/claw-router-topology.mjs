@@ -66,27 +66,9 @@ function appendPath(origin, pathSuffix) {
   return `${String(origin).replace(/\/+$/u, '')}${pathSuffix}`;
 }
 
-export function resolveDevProfileId(deploymentProfile, serviceLayout = 'unified-process') {
-  runtime.assertDeploymentProfile(deploymentProfile);
-  if (runtime.serviceLayoutValues.length > 0) {
-    runtime.assertServiceLayout(serviceLayout);
-    return buildProfileId(deploymentProfile, serviceLayout, 'development');
-  }
-  return buildProfileId(deploymentProfile, 'development');
-}
-
-export function resolveRuntimeModeFromServiceLayout(serviceLayout) {
-  return serviceLayout === 'split-services' ? 'distributed' : 'all-in-one';
-}
-
-export function resolveServiceLayoutFromRuntimeMode(runtimeMode) {
-  if (runtimeMode === 'distributed') {
-    return 'split-services';
-  }
-  if (runtimeMode === 'all-in-one') {
-    return 'unified-process';
-  }
-  return undefined;
+export function resolveDevProfileId(deploymentProfile) {
+  const normalizedDeploymentProfile = runtime.assertDeploymentProfile(deploymentProfile);
+  return runtime.assertProfileId(buildProfileId(normalizedDeploymentProfile, 'development'));
 }
 
 export function bridgeLegacyWorkspaceEnv(profileEnv = {}, {
@@ -181,14 +163,6 @@ export function applyTopologyProfileToWorkspaceSettings(settings, profileEnv = {
   }
   if (platformBind && !settings.sdkworkApiGatewayBindExplicit) {
     settings.sdkworkApiGatewayBind = platformBind;
-  }
-
-  const serviceLayout = readTrimmedValue(profileEnv.SDKWORK_CLAW_ROUTER_SERVICE_LAYOUT);
-  if (serviceLayout && !settings.runtimeModeExplicit) {
-    settings.runtimeMode = resolveRuntimeModeFromServiceLayout(serviceLayout);
-  }
-  if (serviceLayout) {
-    settings.serviceLayout = serviceLayout;
   }
 
   settings.profileId = readTrimmedValue(profileEnv.SDKWORK_CLAW_ROUTER_PROFILE_ID);
@@ -303,22 +277,18 @@ export function bridgeTopologyBindEnvToLegacyRustEnv(profileEnv = {}, settings =
 
 export function loadTopologyProfileForWorkspace({
   deploymentProfile = 'standalone',
-  serviceLayout = 'unified-process',
   env = process.env,
   includeIamDatabase = false,
 } = {}) {
-  const profileId = resolveDevProfileId(deploymentProfile, serviceLayout);
+  const profileId = resolveDevProfileId(deploymentProfile);
   const profileEnv = loadProfile(profileId);
   const layers = [
     env,
     profileEnv,
     ...(includeIamDatabase ? [resolveIamDevEnv(env)] : []),
-    {
-      SDKWORK_CLAW_ROUTER_PROFILE_ID: profileId,
-      ...IAM_APPLICATION_BOOTSTRAP_ENV,
-    },
+    IAM_APPLICATION_BOOTSTRAP_ENV,
   ];
-  const mergedEnv = mergeRuntimeEnv(...layers);
+  const mergedEnv = runtime.applyProfileEnv(profileId, layers);
   return {
     profileId,
     profileEnv,
@@ -330,8 +300,6 @@ export const loadProfile = runtime.loadProfile;
 export const applyProfileEnv = runtime.applyProfileEnv;
 export const mergeRuntimeEnv = runtime.mergeRuntimeEnv;
 export const loadEnvFile = runtime.loadEnvFile;
-export const assertHosting = runtime.assertHosting;
-export const assertServiceLayout = runtime.assertServiceLayout;
 export const resolveSurfaceHttpUrl = runtime.resolveSurfaceHttpUrl.bind(runtime);
 export const resolveSurfaceBind = runtime.resolveSurfaceBind.bind(runtime);
 export const shouldAutostartGateway = runtime.shouldAutostartGateway;

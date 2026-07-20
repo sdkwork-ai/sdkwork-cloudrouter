@@ -5,12 +5,6 @@
   "license": "SEE LICENSE IN ../../LICENSE",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
-  "pnpm": {
-    "overrides": {
-      "@types/react": "^19.0.0",
-      "@types/react-dom": "^19.0.0"
-    }
-  },
   "workspaces": [
     "packages/*",
     "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript",
@@ -80,10 +74,10 @@
   "scripts": {
     "deps:check": "node scripts/check-portal-deps.mjs",
     "predev": "node ../../scripts/ensure-claw-router-env.mjs --lifecycle dev",
-    "dev": "pnpm deps:check && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native",
-    "dev:browser": "pnpm deps:check && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native",
-    "dev:desktop": "node ../../scripts/run-claw-router-application.mjs desktop",
-    "dev:server": "node ../../scripts/run-claw-router-application.mjs server",
+    "dev": "pnpm dev:standalone",
+    "dev:browser": "pnpm dev:browser:postgres:standalone",
+    "dev:desktop": "pnpm dev:desktop:postgres:standalone",
+    "dev:server": "pnpm exec sdkwork-app dev --root ../.. --runtime-target server --deployment-profile standalone",
     "topology:plan:server": "node ../../scripts/run-claw-router-application.mjs plan",
     "prebuild": "node ../../scripts/ensure-claw-router-env.mjs --lifecycle build",
     "build": "pnpm deps:check && node scripts/build-portal.mjs",
@@ -96,7 +90,12 @@
     "test:e2e": "playwright test",
     "test:commerce": "node --import tsx --test commerce-debt-runtime.test.ts commerce-business-runtime.test.ts sdk-composition-standard.test.mjs",
     "test:portal-alignment": "node --test vite-config-runtime.test.ts sdk-composition-standard.test.mjs scripts/portal-workspace-package-resolver.test.mjs",
-    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit"
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "dev:standalone": "pnpm exec sdkwork-app dev --root ../.. --deployment-profile standalone",
+    "dev:cloud": "pnpm exec sdkwork-app dev --root ../.. --deployment-profile cloud",
+    "stop": "pnpm exec sdkwork-app stop --root ../..",
+    "dev:browser:postgres:standalone": "pnpm exec sdkwork-app dev --root ../.. --runtime-target browser --deployment-profile standalone",
+    "dev:desktop:postgres:standalone": "pnpm exec sdkwork-app dev --root ../.. --runtime-target desktop --deployment-profile standalone"
   },
   "dependencies": {
     "@monaco-editor/loader": "^1.7.0",

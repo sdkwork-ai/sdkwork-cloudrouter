@@ -38,13 +38,11 @@ import {
 import { loadStoredAppSessionToken } from './app-session-token.ts';
 import {
   getSdkworkAccountAppSdkClient,
-  getSdkworkCatalogAppSdkClient,
   getSdkworkMembershipAppSdkClient,
   getSdkworkOrderAppSdkClient,
   getSdkworkPaymentAppSdkClient,
   getSdkworkPromotionAppSdkClient,
   type SdkworkAccountAppSdkClient,
-  type SdkworkCatalogAppSdkClient,
   type SdkworkMembershipAppSdkClient,
   type SdkworkOrderAppSdkClient,
   type SdkworkPaymentAppSdkClient,
@@ -92,22 +90,13 @@ function buildPaymentCommercePort(client: SdkworkPaymentAppSdkClient): PaymentAp
 }
 
 function buildOrderCommercePort(
-  catalogClient: SdkworkCatalogAppSdkClient,
-  membershipClient: SdkworkMembershipAppSdkClient,
   orderClient: SdkworkOrderAppSdkClient,
-  paymentClient: SdkworkPaymentAppSdkClient,
 ): OrderAppSdkClient['commerce'] {
   return {
-    memberships: membershipClient.memberships,
-    cart: catalogClient.cart,
-    checkout: orderClient.checkout,
+    memberships: orderClient.memberships,
     orders: orderClient.orders,
-    refunds: paymentClient.commerce.refunds,
-    fulfillments: orderClient.fulfillments,
-    shipments: orderClient.shipments,
-    afterSales: orderClient.afterSales,
     recharges: orderClient.recharges,
-  } as unknown as OrderAppSdkClient['commerce'];
+  };
 }
 
 function buildPromotionCommercePort(client: SdkworkPromotionAppSdkClient): PromotionAppSdkClient['commerce'] {
@@ -119,14 +108,13 @@ function buildPromotionCommercePort(client: SdkworkPromotionAppSdkClient): Promo
 export function configureClawRouterDomainServiceProviders(): void {
   const readSessionTokens = readClawRouterDomainSessionTokens;
   const accountClient = getSdkworkAccountAppSdkClient();
-  const catalogClient = getSdkworkCatalogAppSdkClient();
   const membershipClient = getSdkworkMembershipAppSdkClient();
   const orderClient = getSdkworkOrderAppSdkClient();
   const paymentClient = getSdkworkPaymentAppSdkClient();
   const promotionClient = getSdkworkPromotionAppSdkClient();
   const orderAppService = createSdkworkOrderAppService({
     appClient: {
-      commerce: buildOrderCommercePort(catalogClient, membershipClient, orderClient, paymentClient),
+      commerce: buildOrderCommercePort(orderClient),
     } as OrderAppSdkClient,
   });
 

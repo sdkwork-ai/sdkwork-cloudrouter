@@ -37,8 +37,8 @@ Authoritative mapping is also declared in `specs/topology.spec.json` ->
 | `pnpm dev:browser` | standalone | browser | postgres |
 | `pnpm dev:browser:sqlite` | standalone | browser | sqlite |
 | `pnpm dev:browser:postgres:standalone:debug` | standalone | browser | postgres |
-| `pnpm dev:browser:postgres:cloud` | cloud | browser | postgres |
-| `pnpm dev:browser:postgres:cloud:debug` | cloud | browser | postgres |
+| `pnpm dev:browser:cloud` | cloud | browser | postgres |
+| `pnpm dev:browser:cloud:debug` | cloud | browser | postgres |
 | `pnpm dev:desktop` | standalone | desktop | postgres |
 | `pnpm dev:desktop:sqlite` | standalone | desktop | sqlite |
 | `pnpm topology:plan:server` | standalone | plan | postgres |

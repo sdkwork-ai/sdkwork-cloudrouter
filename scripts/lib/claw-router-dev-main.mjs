@@ -61,7 +61,7 @@ function applyDatabaseSettings(settings) {
 function parseArgs(argv) {
   const settings = {
     deploymentProfile: 'standalone',
-    serviceLayout: 'unified-process',
+    runtimeMode: 'all-in-one',
     target: 'browser',
     database: undefined,
     legacyMode: undefined,
@@ -80,7 +80,7 @@ function parseArgs(argv) {
     }
     if (arg === '--topology') {
       throw new Error(
-        '--topology is retired; use --deployment-profile (standalone|cloud) and --service-layout (unified-process|split-services)',
+        '--topology is retired; use --deployment-profile (standalone|cloud)',
       );
     }
     if (arg === '--deployment-profile') {
@@ -94,12 +94,12 @@ function parseArgs(argv) {
       );
     }
     if (arg === '--service-layout') {
-      settings.serviceLayout = argv[index + 1] ?? settings.serviceLayout;
-      index += 1;
-      continue;
+      throw new Error(
+        '--service-layout is retired; process decomposition is not a topology profile axis. Use --distributed only for local split-process debugging.',
+      );
     }
     if (arg === '--distributed') {
-      settings.serviceLayout = 'split-services';
+      settings.runtimeMode = 'distributed';
       continue;
     }
     if (arg === '--target') {
@@ -153,8 +153,7 @@ Topology-aware Claw Router dev entry. Loads etc/topology profile env via @sdkwor
 
 Options:
   --deployment-profile <standalone|cloud>           Default: standalone
-  --service-layout <unified-process|split-services> Default: unified-process
-  --distributed                                      Alias for --service-layout split-services
+  --distributed                                      Use local split-process debugging
   --target <browser|browser-only|desktop|plan|service>
                                                     Default: browser (integrated product server)
   --database <postgres|sqlite>                      Optional database overlay
@@ -162,11 +161,11 @@ Options:
   --dry-run                                         Print resolved topology only
   --help, -h
 
-Note: --topology is retired. Use --deployment-profile and --service-layout instead.
+Note: --topology and --service-layout are retired. Deployment profiles do not encode process decomposition.
 
 Examples:
   pnpm dev:browser
-  pnpm dev:browser:postgres:cloud
+  pnpm dev:browser:cloud
   pnpm dev:desktop
   pnpm dev:desktop:sqlite
 `);
@@ -179,10 +178,9 @@ function main() {
     return;
   }
 
-  const profileId = resolveDevProfileId(settings.deploymentProfile, settings.serviceLayout);
+  const profileId = resolveDevProfileId(settings.deploymentProfile);
   const { env: mergedEnv } = loadTopologyProfileForWorkspace({
     deploymentProfile: settings.deploymentProfile,
-    serviceLayout: settings.serviceLayout,
     env: process.env,
     includeIamDatabase: true,
   });
@@ -192,7 +190,7 @@ function main() {
     profileId,
     defaultDevProfileId: DEFAULT_DEV_PROFILE_ID,
     deploymentProfile: settings.deploymentProfile,
-    serviceLayout: settings.serviceLayout,
+    runtimeMode: settings.runtimeMode,
     target: settings.target,
     database: settings.database,
     applicationPublicHttpUrl: resolveSurfaceHttpUrl(
@@ -226,8 +224,7 @@ function main() {
   const workspaceArgs = [
     '--deployment-profile',
     settings.deploymentProfile,
-    '--service-layout',
-    settings.serviceLayout,
+    ...(settings.runtimeMode === 'distributed' ? ['--distributed'] : []),
     ...settings.passthrough,
   ];
 

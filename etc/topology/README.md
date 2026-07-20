@@ -17,5 +17,5 @@ Canonical dev commands (see `docs/topology-standard.md` and `specs/topology.spec
 ```bash
 pnpm dev
 pnpm dev:browser:postgres:standalone:debug
-pnpm dev:browser:postgres:cloud
+pnpm dev:browser:cloud
 ```

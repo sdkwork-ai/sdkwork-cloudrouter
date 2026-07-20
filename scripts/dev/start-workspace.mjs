@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 import { mkdirSync } from 'node:fs';
-import { networkInterfaces } from 'node:os';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { formatNetworkAccessLines } from '@sdkwork/app-topology/network-access';
 import {
   defaultClawRouterDevPostgresDatabaseUrl,
   defaultClawRouterDevPostgresMaxConnections,
@@ -33,7 +33,6 @@ import {
   bridgeTopologyBindEnvToLegacyRustEnv,
   IAM_APPLICATION_BOOTSTRAP_ENV,
   loadTopologyProfileForWorkspace,
-  resolveServiceLayoutFromRuntimeMode,
   waitForHttpHealthy,
   waitForWorkspaceHealthSurfaces,
 } from '../lib/claw-router-topology.mjs';
@@ -119,56 +118,34 @@ function loopbackUrl(bind, pathSuffix) {
   return `http://${loopbackHost}:${port}${pathSuffix}`;
 }
 
-function localNetworkIpv4Addresses(interfaces = networkInterfaces()) {
-  const addresses = [];
-  for (const entries of Object.values(interfaces ?? {})) {
-    for (const entry of entries ?? []) {
-      if (entry?.family !== 'IPv4' || entry.internal || !entry.address) {
-        continue;
-      }
-      if (!isPrivateIpv4Address(entry.address)) {
-        continue;
-      }
-      if (!addresses.includes(entry.address)) {
-        addresses.push(entry.address);
-      }
-    }
-  }
-  return addresses.sort();
-}
-
-function isPrivateIpv4Address(address) {
-  const octets = address.split('.').map((value) => Number.parseInt(value, 10));
-  if (octets.length !== 4 || octets.some((value) => !Number.isInteger(value))) {
-    return false;
-  }
-  return octets[0] === 10
-    || (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31)
-    || (octets[0] === 192 && octets[1] === 168);
-}
-
-function lanAccessLines(bind, pathSuffix, interfaces) {
+function networkAccessLines(bind, pathSuffix, interfaces, {
+  includeLocal = false,
+  unavailableText,
+} = {}) {
   const { host, port } = splitBind(bind, '--bind');
-  if (!['0.0.0.0', '[::]', '::'].includes(host)) {
-    return [];
-  }
-  return localNetworkIpv4Addresses(interfaces).map(
-    (address) => `[start-workspace]   LAN: http://${address}:${port}${pathSuffix}`,
-  );
+  return formatNetworkAccessLines({
+    host,
+    includeLocal,
+    port,
+    pathname: pathSuffix,
+    networkInterfaces: interfaces,
+    prefix: '[start-workspace]   ',
+    unavailableText,
+  });
 }
 
 export function successfulStartupAccessLines(settings, interfaces) {
   const accessBind = settings.runtimeMode === 'client'
     ? settings.portalBind
     : settings.serverBind;
-  const lanLines = lanAccessLines(accessBind, '/', interfaces);
+  const accessLines = networkAccessLines(accessBind, '/', interfaces, {
+    includeLocal: true,
+    unavailableText: 'unavailable (listener is loopback-only or no LAN IPv4 address was detected)',
+  });
   return [
     '[start-workspace] application started successfully',
     '[start-workspace] Access URLs',
-    `[start-workspace]   Local: ${loopbackUrl(accessBind, '/')}`,
-    ...(lanLines.length > 0
-      ? lanLines
-      : ['[start-workspace]   LAN: unavailable (listener is loopback-only or no LAN IPv4 address was detected)']),
+    ...accessLines,
   ];
 }
 
@@ -516,7 +493,6 @@ export function parseWorkspaceArgs(argv = [], {
     runtimeModeExplicit: false,
     explicitForwarding: false,
     deploymentProfile: 'standalone',
-    serviceLayout: 'unified-process',
     profileId: undefined,
     gatewayBindExplicit: false,
     adminApiBindExplicit: false,
@@ -591,7 +567,7 @@ export function parseWorkspaceArgs(argv = [], {
         break;
       case '--topology':
         throw new Error(
-          '--topology is retired; use --deployment-profile (standalone|cloud) and --service-layout (unified-process|split-services)',
+          '--topology is retired; use --deployment-profile (standalone|cloud)',
         );
       case '--deployment-profile':
         settings.deploymentProfile = requireValue(argv, index, arg);
@@ -602,19 +578,20 @@ export function parseWorkspaceArgs(argv = [], {
           '--hosting is retired; use --deployment-profile (standalone or cloud)',
         );
       case '--service-layout':
-        settings.serviceLayout = requireValue(argv, index, arg);
-        index += 1;
-        break;
+        throw new Error(
+          '--service-layout is retired; process decomposition is not a topology profile axis. Use --distributed only for local split-process debugging.',
+        );
       case '--distributed':
-        settings.serviceLayout = 'split-services';
+        settings.runtimeMode = 'distributed';
+        settings.runtimeModeExplicit = true;
         break;
       case '--internal-distributed':
         throw new Error(
-          '--internal-distributed is retired; use --service-layout split-services',
+          '--internal-distributed is retired; use --distributed for local split-process debugging',
         );
       case '--all-in-one':
         throw new Error(
-          '--all-in-one is retired; use --service-layout unified-process',
+          '--all-in-one is retired; all-in-one is the default local runtime mode',
         );
       case '--client-only':
         settings.runtimeMode = 'client';
@@ -657,11 +634,6 @@ export function parseWorkspaceArgs(argv = [], {
 
   if (settings.explicitForwarding && !settings.runtimeModeExplicit) {
     settings.runtimeMode = 'distributed';
-    settings.serviceLayout = 'split-services';
-  }
-  if (settings.runtimeModeExplicit && !settings.serviceLayout) {
-    settings.serviceLayout = resolveServiceLayoutFromRuntimeMode(settings.runtimeMode)
-      ?? settings.serviceLayout;
   }
   if (settings.runtimeMode !== 'client' && settings.databaseUrl === null) {
     settings.databaseUrl = environmentDatabaseConfig(workspaceRoot, { skipDevEnvFile }).databaseUrl
@@ -669,7 +641,6 @@ export function parseWorkspaceArgs(argv = [], {
   }
   const topologyProfile = loadTopologyProfileForWorkspace({
     deploymentProfile: settings.deploymentProfile,
-    serviceLayout: settings.serviceLayout,
     env: process.env,
     includeIamDatabase: false,
   });
@@ -1171,12 +1142,12 @@ export function workspaceAccessLines(settings, includeLanAccess = false, interfa
     `[start-workspace]   Direct Portal App API OpenAPI Proxy: ${loopbackUrl(settings.portalBind, `${APP_API_PREFIX}/openapi.json`)}`,
   ];
   if (includeLanAccess) {
-    const lanLines = lanAccessLines(settings.serverBind, '/', interfaces);
+    const networkLines = networkAccessLines(settings.serverBind, '/', interfaces, {
+      unavailableText: 'unavailable (listener is loopback-only or no LAN IPv4 address was detected)',
+    });
     edgeAndPortal.splice(2, 0,
       '[start-workspace] LAN Access (same Wi-Fi/LAN)',
-      ...(lanLines.length > 0
-        ? lanLines
-        : ['[start-workspace]   LAN: no active LAN IPv4 address detected']),
+      ...networkLines,
     );
   }
   const edgeHealth = [
@@ -1217,9 +1188,7 @@ Use --client-only to start only the external sdkwork-api-cloud-gateway plus the 
 Options:
   --deployment-profile <standalone|cloud>
                          Deployment profile (default standalone)
-  --service-layout <unified-process|split-services>
-                         Topology service layout (default unified-process)
-  --distributed          Alias for --service-layout split-services
+  --distributed          Use local split-process debugging; does not change the topology profile
   --database-url <url>    Optional shared SDKWORK_CLAW_DATABASE_URL override (default ${defaultPostgresDatabaseUrl()})
   --gateway-bind <bind>   SDKWORK_CLAW_GATEWAY_BIND override (default ${DEFAULT_GATEWAY_BIND})
   --admin-api-bind <bind> SDKWORK_CLAW_ADMIN_API_BIND override (default ${DEFAULT_ADMIN_API_BIND})

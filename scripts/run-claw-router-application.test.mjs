@@ -239,7 +239,7 @@ test('root package exposes pnpm application entrypoints', () => {
   assert.match(rootPackage.scripts['topology:validate'], /sdkwork-topology\.mjs validate/u);
   assert.match(rootPackage.scripts['test:topology'], /verify-claw-router-topology\.test\.mjs/u);
   assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /claw-router-dev\.mjs/u);
-  assert.match(rootPackage.scripts['dev:browser:postgres:cloud'], /--deployment-profile cloud/u);
+  assert.match(rootPackage.scripts['dev:browser:cloud'], /--deployment-profile cloud/u);
   assert.match(rootPackage.scripts['gateway:matrix'], /sdkwork-topology\.mjs print-matrix/u);
   assert.equal(
     rootPackage.scripts.build,
@@ -325,8 +325,8 @@ test('root package exposes pnpm application entrypoints', () => {
     rootPackage.scripts['smoke:dev'],
     'node scripts/smoke-edge-dev-server.mjs',
   );
-  assert.equal(rootPackage.scripts['fmt:rust'], undefined);
-  assert.equal(rootPackage.scripts['fmt:rust:check'], undefined);
+  assert.equal(rootPackage.scripts['format'], undefined);
+  assert.equal(rootPackage.scripts['format:check'], undefined);
   assert.equal(
     rootPackage.scripts['format:rust'],
     'node scripts/cargo-fmt-workspace.mjs',
@@ -2576,14 +2576,13 @@ test('claw router workspace launch plan resolves split PostgreSQL env fields dir
   });
 });
 
-test('claw router workspace launch plan preserves split-services topology from profile env', async () => {
+test('claw router workspace launch plan supports local split-process debugging', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
   );
 
   const settings = module.parseWorkspaceArgs([
-    '--service-layout',
-    'split-services',
+    '--distributed',
     '--gateway-bind',
     '0.0.0.0:19080',
   ]);
@@ -3451,14 +3450,13 @@ test('workspace launch plan exposes explicit forwarded header trust settings', a
   );
 });
 
-test('workspace access output includes split-services topology details', async () => {
+test('workspace access output includes local split-process details', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
   );
 
   const settings = module.parseWorkspaceArgs([
-    '--service-layout',
-    'split-services',
+    '--distributed',
     '--gateway-bind',
     '0.0.0.0:19080',
     '--admin-api-bind',
@@ -3533,7 +3531,7 @@ test('workspace access output defaults to edge server port 3900', async () => {
   assert.equal(lines.some((line) => line.includes('Gateway Health: http://127.0.0.1:18080')), false);
 });
 
-test('workspace startup output includes LAN portal links for wildcard edge binds', async () => {
+test('workspace startup output includes every non-internal IPv4 link for wildcard edge binds', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
   );
@@ -3541,24 +3539,50 @@ test('workspace startup output includes LAN portal links for wildcard edge binds
   const settings = module.parseWorkspaceArgs([]);
   const lines = module.workspaceAccessLines(settings, true, {
     Ethernet: [
+      { family: 'IPv4', address: '198.18.0.1', internal: false },
       { family: 'IPv4', address: '192.168.50.12', internal: false },
+      { family: 'IPv4', address: '127.0.0.1', internal: true },
       { family: 'IPv6', address: 'fe80::1', internal: false },
     ],
-    WiFi: [{ family: 'IPv4', address: '10.0.0.7', internal: false }],
+    WiFi: [
+      { family: 'IPv4', address: '10.0.0.7', internal: false },
+      { family: 'IPv4', address: '169.254.30.58', internal: false },
+      { family: 4, address: '169.254.23.73', internal: false },
+    ],
+    Virtual: [
+      { family: 'IPv4', address: '172.23.0.1', internal: false },
+      { family: 'IPv4', address: '198.18.0.1', internal: false },
+    ],
   });
 
   assert.ok(lines.includes('[start-workspace] LAN Access (same Wi-Fi/LAN)'));
-  assert.ok(lines.includes('[start-workspace]   LAN: http://10.0.0.7:3900/'));
-  assert.ok(lines.includes('[start-workspace]   LAN: http://192.168.50.12:3900/'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://10.0.0.7:3900/'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.23.73:3900/'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.30.58:3900/'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://172.23.0.1:3900/'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://192.168.50.12:3900/'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://198.18.0.1:3900/'));
+  assert.equal(lines.includes('[start-workspace]   Network: http://127.0.0.1:3900/'), false);
+  assert.equal(lines.some((line) => line.includes('fe80::1')), false);
+  assert.equal(
+    lines.filter((line) => line === '[start-workspace]   Network: http://198.18.0.1:3900/').length,
+    1,
+  );
 
   const successLines = module.successfulStartupAccessLines(settings, {
-    Ethernet: [{ family: 'IPv4', address: '192.168.50.12', internal: false }],
+    Ethernet: [
+      { family: 'IPv4', address: '198.18.0.1', internal: false },
+      { family: 'IPv4', address: '192.168.50.12', internal: false },
+    ],
+    WiFi: [{ family: 'IPv4', address: '169.254.30.58', internal: false }],
   });
   assert.deepEqual(successLines, [
     '[start-workspace] application started successfully',
     '[start-workspace] Access URLs',
     '[start-workspace]   Local: http://127.0.0.1:3900/',
-    '[start-workspace]   LAN: http://192.168.50.12:3900/',
+    '[start-workspace]   Network: http://169.254.30.58:3900/',
+    '[start-workspace]   Network: http://192.168.50.12:3900/',
+    '[start-workspace]   Network: http://198.18.0.1:3900/',
   ]);
 });
 
@@ -3907,9 +3931,9 @@ test('claw router application help does not present distributed dev as a standar
   );
 
   assert.equal(
-    source.includes('pnpm server:dev'),
+    source.includes('pnpm dev:server'),
     false,
-    'default help examples must not advertise server:dev as a standard workflow',
+    'default help examples must not advertise dev:server as a standard workflow',
   );
 });
 
@@ -7752,7 +7776,7 @@ test('global and application environment contracts document Claw Router runtime 
   assert.ok(environmentSpec.includes('password_file = "/etc/sdkwork/router/redis.secret"'));
   assert.ok(environmentSpec.includes('Desktop runtime targets default to SQLite.'));
   assert.ok(environmentSpec.includes('`pnpm dev:browser` and'));
-  assert.ok(environmentSpec.includes('`pnpm dev:desktop` default to PostgreSQL, `unified-process`, and standalone'));
+  assert.ok(environmentSpec.includes('`pnpm dev:desktop` default to PostgreSQL, and standalone'));
   assert.ok(environmentSpec.includes('`pnpm dev:desktop:sqlite`'));
   assert.ok(deploymentSpec.includes('Redis is enabled and required by default for cloud deployments and standalone'));
   assert.ok(deploymentSpec.includes('server/container packages that declare shared runtime state.'));
