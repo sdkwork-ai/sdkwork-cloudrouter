@@ -185,6 +185,13 @@ test.describe('Admin dashboard responsive shell', () => {
     await page.locator('[aria-controls="admin-mobile-navigation"]').click();
     const drawer = page.locator('[data-admin-mobile-navigation]');
     await expect(drawer).toBeVisible();
+    await expect.poll(async () => (await drawer.boundingBox())?.width ?? 0).toBeGreaterThan(350);
+    await expect.poll(async () => {
+      const box = await drawer.boundingBox();
+      return box ? Math.round(box.x + box.width) : 0;
+    }).toBe(await page.locator('.sdkwork-admin-shell').evaluate((shell) => (
+      Math.round(shell.getBoundingClientRect().right)
+    )));
     await expect(drawer.getByText('Dashboard', { exact: true })).toBeVisible();
     await expect(drawer.getByText('Sign out', { exact: true })).toBeVisible();
     await captureVisual(page, 'admin-dashboard-mobile-menu.png');
