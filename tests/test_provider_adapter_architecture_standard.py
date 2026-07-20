@@ -17,7 +17,7 @@ def test_provider_adapter_workspace_boundaries_are_explicit():
 
 
 def test_gateway_does_not_depend_on_concrete_provider_adapter_packages():
-    gateway_cargo = (ROOT / "crates/sdkwork-clawrouter-cloud-gateway/Cargo.toml").read_text(
+    gateway_cargo = (ROOT / "crates/sdkwork-clawrouter-edge-runtime/Cargo.toml").read_text(
         encoding="utf-8"
     )
 
@@ -119,7 +119,7 @@ def test_provider_adapter_architecture_document_records_runtime_contract():
 
 
 def test_provider_native_passthrough_uses_explicit_registry_hit_before_adapter():
-    passthrough = (ROOT / "crates/sdkwork-clawrouter-cloud-gateway/src/passthrough.rs").read_text(
+    passthrough = (ROOT / "crates/sdkwork-clawrouter-edge-runtime/src/passthrough.rs").read_text(
         encoding="utf-8"
     )
     matcher = (
@@ -154,7 +154,7 @@ def test_provider_native_passthrough_uses_explicit_registry_hit_before_adapter()
 
 def test_provider_native_database_channel_route_adapter_tests_lock_route_order():
     gateway_tests = (
-        ROOT / "crates/sdkwork-clawrouter-cloud-gateway/tests/provider_passthrough_route.rs"
+        ROOT / "crates/sdkwork-clawrouter-edge-runtime/tests/provider_passthrough_route.rs"
     ).read_text(encoding="utf-8")
 
     assert (

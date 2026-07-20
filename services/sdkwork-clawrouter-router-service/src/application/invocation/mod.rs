@@ -64,7 +64,7 @@ pub use openai_classifier::OpenAiResourceClassifier;
 pub use payload::PayloadExtractionInterceptor;
 pub use pipeline::{
     DeferredStreamInvocation, DeferredStreamResponse, InvocationPipeline,
-    InvocationPipelineExecution, InvocationPipelineFailure, StreamTerminalOutcome,
+    InvocationPipelineExecution, StreamTerminalOutcome,
 };
 pub use pricing::{PricingFinalizationInterceptor, PricingPreflightInterceptor};
 pub use provider_adapter_dispatch::ProviderAdapterDispatchInterceptor;
@@ -84,8 +84,7 @@ pub use sticky::{StickyCommitInterceptor, StickyResolutionInterceptor};
 pub use subject::{InvocationAuthType, InvocationSubject};
 pub use telemetry::{InvocationNormalizedResponse, InvocationTelemetry};
 pub use tenant_inflight::{
-    LocalTenantInflightCounter, RedisTenantInflightCounter, TenantInflightConfig,
-    TenantInflightCounter, TenantInflightInterceptor,
+    TenantInflightConfig, TenantInflightInterceptor,
 };
 pub use trace::TraceTelemetryInterceptor;
 pub use usage::{

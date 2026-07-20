@@ -72,7 +72,7 @@ class RustCompileRegressionStandardTest(unittest.TestCase):
                 self.assertNotIn("sdkwork-iam-embedded-application-bootstrap", cargo)
 
         runtime = (
-            ROOT / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs"
+            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
         ).read_text(encoding="utf-8")
         context_body = runtime.split("async fn all_in_one_runtime_context_from_env", 1)[1].split(
             "let api_key_security_config", 1
@@ -82,7 +82,7 @@ class RustCompileRegressionStandardTest(unittest.TestCase):
             context_body,
         )
         iam_embedded = (
-            ROOT / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "iam_embedded.rs"
+            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "iam_embedded.rs"
         ).read_text(encoding="utf-8")
         self.assertIn("process_shared_database_pool()", iam_embedded)
         self.assertIn("bootstrap_iam_database(process_pool)", iam_embedded)

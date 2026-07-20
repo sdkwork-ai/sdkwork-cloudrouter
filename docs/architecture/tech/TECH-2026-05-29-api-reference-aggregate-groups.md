@@ -39,7 +39,7 @@
 **Files:**
 - Modify: `crates/sdkwork-claw-http/src/contract_routes.rs`
 - Modify: `crates/sdkwork-claw-http/tests/service_router.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/tests/edge_server.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/tests/edge_server.rs`
 - Modify: `apps/sdkwork-clawrouter-pc/scripts/smoke-production-browser.mjs`
 
 - [ ] **Step 1: Write/update failing Rust and smoke assertions**
@@ -60,6 +60,6 @@
 
 - [ ] Run `pnpm.cmd --dir apps\sdkwork-clawrouter-pc exec tsx api-reference-playground-runtime.test.ts`
 - [ ] Run `cargo test -p sdkwork-claw-http service_router_exposes_ordered_openapi_schema_tabs_from_route_config`
-- [ ] Run `cargo test -p sdkwork-clawrouter-cloud-gateway edge_server_serves_portal_assets_and_openapi_contracts`
+- [ ] Run `cargo test -p sdkwork-clawrouter-edge-runtime edge_server_serves_portal_assets_and_openapi_contracts`
 - [ ] Run `pnpm.cmd --dir apps\sdkwork-clawrouter-pc typecheck`
 

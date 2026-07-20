@@ -2336,6 +2336,8 @@ name = "sdkwork-api-clawrouter-assembly"
 version = "0.3.0"
 dependencies = [
  "axum",
+ "sdkwork-claw-http",
+ "sdkwork-clawrouter-edge-runtime",
  "sdkwork-routes-agent-open-api",
  "sdkwork-routes-audio-open-api",
  "sdkwork-routes-clawrouter-app-api",
@@ -2358,67 +2360,9 @@ name = "sdkwork-api-clawrouter-standalone-gateway"
 version = "0.3.0"
 dependencies = [
  "sdkwork-api-clawrouter-assembly",
+ "sdkwork-claw-config",
  "sdkwork-web-bootstrap",
  "tokio",
-]
-
-[[package]]
-name = "sdkwork-api-cloud-gateway"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "bytes",
- "http-body-util",
- "sdkwork-api-cloud-gateway-config",
- "sdkwork-api-cloud-gateway-observability",
- "sdkwork-api-cloud-gateway-registry",
- "sdkwork-database-sqlx",
- "sdkwork-iam-database-host",
- "sdkwork-iam-embedded-application-bootstrap",
- "sdkwork-iam-web-adapter",
- "sdkwork-routes-iam-app-api",
- "sdkwork-routes-iam-backend-api",
- "sdkwork-utils-rust",
- "sdkwork-web-axum",
- "sdkwork-web-contract",
- "sdkwork-web-core",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "sdkwork-api-cloud-gateway-config"
-version = "0.1.0"
-dependencies = [
- "sdkwork-utils-rust",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "toml",
-]
-
-[[package]]
-name = "sdkwork-api-cloud-gateway-observability"
-version = "0.1.0"
-dependencies = [
- "sdkwork-api-cloud-gateway-config",
- "sdkwork-api-cloud-gateway-registry",
- "serde",
-]
-
-[[package]]
-name = "sdkwork-api-cloud-gateway-registry"
-version = "0.1.0"
-dependencies = [
- "sdkwork-api-cloud-gateway-config",
- "serde",
 ]
 
 [[package]]
@@ -2725,7 +2669,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "sdkwork-clawrouter-cloud-gateway"
+name = "sdkwork-clawrouter-database-host"
+version = "0.3.0"
+dependencies = [
+ "dotenvy",
+ "sdkwork-database-config",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
+name = "sdkwork-clawrouter-edge-runtime"
 version = "0.3.0"
 dependencies = [
  "anyhow",
@@ -2740,9 +2697,6 @@ dependencies = [
  "hyper-rustls",
  "hyper-util",
  "prometheus",
- "sdkwork-api-cloud-gateway",
- "sdkwork-api-cloud-gateway-config",
- "sdkwork-api-cloud-gateway-registry",
  "sdkwork-claw-config",
  "sdkwork-claw-http",
  "sdkwork-claw-observability",
@@ -2755,13 +2709,8 @@ dependencies = [
  "sdkwork-clawrouter-router-service",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
- "sdkwork-iam-database-host",
- "sdkwork-iam-embedded-application-bootstrap",
- "sdkwork-iam-web-adapter",
  "sdkwork-routes-clawrouter-app-api",
  "sdkwork-routes-clawrouter-backend-api",
- "sdkwork-routes-iam-app-api",
- "sdkwork-routes-iam-backend-api",
  "sdkwork-sdk-generator-client",
  "sdkwork-web-core",
  "serde",
@@ -2771,19 +2720,6 @@ dependencies = [
  "tokio",
  "tower",
  "tracing",
-]
-
-[[package]]
-name = "sdkwork-clawrouter-database-host"
-version = "0.3.0"
-dependencies = [
- "dotenvy",
- "sdkwork-database-config",
- "sdkwork-database-lifecycle",
- "sdkwork-database-spi",
- "sdkwork-database-sqlx",
- "sqlx",
- "tokio",
 ]
 
 [[package]]
@@ -2901,18 +2837,6 @@ dependencies = [
  "sqlx",
  "tokio",
  "tower",
-]
-
-[[package]]
-name = "sdkwork-clawrouter-standalone-gateway-lib"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "sdkwork-claw-config",
- "sdkwork-clawrouter-cloud-gateway",
- "sdkwork-database-sqlx",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -3601,10 +3525,18 @@ dependencies = [
 [[package]]
 name = "sdkwork-routes-agent-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-audio-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-clawrouter-app-api"
@@ -3681,10 +3613,18 @@ dependencies = [
 [[package]]
 name = "sdkwork-routes-drive-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-iaas-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-iam-app-api"
@@ -3741,6 +3681,10 @@ dependencies = [
 [[package]]
 name = "sdkwork-routes-image-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-invoice-app-api"
@@ -3780,10 +3724,18 @@ dependencies = [
 [[package]]
 name = "sdkwork-routes-knowledgebase-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-llm-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-membership-app-api"
@@ -3808,6 +3760,10 @@ dependencies = [
 [[package]]
 name = "sdkwork-routes-memory-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-models-catalog-app-api"
@@ -3815,7 +3771,9 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "sdkwork-iam-web-adapter",
+ "sdkwork-models",
  "sdkwork-models-catalog-service",
+ "sdkwork-models-contract-service",
  "sdkwork-web-axum",
  "sdkwork-web-core",
 ]
@@ -3826,7 +3784,9 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "sdkwork-iam-web-adapter",
+ "sdkwork-models",
  "sdkwork-models-catalog-service",
+ "sdkwork-models-contract-service",
  "sdkwork-web-axum",
  "sdkwork-web-core",
 ]
@@ -3884,6 +3844,10 @@ dependencies = [
 [[package]]
 name = "sdkwork-routes-paas-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-payment-app-api"
@@ -3911,6 +3875,10 @@ dependencies = [
 [[package]]
 name = "sdkwork-routes-payment-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-routes-promotion-app-api"
@@ -3936,6 +3904,10 @@ dependencies = [
 [[package]]
 name = "sdkwork-routes-video-open-api"
 version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-claw-http",
+]
 
 [[package]]
 name = "sdkwork-sdk-generator-client"

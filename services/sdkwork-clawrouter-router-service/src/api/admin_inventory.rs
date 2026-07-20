@@ -1,10 +1,9 @@
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
@@ -17,7 +16,7 @@ use crate::api::response::{
 };
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminInventoryCollection, AdminInventoryJsonRecord, AdminInventoryStore, AdminInventorySubject,
+    AdminInventoryCollection, AdminInventoryJsonRecord, AdminInventoryStore,
     ListAdminInventoryRecordsQuery, UpdateAdminInventoryStockCommand,
 };
 

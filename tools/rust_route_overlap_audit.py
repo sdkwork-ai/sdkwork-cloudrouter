@@ -300,8 +300,8 @@ class RustRouteOverlapAudit:
             and path == "/v1/models/{model}"
             and source_paths
             == {
-                "crates/sdkwork-clawrouter-cloud-gateway/src/passthrough.rs",
-                "crates/sdkwork-clawrouter-cloud-gateway/src/invocation_http.rs",
+                "crates/sdkwork-clawrouter-edge-runtime/src/passthrough.rs",
+                "crates/sdkwork-clawrouter-edge-runtime/src/invocation_http.rs",
             }
         ):
             return True

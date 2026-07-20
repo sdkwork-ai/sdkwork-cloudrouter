@@ -720,7 +720,7 @@ node --experimental-strip-types apps\sdkwork-clawrouter-pc\api-reference-playgro
 node apps\sdkwork-clawrouter-pc\api-reference-ssr-smoke.test.cjs
 python -B -m unittest tests.test_frontend_source_hygiene_standard
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 $env:CLAWROUTER_BROWSER_SMOKE_REQUIRED='1'; node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts
@@ -790,7 +790,7 @@ node apps\sdkwork-clawrouter-pc\api-reference-ssr-smoke.test.cjs
 python -B -m unittest tests.test_api_reference_playground_standard tests.test_frontend_source_hygiene_standard
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc --filter sdkwork-clawrouter-pc-api-reference typecheck
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 $env:CLAWROUTER_BROWSER_SMOKE_REQUIRED='1'; node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 pnpm.cmd verify
@@ -946,7 +946,7 @@ node --experimental-strip-types apps\sdkwork-clawrouter-pc\models-runtime.test.t
 node apps\sdkwork-clawrouter-pc\models-ssr-smoke.test.cjs
 python -B -m unittest tests.test_models_catalog_runtime_standard tests.test_frontend_source_hygiene_standard
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 $env:CLAWROUTER_BROWSER_SMOKE_REQUIRED='1'; node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts
@@ -1025,7 +1025,7 @@ python -B -m unittest tests.test_courses_runtime_standard
 python -B -m unittest tests.test_frontend_source_hygiene_standard
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc --filter sdkwork-clawrouter-pc-courses typecheck
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 $env:CLAWROUTER_BROWSER_SMOKE_REQUIRED='1'; node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 ```
@@ -1082,7 +1082,7 @@ python -B -m unittest tests.test_forum_runtime_standard
 python -B -m unittest tests.test_frontend_source_hygiene_standard tests.test_forum_runtime_standard
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc --filter sdkwork-clawrouter-pc-forum typecheck
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 $env:CLAWROUTER_BROWSER_SMOKE_REQUIRED='1'; node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 ```
@@ -1141,7 +1141,7 @@ pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\app-runtime.test.ts
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\skills-runtime.test.ts
 python -B -m unittest tests.test_app_center_runtime_standard tests.test_skills_runtime_standard
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 $env:CLAWROUTER_BROWSER_SMOKE_REQUIRED="1"; node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs; $exit=$LASTEXITCODE; Remove-Item Env:\CLAWROUTER_BROWSER_SMOKE_REQUIRED; exit $exit
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts
@@ -1186,7 +1186,7 @@ Results:
   5 passed, 0 failed.
 - `python -B -m unittest tests.test_app_center_runtime_standard tests.test_skills_runtime_standard`:
   15 tests passed, 0 failed.
-- `cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server`:
+- `cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server`:
   production HTTP smoke passed at `http://127.0.0.1:3200`.
 - `node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs`:
   local non-required run started the production server and then emitted
@@ -1212,7 +1212,7 @@ node scripts\run-claw-router-application.test.mjs
 node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 $env:CLAWROUTER_BROWSER_SMOKE_REQUIRED="1"; node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs; $exit=$LASTEXITCODE; Remove-Item Env:\CLAWROUTER_BROWSER_SMOKE_REQUIRED; exit $exit
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts
 python -B -m unittest tests.test_app_center_runtime_standard tests.test_skills_runtime_standard
 pnpm.cmd verify
@@ -1243,7 +1243,7 @@ Results:
   missing browser evidence instead of silently skipping it.
 - `pnpm.cmd --dir apps\sdkwork-clawrouter-pc build`: production build
   passed and emitted `dist\server.mjs`.
-- `cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server`:
+- `cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server`:
   production HTTP smoke passed at `http://127.0.0.1:3200`.
 - `node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts`:
   50 passed, 0 failed.
@@ -1265,7 +1265,7 @@ python -B -m unittest tests.test_courses_runtime_standard
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\courses-runtime.test.ts
 node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs
 $env:CLAWROUTER_BROWSER_SMOKE_REQUIRED="1"; node apps\sdkwork-clawrouter-pc\scripts\smoke-production-browser.mjs; $exit=$LASTEXITCODE; Remove-Item Env:\CLAWROUTER_BROWSER_SMOKE_REQUIRED; exit $exit
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc typecheck --force
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
@@ -1320,7 +1320,7 @@ Results:
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc typecheck --force
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 pnpm.cmd verify
 pnpm.cmd test:postgres
 pnpm.cmd test:postgres:docker
@@ -1571,7 +1571,7 @@ Frontend field audit is current
 git diff --check -- CHECK_RESULT.md apps/sdkwork-clawrouter-pc/models-runtime.test.ts apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelCatalog.ts apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/pages/ModelDetails.tsx apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/pages/Models.tsx apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n/src/index.ts tests/test_models_catalog_runtime_standard.py
 passed
 
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 passed; production `models-*.js` chunk includes runtime SDK loading,
 filter/reset/group/show-more catalog semantics, detail source labels, safe SDK
 example serialization, and excludes private pricing tokens; production
@@ -1909,7 +1909,7 @@ node --experimental-strip-types apps\sdkwork-clawrouter-pc\app-runtime.test.ts
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\api-reference-playground-runtime.test.ts
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\console-routing-runtime.test.ts
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\admin-group-runtime.test.ts
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node scripts\run-claw-router-application.test.mjs
 ```
 
@@ -2014,7 +2014,7 @@ Command:
 ```powershell
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\rankings-runtime.test.ts
 python -B -m unittest tests.test_rankings_runtime_standard
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 ```
 
 Observed result:
@@ -2057,7 +2057,7 @@ pnpm.cmd --dir apps\sdkwork-clawrouter-pc --filter sdkwork-clawrouter-pc-courses
 python -B -m unittest tests.test_courses_runtime_standard tests.test_frontend_route_classification_standard tests.test_frontend_static_source_manifest
 python -B -m tools.frontend_static_source_manifest --check
 node apps\sdkwork-clawrouter-pc\scripts\audit-bundle-budget.mjs
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 ```
 
 Observed result:
@@ -2144,7 +2144,7 @@ pnpm.cmd --dir apps\sdkwork-clawrouter-pc --filter sdkwork-clawrouter-pc-forum t
 python -B -m unittest tests.test_frontend_route_classification_standard tests.test_frontend_static_source_manifest tests.test_forum_runtime_standard
 python -B -m tools.frontend_static_source_manifest --check
 node apps\sdkwork-clawrouter-pc\scripts\audit-bundle-budget.mjs
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node scripts\verify-claw-router-application.mjs
 ```
 
@@ -2207,7 +2207,7 @@ python -B -m tools.frontend_operation_audit --check
 python -B -m tools.frontend_static_source_manifest --check
 python -B -m tools.frontend_contract_guardian
 node apps\sdkwork-clawrouter-pc\scripts\audit-bundle-budget.mjs
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node scripts\verify-claw-router-application.mjs
 ```
 
@@ -2264,7 +2264,7 @@ node --experimental-strip-types apps\sdkwork-clawrouter-pc\api-reference-playgro
 node apps\sdkwork-clawrouter-pc\api-reference-ssr-smoke.test.cjs
 python -B -m unittest tests.test_api_reference_playground_standard
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc --filter sdkwork-clawrouter-pc-api-reference typecheck
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc typecheck --force
 python -B -m unittest tests.test_frontend_route_classification_standard tests.test_frontend_clipboard_standard tests.test_app_session_exchange_standard
@@ -3197,7 +3197,7 @@ node --experimental-strip-types apps\sdkwork-clawrouter-pc\app-runtime.test.ts
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\skills-runtime.test.ts
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc typecheck --force
 pnpm.cmd --dir apps\sdkwork-clawrouter-pc build
-cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server
+cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server
 node --experimental-strip-types apps\sdkwork-clawrouter-pc\server.test.ts
 node scripts\run-claw-router-application.test.mjs
 ```

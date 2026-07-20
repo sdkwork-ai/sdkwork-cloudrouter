@@ -240,7 +240,7 @@ No task may replace these chains with direct edits to generated output.
 
 **Files:**
 - Modify: `tools/clawrouter_gateway_openapi_generator.py`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/openai_passthrough_routes.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/openai_passthrough_routes.rs`
 - Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/openai_classifier.rs`
 - Modify: `data/ai-routing/resources/openai-resources.json`
 - Modify: `data/ai-routing/resource-groups/official-provider-groups.json`
@@ -263,8 +263,8 @@ No task may replace these chains with direct edits to generated output.
 
 **Files:**
 - Modify/retire: `ProviderPassthroughRuntime::forward_openai`
-- Modify/retire: `crates/sdkwork-clawrouter-cloud-gateway/src/provider_passthrough_transport.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/openai_passthrough_routes.rs`
+- Modify/retire: `crates/sdkwork-clawrouter-edge-runtime/src/provider_passthrough_transport.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/openai_passthrough_routes.rs`
 - Modify: `services/sdkwork-clawrouter-router-service/src/api/app_runtime.rs`
 - Modify: gateway/router composition for `InvocationDispatcher` and `DispatchExecutor`
 - Test: public compatibility dispatch-path integration tests
@@ -291,7 +291,7 @@ No task may replace these chains with direct edits to generated output.
 - Create: `crates/sdkwork-claw-security/src/egress.rs` and focused tests
 - Create: `configs/security/provider-egress-policy.json` with exact provider-code host/port policy
 - Modify: `services/sdkwork-clawrouter-router-service/src/api/admin_channel.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/invocation_dispatcher.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/invocation_dispatcher.rs`
 - Modify: approved provider HTTP adapters that currently construct clients independently
 - Modify: Kubernetes NetworkPolicy and deployment validation fixtures
 
@@ -425,7 +425,7 @@ No task may replace these chains with direct edits to generated output.
 
 **Files:**
 - Create: focused gateway streaming body/parser modules
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/invocation_dispatcher.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/invocation_dispatcher.rs`
 - Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/usage_extraction.rs`
 - Test: streaming relay, first-frame, cancellation, backpressure, and terminal accounting
 

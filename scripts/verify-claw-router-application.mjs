@@ -475,7 +475,7 @@ function buildCiVerificationPlan(env = process.env, settings = {}) {
       '-p',
       'sdkwork-clawrouter-admin-gateway',
       '-p',
-      'sdkwork-clawrouter-cloud-gateway',
+      'sdkwork-clawrouter-edge-runtime',
       '--check',
     ],
     env,
@@ -619,7 +619,7 @@ function buildVerificationPlan(settings, env = process.env) {
   plan.push({
     label: 'portal production edge smoke',
     command: 'cargo',
-    args: ['test', '-p', 'sdkwork-clawrouter-cloud-gateway', '--test', 'edge_server', 'edge_server_can_serve_portal_dist_without_node_server'],
+    args: ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'edge_server', 'edge_server_can_serve_portal_dist_without_node_server'],
     env: rustEnv,
   });
   plan.push({

@@ -1,14 +1,13 @@
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
-use axum::{Json, Router};
+use axum::Router;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -16,7 +15,6 @@ use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_created_response, json_success_list_response, no_content_response,
     normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;

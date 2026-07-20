@@ -44,7 +44,7 @@ const DASHBOARD_DATA = {
       usageOut: 2_400,
       time: '2026-07-20 17:22:09',
       status: 'success',
-      cost: '2.43',
+      cost: '2.430000',
     },
   ],
 };
@@ -82,7 +82,10 @@ const INSTALLATION_DATA = {
   changed: false,
 };
 
-async function prepareAdminDashboard(page: Page): Promise<void> {
+async function prepareAdminDashboard(
+  page: Page,
+  analyticsData: typeof ANALYTICS_DATA = ANALYTICS_DATA,
+): Promise<void> {
   const now = Math.floor(Date.now() / 1_000);
   const session = {
     accessToken: 'visual-access-token',
@@ -127,7 +130,7 @@ async function prepareAdminDashboard(page: Page): Promise<void> {
       return;
     }
     if (path === '/backend/v3/api/system/analytics/admin/overview') {
-      await fulfill(ANALYTICS_DATA);
+      await fulfill(analyticsData);
       return;
     }
     if (path === '/backend/v3/api/system/installation/status') {
@@ -162,12 +165,19 @@ test.describe('Admin dashboard responsive shell', () => {
     await expect(page.getByRole('heading', { name: 'Operations Overview' })).toBeVisible();
     await expect(page.locator('[data-admin-desktop-sidebar]')).toBeVisible();
     await expect(page.getByText('Points Consumed', { exact: true })).toBeVisible();
-    await expect(page.getByText('$184.72', { exact: true })).toBeVisible();
+    await expect(page.getByText('184.72', { exact: true })).toBeVisible();
+    await expect(page.getByText('2.43', { exact: true })).toBeVisible();
 
     const trendSvg = page.locator('.recharts-responsive-container svg').first();
     await expect(trendSvg).toBeVisible();
     await expect.poll(async () => (await trendSvg.boundingBox())?.height ?? 0).toBeGreaterThan(250);
     await expect.poll(async () => (await trendSvg.boundingBox())?.width ?? 0).toBeGreaterThan(700);
+    await expect(page.getByText('1M', { exact: true })).toBeVisible();
+    const trendCurve = page.locator('.recharts-area-curve').first();
+    await expect.poll(async () => {
+      const [curveBox, svgBox] = await Promise.all([trendCurve.boundingBox(), trendSvg.boundingBox()]);
+      return curveBox && svgBox ? curveBox.width / svgBox.width : 0;
+    }).toBeGreaterThan(0.7);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
     await captureVisual(page, 'admin-dashboard-desktop.png');
   });
@@ -179,14 +189,31 @@ test.describe('Admin dashboard responsive shell', () => {
 
     await expect(page.getByRole('heading', { name: 'Operations Overview' })).toBeVisible();
     await expect(page.locator('[data-admin-desktop-sidebar]')).toBeHidden();
+    const summaryCards = page.locator('[data-admin-dashboard-summary-card]');
+    await expect(summaryCards).toHaveCount(8);
+    await expect.poll(async () => {
+      const [firstCard, secondCard] = await Promise.all([
+        summaryCards.nth(0).boundingBox(),
+        summaryCards.nth(1).boundingBox(),
+      ]);
+      return firstCard && secondCard
+        ? Math.abs(firstCard.y - secondCard.y) < 2 && secondCard.x > firstCard.x
+        : false;
+    }).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
     await captureVisual(page, 'admin-dashboard-mobile.png');
 
     const aggregateHeading = page.getByRole('heading', { name: 'Aggregate Metrics Dashboard' });
-    await aggregateHeading.scrollIntoViewIfNeeded();
+    await expect(aggregateHeading).toBeVisible();
+    await page.locator('[data-admin-dashboard-trend-card]').scrollIntoViewIfNeeded();
     const mobileTrendSvg = page.locator('.recharts-responsive-container svg').first();
     await expect.poll(async () => (await mobileTrendSvg.boundingBox())?.height ?? 0).toBeGreaterThan(250);
     await expect.poll(async () => (await mobileTrendSvg.boundingBox())?.width ?? 0).toBeGreaterThan(280);
+    const mobileTrendCurve = page.locator('.recharts-area-curve').first();
+    await expect.poll(async () => {
+      const [curveBox, svgBox] = await Promise.all([mobileTrendCurve.boundingBox(), mobileTrendSvg.boundingBox()]);
+      return curveBox && svgBox ? curveBox.width / svgBox.width : 0;
+    }).toBeGreaterThan(0.7);
     await captureVisual(page, 'admin-dashboard-mobile-chart.png');
 
     await page.locator('[aria-controls="admin-mobile-navigation"]').click();
@@ -201,9 +228,47 @@ test.describe('Admin dashboard responsive shell', () => {
     )));
     await expect(drawer.getByText('Dashboard', { exact: true })).toBeVisible();
     await expect(drawer.getByText('Sign out', { exact: true })).toBeVisible();
+    const closeDrawerButton = drawer.getByRole('button', { name: 'Close admin navigation' });
+    await expect(closeDrawerButton).toBeVisible();
     await captureVisual(page, 'admin-dashboard-mobile-menu.png');
 
+    await closeDrawerButton.click();
+    await expect(drawer).toBeHidden();
+
+    await page.locator('[aria-controls="admin-mobile-navigation"]').click();
+    await expect(drawer).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
+  });
+
+  test('contains long operational metrics at the 320px narrow breakpoint', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await prepareAdminDashboard(page, {
+      ...ANALYTICS_DATA,
+      summary: {
+        ...ANALYTICS_DATA.summary,
+        totalPoints: 1_260_500_123.55,
+        upstreamCost: 184_720_999.42,
+      },
+    });
+    await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
+
+    const summaryCards = page.locator('[data-admin-dashboard-summary-card]');
+    await expect(summaryCards).toHaveCount(8);
+    await expect.poll(async () => {
+      const [firstCard, secondCard] = await Promise.all([
+        summaryCards.nth(0).boundingBox(),
+        summaryCards.nth(1).boundingBox(),
+      ]);
+      return firstCard && secondCard
+        ? Math.abs(firstCard.x - secondCard.x) < 2 && secondCard.y > firstCard.y
+        : false;
+    }).toBe(true);
+    expect(await summaryCards.evaluateAll((cards) => (
+      cards.some((card) => card.scrollWidth > card.clientWidth)
+    ))).toBe(false);
+    expect(await page.evaluate(() => (
+      document.documentElement.scrollWidth > document.documentElement.clientWidth
+    ))).toBe(false);
   });
 });

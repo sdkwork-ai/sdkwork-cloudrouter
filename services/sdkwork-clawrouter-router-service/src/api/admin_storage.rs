@@ -1,8 +1,7 @@
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch, post};
 use axum::{Json, Router};
@@ -12,7 +11,7 @@ use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{json_success_list_response, problem_from_wire_code, success_envelope};
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminStorageCollection, AdminStorageJsonRecord, AdminStorageStore, AdminStorageSubject,
+    AdminStorageCollection, AdminStorageJsonRecord, AdminStorageStore,
     CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
     CreateStorageGarbageCollectionJobCommand, CreateStorageProviderCommand,
     CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,

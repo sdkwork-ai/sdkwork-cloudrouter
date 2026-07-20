@@ -6,7 +6,7 @@ use axum::http::{Extensions, HeaderMap};
 use axum::response::Response;
 
 use crate::api::app_sql_subject::{
-    resolve_optional_app_sql_subject, SqlScopedSubject, APP_USER_OPERATOR_TYPE,
+    resolve_optional_app_sql_subject, SqlScopedSubject,
 };
 use crate::api::subject::unauthorized_subject_response;
 

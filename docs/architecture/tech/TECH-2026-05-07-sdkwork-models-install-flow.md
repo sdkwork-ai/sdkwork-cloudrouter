@@ -157,7 +157,7 @@ Out of scope for this plan:
   Show catalog root and catalog version in status/install output. Add an
   explicit catalog refresh command.
 
-- Modify `crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs`
+- Modify `crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs`
 - Modify `services/sdkwork-clawrouter-admin-gateway/src/lib.rs`
 - Modify `services/sdkwork-clawrouter-standalone-gateway/src/lib.rs`
   Ensure startup install can receive catalog options from environment.
@@ -919,7 +919,7 @@ git commit -m "add ClawRouter sdkwork models importer"
 - Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs`
 - Modify: `services/sdkwork-clawrouter-router-service/tests/database_installer.rs`
 - Modify: `services/sdkwork-claw-installer/src/main.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs`
 - Modify: `services/sdkwork-clawrouter-admin-gateway/src/lib.rs`
 - Modify: `services/sdkwork-clawrouter-standalone-gateway/src/lib.rs`
 - Modify: `services/sdkwork-clawrouter-router-service/src/infrastructure/sql/mod.rs`
@@ -1078,7 +1078,7 @@ Run:
 ```powershell
 cargo test -p sdkwork-clawrouter-router-service --test database_installer
 cargo test -p sdkwork-clawrouter-admin-gateway --test installation_status_route
-cargo test -p sdkwork-clawrouter-cloud-gateway --test database_installer_startup
+cargo test -p sdkwork-clawrouter-edge-runtime --test database_installer_startup
 ```
 
 Expected: all pass and report catalog version from `sdkwork-models.json`.
@@ -1086,7 +1086,7 @@ Expected: all pass and report catalog version from `sdkwork-models.json`.
 - [ ] **Step 10: Commit**
 
 ```powershell
-git add services/sdkwork-clawrouter-router-service services/sdkwork-claw-installer crates/sdkwork-clawrouter-cloud-gateway services/sdkwork-clawrouter-admin-gateway services/sdkwork-clawrouter-standalone-gateway
+git add services/sdkwork-clawrouter-router-service services/sdkwork-claw-installer crates/sdkwork-clawrouter-edge-runtime services/sdkwork-clawrouter-admin-gateway services/sdkwork-clawrouter-standalone-gateway
 git commit -m "migrate installer to sdkwork-models catalog"
 ```
 
@@ -1556,7 +1556,7 @@ cargo test -p sdkwork-clawrouter-router-service --test sdkwork_models_catalog_im
 cargo test -p sdkwork-clawrouter-router-service --test database_installer
 cargo test -p sdkwork-clawrouter-router-service --test admin_model_command_api
 cargo test -p sdkwork-clawrouter-admin-gateway --test installation_status_route
-cargo test -p sdkwork-clawrouter-cloud-gateway --test database_installer_startup
+cargo test -p sdkwork-clawrouter-edge-runtime --test database_installer_startup
 pnpm.cmd verify:fast
 ```
 

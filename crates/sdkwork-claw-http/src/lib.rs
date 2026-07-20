@@ -5,6 +5,7 @@ pub mod federated_database_env;
 pub mod headers;
 pub mod health;
 pub mod metrics;
+pub mod open_api_capability;
 pub mod query_string;
 pub mod readiness;
 pub mod router;
@@ -43,6 +44,9 @@ pub use federated_database_env::{
 };
 pub use headers::{default_security_headers, redact_http_header};
 pub use metrics::{metrics, metrics_middleware, record_readiness_check};
+pub use open_api_capability::{
+    open_api_capability_for_request, open_api_capability_router, OpenApiCapability,
+};
 pub use query_string::{
     sanitize_sensitive_query, sanitize_sensitive_query_in_uri, upsert_query_parameter,
     QueryStringError,

@@ -149,7 +149,7 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
                 "docs/02-技术架构设计.md",
                 """
                 # 技术架构设计
-                Rust-first runtime with sdkwork-clawrouter-cloud-gateway, sdkwork-clawrouter-app-api-server,
+                Rust-first runtime with sdkwork-clawrouter-edge-runtime, sdkwork-clawrouter-app-api-server,
                 sdkwork-clawrouter-admin-api-server, /app/v3/api, /backend/v3/api and /v1.
                 """,
             )

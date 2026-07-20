@@ -222,9 +222,9 @@ function collectIdempotencyFacts() {
 
 function collectStreamingFacts() {
   const dispatcherPath =
-    "crates/sdkwork-clawrouter-cloud-gateway/src/invocation_dispatcher.rs";
+    "crates/sdkwork-clawrouter-edge-runtime/src/invocation_dispatcher.rs";
   const passthroughTransportPath =
-    "crates/sdkwork-clawrouter-cloud-gateway/src/provider_passthrough_transport.rs";
+    "crates/sdkwork-clawrouter-edge-runtime/src/provider_passthrough_transport.rs";
   const dispatcherText = fileExists(dispatcherPath) ? readText(dispatcherPath) : "";
   const transportText = fileExists(passthroughTransportPath) ? readText(passthroughTransportPath) : "";
   return {

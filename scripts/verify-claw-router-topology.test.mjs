@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
@@ -70,6 +71,10 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
     packageJson.scripts['dev:cloud'],
     'pnpm exec sdkwork-app dev --deployment-profile cloud',
   );
+  assert.equal(
+    packageJson.scripts['_sdkwork:dev:standalone'],
+    'node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --database postgres',
+  );
   assert.equal(packageJson.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
   assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /sdkwork-app dev/u);
   assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--deployment-profile standalone/u);
@@ -84,12 +89,10 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
   assert.equal(spec.scripts.pnpm.dev.deploymentProfile, 'standalone');
 });
 
-test('declares cloud gateway config bundles referenced by topology spec', async () => {
+test('application topology declares no platform host config bundle', async () => {
   const spec = await readJson('specs/topology.spec.json');
-  for (const configFile of spec.packaging.cloudConfigFiles) {
-    const configPath = path.join('etc', configFile);
-    assert.equal(await exists(configPath), true, `${configPath} should exist`);
-  }
+  assert.equal(spec.components.platformGateway, undefined);
+  assert.deepEqual(spec.packaging.targets, []);
 });
 
 test('v5 topology adapter resolves two-segment development profiles', async () => {
@@ -256,30 +259,13 @@ test('parseWorkspaceArgs rejects retired topology CLI flags', async () => {
   );
 });
 
-test('sdkwork.workflow.json references topology cloud-config packaging target', async () => {
+test('sdkwork.workflow.json contains no application-owned platform host package target', async () => {
   const spec = await readJson('specs/topology.spec.json');
   const workflow = await readJson('sdkwork.workflow.json');
-  const topologyTarget = spec.packaging.targets.find(
-    (target) => target.id === 'platform-config-bundle-tar-gz',
-  );
-  const workflowTarget = workflow.targets.find(
-    (target) => target.outputGlobs?.includes(topologyTarget.outputGlob),
-  );
-
-  assert.ok(topologyTarget);
-  assert.ok(workflowTarget);
-  assert.equal(workflowTarget.profile, 'container');
-  assert.equal(workflowTarget.deploymentProfile, 'cloud');
-  assert.equal(workflowTarget.variant, 'config-bundle');
-  assert.deepEqual(workflowTarget.outputGlobs, [topologyTarget.outputGlob]);
-  const packageStep = workflow.lifecycle.package.find(
-    (step) => step.name === 'Package cloud gateway config bundle',
-  );
-  const validateStep = workflow.lifecycle.validate.find(
-    (step) => step.name === 'Validate cloud gateway config bundle',
-  );
-  assert.ok(packageStep?.run.includes('gateway:package:cloud'));
-  assert.ok(validateStep?.run.includes('gateway:validate:cloud'));
+  assert.deepEqual(spec.packaging.targets, []);
+  assert.equal(workflow.targets.some((target) => target.variant === 'config-bundle'), false);
+  assert.equal(workflow.lifecycle.package.some((step) => /cloud gateway/u.test(step.name)), false);
+  assert.equal(workflow.lifecycle.validate.some((step) => /cloud gateway/u.test(step.name)), false);
 });
 
 test('claw-router dev orchestrator loads topology profile and forwards workspace flags', async () => {
@@ -291,6 +277,35 @@ test('claw-router dev orchestrator loads topology profile and forwards workspace
   assert.match(devScript, /--database/);
   assert.match(devScript, /run-claw-router-application\.mjs/);
   assert.match(devScript, /topology is retired/);
+});
+
+test('claw-router dev hook consumes sdkwork-app lifecycle arguments', () => {
+  const result = spawnSync(process.execPath, [
+    'scripts/claw-router-dev.mjs',
+    '--target',
+    'browser',
+    '--deployment-profile',
+    'standalone',
+    '--database',
+    'postgres',
+    '--dry-run',
+    '--',
+    '--deployment-profile',
+    'standalone',
+    '--environment',
+    'development',
+    '--runtime-target',
+    'browser',
+  ], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const summary = JSON.parse(result.stdout.slice(result.stdout.indexOf('{')));
+  assert.equal(summary.deploymentProfile, 'standalone');
+  assert.equal(summary.environment, 'development');
+  assert.equal(summary.target, 'browser');
 });
 
 test('CI verification plan includes commercial contract guardians and portal typecheck', async () => {

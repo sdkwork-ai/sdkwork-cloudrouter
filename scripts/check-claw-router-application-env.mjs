@@ -361,33 +361,6 @@ function assertReleaseEnvironmentContractMatchesEdgeKeyOrder() {
   }
 }
 
-function assertGatewayReadsCanonicalEdgeEnvKeys() {
-  const gatewayMainPath = path.join(
-    WORKSPACE_ROOT,
-    'crates',
-    'sdkwork-clawrouter-standalone-gateway-lib',
-    'src',
-    'main.rs',
-  );
-  const edgeEnvPath = path.join(
-    WORKSPACE_ROOT,
-    'crates',
-    'sdkwork-clawrouter-standalone-gateway-lib',
-    'src',
-    'edge_env.rs',
-  );
-  const mainSource = readFileSync(gatewayMainPath, 'utf8');
-  const edgeEnvSource = readFileSync(edgeEnvPath, 'utf8');
-  for (const key of CANONICAL_EDGE_ENV_MARKERS) {
-    if (!mainSource.includes(key)) {
-      throw new Error(`gateway main.rs must read canonical edge env key ${key}`);
-    }
-  }
-  if (!edgeEnvSource.includes('env_optional_with_legacy')) {
-    throw new Error('gateway edge_env.rs must provide legacy alias resolution');
-  }
-}
-
 function assertViteReadsStandardBrowserDevProxyKeys() {
   const viteConfigPath = path.join(PORTAL_ROOT, 'vite.config.ts');
   const source = readFileSync(viteConfigPath, 'utf8');
@@ -500,7 +473,6 @@ function main() {
     assertProductionTemplateForbidsLegacyPortalKeys,
     assertReleaseTemplateDocumentsPortalPublicKeys,
     assertEnvExampleIsReleaseRuntimeReference,
-    assertGatewayReadsCanonicalEdgeEnvKeys,
     assertReleaseEdgeGeneratedEnvMatchesKeyOrder,
     assertReleaseEnvironmentContractMatchesEdgeKeyOrder,
     assertBrowserProfileTemplatesDoNotUseLegacyPortalKeys,
@@ -542,7 +514,6 @@ export {
   assertDevelopmentTemplateUsesStandardBrowserEnvKeys,
   assertEntrypointMarkers,
   assertEnvExampleIsReleaseRuntimeReference,
-  assertGatewayReadsCanonicalEdgeEnvKeys,
   assertHostReleaseProfileHasCanonicalKeyOrder,
   assertHostProductionProfilesDoNotPersistAccessToken,
   assertHostBrowserProfilesFreeOfLegacyPortalKeys,

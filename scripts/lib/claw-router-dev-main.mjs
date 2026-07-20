@@ -61,6 +61,7 @@ function applyDatabaseSettings(settings) {
 function parseArgs(argv) {
   const settings = {
     deploymentProfile: 'standalone',
+    environment: 'development',
     runtimeMode: 'all-in-one',
     target: 'browser',
     database: undefined,
@@ -88,6 +89,11 @@ function parseArgs(argv) {
       index += 1;
       continue;
     }
+    if (arg === '--environment') {
+      settings.environment = argv[index + 1] ?? settings.environment;
+      index += 1;
+      continue;
+    }
     if (arg === '--hosting') {
       throw new Error(
         '--hosting is retired; use --deployment-profile (standalone or cloud)',
@@ -103,6 +109,11 @@ function parseArgs(argv) {
       continue;
     }
     if (arg === '--target') {
+      settings.target = argv[index + 1] ?? settings.target;
+      index += 1;
+      continue;
+    }
+    if (arg === '--runtime-target') {
       settings.target = argv[index + 1] ?? settings.target;
       index += 1;
       continue;
@@ -141,6 +152,9 @@ function parseArgs(argv) {
     settings.passthrough.push(arg);
   }
 
+  if (settings.environment !== 'development') {
+    throw new Error('claw-router-dev supports only --environment development');
+  }
   applyDatabaseSettings(settings);
   settings.mode = mapTargetToProductMode(settings.target, settings.legacyMode);
   return settings;
@@ -153,9 +167,11 @@ Topology-aware Claw Router dev entry. Loads etc/topology profile env via @sdkwor
 
 Options:
   --deployment-profile <standalone|cloud>           Default: standalone
+  --environment <development>                       Default: development
   --distributed                                      Use local split-process debugging
   --target <browser|browser-only|desktop|plan|service>
                                                     Default: browser (integrated product server)
+  --runtime-target <browser|desktop|server>           sdkwork-app lifecycle alias for --target
   --database <postgres|sqlite>                      Optional database overlay
   --dev-env-file <path>                             Optional dotenv overlay (overrides --database postgres)
   --dry-run                                         Print resolved topology only
@@ -190,6 +206,7 @@ function main() {
     profileId,
     defaultDevProfileId: DEFAULT_DEV_PROFILE_ID,
     deploymentProfile: settings.deploymentProfile,
+    environment: settings.environment,
     runtimeMode: settings.runtimeMode,
     target: settings.target,
     database: settings.database,

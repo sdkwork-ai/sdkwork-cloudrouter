@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT_API_ROOT = ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api"
-GATEWAY_SOURCE_ROOT = ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src"
+GATEWAY_SOURCE_ROOT = ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src"
 
 
 class BackendRequestIdentityStandardTest(unittest.TestCase):

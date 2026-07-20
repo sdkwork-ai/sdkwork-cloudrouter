@@ -633,8 +633,8 @@ services/sdkwork-clawrouter-router-service/src/application/invocation/
 新增 gateway HTTP 适配层：
 
 ```text
-services/sdkwork-clawrouter-cloud-gateway/src/invocation_http.rs
-services/sdkwork-clawrouter-cloud-gateway/src/invocation_router.rs
+services/sdkwork-clawrouter-edge-runtime/src/invocation_http.rs
+services/sdkwork-clawrouter-edge-runtime/src/invocation_router.rs
 ```
 
 删除或大幅替换：
@@ -646,8 +646,8 @@ services/sdkwork-clawrouter-router-service/src/api/openai_responses.rs
 services/sdkwork-clawrouter-router-service/src/api/openai_invocation.rs
 services/sdkwork-clawrouter-router-service/src/api/openai_runtime.rs
 services/sdkwork-clawrouter-router-service/src/api/openai_usage.rs
-services/sdkwork-clawrouter-cloud-gateway/src/passthrough.rs
-services/sdkwork-clawrouter-cloud-gateway/src/route_scoped_openai_passthrough.rs
+services/sdkwork-clawrouter-edge-runtime/src/passthrough.rs
+services/sdkwork-clawrouter-edge-runtime/src/route_scoped_openai_passthrough.rs
 ```
 
 这些文件可先替换为薄路由入口，再逐步删除旧私有函数。最终不保留旧编排。

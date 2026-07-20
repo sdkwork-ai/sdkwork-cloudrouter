@@ -144,7 +144,7 @@ class MessagingDeliveryStandardTest(unittest.TestCase):
     def test_product_app_runtime_does_not_wire_local_verification_delivery(self) -> None:
         app_api_path = ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
         iam_embedded_path = (
-            ROOT / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "iam_embedded.rs"
+            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "iam_embedded.rs"
         )
         app_api_source = app_api_path.read_text(encoding="utf-8")
         iam_embedded_source = iam_embedded_path.read_text(encoding="utf-8")

@@ -9,7 +9,7 @@ Specs: APP_RUNTIME_TOPOLOGY_SPEC.md, APPLICATION_GATEWAY_SPEC.md, ARCHITECTURE_D
 ## Context
 
 Claw Router exposes OpenAI-compatible and provider-native traffic through the
-application-owned `sdkwork-clawrouter-cloud-gateway`. The shared
+application-owned `sdkwork-clawrouter-edge-runtime`. The shared
 `sdkwork-api-cloud-gateway` remains the platform dependency gateway and cannot
 replace Claw Router's provider routing, streaming, billing, and settlement
 pipeline.
@@ -23,7 +23,7 @@ starting local API or gateway processes.
 Use the `dedicated-application` cloud ingress strategy.
 
 - `sdkwork-api-cloud-gateway` owns the platform gateway surface.
-- `sdkwork-clawrouter-cloud-gateway` owns the Claw Router application ingress.
+- `sdkwork-clawrouter-edge-runtime` owns the Claw Router application ingress.
 - Cloud development uses `https://clawrouter-test.sdkwork.com` for application,
   open, backend, and browser-facing Claw Router URLs.
 - Cloud production continues to use `https://clawrouter.sdkwork.com` for the

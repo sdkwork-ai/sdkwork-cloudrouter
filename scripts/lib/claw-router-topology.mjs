@@ -15,7 +15,6 @@ const __dirname = path.dirname(__filename);
 
 export const REPO_ROOT = path.resolve(__dirname, '..', '..');
 export const SPEC_PATH = path.join(REPO_ROOT, 'specs/topology.spec.json');
-export const API_GATEWAY_REPO = path.resolve(REPO_ROOT, '..', 'sdkwork-api-cloud-gateway');
 export const IAM_REPO_ROOT = path.resolve(REPO_ROOT, '..', 'sdkwork-iam');
 
 export const IAM_APPLICATION_BOOTSTRAP_ENV = {
@@ -37,9 +36,7 @@ const runtime = createTopologyRuntime(spec, REPO_ROOT);
 
 export const DEFAULT_DEV_PROFILE_ID = runtime.defaults.developmentProfileId;
 export const DEFAULT_PRODUCTION_PROFILE_ID = runtime.defaults.productionProfileId;
-export const PLATFORM_CONFIG_BUNDLE_PROFILE = 'platform-config-bundle';
 export const GATEWAY_PACKAGE_TARGETS = runtime.listPackageTargets();
-export const CLAW_ROUTER_CLOUD_GATEWAY_CONFIGS = spec.packaging?.cloudConfigFiles ?? [];
 
 export function listGatewayPackageTargets(profile) {
   return runtime.listPackageTargetsByProfile(profile);

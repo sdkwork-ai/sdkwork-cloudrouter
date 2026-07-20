@@ -1,8 +1,6 @@
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
-use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;

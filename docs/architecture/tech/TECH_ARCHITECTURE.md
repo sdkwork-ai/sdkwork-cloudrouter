@@ -184,9 +184,9 @@ SDK clients in TypeScript).
 | Module | Owner crate | Responsibility | Cannot import |
 | --- | --- | --- | --- |
 | HTTP entry + auth | `crates/sdkwork-claw-http` | TLS termination, app session token, API key auth, contract fallback | router-service internals |
-| Gateway assembly | `crates/sdkwork-clawrouter-cloud-gateway` | Edge server, invocation router wiring, OpenAI passthrough path table, provider-native passthrough | sqlx stores directly |
+| Gateway assembly | `crates/sdkwork-clawrouter-edge-runtime` | Edge server, invocation router wiring, OpenAI passthrough path table, provider-native passthrough | sqlx stores directly |
 | Service layer | `services/sdkwork-clawrouter-router-service` | 13-interceptor invocation pipeline, OpenAI handlers, billing, pricing, settlement, payment adapters | axum router assembly |
-| App API | `services/sdkwork-clawrouter-standalone-gateway` + `crates/sdkwork-clawrouter-standalone-gateway-lib` | Consumer portal HTTP handlers (`/app/v3/api/*`) + edge env resolution | gateway internals |
+| Application API ingress | `crates/sdkwork-api-clawrouter-standalone-gateway` -> `crates/sdkwork-api-clawrouter-assembly` | Canonical standalone listener and complete app/backend/open API composition | listener lifecycle only |
 | Backend API | `services/sdkwork-clawrouter-admin-gateway` | Operator console HTTP handlers (`/backend/v3/api/*`) | gateway internals |
 | Provider adapters | `crates/provider-adapters/*` | Per-provider HTTP + signing + credential loading | router-service |
 | Config | `crates/sdkwork-claw-config` | Runtime TOML + env + secret file resolution; database/redis/deployment/runtime/app_session/api_key sections | any service crate |
@@ -224,8 +224,8 @@ sdkwork-clawrouter/
 ├── crates/                    # Rust shared crates
 │   ├── provider-adapters/     # per-provider HTTP+signing
 │   ├── sdkwork-claw-{config,http,core,security,contract,...}
-│   ├── sdkwork-clawrouter-cloud-gateway/   # gateway assembly
-│   ├── sdkwork-clawrouter-standalone-gateway-lib/  # standalone edge + app API wiring
+│   ├── sdkwork-clawrouter-edge-runtime/   # gateway assembly
+│   ├── sdkwork-api-clawrouter-standalone-gateway/  # canonical standalone listener
 │   └── sdkwork-routes-{llm,iaas,paas}-open-api/  # route manifests
 ├── services/                 # runnable Rust binaries
 │   ├── sdkwork-clawrouter-router-service/  # core service layer

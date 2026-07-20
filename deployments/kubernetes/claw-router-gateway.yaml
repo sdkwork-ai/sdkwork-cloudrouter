@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sdkwork-clawrouter-cloud-gateway
+  name: sdkwork-api-clawrouter-standalone-gateway
   labels:
     app: sdkwork-clawrouter
     component: gateway
@@ -35,7 +35,7 @@ spec:
       containers:
         - name: gateway
           image: registry.sdkwork.com/apps/sdkwork-clawrouter:0.3.0
-          command: ["sdkwork-clawrouter-cloud-gateway"]
+          command: ["sdkwork-api-clawrouter-standalone-gateway"]
           ports:
             - containerPort: 18080
               name: http
@@ -108,7 +108,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sdkwork-clawrouter-cloud-gateway
+  name: sdkwork-api-clawrouter-standalone-gateway
 spec:
   selector:
     app: sdkwork-clawrouter
@@ -121,7 +121,7 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: sdkwork-clawrouter-cloud-gateway
+  name: sdkwork-api-clawrouter-standalone-gateway
 spec:
   minAvailable: 1
   selector:
@@ -132,12 +132,12 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: sdkwork-clawrouter-cloud-gateway
+  name: sdkwork-api-clawrouter-standalone-gateway
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: sdkwork-clawrouter-cloud-gateway
+    name: sdkwork-api-clawrouter-standalone-gateway
   minReplicas: 2
   maxReplicas: 12
   metrics:

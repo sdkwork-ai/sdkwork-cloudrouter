@@ -6,3 +6,7 @@ license-file.workspace = true
 
 [lib]
 path = "src/lib.rs"
+
+[dependencies]
+axum.workspace = true
+sdkwork-claw-http.workspace = true

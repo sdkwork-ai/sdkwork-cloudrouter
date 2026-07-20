@@ -4,9 +4,14 @@ use sdkwork_web_bootstrap::{service_router, ServiceRouterConfig};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sdkwork_web_bootstrap::init_tracing_from_env();
+    let runtime_toml = sdkwork_claw_config::RuntimeTomlConfig::from_env_config_file()
+        .map_err(std::io::Error::other)?;
     let bind_address = std::env::var("SDKWORK_CLAWROUTER_APPLICATION_PUBLIC_INGRESS_BIND")
-        .unwrap_or_else(|_| "127.0.0.1:8080".to_owned());
-    let assembly = api_assembly::assemble_api_router();
+        .ok()
+        .or_else(|| std::env::var("SDKWORK_CLAW_SERVER_BIND").ok())
+        .or_else(|| runtime_toml.and_then(|config| config.server.bind))
+        .unwrap_or_else(|| "127.0.0.1:3900".to_owned());
+    let assembly = api_assembly::assemble_api_router().await?;
     let app = service_router(
         assembly.router,
         ServiceRouterConfig::default().with_always_ready(),

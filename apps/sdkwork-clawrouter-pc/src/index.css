@@ -25,6 +25,8 @@
 @source "../../../../sdkwork-music/apps/sdkwork-music-pc/packages/*/src";
 @source "../../../../sdkwork-audio/apps/sdkwork-audio-pc/packages/*/src";
 @source "../../../../sdkwork-models/apps/sdkwork-models-pc/packages/*/src";
+@source "../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/*/src";
+@source "../../../../sdkwork-agents/apps/sdkwork-agents-pc/src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -252,15 +254,15 @@
   background: transparent;
   font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   line-height: 1rem;
   text-transform: uppercase;
-  color: rgb(148 163 184);
+  color: rgb(100 116 139);
   transition: color var(--sdkwork-sidebar-transition);
 }
 
 .dark .sdkwork-portal-sidebar-group-label {
-  color: rgb(100 116 139);
+  color: rgb(148 163 184);
 }
 
 .sdkwork-portal-sidebar-group-label:hover {

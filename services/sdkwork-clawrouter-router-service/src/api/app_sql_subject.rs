@@ -5,9 +5,8 @@
 
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use axum::http::{Extensions, HeaderMap, StatusCode};
+use axum::http::{Extensions, HeaderMap};
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use sdkwork_claw_http::TrustedRequestSubject;
 use sdkwork_iam_bootstrap::{
     is_legacy_opaque_iam_subject_id, parse_iam_sql_organization_id, parse_iam_sql_tenant_id,
@@ -19,7 +18,7 @@ use sdkwork_claw_http::TenantIsolationViolation;
 
 use sdkwork_clawrouter_app_providers_repository_sqlx::AppProvidersSubject;
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::problem_from_wire_code;
 use crate::api::subject::unauthorized_subject_response;
 use crate::ports::{
     AppChatSubject, AppNotificationSubject, AppRoutingStrategySubject, AppRoutingSubject,

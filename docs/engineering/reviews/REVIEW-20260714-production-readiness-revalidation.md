@@ -63,11 +63,11 @@ results retain their stated evidence boundaries:
 ```text
 cargo test -p sdkwork-claw-http --lib test_key_rotation
 cargo test -p sdkwork-clawrouter-router-service runtime_id::tests --lib
-cargo check -p sdkwork-clawrouter-cloud-gateway --lib
-cargo test -p sdkwork-clawrouter-cloud-gateway --lib invocation_dispatcher::tests
-cargo test -p sdkwork-clawrouter-cloud-gateway --lib runtime::tests::invocation_response_budget_rejects_zero_runtime_config -- --exact
-cargo test -p sdkwork-clawrouter-cloud-gateway passthrough::tests::provider_passthrough_runtime_enforces_the_injected_request_body_limit --lib -- --exact
-cargo test -p sdkwork-clawrouter-cloud-gateway runtime::tests::runtime_toml_body_limit_is_resolved_once_for_invocation_and_passthrough --lib -- --exact
+cargo check -p sdkwork-clawrouter-edge-runtime --lib
+cargo test -p sdkwork-clawrouter-edge-runtime --lib invocation_dispatcher::tests
+cargo test -p sdkwork-clawrouter-edge-runtime --lib runtime::tests::invocation_response_budget_rejects_zero_runtime_config -- --exact
+cargo test -p sdkwork-clawrouter-edge-runtime passthrough::tests::provider_passthrough_runtime_enforces_the_injected_request_body_limit --lib -- --exact
+cargo test -p sdkwork-clawrouter-edge-runtime runtime::tests::runtime_toml_body_limit_is_resolved_once_for_invocation_and_passthrough --lib -- --exact
 cargo test -p sdkwork-clawrouter-router-service --test sqlite_gateway_usage_recorder
 cargo test -p sdkwork-clawrouter-router-service infrastructure::gateway_accounting_retry_queue::tests --lib
 cargo test -p sdkwork-clawrouter-router-service --test invocation_pricing_settlement

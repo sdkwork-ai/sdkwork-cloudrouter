@@ -950,7 +950,7 @@ class SdkworkStandardAlignmentGuardian:
                 )
             )
 
-        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs"
+        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
         gateway_text = (
             gateway_runtime.read_text(encoding="utf-8") if gateway_runtime.exists() else ""
         )
@@ -1166,7 +1166,7 @@ class SdkworkStandardAlignmentGuardian:
 
     def _check_database_framework_integration(self) -> list[AlignmentCheck]:
         checks: list[AlignmentCheck] = []
-        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs"
+        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
         gateway_text = gateway_runtime.read_text(encoding="utf-8") if gateway_runtime.exists() else ""
         if "sdkwork_database_sqlx" in gateway_text:
             checks.append(
@@ -1235,7 +1235,7 @@ class SdkworkStandardAlignmentGuardian:
                     )
                 )
 
-        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs"
+        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
         gateway_text = gateway_runtime.read_text(encoding="utf-8") if gateway_runtime.exists() else ""
         if "connect_claw_sqlite_runtime" in gateway_text:
             checks.append(
@@ -2409,7 +2409,7 @@ class SdkworkStandardAlignmentGuardian:
             "services/sdkwork-clawrouter-router-service",
             "services/sdkwork-clawrouter-app-api-server",
             "services/sdkwork-clawrouter-admin-api-server",
-            "crates/sdkwork-clawrouter-cloud-gateway",
+            "crates/sdkwork-clawrouter-edge-runtime",
             "crates/sdkwork-clawrouter-standalone-gateway",
         )
         migration_manifest = self.root / "specs" / "naming-migration.manifest.json"

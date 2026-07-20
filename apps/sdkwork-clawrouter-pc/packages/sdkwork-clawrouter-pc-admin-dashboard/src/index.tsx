@@ -8,7 +8,6 @@ import {
   CircleAlert,
   Coins,
   Database,
-  DollarSign,
   ExternalLink,
   Fingerprint,
   Image,
@@ -16,6 +15,7 @@ import {
   Loader2,
   MessageSquare,
   Mic,
+  ReceiptText,
   RefreshCw,
   Users,
 } from 'lucide-react';
@@ -38,6 +38,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
   AdminDashboardService,
+  formatChargeAmount,
+  formatCompactAxisValue,
   type DashboardSummaryCard,
   type PieChartData,
   type RecentUsageTrace,
@@ -88,7 +90,7 @@ const SUMMARY_CARD_ICONS = [
   Image,
   CircleAlert,
   Coins,
-  DollarSign,
+  ReceiptText,
 ] as const;
 const SUMMARY_CARD_COLORS = [
   'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10',
@@ -300,19 +302,23 @@ export function DashboardAdmin() {
       ) : null}
 
       {/* Top Value Cards (Grid of 8) */}
-      <div className="grid grid-cols-1 gap-4 px-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 px-4 min-[360px]:grid-cols-2 sm:gap-4 lg:grid-cols-4" data-admin-dashboard-summary-grid>
         {summaryCards.map((card, index) => {
           const Icon = SUMMARY_CARD_ICONS[index] ?? Activity;
           const color = SUMMARY_CARD_COLORS[index] ?? 'text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/10';
           return (
-            <div key={card.label} className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-slate-300 dark:border-white/10 dark:bg-[#1a1a1a] dark:hover:border-white/20">
-              <div className={`mt-0.5 rounded-md p-2.5 ${color}`}>
+            <div
+              key={card.label}
+              className="flex min-w-0 items-start gap-2.5 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-slate-300 sm:gap-3 sm:p-4 dark:border-white/10 dark:bg-[#1a1a1a] dark:hover:border-white/20"
+              data-admin-dashboard-summary-card
+            >
+              <div className={`mt-0.5 shrink-0 rounded-md p-2 sm:p-2.5 ${color}`}>
                 <Icon className="w-5 h-5" />
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{card.label}</p>
+              <div className="min-w-0 w-full">
+                <p className="line-clamp-2 min-h-10 text-sm font-medium text-slate-500 sm:line-clamp-1 sm:min-h-0 dark:text-slate-400">{card.label}</p>
                 <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{card.value}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{card.detail}</p>
+                <p className="mt-1 line-clamp-2 min-h-8 text-xs text-slate-500 dark:text-slate-400">{card.detail}</p>
               </div>
             </div>
           );
@@ -320,7 +326,10 @@ export function DashboardAdmin() {
       </div>
 
       {/* Main Full-Width Chart Card with Integrated Filters */}
-      <div className="mx-4 flex min-h-[450px] shrink-0 flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
+      <div
+        className="mx-4 flex min-h-[450px] shrink-0 flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]"
+        data-admin-dashboard-trend-card
+      >
         <div className="mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex items-center gap-4">
             <h3 className="text-base font-bold text-slate-900 dark:text-white whitespace-nowrap">{t("admin.dashboard.index.text.yomhnm", "聚合指标大盘")}</h3>
@@ -387,11 +396,12 @@ export function DashboardAdmin() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#888" strokeOpacity={0.15} />
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} tickFormatter={(val: number) => trendMetric === 'tokens' ? `${val/1000}k` : String(val)} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} tickFormatter={formatCompactAxisValue} />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(150,150,150,0.2)', strokeWidth: 1 }} />
                 <Area
                   type="monotone"
                   dataKey={trendChartDataKey}
+                  isAnimationActive={false}
                   stroke={trendMetric === 'points' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'}
                   strokeWidth={3}
                   fillOpacity={1}
@@ -402,11 +412,12 @@ export function DashboardAdmin() {
               <BarChart data={trafficData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#888" strokeOpacity={0.15} />
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} tickFormatter={(val: number) => trendMetric === 'tokens' ? `${val/1000}k` : String(val)} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} tickFormatter={formatCompactAxisValue} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(150,150,150,0.1)' }} />
                 <Bar
                   dataKey={trendChartDataKey}
                   fill={trendMetric === 'points' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'}
+                  isAnimationActive={false}
                   radius={[4, 4, 0, 0]}
                   barSize={24}
                 />
@@ -611,7 +622,9 @@ export function DashboardAdmin() {
                        </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-emerald-600 dark:text-emerald-400">{item.cost}</td>
+                  <td className="px-4 py-3 font-mono text-emerald-600 dark:text-emerald-400">
+                    {formatChargeAmount(item.cost)}
+                  </td>
                   <td className="px-4 py-3 font-mono text-[11px] text-slate-500">{item.time}</td>
                   <td className="px-4 py-3">
                     <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded w-fit border ${isSuccess ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20'}`}>

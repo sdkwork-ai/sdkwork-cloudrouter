@@ -39,13 +39,32 @@
       "file": "DATABASE_FRAMEWORK_SPEC.md",
       "path": "../../../sdkwork-specs/DATABASE_FRAMEWORK_SPEC.md",
       "purpose": "Database lifecycle bootstrap ownership for embedded assemblies."
+    },
+    {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Authored source structure rules."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical assembly naming."
+    },
+    {
+      "file": "RUST_CODE_SPEC.md",
+      "path": "../../../sdkwork-specs/RUST_CODE_SPEC.md",
+      "purpose": "Rust composition boundaries."
     }
   ],
   "contracts": {
     "publicExports": [
       "."
     ],
-    "runtimeEntrypoints": [],
+    "providedPorts": [
+      { "name": "clawrouter-api-assembly", "export": "." }
+    ],
+    "requiredPorts": [],
+    "runtimeEntrypoints": ["src/lib.rs#assemble_api_router"],
     "routeManifest": "assembly-manifest.json",
     "sdkClients": [],
     "sdkDependencies": [],

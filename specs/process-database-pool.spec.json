@@ -40,33 +40,17 @@
       "temporaryDriverExceptions": []
     },
     {
-      "id": "sdkwork-clawrouter-cloud-gateway",
-      "entrypoint": "crates/sdkwork-clawrouter-cloud-gateway/src/main.rs",
-      "poolOwner": "crates/sdkwork-clawrouter-cloud-gateway/src/main.rs",
+      "id": "sdkwork-clawrouter-edge-runtime",
+      "entrypoint": "crates/sdkwork-clawrouter-edge-runtime/src/main.rs",
+      "poolOwner": "crates/sdkwork-clawrouter-edge-runtime/src/main.rs",
       "driver": "sqlx::PgPool",
       "poolCount": 1,
       "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
       "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
       "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["crates/sdkwork-clawrouter-cloud-gateway/src"],
+      "productionSourceRoots": ["crates/sdkwork-clawrouter-edge-runtime/src"],
       "consumers": [
-        {"module": "clawrouter router runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs"]},
-        {"module": "sdkwork-iam", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-clawrouter-cloud-gateway/src/iam_embedded.rs"]}
-      ],
-      "temporaryDriverExceptions": []
-    },
-    {
-      "id": "sdkwork-clawrouter-all-in-one-edge",
-      "entrypoint": "crates/sdkwork-clawrouter-standalone-gateway-lib/src/main.rs",
-      "poolOwner": "crates/sdkwork-clawrouter-standalone-gateway-lib/src/main.rs",
-      "driver": "sqlx::PgPool",
-      "poolCount": 1,
-      "databaseUrlEnv": "SDKWORK_CLAW_DATABASE_URL or SDKWORK_CLAW_DATABASE_*",
-      "schemaEnv": "SDKWORK_CLAW_DATABASE_SCHEMA",
-      "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
-      "productionSourceRoots": ["crates/sdkwork-clawrouter-standalone-gateway-lib/src"],
-      "consumers": [
-        {"module": "cloud gateway all-in-one runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs"]}
+        {"module": "clawrouter router runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs"]}
       ],
       "temporaryDriverExceptions": []
     },
@@ -89,7 +73,7 @@
   ],
   "verification": [
     "node ../sdkwork-specs/tools/check-process-shared-database-pool.mjs --root .",
-    "cargo check -p sdkwork-clawrouter-cloud-gateway",
+    "cargo check -p sdkwork-clawrouter-edge-runtime",
     "cargo check -p sdkwork-clawrouter-standalone-gateway"
   ]
 }

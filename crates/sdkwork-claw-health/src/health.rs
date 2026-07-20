@@ -72,10 +72,10 @@ mod tests {
     #[test]
     fn health_response_exposes_service_and_deployment_mode() {
         let health =
-            HealthResponse::new("sdkwork-clawrouter-cloud-gateway", DeploymentMode::Desktop);
+            HealthResponse::new("sdkwork-clawrouter-edge-runtime", DeploymentMode::Desktop);
 
         assert_eq!("ok", health.status);
-        assert_eq!("sdkwork-clawrouter-cloud-gateway", health.service);
+        assert_eq!("sdkwork-clawrouter-edge-runtime", health.service);
         assert_eq!("desktop", health.deployment_mode);
     }
 

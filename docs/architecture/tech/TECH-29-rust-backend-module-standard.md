@@ -15,7 +15,7 @@ The runtime is split into small Rust packages with explicit boundaries:
 - `sdkwork-claw-security`: redaction, sensitive headers, auth-safe logging helpers, and future permission primitives.
 - `sdkwork-claw-http`: common Axum router bootstrap, API Key auth input parsing, standard health/readiness routes, request id, timeout, CORS, security headers, and HTTP boundary helpers.
 - `sdkwork-claw-observability`: tracing initialization and telemetry bootstrap.
-- `sdkwork-clawrouter-cloud-gateway`: `/v1` OpenAI-compatible gateway and streaming provider relay.
+- `sdkwork-clawrouter-edge-runtime`: `/v1` OpenAI-compatible gateway and streaming provider relay.
 - `sdkwork-clawrouter-standalone-gateway`: `/app/v3/api` app/console/public API surface.
 - `sdkwork-clawrouter-admin-gateway`: `/backend/v3/api` admin/backend API surface.
 - `sdkwork-clawrouter-router-service`: product composition and deployable runtime assembly.
@@ -84,7 +84,7 @@ The product query layer exposes `ModelCatalogQueryService` on top of the `Pricin
 
 `AdminModelRoute` owns the `/backend/v3/api/model/list` HTTP adapter shape. It must call `ModelCatalogQueryService`, return the standard SDKWork API envelope with `code=2000` on success, and keep HTTP handlers free of pricing math, provider selection rules, SQL, or fake in-memory production data.
 
-`OpenAIModelsRoute` owns the `/v1/models` runtime adapter shape. It must be mounted through the `sdkwork-clawrouter-cloud-gateway` runtime module, authenticate API Key credentials through `ApiKeySecurityConfig` plus `HmacSha256ApiKeySecretHasher`, load catalog data from a real `PricingCatalog` snapshot, and return an OpenAI-compatible model list envelope rather than the SDKWork API envelope. `GatewayRouterError` is the gateway bootstrap error boundary for database loader failures and missing API key pepper configuration; errors must not expose database URLs or API key secrets.
+`OpenAIModelsRoute` owns the `/v1/models` runtime adapter shape. It must be mounted through the `sdkwork-clawrouter-edge-runtime` runtime module, authenticate API Key credentials through `ApiKeySecurityConfig` plus `HmacSha256ApiKeySecretHasher`, load catalog data from a real `PricingCatalog` snapshot, and return an OpenAI-compatible model list envelope rather than the SDKWork API envelope. `GatewayRouterError` is the gateway bootstrap error boundary for database loader failures and missing API key pepper configuration; errors must not expose database URLs or API key secrets.
 
 `OpenAIChatCompletionsRoute` owns the `/v1/chat/completions` runtime boundary. It must parse the OpenAI-compatible request JSON, authenticate API Key credentials, validate model routing and input-token pricing through `PricingCatalog`, select the configured provider route, and verify `LlmInputToken` pricing before provider execution. Non-stream requests delegate through `ChatCompletionRelay`; stream requests delegate through `ChatCompletionStreamRelay` and return a `ChatCompletionStreamRelayResponse` with upstream `text/event-stream`/SSE body pass-through. When the matching relay is absent, the honest responses are `provider_relay_not_configured` for non-stream requests and `streaming_relay_not_configured` for stream requests. It must not return fake chat choices, fake usage, mock upstream provider data, buffered fake stream chunks, or the SDKWork app/backend API envelope.
 

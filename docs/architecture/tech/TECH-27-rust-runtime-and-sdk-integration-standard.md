@@ -187,7 +187,7 @@ The Rust workspace is organized around small, high-cohesion crates:
 - `sdkwork-claw-config`: deployment mode and runtime configuration
 - `sdkwork-claw-health`: shared app state, error and health model
 - `sdkwork-claw-observability`: tracing/logging setup
-- `sdkwork-clawrouter-cloud-gateway`: `/v1/**` gateway runtime and health
+- `sdkwork-clawrouter-edge-runtime`: `/v1/**` gateway runtime and health
 - `sdkwork-clawrouter-admin-gateway`: `/backend/v3/api/**` admin surface
 - `sdkwork-clawrouter-standalone-gateway`: `/app/v3/api/**` app/console/public surface
 - `sdkwork-clawrouter-router-service`: product composition entrypoint
@@ -206,7 +206,7 @@ Model list APIs must consume `ModelCatalogQueryService` rather than reconstructi
 
 The backend adapter for `/backend/v3/api/model/list` is named `AdminModelRoute`. It returns the SDKWork backend JSON envelope and maps product application DTOs to SDK-facing JSON only; production wiring must use a real `PricingCatalog` implementation, not the in-memory test catalog.
 
-The gateway adapter for `/v1/models` is named `OpenAIModelsRoute`. It is mounted by the `sdkwork-clawrouter-cloud-gateway` runtime module, authenticates through `ApiKeySecurityConfig` and `HmacSha256ApiKeySecretHasher`, uses the same database-backed `PricingCatalog` snapshot as admin product catalog views, and returns an OpenAI-compatible `{"object":"list","data":[...]}` envelope. Gateway startup and database loader failures are represented by `GatewayRouterError`; this boundary must redact database URLs, API key secrets, and pepper material.
+The gateway adapter for `/v1/models` is named `OpenAIModelsRoute`. It is mounted by the `sdkwork-clawrouter-edge-runtime` runtime module, authenticates through `ApiKeySecurityConfig` and `HmacSha256ApiKeySecretHasher`, uses the same database-backed `PricingCatalog` snapshot as admin product catalog views, and returns an OpenAI-compatible `{"object":"list","data":[...]}` envelope. Gateway startup and database loader failures are represented by `GatewayRouterError`; this boundary must redact database URLs, API key secrets, and pepper material.
 
 The gateway boundary for `/v1/chat/completions` is named `OpenAIChatCompletionsRoute`. It performs the production-safe front half of the request before provider execution: parse request JSON, authenticate the API Key, validate model availability, select the configured provider route, and verify `LlmInputToken` pricing for the API Key group. Non-stream requests enter the `ChatCompletionRelay` product port through `ChatCompletionRelayRequest`; stream requests enter `ChatCompletionStreamRelay` and return `ChatCompletionStreamRelayResponse` with upstream `text/event-stream`/SSE body pass-through. If the matching relay is absent, the route returns the OpenAI-compatible `provider_relay_not_configured` or `streaming_relay_not_configured` 501 error. Fake assistant choices, fake usage, mock provider payloads, buffered fake chunks, or wrapped app/backend JSON envelopes are forbidden.
 

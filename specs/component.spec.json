@@ -116,7 +116,7 @@
     ],
     "runtimeEntrypoints": [
       "crates/sdkwork-clawrouter-standalone-gateway/src/main.rs",
-      "crates/sdkwork-clawrouter-cloud-gateway/src/main.rs",
+      "crates/sdkwork-clawrouter-edge-runtime/src/main.rs",
       "apps/sdkwork-clawrouter-pc/package.json#scripts"
     ],
     "routeManifest": null,

@@ -70,7 +70,7 @@ spec:
             - name: SDKWORK_CLAW_SERVER_BIND
               value: 0.0.0.0:3900
             - name: SDKWORK_CLAW_EDGE_GATEWAY_BASE_URL
-              value: http://sdkwork-clawrouter-cloud-gateway:18080
+              value: http://sdkwork-clawrouter-edge-runtime:18080
             - name: SDKWORK_CLAW_EDGE_BACKEND_API_BASE_URL
               value: http://sdkwork-clawrouter-admin-api:18081
             - name: SDKWORK_CLAW_EDGE_APP_API_BASE_URL

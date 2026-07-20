@@ -42,7 +42,7 @@ crates/sdkwork-claw-contract
 crates/sdkwork-claw-config
 crates/sdkwork-claw-health
 crates/sdkwork-claw-observability
-crates/sdkwork-clawrouter-cloud-gateway
+crates/sdkwork-clawrouter-edge-runtime
 services/sdkwork-clawrouter-standalone-gateway
 services/sdkwork-clawrouter-admin-gateway
 services/sdkwork-clawrouter-router-service
@@ -52,7 +52,7 @@ services/sdkwork-clawrouter-router-service
 
 | Service | Runtime | 端口配置 | 职责 |
 | --- | --- | --- | --- |
-| `sdkwork-clawrouter-cloud-gateway` | Rust + axum + tokio | `SDKWORK_CLAW_GATEWAY_BIND` | `/v1/**`、OpenAI-compatible、provider relay、routing hot path |
+| `sdkwork-clawrouter-edge-runtime` | Rust + axum + tokio | `SDKWORK_CLAW_GATEWAY_BIND` | `/v1/**`、OpenAI-compatible、provider relay、routing hot path |
 | `sdkwork-clawrouter-standalone-gateway` | Rust + axum + tokio | `SDKWORK_CLAW_APP_API_BIND` | `/app/v3/api/**`、console/public app API |
 | `sdkwork-clawrouter-admin-gateway` | Rust + axum + tokio | `SDKWORK_CLAW_ADMIN_API_BIND` | `/backend/v3/api/**`、admin/control API |
 | `sdkwork-clawrouter-router-service` | Rust composition | profile config | desktop/server/docker/kubernetes 组合入口 |

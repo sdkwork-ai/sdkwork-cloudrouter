@@ -50,6 +50,19 @@ test('resolver finds transitive SDK packages from workspace dependency node_modu
   assert.match(resolved ?? '', /[\\/]src[\\/]index\.ts$/u);
 });
 
+test('resolver follows pnpm workspace junctions for transitive runtime dependencies', () => {
+  const importer = path.resolve(
+    portalRoot,
+    '../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-canvas/node_modules/jspdf/dist/jspdf.es.min.js',
+  );
+  const resolved = resolvePortalPackageModule('@babel/runtime/helpers/typeof', portalRoot, importer);
+
+  assert.match(
+    (resolved ?? '').replaceAll('\\', '/'),
+    /\/@babel\/runtime\/helpers\/(?:esm\/)?typeof\.js$/u,
+  );
+});
+
 test('resolver maps retired clawrouter commons imports to clawroutes commons', () => {
   const importer = path.join(portalRoot, 'node_modules/@sdkwork/models-pc-admin-catalog/src/modelService.ts');
   const resolved = resolvePortalPackageModule('@sdkwork/clawrouter-pc-commons/runtime', portalRoot, importer);

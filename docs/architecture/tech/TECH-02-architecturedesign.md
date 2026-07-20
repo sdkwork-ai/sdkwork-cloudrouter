@@ -27,7 +27,7 @@ apps/sdkwork-clawrouter-pc
   -> /backend/v3/api/**  sdkwork-clawrouter-admin-gateway
 
 OpenAI-compatible SDK / curl / third-party clients
-  -> /v1/**              sdkwork-clawrouter-cloud-gateway
+  -> /v1/**              sdkwork-clawrouter-edge-runtime
 
 Rust runtime services
   -> sdkwork-claw-health
@@ -50,7 +50,7 @@ State
 
 | Plane | Rust 服务/模块 | 职责 | 公共路径 |
 | --- | --- | --- | --- |
-| Gateway Plane | `sdkwork-clawrouter-cloud-gateway` | OpenAI-compatible 请求、streaming、provider relay、routing、quota、usage finalize | `/v1/**` |
+| Gateway Plane | `sdkwork-clawrouter-edge-runtime` | OpenAI-compatible 请求、streaming、provider relay、routing、quota、usage finalize | `/v1/**` |
 | App Plane | `sdkwork-clawrouter-standalone-gateway` | console/public 用户自助 API，用户上下文和资源归属校验 | `/app/v3/api/**` |
 | Admin Plane | `sdkwork-clawrouter-admin-gateway` | admin 控制台 API，后台 RBAC/ABAC、审计和配置治理 | `/backend/v3/api/**` |
 | Product Plane | `sdkwork-clawrouter-router-service` | 本地桌面/服务端组合入口、静态 portal 装配、部署 profile glue | internal |

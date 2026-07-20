@@ -1,8 +1,7 @@
-use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use std::sync::Arc;
 
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post, put};
 use axum::{Json, Router};
@@ -17,7 +16,7 @@ use crate::api::response::{
 use crate::domain::DomainError;
 use crate::ports::{
     AdminMessagingCollection, AdminMessagingCommandFuture, AdminMessagingRouteSimulationCommand,
-    AdminMessagingStore, AdminMessagingSubject, AdminMessagingTemplateSendCommand,
+    AdminMessagingStore, AdminMessagingTemplateSendCommand,
     AdminMessagingTestSendCommand, CreateMessagingProviderAccountCommand,
     CreateMessagingRouteRuleCommand, CreateMessagingSenderIdentityCommand,
     CreateMessagingSuppressionCommand, CreateMessagingTemplateCommand,

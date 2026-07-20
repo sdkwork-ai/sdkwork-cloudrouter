@@ -18,12 +18,12 @@ class ConsoleUserBackendRuntimeStandardTest(unittest.TestCase):
         iam_embedded = (
             ROOT
             / "crates"
-            / "sdkwork-clawrouter-cloud-gateway"
+            / "sdkwork-clawrouter-edge-runtime"
             / "src"
             / "iam_embedded.rs"
         ).read_text(encoding="utf-8")
         runtime = (
-            ROOT / "crates" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs"
+            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
         ).read_text(encoding="utf-8")
 
         self.assertNotIn("mod app_user_profile;", product_api_mod)

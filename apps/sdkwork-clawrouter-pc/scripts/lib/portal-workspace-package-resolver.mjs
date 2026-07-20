@@ -190,15 +190,8 @@ function collectPortalModuleSearchRoots(configDir, parentUrl) {
     roots.push(normalized);
   }
 
-  appendRoot(configDir);
-
-  if (parentUrl) {
-    let currentDir = parentUrl.startsWith('file:')
-      ? path.dirname(new URL(parentUrl).pathname)
-      : path.dirname(parentUrl);
-    if (process.platform === 'win32' && currentDir.startsWith('/')) {
-      currentDir = currentDir.slice(1);
-    }
+  function appendAncestorRoots(startDir) {
+    let currentDir = startDir;
     while (true) {
       appendRoot(currentDir);
       const parentDir = path.dirname(currentDir);
@@ -206,6 +199,21 @@ function collectPortalModuleSearchRoots(configDir, parentUrl) {
         break;
       }
       currentDir = parentDir;
+    }
+  }
+
+  appendRoot(configDir);
+
+  if (parentUrl) {
+    let importerDir = parentUrl.startsWith('file:')
+      ? path.dirname(new URL(parentUrl).pathname)
+      : path.dirname(parentUrl);
+    if (process.platform === 'win32' && importerDir.startsWith('/')) {
+      importerDir = importerDir.slice(1);
+    }
+    appendAncestorRoots(importerDir);
+    if (fs.existsSync(importerDir)) {
+      appendAncestorRoots(fs.realpathSync.native(importerDir));
     }
   }
 
@@ -220,26 +228,30 @@ export function readPackageImportEntry(exportsField, subpath = '.') {
   const rootExport = Object.prototype.hasOwnProperty.call(exportsField, subpath)
     ? exportsField[subpath]
     : exportsField;
-  if (typeof rootExport === 'string') {
-    return rootExport;
+  return readConditionalExportEntry(rootExport);
+}
+
+function readConditionalExportEntry(entry) {
+  if (typeof entry === 'string') {
+    return entry;
   }
-  if (!rootExport || typeof rootExport !== 'object') {
+  if (Array.isArray(entry)) {
+    for (const candidate of entry) {
+      const resolved = readConditionalExportEntry(candidate);
+      if (resolved) {
+        return resolved;
+      }
+    }
     return undefined;
   }
-
-  const importExport = rootExport.import;
-  if (typeof importExport === 'string') {
-    return importExport;
+  if (!entry || typeof entry !== 'object') {
+    return undefined;
   }
-  if (importExport && typeof importExport === 'object') {
-    const defaultExport = importExport.default;
-    if (typeof defaultExport === 'string') {
-      return defaultExport;
+  for (const condition of ['import', 'default', 'node']) {
+    const resolved = readConditionalExportEntry(entry[condition]);
+    if (resolved) {
+      return resolved;
     }
-  }
-  const rootDefaultExport = rootExport.default;
-  if (typeof rootDefaultExport === 'string') {
-    return rootDefaultExport;
   }
   return undefined;
 }

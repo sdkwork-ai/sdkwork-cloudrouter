@@ -418,6 +418,57 @@
           "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
           "tokenManager": "claw-router-global"
         }
+      },
+      {
+        "sdkFamily": "sdkwork-agents-app-sdk",
+        "packageName": "@sdkwork/agents-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkAgentAppSdkClient",
+        "getter": "getSdkworkAgentAppSdkClient",
+        "runtimeIntegration": {
+          "mode": "dependency-app-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_AGENT_APP_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-memory-app-sdk",
+        "packageName": "@sdkwork/memory-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkMemoryAppSdkClient",
+        "getter": "getSdkworkMemoryAppSdkClient",
+        "runtimeIntegration": {
+          "mode": "dependency-app-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_MEMORY_APP_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
+      },
+      {
+        "sdkFamily": "sdkwork-prompts-app-sdk",
+        "packageName": "@sdkwork/prompts-app-sdk",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "sourceExport": "./sdk-clients",
+        "factory": "createSdkworkPromptsAppSdkClient",
+        "getter": "getSdkworkPromptsAppSdkClient",
+        "runtimeIntegration": {
+          "mode": "dependency-app-api",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_PROMPTS_APP_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
+          "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+          "tokenManager": "claw-router-global"
+        }
       }
     ],
     "events": [],

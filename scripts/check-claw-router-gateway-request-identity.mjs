@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
-const GATEWAY_ROOT = path.join(WORKSPACE_ROOT, 'crates', 'sdkwork-clawrouter-cloud-gateway');
+const GATEWAY_ROOT = path.join(WORKSPACE_ROOT, 'crates', 'sdkwork-clawrouter-edge-runtime');
 
 const REQUIRED_SOURCE_MARKERS = Object.freeze([
   {
@@ -57,7 +57,7 @@ function assertSourceMarkers() {
 
 function runGatewayRequestIdentityTests() {
   execSync(
-    'cargo test -p sdkwork-clawrouter-cloud-gateway request_identity',
+    'cargo test -p sdkwork-clawrouter-edge-runtime request_identity',
     {
       cwd: WORKSPACE_ROOT,
       stdio: 'inherit',
@@ -65,15 +65,7 @@ function runGatewayRequestIdentityTests() {
     },
   );
   execSync(
-    'cargo test -p sdkwork-clawrouter-standalone-gateway-lib edge_env',
-    {
-      cwd: WORKSPACE_ROOT,
-      stdio: 'inherit',
-      env: process.env,
-    },
-  );
-  execSync(
-    'cargo test -p sdkwork-clawrouter-cloud-gateway --test invocation_router',
+    'cargo test -p sdkwork-clawrouter-edge-runtime --test invocation_router',
     {
       cwd: WORKSPACE_ROOT,
       stdio: 'inherit',

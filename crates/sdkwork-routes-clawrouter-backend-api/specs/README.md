@@ -17,7 +17,7 @@ Externally served routers must be finalized exactly once through `web_bootstrap`
 | `maybe_wrap_router_with_web_framework_and_iam_pool` | All-in-one gateway — shared Postgres pool + `database_config` |
 | `finalize_served_router` | Thin alias for single wrap |
 
-IAM backend-api (`/backend/v3/api/iam/*`) is **not** merged on the product admin router. All-in-one runtime mounts IAM through `sdkwork-clawrouter-cloud-gateway/src/iam_embedded.rs` and `sdkwork-api-cloud-gateway` embedded dependency surfaces.
+IAM backend-api remains owned by `sdkwork-api-iam-assembly`. A host that selects both applications composes that dependency assembly alongside `sdkwork-api-clawrouter-assembly`; this product route crate does not copy IAM handlers.
 
 `ClawRouterBackendDomainInjector` projects `IamAppContext` from canonical `WebRequestContext`.
 

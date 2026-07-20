@@ -76,7 +76,7 @@ export interface InstallationStatusResponse {
   changed: boolean;
 }
 
-export interface DashboardAnalyticsSummary {
+interface DashboardAnalyticsSummary {
   totalUsers: number;
   activeUsers: number;
   activeModels: number;
@@ -95,6 +95,11 @@ interface DashboardAnalyticsSnapshot {
   summary: DashboardAnalyticsSummary;
   traffic: TrafficData[];
 }
+
+const COMPACT_AXIS_NUMBER_FORMATTER = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
 
 const INITIAL_DAILY_TRAFFIC_DATA: TrafficData[] = [
   { time: 'D-6', tokens: 0, requests: 0, points: 0, chartTokens: 0, chartRequests: 0, chartPoints: 0 },
@@ -402,16 +407,15 @@ export function createDashboardSummaryCards(snapshot: {
     {
       label: t('admin.dashboard.summary.activeUsers.label', '活跃用户'),
       value: formatInteger(snapshot.activeUsers),
-      detail: t('admin.dashboard.summary.activeUsers.detail', '{{count}} 位产生用量的用户', {
-        count: formatInteger(summary.activeUsers),
+      detail: t('admin.dashboard.summary.activeUsers.detail', '{{active}} / {{total}} 位用户活跃', {
+        active: formatInteger(summary.activeUsers),
+        total: formatInteger(summary.totalUsers),
       }),
     },
     {
       label: t('admin.dashboard.summary.activeModels.label', '活跃模型'),
       value: formatInteger(summary.activeModels),
-      detail: t('admin.dashboard.summary.activeModels.detail', '来自 {{count}} 位统计用户', {
-        count: formatInteger(summary.totalUsers),
-      }),
+      detail: t('admin.dashboard.summary.activeModels.detail', '已产生调用流量'),
     },
     {
       label: t('admin.dashboard.summary.totalRequests.label', '总请求'),
@@ -449,8 +453,8 @@ export function createDashboardSummaryCards(snapshot: {
     },
     {
       label: t('admin.dashboard.summary.upstreamCost.label', '上游成本'),
-      value: formatMoney(summary.upstreamCost),
-      detail: t('admin.dashboard.summary.upstreamCost.detail', '供应商侧实际成本'),
+      value: formatDecimal(summary.upstreamCost),
+      detail: t('admin.dashboard.summary.upstreamCost.detail', '币种不可用'),
     },
   ];
 }
@@ -463,8 +467,20 @@ function formatInteger(value: number): string {
   return Math.round(value).toLocaleString('en-US');
 }
 
-function formatMoney(value: number): string {
-  return `$${value.toFixed(2)}`;
+export function formatChargeAmount(value: string): string {
+  const decimalSeparatorIndex = value.indexOf('.');
+  if (decimalSeparatorIndex < 0) {
+    return value;
+  }
+
+  const integerPart = value.slice(0, decimalSeparatorIndex);
+  const fractionPart = value.slice(decimalSeparatorIndex + 1);
+  const trimmedFraction = fractionPart.replace(/0+$/, '');
+  return trimmedFraction.length > 0 ? `${integerPart}.${trimmedFraction}` : integerPart;
+}
+
+export function formatCompactAxisValue(value: number): string {
+  return COMPACT_AXIS_NUMBER_FORMATTER.format(value).replace(/K$/u, 'k');
 }
 
 function formatDecimal(value: number): string {

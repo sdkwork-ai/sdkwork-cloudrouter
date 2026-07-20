@@ -19,7 +19,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                     "crates/sdkwork-claw-security",
                     "crates/sdkwork-claw-http",
                     "crates/sdkwork-claw-observability",
-                    "crates/sdkwork-clawrouter-cloud-gateway",
+                    "crates/sdkwork-clawrouter-edge-runtime",
                     "services/sdkwork-clawrouter-admin-api-server",
                     "services/sdkwork-clawrouter-app-api-server",
                     "services/sdkwork-clawrouter-router-service",
@@ -56,7 +56,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             "crates/sdkwork-claw-security",
             "crates/sdkwork-claw-http",
             "crates/sdkwork-claw-observability",
-            "crates/sdkwork-clawrouter-cloud-gateway",
+            "crates/sdkwork-clawrouter-edge-runtime",
             "services/sdkwork-clawrouter-admin-api-server",
             "services/sdkwork-clawrouter-app-api-server",
             "services/sdkwork-clawrouter-router-service",
@@ -78,7 +78,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             "crates/sdkwork-claw-security": ("headers", "redaction"),
             "crates/sdkwork-claw-http": ("auth", "contract_routes", "error", "health", "headers", "router"),
             "crates/sdkwork-claw-observability": ("tracing_setup",),
-            "crates/sdkwork-clawrouter-cloud-gateway": ("runtime",),
+            "crates/sdkwork-clawrouter-edge-runtime": ("runtime",),
             "services/sdkwork-clawrouter-router-service": ("api", "application", "domain", "identity", "infrastructure", "ports"),
         }
         for member, modules in module_rules.items():
@@ -154,7 +154,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         product_postgres.joinpath("row_mapping.rs").write_text("// postgres row mapping\n", encoding="utf-8")
         product_postgres.joinpath("usage_settlement_store.rs").write_text("// PostgresUsageSettlementStore commerce_usage_settlement plus_account_history settlement_status INSUFFICIENT_POINTS\n", encoding="utf-8")
 
-        for service in ("sdkwork-clawrouter-cloud-gateway", "sdkwork-clawrouter-admin-api-server", "sdkwork-clawrouter-app-api-server"):
+        for service in ("sdkwork-clawrouter-edge-runtime", "sdkwork-clawrouter-admin-api-server", "sdkwork-clawrouter-app-api-server"):
             service_root = root / "services" / service
             service_root.joinpath("Cargo.toml").write_text(
                 textwrap.dedent(
@@ -176,7 +176,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             )
             service_root.joinpath("src").mkdir(parents=True, exist_ok=True)
             lib_text = "pub fn router() { sdkwork_claw_http::service_router(\"service\"); }\n"
-            if service == "sdkwork-clawrouter-cloud-gateway":
+            if service == "sdkwork-clawrouter-edge-runtime":
                 lib_text = "pub mod runtime;\npub fn router() { sdkwork_claw_http::service_router(\"service\"); }\n"
             service_root.joinpath("src", "lib.rs").write_text(lib_text, encoding="utf-8")
 
@@ -290,17 +290,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            gateway_lib = root / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "lib.rs"
+            gateway_lib = root / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "lib.rs"
             gateway_lib.write_text(
                 gateway_lib.read_text(encoding="utf-8").replace("pub mod runtime;\n", ""),
                 encoding="utf-8",
             )
-            root.joinpath("services", "sdkwork-clawrouter-cloud-gateway", "src", "runtime.rs").unlink(missing_ok=True)
+            root.joinpath("services", "sdkwork-clawrouter-edge-runtime", "src", "runtime.rs").unlink(missing_ok=True)
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-clawrouter-cloud-gateway/src/lib.rs must declare module: runtime", result.messages)
+            self.assertIn("crates/sdkwork-clawrouter-edge-runtime/src/lib.rs must declare module: runtime", result.messages)
 
     def test_reports_missing_module_standard_doc_terms(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

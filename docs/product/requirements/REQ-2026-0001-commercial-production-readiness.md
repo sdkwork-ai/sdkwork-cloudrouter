@@ -113,7 +113,7 @@ artifacts without trustworthy evidence.
 ### Components
 
 - `services/sdkwork-clawrouter-router-service`
-- `crates/sdkwork-clawrouter-cloud-gateway`
+- `crates/sdkwork-clawrouter-edge-runtime`
 - `crates/sdkwork-routes-clawrouter-app-api`
 - `crates/sdkwork-routes-clawrouter-backend-api`
 - `apis/open-api/clawrouter`

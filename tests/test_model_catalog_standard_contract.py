@@ -112,8 +112,8 @@ RUNTIME_MODEL_IDENTITY_FIXTURE_PATHS = (
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "openai_responses_adapter_api.rs",
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "sqlite_admin_channel_group_store.rs",
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "sqlite_openai_invocation_telemetry.rs",
-    ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs",
-    ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "invocation_http.rs",
+    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
+    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_http.rs",
 )
 PORTAL_RUNTIME_MODEL_IDENTITY_FIXTURE_PATHS = (
     ROOT / "apps" / "sdkwork-clawrouter-pc" / "admin-channel-runtime.test.ts",
@@ -128,12 +128,12 @@ PORTAL_RUNTIME_MODEL_IDENTITY_FIXTURE_PATHS = (
 API_GATEWAY_MODEL_IDENTITY_FIXTURE_PATHS = (
     ROOT / "services" / "sdkwork-clawrouter-admin-api-server" / "tests" / "database_config_router.rs",
     ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "tests" / "contract_routes.rs",
-    ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "tests" / "provider_passthrough_route.rs",
-    ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "tests" / "edge_server_sqlite_smoke.rs",
+    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "tests" / "provider_passthrough_route.rs",
+    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "tests" / "edge_server_sqlite_smoke.rs",
 )
 AI_CHANNEL_ROUTE_RUNTIME_ROOTS = (
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "src",
-    ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src",
+    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src",
     ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "src",
 )
 SERVER_RESOURCES = ROOT.parents[1] / "spring-ai-plus-server-application" / "src" / "main" / "resources"
@@ -1511,7 +1511,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     )
 
     def test_gateway_usage_does_not_recreate_regional_requested_catalog_key_compatibility(self) -> None:
-        source = read_text(ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "passthrough.rs")
+        source = read_text(ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "passthrough.rs")
         domain_source = read_text(MODELS_CATALOG_DOMAIN_PATH)
         self.assertNotIn(
             "canonical_adapter_usage_catalog_key",
@@ -1573,7 +1573,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     source,
                     "Regional catalog-key guards must reject region segments through the shared domain standard.",
                 )
-        passthrough_source = read_text(ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "passthrough.rs")
+        passthrough_source = read_text(ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "passthrough.rs")
         self.assertIn(
             "ensure_canonical_model_catalog_key",
             passthrough_source,
@@ -1972,9 +1972,9 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         )
         offenders = []
         for path in (
-            ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs",
-            ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "invocation_http.rs",
-            ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "invocation_router.rs",
+            ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
+            ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_http.rs",
+            ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_router.rs",
         ):
             text = read_text(path)
             negative_ranges = [
@@ -2366,7 +2366,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         self.assertNotIn("catalog_version={}", cli_source)
 
         for service_runtime in (
-            ROOT / "services" / "sdkwork-clawrouter-cloud-gateway" / "src" / "runtime.rs",
+            ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
             ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs",
             ROOT / "crates" / "sdkwork-routes-clawrouter-backend-api" / "src" / "routes.rs",
         ):

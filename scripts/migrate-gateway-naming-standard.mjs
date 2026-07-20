@@ -10,9 +10,9 @@ const SKIP_DIRS = new Set(['node_modules', 'target', '.git', 'generated', 'dist'
 const SKIP_SUFFIXES = ['Cargo.lock', '.png', '.jpg', '.zip', '.wasm'];
 
 const REPLACEMENTS = [
-  ['crates/sdkwork-clawrouter-cloud-gateway', 'crates/sdkwork-clawrouter-cloud-gateway'],
-  ['sdkwork_clawrouter_cloud_gateway', 'sdkwork_clawrouter_cloud_gateway'],
-  ['sdkwork-clawrouter-cloud-gateway', 'sdkwork-clawrouter-cloud-gateway'],
+  ['crates/sdkwork-clawrouter-edge-runtime', 'crates/sdkwork-clawrouter-edge-runtime'],
+  ['sdkwork_clawrouter_edge_runtime', 'sdkwork_clawrouter_edge_runtime'],
+  ['sdkwork-clawrouter-edge-runtime', 'sdkwork-clawrouter-edge-runtime'],
 ];
 
 function shouldSkipDir(name) {
@@ -56,7 +56,7 @@ for (const filePath of walk(root)) {
   } catch {
     continue;
   }
-  if (!text.includes('sdkwork-clawrouter-cloud-gateway') && !text.includes('sdkwork_clawrouter_cloud_gateway')) {
+  if (!text.includes('sdkwork-clawrouter-edge-runtime') && !text.includes('sdkwork_clawrouter_edge_runtime')) {
     continue;
   }
   let next = text;

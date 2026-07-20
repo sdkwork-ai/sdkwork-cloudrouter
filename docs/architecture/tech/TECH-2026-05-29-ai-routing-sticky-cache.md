@@ -48,7 +48,7 @@
 
 **Files:**
 - Modify: `services/sdkwork-clawrouter-router-service/src/domain/routing.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/openai_route_taxonomy.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/openai_route_taxonomy.rs`
 
 - [ ] Write failing tests for route strategy classification on stateless, create-sticky, parent-sticky, lookup-sticky, and primary-channel API families.
 - [ ] Add route strategy/failure/model requirement enums and extend OpenAI classification.

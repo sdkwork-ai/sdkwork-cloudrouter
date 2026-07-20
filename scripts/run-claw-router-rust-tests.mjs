@@ -10,7 +10,7 @@ const PROFILES = new Set(['auto', 'smoke', 'quick', 'admin-api', 'app-api', 'gat
 const PACKAGE_BY_SERVICE_DIR = Object.freeze({
   'sdkwork-clawrouter-admin-gateway': 'sdkwork-clawrouter-admin-gateway',
   'sdkwork-clawrouter-standalone-gateway': 'sdkwork-clawrouter-standalone-gateway',
-  'sdkwork-clawrouter-cloud-gateway': 'sdkwork-clawrouter-cloud-gateway',
+  'sdkwork-clawrouter-edge-runtime': 'sdkwork-clawrouter-edge-runtime',
   'sdkwork-clawrouter-standalone-gateway': 'sdkwork-clawrouter-standalone-gateway',
   'sdkwork-claw-installer': 'sdkwork-claw-installer',
   'sdkwork-clawrouter-router-service': 'sdkwork-clawrouter-router-service',
@@ -19,7 +19,7 @@ const PACKAGE_WORKSPACE_ROOTS = Object.freeze(['services', 'crates']);
 const PROFILE_BY_SERVICE_PACKAGE = Object.freeze({
   'sdkwork-clawrouter-admin-gateway': 'admin-api',
   'sdkwork-clawrouter-standalone-gateway': 'app-api',
-  'sdkwork-clawrouter-cloud-gateway': 'gateway',
+  'sdkwork-clawrouter-edge-runtime': 'gateway',
   'sdkwork-claw-installer': 'runtime',
   'sdkwork-clawrouter-router-service': 'runtime',
 });
@@ -29,8 +29,8 @@ const PROFILE_BY_PATH_PREFIX = Object.freeze([
   ['crates/sdkwork-claw-test-support/', 'smoke'],
   ['crates/sdkwork-claw-http/', 'runtime'],
   ['services/sdkwork-claw-provider-adapter/', 'product-relay'],
-  ['crates/sdkwork-clawrouter-cloud-gateway/', 'gateway'],
-  ['crates/sdkwork-clawrouter-standalone-gateway-lib/', 'gateway'],
+  ['crates/sdkwork-clawrouter-edge-runtime/', 'gateway'],
+  ['crates/sdkwork-api-clawrouter-standalone-gateway/', 'gateway'],
   ['services/sdkwork-clawrouter-standalone-gateway/', 'app-api'],
   ['Cargo.toml', 'quick'],
   ['Cargo.lock', 'quick'],
@@ -615,28 +615,28 @@ function buildAppApiSteps(env, settings) {
 
 function buildGatewaySteps(env, settings) {
   return [
-    cargoStep('gateway health tests', ['test', '-p', 'sdkwork-clawrouter-cloud-gateway', '--test', 'health'], env, settings),
+    cargoStep('gateway health tests', ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'health'], env, settings),
     cargoStep(
       'gateway edge server tests',
-      ['test', '-p', 'sdkwork-clawrouter-cloud-gateway', '--test', 'edge_server'],
+      ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'edge_server'],
       env,
       settings,
     ),
     cargoStep(
       'gateway database router integration tests',
-      ['test', '-p', 'sdkwork-clawrouter-cloud-gateway', '--test', 'database_config_router'],
+      ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'database_config_router'],
       env,
       settings,
     ),
     cargoStep(
       'gateway provider passthrough route tests',
-      ['test', '-p', 'sdkwork-clawrouter-cloud-gateway', '--test', 'provider_passthrough_route'],
+      ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'provider_passthrough_route'],
       env,
       settings,
     ),
     cargoStep(
       'gateway provider adapter invocation tests',
-      ['test', '-p', 'sdkwork-clawrouter-cloud-gateway', '--test', 'provider_adapter_invocation'],
+      ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'provider_adapter_invocation'],
       env,
       settings,
     ),
@@ -645,7 +645,7 @@ function buildGatewaySteps(env, settings) {
       [
         'test',
         '-p',
-        'sdkwork-clawrouter-cloud-gateway',
+        'sdkwork-clawrouter-edge-runtime',
         '--test',
         'openai_chat_relay_route',
         '--test',
@@ -725,7 +725,7 @@ function buildRuntimeSteps(env, settings) {
         '-p',
         'sdkwork-clawrouter-router-service',
         '-p',
-        'sdkwork-clawrouter-cloud-gateway',
+        'sdkwork-clawrouter-edge-runtime',
         '-p',
         'sdkwork-clawrouter-admin-gateway',
         '-p',
@@ -742,7 +742,7 @@ function buildRuntimeSteps(env, settings) {
 function buildFullSteps(env, settings) {
   const runtimePackages = [
     'sdkwork-clawrouter-router-service',
-    'sdkwork-clawrouter-cloud-gateway',
+    'sdkwork-clawrouter-edge-runtime',
     'sdkwork-clawrouter-admin-gateway',
     'sdkwork-clawrouter-standalone-gateway',
     'sdkwork-claw-installer',

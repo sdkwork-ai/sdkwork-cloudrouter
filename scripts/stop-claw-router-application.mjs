@@ -28,8 +28,6 @@ Options:
   --gateway-bind <host:port>        Match a custom gateway listener.
   --admin-api-bind <host:port>      Match a custom admin API listener.
   --app-api-bind <host:port>        Match a custom app API listener.
-  --sdkwork-api-cloud-gateway-bind <host:port>
-                                      Match a custom SDKWork API Gateway listener.
   -h, --help                        Show this help.
 `);
 }

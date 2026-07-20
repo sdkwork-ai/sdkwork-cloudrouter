@@ -108,6 +108,7 @@
     }
   ],
   "contracts": {
+    "layerRole": "frontend-feature",
     "publicExports": [
       "."
     ],
@@ -116,6 +117,8 @@
       "package.json#scripts.build",
       "package.json#scripts.typecheck"
     ],
+    "providedPorts": ["clawrouter.playground"],
+    "requiredPorts": ["agents.workbench", "clawrouter.sdk-runtime"],
     "sdkClients": [],
     "events": [],
     "configKeys": [],

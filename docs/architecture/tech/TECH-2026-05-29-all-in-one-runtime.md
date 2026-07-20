@@ -16,7 +16,7 @@
 ### Task 1: Add In-Process Edge Dispatch Tests
 
 **Files:**
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/tests/edge_server.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/tests/edge_server.rs`
 
 - [ ] **Step 1: Write failing tests**
 
@@ -24,26 +24,26 @@ Add tests proving an edge router can dispatch gateway, backend, and app paths to
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_dispatch_to_in_process_upstreams --offline`
+Run: `cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_dispatch_to_in_process_upstreams --offline`
 
 Expected: FAIL because `edge_server_router_with_in_process_upstreams` and `EdgeInProcessUpstreams` do not exist.
 
 - [ ] **Step 3: Implement minimal Rust edge support**
 
-Modify `crates/sdkwork-clawrouter-cloud-gateway/src/edge_server.rs` to add `EdgeInProcessUpstreams` and a new router constructor. Dispatch matching API paths through cloned Axum routers with `tower::ServiceExt::oneshot`; keep existing HTTP forwarding as the default.
+Modify `crates/sdkwork-clawrouter-edge-runtime/src/edge_server.rs` to add `EdgeInProcessUpstreams` and a new router constructor. Dispatch matching API paths through cloned Axum routers with `tower::ServiceExt::oneshot`; keep existing HTTP forwarding as the default.
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_dispatch_to_in_process_upstreams --offline`
+Run: `cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_dispatch_to_in_process_upstreams --offline`
 
 Expected: PASS.
 
 ### Task 2: Add All-In-One Runtime Builder
 
 **Files:**
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/Cargo.toml`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/lib.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/main.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/Cargo.toml`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/lib.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/main.rs`
 
 - [ ] **Step 1: Write failing test**
 
@@ -51,17 +51,17 @@ Extend the SQLite edge smoke test to build an all-in-one router from real gatewa
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server_sqlite_smoke all_in_one_edge_router_serves_sqlite_gateway_admin_and_app_without_service_ports --offline`
+Run: `cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server_sqlite_smoke all_in_one_edge_router_serves_sqlite_gateway_admin_and_app_without_service_ports --offline`
 
 Expected: FAIL because the all-in-one builder does not exist.
 
 - [ ] **Step 3: Implement minimal builder**
 
-Promote `sdkwork-clawrouter-admin-gateway` and `sdkwork-clawrouter-standalone-gateway` from dev-dependencies to dependencies of `sdkwork-clawrouter-cloud-gateway`. Add `all_in_one_edge_router_from_env` and `serve_all_in_one_edge_server_with_runtime_config`, then make `src/main.rs` use that path when `SDKWORK_CLAW_ALL_IN_ONE_RUNTIME=1`.
+Promote `sdkwork-clawrouter-admin-gateway` and `sdkwork-clawrouter-standalone-gateway` from dev-dependencies to dependencies of `sdkwork-clawrouter-edge-runtime`. Add `all_in_one_edge_router_from_env` and `serve_all_in_one_edge_server_with_runtime_config`, then make `src/main.rs` use that path when `SDKWORK_CLAW_ALL_IN_ONE_RUNTIME=1`.
 
 - [ ] **Step 4: Run focused tests**
 
-Run: `cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server_sqlite_smoke all_in_one_edge_router_serves_sqlite_gateway_admin_and_app_without_service_ports --offline`
+Run: `cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server_sqlite_smoke all_in_one_edge_router_serves_sqlite_gateway_admin_and_app_without_service_ports --offline`
 
 Expected: PASS.
 
@@ -131,8 +131,8 @@ Document the default two-process local flow, one-process production flow, and ex
 - [ ] **Step 2: Run focused verification**
 
 Run:
-- `cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_dispatch_to_in_process_upstreams --offline`
-- `cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server_sqlite_smoke all_in_one_edge_router_serves_sqlite_gateway_admin_and_app_without_service_ports --offline`
+- `cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_dispatch_to_in_process_upstreams --offline`
+- `cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server_sqlite_smoke all_in_one_edge_router_serves_sqlite_gateway_admin_and_app_without_service_ports --offline`
 - `node scripts/run-claw-router-application.test.mjs --test-name-pattern "all-in-one|distributed|start-production"`
 
 Expected: PASS.

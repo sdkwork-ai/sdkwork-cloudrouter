@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 
 import { spawn } from "node:child_process";
 import { access, mkdtemp, rm } from "node:fs/promises";
@@ -988,7 +988,7 @@ function spawnRustEdgeServer() {
     CARGO_TARGET_DIR: resolveRustEdgeCargoTargetDir(),
   };
   try {
-    server = spawn(process.platform === "win32" ? "cargo.exe" : "cargo", ["run", "-p", "sdkwork-clawrouter-cloud-gateway"], {
+    server = spawn(process.platform === "win32" ? "cargo.exe" : "cargo", ["run", "-p", "sdkwork-clawrouter-edge-runtime"], {
       cwd: workspaceRoot,
       env,
       stdio: ["ignore", "ignore", "pipe"],

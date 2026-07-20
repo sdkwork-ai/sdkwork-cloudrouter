@@ -31,8 +31,7 @@ members = [
     "crates/sdkwork-routes-clawrouter-backend-api",
     "crates/provider-adapters/tencent-cloud",
     "crates/provider-adapters/alicloud",
-    "crates/sdkwork-clawrouter-cloud-gateway",
-    "crates/sdkwork-clawrouter-standalone-gateway-lib",
+    "crates/sdkwork-clawrouter-edge-runtime",
     "services/sdkwork-clawrouter-admin-gateway",
     "services/sdkwork-clawrouter-standalone-gateway",
     "services/sdkwork-clawrouter-router-service",
@@ -75,8 +74,7 @@ default-members = [
     "crates/sdkwork-routes-clawrouter-backend-api",
     "crates/provider-adapters/tencent-cloud",
     "crates/provider-adapters/alicloud",
-    "crates/sdkwork-clawrouter-cloud-gateway",
-    "crates/sdkwork-clawrouter-standalone-gateway-lib",
+    "crates/sdkwork-clawrouter-edge-runtime",
     "services/sdkwork-clawrouter-admin-gateway",
     "services/sdkwork-clawrouter-standalone-gateway",
     "services/sdkwork-clawrouter-router-service",
@@ -105,7 +103,6 @@ license-file = "LICENSE"
 
 [workspace.dependencies]
 sdkwork-api-clawrouter-assembly = { path = "crates/sdkwork-api-clawrouter-assembly" }
-sdkwork-api-cloud-gateway-registry = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway-registry" }
 anyhow = "1.0"
 argon2 = "0.5"
 axum = { version = "0.8", features = ["multipart"] }
@@ -165,9 +162,7 @@ sdkwork-clawrouter-admin-gateway = { path = "services/sdkwork-clawrouter-admin-g
 sdkwork-routes-clawrouter-app-api = { path = "crates/sdkwork-routes-clawrouter-app-api" }
 sdkwork-routes-clawrouter-backend-api = { path = "crates/sdkwork-routes-clawrouter-backend-api" }
 sdkwork-claw-installer = { path = "services/sdkwork-claw-installer" }
-sdkwork-clawrouter-cloud-gateway = { path = "crates/sdkwork-clawrouter-cloud-gateway" }
-sdkwork-api-cloud-gateway = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway" }
-sdkwork-api-cloud-gateway-config = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway-config" }
+sdkwork-clawrouter-edge-runtime = { path = "crates/sdkwork-clawrouter-edge-runtime" }
 sdkwork-claw-provider-adapter-contract = { path = "crates/sdkwork-claw-provider-adapter-contract" }
 sdkwork-claw-provider-adapter = { path = "crates/sdkwork-claw-provider-adapter" }
 sdkwork-claw-provider-adapter-http = { path = "crates/sdkwork-claw-provider-adapter-http" }

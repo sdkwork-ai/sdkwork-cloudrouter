@@ -1,9 +1,7 @@
-use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use sdkwork_claw_http::{TrustedRequestSubject, TrustedRequestSubjectError};
 
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::problem_from_wire_code;
 
 #[derive(Debug, Clone, Copy)]
 pub struct AdminOperatorFields {

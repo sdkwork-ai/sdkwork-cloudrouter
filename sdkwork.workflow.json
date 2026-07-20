@@ -118,7 +118,7 @@
         "name": "Stage production files",
         "shell": "pwsh",
         "workingDirectory": ".",
-        "run": "$ErrorActionPreference = \"Stop\"\n$stage = Join-Path (Get-Location) \"dist/install-package-staging\"\n$output = Join-Path (Get-Location) \"dist/install-packages\"\nRemove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue\nRemove-Item -LiteralPath $output -Recurse -Force -ErrorAction SilentlyContinue\nNew-Item -ItemType Directory -Force -Path (Join-Path $stage \"bin\") | Out-Null\nNew-Item -ItemType Directory -Force -Path (Join-Path $stage \"portal\") | Out-Null\n$suffix = if ($IsWindows) { \".exe\" } else { \"\" }\nCopy-Item -LiteralPath \"target/release/clawrouter$suffix\" -Destination (Join-Path $stage \"bin/clawrouter$suffix\")\nCopy-Item -LiteralPath \"target/release/clawrouterctl$suffix\" -Destination (Join-Path $stage \"bin/clawrouterctl$suffix\")\nCopy-Item -LiteralPath \".env.release.example\" -Destination (Join-Path $stage \".env.release.example\")\nCopy-Item -LiteralPath \"apps/sdkwork-clawrouter-pc/dist\" -Destination (Join-Path $stage \"portal/dist\") -Recurse"
+        "run": "$ErrorActionPreference = \"Stop\"\n$stage = Join-Path (Get-Location) \"dist/install-package-staging\"\n$output = Join-Path (Get-Location) \"dist/install-packages\"\nRemove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue\nRemove-Item -LiteralPath $output -Recurse -Force -ErrorAction SilentlyContinue\nNew-Item -ItemType Directory -Force -Path (Join-Path $stage \"bin\") | Out-Null\nNew-Item -ItemType Directory -Force -Path (Join-Path $stage \"portal\") | Out-Null\n$suffix = if ($IsWindows) { \".exe\" } else { \"\" }\n$gateway = \"sdkwork-api-clawrouter-standalone-gateway$suffix\"\nCopy-Item -LiteralPath \"target/release/$gateway\" -Destination (Join-Path $stage \"bin/$gateway\")\nCopy-Item -LiteralPath \"target/release/clawrouterctl$suffix\" -Destination (Join-Path $stage \"bin/clawrouterctl$suffix\")\nCopy-Item -LiteralPath \".env.release.example\" -Destination (Join-Path $stage \".env.release.example\")\nCopy-Item -LiteralPath \"apps/sdkwork-clawrouter-pc/dist\" -Destination (Join-Path $stage \"portal/dist\") -Recurse"
       }
     ],
     "package": [
@@ -127,12 +127,6 @@
         "shell": "pwsh",
         "workingDirectory": ".",
         "run": "$ErrorActionPreference = \"Stop\"\nfunction Resolve-ClawRouterPackageId([string] $packageId) {\n  switch ($packageId) {\n    \"linux-debian-x64-standalone-server-deb\" { return \"linux-x64-service\" }\n    \"linux-debian-arm64-standalone-server-deb\" { return \"linux-arm64-service\" }\n    \"linux-x64-standalone-server-tar-gz\" { return \"linux-x64-archive\" }\n    \"linux-arm64-standalone-server-tar-gz\" { return \"linux-arm64-archive\" }\n    \"windows-x64-standalone-server-msi\" { return \"windows-x64-service\" }\n    \"windows-arm64-standalone-server-msi\" { return \"windows-arm64-service\" }\n    \"windows-x64-standalone-server-zip\" { return \"windows-x64-archive\" }\n    \"windows-arm64-standalone-server-zip\" { return \"windows-arm64-archive\" }\n    \"macos-x64-standalone-server-pkg\" { return \"macos-x64-service\" }\n    \"macos-arm64-standalone-server-pkg\" { return \"macos-arm64-service\" }\n    \"macos-x64-standalone-server-tar-gz\" { return \"macos-x64-archive\" }\n    \"macos-arm64-standalone-server-tar-gz\" { return \"macos-arm64-archive\" }\n    \"linux-debian-x64-standalone-desktop-deb\" { return \"linux-x64-desktop\" }\n    \"linux-debian-arm64-standalone-desktop-deb\" { return \"linux-arm64-desktop\" }\n    \"windows-x64-standalone-desktop-msi\" { return \"windows-x64-desktop\" }\n    \"windows-arm64-standalone-desktop-msi\" { return \"windows-arm64-desktop\" }\n    \"macos-x64-standalone-desktop-pkg\" { return \"macos-x64-desktop\" }\n    \"macos-arm64-standalone-desktop-pkg\" { return \"macos-arm64-desktop\" }\n    default { throw \"Unsupported SDKWork package id $packageId\" }\n  }\n}\n$legacyPackageId = Resolve-ClawRouterPackageId $env:SDKWORK_PACKAGE_ID\nif ($env:SDKWORK_PACKAGE_FORMAT -in @(\"deb\", \"pkg\", \"msi\")) {\n  node scripts/build-claw-router-native-installer.mjs --package-id $legacyPackageId --version $env:SDKWORK_PACKAGE_VERSION --staging-root dist/install-package-staging --output-dir dist/install-packages --json\n} else {\n  node scripts/build-claw-router-install-package.mjs --package-id $legacyPackageId --version $env:SDKWORK_PACKAGE_VERSION --staging-root dist/install-package-staging --output-dir dist/install-packages --json\n}"
-      },
-      {
-        "name": "Package cloud gateway config bundle",
-        "shell": "pwsh",
-        "workingDirectory": ".",
-        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'config-bundle' { pnpm gateway:package:cloud }\n  default { Write-Host \"Skipping cloud gateway config bundle for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
       }
     ],
     "validate": [
@@ -141,12 +135,6 @@
         "shell": "pwsh",
         "workingDirectory": ".",
         "run": "$ErrorActionPreference = \"Stop\"\nfunction Resolve-ClawRouterPackageId([string] $packageId) {\n  switch ($packageId) {\n    \"linux-debian-x64-standalone-server-deb\" { return \"linux-x64-service\" }\n    \"linux-debian-arm64-standalone-server-deb\" { return \"linux-arm64-service\" }\n    \"linux-x64-standalone-server-tar-gz\" { return \"linux-x64-archive\" }\n    \"linux-arm64-standalone-server-tar-gz\" { return \"linux-arm64-archive\" }\n    \"windows-x64-standalone-server-msi\" { return \"windows-x64-service\" }\n    \"windows-arm64-standalone-server-msi\" { return \"windows-arm64-service\" }\n    \"windows-x64-standalone-server-zip\" { return \"windows-x64-archive\" }\n    \"windows-arm64-standalone-server-zip\" { return \"windows-arm64-archive\" }\n    \"macos-x64-standalone-server-pkg\" { return \"macos-x64-service\" }\n    \"macos-arm64-standalone-server-pkg\" { return \"macos-arm64-service\" }\n    \"macos-x64-standalone-server-tar-gz\" { return \"macos-x64-archive\" }\n    \"macos-arm64-standalone-server-tar-gz\" { return \"macos-arm64-archive\" }\n    \"linux-debian-x64-standalone-desktop-deb\" { return \"linux-x64-desktop\" }\n    \"linux-debian-arm64-standalone-desktop-deb\" { return \"linux-arm64-desktop\" }\n    \"windows-x64-standalone-desktop-msi\" { return \"windows-x64-desktop\" }\n    \"windows-arm64-standalone-desktop-msi\" { return \"windows-arm64-desktop\" }\n    \"macos-x64-standalone-desktop-pkg\" { return \"macos-x64-desktop\" }\n    \"macos-arm64-standalone-desktop-pkg\" { return \"macos-arm64-desktop\" }\n    default { throw \"Unsupported SDKWork package id $packageId\" }\n  }\n}\nfunction Resolve-ClawRouterArtifactId([string] $legacyPackageId) {\n  $parts = $legacyPackageId -split \"-\"\n  if ($parts.Length -ne 3) { throw \"Invalid legacy Claw Router package id $legacyPackageId\" }\n  if ($parts[2] -eq \"service\") { return \"$($parts[0])-$($parts[1])-server\" }\n  return $legacyPackageId\n}\n$legacyPackageId = Resolve-ClawRouterPackageId $env:SDKWORK_PACKAGE_ID\n$legacyArtifactId = Resolve-ClawRouterArtifactId $legacyPackageId\n$pattern = \"clawrouter-$legacyArtifactId-$env:SDKWORK_PACKAGE_VERSION.$env:SDKWORK_PACKAGE_FORMAT\"\n$file = Get-ChildItem -Path \"dist/install-packages\" -File |\n  Where-Object { $_.Name -like $pattern -and $_.Name -notlike \"*.manifest.json\" -and $_.Name -notlike \"install-packages-manifest*.json\" } |\n  Select-Object -First 1\nif (-not $file) { throw \"Missing built install package artifact matching $pattern for $env:SDKWORK_PACKAGE_ID\" }\nnode scripts/validate-claw-router-install-artifacts.mjs --package-id $legacyPackageId --artifact-path $file.FullName --version $env:SDKWORK_PACKAGE_VERSION"
-      },
-      {
-        "name": "Validate cloud gateway config bundle",
-        "shell": "pwsh",
-        "workingDirectory": ".",
-        "run": "$ErrorActionPreference = \"Stop\"\nswitch ($env:SDKWORK_PACKAGE_VARIANT) {\n  'config-bundle' { pnpm gateway:validate:cloud }\n  default { Write-Host \"Skipping cloud gateway config bundle validation for profile $($env:SDKWORK_PACKAGE_VARIANT)\" }\n}"
       }
     ],
     "sign": [
@@ -440,22 +428,6 @@
       ],
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
-    },
-    {
-      "id": "container-noarch-cloud-container-config-bundle-tar-gz",
-      "profile": "container",
-      "platform": "container",
-      "architecture": "noarch",
-      "formats": [
-        "tar.gz"
-      ],
-      "runner": "ubuntu-24.04",
-      "outputGlobs": [
-        "dist/config-bundle/sdkwork-clawrouter-api-cloud-gateway-config-*.tar.gz"
-      ],
-      "deploymentProfile": "cloud",
-      "runtimeTarget": "container",
-      "variant": "config-bundle"
     }
   ],
   "security": {

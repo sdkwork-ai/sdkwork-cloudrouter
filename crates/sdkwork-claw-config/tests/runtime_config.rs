@@ -3,7 +3,7 @@ use sdkwork_claw_config::{DeploymentMode, RuntimeConfig, RuntimeTomlConfig};
 #[test]
 fn runtime_config_uses_default_bind_and_desktop_mode_when_env_parts_are_absent() {
     let config = RuntimeConfig::from_optional_parts(
-        "sdkwork-clawrouter-cloud-gateway",
+        "sdkwork-clawrouter-edge-runtime",
         "SDKWORK_CLAW_GATEWAY_BIND",
         "0.0.0.0:18080",
         None,
@@ -11,7 +11,7 @@ fn runtime_config_uses_default_bind_and_desktop_mode_when_env_parts_are_absent()
     )
     .unwrap();
 
-    assert_eq!("sdkwork-clawrouter-cloud-gateway", config.service_name);
+    assert_eq!("sdkwork-clawrouter-edge-runtime", config.service_name);
     assert_eq!(DeploymentMode::Desktop, config.deployment_mode);
     assert_eq!("0.0.0.0:18080", config.bind_addr);
 }
@@ -19,7 +19,7 @@ fn runtime_config_uses_default_bind_and_desktop_mode_when_env_parts_are_absent()
 #[test]
 fn runtime_config_accepts_service_bind_override_and_kubernetes_alias() {
     let config = RuntimeConfig::from_optional_parts(
-        "sdkwork-clawrouter-cloud-gateway",
+        "sdkwork-clawrouter-edge-runtime",
         "SDKWORK_CLAW_GATEWAY_BIND",
         "0.0.0.0:18080",
         Some("127.0.0.1:19090".to_owned()),
@@ -34,7 +34,7 @@ fn runtime_config_accepts_service_bind_override_and_kubernetes_alias() {
 #[test]
 fn runtime_config_rejects_blank_or_invalid_bind_address() {
     let blank = RuntimeConfig::from_optional_parts(
-        "sdkwork-clawrouter-cloud-gateway",
+        "sdkwork-clawrouter-edge-runtime",
         "SDKWORK_CLAW_GATEWAY_BIND",
         "0.0.0.0:18080",
         Some("   ".to_owned()),
@@ -44,7 +44,7 @@ fn runtime_config_rejects_blank_or_invalid_bind_address() {
     assert!(blank.contains("SDKWORK_CLAW_GATEWAY_BIND"));
 
     let invalid = RuntimeConfig::from_optional_parts(
-        "sdkwork-clawrouter-cloud-gateway",
+        "sdkwork-clawrouter-edge-runtime",
         "SDKWORK_CLAW_GATEWAY_BIND",
         "0.0.0.0:18080",
         Some("not-a-socket".to_owned()),
@@ -57,7 +57,7 @@ fn runtime_config_rejects_blank_or_invalid_bind_address() {
 #[test]
 fn runtime_config_rejects_invalid_deployment_mode() {
     let error = RuntimeConfig::from_optional_parts(
-        "sdkwork-clawrouter-cloud-gateway",
+        "sdkwork-clawrouter-edge-runtime",
         "SDKWORK_CLAW_GATEWAY_BIND",
         "0.0.0.0:18080",
         None,

@@ -1,0 +1,50 @@
+[package]
+name = "sdkwork-clawrouter-edge-runtime"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[[bin]]
+name = "sdkwork-clawrouter-edge-runtime"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+bytes.workspace = true
+futures-util.workspace = true
+getrandom.workspace = true
+hex.workspace = true
+http-body-util.workspace = true
+hyper.workspace = true
+hyper-rustls.workspace = true
+hyper-util.workspace = true
+prometheus.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sdkwork-claw-config.workspace = true
+sdkwork-claw-security.workspace = true
+sdkwork-claw-http.workspace = true
+sdkwork-claw-observability.workspace = true
+sdkwork-claw-provider-adapter-contract.workspace = true
+sdkwork-claw-provider-adapter-http.workspace = true
+sdkwork-claw-provider-adapter-registry.workspace = true
+sdkwork-clawrouter-router-service.workspace = true
+sdkwork-clawrouter-database-host.workspace = true
+sdkwork-database-config.workspace = true
+sdkwork-database-sqlx.workspace = true
+sdkwork-routes-clawrouter-app-api.workspace = true
+sdkwork-routes-clawrouter-backend-api.workspace = true
+sdkwork-sdk-generator-client.workspace = true
+sdkwork-web-core.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+futures-core.workspace = true
+serde_json.workspace = true
+sdkwork-claw-test-support.workspace = true
+sdkwork-web-core.workspace = true

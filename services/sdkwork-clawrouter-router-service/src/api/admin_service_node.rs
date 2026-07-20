@@ -13,7 +13,6 @@ use crate::api::response::{
     normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
     success_envelope, validation_problem,
 };
-use crate::api::subject::admin_operator_fields;
 use crate::ports::{
     AdminServiceNodeItem, AdminServiceNodeStore, AdminServiceNodeSubject,
     CreateAdminServiceNodeCommand, DeleteAdminServiceNodeCommand, ListAdminServiceNodesQuery,

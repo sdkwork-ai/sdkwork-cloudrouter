@@ -59,7 +59,7 @@
 - Create: `services/sdkwork-clawrouter-router-service/src/application/invocation/openai_classifier.rs`
 - Create: `services/sdkwork-clawrouter-router-service/src/application/invocation/provider_native_classifier.rs`
 - Modify: `services/sdkwork-clawrouter-router-service/src/application/invocation/mod.rs`
-- Replace: `crates/sdkwork-clawrouter-cloud-gateway/src/openai_route_taxonomy.rs` usage with product-layer classifier
+- Replace: `crates/sdkwork-clawrouter-edge-runtime/src/openai_route_taxonomy.rs` usage with product-layer classifier
 - Test: `services/sdkwork-clawrouter-router-service/tests/invocation_classification.rs`
 
 - [ ] Write failing tests for `/v1/chat/completions`, `/v1/embeddings`, `/v1/responses`, `/v1/files`, `/v1/files/{id}/content`, `/v1/threads/{id}/runs`, provider-native video path, and free endpoint classification.
@@ -101,7 +101,7 @@
 - Create: `services/sdkwork-clawrouter-router-service/src/application/invocation/sticky.rs`
 - Create: `services/sdkwork-clawrouter-router-service/src/ports/sticky_route_store.rs`
 - Modify: `services/sdkwork-clawrouter-router-service/src/ports/mod.rs`
-- Move logic from: `crates/sdkwork-clawrouter-cloud-gateway/src/route_scoped_openai_passthrough.rs`
+- Move logic from: `crates/sdkwork-clawrouter-edge-runtime/src/route_scoped_openai_passthrough.rs`
 - Test: `services/sdkwork-clawrouter-router-service/tests/invocation_sticky.rs`
 
 - [ ] Write failing tests for CreateThenSticky preparation, LookupSticky hit, LookupSticky miss fail closed, ParentSticky hit, and success-only sticky commit.
@@ -201,17 +201,17 @@
 ### Task 13: Add Gateway HTTP Adapter
 
 **Files:**
-- Create: `crates/sdkwork-clawrouter-cloud-gateway/src/invocation_http.rs`
-- Create: `crates/sdkwork-clawrouter-cloud-gateway/src/invocation_router.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/lib.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs`
-- Test: `crates/sdkwork-clawrouter-cloud-gateway/tests/invocation_router.rs`
+- Create: `crates/sdkwork-clawrouter-edge-runtime/src/invocation_http.rs`
+- Create: `crates/sdkwork-clawrouter-edge-runtime/src/invocation_router.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/lib.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs`
+- Test: `crates/sdkwork-clawrouter-edge-runtime/tests/invocation_router.rs`
 
 - [ ] Write failing gateway tests for `/v1/chat/completions`, `/v1/embeddings`, `/v1/responses`, `/v1/files`, provider-native path, and free endpoint path.
 - [ ] Convert axum requests into `Invocation`.
 - [ ] Build the configured pipeline from catalog, api key hasher, secret resolver, adapter registry, usage recorder, and dispatchers.
 - [ ] Return normalized axum responses.
-- [ ] Run `cargo test -p sdkwork-clawrouter-cloud-gateway --test invocation_router`.
+- [ ] Run `cargo test -p sdkwork-clawrouter-edge-runtime --test invocation_router`.
 - [ ] Commit with `feat: route HTTP through invocation pipeline`.
 
 ### Task 14: Delete Old Router Orchestration
@@ -223,11 +223,11 @@
 - Delete or replace: `services/sdkwork-clawrouter-router-service/src/api/openai_invocation.rs`
 - Delete or replace: `services/sdkwork-clawrouter-router-service/src/api/openai_runtime.rs`
 - Delete or replace: `services/sdkwork-clawrouter-router-service/src/api/openai_usage.rs`
-- Delete or replace: `crates/sdkwork-clawrouter-cloud-gateway/src/passthrough.rs`
-- Delete or replace: `crates/sdkwork-clawrouter-cloud-gateway/src/route_scoped_openai_passthrough.rs`
+- Delete or replace: `crates/sdkwork-clawrouter-edge-runtime/src/passthrough.rs`
+- Delete or replace: `crates/sdkwork-clawrouter-edge-runtime/src/route_scoped_openai_passthrough.rs`
 - Modify: `services/sdkwork-clawrouter-router-service/src/api/mod.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/lib.rs`
-- Modify: `crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/lib.rs`
+- Modify: `crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs`
 - Test: existing gateway/product OpenAI and passthrough tests
 
 - [ ] Remove old exported router constructors that bypass `InvocationPipeline`.
@@ -256,7 +256,7 @@
 ### Task 16: Full Integration Matrix
 
 **Files:**
-- Modify/add gateway tests under `crates/sdkwork-clawrouter-cloud-gateway/tests/`
+- Modify/add gateway tests under `crates/sdkwork-clawrouter-edge-runtime/tests/`
 - Modify/add product tests under `services/sdkwork-clawrouter-router-service/tests/`
 
 - [ ] Add integration tests for token model calls.
@@ -271,7 +271,7 @@
 - [ ] Add integration tests for region-specific pricing.
 - [ ] Add integration tests for failover/fail-closed behavior.
 - [ ] Run `cargo test -p sdkwork-clawrouter-router-service`.
-- [ ] Run `cargo test -p sdkwork-clawrouter-cloud-gateway`.
+- [ ] Run `cargo test -p sdkwork-clawrouter-edge-runtime`.
 - [ ] Commit with `test: cover invocation router matrix`.
 
 ### Task 17: Final Verification

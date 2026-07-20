@@ -43,7 +43,7 @@
     "release:plan": "pnpm exec sdkwork-app release:plan",
     "release:plan:standalone": "pnpm exec sdkwork-app release:plan --deployment-profile standalone",
     "release:plan:cloud": "pnpm exec sdkwork-app release:plan --deployment-profile cloud",
-    "release:package": "node scripts/build-claw-router-install-package.mjs",
+    "release:package": "pnpm release:package:standalone",
     "release:package:check": "node scripts/build-claw-router-install-package.mjs --check --dry-run --all",
     "release:native:package": "node scripts/build-claw-router-native-installer.mjs",
     "release:native:check": "node scripts/build-claw-router-native-installer.mjs --check --dry-run --all",
@@ -62,10 +62,10 @@
     "topology:plan:server:postgres": "node scripts/claw-router-dev.mjs --target plan --deployment-profile standalone --database postgres --dev-env-file .env.postgres",
     "topology:plan:server:sqlite": "node scripts/claw-router-dev.mjs --target plan --deployment-profile standalone --database sqlite",
     "test:topology": "node --test --experimental-test-isolation=none scripts/verify-claw-router-topology.test.mjs",
-    "gateway:run:standalone": "cargo run -p sdkwork-clawrouter-standalone-gateway --bin sdkwork-clawrouter-standalone-gateway",
-    "gateway:build:standalone": "cargo build -p sdkwork-clawrouter-standalone-gateway --bin sdkwork-clawrouter-standalone-gateway",
-    "gateway:package:standalone": "cargo build -p sdkwork-clawrouter-standalone-gateway --release --bin sdkwork-clawrouter-standalone-gateway",
-    "gateway:validate:standalone": "cargo check -p sdkwork-clawrouter-standalone-gateway",
+    "gateway:run:standalone": "cargo run -p sdkwork-api-clawrouter-standalone-gateway --bin sdkwork-api-clawrouter-standalone-gateway",
+    "gateway:build:standalone": "cargo build -p sdkwork-api-clawrouter-standalone-gateway --bin sdkwork-api-clawrouter-standalone-gateway",
+    "gateway:package:standalone": "cargo build -p sdkwork-api-clawrouter-standalone-gateway --release --bin sdkwork-api-clawrouter-standalone-gateway",
+    "gateway:validate:standalone": "cargo check -p sdkwork-api-clawrouter-standalone-gateway",
     "gateway:matrix": "node ../sdkwork-app-topology/scripts/sdkwork-topology.mjs print-matrix --root . --spec specs/topology.spec.json --profile all",
     "sbom:release": "node scripts/generate-release-sbom.mjs",
     "test:tooling": "node scripts/run-claw-router-application.test.mjs && node --test scripts/stop-claw-router-application.test.mjs",
@@ -144,6 +144,7 @@
     "db:postgres:init": "node ../sdkwork-specs/tools/postgres/postgres-db-cli.mjs --mode init --config .env.postgres --app-root .",
     "db:postgres:plan": "node ../sdkwork-specs/tools/postgres/postgres-db-cli.mjs --mode plan --config .env.postgres --app-root . --dry-run",
     "db:postgres:recreate": "bash ../sdkwork-specs/tools/postgres/recreate-dev-database.sh",
+    "_sdkwork:dev:standalone": "node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --database postgres",
     "_sdkwork:build": "node scripts/build-claw-router-production.mjs",
     "_sdkwork:test": "pnpm topology:validate && pnpm test:topology && node scripts/run-claw-router-application.test.mjs",
     "_sdkwork:check": "pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:app-composition && pnpm check:vendor-workspace && pnpm check:commerce-debt && node scripts/run-claw-router-application.mjs check",
@@ -156,7 +157,8 @@
     "release:package:standalone": "pnpm exec sdkwork-app release:package --deployment-profile standalone",
     "release:package:cloud": "pnpm exec sdkwork-app release:package --deployment-profile cloud",
     "dev:browser:cloud": "pnpm exec sdkwork-app dev --runtime-target browser --deployment-profile cloud",
-    "dev:browser:cloud:debug": "node scripts/claw-router-dev.mjs --target browser --deployment-profile cloud --distributed --database postgres --dev-env-file .env.postgres"
+    "dev:browser:cloud:debug": "node scripts/claw-router-dev.mjs --target browser --deployment-profile cloud --distributed --database postgres --dev-env-file .env.postgres",
+    "_sdkwork:release:package": "node scripts/build-claw-router-install-package.mjs"
   },
   "pnpm": {
     "overrides": {

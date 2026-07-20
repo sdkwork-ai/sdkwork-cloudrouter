@@ -1082,7 +1082,7 @@ function resolveStartProductionCommand(
 
   return {
     command: cargoCommand(platform),
-    args: ['run', '-p', 'sdkwork-clawrouter-cloud-gateway'],
+    args: ['run', '-p', 'sdkwork-api-clawrouter-standalone-gateway'],
     source: 'cargo',
   };
 }

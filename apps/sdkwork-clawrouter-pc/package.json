@@ -90,13 +90,16 @@
     "test:e2e": "playwright test",
     "test:commerce": "node --import tsx --test commerce-debt-runtime.test.ts commerce-business-runtime.test.ts sdk-composition-standard.test.mjs",
     "test:portal-alignment": "node --test vite-config-runtime.test.ts sdk-composition-standard.test.mjs scripts/portal-workspace-package-resolver.test.mjs",
+    "test:admin": "pnpm --filter @sdkwork/clawrouter-pc-admin-dashboard test && pnpm --filter @sdkwork/clawrouter-pc-admin-site test && pnpm --filter @sdkwork/clawrouter-pc-admin-runtime-region test && pnpm --filter @sdkwork/clawrouter-pc-admin-cache test && pnpm exec vitest run admin-delete-semantics.test.ts --config vite.config.ts --configLoader native --pool vmThreads && node --import tsx --test admin-sidebar-runtime.test.ts",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "dev:standalone": "pnpm exec sdkwork-app dev --root ../.. --deployment-profile standalone",
     "dev:cloud": "pnpm exec sdkwork-app dev --root ../.. --deployment-profile cloud",
     "stop": "pnpm exec sdkwork-app stop --root ../..",
     "dev:browser:postgres:standalone": "pnpm exec sdkwork-app dev --root ../.. --runtime-target browser --deployment-profile standalone",
     "dev:desktop:postgres:standalone": "pnpm exec sdkwork-app dev --root ../.. --runtime-target desktop --deployment-profile standalone",
-    "_sdkwork:client:browser": "pnpm check:dependencies && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native"
+    "_sdkwork:client:browser": "pnpm check:dependencies && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native",
+    "test": "pnpm run test:admin && pnpm run test:commerce && pnpm run test:portal-alignment",
+    "verify": "pnpm check && pnpm test"
   },
   "dependencies": {
     "@monaco-editor/loader": "^1.7.0",

@@ -222,7 +222,7 @@ test('clawrouter backend SDK is owner-only and does not regenerate business capa
   );
 });
 
-test('admin host composes owner admin modules without aggregating dependency SDKs into admin core', () => {
+test('admin host composes owner admin modules through the backend-admin core SDK boundary', () => {
   const appSource = source('src/App.tsx');
   const hostSource = source('src/admin/clawRouterAdminHostMount.tsx');
   const permissionSource = source('packages/sdkwork-clawrouter-pc-admin-shell/src/admin-route-permission-hints.ts');
@@ -283,16 +283,28 @@ test('admin host composes owner admin modules without aggregating dependency SDK
   assert.deepEqual(Object.keys(adminCorePackage.dependencies).sort(), [
     '@sdkwork/clawrouter-backend-sdk',
     '@sdkwork/clawroutes-pc-commons',
+    '@sdkwork/models-backend-sdk',
   ]);
   assert.deepEqual(
     adminCoreComponent.contracts.sdkDependencies.map((dependency) => dependency.workspace),
-    ['clawrouter-backend-sdk'],
+    ['clawrouter-backend-sdk', 'sdkwork-models-backend-sdk'],
   );
-  assert.doesNotMatch(adminCoreSdkSource, /models-backend-sdk|getModelsBackendSdkClient|AdminAiResource/);
-  assert.doesNotMatch(adminCoreInventorySource, /sdkwork-(?:iam|models)-backend-sdk/);
+  const adminCoreInventory = [...adminCoreInventorySource.matchAll(
+    /\{\s*workspace:\s*'([^']+)'\s*,\s*surface:\s*'([^']+)'\s*,\s*credentialMode:\s*'([^']+)'\s*\}/g,
+  )].map((match) => ({
+    workspace: match[1],
+    surface: match[2],
+    credentialMode: match[3],
+  }));
+  assert.deepEqual(adminCoreInventory, adminCoreComponent.contracts.sdkDependencies);
+  assert.match(adminCoreSdkSource, /from '@sdkwork\/models-backend-sdk'/);
+  assert.match(adminCoreSdkSource, /getModelsBackendSdkClient/);
 
-  assert.equal(channelPackage.dependencies['@sdkwork/models-backend-sdk'], 'workspace:*');
-  assert.match(channelService, /from '@sdkwork\/models-backend-sdk'/);
+  assert.equal(channelPackage.dependencies['@sdkwork/models-backend-sdk'], undefined);
+  assert.doesNotMatch(channelService, /from '@sdkwork\/models-backend-sdk'/);
+  assert.match(channelService, /from '@sdkwork\/clawrouter-pc-admin-core\/sdk'/);
+  assert.doesNotMatch(groupService, /from '@sdkwork\/models-backend-sdk'/);
+  assert.match(groupService, /from '@sdkwork\/clawrouter-pc-admin-core\/sdk'/);
   assert.match(channelService, /getModelsBackendSdkClient/);
   assert.match(groupService, /getModelsBackendSdkClient/);
 });

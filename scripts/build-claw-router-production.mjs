@@ -113,7 +113,14 @@ function createProductionBuildPlan(
     {
       label: 'Rust edge release binary',
       command: cargoCommand(platform),
-      args: ['build', '-p', 'sdkwork-clawrouter-cloud-gateway', '--bin', 'clawrouter', '--release'],
+      args: [
+        'build',
+        '-p',
+        'sdkwork-api-clawrouter-standalone-gateway',
+        '--bin',
+        'sdkwork-api-clawrouter-standalone-gateway',
+        '--release',
+      ],
       env,
       cwd: root,
     },

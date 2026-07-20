@@ -79,7 +79,7 @@ SDKWORK_CLAW_GATEWAY_BASE_URL
 Desktop Shell / local launcher
   -> static portal
   -> sdkwork-clawrouter-router-service
-      -> sdkwork-clawrouter-cloud-gateway      127.0.0.1:18080
+      -> sdkwork-clawrouter-edge-runtime      127.0.0.1:18080
       -> sdkwork-clawrouter-admin-gateway    127.0.0.1:18081
       -> sdkwork-clawrouter-standalone-gateway      127.0.0.1:18082
       -> SQLite
@@ -111,7 +111,7 @@ Nginx
   -> /                 portal static
   -> /app/v3/api       sdkwork-clawrouter-standalone-gateway
   -> /backend/v3/api   sdkwork-clawrouter-admin-gateway
-  -> /v1               sdkwork-clawrouter-cloud-gateway
+  -> /v1               sdkwork-clawrouter-edge-runtime
 
 Rust services
   -> PostgreSQL
@@ -182,7 +182,7 @@ Deployments:
   portal
   sdkwork-clawrouter-standalone-gateway
   sdkwork-clawrouter-admin-gateway
-  sdkwork-clawrouter-cloud-gateway
+  sdkwork-clawrouter-edge-runtime
   sdkwork-claw-worker
 
 State:
@@ -202,7 +202,7 @@ Observability:
 
 | Deployment | 扩缩容依据 |
 | --- | --- |
-| `sdkwork-clawrouter-cloud-gateway` | QPS、并发、CPU、network、TTFT |
+| `sdkwork-clawrouter-edge-runtime` | QPS、并发、CPU、network、TTFT |
 | `sdkwork-clawrouter-standalone-gateway` | console/public 请求量 |
 | `sdkwork-clawrouter-admin-gateway` | admin 请求量、后台任务触发 |
 | `sdkwork-claw-worker` | outbox backlog、usage finalize delay |

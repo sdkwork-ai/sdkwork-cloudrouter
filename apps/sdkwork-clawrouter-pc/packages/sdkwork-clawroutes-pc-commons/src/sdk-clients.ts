@@ -18,6 +18,11 @@ import {
   type SdkworkAppConfig as SdkworkMemoryAppConfig,
 } from '@sdkwork/memory-app-sdk';
 import {
+  createClient as createPromptsAppSdkClient,
+  type SdkworkAppConfig as SdkworkPromptsAppConfig,
+  type SdkworkPromptsAppClient as PromptsAppClient,
+} from '@sdkwork/prompts-app-sdk';
+import {
   SdkworkAppClient as SdkworkAgentAppClient,
   type SdkworkAppConfig as SdkworkAgentAppConfig,
 } from '@sdkwork/agents-app-sdk';
@@ -379,6 +384,13 @@ export interface SdkworkMemoryAppSdkClientOptions {
   timeout?: number;
 }
 
+export interface SdkworkPromptsAppSdkClientOptions {
+  appBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
 export interface SdkworkAgentAppSdkClientOptions {
   appBaseUrl?: string;
   platform?: string;
@@ -427,6 +439,7 @@ export type SdkworkAppbaseAppSdkClient = SdkworkAppbaseAppClient;
 export type SdkworkAppbaseBackendSdkClient = SdkworkAppbaseBackendClient;
 export type SdkworkGenerationsAppSdkClient = SdkworkGenerationsAppClient;
 export type SdkworkMemoryAppSdkClient = SdkworkMemoryAppClient;
+export type SdkworkPromptsAppSdkClient = PromptsAppClient;
 export type SdkworkAgentAppSdkClient = SdkworkAgentAppClient;
 export type SdkworkAgentBackendSdkClient = SdkworkAgentBackendClient;
 export type SdkworkPromptsBackendSdkClient = SdkworkPromptsBackendClient;
@@ -487,6 +500,7 @@ let appbaseAppClient: SdkworkAppbaseAppClient | null = null;
 let appbaseBackendClient: SdkworkAppbaseBackendClient | null = null;
 let generationsAppClient: SdkworkGenerationsAppClient | null = null;
 let memoryAppClient: SdkworkMemoryAppClient | null = null;
+let promptsAppClient: PromptsAppClient | null = null;
 let agentAppClient: SdkworkAgentAppClient | null = null;
 let agentBackendClient: SdkworkAgentBackendClient | null = null;
 let promptsBackendClient: SdkworkPromptsBackendClient | null = null;
@@ -534,6 +548,12 @@ export function createSdkworkMemoryAppSdkClient(
   options: SdkworkMemoryAppSdkClientOptions = {},
 ): SdkworkMemoryAppClient {
   return attachClawRouterSdkSessionAuthBoundary(new SdkworkMemoryAppClient(buildMemoryAppConfig(options)));
+}
+
+export function createSdkworkPromptsAppSdkClient(
+  options: SdkworkPromptsAppSdkClientOptions = {},
+): PromptsAppClient {
+  return attachClawRouterSdkSessionAuthBoundary(createPromptsAppSdkClient(buildPromptsAppConfig(options)));
 }
 
 export function createSdkworkAgentAppSdkClient(
@@ -737,6 +757,18 @@ export function getSdkworkMemoryAppSdkClient(
     memoryAppClient = createSdkworkMemoryAppSdkClient();
   }
   return memoryAppClient;
+}
+
+export function getSdkworkPromptsAppSdkClient(
+  options: SdkworkPromptsAppSdkClientOptions = {},
+): SdkworkPromptsAppSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkPromptsAppSdkClient(options);
+  }
+  if (!promptsAppClient) {
+    promptsAppClient = createSdkworkPromptsAppSdkClient();
+  }
+  return promptsAppClient;
 }
 
 export function getSdkworkAgentAppSdkClient(
@@ -1180,6 +1212,21 @@ function buildMemoryAppConfig(options: SdkworkMemoryAppSdkClientOptions): Sdkwor
   };
 }
 
+function buildPromptsAppConfig(options: SdkworkPromptsAppSdkClientOptions): SdkworkPromptsAppConfig {
+  return {
+    baseUrl: normalizeGeneratedSdkBaseUrl(
+      options.appBaseUrl
+      ?? readClawRouterRuntimeEnv('VITE_SDKWORK_PROMPTS_APP_API_BASE_URL')
+      ?? readClawRouterRuntimeEnv('VITE_CLAWROUTER_APP_API_BASE_URL')
+      ?? APP_API_PREFIX,
+      APP_API_PREFIX,
+    ),
+    platform: options.platform ?? 'web',
+    tokenManager: resolveClawRouterSdkTokenManager(options.tokenManager),
+    timeout: options.timeout,
+  };
+}
+
 function buildAgentAppConfig(options: SdkworkAgentAppSdkClientOptions): SdkworkAgentAppConfig {
   return {
     baseUrl:
@@ -1326,6 +1373,7 @@ function hasRuntimeOverrides(
     | SdkworkAppbaseBackendSdkClientOptions
     | SdkworkGenerationsAppSdkClientOptions
     | SdkworkMemoryAppSdkClientOptions
+    | SdkworkPromptsAppSdkClientOptions
     | SdkworkAgentAppSdkClientOptions
     | SdkworkAgentBackendSdkClientOptions
     | SdkworkDriveAppSdkClientOptions

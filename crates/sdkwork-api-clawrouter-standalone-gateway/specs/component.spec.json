@@ -53,18 +53,23 @@
       "file": "TEST_SPEC.md",
       "path": "../../../sdkwork-specs/TEST_SPEC.md",
       "purpose": "Gateway composition verification."
+    },
+    {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Authored source structure rules."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical standalone gateway naming."
     }
   ],
   "contracts": {
     "layerRole": "runtime-gateway",
     "publicExports": [],
     "providedPorts": [],
-    "requiredPorts": [
-      {
-        "name": "applicationApiAssembly",
-        "export": "sdkwork-api-assembly"
-      }
-    ],
+    "requiredPorts": [],
     "runtimeEntrypoints": [
       "src/main.rs"
     ],

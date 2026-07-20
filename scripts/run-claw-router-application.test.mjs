@@ -204,9 +204,9 @@ async function createRustAutoFixtureRepo() {
   writeFixtureFile(repoDir, 'services/sdkwork-clawrouter-router-service/tests/postgres_app_runtime_sql_contract.rs');
   writeFixtureFile(repoDir, 'services/sdkwork-clawrouter-router-service/tests/sqlite_app_runtime_store.rs');
   writeFixtureFile(repoDir, 'services/sdkwork-clawrouter-router-service/tests/openai_compatible_http_relay.rs');
-  writeFixtureFile(repoDir, 'crates/sdkwork-clawrouter-cloud-gateway/src/edge_server.rs');
-  writeFixtureFile(repoDir, 'crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs');
-  writeFixtureFile(repoDir, 'crates/sdkwork-clawrouter-cloud-gateway/tests/edge_server.rs');
+  writeFixtureFile(repoDir, 'crates/sdkwork-clawrouter-edge-runtime/src/edge_server.rs');
+  writeFixtureFile(repoDir, 'crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs');
+  writeFixtureFile(repoDir, 'crates/sdkwork-clawrouter-edge-runtime/tests/edge_server.rs');
 
   await runGit(repoDir, ['add', '.']);
   await runGit(repoDir, ['commit', '-m', 'fixture']);
@@ -464,66 +464,14 @@ test('pnpm dev delegates to canonical browser topology command', () => {
   assert.doesNotMatch(rootPackage.scripts['dev:browser:sqlite'], /client/u);
 });
 
-test('foundation dependency APIs target the shared sdkwork api gateway without a local gateway catalog', () => {
+test('application metadata does not own a platform gateway host or catalog', () => {
   const componentSpec = readWorkspaceJson('specs/component.spec.json');
-  const dependencySurfaces = readWorkspaceJson('specs/dependency-api-surfaces.json');
-
-  assert.deepEqual(componentSpec.integration.foundationApiGateway, {
-    targetApplication: 'sdkwork-api-cloud-gateway',
-    targetMode: 'shared-gateway',
-    commonSdkRootEnv: 'PORTAL_PUBLIC_SDK_BASE_URL',
-    authority: 'cargo-workspace',
-    catalogPolicy: 'no-dedicated-gateway-catalog',
-    productApiPolicy: 'sdkwork-clawrouter APIs remain product-owned SDKWork API surfaces',
-    migrationState: 'shared-gateway-default',
-  });
-
-  assert.deepEqual(dependencySurfaces.gatewayIntegration, {
-    targetApplication: 'sdkwork-api-cloud-gateway',
-    targetMode: 'shared-gateway',
-    commonSdkRootEnv: 'PORTAL_PUBLIC_SDK_BASE_URL',
-    authority: 'cargo-workspace',
-    catalogPolicy: 'no-dedicated-gateway-catalog',
-    productApiPolicy: 'sdkwork-clawrouter APIs remain product-owned SDKWork API surfaces',
-    migrationState: 'shared-gateway-default',
-  });
-
-  const foundationDependencies = dependencySurfaces.dependencies.filter((dependency) =>
-    /^sdkwork-(iam|commerce)-/u.test(dependency.workspace)
-  );
-  assert.equal(foundationDependencies.length, 4);
-  for (const dependency of foundationDependencies) {
-    assert.equal(
-      dependency.runtimeIntegration.mode,
-      'external-service',
-      `${dependency.workspace} must not be declared as product-local same-origin mounted by default`,
-    );
-    assert.equal(
-      dependency.runtimeIntegration.sameOriginAllowed,
-      false,
-      `${dependency.workspace} must consume the shared gateway root instead of a product-owned API base URL`,
-    );
-    assert.equal(
-      dependency.runtimeIntegration.commonBaseUrlEnv,
-      'PORTAL_PUBLIC_SDK_BASE_URL',
-      `${dependency.workspace} must derive from the shared sdkwork-api-cloud-gateway root by default`,
-    );
-    assert.deepEqual(
-      dependency.runtimeIntegration.targetRuntimeIntegration,
-      {
-        mode: 'shared-gateway',
-        gatewayApplication: 'sdkwork-api-cloud-gateway',
-        commonSdkRootEnv: 'PORTAL_PUBLIC_SDK_BASE_URL',
-        catalogPolicy: 'no-dedicated-gateway-catalog',
-      },
-      `${dependency.workspace} must declare the shared gateway target state`,
-    );
-  }
+  assert.equal(componentSpec.integration?.foundationApiGateway, undefined);
 
   const forbiddenGatewayCatalogs = listFilesRecursive(path.join(workspaceRoot, 'specs'))
     .map((filePath) => slashPath(path.relative(workspaceRoot, filePath)))
     .filter((relativePath) =>
-      /(^|\/)(sdkwork-api-cloud-gateway-catalog|api-gateway-catalog|gateway-catalog|foundation-api-catalog)\.(json|ya?ml|toml)$/iu.test(relativePath)
+      /(^|\/)(api-gateway-catalog|gateway-catalog|foundation-api-catalog)\.(json|ya?ml|toml)$/iu.test(relativePath)
     );
   assert.deepEqual(
     forbiddenGatewayCatalogs,
@@ -533,48 +481,6 @@ test('foundation dependency APIs target the shared sdkwork api gateway without a
 });
 
 test('product app and admin API servers do not keep direct foundation API runtime debts', () => {
-  const dependencySurfaces = readWorkspaceJson('specs/dependency-api-surfaces.json');
-  const dependencySurfaceText = readFileSync(
-    path.join(workspaceRoot, 'specs', 'dependency-api-surfaces.json'),
-    'utf8',
-  );
-
-  assert.doesNotMatch(
-    dependencySurfaceText,
-    /legacy(?:HandlerAdapterExports|RustRouteContractCrate|FallbackBaseUrlEnv|PublicBaseUrlEnv)/u,
-    'shared-gateway migration must not keep product-local legacy adapter or base-url fallback fields in dependency-api-surfaces.json',
-  );
-  for (const dependency of dependencySurfaces.dependencies ?? []) {
-    if (/^sdkwork-models-/u.test(dependency.workspace)) {
-      assert.equal(
-        dependency.runtimeIntegration?.mode,
-        'same-origin-mounted',
-        `${dependency.workspace} must declare compose-mounted models catalog routes on the product API surface`,
-      );
-      assert.equal(
-        dependency.runtimeIntegration?.sameOriginAllowed,
-        true,
-        `${dependency.workspace} must allow same-origin product API roots for compose-mounted models catalog routes`,
-      );
-      assert.equal(
-        dependency.runtimeIntegration?.mountCoverage?.status,
-        'verified',
-        `${dependency.workspace} must declare verified mount coverage for compose-mounted models catalog routes`,
-      );
-      continue;
-    }
-    assert.equal(
-      dependency.runtimeIntegration?.mode,
-      'external-service',
-      `${dependency.workspace} must be an external shared-gateway dependency surface`,
-    );
-    assert.equal(
-      dependency.runtimeIntegration?.sameOriginAllowed,
-      false,
-      `${dependency.workspace} must not inherit product-owned same-origin API roots`,
-    );
-  }
-
   const forbiddenFoundationRuntimeCrates = [
     'sdkwork_iam_http',
     'sdkwork_iam_storage_sqlx',
@@ -590,7 +496,7 @@ test('product app and admin API servers do not keep direct foundation API runtim
       assert.doesNotMatch(
         cargoToml,
         new RegExp(`^${crateName}\\.workspace\\s*=\\s*true`, 'mu'),
-        `${relativePath} must not depend on ${crateName}; foundation API runtime is owned by sdkwork-api-cloud-gateway`,
+        `${relativePath} must not depend on ${crateName}; dependency APIs enter through canonical assemblies`,
       );
     }
   }
@@ -604,7 +510,7 @@ test('product app and admin API servers do not keep direct foundation API runtim
     assert.doesNotMatch(
       rootCargoToml,
       new RegExp(`^${crateName}\\s*=`, 'mu'),
-      `root Cargo.toml must not keep unused ${crateName}; shared foundation API runtime integration belongs to sdkwork-api-cloud-gateway`,
+      `root Cargo.toml must not keep unused ${crateName}; dependency APIs enter through canonical assemblies`,
     );
   }
 
@@ -662,7 +568,7 @@ test('product app and admin API servers do not keep direct foundation API runtim
   assert.deepEqual(
     productFoundationAdapters,
     [],
-    'sdkwork-clawrouter-router-service must not retain product-local appbase backend IAM API adapters; appbase backend IAM is served through sdkwork-api-cloud-gateway',
+    'sdkwork-clawrouter-router-service must not retain product-local appbase backend IAM API adapters; IAM remains owned by its canonical assembly',
   );
 
   const productApiModule = readFileSync(
@@ -803,7 +709,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     '-p',
     'sdkwork-clawrouter-router-service',
     '-p',
-    'sdkwork-clawrouter-cloud-gateway',
+    'sdkwork-clawrouter-edge-runtime',
     '-p',
     'sdkwork-clawrouter-admin-gateway',
     '-p',
@@ -870,7 +776,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     module.parseArgs([
       'auto',
       '--changed-file',
-      'crates/sdkwork-clawrouter-cloud-gateway/src/edge_server.rs',
+      'crates/sdkwork-clawrouter-edge-runtime/src/edge_server.rs',
     ]),
     {
       env: {},
@@ -882,7 +788,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
   assert.deepEqual(autoGatewayServiceChange.steps[0].args, [
     'test',
     '-p',
-    'sdkwork-clawrouter-cloud-gateway',
+    'sdkwork-clawrouter-edge-runtime',
     '--test',
     'edge_server',
   ]);
@@ -912,7 +818,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     module.parseArgs([
       'auto',
       '--changed-file',
-      'crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs',
+      'crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs',
     ]),
     {
       env: {},
@@ -926,7 +832,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     module.parseArgs([
       'auto',
       '--changed-file',
-      'crates/sdkwork-clawrouter-cloud-gateway/src/edge_server.rs',
+      'crates/sdkwork-clawrouter-edge-runtime/src/edge_server.rs',
       '--changed-file',
       'services/sdkwork-clawrouter-router-service/src/api/app_runtime.rs',
     ]),
@@ -1108,7 +1014,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     await runGit(stagedFixtureRepo, ['add', 'services/sdkwork-clawrouter-router-service/tests/openai_compatible_http_relay.rs']);
     writeFixtureFile(
       stagedFixtureRepo,
-      'crates/sdkwork-clawrouter-cloud-gateway/src/runtime.rs',
+      'crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs',
       '// unstaged runtime noise\n',
     );
 
@@ -1138,10 +1044,10 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     await runGit(baseRefFixtureRepo, ['checkout', '-b', 'feature/edge-server']);
     writeFixtureFile(
       baseRefFixtureRepo,
-      'crates/sdkwork-clawrouter-cloud-gateway/src/edge_server.rs',
+      'crates/sdkwork-clawrouter-edge-runtime/src/edge_server.rs',
       '// committed feature change\n',
     );
-    await runGit(baseRefFixtureRepo, ['add', 'crates/sdkwork-clawrouter-cloud-gateway/src/edge_server.rs']);
+    await runGit(baseRefFixtureRepo, ['add', 'crates/sdkwork-clawrouter-edge-runtime/src/edge_server.rs']);
     await runGit(baseRefFixtureRepo, ['commit', '-m', 'feature change']);
     writeFixtureFile(
       baseRefFixtureRepo,
@@ -1162,7 +1068,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     assert.deepEqual(autoBaseRefSelection.steps[0].args, [
       'test',
       '-p',
-      'sdkwork-clawrouter-cloud-gateway',
+      'sdkwork-clawrouter-edge-runtime',
       '--test',
       'edge_server',
     ]);
@@ -1314,7 +1220,7 @@ test('rust target measurement plan covers known slow integration surfaces', asyn
   assert.equal(
     plan.steps.some(
       (step) =>
-        step.packageName === 'sdkwork-clawrouter-cloud-gateway' &&
+        step.packageName === 'sdkwork-clawrouter-edge-runtime' &&
         step.testTarget === 'provider_passthrough_route',
     ),
     true,
@@ -1454,7 +1360,7 @@ test('installation documentation covers release, source, initialization, usage, 
   assert.ok(enUsage.includes('Whether registration requires verification code is controlled by IAM runtime policy'));
   assert.ok(zhUsage.includes('SDK 包版本独立于 Claw Router release 版本'));
   assert.ok(enUsage.includes('SDK package versions are independent from Claw Router release versions'));
-  assert.ok(rootReadme.includes('Client development commands use `sdkwork-api-cloud-gateway` for API integration.'));
+  assert.ok(rootReadme.includes('Cloud profile commands are remote-client-only'));
   assert.ok(rootReadme.includes('Explicit product server development commands use PostgreSQL for integration'));
   assert.ok(rootReadme.includes('Desktop packages and first-run local user data use SQLite under `~/.sdkwork/router/data`.'));
   assert.ok(postgresqlIndex.includes('./postgresql-development.md'));
@@ -1484,7 +1390,6 @@ test('installation documentation covers release, source, initialization, usage, 
   assert.ok(postgresqlProduction.includes('Desktop local runtime'));
   assert.ok(postgresqlProduction.includes('~/.sdkwork/router/data/clawrouter.sqlite'));
   assert.ok(enRelease.includes('This desktop SQLite policy is independent from the explicit product server PostgreSQL development profile used by `pnpm dev`, `pnpm dev:server`, and `pnpm dev:server:postgres` for the backend service runtime.'));
-  assert.ok(enRelease.includes('Gateway-backed client commands such as `pnpm dev:desktop` and `pnpm dev:desktop:sqlite` run through `sdkwork-api-cloud-gateway` and do not start a Claw Router backend service.'));
 
   for (const relativePath of ['README.md', ...requiredDocs]) {
     assertMarkdownLocalLinksExist(relativePath);
@@ -1749,7 +1654,7 @@ test('portal runtime is served by Rust edge server without Node server entrypoin
 
 test('Rust edge server owns configurable portal CSP connect-src policy', () => {
   const edgeServerSource = readFileSync(
-    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-cloud-gateway', 'src', 'edge_server.rs'),
+    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-edge-runtime', 'src', 'edge_server.rs'),
     'utf8',
   );
   const gatewayMainSource = readFileSync(
@@ -2271,36 +2176,17 @@ test('claw router application launcher keeps explicit client and desktop modes g
   });
 });
 
-test('claw router workspace client-only launch plan starts sdkwork-api-cloud-gateway and portal only', async () => {
+test('claw router workspace client-only launch plan starts only the remote API client portal', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
   );
 
   const settings = module.parseWorkspaceArgs(['--client-only']);
   const plan = module.buildWorkspaceCommandPlan(settings, { workspaceRoot, platform: 'linux' });
-  const managedGatewayStep = plan.steps.find((step) => step.name === 'sdkwork-api-cloud-gateway');
   const portalStep = plan.steps.find((step) => step.name === 'portal');
 
   assert.equal(settings.runtimeMode, 'client');
-  assert.deepEqual(plan.steps.map((step) => step.name), [
-    'sdkwork-api-cloud-gateway-prebuild',
-    'sdkwork-api-cloud-gateway',
-    'portal',
-  ]);
-  assert.deepEqual(managedGatewayStep.args, [
-    'run',
-    '-p',
-    'sdkwork-api-cloud-gateway',
-    '--bin',
-    'sdkwork-api-cloud-gateway',
-    '--',
-    '--config',
-    'configs/sdkwork-api-cloud-gateway.development.toml.example',
-  ]);
-  assert.equal(
-    managedGatewayStep.cwd,
-    path.resolve(workspaceRoot, '..', 'sdkwork-api-cloud-gateway'),
-  );
+  assert.deepEqual(plan.steps.map((step) => step.name), ['portal']);
   assert.equal(portalStep.env.PORTAL_PUBLIC_SDK_BASE_URL, undefined);
   assert.equal(portalStep.env.PORTAL_PUBLIC_API_BASE_URL, undefined);
   assert.equal(portalStep.env.PORTAL_PUBLIC_OPEN_API_BASE_URL, undefined);
@@ -2322,7 +2208,6 @@ test('claw router workspace client-only launch plan starts sdkwork-api-cloud-gat
   assert.deepEqual(
     module.workspaceBindTargets(settings).map((target) => `${target.name} ${target.bind}`),
     [
-      'sdkwork-api-cloud-gateway 127.0.0.1:3902',
       'portal 127.0.0.1:3901',
     ],
   );
@@ -2341,7 +2226,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
 
     assert.equal(settings.serverBind, '0.0.0.0:3900');
     assert.equal(settings.portalBind, '127.0.0.1:3901');
-    assert.equal(settings.sdkworkApiGatewayBind, '127.0.0.1:3902');
+    assert.equal(settings.remoteApiIngressOrigin, 'http://127.0.0.1:3902');
     assert.equal(settings.portalDevBind, undefined);
     assert.equal(settings.databaseUrl, defaultDevPostgresDatabaseUrl);
     assert.equal(settings.runtimeMode, 'all-in-one');
@@ -2361,7 +2246,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       '-p',
       'sdkwork-claw-installer',
       '-p',
-      'sdkwork-clawrouter-standalone-gateway-lib',
+      'sdkwork-api-clawrouter-standalone-gateway',
     ]);
     assert.equal(prebuildStep.blocking, true);
     assert.equal(
@@ -2400,11 +2285,12 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       refreshStep.env.SDKWORK_MODELS_CATALOG_ROOT,
       path.join(workspaceRoot, '..', 'sdkwork-models'),
     );
-    assert.equal(plan.steps.some((step) => step.name === 'sdkwork-api-cloud-gateway'), true);
+    assert.equal(plan.steps.some((step) => step.name === 'platform-api-host'), false);
     assert.deepEqual(portalStep.args, [
       '--dir',
       'apps/sdkwork-clawrouter-pc',
-      'dev:browser',
+      'run',
+      '_sdkwork:client:browser',
     ]);
     assert.equal(portalStep.env.PORT, '3901');
     assert.equal(portalStep.env.SDKWORK_CLAW_PORTAL_BIND, '127.0.0.1:3901');
@@ -2429,7 +2315,7 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.deepEqual(serverStep.args, [
       'run',
       '-p',
-      'sdkwork-clawrouter-standalone-gateway-lib',
+      'sdkwork-api-clawrouter-standalone-gateway',
     ]);
     assert.equal(
       serverStep.env.CARGO_TARGET_DIR,
@@ -2437,7 +2323,6 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     );
     assert.equal(serverStep.env.SDKWORK_CLAW_EDGE_SERVER, '1');
     assert.equal(serverStep.env.SDKWORK_CLAW_ALL_IN_ONE_RUNTIME, '1');
-    assert.equal(serverStep.env.SDKWORK_API_CLOUD_GATEWAY_MODE, 'embedded');
     assert.equal(serverStep.env.SDKWORK_CLAW_SERVER_BIND, '0.0.0.0:3900');
     assert.equal(serverStep.env.SDKWORK_CLAW_STARTUP_INSTALL_MODE, 'skip');
     assert.equal(serverStep.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1005');
@@ -2461,7 +2346,6 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
       module.workspaceBindTargets(settings).map((target) => `${target.name} ${target.bind}`),
       [
         'server 0.0.0.0:3900',
-        'sdkwork-api-cloud-gateway 127.0.0.1:3902',
         'portal 127.0.0.1:3901',
       ],
     );
@@ -2591,24 +2475,20 @@ test('claw router workspace launch plan supports local split-process debugging',
   assert.equal(settings.runtimeMode, 'distributed');
   assert.deepEqual(plan.steps.map((step) => step.name), [
     'rust-prebuild',
-    'sdkwork-api-cloud-gateway-prebuild',
     'installer',
     'model-catalog-refresh',
     'gateway',
     'admin-api',
     'app-api',
-    'sdkwork-api-cloud-gateway',
     'portal',
     'server',
   ]);
   const gatewayStep = plan.steps.find((step) => step.name === 'gateway');
   const appApiStep = plan.steps.find((step) => step.name === 'app-api');
-  const managedGatewayStep = plan.steps.find((step) => step.name === 'sdkwork-api-cloud-gateway');
   const portalStep = plan.steps.find((step) => step.name === 'portal');
   const serverStep = plan.steps.find((step) => step.name === 'server');
   assert.equal(gatewayStep.env.SDKWORK_CLAW_GATEWAY_BIND, '0.0.0.0:19080');
   assert.equal(appApiStep.env.SDKWORK_CLAW_APP_RUNTIME_GATEWAY_BASE_URL, 'http://127.0.0.1:19080');
-  assert.equal(managedGatewayStep.env.SDKWORK_API_CLOUD_GATEWAY_BIND, '127.0.0.1:3902');
   assert.equal(portalStep.env.PORTAL_PUBLIC_SDK_BASE_URL, undefined);
   assert.equal(portalStep.env.SDKWORK_CLAW_BROWSER_DEV_PROXY_OPEN_API_ORIGIN, 'http://127.0.0.1:19080');
   assert.equal(portalStep.env.SDKWORK_CLAW_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN, 'http://127.0.0.1:18081');
@@ -2632,14 +2512,13 @@ test('claw router workspace reports occupied service ports before startup', asyn
     unavailable.map((target) => `${target.name} ${target.bind}`),
     [
       'server 0.0.0.0:3900',
-      'sdkwork-api-cloud-gateway 127.0.0.1:3902',
     ],
   );
   await assert.rejects(
     () => module.assertWorkspaceBindsAvailable(settings, async (target) =>
       !['18082', '3900', '3902'].includes(target.port),
     ),
-    /workspace ports are already in use: server 0\.0\.0\.0:3900, sdkwork-api-cloud-gateway 127\.0\.0\.1:3902/u,
+    /workspace ports are already in use: server 0\.0\.0\.0:3900/u,
   );
 });
 
@@ -2777,7 +2656,8 @@ test('claw router workspace supports custom edge server and direct portal binds'
   assert.deepEqual(portalStep.args, [
     '--dir',
     'apps/sdkwork-clawrouter-pc',
-    'dev:browser',
+    'run',
+    '_sdkwork:client:browser',
   ]);
   assert.equal(portalStep.env.HOST, '0.0.0.0');
   assert.equal(portalStep.env.PORT, '13900');
@@ -4244,7 +4124,7 @@ test('production build creates portal assets and Rust edge release artifact', as
   assert.deepEqual(plan[4].args, ['--dir', 'apps/sdkwork-clawrouter-pc', 'build']);
   assert.deepEqual(plan[5].args, ['scripts/archive-claw-router-sdks.mjs']);
   assert.equal(plan[5].command, 'node');
-  assert.deepEqual(plan[6].args, ['build', '-p', 'sdkwork-clawrouter-cloud-gateway', '--bin', 'clawrouter', '--release']);
+  assert.deepEqual(plan[6].args, ['build', '-p', 'sdkwork-clawrouter-edge-runtime', '--bin', 'clawrouter', '--release']);
   assert.equal(plan[6].command, 'cargo.exe');
   assert.equal(plan[6].env.CARGO_TARGET_DIR, 'target-codex');
   assert.ok(
@@ -5954,11 +5834,11 @@ test('production SDK archiver creates deterministic ZIP artifacts for generated 
 
 test('Rust edge SDK archive tool API is constrained to generated SDK packages', () => {
   const edgeServerSource = readFileSync(
-    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-cloud-gateway', 'src', 'edge_server.rs'),
+    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-edge-runtime', 'src', 'edge_server.rs'),
     'utf8',
   );
   const edgeServerTestSource = readFileSync(
-    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-cloud-gateway', 'tests', 'edge_server.rs'),
+    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-edge-runtime', 'tests', 'edge_server.rs'),
     'utf8',
   );
 
@@ -6109,11 +5989,11 @@ test('API router product chain is covered from portal services through SDK and R
     'utf8',
   );
   const edgeSmokeSource = readFileSync(
-    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-cloud-gateway', 'tests', 'edge_server_sqlite_smoke.rs'),
+    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-edge-runtime', 'tests', 'edge_server_sqlite_smoke.rs'),
     'utf8',
   );
   const gatewayRuntimeSource = readFileSync(
-    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-cloud-gateway', 'src', 'runtime.rs'),
+    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-edge-runtime', 'src', 'runtime.rs'),
     'utf8',
   );
   const openaiChatSource = readFileSync(
@@ -6121,7 +6001,7 @@ test('API router product chain is covered from portal services through SDK and R
     'utf8',
   );
   const openaiChatTestSource = readFileSync(
-    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-cloud-gateway', 'tests', 'openai_chat_route.rs'),
+    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-edge-runtime', 'tests', 'openai_chat_route.rs'),
     'utf8',
   );
   const appAiServiceSurface = `${modelServiceSource}\n${playgroundServiceSource}\n${appRuntimeApiOperationsSource}`;
@@ -8247,7 +8127,7 @@ test('verification plan verifies production portal through Rust edge server with
   const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
 
   assert.ok(commandLines.includes(
-    'cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server',
+    'cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server',
   ));
   assert.ok(!commandLines.some((commandLine) => commandLine.includes('server.test.ts')));
   assert.ok(!commandLines.some((commandLine) => commandLine.includes('smoke-production-server.mjs')));
@@ -8818,7 +8698,7 @@ test('verification plan includes portal production edge smoke after artifact aud
   );
   const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
   const edgeServerSource = readFileSync(
-    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-cloud-gateway', 'src', 'edge_server.rs'),
+    path.join(workspaceRoot, 'crates', 'sdkwork-clawrouter-edge-runtime', 'src', 'edge_server.rs'),
     'utf8',
   );
   const budgetIndex = plan.findIndex((step) => step.label === 'portal bundle budget audit');
@@ -8828,7 +8708,7 @@ test('verification plan includes portal production edge smoke after artifact aud
   assert.ok(smokeIndex > budgetIndex, 'production edge smoke must inspect the audited artifact');
   assert.ok(browserSmokeIndex > smokeIndex, 'browser DOM smoke must run after production edge smoke');
   assert.ok(commandLines.includes(
-    'cargo test -p sdkwork-clawrouter-cloud-gateway --test edge_server edge_server_can_serve_portal_dist_without_node_server',
+    'cargo test -p sdkwork-clawrouter-edge-runtime --test edge_server edge_server_can_serve_portal_dist_without_node_server',
   ));
   assert.ok(edgeServerSource.includes('with_portal_static_dist'));
   assert.ok(edgeServerSource.includes('runtime-env.js'));

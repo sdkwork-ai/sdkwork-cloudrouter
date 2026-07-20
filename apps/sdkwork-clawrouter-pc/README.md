@@ -1,13 +1,13 @@
 # SDKWork ClawRouter PC
 
-SDKWork ClawRouter PC is the browser console for the Claw Router product. Default root `pnpm dev` starts the integrated product server workspace (topology profile `standalone.development`); gateway-backed client mode is available via `pnpm dev:desktop`. Production packages are served by the Rust edge server. Frontend business calls stay behind the portal service layer, generated SDKs, and SDKWork API entrypoints.
+SDKWork ClawRouter PC is the browser console for the Claw Router product. Root `pnpm dev` starts the canonical standalone application runtime. Cloud profile commands are remote-client-only and start no local API process. Frontend business calls stay behind the portal service layer, generated SDKs, and surface-oriented SDKWork API entrypoints.
 
 ## Architecture
 
 - Portal UI modules call local service boundaries.
 - App business APIs use `@sdkwork/clawrouter-app-sdk` for `/app/v3/api`.
 - Admin and backend APIs use `@sdkwork/clawrouter-backend-sdk` for `/backend/v3/api`.
-- `sdkwork-api-cloud-gateway` backs gateway-only client development (`pnpm dev:desktop`); integrated dev uses the Rust edge on `application.public-ingress` (default `http://127.0.0.1:3900`).
+- Standalone development uses `application.public-ingress` (default `http://127.0.0.1:3900`); remote client development reads explicit surface URLs and does not depend on a gateway implementation identity.
 - The Rust edge server is the default development entrypoint (`pnpm dev`) and the production packaged entrypoint.
 - Direct product service ports remain available for distributed profiles (`pnpm dev:browser:postgres:standalone:debug`) and explicit diagnostics.
 
@@ -45,13 +45,13 @@ See `docs/topology-standard.md` for topology profiles, URLs, and env keys.
 Useful root entrypoints:
 
 - `pnpm.cmd dev` starts the integrated Rust edge plus portal dev server (default standalone profile on port 3900).
-- `pnpm.cmd dev:desktop` starts `sdkwork-api-cloud-gateway` and the portal dev server only (gateway-backed client).
+- `pnpm.cmd dev:desktop` starts the desktop client against the standalone application ingress.
 - `pnpm.cmd test` runs launcher and tooling contract tests.
 - `pnpm.cmd build` builds production portal assets and the Rust edge server release binary.
 - `pnpm.cmd start` serves the production portal through the Rust edge server.
 - `pnpm.cmd release` runs release preflight and the full verification gate.
 - `pnpm.cmd smoke:dev` verifies the explicit product server edge entrypoint and direct service URLs on isolated local ports.
-- `pnpm.cmd dev:desktop` starts the gateway-backed desktop client workspace.
+- `pnpm.cmd dev:browser:cloud` starts a remote browser client and no local API host.
 - `pnpm.cmd dev:server -- --gateway-bind 0.0.0.0:19080` starts all services with forwarded workspace options.
 - `pnpm.cmd topology:plan:server` prints the server startup plan without launching processes.
 
@@ -66,13 +66,11 @@ Default integrated development URLs:
 - Backend/Admin API: `http://127.0.0.1:3900/backend/v3/api`
 - App API: `http://127.0.0.1:3900/app/v3/api`
 
-Gateway-backed client mode (`pnpm dev:desktop`) uses `sdkwork-api-cloud-gateway` on port `3902` and portal dev server on `3901`:
+Remote client mode uses the configured application API origin and the portal dev server on `3901`:
 
 - Portal Vite dev server: `http://127.0.0.1:3901/`
-- SDKWork API Gateway: `http://127.0.0.1:3902/`
-- OpenAI-compatible Gateway API: `http://127.0.0.1:3902/v1`
-- Backend/Admin API: `http://127.0.0.1:3902/backend/v3/api`
-- App API: `http://127.0.0.1:3902/app/v3/api`
+- Remote API ingress: configured by the selected cloud profile
+- Open API, backend API, and app API URLs: configured independently by surface
 
 ## Server Entrypoint
 
@@ -135,7 +133,7 @@ For **local Vite development**, use `.env.development` instead:
 - `SDKWORK_CLAW_BROWSER_DEV_PROXY_*_ORIGIN` for private dev-server proxy upstreams
 - Do not put `PORTAL_PUBLIC_*` or legacy `PORTAL_DEV_PROXY_*` in `.env.development`
 
-The direct `3901` Vite dev server proxies same-origin API paths to the active topology upstream (`sdkwork-api-cloud-gateway` in client development or the integrated Rust edge in unified-process development), so generated SDK base URLs stay aligned with the gateway-backed API entrypoint.
+The direct `3901` Vite dev server proxies same-origin API paths to the active topology surface URL, so generated SDK base URLs remain independent of the remote host implementation.
 Per-surface release overrides remain available through `PORTAL_PUBLIC_API_BASE_URL`, `PORTAL_PUBLIC_OPEN_API_BASE_URL`, `PORTAL_PUBLIC_APP_API_BASE_URL`, and `PORTAL_PUBLIC_BACKEND_API_BASE_URL` on the release host for split deployments.
 
 Private edge-server settings (CSP, tool API rate limits, SDK archive fallback) belong in `.env.release` as `SDKWORK_CLAW_EDGE_*` and `SDKWORK_CLAW_TOOL_API_*`. See `.env.release.example` and `specs/application-env-standard.md`.

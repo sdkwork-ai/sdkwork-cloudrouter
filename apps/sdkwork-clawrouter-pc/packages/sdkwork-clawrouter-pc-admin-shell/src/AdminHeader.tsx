@@ -521,13 +521,15 @@ export function AdminHeader({
             aria-label={mobileMenuOpen
               ? t('admin.header.mobileMenu.close', 'Close admin navigation')
               : t('admin.header.mobileMenu.open', 'Open admin navigation')}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+            aria-hidden={mobileMenuOpen ? 'true' : undefined}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/10 hover:text-white ${
+              mobileMenuOpen ? 'invisible pointer-events-none' : ''
+            }`}
             onClick={onMobileMenuToggle}
+            tabIndex={mobileMenuOpen ? -1 : undefined}
             type="button"
           >
-            {mobileMenuOpen
-              ? <X aria-hidden="true" className="h-6 w-6" />
-              : <Menu aria-hidden="true" className="h-6 w-6" />}
+            <Menu aria-hidden="true" className="h-6 w-6" />
           </button>
         </div>
       </div>

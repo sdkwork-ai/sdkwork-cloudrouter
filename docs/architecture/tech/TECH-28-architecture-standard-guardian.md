@@ -50,7 +50,7 @@ docs/09-部署架构设计.md
 
 - `docs/02-技术架构设计.md`
   - `Rust-first`
-  - `sdkwork-clawrouter-cloud-gateway`
+  - `sdkwork-clawrouter-edge-runtime`
   - `sdkwork-clawrouter-standalone-gateway`
   - `sdkwork-clawrouter-admin-gateway`
   - `/app/v3/api`
