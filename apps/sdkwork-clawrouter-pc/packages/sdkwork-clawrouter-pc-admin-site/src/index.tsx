@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useId, useState } from 'react';
 import { Image, Loader2, Palette, RefreshCw, Save, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
@@ -34,6 +34,9 @@ export function ClawRouterSiteSettingsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const siteNameError = form.siteName.trim()
+    ? null
+    : t('admin.siteSettings.errors.siteNameRequired');
 
   const loadSettings = useCallback(async (isActive: () => boolean = () => true) => {
     setLoading(true);
@@ -63,11 +66,19 @@ export function ClawRouterSiteSettingsPage() {
   }, [loadSettings]);
 
   const saveSettings = async () => {
+    if (siteNameError) {
+      setSaveError(siteNameError);
+      setSaveSuccess(null);
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(null);
     try {
-      const saved = await SiteSettingsService.updateSettings(form);
+      const saved = await SiteSettingsService.updateSettings({
+        ...form,
+        siteName: form.siteName.trim(),
+      });
       setForm(saved);
       setSaveSuccess(t('admin.siteSettings.messages.saved'));
     } catch (error) {
@@ -122,7 +133,7 @@ export function ClawRouterSiteSettingsPage() {
           </button>
           <button
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={saving}
+            disabled={saving || Boolean(siteNameError)}
             onClick={() => void saveSettings()}
             type="button"
           >
@@ -147,7 +158,7 @@ export function ClawRouterSiteSettingsPage() {
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
           <SectionHeader icon={<Settings2 className="h-5 w-5 text-blue-500" />} title={t('admin.siteSettings.sections.identity')} />
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <TextField label={t('admin.siteSettings.fields.siteName')} onChange={(value) => updateField('siteName', value)} required value={form.siteName} />
+            <TextField error={siteNameError} label={t('admin.siteSettings.fields.siteName')} onChange={(value) => updateField('siteName', value)} required value={form.siteName} />
             <TextField label={t('admin.siteSettings.fields.shortName')} onChange={(value) => updateField('shortName', value)} value={form.shortName} />
             <TextArea className="md:col-span-2" label={t('admin.siteSettings.fields.description')} onChange={(value) => updateField('description', value)} rows={3} value={form.description} />
             <TextField label={t('admin.siteSettings.fields.seoTitle')} onChange={(value) => updateField('seoTitle', value)} value={form.seoTitle} />
@@ -224,22 +235,35 @@ function SectionDivider({ title }: { title: string }) {
   );
 }
 
-function TextField({ label, value, onChange, className = '', required = false }: {
+function TextField({ label, value, onChange, className = '', error = null, required = false }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  error?: string | null;
   required?: boolean;
 }) {
+  const errorId = useId();
   return (
     <label className={`block ${className}`}>
       <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
       <input
-        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={error ? 'true' : undefined}
+        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:ring-2 dark:bg-black/20 dark:text-white ${
+          error
+            ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500/60'
+            : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-white/10'
+        }`}
         onChange={(event) => onChange(event.target.value)}
         required={required}
         value={value}
       />
+      {error ? (
+        <span className="mt-1 block text-xs text-red-600 dark:text-red-400" id={errorId} role="alert">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }

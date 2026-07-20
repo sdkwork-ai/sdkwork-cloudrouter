@@ -18,7 +18,7 @@ export const DEFAULT_RUNTIME_REGION_SETTINGS: RuntimeRegionSettingsForm = {
 
 export const RuntimeRegionService = {
   async fetchSettings(): Promise<RuntimeRegionSettingsForm> {
-    const result = await getClawRouterBackendSdkClient().system.runtimeRegion.settings.retrieve();
+    const result = await getClawRouterBackendSdkClient().system.runtimeRegion.settings.list();
     ensureSdkworkApiSuccess(result, 'Unable to load runtime region settings');
     return toRuntimeRegionSettings(readApiRecord(result));
   },
@@ -35,6 +35,16 @@ export function toRuntimeRegionSettings(record: Record<string, unknown>): Runtim
     currentRegionCode: readString(record, 'currentRegionCode', DEFAULT_RUNTIME_REGION_SETTINGS.currentRegionCode),
     currentRegionName: readString(record, 'currentRegionName', DEFAULT_RUNTIME_REGION_SETTINGS.currentRegionName),
     remark: readString(record, 'remark', DEFAULT_RUNTIME_REGION_SETTINGS.remark),
+  };
+}
+
+export function toRuntimeRegionUpdateRequest(
+  form: RuntimeRegionSettingsForm,
+): AdminRuntimeRegionSettingsUpdateRequest {
+  return {
+    currentRegionCode: form.currentRegionCode.trim(),
+    currentRegionName: form.currentRegionName.trim(),
+    remark: form.remark.trim(),
   };
 }
 

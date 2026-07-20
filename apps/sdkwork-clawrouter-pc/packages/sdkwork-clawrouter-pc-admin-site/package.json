@@ -5,11 +5,22 @@
   "type": "module",
   "main": "./src/index.tsx",
   "scripts": {
+    "test": "vitest run src/SiteSettingsService.test.ts --config ../../vite.config.ts --configLoader native --pool vmThreads",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@sdkwork/clawrouter-pc-admin-core": "workspace:*",
     "@sdkwork/clawroutes-pc-commons": "workspace:*"
+  },
+  "peerDependencies": {
+    "lucide-react": ">=0.500.0 <1.0.0",
+    "react": ">=19.0.0 <20.0.0",
+    "react-i18next": ">=17.0.0 <18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public",

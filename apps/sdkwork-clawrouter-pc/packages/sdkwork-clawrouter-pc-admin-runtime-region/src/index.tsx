@@ -1,17 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Globe2, Loader2, MapPin, RefreshCw, Route, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
-import type { AdminRuntimeRegionSettingsUpdateRequest } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import {
   DEFAULT_RUNTIME_REGION_SETTINGS,
   RuntimeRegionService,
+  toRuntimeRegionUpdateRequest,
   type RuntimeRegionSettingsForm,
 } from './runtimeRegionService';
 
 export {
   DEFAULT_RUNTIME_REGION_SETTINGS,
   RuntimeRegionService,
+  toRuntimeRegionUpdateRequest,
   toRuntimeRegionSettings,
 } from './runtimeRegionService';
 export type { RuntimeRegionSettingsForm } from './runtimeRegionService';
@@ -36,11 +37,20 @@ export function RuntimeRegionAdmin() {
 
   const regionCodeError = useMemo(() => {
     const code = form.currentRegionCode.trim();
-    if (!code || REGION_CODE_PATTERN.test(code)) {
-      return null;
+    if (!code) {
+      return t('admin.runtimeRegion.errors.regionCodeRequired');
     }
-    return t('admin.runtimeRegion.errors.invalidRegionCode');
+    return REGION_CODE_PATTERN.test(code)
+      ? null
+      : t('admin.runtimeRegion.errors.invalidRegionCode');
   }, [form.currentRegionCode, t]);
+
+  const regionNameError = useMemo(
+    () => form.currentRegionName.trim()
+      ? null
+      : t('admin.runtimeRegion.errors.regionNameRequired'),
+    [form.currentRegionName, t],
+  );
 
   const loadSettings = useCallback(async (isActive: () => boolean = () => true) => {
     setLoading(true);
@@ -70,8 +80,9 @@ export function RuntimeRegionAdmin() {
   }, [loadSettings]);
 
   const saveSettings = async () => {
-    if (regionCodeError) {
-      setSaveError(regionCodeError);
+    const validationError = regionCodeError ?? regionNameError;
+    if (validationError) {
+      setSaveError(validationError);
       setSaveSuccess(null);
       return;
     }
@@ -80,7 +91,7 @@ export function RuntimeRegionAdmin() {
     setSaveError(null);
     setSaveSuccess(null);
     try {
-      const saved = await RuntimeRegionService.updateSettings(toUpdateRequest(form));
+      const saved = await RuntimeRegionService.updateSettings(toRuntimeRegionUpdateRequest(form));
       setForm(saved);
       setSaveSuccess(t('admin.runtimeRegion.messages.saved'));
     } catch (error) {
@@ -139,7 +150,7 @@ export function RuntimeRegionAdmin() {
         </button>
         <button
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={saving || Boolean(regionCodeError)}
+          disabled={saving || Boolean(regionCodeError) || Boolean(regionNameError)}
           onClick={() => void saveSettings()}
           type="button"
         >
@@ -172,6 +183,7 @@ export function RuntimeRegionAdmin() {
               value={form.currentRegionCode}
             />
             <TextField
+              error={regionNameError}
               label={t('admin.runtimeRegion.fields.currentRegionName')}
               onChange={(value) => updateField('currentRegionName', value)}
               required
@@ -236,10 +248,13 @@ function TextField({ label, value, onChange, className = '', required = false, e
   required?: boolean;
   error?: string | null;
 }) {
+  const errorId = useId();
   return (
     <label className={`block ${className}`}>
       <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
       <input
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={error ? 'true' : undefined}
         className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:ring-2 dark:bg-black/20 dark:text-white ${
           error
             ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500/40'
@@ -249,7 +264,7 @@ function TextField({ label, value, onChange, className = '', required = false, e
         required={required}
         value={value}
       />
-      {error ? <span className="mt-1 block text-xs text-red-600 dark:text-red-300">{error}</span> : null}
+      {error ? <span className="mt-1 block text-xs text-red-600 dark:text-red-300" id={errorId} role="alert">{error}</span> : null}
     </label>
   );
 }
@@ -272,14 +287,6 @@ function TextArea({ label, value, onChange, className = '', rows = 4 }: {
       />
     </label>
   );
-}
-
-function toUpdateRequest(form: RuntimeRegionSettingsForm): AdminRuntimeRegionSettingsUpdateRequest {
-  return {
-    currentRegionCode: form.currentRegionCode.trim() || DEFAULT_RUNTIME_REGION_SETTINGS.currentRegionCode,
-    currentRegionName: form.currentRegionName.trim() || DEFAULT_RUNTIME_REGION_SETTINGS.currentRegionName,
-    remark: form.remark.trim() || DEFAULT_RUNTIME_REGION_SETTINGS.remark,
-  };
 }
 
 function errorMessage(error: unknown, fallback: string): string {

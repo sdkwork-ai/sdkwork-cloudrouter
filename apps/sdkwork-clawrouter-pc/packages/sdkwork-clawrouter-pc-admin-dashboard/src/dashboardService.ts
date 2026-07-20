@@ -27,10 +27,10 @@ export interface TrafficData {
   time: string;
   tokens: number;
   requests: number;
-  cost: number;
+  points: number;
   chartTokens: number;
   chartRequests: number;
-  chartCost: number;
+  chartPoints: number;
 }
 
 export interface RecentUsageTrace {
@@ -76,7 +76,7 @@ export interface InstallationStatusResponse {
   changed: boolean;
 }
 
-interface DashboardAnalyticsSummary {
+export interface DashboardAnalyticsSummary {
   totalUsers: number;
   activeUsers: number;
   activeModels: number;
@@ -97,44 +97,17 @@ interface DashboardAnalyticsSnapshot {
 }
 
 const INITIAL_DAILY_TRAFFIC_DATA: TrafficData[] = [
-  { time: 'D-6', tokens: 0, requests: 0, cost: 0, chartTokens: 0, chartRequests: 0, chartCost: 0 },
-  { time: 'D-5', tokens: 0, requests: 0, cost: 0, chartTokens: 0, chartRequests: 0, chartCost: 0 },
-  { time: 'D-4', tokens: 0, requests: 0, cost: 0, chartTokens: 0, chartRequests: 0, chartCost: 0 },
-  { time: 'D-3', tokens: 0, requests: 0, cost: 0, chartTokens: 0, chartRequests: 0, chartCost: 0 },
-  { time: 'D-2', tokens: 0, requests: 0, cost: 0, chartTokens: 0, chartRequests: 0, chartCost: 0 },
-  { time: 'D-1', tokens: 0, requests: 0, cost: 0, chartTokens: 0, chartRequests: 0, chartCost: 0 },
-  { time: 'Today', tokens: 0, requests: 0, cost: 0, chartTokens: 0, chartRequests: 0, chartCost: 0 },
+  { time: 'D-6', tokens: 0, requests: 0, points: 0, chartTokens: 0, chartRequests: 0, chartPoints: 0 },
+  { time: 'D-5', tokens: 0, requests: 0, points: 0, chartTokens: 0, chartRequests: 0, chartPoints: 0 },
+  { time: 'D-4', tokens: 0, requests: 0, points: 0, chartTokens: 0, chartRequests: 0, chartPoints: 0 },
+  { time: 'D-3', tokens: 0, requests: 0, points: 0, chartTokens: 0, chartRequests: 0, chartPoints: 0 },
+  { time: 'D-2', tokens: 0, requests: 0, points: 0, chartTokens: 0, chartRequests: 0, chartPoints: 0 },
+  { time: 'D-1', tokens: 0, requests: 0, points: 0, chartTokens: 0, chartRequests: 0, chartPoints: 0 },
+  { time: 'Today', tokens: 0, requests: 0, points: 0, chartTokens: 0, chartRequests: 0, chartPoints: 0 },
 ];
 
 const DEFAULT_TRAFFIC_TIME_RANGE: DashboardTrafficTimeRange = 'daily';
 const TRAFFIC_TIME_RANGES = new Set<DashboardTrafficTimeRange>(['hourly', 'daily', 'weekly', 'monthly']);
-const TRAFFIC_POINT_LIMITS: Record<DashboardTrafficTimeRange, number> = {
-  hourly: 24,
-  daily: 30,
-  weekly: 26,
-  monthly: 12,
-};
-
-const INITIAL_TRAFFIC_DATA_BY_RANGE: Record<DashboardTrafficTimeRange, TrafficData[]> = {
-  hourly: Array.from({ length: 24 }, (_item, index) => zeroTrafficData(index === 23 ? 'Now' : `H-${23 - index}`)),
-  daily: INITIAL_DAILY_TRAFFIC_DATA,
-  weekly: [
-    zeroTrafficData('W-5'),
-    zeroTrafficData('W-4'),
-    zeroTrafficData('W-3'),
-    zeroTrafficData('W-2'),
-    zeroTrafficData('W-1'),
-    zeroTrafficData('This week'),
-  ],
-  monthly: [
-    zeroTrafficData('M-5'),
-    zeroTrafficData('M-4'),
-    zeroTrafficData('M-3'),
-    zeroTrafficData('M-2'),
-    zeroTrafficData('M-1'),
-    zeroTrafficData('This month'),
-  ],
-};
 
 const INITIAL_MODEL_DISTRIBUTION: PieChartData[] = [
   { name: 'No model usage', value: 0, chartValue: 1, color: '#94a3b8' },
@@ -155,8 +128,8 @@ export class AdminDashboardService {
     t: AdminDashboardTranslator = DEFAULT_DASHBOARD_TRANSLATOR,
     query: DashboardDataQuery = {},
   ): Promise<DashboardDataSnapshot> {
-    const trafficTimeRange = normalizeDashboardTrafficTimeRange(query.timeRange);
-    const result = await getClawRouterBackendSdkClient().system.dashboard.admin.overview.retrieve();
+    normalizeDashboardTrafficTimeRange(query.timeRange);
+    const result = await getClawRouterBackendSdkClient().system.dashboard.admin.overview.list();
     const data = readRequiredRecord(result, 'Admin dashboard overview is required');
     const activeUsers = readRequiredNonNegativeNumber(data, 'activeUsers', 'Dashboard active users are required');
     const backendUserConsumption = readRequiredRecordArray(data, 'userConsumption', 'Dashboard userConsumption is required', 'Dashboard pie chart record is required')
@@ -169,14 +142,14 @@ export class AdminDashboardService {
       .map(normalizePieChartData);
     const recentUsage = readRequiredRecordArray(data, 'recentUsage', 'Dashboard recentUsage is required', 'Recent usage trace record is required')
       .map(normalizeRecentUsageTrace);
-    const analytics = await fetchDashboardAnalyticsForTimeRange(trafficTimeRange);
+    const analytics = await fetchDailyDashboardAnalytics();
     const userConsumption = withInitialPieChartData(backendUserConsumption, INITIAL_USER_CONSUMPTION);
     const multimodal = withInitialPieChartData(backendMultimodal, INITIAL_MULTIMODAL_DATA);
-    const traffic = withInitialTrafficData(analytics.traffic, trafficTimeRange);
+    const traffic = withInitialTrafficData(analytics.traffic);
     const modelDistribution = withInitialPieChartData(backendModelDistribution, INITIAL_MODEL_DISTRIBUTION);
     return {
       activeUsers,
-      summaryCards: createSummaryCards({
+      summaryCards: createDashboardSummaryCards({
         activeUsers,
         summary: analytics.summary,
         multimodal: backendMultimodal,
@@ -190,18 +163,14 @@ export class AdminDashboardService {
   }
 
   static async fetchInstallationStatus(): Promise<InstallationStatusResponse> {
-    const result = await getClawRouterBackendSdkClient().system.installation.status.retrieve();
+    const result = await getClawRouterBackendSdkClient().system.installation.status.list();
     return normalizeInstallationStatus(readRequiredRecord(result, 'Installation status is required'));
   }
 }
 
-async function fetchDashboardAnalyticsForTimeRange(
-  timeRange: DashboardTrafficTimeRange,
-): Promise<DashboardAnalyticsSnapshot> {
-  const result = await getClawRouterBackendSdkClient().system.analytics.admin.overview.retrieve({
-    timeRange,
-    rankingSize: TRAFFIC_POINT_LIMITS[timeRange],
-  });
+async function fetchDailyDashboardAnalytics(): Promise<DashboardAnalyticsSnapshot> {
+  // The generated SDK has no analytics query type; the backend's no-query default is daily.
+  const result = await getClawRouterBackendSdkClient().system.analytics.admin.overview.list();
   const data = readRequiredRecord(result, 'Dashboard traffic analytics overview is required');
   return {
     summary: normalizeAnalyticsSummary(readRequiredRecord(data.summary, 'Dashboard traffic analytics summary is required')),
@@ -214,7 +183,7 @@ async function fetchDashboardAnalyticsForTimeRange(
   };
 }
 
-function normalizeDashboardTrafficTimeRange(value: unknown): DashboardTrafficTimeRange {
+export function normalizeDashboardTrafficTimeRange(value: unknown): DashboardTrafficTimeRange {
   if (value === undefined || value === null || value === '') {
     return DEFAULT_TRAFFIC_TIME_RANGE;
   }
@@ -222,22 +191,13 @@ function normalizeDashboardTrafficTimeRange(value: unknown): DashboardTrafficTim
     throw new Error('Dashboard traffic timeRange must be a valid time range');
   }
   const normalized = value.trim().toLowerCase();
+  if (normalized === DEFAULT_TRAFFIC_TIME_RANGE) {
+    return DEFAULT_TRAFFIC_TIME_RANGE;
+  }
   if (TRAFFIC_TIME_RANGES.has(normalized as DashboardTrafficTimeRange)) {
-    return normalized as DashboardTrafficTimeRange;
+    throw new Error(`Dashboard analytics SDK does not support the requested ${normalized} time range`);
   }
   throw new Error('Dashboard traffic timeRange must be a valid time range');
-}
-
-function zeroTrafficData(time: string): TrafficData {
-  return {
-    time,
-    tokens: 0,
-    requests: 0,
-    cost: 0,
-    chartTokens: 0,
-    chartRequests: 0,
-    chartCost: 0,
-  };
 }
 
 function normalizePieChartData(value: unknown): PieChartData {
@@ -254,31 +214,31 @@ function normalizeTrafficData(value: unknown): TrafficData {
   const item = readRequiredRecord(value, 'Dashboard traffic record is required');
   const tokens = readRequiredNonNegativeNumber(item, 'tokens', 'Dashboard traffic tokens are required');
   const requests = readRequiredNonNegativeNumber(item, 'requests', 'Dashboard traffic requests are required');
-  const cost = readRequiredNonNegativeNumber(item, 'cost', 'Dashboard traffic cost is required');
+  const points = readRequiredNonNegativeNumber(item, 'cost', 'Dashboard traffic billing points are required');
   return {
     time: readRequiredString(item, 'time', 'Dashboard traffic time is required'),
     tokens,
     requests,
-    cost,
+    points,
     chartTokens: tokens,
     chartRequests: requests,
-    chartCost: cost,
+    chartPoints: points,
   };
 }
 
-function normalizeAnalyticsTrafficData(value: unknown): TrafficData {
+export function normalizeAnalyticsTrafficData(value: unknown): TrafficData {
   const item = readRequiredRecord(value, 'Dashboard traffic analytics trend point is required');
   const tokens = readRequiredNonNegativeNumber(item, 'tokens', 'Dashboard traffic analytics tokens are required');
   const requests = readRequiredNonNegativeNumber(item, 'requests', 'Dashboard traffic analytics requests are required');
-  const cost = readRequiredNonNegativeNumber(item, 'points', 'Dashboard traffic analytics points are required');
+  const points = readRequiredNonNegativeNumber(item, 'points', 'Dashboard traffic analytics points are required');
   return {
     time: readRequiredString(item, 'time', 'Dashboard traffic analytics time is required'),
     tokens,
     requests,
-    cost,
+    points,
     chartTokens: tokens,
     chartRequests: requests,
-    chartCost: cost,
+    chartPoints: points,
   };
 }
 
@@ -340,14 +300,13 @@ function withInitialPieChartData(items: PieChartData[], initialItems: PieChartDa
 
 function withInitialTrafficData(
   items: TrafficData[],
-  timeRange: DashboardTrafficTimeRange = DEFAULT_TRAFFIC_TIME_RANGE,
 ): TrafficData[] {
-  const trafficItems = items.length > 0 ? items : INITIAL_TRAFFIC_DATA_BY_RANGE[timeRange];
+  const trafficItems = items.length > 0 ? items : INITIAL_DAILY_TRAFFIC_DATA;
   return trafficItems.map((item) => ({
     ...item,
     chartTokens: item.tokens,
     chartRequests: item.requests,
-    chartCost: item.cost,
+    chartPoints: item.points,
   }));
 }
 
@@ -431,11 +390,11 @@ function readRequiredDecimalString(
   return readDecimalString(record, key);
 }
 
-function createSummaryCards(snapshot: {
+export function createDashboardSummaryCards(snapshot: {
   activeUsers: number;
   summary: DashboardAnalyticsSummary;
   multimodal: PieChartData[];
-}, t: AdminDashboardTranslator): DashboardSummaryCard[] {
+}, t: AdminDashboardTranslator = DEFAULT_DASHBOARD_TRANSLATOR): DashboardSummaryCard[] {
   const summary = snapshot.summary;
   const multimodalTotal = sumBy(snapshot.multimodal, (item) => item.value);
 
@@ -443,12 +402,16 @@ function createSummaryCards(snapshot: {
     {
       label: t('admin.dashboard.summary.activeUsers.label', '活跃用户'),
       value: formatInteger(snapshot.activeUsers),
-      detail: t('admin.dashboard.summary.activeUsers.detail', '{{amount}} 用户消费', { amount: formatMoney(summary.totalPoints) }),
+      detail: t('admin.dashboard.summary.activeUsers.detail', '{{count}} 位产生用量的用户', {
+        count: formatInteger(summary.activeUsers),
+      }),
     },
     {
-      label: t('admin.dashboard.summary.modelCoverage.label', '模型覆盖'),
+      label: t('admin.dashboard.summary.activeModels.label', '活跃模型'),
       value: formatInteger(summary.activeModels),
-      detail: t('admin.dashboard.summary.modelCoverage.detail', '{{count}} 次模型调用', { count: formatInteger(summary.totalRequests) }),
+      detail: t('admin.dashboard.summary.activeModels.detail', '来自 {{count}} 位统计用户', {
+        count: formatInteger(summary.totalUsers),
+      }),
     },
     {
       label: t('admin.dashboard.summary.totalRequests.label', '总请求'),
@@ -461,7 +424,9 @@ function createSummaryCards(snapshot: {
     {
       label: t('admin.dashboard.summary.totalTokens.label', '总 Tokens'),
       value: formatCompactNumber(summary.totalTokens),
-      detail: t('admin.dashboard.summary.totalTokens.detail', '累计计费 {{amount}}', { amount: formatMoney(summary.totalPoints) }),
+      detail: t('admin.dashboard.summary.totalTokens.detail', '平均每次 {{average}} Tokens', {
+        average: formatDecimal(summary.averageTokensPerRequest),
+      }),
     },
     {
       label: t('admin.dashboard.summary.modalityCalls.label', '模态调用'),
@@ -469,19 +434,23 @@ function createSummaryCards(snapshot: {
       detail: t('admin.dashboard.summary.modalityCalls.detail', '{{count}} 个模态', { count: formatInteger(snapshot.multimodal.length) }),
     },
     {
-      label: t('admin.dashboard.summary.liveTraces.label', '实时流水'),
-      value: formatInteger(summary.failedRequests),
-      detail: t('admin.dashboard.summary.liveTraces.detail', '{{rate}} 失败率', { rate: formatPercent(summary.errorRate) }),
+      label: t('admin.dashboard.summary.errorRate.label', '错误率'),
+      value: formatPercent(summary.errorRate),
+      detail: t('admin.dashboard.summary.errorRate.detail', '{{count}} 次失败请求', {
+        count: formatInteger(summary.failedRequests),
+      }),
     },
     {
-      label: t('admin.dashboard.summary.recentApiCalls.label', '最近 API 调用'),
-      value: formatInteger(summary.totalUsers),
-      detail: t('admin.dashboard.summary.recentApiCalls.detail', '总用户 {{count}}', { count: formatInteger(summary.totalUsers) }),
+      label: t('admin.dashboard.summary.pointsConsumed.label', '消耗积分'),
+      value: formatDecimal(summary.totalPoints),
+      detail: t('admin.dashboard.summary.pointsConsumed.detail', '平均每次 {{average}} 积分', {
+        average: formatDecimal(summary.averagePointsPerRequest),
+      }),
     },
     {
-      label: t('admin.dashboard.summary.averageRequestCost.label', '平均单次成本'),
-      value: formatMoney(summary.averagePointsPerRequest),
-      detail: t('admin.dashboard.summary.averageRequestCost.detail', '按 analytics summary 计算'),
+      label: t('admin.dashboard.summary.upstreamCost.label', '上游成本'),
+      value: formatMoney(summary.upstreamCost),
+      detail: t('admin.dashboard.summary.upstreamCost.detail', '供应商侧实际成本'),
     },
   ];
 }
@@ -496,6 +465,10 @@ function formatInteger(value: number): string {
 
 function formatMoney(value: number): string {
   return `$${value.toFixed(2)}`;
+}
+
+function formatDecimal(value: number): string {
+  return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
 function formatPercent(value: number): string {

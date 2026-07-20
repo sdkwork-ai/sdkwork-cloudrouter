@@ -16,9 +16,6 @@ export type SiteSettingsForm = Omit<AdminSiteSettingsResponse, 'logo' | 'icon' |
   favicon?: ClawRouterMediaResource;
 };
 
-const DEFAULT_ICP_RECORD_NUMBER = `${String.fromCharCode(0x4eac)}ICP${String.fromCharCode(0x5907)}2026000000${String.fromCharCode(0x53f7)}-1`;
-const DEFAULT_POLICE_RECORD_NUMBER = `${String.fromCharCode(0x4eac)}${String.fromCharCode(0x516c)}${String.fromCharCode(0x7f51)}${String.fromCharCode(0x5b89)}${String.fromCharCode(0x5907)}11010502000000${String.fromCharCode(0x53f7)}`;
-
 export const DEFAULT_SITE_SETTINGS: SiteSettingsForm = {
   siteName: 'Claw Router',
   shortName: 'Claw Router',
@@ -29,10 +26,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsForm = {
   brandColor: '#0f172a',
   accentColor: '#e9583f',
   footerCopyright: 'Claw Router. All rights reserved.',
-  icpRecordNumber: DEFAULT_ICP_RECORD_NUMBER,
-  icpRecordUrl: 'https://beian.miit.gov.cn/',
-  policeRecordNumber: DEFAULT_POLICE_RECORD_NUMBER,
-  policeRecordUrl: 'https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010502000000',
+  icpRecordNumber: '',
+  icpRecordUrl: '',
+  policeRecordNumber: '',
+  policeRecordUrl: '',
   seoTitle: 'Claw Router',
   seoDescription: 'Unified AI gateway and model routing platform.',
   supportUrl: '',
@@ -44,7 +41,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsForm = {
 
 export const SiteSettingsService = {
   async fetchSettings(): Promise<SiteSettingsForm> {
-    const result = await getClawRouterBackendSdkClient().system.site.settings.retrieve();
+    const result = await getClawRouterBackendSdkClient().system.site.settings.list();
     ensureSdkworkApiSuccess(result, 'Unable to load site settings');
     return toSiteSettings(readApiRecord(result));
   },
