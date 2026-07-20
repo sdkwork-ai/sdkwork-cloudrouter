@@ -413,8 +413,7 @@ export class GroupService {
 
   static async deleteGroup(id: string): Promise<boolean> {
     const channelGroupId = requiredSafePathSegment(id, 'channelGroupId');
-    const result = await getClawRouterBackendSdkClient().ai.channelGroups.delete(channelGroupId);
-    ensureDeleteResult(result, 'Group delete confirmation is required');
+    await getClawRouterBackendSdkClient().ai.channelGroups.delete(channelGroupId);
     return true;
   }
 
@@ -746,13 +745,6 @@ function validateResourceCodes(values: string[]): void {
 
 function pruneUndefined<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
-}
-
-function ensureDeleteResult(result: unknown, message: string): void {
-  ensureSdkworkApiSuccess(result, message);
-  if (readBoolean(readApiRecord(result), 'deleted') !== true) {
-    throw new Error(message);
-  }
 }
 
 function toGroupListQueryParams(filters: GroupListFilters = {}): {

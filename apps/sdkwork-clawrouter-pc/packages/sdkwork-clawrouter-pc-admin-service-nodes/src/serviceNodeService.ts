@@ -1,8 +1,6 @@
 import {
   ensureSdkworkApiSuccess,
   isRecord,
-  readApiRecord,
-  readBoolean,
   readRequiredApiItem,
   readRequiredApiItems,
   readRequiredString,
@@ -43,10 +41,6 @@ export interface ServiceNodeListParams {
   status?: ServiceNodeStatus | 'all';
 }
 
-export interface ServiceNodeDeleteOutcome {
-  deleted: boolean;
-}
-
 type ServiceNodeListSdkParams = Parameters<ReturnType<typeof getClawRouterBackendSdkClient>['system']['serviceNodes']['list']>[0];
 
 export class ServiceNodeService {
@@ -81,14 +75,8 @@ export class ServiceNodeService {
     return normalizeServiceNode(readRequiredApiItem(result, 'Updated service node response is missing data'));
   }
 
-  static async deleteNode(nodeId: string): Promise<ServiceNodeDeleteOutcome> {
-    const result = await getClawRouterBackendSdkClient().system.serviceNodes.delete(requiredNodeId(nodeId));
-    ensureSdkworkApiSuccess(result, 'Failed to delete service node');
-    const deleted = readBoolean(readApiRecord(result), 'deleted');
-    if (!deleted) {
-      throw new Error('Service node delete confirmation is required');
-    }
-    return { deleted };
+  static async deleteNode(nodeId: string): Promise<void> {
+    await getClawRouterBackendSdkClient().system.serviceNodes.delete(requiredNodeId(nodeId));
   }
 }
 

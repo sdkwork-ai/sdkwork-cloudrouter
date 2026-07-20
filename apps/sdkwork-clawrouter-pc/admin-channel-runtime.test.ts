@@ -2768,7 +2768,7 @@ test("admin channel service calls generated backend SDK paths and normalizes cha
         };
       }
       if (url === "/backend/v3/api/integration/channels/channel-2" && method === "DELETE") {
-        return { deleted: true };
+        return undefined;
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
@@ -3307,19 +3307,18 @@ test("admin channel list fails closed when backend returns unsupported channel s
   );
 });
 
-test("admin channel delete fails closed when backend omits delete confirmation", async () => {
+test("admin channel delete treats a resolved SDK void response as success", async () => {
   await withBackendSdkFetch(
     (url, init) => {
       if (url === "/backend/v3/api/integration/channels/channel-2" && init?.method === "DELETE") {
-        return {};
+        return undefined;
       }
       throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
     },
     async () => {
-      await assert.rejects(
-        () => ChannelService.deleteChannel("channel-2"),
-        /Channel delete confirmation is required/,
-      );
+      await assert.doesNotReject(async () => {
+        assert.equal(await ChannelService.deleteChannel("channel-2"), true);
+      });
     },
   );
 });

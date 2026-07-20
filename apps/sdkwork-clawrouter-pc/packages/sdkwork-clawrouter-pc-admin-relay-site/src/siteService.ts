@@ -132,9 +132,8 @@ export class SiteService {
   }
 
   static async deleteSite(siteId: string): Promise<boolean> {
-    const result = await getClawRouterBackendSdkClient().sites.delete(requiredSafePathSegment(siteId, 'siteId'));
-    ensureSdkworkApiSuccess(result, 'Failed to delete site');
-    return readBoolean(readApiRecord(result), 'deleted', false);
+    await getClawRouterBackendSdkClient().sites.delete(requiredSafePathSegment(siteId, 'siteId'));
+    return true;
   }
 
 

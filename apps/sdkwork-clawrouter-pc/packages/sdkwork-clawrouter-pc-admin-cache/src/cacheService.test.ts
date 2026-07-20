@@ -15,20 +15,14 @@ function createBackendSdkMock() {
         overview: {
           retrieve: vi.fn(),
         },
-        refresh: {
-          create: vi.fn(),
-        },
+        refresh: vi.fn(),
         instances: {
           delete: vi.fn(),
-          refresh: {
-            create: vi.fn(),
-          },
+          refresh: vi.fn(),
         },
         namespaces: {
           delete: vi.fn(),
-          refresh: {
-            create: vi.fn(),
-          },
+          refresh: vi.fn(),
           keys: {
             list: vi.fn(),
             delete: vi.fn(),
@@ -324,40 +318,31 @@ describe('AdminCacheService', () => {
   it('routes cache operations through the generated backend SDK', async () => {
     const backendSdk = createBackendSdkMock();
     const outcome = createOperationOutcome();
-    backendSdk.system.cache.refresh.create.mockResolvedValue(outcome);
-    backendSdk.system.cache.instances.delete.mockResolvedValue({
-      ...outcome,
-      operation: 'delete_instance',
-      namespace: null,
-      cacheKey: null,
-    });
-    backendSdk.system.cache.instances.refresh.create.mockResolvedValue(outcome);
-    backendSdk.system.cache.namespaces.refresh.create.mockResolvedValue({
+    backendSdk.system.cache.refresh.mockResolvedValue(outcome);
+    backendSdk.system.cache.instances.delete.mockResolvedValue(undefined);
+    backendSdk.system.cache.instances.refresh.mockResolvedValue(outcome);
+    backendSdk.system.cache.namespaces.refresh.mockResolvedValue({
       ...outcome,
       operation: 'refresh_namespace',
     });
-    backendSdk.system.cache.namespaces.delete.mockResolvedValue(outcome);
-    backendSdk.system.cache.namespaces.keys.delete.mockResolvedValue(outcome);
+    backendSdk.system.cache.namespaces.delete.mockResolvedValue(undefined);
+    backendSdk.system.cache.namespaces.keys.delete.mockResolvedValue(undefined);
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     await expect(AdminCacheService.refreshAll()).resolves.toMatchObject({ operation: 'delete_key' });
-    await expect(AdminCacheService.deleteInstance('redis-default')).resolves.toMatchObject({
-      operation: 'delete_instance',
-      instanceName: 'redis-default',
-      namespace: null,
-    });
+    await expect(AdminCacheService.deleteInstance('redis-default')).resolves.toBeUndefined();
     await expect(AdminCacheService.refreshInstance('redis-default')).resolves.toMatchObject({ instanceName: 'redis-default' });
     await expect(AdminCacheService.refreshNamespace('auth.qr.challenge')).resolves.toMatchObject({
       operation: 'refresh_namespace',
       namespace: 'auth.qr.challenge',
     });
-    await expect(AdminCacheService.deleteNamespace('auth.qr.challenge')).resolves.toMatchObject({ namespace: 'auth.qr.challenge' });
-    await expect(AdminCacheService.deleteKey('auth.qr.challenge', 'login-qr-1')).resolves.toMatchObject({ cacheKey: 'login-qr-1' });
+    await expect(AdminCacheService.deleteNamespace('auth.qr.challenge')).resolves.toBeUndefined();
+    await expect(AdminCacheService.deleteKey('auth.qr.challenge', 'login-qr-1')).resolves.toBeUndefined();
 
-    expect(backendSdk.system.cache.refresh.create).toHaveBeenCalledTimes(1);
+    expect(backendSdk.system.cache.refresh).toHaveBeenCalledTimes(1);
     expect(backendSdk.system.cache.instances.delete).toHaveBeenCalledWith('redis-default');
-    expect(backendSdk.system.cache.instances.refresh.create).toHaveBeenCalledWith('redis-default');
-    expect(backendSdk.system.cache.namespaces.refresh.create).toHaveBeenCalledWith('auth.qr.challenge');
+    expect(backendSdk.system.cache.instances.refresh).toHaveBeenCalledWith('redis-default');
+    expect(backendSdk.system.cache.namespaces.refresh).toHaveBeenCalledWith('auth.qr.challenge');
     expect(backendSdk.system.cache.namespaces.delete).toHaveBeenCalledWith('auth.qr.challenge');
     expect(backendSdk.system.cache.namespaces.keys.delete).toHaveBeenCalledWith('auth.qr.challenge', 'login-qr-1');
   });

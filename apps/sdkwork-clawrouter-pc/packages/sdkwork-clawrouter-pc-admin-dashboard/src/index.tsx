@@ -1,10 +1,49 @@
-import { useState, useEffect } from 'react';
-import { Key, BarChart2, Users, Coins, Database, Activity, Fingerprint, Image, Mic, MessageSquare, ArrowDownRight, ArrowUpRight, ExternalLink, Loader2, RefreshCw, Boxes, CircleAlert, DollarSign } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart2,
+  Boxes,
+  CircleAlert,
+  Coins,
+  Database,
+  DollarSign,
+  ExternalLink,
+  Fingerprint,
+  Image,
+  Key,
+  Loader2,
+  MessageSquare,
+  Mic,
+  RefreshCw,
+  Users,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend } from 'recharts';
-import { AdminDashboardService, DashboardSummaryCard, PieChartData, RecentUsageTrace, TrafficData } from './dashboardService';
-
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { useTranslation } from 'react-i18next';
+import {
+  AdminDashboardService,
+  type DashboardSummaryCard,
+  type PieChartData,
+  type RecentUsageTrace,
+  type TrafficData,
+} from './dashboardService';
+
 type ChartPayloadEntry = {
   color?: string;
   name?: string | number;
@@ -41,7 +80,16 @@ const TREND_CHART_DATA_KEYS = {
   requests: 'chartRequests',
 } as const;
 
-const SUMMARY_CARD_ICONS = [Users, Boxes, BarChart2, Database, Image, CircleAlert, Coins, DollarSign] as const;
+const SUMMARY_CARD_ICONS = [
+  Users,
+  Boxes,
+  BarChart2,
+  Database,
+  Image,
+  CircleAlert,
+  Coins,
+  DollarSign,
+] as const;
 const SUMMARY_CARD_COLORS = [
   'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10',
   'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10',

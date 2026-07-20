@@ -104,6 +104,7 @@ version = "0.3.0"
 license-file = "LICENSE"
 
 [workspace.dependencies]
+sdkwork-api-clawrouter-assembly = { path = "crates/sdkwork-api-clawrouter-assembly" }
 sdkwork-api-cloud-gateway-registry = { path = "../sdkwork-api-cloud-gateway/crates/sdkwork-api-cloud-gateway-registry" }
 anyhow = "1.0"
 argon2 = "0.5"

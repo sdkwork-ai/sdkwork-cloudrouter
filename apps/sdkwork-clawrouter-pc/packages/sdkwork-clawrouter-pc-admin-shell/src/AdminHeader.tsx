@@ -519,8 +519,8 @@ export function AdminHeader({
             aria-controls={MOBILE_NAVIGATION_ID}
             aria-expanded={mobileMenuOpen}
             aria-label={mobileMenuOpen
-              ? t('navbar.menu.close', 'Close navigation menu')
-              : t('navbar.menu.toggle', 'Open navigation menu')}
+              ? t('admin.header.mobileMenu.close', 'Close admin navigation')
+              : t('admin.header.mobileMenu.open', 'Open admin navigation')}
             className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
             onClick={onMobileMenuToggle}
             type="button"
@@ -567,7 +567,7 @@ export function AdminHeader({
                   <span id={MOBILE_NAVIGATION_TITLE_ID}>{t('admin.header.badge', 'Admin')}</span>
                 </div>
                 <button
-                  aria-label={t('navbar.menu.close', 'Close navigation menu')}
+                  aria-label={t('admin.header.mobileMenu.close', 'Close admin navigation')}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
                   onClick={onMobileMenuClose}
                   type="button"

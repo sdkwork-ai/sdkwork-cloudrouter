@@ -129,9 +129,8 @@ export class AdminCacheService {
     return normalizeOperation(readRequiredRecord(result, 'Cache instance refresh outcome is required'));
   }
 
-  static async deleteInstance(instanceName: string): Promise<CacheOperationOutcome> {
-    const result = await getClawRouterBackendSdkClient().system.cache.instances.delete(instanceName);
-    return normalizeOperation(readRequiredRecord(result, 'Cache instance delete outcome is required'));
+  static async deleteInstance(instanceName: string): Promise<void> {
+    await getClawRouterBackendSdkClient().system.cache.instances.delete(instanceName);
   }
 
   static async refreshNamespace(namespace: string): Promise<CacheOperationOutcome> {
@@ -139,14 +138,12 @@ export class AdminCacheService {
     return normalizeOperation(readRequiredRecord(result, 'Cache namespace refresh outcome is required'));
   }
 
-  static async deleteNamespace(namespace: string): Promise<CacheOperationOutcome> {
-    const result = await getClawRouterBackendSdkClient().system.cache.namespaces.delete(namespace);
-    return normalizeOperation(readRequiredRecord(result, 'Cache namespace delete outcome is required'));
+  static async deleteNamespace(namespace: string): Promise<void> {
+    await getClawRouterBackendSdkClient().system.cache.namespaces.delete(namespace);
   }
 
-  static async deleteKey(namespace: string, key: string): Promise<CacheOperationOutcome> {
-    const result = await getClawRouterBackendSdkClient().system.cache.namespaces.keys.delete(namespace, key);
-    return normalizeOperation(readRequiredRecord(result, 'Cache key delete outcome is required'));
+  static async deleteKey(namespace: string, key: string): Promise<void> {
+    await getClawRouterBackendSdkClient().system.cache.namespaces.keys.delete(namespace, key);
   }
 
   static async listKeys(

@@ -635,7 +635,7 @@ test("admin group service calls generated backend SDK paths and normalizes ai ch
         };
       }
       if (url === "/backend/v3/api/ai/channel_groups/group-2" && method === "DELETE") {
-        return { deleted: true };
+        return undefined;
       }
       throw new Error(`Unexpected SDK request ${method} ${url}`);
     },
@@ -1594,23 +1594,20 @@ test("admin group update fails closed when backend success response omits the up
   );
 });
 
-test("admin group delete fails closed unless backend confirms deletion", async () => {
-  for (const response of [{}, { deleted: false }]) {
-    await withBackendSdkFetch(
-      (url, init) => {
-        if (url === "/backend/v3/api/ai/channel_groups/group-2" && init?.method === "DELETE") {
-          return response;
-        }
-        throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
-      },
-      async () => {
-        await assert.rejects(
-          () => GroupService.deleteGroup("group-2"),
-          /Group delete confirmation is required/,
-        );
-      },
-    );
-  }
+test("admin group delete treats a resolved SDK void response as success", async () => {
+  await withBackendSdkFetch(
+    (url, init) => {
+      if (url === "/backend/v3/api/ai/channel_groups/group-2" && init?.method === "DELETE") {
+        return undefined;
+      }
+      throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
+    },
+    async () => {
+      await assert.doesNotReject(async () => {
+        assert.equal(await GroupService.deleteGroup("group-2"), true);
+      });
+    },
+  );
 });
 
 test("admin group list fails closed when backend omits stable group ids", async () => {

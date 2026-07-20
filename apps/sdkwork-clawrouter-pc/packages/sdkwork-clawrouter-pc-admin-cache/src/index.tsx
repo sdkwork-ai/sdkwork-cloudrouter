@@ -88,14 +88,16 @@ export function CacheAdmin() {
 
   const executeOperation = async (
     busyKey: string,
-    action: () => Promise<CacheOperationOutcome>,
+    action: () => Promise<CacheOperationOutcome | void>,
   ): Promise<boolean> => {
     setOperationBusy(busyKey);
     setOperationError(null);
     setOperationOutcome(null);
     try {
       const outcome = await action();
-      setOperationOutcome(outcome);
+      if (outcome) {
+        setOperationOutcome(outcome);
+      }
       await loadOverview();
       return true;
     } catch (error) {

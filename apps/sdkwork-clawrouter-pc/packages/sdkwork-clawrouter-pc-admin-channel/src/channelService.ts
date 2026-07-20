@@ -359,8 +359,7 @@ export class ChannelService {
   }
 
   static async deleteChannel(id: string): Promise<boolean> {
-    const result = await channelBackendClient().integration.channels.delete(requiredSafePathSegment(id, 'channelId'));
-    ensureDeleteResult(result, 'Channel delete confirmation is required');
+    await channelBackendClient().integration.channels.delete(requiredSafePathSegment(id, 'channelId'));
     return true;
   }
 
@@ -1255,13 +1254,6 @@ function readOptionalNonNegativeIntegerFilter(
     throw new Error(`${fieldName} must be a non-negative integer`);
   }
   return parsed;
-}
-
-function ensureDeleteResult(result: unknown, message: string): void {
-  ensureSdkworkApiSuccess(result, message);
-  if (readBoolean(readApiRecord(result), 'deleted') !== true) {
-    throw new Error(message);
-  }
 }
 
 function channelBackendClient() {
