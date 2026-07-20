@@ -4,7 +4,7 @@
 use axum::{body::Body, extract::State, http::Request, response::Response, Router};
 use tower::ServiceExt;
 
-pub struct ApplicationAssembly {
+pub struct ApiAssembly {
     pub router: Router,
 }
 
@@ -14,7 +14,7 @@ struct ApplicationRouters {
     backend: Router,
 }
 
-pub fn assemble_application_router() -> ApplicationAssembly {
+pub fn assemble_api_router() -> ApiAssembly {
     let routers = ApplicationRouters {
         app: sdkwork_routes_clawrouter_app_api::gateway_mount(),
         backend: sdkwork_routes_clawrouter_backend_api::gateway_mount(),
@@ -22,7 +22,7 @@ pub fn assemble_application_router() -> ApplicationAssembly {
     let router = Router::new()
         .fallback(dispatch_application_request)
         .with_state(routers);
-    ApplicationAssembly { router }
+    ApiAssembly { router }
 }
 
 async fn dispatch_application_request(
@@ -53,11 +53,11 @@ mod tests {
     };
     use tower::ServiceExt;
 
-    use super::assemble_application_router;
+    use super::assemble_api_router;
 
     #[tokio::test]
     async fn application_assembly_dispatches_overlapping_full_routers_by_surface() {
-        let router = assemble_application_router().router;
+        let router = assemble_api_router().router;
 
         let app_response = router
             .clone()

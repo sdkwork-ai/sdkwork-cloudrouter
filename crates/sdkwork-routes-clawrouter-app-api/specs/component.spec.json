@@ -47,7 +47,7 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "embedded",
-        "executablePublicExport": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "executablePublicExport": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "coverageEvidence": [
           "../../../sdkwork-order/crates/sdkwork-order-gateway-assembly/assembly-manifest.json",
           "../../../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"

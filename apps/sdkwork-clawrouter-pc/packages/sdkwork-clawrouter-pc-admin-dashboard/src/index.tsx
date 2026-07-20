@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Key, BarChart2, Users, Coins, Database, Zap, Clock, Activity, Fingerprint, Image, Mic, MessageSquare, ArrowDownRight, ArrowUpRight, ExternalLink, Loader2 } from 'lucide-react';
+import { Key, BarChart2, Users, Coins, Database, Zap, Clock, Activity, Fingerprint, Image, Mic, MessageSquare, ArrowDownRight, ArrowUpRight, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend } from 'recharts';
-import { AdminDashboardService, DashboardSummaryCard, DashboardTrafficTimeRange, PieChartData, RecentUsageTrace, TrafficData } from './dashboardService';
+import { AdminDashboardService, DashboardSummaryCard, PieChartData, RecentUsageTrace, TrafficData } from './dashboardService';
 
 import { useTranslation } from 'react-i18next';
 type ChartPayloadEntry = {
@@ -15,10 +15,10 @@ type ChartPayloadEntry = {
     chartValue?: string | number;
     tokens?: string | number;
     requests?: string | number;
-    cost?: string | number;
+    points?: string | number;
     chartTokens?: string | number;
     chartRequests?: string | number;
-    chartCost?: string | number;
+    chartPoints?: string | number;
   };
 };
 
@@ -33,11 +33,11 @@ type CustomPieLegendProps = {
   unit: '$' | '%';
 };
 
-type DashboardTrendMetric = 'tokens' | 'cost' | 'requests';
+type DashboardTrendMetric = 'tokens' | 'points' | 'requests';
 
 const TREND_CHART_DATA_KEYS = {
   tokens: 'chartTokens',
-  cost: 'chartCost',
+  points: 'chartPoints',
   requests: 'chartRequests',
 } as const;
 
@@ -56,13 +56,14 @@ const SUMMARY_CARD_COLORS = [
 type DashboardChartTab = 'modelDistribution' | 'userConsumption';
 
 export function DashboardAdmin() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [chartTab, setChartTab] = useState<DashboardChartTab>('modelDistribution');
-  const [trafficTimeRange, setTrafficTimeRange] = useState<DashboardTrafficTimeRange>('daily');
   const [trendMetric, setTrendMetric] = useState<DashboardTrendMetric>('tokens');
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
 
   const [loading, setLoading] = useState(true);
+  const [refreshRequest, setRefreshRequest] = useState(0);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [summaryCards, setSummaryCards] = useState<DashboardSummaryCard[]>([]);
   const [userConsumptionData, setUserConsumptionData] = useState<PieChartData[]>([]);
@@ -75,7 +76,7 @@ export function DashboardAdmin() {
     let disposed = false;
     setLoading(true);
     setErrorMessage('');
-    AdminDashboardService.fetchDashboardData(t, { timeRange: trafficTimeRange })
+    AdminDashboardService.fetchDashboardData(t)
       .then(data => {
         if (disposed) {
           return;
@@ -86,17 +87,12 @@ export function DashboardAdmin() {
         setTrafficData(data.traffic);
         setModelDistribution(data.modelDistribution);
         setRecentUsage(data.recentUsage);
+        setLastUpdatedAt(new Date());
       })
       .catch(error => {
         if (disposed) {
           return;
         }
-        setSummaryCards([]);
-        setUserConsumptionData([]);
-        setMultimodalData([]);
-        setTrafficData([]);
-        setModelDistribution([]);
-        setRecentUsage([]);
         setErrorMessage(error instanceof Error ? error.message : t("admin.dashboard.index.text.1s2i7d1", "加载大盘数据失败"));
       })
       .finally(() => {
@@ -107,14 +103,14 @@ export function DashboardAdmin() {
     return () => {
       disposed = true;
     };
-  }, [t, trafficTimeRange]);
+  }, [refreshRequest, t]);
 
   const getTrendMetricLabel = (name: string | number | undefined): string | undefined => {
     if (name === 'tokens' || name === 'chartTokens') {
       return t("admin.dashboard.index.text.1rty913", "Token 消耗");
     }
-    if (name === 'cost' || name === 'chartCost') {
-      return t("admin.dashboard.index.text.3nwvcy", "金额消耗");
+    if (name === 'points' || name === 'chartPoints') {
+      return t('admin.dashboard.trend.points', '积分消耗');
     }
     if (name === 'requests' || name === 'chartRequests') {
       return t("admin.dashboard.index.text.1j8nxcs", "API 请求");
@@ -129,8 +125,8 @@ export function DashboardAdmin() {
     if (entry.name === 'chartRequests') {
       return entry.payload?.requests ?? 0;
     }
-    if (entry.name === 'chartCost') {
-      return entry.payload?.cost ?? 0;
+    if (entry.name === 'chartPoints') {
+      return entry.payload?.points ?? 0;
     }
     if (entry.name === 'chartValue') {
       return entry.payload?.value ?? 0;
@@ -151,7 +147,7 @@ export function DashboardAdmin() {
                   {getTrendMetricLabel(entry.name) ?? String(entry.name === 'chartValue' ? label ?? entry.payload?.name ?? '' : entry.name ?? '')}
                 </span>
                 <span className="font-semibold text-slate-900 dark:text-white ml-auto pl-4">
-                  {entry.name === 'cost' || entry.name === 'chartCost' ? `$${Number(readTooltipValue(entry)).toFixed(2)}` : Number(readTooltipValue(entry)).toLocaleString()}
+                  {Number(readTooltipValue(entry)).toLocaleString()}
                 </span>
               </div>
             ))}
@@ -180,7 +176,16 @@ export function DashboardAdmin() {
     );
   };
 
-  if (loading) {
+  const hasSnapshot = summaryCards.length > 0;
+  const updatedAtLabel = lastUpdatedAt
+    ? new Intl.DateTimeFormat(i18n.resolvedLanguage === 'zh' ? 'zh-CN' : 'en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }).format(lastUpdatedAt)
+    : t('admin.dashboard.updated.never', '尚未更新');
+
+  if (loading && !hasSnapshot) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center space-y-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -189,12 +194,20 @@ export function DashboardAdmin() {
     );
   }
 
-  if (errorMessage) {
+  if (errorMessage && !hasSnapshot) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center space-y-3 px-6 text-center">
         <Activity className="w-8 h-8 text-red-500" />
         <span className="text-sm font-medium text-slate-900 dark:text-white">{t("admin.dashboard.index.text.1colgfp", "大盘数据加载失败")}</span>
         <span className="max-w-xl text-xs text-slate-500 dark:text-slate-400">{errorMessage}</span>
+        <button
+          className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+          onClick={() => setRefreshRequest((request) => request + 1)}
+          type="button"
+        >
+          <RefreshCw className="h-4 w-4" />
+          {t('admin.dashboard.retry', '重试')}
+        </button>
       </div>
     );
   }
@@ -203,19 +216,54 @@ export function DashboardAdmin() {
     <div className="w-full h-full min-h-0 overflow-y-auto custom-scrollbar">
       <div className="flex min-h-full w-full flex-col space-y-4 pb-8">
 
+      <div className="flex min-h-12 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2 dark:border-white/10 dark:bg-[#17191f]">
+        <div className="min-w-0">
+          <h1 className="text-base font-semibold text-slate-900 dark:text-white">
+            {t('admin.dashboard.title', '运营概览')}
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {t('admin.dashboard.updatedAt', '更新于 {{time}}', { time: updatedAtLabel })}
+          </p>
+        </div>
+        <button
+          aria-label={t('admin.dashboard.refresh', '刷新大盘数据')}
+          className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+          disabled={loading}
+          onClick={() => setRefreshRequest((request) => request + 1)}
+          title={t('admin.dashboard.refresh', '刷新大盘数据')}
+          type="button"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          {t('admin.dashboard.refreshAction', '刷新')}
+        </button>
+      </div>
+
+      {errorMessage ? (
+        <div className="mx-4 flex items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300" role="alert">
+          <span className="min-w-0 truncate">{errorMessage}</span>
+          <button
+            className="shrink-0 font-medium underline underline-offset-2"
+            onClick={() => setRefreshRequest((request) => request + 1)}
+            type="button"
+          >
+            {t('admin.dashboard.retry', '重试')}
+          </button>
+        </div>
+      ) : null}
+
       {/* Top Value Cards (Grid of 8) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+      <div className="grid grid-cols-1 gap-4 px-4 sm:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map((card, index) => {
           const Icon = SUMMARY_CARD_ICONS[index] ?? Activity;
           const color = SUMMARY_CARD_COLORS[index] ?? 'text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/10';
           return (
-            <div key={card.label} className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-xl p-5 shadow-sm flex items-start gap-4 hover:border-slate-300 dark:hover:border-white/20 transition-all hover:-translate-y-1">
-              <div className={`p-3 rounded-lg mt-1 ${color}`}>
+            <div key={card.label} className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-slate-300 dark:border-white/10 dark:bg-[#1a1a1a] dark:hover:border-white/20">
+              <div className={`mt-0.5 rounded-md p-2.5 ${color}`}>
                 <Icon className="w-5 h-5" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{card.label}</p>
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1 tracking-tight">{card.value}</h3>
+                <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{card.value}</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{card.detail}</p>
               </div>
             </div>
@@ -224,46 +272,29 @@ export function DashboardAdmin() {
       </div>
 
       {/* Main Full-Width Chart Card with Integrated Filters */}
-      <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-xl p-5 flex flex-col shadow-sm shrink-0 min-h-[450px]">
+      <div className="mx-4 flex min-h-[450px] shrink-0 flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
         <div className="mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex items-center gap-4">
             <h3 className="text-base font-bold text-slate-900 dark:text-white whitespace-nowrap">{t("admin.dashboard.index.text.yomhnm", "聚合指标大盘")}</h3>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex bg-slate-100 dark:bg-[#121212] rounded-lg p-1 border border-slate-200 dark:border-white/5">
-              <button
-                onClick={() => setTrafficTimeRange('hourly')}
-                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${trafficTimeRange === 'hourly' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              >
-                {t("admin.dashboard.index.timeRange.hourly", "小时")}</button>
-              <button
-                onClick={() => setTrafficTimeRange('daily')}
-                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${trafficTimeRange === 'daily' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              >
-                {t("admin.dashboard.index.timeRange.daily", "天")}</button>
-              <button
-                onClick={() => setTrafficTimeRange('weekly')}
-                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${trafficTimeRange === 'weekly' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              >
-                {t("admin.dashboard.index.timeRange.weekly", "周")}</button>
-              <button
-                onClick={() => setTrafficTimeRange('monthly')}
-                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${trafficTimeRange === 'monthly' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
-              >
-                {t("admin.dashboard.index.timeRange.monthly", "月")}</button>
-            </div>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              {t('admin.dashboard.timeRange.dailySnapshot', '最近 24 小时')}
+            </span>
 
-            <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+            <div className="hidden h-6 w-px bg-slate-200 dark:bg-white/10 sm:block"></div>
 
             {/* Chart Type Toggle */}
-            <div className="flex bg-slate-100 dark:bg-[#121212] rounded-lg p-1 border border-slate-200 dark:border-white/5">
+            <div aria-label={t('admin.dashboard.chartType', '图表类型')} className="flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-white/5 dark:bg-[#121212]" role="group">
               <button
+                aria-pressed={chartType === 'area'}
                 onClick={() => setChartType('area')}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${chartType === 'area' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
                 {t("admin.dashboard.index.text.12bof9e", "折线图")}</button>
               <button
+                aria-pressed={chartType === 'bar'}
                 onClick={() => setChartType('bar')}
                 className={`px-2 py-1 rounded text-xs font-medium transition-colors ${chartType === 'bar' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
@@ -273,18 +304,21 @@ export function DashboardAdmin() {
             <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
 
             {/* Metric Toggle */}
-            <div className="flex bg-slate-100 dark:bg-[#121212] rounded-lg p-1 border border-slate-200 dark:border-white/5">
+            <div aria-label={t('admin.dashboard.metric', '趋势指标')} className="flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-white/5 dark:bg-[#121212]" role="group">
               <button
+                aria-pressed={trendMetric === 'tokens'}
                 onClick={() => setTrendMetric('tokens')}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${trendMetric === 'tokens' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
                 {t("admin.dashboard.index.text.1rty913", "Token 消耗")}</button>
               <button
-                onClick={() => setTrendMetric('cost')}
-                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${trendMetric === 'cost' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                aria-pressed={trendMetric === 'points'}
+                onClick={() => setTrendMetric('points')}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${trendMetric === 'points' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
-                {t("admin.dashboard.index.text.3nwvcy", "金额消耗")}</button>
+                {t('admin.dashboard.trend.points', '积分消耗')}</button>
               <button
+                aria-pressed={trendMetric === 'requests'}
                 onClick={() => setTrendMetric('requests')}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${trendMetric === 'requests' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
@@ -299,18 +333,18 @@ export function DashboardAdmin() {
               <AreaChart data={trafficData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={trendMetric === 'cost' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={trendMetric === 'cost' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'} stopOpacity={0}/>
+                    <stop offset="5%" stopColor={trendMetric === 'points' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={trendMetric === 'points' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#888" strokeOpacity={0.15} />
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} tickFormatter={(val: number) => trendMetric === 'cost' ? `$${val}` : trendMetric === 'tokens' ? `${val/1000}k` : String(val)} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} tickFormatter={(val: number) => trendMetric === 'tokens' ? `${val/1000}k` : String(val)} />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(150,150,150,0.2)', strokeWidth: 1 }} />
                 <Area
                   type="monotone"
                   dataKey={trendChartDataKey}
-                  stroke={trendMetric === 'cost' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'}
+                  stroke={trendMetric === 'points' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'}
                   strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#colorMetric)"
@@ -320,11 +354,11 @@ export function DashboardAdmin() {
               <BarChart data={trafficData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#888" strokeOpacity={0.15} />
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} tickFormatter={(val: number) => trendMetric === 'cost' ? `$${val}` : trendMetric === 'tokens' ? `${val/1000}k` : String(val)} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} tickFormatter={(val: number) => trendMetric === 'tokens' ? `${val/1000}k` : String(val)} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(150,150,150,0.1)' }} />
                 <Bar
                   dataKey={trendChartDataKey}
-                  fill={trendMetric === 'cost' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'}
+                  fill={trendMetric === 'points' ? '#f59e0b' : trendMetric === 'requests' ? '#10b981' : '#3b82f6'}
                   radius={[4, 4, 0, 0]}
                   barSize={24}
                 />
@@ -335,10 +369,10 @@ export function DashboardAdmin() {
       </div>
 
       {/* Sub Charts (Model & Multimodal) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0 min-h-[360px]">
+      <div className="mx-4 grid min-h-[360px] shrink-0 grid-cols-1 gap-4 lg:grid-cols-2">
 
         {/* Left Chart Card: Model Distribution */}
-        <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-xl p-5 flex flex-col shadow-sm">
+        <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               {chartTab === 'modelDistribution'
@@ -408,7 +442,7 @@ export function DashboardAdmin() {
         </div>
 
         {/* Right Chart Card: Multimodal Capabilities */}
-        <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-xl p-5 flex flex-col shadow-sm">
+        <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
           <div className="mb-6 flex justify-between items-center">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">{t("admin.dashboard.index.text.d43g8g", "多模态能力调用占比")}</h3>
             <div className="flex items-center gap-3">
@@ -453,7 +487,7 @@ export function DashboardAdmin() {
       </div>
 
       {/* Bottom Table */}
-      <div className="bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-xl p-5 shadow-sm shrink-0 flex min-h-[320px] flex-1 flex-col overflow-hidden mt-2">
+      <div className="mx-4 mt-2 flex min-h-[320px] flex-1 shrink-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">{t("admin.dashboard.index.text.13upnw7", "平台实时调用流水 (Live Traces)")}</h3>
           <Link to="/admin/record" className="text-xs text-blue-500 hover:text-blue-600 font-medium flex items-center px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors gap-1">
@@ -474,6 +508,13 @@ export function DashboardAdmin() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+              {recentUsage.length === 0 ? (
+                <tr>
+                  <td className="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400" colSpan={7}>
+                    {t('admin.dashboard.recentUsage.empty', '暂无调用记录')}
+                  </td>
+                </tr>
+              ) : null}
               {recentUsage.map((item) => {
                 const isSuccess = item.status.trim().toLowerCase() === 'success';
                 const statusLabel = item.status.trim() || 'unknown';

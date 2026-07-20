@@ -1119,7 +1119,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1145,7 +1145,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1171,7 +1171,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1197,7 +1197,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1223,7 +1223,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1249,7 +1249,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1275,7 +1275,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1301,7 +1301,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1327,7 +1327,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1353,7 +1353,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1379,7 +1379,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1405,7 +1405,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1431,7 +1431,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1457,7 +1457,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1483,7 +1483,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1509,7 +1509,7 @@
         "required": false
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1535,7 +1535,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1561,7 +1561,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1587,7 +1587,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1613,7 +1613,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1639,7 +1639,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1665,7 +1665,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1691,7 +1691,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1717,7 +1717,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1743,7 +1743,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1769,7 +1769,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1795,7 +1795,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1821,7 +1821,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1847,7 +1847,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1873,7 +1873,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1899,7 +1899,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1925,7 +1925,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1951,7 +1951,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -1977,7 +1977,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -2003,7 +2003,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -2029,7 +2029,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -2055,7 +2055,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -2081,7 +2081,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -2107,7 +2107,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -2133,7 +2133,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {
@@ -2159,7 +2159,7 @@
         "required": true
       },
       "handler": {
-        "module": "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+        "module": "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
         "name": null
       },
       "ownership": {

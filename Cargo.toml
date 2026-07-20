@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/sdkwork-api-clawrouter-standalone-gateway",
     "crates/sdkwork-api-clawrouter-assembly",
     "crates/sdkwork-api-clawrouter-assembly",
     "crates/sdkwork-claw-contract",

@@ -133,7 +133,7 @@ function renderManifest(routes, { iamRouteEntries = null } = {}) {
     #[test]
     fn order_assembly_routes_are_materialized() {
         let aggregate = super::http_route_manifest();
-        let order = sdkwork_order_gateway_assembly::ApplicationAssembly::app_route_manifest();
+        let order = sdkwork_order_gateway_assembly::ApiAssembly::app_route_manifest();
 
         for dependency_route in order.routes() {
             let route = aggregate

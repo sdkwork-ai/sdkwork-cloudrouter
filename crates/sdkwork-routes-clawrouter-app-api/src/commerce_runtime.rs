@@ -64,7 +64,7 @@ pub async fn merge_federated_commerce_app_routers(
 async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String> {
     let payment_module = sdkwork_payment_database_host::database_module()
         .map_err(|e| format!("load payment database module failed: {e}"))?;
-    let order_module = sdkwork_order_gateway_assembly::ApplicationAssembly::database_module()
+    let order_module = sdkwork_order_gateway_assembly::ApiAssembly::database_module()
         .map_err(|e| format!("load order database module failed: {e}"))?;
     let membership_module = sdkwork_membership_database_host::database_module()
         .map_err(|e| format!("load membership database module failed: {e}"))?;
@@ -98,7 +98,7 @@ async fn wire_commerce_app_router(payment: Arc<PaymentServiceHost>) -> Result<Ro
     let promotion_router = build_promotion_router_from_payment_pool(payment.database_pool())?;
     let account_wallet_router =
         build_account_wallet_router_from_payment_pool(payment.database_pool())?;
-    let order_assembly = sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool(
+    let order_assembly = sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool(
         payment.database_pool().clone(),
     )
     .await?;
@@ -143,7 +143,7 @@ mod tests {
             .find("sdkwork_payment_database_host::database_module()")
             .expect("payment database module registration");
         let order = source
-            .find("sdkwork_order_gateway_assembly::ApplicationAssembly::database_module()")
+            .find("sdkwork_order_gateway_assembly::ApiAssembly::database_module()")
             .expect("order assembly database module registration");
         let membership = source
             .find("sdkwork_membership_database_host::database_module()")
@@ -160,7 +160,7 @@ mod tests {
         assert!(source.contains(".register(order_module)"));
         assert!(source.contains(".register(membership_module)"));
         assert!(source
-            .contains("sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool("));
+            .contains("sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool("));
         let forbidden_direct_route_crate = ["sdkwork_routes_order", "_app_api::"].concat();
         assert!(!source.contains(&forbidden_direct_route_crate));
     }

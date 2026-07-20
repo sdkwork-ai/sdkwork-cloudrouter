@@ -14,7 +14,7 @@ const ORDER_APP_DEPENDENCY = {
   packageName: "sdkwork-routes-order-app-api",
   apiAuthority: "sdkwork-order-app-api",
   handlerModule:
-    "sdkwork_order_gateway_assembly::ApplicationAssembly::from_database_pool",
+    "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
 };
 
 const HTTP_METHODS = new Set([
