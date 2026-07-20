@@ -235,7 +235,7 @@ test("app bootstrap wires T1 domain service providers from independent owner SDK
 test("federated commerce runtime mounts the complete Order gateway assembly", () => {
   const runtimeSource = readPortalFile("../../crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs");
 
-  assert.match(runtimeSource, /sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool/);
+  assert.match(runtimeSource, /sdkwork_api_order_assembly::ApiAssembly::from_database_pool/);
   assert.match(runtimeSource, /\.merge\(order_assembly\.router\)/);
   assert.doesNotMatch(runtimeSource, /sdkwork_routes_order_app_api::/);
 });

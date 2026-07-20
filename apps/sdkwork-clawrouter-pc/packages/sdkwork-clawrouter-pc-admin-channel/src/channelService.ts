@@ -8,7 +8,6 @@ import {
   readApiRecord,
   readRequiredApiItems,
   readRequiredApiItem,
-  readBoolean,
   readNumber,
   readRequiredNumber,
   requiredSafePathSegment,

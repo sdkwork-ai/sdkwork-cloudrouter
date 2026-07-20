@@ -2332,6 +2332,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-api-clawrouter-assembly"
+version = "0.3.0"
+dependencies = [
+ "axum",
+ "sdkwork-routes-agent-open-api",
+ "sdkwork-routes-audio-open-api",
+ "sdkwork-routes-clawrouter-app-api",
+ "sdkwork-routes-clawrouter-backend-api",
+ "sdkwork-routes-drive-open-api",
+ "sdkwork-routes-iaas-open-api",
+ "sdkwork-routes-image-open-api",
+ "sdkwork-routes-knowledgebase-open-api",
+ "sdkwork-routes-llm-open-api",
+ "sdkwork-routes-memory-open-api",
+ "sdkwork-routes-paas-open-api",
+ "sdkwork-routes-payment-open-api",
+ "sdkwork-routes-video-open-api",
+ "tokio",
+ "tower",
+]
+
+[[package]]
+name = "sdkwork-api-clawrouter-standalone-gateway"
+version = "0.3.0"
+dependencies = [
+ "sdkwork-api-clawrouter-assembly",
+ "sdkwork-web-bootstrap",
+ "tokio",
+]
+
+[[package]]
 name = "sdkwork-api-cloud-gateway"
 version = "0.1.0"
 dependencies = [
@@ -2388,6 +2419,22 @@ version = "0.1.0"
 dependencies = [
  "sdkwork-api-cloud-gateway-config",
  "serde",
+]
+
+[[package]]
+name = "sdkwork-api-order-assembly"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+ "sdkwork-order-database-host",
+ "sdkwork-order-service-host",
+ "sdkwork-routes-order-app-api",
+ "sdkwork-routes-order-backend-api",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "tokio",
 ]
 
 [[package]]
@@ -2737,17 +2784,6 @@ dependencies = [
  "sdkwork-database-sqlx",
  "sqlx",
  "tokio",
-]
-
-[[package]]
-name = "sdkwork-clawrouter-gateway-assembly"
-version = "0.3.0"
-dependencies = [
- "axum",
- "sdkwork-routes-clawrouter-app-api",
- "sdkwork-routes-clawrouter-backend-api",
- "tokio",
- "tower",
 ]
 
 [[package]]
@@ -3330,22 +3366,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sdkwork-order-gateway-assembly"
-version = "0.1.0"
-dependencies = [
- "axum",
- "sdkwork-database-spi",
- "sdkwork-database-sqlx",
- "sdkwork-order-database-host",
- "sdkwork-order-service-host",
- "sdkwork-routes-order-app-api",
- "sdkwork-routes-order-backend-api",
- "sdkwork-web-bootstrap",
- "sdkwork-web-core",
- "tokio",
-]
-
-[[package]]
 name = "sdkwork-order-integration-account"
 version = "0.1.0"
 dependencies = [
@@ -3593,6 +3613,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum",
+ "sdkwork-api-order-assembly",
  "sdkwork-claw-config",
  "sdkwork-claw-http",
  "sdkwork-claw-observability",
@@ -3606,7 +3627,6 @@ dependencies = [
  "sdkwork-invoice-database-host",
  "sdkwork-invoice-service-host",
  "sdkwork-membership-database-host",
- "sdkwork-order-gateway-assembly",
  "sdkwork-payment-database-host",
  "sdkwork-payment-providers",
  "sdkwork-payment-service-host",
