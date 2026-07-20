@@ -2,7 +2,6 @@ import {
   ensureSdkworkApiSuccess,
   isRecord,
   readApiRecord,
-  readBoolean,
   readNullableString,
   readNumber,
   readRequiredApiItems,
