@@ -182,6 +182,13 @@ test.describe('Admin dashboard responsive shell', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
     await captureVisual(page, 'admin-dashboard-mobile.png');
 
+    const aggregateHeading = page.getByRole('heading', { name: 'Aggregate Metrics Dashboard' });
+    await aggregateHeading.scrollIntoViewIfNeeded();
+    const mobileTrendSvg = page.locator('.recharts-responsive-container svg').first();
+    await expect.poll(async () => (await mobileTrendSvg.boundingBox())?.height ?? 0).toBeGreaterThan(250);
+    await expect.poll(async () => (await mobileTrendSvg.boundingBox())?.width ?? 0).toBeGreaterThan(280);
+    await captureVisual(page, 'admin-dashboard-mobile-chart.png');
+
     await page.locator('[aria-controls="admin-mobile-navigation"]').click();
     const drawer = page.locator('[data-admin-mobile-navigation]');
     await expect(drawer).toBeVisible();
