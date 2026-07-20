@@ -1,0 +1,27 @@
+[package]
+name = "sdkwork-api-clawrouter-assembly"
+edition.workspace = true
+version.workspace = true
+description = "Generated API assembly for sdkwork-clawrouter application HTTP plane."
+
+[lib]
+name = "sdkwork_api_clawrouter_assembly"
+path = "src/lib.rs"
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+tower.workspace = true
+sdkwork-routes-agent-open-api = { path = "../sdkwork-routes-agent-open-api" }
+sdkwork-routes-audio-open-api = { path = "../sdkwork-routes-audio-open-api" }
+sdkwork-routes-clawrouter-app-api.workspace = true
+sdkwork-routes-clawrouter-backend-api.workspace = true
+sdkwork-routes-drive-open-api = { path = "../sdkwork-routes-drive-open-api" }
+sdkwork-routes-iaas-open-api = { path = "../sdkwork-routes-iaas-open-api" }
+sdkwork-routes-image-open-api = { path = "../sdkwork-routes-image-open-api" }
+sdkwork-routes-knowledgebase-open-api = { path = "../sdkwork-routes-knowledgebase-open-api" }
+sdkwork-routes-llm-open-api = { path = "../sdkwork-routes-llm-open-api" }
+sdkwork-routes-memory-open-api = { path = "../sdkwork-routes-memory-open-api" }
+sdkwork-routes-paas-open-api = { path = "../sdkwork-routes-paas-open-api" }
+sdkwork-routes-payment-open-api = { path = "../sdkwork-routes-payment-open-api" }
+sdkwork-routes-video-open-api = { path = "../sdkwork-routes-video-open-api" }

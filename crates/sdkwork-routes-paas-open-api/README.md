@@ -41,7 +41,7 @@ See:
 
 The route manifest is a stable contract surface used by:
 
-- The gateway assembly layer (`sdkwork-clawrouter-gateway-assembly`) to wire
+- The gateway assembly layer (`sdkwork-api-clawrouter-assembly`) to wire
   routes without hard-coding package names.
 - The OpenAPI documentation dispatcher (`sdkwork-claw-http::contract_routes`)
   to serve per-surface schema tabs.
