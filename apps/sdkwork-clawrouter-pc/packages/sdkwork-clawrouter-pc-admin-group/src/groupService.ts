@@ -16,11 +16,11 @@ import {
   readRequiredString,
   readString,
   readStringArray,
-  getModelsBackendSdkClient,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import {
   getClawRouterBackendSdkClient,
+  getModelsBackendSdkClient,
 } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
   AdminChannelGroupCreateRequest,

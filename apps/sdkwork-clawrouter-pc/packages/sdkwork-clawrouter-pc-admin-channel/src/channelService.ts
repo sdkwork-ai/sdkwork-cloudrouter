@@ -16,11 +16,11 @@ import {
   readRequiredString,
   readString,
   readStringArray,
-  getModelsBackendSdkClient,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import {
   getClawRouterBackendSdkClient,
+  getModelsBackendSdkClient,
 } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import {
   isCanonicalModelCatalogKey,
@@ -31,10 +31,6 @@ import type {
   AdminChannelCreateRequest,
   AdminChannelCredentialInput,
   AdminChannelUpdateRequest,
-  ProviderCircuitBreakerPolicy,
-  ProviderRetryPolicy,
-} from '@sdkwork/clawrouter-pc-admin-core/sdk';
-import type {
   AdminAiResourceCreateRequest,
   AdminAiResourceMemberInput,
   AdminAiResourceUpdateRequest,
@@ -43,7 +39,9 @@ import type {
   AdminModelMappingRuleItemInput,
   AdminModelMappingUpdateRequest,
   AiModelMappingsListParams,
-} from '@sdkwork/models-backend-sdk';
+  ProviderCircuitBreakerPolicy,
+  ProviderRetryPolicy,
+} from '@sdkwork/clawrouter-pc-admin-core/sdk';
 
 interface AdminAiResourceMemberItem {
   parentResourceCode: string;

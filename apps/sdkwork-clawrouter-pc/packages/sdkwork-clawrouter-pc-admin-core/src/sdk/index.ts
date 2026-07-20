@@ -1,5 +1,6 @@
 export {
   getClawRouterBackendSdkClient,
+  getModelsBackendSdkClient,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import type { ClawRouterMediaResource } from '@sdkwork/clawroutes-pc-commons/runtime';
 import type {
@@ -27,6 +28,16 @@ export type {
   AdminTokenLimitCreateRequest,
   IntegrationProviderSecretsListParams,
 } from '@sdkwork/clawrouter-backend-sdk';
+export type {
+  AdminAiResourceCreateRequest,
+  AdminAiResourceMemberInput,
+  AdminAiResourceUpdateRequest,
+  AdminModelMappingCreateRequest,
+  AdminModelMappingRuleBindingInput,
+  AdminModelMappingRuleItemInput,
+  AdminModelMappingUpdateRequest,
+  AiModelMappingsListParams,
+} from '@sdkwork/models-backend-sdk';
 
 export type MediaResource = ClawRouterMediaResource;
 

@@ -2797,9 +2797,6 @@ importers:
       '@sdkwork/clawroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
-      '@sdkwork/models-backend-sdk':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core:
     dependencies:
@@ -2809,6 +2806,9 @@ importers:
       '@sdkwork/clawroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
+      '@sdkwork/models-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard:
     dependencies:

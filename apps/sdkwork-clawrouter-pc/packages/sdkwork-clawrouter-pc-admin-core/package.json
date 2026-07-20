@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@sdkwork/clawroutes-pc-commons": "workspace:*",
-    "@sdkwork/clawrouter-backend-sdk": "workspace:*"
+    "@sdkwork/clawrouter-backend-sdk": "workspace:*",
+    "@sdkwork/models-backend-sdk": "workspace:*"
   },
   "exports": {
     ".": {
