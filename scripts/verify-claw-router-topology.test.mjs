@@ -60,25 +60,27 @@ test('declares v5 topology spec and profile env files for sdkwork-clawrouter', a
 test('root package.json wires @sdkwork/app-topology and canonical dev scripts', async () => {
   const packageJson = await readJson('package.json');
   const spec = await readJson('specs/topology.spec.json');
-  assert.ok(
-    packageJson.dependencies['@sdkwork/app-topology'] === 'file:../sdkwork-app-topology'
-      || packageJson.dependencies['@sdkwork/app-topology'] === 'workspace:*',
-    'expected @sdkwork/app-topology to resolve via sibling file: or workspace:* link',
+  assert.equal(packageJson.dependencies['@sdkwork/app-topology'], 'workspace:*');
+  assert.equal(packageJson.scripts.dev, 'pnpm dev:standalone');
+  assert.equal(
+    packageJson.scripts['dev:standalone'],
+    'pnpm exec sdkwork-app dev --deployment-profile standalone',
   );
-  assert.equal(packageJson.scripts.dev, 'pnpm install:deps:ensure && pnpm dev:browser');
+  assert.equal(
+    packageJson.scripts['dev:cloud'],
+    'pnpm exec sdkwork-app dev --deployment-profile cloud',
+  );
   assert.equal(packageJson.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
-  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /scripts\/claw-router-dev\.mjs/);
+  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /sdkwork-app dev/u);
   assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--deployment-profile standalone/u);
-  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--target browser/u);
-  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--database postgres/u);
+  assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--runtime-target browser/u);
   assert.match(packageJson.scripts['dev:browser:cloud'], /--deployment-profile cloud/u);
   assert.equal(packageJson.scripts['dev:desktop'], 'pnpm dev:desktop:postgres:standalone');
-  assert.match(packageJson.scripts['dev:desktop:postgres:standalone'], /--target desktop/u);
+  assert.match(packageJson.scripts['dev:desktop:postgres:standalone'], /--runtime-target desktop/u);
   assert.match(packageJson.scripts['topology:validate'], /sdkwork-topology\.mjs validate/);
   assert.match(packageJson.scripts['gateway:matrix'], /sdkwork-topology\.mjs print-matrix/);
-  assert.match(packageJson.scripts['gateway:package:cloud'], /gateway-cloud-bundle\.mjs bundle/);
   assert.equal(spec.scripts.applicationDev, 'scripts/claw-router-dev.mjs');
-  assert.equal(spec.scripts.gatewayCloudBundle, 'scripts/gateway-cloud-bundle.mjs');
+  assert.equal(spec.components.portalRenderer.script, '_sdkwork:client:browser');
   assert.equal(spec.scripts.pnpm.dev.deploymentProfile, 'standalone');
 });
 

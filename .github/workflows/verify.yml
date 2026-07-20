@@ -86,7 +86,7 @@ jobs:
 
       - name: PC bundle size check
         working-directory: apps/sdkwork-clawrouter-pc
-        run: pnpm size
+        run: pnpm check:size
 
       - name: Product verification (CI)
         run: pnpm verify:ci --parallel --concurrency 4

@@ -630,18 +630,22 @@ test("third-party runtime dependencies are direct dependencies instead of Vite a
 test("portal scripts run dependency preflight before Vite entrypoints", () => {
   const portalPackage = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
-  assert.equal(portalPackage.scripts["deps:check"], "node scripts/check-portal-deps.mjs");
+  assert.equal(portalPackage.scripts["check:dependencies"], "node scripts/check-portal-deps.mjs");
   assert.equal(portalPackage.scripts.predev, "node ../../scripts/ensure-claw-router-env.mjs --lifecycle dev");
   assert.equal(portalPackage.scripts.prebuild, "node ../../scripts/ensure-claw-router-env.mjs --lifecycle build");
   assert.equal(
     portalPackage.scripts.dev,
-    "pnpm deps:check && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native",
+    "pnpm dev:standalone",
   );
   assert.equal(
     portalPackage.scripts["dev:browser"],
-    "pnpm deps:check && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native",
+    "pnpm dev:browser:postgres:standalone",
   );
-  assert.equal(portalPackage.scripts.build, "pnpm deps:check && node scripts/build-portal.mjs");
+  assert.equal(
+    portalPackage.scripts["_sdkwork:client:browser"],
+    "pnpm check:dependencies && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native",
+  );
+  assert.equal(portalPackage.scripts.build, "pnpm check:dependencies && node scripts/build-portal.mjs");
 });
 
 test("development mode uses the shared credential-entry plugin while production does not", async () => {

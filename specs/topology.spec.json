@@ -107,7 +107,7 @@
     },
     "portalRenderer": {
       "package": "apps/sdkwork-clawrouter-pc",
-      "script": "dev:browser"
+      "script": "_sdkwork:client:browser"
     }
   },
   "orchestration": {
@@ -124,7 +124,7 @@
           {
             "id": "portal-renderer",
             "package": "apps/sdkwork-clawrouter-pc",
-            "script": "dev:browser",
+            "script": "_sdkwork:client:browser",
             "required": true,
             "role": "client"
           }
@@ -159,7 +159,7 @@
           {
             "id": "portal-renderer",
             "package": "apps/sdkwork-clawrouter-pc",
-            "script": "dev:browser",
+            "script": "_sdkwork:client:browser",
             "required": true,
             "role": "client"
           }
@@ -201,7 +201,7 @@
           {
             "id": "portal-renderer",
             "package": "apps/sdkwork-clawrouter-pc",
-            "script": "dev:browser",
+            "script": "_sdkwork:client:browser",
             "required": true,
             "role": "client"
           }

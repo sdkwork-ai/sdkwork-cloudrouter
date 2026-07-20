@@ -1738,11 +1738,11 @@ test('portal runtime is served by Rust edge server without Node server entrypoin
   assert.ok(!scriptsSurface.includes('server.ts'));
   assert.ok(!scriptsSurface.includes('dist/server.mjs'));
   assert.ok(!scriptsSurface.includes('smoke-production-server.mjs'));
-  assert.equal(portalPackage.scripts['deps:check'], 'node scripts/check-portal-deps.mjs');
-  assert.equal(portalPackage.scripts.dev, 'pnpm deps:check && vite --configLoader native');
-  assert.equal(portalPackage.scripts['dev:browser'], 'pnpm deps:check && vite --configLoader native');
+  assert.equal(portalPackage.scripts['check:dependencies'], 'node scripts/check-portal-deps.mjs');
+  assert.equal(portalPackage.scripts.dev, 'pnpm check:dependencies && vite --configLoader native');
+  assert.equal(portalPackage.scripts['dev:browser'], 'pnpm check:dependencies && vite --configLoader native');
   assert.equal(portalPackage.scripts.preview, 'vite preview --configLoader native');
-  assert.equal(portalPackage.scripts.build, 'pnpm deps:check && node scripts/build-portal.mjs');
+  assert.equal(portalPackage.scripts.build, 'pnpm check:dependencies && node scripts/build-portal.mjs');
   assert.equal(portalPackage.scripts.start, 'node ../../scripts/start-claw-router-production.mjs');
   assert.equal(rootPackage.scripts.start, 'node scripts/start-claw-router-production.mjs');
 });
@@ -8530,8 +8530,8 @@ test('portal dev scripts run Vite without a Node server entrypoint', () => {
     'utf8',
   );
 
-  assert.equal(portalPackage.scripts.dev, 'pnpm deps:check && vite --configLoader native');
-  assert.equal(portalPackage.scripts['dev:browser'], 'pnpm deps:check && vite --configLoader native');
+  assert.equal(portalPackage.scripts.dev, 'pnpm check:dependencies && vite --configLoader native');
+  assert.equal(portalPackage.scripts['dev:browser'], 'pnpm check:dependencies && vite --configLoader native');
   assert.equal(portalPackage.scripts.preview, 'vite preview --configLoader native');
   assert.equal(
     portalPackage.scripts.typecheck,
@@ -8741,7 +8741,7 @@ test('portal build script uses native Vite config loading', () => {
     'utf8',
   );
 
-  assert.equal(portalPackage.scripts.build, 'pnpm deps:check && node scripts/build-portal.mjs');
+  assert.equal(portalPackage.scripts.build, 'pnpm check:dependencies && node scripts/build-portal.mjs');
   assert.match(buildScript, /process\.env\.NODE_ENV\s*=\s*['"]production['"]/);
   assert.doesNotMatch(buildScript, /import\s*\{\s*build\s*\}\s*from\s*['"]vite['"]/);
   assert.match(buildScript, /await import\(['"]vite['"]\)/);

@@ -72,7 +72,7 @@
     "../../../sdkwork-payment/apps/sdkwork-payment-common/packages/*"
   ],
   "scripts": {
-    "deps:check": "node scripts/check-portal-deps.mjs",
+    "check:dependencies": "node scripts/check-portal-deps.mjs",
     "predev": "node ../../scripts/ensure-claw-router-env.mjs --lifecycle dev",
     "dev": "pnpm dev:standalone",
     "dev:browser": "pnpm dev:browser:postgres:standalone",
@@ -80,13 +80,13 @@
     "dev:server": "pnpm exec sdkwork-app dev --root ../.. --runtime-target server --deployment-profile standalone",
     "topology:plan:server": "node ../../scripts/run-claw-router-application.mjs plan",
     "prebuild": "node ../../scripts/ensure-claw-router-env.mjs --lifecycle build",
-    "build": "pnpm deps:check && node scripts/build-portal.mjs",
+    "build": "pnpm check:dependencies && node scripts/build-portal.mjs",
     "preview": "vite preview --configLoader native",
     "start": "node ../../scripts/start-claw-router-production.mjs",
     "check": "pnpm typecheck && pnpm build",
     "clean": "rm -rf dist packages/*/dist",
     "lint": "tsc -p tsconfig.typecheck.json --noEmit",
-    "size": "size-limit",
+    "check:size": "size-limit",
     "test:e2e": "playwright test",
     "test:commerce": "node --import tsx --test commerce-debt-runtime.test.ts commerce-business-runtime.test.ts sdk-composition-standard.test.mjs",
     "test:portal-alignment": "node --test vite-config-runtime.test.ts sdk-composition-standard.test.mjs scripts/portal-workspace-package-resolver.test.mjs",
@@ -95,7 +95,8 @@
     "dev:cloud": "pnpm exec sdkwork-app dev --root ../.. --deployment-profile cloud",
     "stop": "pnpm exec sdkwork-app stop --root ../..",
     "dev:browser:postgres:standalone": "pnpm exec sdkwork-app dev --root ../.. --runtime-target browser --deployment-profile standalone",
-    "dev:desktop:postgres:standalone": "pnpm exec sdkwork-app dev --root ../.. --runtime-target desktop --deployment-profile standalone"
+    "dev:desktop:postgres:standalone": "pnpm exec sdkwork-app dev --root ../.. --runtime-target desktop --deployment-profile standalone",
+    "_sdkwork:client:browser": "pnpm check:dependencies && node --import ./scripts/register-portal-workspace-resolver.mjs ./node_modules/vite/bin/vite.js --configLoader native"
   },
   "dependencies": {
     "@monaco-editor/loader": "^1.7.0",
