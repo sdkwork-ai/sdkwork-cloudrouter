@@ -375,7 +375,7 @@ export function DashboardAdmin() {
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 relative mt-2">
+        <div className="relative mt-2 h-80 shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'area' ? (
               <AreaChart data={trafficData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
@@ -440,7 +440,7 @@ export function DashboardAdmin() {
                 {t("admin.dashboard.index.text.f8emjh", "用户消费榜")}</button>
             </div>
           </div>
-          <div className="flex-1 min-h-0 relative">
+          <div className="relative h-72 shrink-0">
             {chartTab === 'modelDistribution' ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={modelDistribution} layout="vertical" margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
@@ -498,7 +498,7 @@ export function DashboardAdmin() {
               <span className="flex items-center gap-1 text-xs text-slate-500"><Mic className="w-3.5 h-3.5" /> {t("admin.dashboard.index.text.113w1g1", "语音")}</span>
             </div>
           </div>
-          <div className="flex-1 min-h-0 relative flex items-center">
+          <div className="relative flex h-72 shrink-0 items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
