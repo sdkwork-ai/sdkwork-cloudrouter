@@ -159,10 +159,15 @@
         "sdkFamily": "sdkwork-iam-app-sdk",
         "apiAuthority": "sdkwork-iam-app-api",
         "surface": "app-api",
-        "connectivityPlane": "platform",
-        "runtimeMode": "external-via-platform-gateway",
-        "mountStatus": "not-mounted",
-        "baseUrlConfigKey": "VITE_SDKWORK_APPBASE_APP_API_BASE_URL"
+        "connectivityPlane": "application",
+        "runtimeMode": "same-origin-mounted",
+        "mountStatus": "verified",
+        "cargoDependency": "sdkwork-api-clawrouter-assembly",
+        "embeddedExecutableExport": "sdkwork_api_clawrouter_assembly::assemble_api_router",
+        "coverageEvidence": [
+          "crates/sdkwork-api-clawrouter-assembly/src/bootstrap/iam.rs#wire_iam_app_router",
+          "crates/sdkwork-api-clawrouter-assembly/src/bootstrap.rs#assemble_api_router"
+        ]
       },
       {
         "workspace": "sdkwork-iam-backend-sdk",
@@ -201,4 +206,3 @@
     ]
   }
 }
-

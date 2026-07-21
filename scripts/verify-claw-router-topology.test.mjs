@@ -42,6 +42,29 @@ test('declares v5 topology spec and profile env files for sdkwork-clawrouter', a
   assert.ok(spec.surfaces['application.backend-http']);
   assert.ok(spec.surfaces['application.open-http']);
   assert.ok(spec.surfaces['platform.api-gateway']);
+  const standaloneDevelopment = spec.orchestration.profiles['standalone.development'];
+  assert.deepEqual(standaloneDevelopment.accessEndpoints, [
+    {
+      id: 'application-ui',
+      kind: 'user-interface',
+      source: { processId: 'portal-renderer' },
+      path: '/',
+      primary: true,
+      runtimeTargets: ['browser'],
+      clientArchitectures: ['pc-web'],
+    },
+    {
+      id: 'application-api-reference',
+      kind: 'api-reference',
+      source: { surfaceId: 'application.public-ingress' },
+      path: '/openapi.json',
+      runtimeTargets: ['browser'],
+    },
+  ]);
+  assert.equal(
+    standaloneDevelopment.processes.find((process) => process.id === 'portal-renderer').bindEnv,
+    'SDKWORK_CLAW_ROUTER_INTERNAL_PORTAL_RENDERER_BIND',
+  );
 
   for (const profileId of [
     'standalone.development',

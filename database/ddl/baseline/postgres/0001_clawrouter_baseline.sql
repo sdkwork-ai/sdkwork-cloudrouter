@@ -1613,39 +1613,6 @@ CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_metric_snapshot ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_name, metric_period, period_start, dimension_key, dimension_value);
 
-CREATE TABLE IF NOT EXISTS ops_notification_delivery (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    user_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    app_id VARCHAR(128) NOT NULL DEFAULT 'default',
-    message_id BIGINT NOT NULL,
-    delivery_channel INTEGER NOT NULL,
-    delivery_status INTEGER,
-    read_at TIMESTAMPTZ,
-    popup_seen_at TIMESTAMPTZ,
-    archived_at TIMESTAMPTZ,
-    delivered_at TIMESTAMPTZ,
-    failure_code VARCHAR(128),
-    retry_count INTEGER NOT NULL DEFAULT 0,
-    CONSTRAINT ck_ops_notification_delivery_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT fk_ops_notification_delivery_message FOREIGN KEY (tenant_id, organization_id, message_id) REFERENCES ops_notification_message (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ops_notification_delivery_retry_count CHECK (retry_count >= 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_notification_delivery_user_message_app ON ops_notification_delivery (tenant_id, organization_id, message_id, user_id, app_id, delivery_channel);
-CREATE INDEX IF NOT EXISTS idx_ops_notification_delivery_user_read ON ops_notification_delivery (tenant_id, organization_id, user_id, app_id, read_at, created_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_notification_delivery_popup_seen ON ops_notification_delivery (tenant_id, organization_id, user_id, app_id, popup_seen_at, id);
-
 CREATE TABLE IF NOT EXISTS ops_notification_message (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
@@ -1678,6 +1645,39 @@ CREATE TABLE IF NOT EXISTS ops_notification_message (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_notification_message_scope_id ON ops_notification_message (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_ops_notification_message_scope ON ops_notification_message (tenant_id, organization_id, app_id, scope_type, status, published_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_notification_message_popup ON ops_notification_message (tenant_id, organization_id, show_as_popup, published_at, id);
+
+CREATE TABLE IF NOT EXISTS ops_notification_delivery (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    app_id VARCHAR(128) NOT NULL DEFAULT 'default',
+    message_id BIGINT NOT NULL,
+    delivery_channel INTEGER NOT NULL,
+    delivery_status INTEGER,
+    read_at TIMESTAMPTZ,
+    popup_seen_at TIMESTAMPTZ,
+    archived_at TIMESTAMPTZ,
+    delivered_at TIMESTAMPTZ,
+    failure_code VARCHAR(128),
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT ck_ops_notification_delivery_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT fk_ops_notification_delivery_message FOREIGN KEY (tenant_id, organization_id, message_id) REFERENCES ops_notification_message (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ops_notification_delivery_retry_count CHECK (retry_count >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_notification_delivery_user_message_app ON ops_notification_delivery (tenant_id, organization_id, message_id, user_id, app_id, delivery_channel);
+CREATE INDEX IF NOT EXISTS idx_ops_notification_delivery_user_read ON ops_notification_delivery (tenant_id, organization_id, user_id, app_id, read_at, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_ops_notification_delivery_popup_seen ON ops_notification_delivery (tenant_id, organization_id, user_id, app_id, popup_seen_at, id);
 
 CREATE TABLE IF NOT EXISTS ops_notification_recipient (
     id BIGINT NOT NULL PRIMARY KEY,

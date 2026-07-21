@@ -157,23 +157,17 @@ class SchemaCompiler:
             "-- Do not edit by hand; update Schema Registry and regenerate."
         ]
 
-        generated_table_count = 0
-        for table in tables:
-            if not isinstance(table, dict):
-                continue
-            if table.get("generated_by_this_project") is False:
-                continue
-
+        generated_tables = self._generated_tables_in_dependency_order(tables)
+        for table in generated_tables:
             policy = self.resolve_table_policy(table, profile_policies)
             columns = self._collect_columns(table, common_column_groups, dialect)
             self._validate_lifecycle_contract(table, set(columns))
             statements.append(self._compile_table(table, dialect, policy, columns))
-            generated_table_count += 1
             index_sql = self._compile_indexes(table, dialect, policy, set(columns))
             if index_sql:
                 statements.append(index_sql)
 
-        if generated_table_count == 0:
+        if not generated_tables:
             raise SchemaCompileError(
                 "schema registry does not contain any project-generated tables; "
                 "check table_fragments and generated_by_this_project flags"
@@ -259,6 +253,65 @@ class SchemaCompiler:
 
     def _load_registry(self) -> dict[str, Any]:
         return load_schema_registry(self.registry_path)
+
+    def _generated_tables_in_dependency_order(
+        self,
+        tables: list[Any],
+    ) -> list[dict[str, Any]]:
+        generated_tables: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        for table in tables:
+            if not isinstance(table, dict) or table.get("generated_by_this_project") is False:
+                continue
+            table_name = self._require_identifier(table.get("table"), "table")
+            if table_name in generated_tables:
+                raise SchemaCompileError(f"duplicate generated table: {table_name}")
+            generated_tables[table_name] = table
+
+        dependencies: dict[str, list[str]] = {}
+        for table_name, table in generated_tables.items():
+            table_dependencies: list[str] = []
+            foreign_keys = table.get("foreign_keys", []) or []
+            if not isinstance(foreign_keys, list):
+                raise SchemaCompileError(f"{table_name}.foreign_keys must be a list")
+            for foreign_key in foreign_keys:
+                if not isinstance(foreign_key, dict):
+                    continue
+                reference_table = foreign_key.get("references_table")
+                if (
+                    isinstance(reference_table, str)
+                    and reference_table != table_name
+                    and reference_table in generated_tables
+                    and reference_table not in table_dependencies
+                ):
+                    table_dependencies.append(reference_table)
+            dependencies[table_name] = table_dependencies
+
+        ordered: list[dict[str, Any]] = []
+        states: dict[str, int] = {}
+        stack: list[str] = []
+
+        def visit(table_name: str) -> None:
+            state = states.get(table_name, 0)
+            if state == 2:
+                return
+            if state == 1:
+                cycle_start = stack.index(table_name)
+                cycle = [*stack[cycle_start:], table_name]
+                raise SchemaCompileError(
+                    f"generated table foreign key dependency cycle: {' -> '.join(cycle)}"
+                )
+
+            states[table_name] = 1
+            stack.append(table_name)
+            for dependency in dependencies[table_name]:
+                visit(dependency)
+            stack.pop()
+            states[table_name] = 2
+            ordered.append(generated_tables[table_name])
+
+        for table_name in generated_tables:
+            visit(table_name)
+        return ordered
 
     def _compile_table(
         self,

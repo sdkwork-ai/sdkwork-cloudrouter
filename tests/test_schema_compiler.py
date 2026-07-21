@@ -334,6 +334,82 @@ class SchemaCompilerTest(unittest.TestCase):
                 sql,
             )
 
+    def test_orders_referenced_table_and_indexes_before_foreign_key_table(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                tables:
+                  - table: ai_child
+                    domain: ai
+                    columns:
+                      id: { type: int64, constraints: "PRIMARY KEY" }
+                      tenant_id: int64
+                      parent_id: int64
+                    foreign_keys:
+                      - name: fk_ai_child_parent
+                        columns: [tenant_id, parent_id]
+                        references_table: ai_parent
+                        references_columns: [tenant_id, id]
+                  - table: ai_parent
+                    domain: ai
+                    columns:
+                      id: { type: int64, constraints: "PRIMARY KEY" }
+                      tenant_id: int64
+                    indexes:
+                      - name: uk_ai_parent_scope_id
+                        unique: true
+                        columns: [tenant_id, id]
+                """,
+            )
+
+            sql = SchemaCompiler(root=root, registry_path=registry).compile_postgres()
+
+            parent_position = sql.index("CREATE TABLE IF NOT EXISTS ai_parent")
+            parent_index_position = sql.index(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_parent_scope_id"
+            )
+            child_position = sql.index("CREATE TABLE IF NOT EXISTS ai_child")
+            self.assertLess(parent_position, parent_index_position)
+            self.assertLess(parent_index_position, child_position)
+
+    def test_rejects_generated_foreign_key_dependency_cycles(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                tables:
+                  - table: ai_first
+                    domain: ai
+                    columns:
+                      id: { type: int64, constraints: "PRIMARY KEY" }
+                      second_id: int64
+                    foreign_keys:
+                      - name: fk_ai_first_second
+                        columns: [second_id]
+                        references_table: ai_second
+                        references_columns: [id]
+                  - table: ai_second
+                    domain: ai
+                    columns:
+                      id: { type: int64, constraints: "PRIMARY KEY" }
+                      first_id: int64
+                    foreign_keys:
+                      - name: fk_ai_second_first
+                        columns: [first_id]
+                        references_table: ai_first
+                        references_columns: [id]
+                """,
+            )
+
+            with self.assertRaisesRegex(
+                SchemaCompileError,
+                "generated table foreign key dependency cycle: ai_first -> ai_second -> ai_first",
+            ):
+                SchemaCompiler(root=root, registry_path=registry).compile_postgres()
+
     def test_explicit_unique_index_remains_foreign_key_candidate_with_active_unique(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

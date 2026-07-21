@@ -153,7 +153,6 @@
     "publicExports": [],
     "runtimeEntrypoints": [
       "sdkwork.app.config.json",
-      "../../specs/dependency-api-surfaces.json",
       "package.json#scripts.dev",
       "package.json#scripts.build",
       "package.json#scripts.start",
@@ -210,9 +209,10 @@
         "providedBy": "sdkwork-clawroutes-pc-commons/runtime",
         "dependencyApiSurface": "sdkwork-iam-app-sdk",
         "runtimeIntegration": {
-          "mode": "external-service",
-          "sameOriginAllowed": false,
-          "requiredBaseUrlEnv": "VITE_SDKWORK_APPBASE_APP_API_BASE_URL",
+          "mode": "same-origin-mounted",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_APPBASE_APP_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
           "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL"
         }
       },
@@ -247,16 +247,10 @@
     ],
     "events": [],
     "configKeys": [
-      "sdkwork.app.config.json",
-      "../../specs/dependency-api-surfaces.json"
+      "sdkwork.app.config.json"
     ],
     "routeManifest": null,
-    "dependencyApiSurfaces": [
-      {
-        "mode": "manifest-ref",
-        "manifestRef": "../../specs/dependency-api-surfaces.json"
-      }
-    ],
+    "dependencyApiSurfaces": [],
     "iamModuleManifest": "specs/iam.module.manifest.json",
     "permissionComposition": {
       "inheritanceMode": "module-catalog-with-overrides",

@@ -2335,15 +2335,19 @@ dependencies = [
 name = "sdkwork-api-clawrouter-assembly"
 version = "0.3.0"
 dependencies = [
+ "anyhow",
  "axum",
  "sdkwork-claw-http",
  "sdkwork-clawrouter-edge-runtime",
+ "sdkwork-iam-database-host",
+ "sdkwork-iam-embedded-application-bootstrap",
  "sdkwork-routes-agent-open-api",
  "sdkwork-routes-audio-open-api",
  "sdkwork-routes-clawrouter-app-api",
  "sdkwork-routes-clawrouter-backend-api",
  "sdkwork-routes-drive-open-api",
  "sdkwork-routes-iaas-open-api",
+ "sdkwork-routes-iam-app-api",
  "sdkwork-routes-image-open-api",
  "sdkwork-routes-knowledgebase-open-api",
  "sdkwork-routes-llm-open-api",
@@ -4007,6 +4011,7 @@ name = "sdkwork-web-store-redis"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "getrandom 0.2.17",
  "redis 0.27.6",
  "sdkwork-web-core",
  "serde",

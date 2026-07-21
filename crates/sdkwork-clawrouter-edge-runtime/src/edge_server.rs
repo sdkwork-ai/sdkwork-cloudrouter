@@ -170,6 +170,18 @@ impl EdgeInProcessUpstreams {
         self
     }
 
+    pub fn gateway_router(&self) -> Router {
+        self.gateway_router.clone()
+    }
+
+    pub fn backend_router(&self) -> Router {
+        self.backend_router.clone()
+    }
+
+    pub fn app_router(&self) -> Router {
+        self.app_router.clone()
+    }
+
     fn router_for_surface(&self, surface: EdgeApiSurface) -> Router {
         match surface {
             EdgeApiSurface::Gateway => self.gateway_router.clone(),
@@ -178,14 +190,7 @@ impl EdgeInProcessUpstreams {
         }
     }
 
-    fn router_for_path(&self, path: &str) -> Option<Router> {
-        if let Some(router) = self
-            .dependency_api_router
-            .clone()
-            .filter(|_| application_api_surface_path(path))
-        {
-            return Some(router);
-        }
+    pub fn router_for_path(&self, path: &str) -> Option<Router> {
         if dependency_api_path(path) {
             return Some(
                 self.dependency_api_router
@@ -692,10 +697,6 @@ fn is_clawrouter_owned_iam_app_path(path: &str) -> bool {
     CLAWROUTER_OWNED_IAM_APP_PREFIXES.iter().any(|prefix| {
         path == prefix.trim_end_matches('/') || path.starts_with(&format!("{prefix}/"))
     })
-}
-
-fn application_api_surface_path(path: &str) -> bool {
-    path_matches_prefix(path, APP_API_PREFIX) || path_matches_prefix(path, BACKEND_API_PREFIX)
 }
 
 fn path_matches_prefix(path: &str, prefix: &str) -> bool {

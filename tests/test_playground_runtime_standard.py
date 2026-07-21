@@ -34,6 +34,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("getSdkworkDriveAppSdkClient", adapter_source)
         self.assertIn("getSdkworkMemoryAppSdkClient", adapter_source)
         self.assertIn("getSdkworkPromptsAppSdkClient", adapter_source)
+        self.assertIn("<AgentsWorkbench showSidebarLogo={false} />", adapter_source)
         self.assertNotIn("GlobalSidebar", adapter_source)
         self.assertNotIn("WORKBENCH_VIEW_BY_TAB", adapter_source)
         self.assertNotIn("PlaygroundPage", adapter_source)
@@ -190,12 +191,27 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
                 f"../sdkwork-agents/apps/sdkwork-agents-pc/packages/{package_name}",
                 workspace_source,
             )
-        tailwind_source = "../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/*/src"
+        tailwind_source = "../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages"
         tailwind_app_source = "../../../../sdkwork-agents/apps/sdkwork-agents-pc/src"
         self.assertIn(tailwind_source, css_source)
         self.assertIn(tailwind_source, sources_registry)
         self.assertIn(tailwind_app_source, css_source)
         self.assertIn(tailwind_app_source, sources_registry)
+
+    def test_playground_does_not_inject_the_retired_theme_surface_into_agents(self) -> None:
+        source = (
+            ROOT
+            / "apps"
+            / "sdkwork-clawrouter-pc"
+            / "packages"
+            / "sdkwork-clawrouter-pc-playground"
+            / "src"
+            / "pages"
+            / "Playground.tsx"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("sdkwork-playground-host", source)
+        self.assertNotIn("theme-aware-dark-surface", source)
 
     def test_prompts_app_facade_consumes_the_transport_package_root(self) -> None:
         prompts_package_root = (

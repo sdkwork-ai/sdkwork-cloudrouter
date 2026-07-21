@@ -8,18 +8,30 @@ import {
   getSdkworkMemoryAppSdkClient,
   getSdkworkPromptsAppSdkClient,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import { buildPortalAuthLoginRedirect } from '@sdkwork/clawroutes-pc-commons';
+import {
+  getClawRouterCouponRechargeService,
+  getClawRouterMembershipCheckoutService,
+  getClawRouterPointsRechargeService,
+} from '@sdkwork/clawroutes-pc-commons/domain-service-providers';
 
 configureAgentsWorkbenchRuntime({
   getAgentsAppSdkClient: getSdkworkAgentAppSdkClient,
   getDriveAppSdkClient: getSdkworkDriveAppSdkClient,
   getMemoryAppSdkClient: getSdkworkMemoryAppSdkClient,
   getPromptsAppSdkClient: getSdkworkPromptsAppSdkClient,
+  tokenPlan: {
+    checkoutService: getClawRouterMembershipCheckoutService(),
+    couponRechargeService: getClawRouterCouponRechargeService(),
+    onLoginRequired: () => window.location.assign(buildPortalAuthLoginRedirect(window.location)),
+    pointsRechargeService: getClawRouterPointsRechargeService(),
+  },
 });
 
 export function Playground() {
   return (
-    <div className="theme-aware-dark-surface sdkwork-playground-host flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
-      <AgentsWorkbench />
+    <div className="sdkwork-playground-host flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <AgentsWorkbench showSidebarLogo={false} />
     </div>
   );
 }

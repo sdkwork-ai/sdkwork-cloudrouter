@@ -41,14 +41,77 @@
     "dependencyApiExports": [],
     "dependencyApiSurfaces": [
       {
+        "workspace": "sdkwork-account",
+        "sdkFamily": "sdkwork-account-app-sdk",
+        "apiAuthority": "sdkwork-account-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "cargoDependency": "sdkwork_routes_account_app_api",
+        "embeddedExecutableExport": "sdkwork_routes_account_app_api::app_account_wallet_router_with_sqlite_pool",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "../../../sdkwork-account/apis/app-api/account/account-app-api.openapi.json"
+        ]
+      },
+      {
+        "workspace": "sdkwork-payment",
+        "sdkFamily": "sdkwork-payment-app-sdk",
+        "apiAuthority": "sdkwork-payment-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "cargoDependency": "sdkwork_routes_payment_app_api",
+        "embeddedExecutableExport": "sdkwork_routes_payment_app_api::routes::build_payment_app_router",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "../../../sdkwork-payment/apis/app-api/payment/sdkwork-payment-app-api.openapi.yaml"
+        ]
+      },
+      {
+        "workspace": "sdkwork-promotion",
+        "sdkFamily": "sdkwork-promotion-app-sdk",
+        "apiAuthority": "sdkwork-promotion-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "cargoDependency": "sdkwork_routes_promotion_app_api",
+        "embeddedExecutableExport": "sdkwork_routes_promotion_app_api::app_promotion_router_with_sqlite_pool",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "../../../sdkwork-promotion/apis/app-api/promotion/sdkwork-promotion-app-api.openapi.json"
+        ]
+      },
+      {
+        "workspace": "sdkwork-membership",
+        "sdkFamily": "sdkwork-membership-app-sdk",
+        "apiAuthority": "sdkwork-membership-app-api",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "cargoDependency": "sdkwork_routes_membership_app_api",
+        "embeddedExecutableExport": "sdkwork_routes_membership_app_api::app_membership_router_with_sqlite_pool",
+        "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "../../../sdkwork-membership/apis/app-api/membership/membership-app-api.openapi.json"
+        ]
+      },
+      {
         "workspace": "sdkwork-order",
         "sdkFamily": "sdkwork-order-app-sdk",
         "apiAuthority": "sdkwork-order-app-api",
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
-        "runtimeMode": "embedded",
-        "executablePublicExport": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool",
+        "runtimeMode": "same-origin-mounted",
+        "cargoDependency": "sdkwork_api_order_assembly",
+        "embeddedExecutableExport": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool",
         "coverageEvidence": [
+          "src/commerce_runtime.rs",
+          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
           "../../../sdkwork-order/crates/sdkwork-api-order-assembly/assembly-manifest.json",
           "../../../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
         ]

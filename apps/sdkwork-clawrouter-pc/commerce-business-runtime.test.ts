@@ -107,6 +107,20 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   assert.match(summarySource, /pointBalance:\s*state\.dashboard\.summary\.pointBalance/);
 });
 
+test("Playground delegates Token Plan UI to Agents and injects only host services", () => {
+  const playgroundSource = readPortalFile(
+    "./packages/sdkwork-clawrouter-pc-playground/src/pages/Playground.tsx",
+  );
+
+  assert.match(playgroundSource, /@sdkwork\/agents-pc\/workbench/);
+  assert.match(playgroundSource, /tokenPlan:\s*\{/);
+  assert.match(playgroundSource, /checkoutService:\s*getClawRouterMembershipCheckoutService\(\)/);
+  assert.match(playgroundSource, /couponRechargeService:\s*getClawRouterCouponRechargeService\(\)/);
+  assert.match(playgroundSource, /pointsRechargeService:\s*getClawRouterPointsRechargeService\(\)/);
+  assert.doesNotMatch(playgroundSource, /SdkworkSubscriptionCatalogPage/);
+  assert.doesNotMatch(playgroundSource, /\bfetch\s*\(|axios|Authorization|Access-Token/);
+});
+
 test("console checkout and payment routes stay hidden from sidebar navigation", () => {
   const consoleLayoutSource = readPortalFile("./packages/sdkwork-clawrouter-pc-console-shell/src/ConsoleLayout.tsx");
 

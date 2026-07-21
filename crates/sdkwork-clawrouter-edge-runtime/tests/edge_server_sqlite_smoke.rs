@@ -637,7 +637,7 @@ async fn all_in_one_edge_router_serves_sqlite_gateway_admin_and_app_without_serv
     );
 
     let app_models = json_request(
-        edge_router,
+        edge_router.clone(),
         Method::GET,
         "/app/v3/api/ai/models",
         Body::empty(),
@@ -650,6 +650,18 @@ async fn all_in_one_edge_router_serves_sqlite_gateway_admin_and_app_without_serv
         "qwen3.6-max-preview",
         model_item_by_code(&app_models.json["data"]["items"], "qwen3.6-max-preview")["model"]
     );
+
+    let membership_package_groups = json_request(
+        edge_router,
+        Method::GET,
+        "/app/v3/api/memberships/package_groups?page=1&page_size=200",
+        Body::empty(),
+    )
+    .send()
+    .await;
+    assert_eq!(StatusCode::OK, membership_package_groups.status);
+    assert_eq!(0, membership_package_groups.json["code"]);
+    assert!(membership_package_groups.json["data"]["items"].is_array());
 
     let _ = portal.stop.send(());
 }

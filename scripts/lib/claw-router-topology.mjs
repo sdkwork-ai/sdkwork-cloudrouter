@@ -186,6 +186,32 @@ export function loopbackHealthUrlFromBind(bind) {
   return `http://${loopbackHost}:${port}${HEALTH_PATH}`;
 }
 
+function loopbackHttpOriginFromBind(bind) {
+  const healthUrl = loopbackHealthUrlFromBind(bind);
+  return healthUrl?.slice(0, -HEALTH_PATH.length);
+}
+
+export function resolveWorkspaceRuntimePlan(settings) {
+  const profileId = settings.profileId ?? resolveDevProfileId(settings.deploymentProfile);
+  const profileEnv = runtime.loadProfile(profileId);
+  const effectiveEnv = runtime.applyProfileEnv(profileId, [
+    profileEnv,
+    {
+      SDKWORK_CLAW_ROUTER_INTERNAL_PORTAL_RENDERER_BIND: settings.portalBind,
+      ...(settings.runtimeMode === 'client'
+        ? {}
+        : {
+            SDKWORK_CLAW_ROUTER_APPLICATION_PUBLIC_INGRESS_BIND: settings.serverBind,
+            SDKWORK_CLAW_ROUTER_APPLICATION_PUBLIC_HTTP_URL:
+              loopbackHttpOriginFromBind(settings.serverBind),
+          }),
+    },
+  ]);
+  return runtime.resolvePlan(profileId, 'browser', 'pc-web', {
+    profileEnv: effectiveEnv,
+  });
+}
+
 export function resolveWorkspaceHealthCheckUrls(settings) {
   if (settings.runtimeMode === 'client') {
     return [

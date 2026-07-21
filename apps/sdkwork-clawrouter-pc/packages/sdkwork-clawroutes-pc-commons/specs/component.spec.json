@@ -132,7 +132,6 @@
       "./utils/env"
     ],
     "runtimeEntrypoints": [
-      "../../../../../specs/dependency-api-surfaces.json",
       "package.json#scripts.dev",
       "package.json#scripts.build",
       "package.json#scripts.typecheck"
@@ -199,9 +198,10 @@
         "getter": "getSdkworkAppbaseAppSdkClient",
         "dependencyApiSurface": "sdkwork-iam-app-sdk",
         "runtimeIntegration": {
-          "mode": "external-service",
-          "sameOriginAllowed": false,
-          "requiredBaseUrlEnv": "VITE_SDKWORK_APPBASE_APP_API_BASE_URL",
+          "mode": "same-origin-mounted",
+          "sameOriginAllowed": true,
+          "baseUrlEnv": "VITE_SDKWORK_APPBASE_APP_API_BASE_URL",
+          "fallbackBaseUrlEnv": "VITE_CLAWROUTER_APP_API_BASE_URL",
           "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
           "tokenManager": "claw-router-global"
         }
@@ -472,16 +472,9 @@
       }
     ],
     "events": [],
-    "configKeys": [
-      "../../../../../specs/dependency-api-surfaces.json"
-    ],
+    "configKeys": [],
     "routeManifest": null,
-    "dependencyApiSurfaces": [
-      {
-        "mode": "manifest-ref",
-        "manifestRef": "../../../../../specs/dependency-api-surfaces.json"
-      }
-    ]
+    "dependencyApiSurfaces": []
   },
   "integration": {
     "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",

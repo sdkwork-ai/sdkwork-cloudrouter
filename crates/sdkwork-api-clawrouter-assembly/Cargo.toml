@@ -9,9 +9,13 @@ name = "sdkwork_api_clawrouter_assembly"
 path = "src/lib.rs"
 
 [dependencies]
+anyhow.workspace = true
 axum.workspace = true
 sdkwork-claw-http.workspace = true
 sdkwork-clawrouter-edge-runtime.workspace = true
+sdkwork-iam-database-host.workspace = true
+sdkwork-iam-embedded-application-bootstrap.workspace = true
+sdkwork-routes-iam-app-api.workspace = true
 tokio.workspace = true
 tower.workspace = true
 sdkwork-routes-agent-open-api = { path = "../sdkwork-routes-agent-open-api" }

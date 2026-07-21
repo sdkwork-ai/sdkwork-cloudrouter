@@ -6,7 +6,12 @@ import { createServer } from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { formatNetworkAccessLines } from '@sdkwork/app-topology/network-access';
+import {
+  formatAccessEndpointCatalogLines,
+  formatPrimaryAccessLines,
+  resolveAccessEndpointReports,
+} from '@sdkwork/app-topology/access-endpoints';
+import { formatResolvedNetworkAccessLines } from '@sdkwork/app-topology/network-access';
 import {
   defaultClawRouterDevPostgresDatabaseUrl,
   defaultClawRouterDevPostgresMaxConnections,
@@ -33,6 +38,7 @@ import {
   bridgeTopologyBindEnvToLegacyRustEnv,
   IAM_APPLICATION_BOOTSTRAP_ENV,
   loadTopologyProfileForWorkspace,
+  resolveWorkspaceRuntimePlan,
   waitForHttpHealthy,
   waitForWorkspaceHealthSurfaces,
 } from '../lib/claw-router-topology.mjs';
@@ -118,35 +124,13 @@ function loopbackUrl(bind, pathSuffix) {
   return `http://${loopbackHost}:${port}${pathSuffix}`;
 }
 
-function networkAccessLines(bind, pathSuffix, interfaces, {
-  includeLocal = false,
-  unavailableText,
-} = {}) {
-  const { host, port } = splitBind(bind, '--bind');
-  return formatNetworkAccessLines({
-    host,
-    includeLocal,
-    port,
-    pathname: pathSuffix,
-    networkInterfaces: interfaces,
-    prefix: '[start-workspace]   ',
-    unavailableText,
-  });
-}
-
 export function successfulStartupAccessLines(settings, interfaces) {
-  const accessBind = settings.runtimeMode === 'client'
-    ? settings.portalBind
-    : settings.serverBind;
-  const accessLines = networkAccessLines(accessBind, '/', interfaces, {
-    includeLocal: true,
+  return formatPrimaryAccessLines(resolveWorkspaceRuntimePlan(settings), {
+    networkInterfaces: interfaces,
+    prefix: '[start-workspace] ',
+    statusText: 'application started successfully',
     unavailableText: 'unavailable (listener is loopback-only or no LAN IPv4 address was detected)',
   });
-  return [
-    '[start-workspace] application started successfully',
-    '[start-workspace] Access URLs',
-    ...accessLines,
-  ];
 }
 
 export async function waitForPortalReady(settings, {
@@ -1023,10 +1007,28 @@ export function workspaceAccessLines(settings, includeLanAccess = false, interfa
     ];
   }
 
+  const runtimePlan = resolveWorkspaceRuntimePlan(settings);
+  const accessCatalog = formatAccessEndpointCatalogLines(runtimePlan, {
+    prefix: '[start-workspace] ',
+  });
+  const apiReference = resolveAccessEndpointReports(runtimePlan, {
+    networkInterfaces: interfaces,
+  }).find((endpoint) => endpoint.kind === 'api-reference');
+  const apiNetworkLines = includeLanAccess && apiReference
+    ? [
+        '[start-workspace] Application API LAN OpenAPI (same Wi-Fi/LAN)',
+        ...formatResolvedNetworkAccessLines(apiReference, {
+          includeLocal: false,
+          prefix: '[start-workspace]   ',
+          unavailableText: 'unavailable (listener is loopback-only or no LAN IPv4 address was detected)',
+        }),
+      ]
+    : [];
   const edgeAndPortal = [
     `[start-workspace] Mode: server (${settings.runtimeMode})`,
-    '[start-workspace] Edge Server Access',
-    `[start-workspace]   Portal: ${loopbackUrl(settings.serverBind, '/')}`,
+    ...accessCatalog,
+    '[start-workspace] Application API Access',
+    ...apiNetworkLines,
     `[start-workspace]   Gateway API: ${loopbackUrl(settings.serverBind, GATEWAY_API_PREFIX)}`,
     `[start-workspace]   Backend/Admin API: ${loopbackUrl(settings.serverBind, BACKEND_API_PREFIX)}`,
     `[start-workspace]   App API: ${loopbackUrl(settings.serverBind, APP_API_PREFIX)}`,
@@ -1042,19 +1044,10 @@ export function workspaceAccessLines(settings, includeLanAccess = false, interfa
     `[start-workspace]   Direct Portal Admin API OpenAPI Proxy: ${loopbackUrl(settings.portalBind, `${BACKEND_API_PREFIX}/openapi.json`)}`,
     `[start-workspace]   Direct Portal App API OpenAPI Proxy: ${loopbackUrl(settings.portalBind, `${APP_API_PREFIX}/openapi.json`)}`,
   ];
-  if (includeLanAccess) {
-    const networkLines = networkAccessLines(settings.serverBind, '/', interfaces, {
-      unavailableText: 'unavailable (listener is loopback-only or no LAN IPv4 address was detected)',
-    });
-    edgeAndPortal.splice(2, 0,
-      '[start-workspace] LAN Access (same Wi-Fi/LAN)',
-      ...networkLines,
-    );
-  }
   const edgeHealth = [
     '[start-workspace] Health Checks',
-    `[start-workspace]   Edge Server Health: ${loopbackUrl(settings.serverBind, '/healthz')}`,
-    `[start-workspace]   Edge Server Ready: ${loopbackUrl(settings.serverBind, '/readyz')}`,
+    `[start-workspace]   Application API Health: ${loopbackUrl(settings.serverBind, '/healthz')}`,
+    `[start-workspace]   Application API Ready: ${loopbackUrl(settings.serverBind, '/readyz')}`,
   ];
   if (settings.runtimeMode !== 'distributed') {
     return [...edgeAndPortal, ...edgeHealth];

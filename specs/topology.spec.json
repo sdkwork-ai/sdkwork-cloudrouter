@@ -120,7 +120,28 @@
             "package": "apps/sdkwork-clawrouter-pc",
             "script": "_sdkwork:client:browser",
             "required": true,
-            "role": "client"
+            "role": "client",
+            "bindEnv": "SDKWORK_CLAW_ROUTER_INTERNAL_PORTAL_RENDERER_BIND",
+            "runtimeTargets": ["browser"],
+            "clientArchitectures": ["pc-web"]
+          }
+        ],
+        "accessEndpoints": [
+          {
+            "id": "application-ui",
+            "kind": "user-interface",
+            "source": { "processId": "portal-renderer" },
+            "path": "/",
+            "primary": true,
+            "runtimeTargets": ["browser"],
+            "clientArchitectures": ["pc-web"]
+          },
+          {
+            "id": "application-api-reference",
+            "kind": "api-reference",
+            "source": { "surfaceId": "application.public-ingress" },
+            "path": "/openapi.json",
+            "runtimeTargets": ["browser"]
           }
         ],
         "healthSurfaces": [
@@ -155,7 +176,28 @@
             "package": "apps/sdkwork-clawrouter-pc",
             "script": "_sdkwork:client:browser",
             "required": true,
-            "role": "client"
+            "role": "client",
+            "bindEnv": "SDKWORK_CLAW_ROUTER_INTERNAL_PORTAL_RENDERER_BIND",
+            "runtimeTargets": ["browser"],
+            "clientArchitectures": ["pc-web"]
+          }
+        ],
+        "accessEndpoints": [
+          {
+            "id": "application-ui",
+            "kind": "user-interface",
+            "source": { "processId": "portal-renderer" },
+            "path": "/",
+            "primary": true,
+            "runtimeTargets": ["browser"],
+            "clientArchitectures": ["pc-web"]
+          },
+          {
+            "id": "application-api-reference",
+            "kind": "api-reference",
+            "source": { "surfaceId": "application.public-ingress" },
+            "path": "/openapi.json",
+            "runtimeTargets": ["browser"]
           }
         ],
         "healthSurfaces": [

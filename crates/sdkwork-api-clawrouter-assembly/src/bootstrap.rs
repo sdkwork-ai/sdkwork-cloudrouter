@@ -1,5 +1,7 @@
 //! Host-neutral API composition for sdkwork-clawrouter.
 
+mod iam;
+
 use axum::{
     body::Body,
     extract::State,
@@ -14,12 +16,11 @@ pub struct ApiAssembly {
     pub router: Router,
 }
 
-pub type ApiAssemblyError = sdkwork_clawrouter_edge_runtime::GatewayRouterError;
+pub type ApiAssemblyError = anyhow::Error;
 
 #[derive(Clone)]
 struct ApplicationRouters {
-    app: Router,
-    backend: Router,
+    upstreams: sdkwork_clawrouter_edge_runtime::EdgeInProcessUpstreams,
     open: OpenApiRouters,
 }
 
@@ -39,14 +40,21 @@ struct OpenApiRouters {
 }
 
 pub async fn assemble_api_router() -> Result<ApiAssembly, ApiAssemblyError> {
-    let open_runtime = sdkwork_clawrouter_edge_runtime::router_from_env().await?;
-    Ok(assemble_api_router_with_open_runtime(open_runtime))
+    let upstreams =
+        sdkwork_clawrouter_edge_runtime::runtime::all_in_one_in_process_upstreams_from_env()
+            .await?;
+    let iam_router = iam::wire_iam_app_router().await?;
+    Ok(assemble_api_router_with_in_process_upstreams(
+        upstreams.with_dependency_api_router(iam_router),
+    ))
 }
 
-fn assemble_api_router_with_open_runtime(open_runtime: Router) -> ApiAssembly {
+fn assemble_api_router_with_in_process_upstreams(
+    upstreams: sdkwork_clawrouter_edge_runtime::EdgeInProcessUpstreams,
+) -> ApiAssembly {
+    let open_runtime = upstreams.gateway_router();
     let routers = ApplicationRouters {
-        app: sdkwork_routes_clawrouter_app_api::gateway_mount(),
-        backend: sdkwork_routes_clawrouter_backend_api::gateway_mount(),
+        upstreams,
         open: OpenApiRouters {
             agent: sdkwork_routes_agent_open_api::gateway_mount(open_runtime.clone()),
             audio: sdkwork_routes_audio_open_api::gateway_mount(open_runtime.clone()),
@@ -74,10 +82,8 @@ async fn dispatch_application_request(
     request: Request<Body>,
 ) -> Response {
     let path = request.uri().path();
-    let router = if is_backend_path(path) {
-        Some(routers.backend)
-    } else if is_app_path(path) {
-        Some(routers.app)
+    let router = if is_backend_path(path) || is_app_path(path) {
+        routers.upstreams.router_for_path(path)
     } else {
         open_api_capability_for_request(request.method(), path)
             .map(|capability| routers.open.for_capability(capability))
@@ -124,15 +130,44 @@ mod tests {
     use axum::{
         body::Body,
         http::{Request, StatusCode},
+        routing::{get as route_get, post as route_post},
+        Router,
     };
     use tower::ServiceExt;
 
-    use super::assemble_api_router_with_open_runtime;
+    use super::assemble_api_router_with_in_process_upstreams;
 
     #[tokio::test]
-    async fn application_assembly_dispatches_each_api_surface() {
-        let router =
-            assemble_api_router_with_open_runtime(sdkwork_clawrouter_edge_runtime::router()).router;
+    async fn application_assembly_dispatches_shared_runtime_surfaces() {
+        let gateway_router = Router::new().route("/openapi.json", route_get(|| async { "open" }));
+        let backend_router = Router::new().route(
+            "/backend/v3/api/openapi.json",
+            route_get(|| async { "backend" }),
+        );
+        let app_router = Router::new()
+            .route("/app/v3/api/openapi.json", route_get(|| async { "app" }))
+            .route(
+                "/app/v3/api/memberships/package_groups",
+                route_get(|| async { "membership" }),
+            );
+        let dependency_router = Router::new()
+            .route(
+                "/app/v3/api/system/iam/runtime",
+                route_get(|| async { "iam-runtime" }),
+            )
+            .route(
+                "/app/v3/api/oauth/device_authorizations",
+                route_post(|| async { "device-authorization" }),
+            );
+        let router = assemble_api_router_with_in_process_upstreams(
+            sdkwork_clawrouter_edge_runtime::EdgeInProcessUpstreams::new(
+                gateway_router,
+                backend_router,
+                app_router,
+            )
+            .with_dependency_api_router(dependency_router),
+        )
+        .router;
 
         let app_response = router
             .clone()
@@ -155,15 +190,37 @@ mod tests {
             .expect("LLM schema response");
         assert_eq!(StatusCode::OK, llm_schema_response.status());
 
-        let payment_schema_response = router
-            .oneshot(get("/payments/v3/openapi.json"))
+        let iam_runtime_response = router
+            .clone()
+            .oneshot(get("/app/v3/api/system/iam/runtime"))
             .await
-            .expect("payment schema response");
-        assert_eq!(StatusCode::OK, payment_schema_response.status());
+            .expect("IAM runtime response");
+        assert_eq!(StatusCode::OK, iam_runtime_response.status());
+
+        let device_authorization_response = router
+            .clone()
+            .oneshot(post("/app/v3/api/oauth/device_authorizations"))
+            .await
+            .expect("device authorization response");
+        assert_eq!(StatusCode::OK, device_authorization_response.status());
+
+        let membership_response = router
+            .oneshot(get("/app/v3/api/memberships/package_groups"))
+            .await
+            .expect("membership response");
+        assert_eq!(StatusCode::OK, membership_response.status());
     }
 
     fn get(path: &str) -> Request<Body> {
         Request::builder()
+            .uri(path)
+            .body(Body::empty())
+            .expect("request")
+    }
+
+    fn post(path: &str) -> Request<Body> {
+        Request::builder()
+            .method("POST")
             .uri(path)
             .body(Body::empty())
             .expect("request")

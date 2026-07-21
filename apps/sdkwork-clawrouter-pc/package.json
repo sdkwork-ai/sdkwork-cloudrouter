@@ -31,6 +31,7 @@
     "../../../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript",
     "../../../sdkwork-agents/sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-typescript",
     "../../../sdkwork-agents/sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript",
+    "../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-membership",
     "../../../sdkwork-appbase/packages/pc-react/host/sdkwork-host-pc-react",
     "../../../sdkwork-appbase/packages/pc-react/host/sdkwork-host-tauri-pc-react",
     "../../../sdkwork-appbase/packages/pc-react/notification/sdkwork-notification-pc-react",

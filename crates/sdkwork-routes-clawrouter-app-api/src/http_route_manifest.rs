@@ -281,6 +281,116 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "iam",
         "roleBindings.list",
     ),
+    // ── Public catalog routes (anonymous-accessible) ──────────────────
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/plans",
+        "Membership",
+        "memberships.plans.list",
+    ),
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/benefits",
+        "Membership",
+        "memberships.benefits.list",
+    ),
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/packages",
+        "Membership",
+        "memberships.packages.list",
+    ),
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/packages/{packageId}",
+        "Membership",
+        "memberships.packages.retrieve",
+    ),
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/package_groups",
+        "Membership",
+        "memberships.packageGroups.list",
+    ),
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/package_groups/{packageGroupId}",
+        "Membership",
+        "memberships.packageGroups.retrieve",
+    ),
+    HttpRoute::public(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+        "Membership",
+        "memberships.packageGroups.packages.list",
+    ),
+    // ── Protected routes (require dual-token authentication) ───────────
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/current",
+        "Membership",
+        "memberships.current.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/current/status",
+        "Membership",
+        "memberships.current.status.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/points/balance",
+        "Membership",
+        "memberships.points.balance.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/points/history",
+        "Membership",
+        "memberships.points.history.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/points/daily_rewards/status",
+        "Membership",
+        "memberships.points.dailyRewards.status.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/memberships/points/daily_rewards",
+        "Membership",
+        "memberships.points.dailyRewards.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/memberships/privileges/usage",
+        "Membership",
+        "memberships.privileges.usage.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/memberships/privileges/speed_ups",
+        "Membership",
+        "memberships.privileges.speedUps.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/memberships/purchases",
+        "Membership",
+        "memberships.purchases.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/memberships/purchases/renew",
+        "Membership",
+        "memberships.purchases.renew",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/memberships/purchases/upgrade",
+        "Membership",
+        "memberships.purchases.upgrade",
+    ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/ai/channel_groups",
@@ -800,7 +910,11 @@ mod tests {
         let route = manifest
             .match_route(method, path)
             .unwrap_or_else(|| panic!("{method} {path} must be registered"));
-        assert_eq!(RouteAuth::Public, route.auth, "{method} {path} must be public");
+        assert_eq!(
+            RouteAuth::Public,
+            route.auth,
+            "{method} {path} must be public"
+        );
         assert!(
             resolve_public_path(
                 method,
@@ -827,8 +941,14 @@ mod tests {
         assert_public_route("GET", "/app/v3/api/memberships/packages");
         assert_public_route("GET", "/app/v3/api/memberships/packages/{packageId}");
         assert_public_route("GET", "/app/v3/api/memberships/package_groups");
-        assert_public_route("GET", "/app/v3/api/memberships/package_groups/{packageGroupId}");
-        assert_public_route("GET", "/app/v3/api/memberships/package_groups/{packageGroupId}/packages");
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}",
+        );
+        assert_public_route(
+            "GET",
+            "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
+        );
     }
 
     #[test]

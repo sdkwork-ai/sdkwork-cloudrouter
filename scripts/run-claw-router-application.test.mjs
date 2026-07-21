@@ -3350,8 +3350,10 @@ test('workspace access output includes local split-process details', async () =>
 
   assert.deepEqual(lines, [
     '[start-workspace] Mode: server (distributed)',
-    '[start-workspace] Edge Server Access',
-    '[start-workspace]   Portal: http://127.0.0.1:12900/',
+    '[start-workspace] Access Endpoints',
+    '[start-workspace]   Application: http://127.0.0.1:3901/',
+    '[start-workspace]   API Reference: http://127.0.0.1:12900/openapi.json',
+    '[start-workspace] Application API Access',
     '[start-workspace]   Gateway API: http://127.0.0.1:12900/v1',
     '[start-workspace]   Backend/Admin API: http://127.0.0.1:12900/backend/v3/api',
     '[start-workspace]   App API: http://127.0.0.1:12900/app/v3/api',
@@ -3376,8 +3378,8 @@ test('workspace access output includes local split-process details', async () =>
     '[start-workspace]   Backend/Admin API: http://127.0.0.1:19081/backend/v3/api',
     '[start-workspace]   App API: http://127.0.0.1:19082/app/v3/api',
     '[start-workspace] Health Checks',
-    '[start-workspace]   Edge Server Health: http://127.0.0.1:12900/healthz',
-    '[start-workspace]   Edge Server Ready: http://127.0.0.1:12900/readyz',
+    '[start-workspace]   Application API Health: http://127.0.0.1:12900/healthz',
+    '[start-workspace]   Application API Ready: http://127.0.0.1:12900/readyz',
     '[start-workspace]   Gateway Health: http://127.0.0.1:19080/healthz',
     '[start-workspace]   Gateway Ready: http://127.0.0.1:19080/readyz',
     '[start-workspace]   Admin API Health: http://127.0.0.1:19081/healthz',
@@ -3387,7 +3389,7 @@ test('workspace access output includes local split-process details', async () =>
   ]);
 });
 
-test('workspace access output defaults to edge server port 3900', async () => {
+test('workspace access output distinguishes the API ingress from the portal renderer', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
   );
@@ -3397,21 +3399,24 @@ test('workspace access output defaults to edge server port 3900', async () => {
 
   assert.equal(settings.serverBind, '0.0.0.0:3900');
   assert.equal(settings.portalBind, '127.0.0.1:3901');
-  assert.equal(lines[2], '[start-workspace]   Portal: http://127.0.0.1:3900/');
-  assert.equal(lines[3], '[start-workspace]   Gateway API: http://127.0.0.1:3900/v1');
-  assert.equal(lines[6], '[start-workspace]   Gateway OpenAPI: http://127.0.0.1:3900/openapi.json');
-  assert.equal(lines[7], '[start-workspace]   Admin API OpenAPI: http://127.0.0.1:3900/backend/v3/api/openapi.json');
-  assert.equal(lines[8], '[start-workspace]   App API OpenAPI: http://127.0.0.1:3900/app/v3/api/openapi.json');
+  assert.equal(lines[1], '[start-workspace] Access Endpoints');
+  assert.equal(lines[2], '[start-workspace]   Application: http://127.0.0.1:3901/');
+  assert.equal(lines[3], '[start-workspace]   API Reference: http://127.0.0.1:3900/openapi.json');
+  assert.equal(lines[4], '[start-workspace] Application API Access');
+  assert.equal(lines[5], '[start-workspace]   Gateway API: http://127.0.0.1:3900/v1');
+  assert.equal(lines[8], '[start-workspace]   Gateway OpenAPI: http://127.0.0.1:3900/openapi.json');
+  assert.equal(lines[9], '[start-workspace]   Admin API OpenAPI: http://127.0.0.1:3900/backend/v3/api/openapi.json');
+  assert.equal(lines[10], '[start-workspace]   App API OpenAPI: http://127.0.0.1:3900/app/v3/api/openapi.json');
   assert.ok(lines.includes('[start-workspace]   Direct Portal Dev: http://127.0.0.1:3901/'));
   assert.ok(lines.includes('[start-workspace]   Direct Portal Gateway API Proxy: http://127.0.0.1:3901/v1'));
   assert.ok(lines.includes('[start-workspace]   Direct Portal App API Proxy: http://127.0.0.1:3901/app/v3/api'));
   assert.ok(lines.includes('[start-workspace]   Direct Portal App API OpenAPI Proxy: http://127.0.0.1:3901/app/v3/api/openapi.json'));
-  assert.ok(lines.includes('[start-workspace]   Edge Server Health: http://127.0.0.1:3900/healthz'));
-  assert.ok(lines.includes('[start-workspace]   Edge Server Ready: http://127.0.0.1:3900/readyz'));
+  assert.ok(lines.includes('[start-workspace]   Application API Health: http://127.0.0.1:3900/healthz'));
+  assert.ok(lines.includes('[start-workspace]   Application API Ready: http://127.0.0.1:3900/readyz'));
   assert.equal(lines.some((line) => line.includes('Gateway Health: http://127.0.0.1:18080')), false);
 });
 
-test('workspace startup output includes every non-internal IPv4 link for wildcard edge binds', async () => {
+test('workspace startup output includes every non-internal IPv4 OpenAPI link for wildcard API binds', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
   );
@@ -3435,17 +3440,17 @@ test('workspace startup output includes every non-internal IPv4 link for wildcar
     ],
   });
 
-  assert.ok(lines.includes('[start-workspace] LAN Access (same Wi-Fi/LAN)'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://10.0.0.7:3900/'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.23.73:3900/'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.30.58:3900/'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://172.23.0.1:3900/'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://192.168.50.12:3900/'));
-  assert.ok(lines.includes('[start-workspace]   Network: http://198.18.0.1:3900/'));
-  assert.equal(lines.includes('[start-workspace]   Network: http://127.0.0.1:3900/'), false);
+  assert.ok(lines.includes('[start-workspace] Application API LAN OpenAPI (same Wi-Fi/LAN)'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://10.0.0.7:3900/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.23.73:3900/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://169.254.30.58:3900/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://172.23.0.1:3900/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://192.168.50.12:3900/openapi.json'));
+  assert.ok(lines.includes('[start-workspace]   Network: http://198.18.0.1:3900/openapi.json'));
+  assert.equal(lines.includes('[start-workspace]   Network: http://127.0.0.1:3900/openapi.json'), false);
   assert.equal(lines.some((line) => line.includes('fe80::1')), false);
   assert.equal(
-    lines.filter((line) => line === '[start-workspace]   Network: http://198.18.0.1:3900/').length,
+    lines.filter((line) => line === '[start-workspace]   Network: http://198.18.0.1:3900/openapi.json').length,
     1,
   );
 
@@ -3459,10 +3464,8 @@ test('workspace startup output includes every non-internal IPv4 link for wildcar
   assert.deepEqual(successLines, [
     '[start-workspace] application started successfully',
     '[start-workspace] Access URLs',
-    '[start-workspace]   Local: http://127.0.0.1:3900/',
-    '[start-workspace]   Network: http://169.254.30.58:3900/',
-    '[start-workspace]   Network: http://192.168.50.12:3900/',
-    '[start-workspace]   Network: http://198.18.0.1:3900/',
+    '[start-workspace]   Local: http://127.0.0.1:3901/',
+    '[start-workspace]   Network: unavailable (listener is loopback-only or no LAN IPv4 address was detected)',
   ]);
 });
 
