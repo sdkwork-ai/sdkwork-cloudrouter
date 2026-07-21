@@ -14,6 +14,72 @@ const MEMBERSHIP_APP_MANIFEST_PATH = path.resolve(
   "../sdkwork-membership/crates/sdkwork-routes-membership-app-api/src/manifest.rs",
 );
 
+const EXECUTABLE_DEPENDENCY_MOUNTS = {
+  iam: {
+    label: "IAM app API",
+    componentSpecPath:
+      "crates/sdkwork-api-clawrouter-assembly/specs/component.spec.json",
+    sdkFamily: "sdkwork-iam-app-sdk",
+    contract: {
+      runtimeMode: "same-origin-mounted",
+      cargoDependency: "sdkwork-routes-iam-app-api",
+      embeddedExecutableExport: "sdkwork_api_clawrouter_assembly::assemble_api_router",
+    },
+    sourceEvidence: [
+      {
+        path: "crates/sdkwork-api-clawrouter-assembly/src/bootstrap.rs",
+        requiredText: [
+          "iam::wire_iam_app_router().await?",
+          "with_dependency_api_router(iam_router)",
+        ],
+      },
+      {
+        path: "crates/sdkwork-api-clawrouter-assembly/src/bootstrap/iam.rs",
+        requiredText: [
+          "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router()",
+        ],
+      },
+      {
+        path: "crates/sdkwork-api-clawrouter-assembly/Cargo.toml",
+        requiredText: ["sdkwork-routes-iam-app-api.workspace = true"],
+      },
+    ],
+  },
+  membership: {
+    label: "Membership app API",
+    componentSpecPath:
+      "crates/sdkwork-routes-clawrouter-app-api/specs/component.spec.json",
+    sdkFamily: "sdkwork-membership-app-sdk",
+    contract: {
+      runtimeMode: "same-origin-mounted",
+      cargoDependency: "sdkwork_routes_membership_app_api",
+      embeddedExecutableExport:
+        "sdkwork_routes_membership_app_api::app_membership_router_with_sqlite_pool",
+    },
+    sourceEvidence: [
+      {
+        path: "crates/sdkwork-routes-clawrouter-app-api/src/routes.rs",
+        requiredText: [
+          "crate::commerce_runtime::merge_federated_commerce_app_routers(",
+        ],
+      },
+      {
+        path: "crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs",
+        requiredText: [
+          "app_membership_router_with_postgres_pool",
+          "app_membership_router_with_sqlite_pool",
+          "let membership_router = build_membership_router_from_pool(",
+          "merge_federated_app_capability_router_with_optional_auth(",
+        ],
+      },
+      {
+        path: "crates/sdkwork-routes-clawrouter-app-api/Cargo.toml",
+        requiredText: ["sdkwork_routes_membership_app_api.workspace = true"],
+      },
+    ],
+  },
+};
+
 const TARGETS = [
   {
     surface: "app-api",
@@ -131,6 +197,54 @@ function filterProductRoutesOverlappingDependencies(productRoutes, dependencyRou
   return productRoutes.filter(
     (route) => !dependencyKeys.has(`${route.method} ${route.path}`),
   );
+}
+
+async function assertExecutableDependencyMount(mount) {
+  const componentSpecFile = path.join(workspaceRoot, mount.componentSpecPath);
+  const componentSpec = JSON.parse(await readFile(componentSpecFile, "utf8"));
+  const dependencySurfaces = componentSpec.contracts?.dependencyApiSurfaces;
+  if (!Array.isArray(dependencySurfaces)) {
+    throw new Error(
+      `${mount.label} executable mount check failed: ${mount.componentSpecPath} does not declare contracts.dependencyApiSurfaces`,
+    );
+  }
+
+  const dependencySurface = dependencySurfaces.find(
+    (candidate) => candidate.sdkFamily === mount.sdkFamily,
+  );
+  if (!dependencySurface) {
+    throw new Error(
+      `${mount.label} executable mount check failed: ${mount.componentSpecPath} does not declare ${mount.sdkFamily}`,
+    );
+  }
+
+  for (const [field, expected] of Object.entries(mount.contract)) {
+    if (dependencySurface[field] !== expected) {
+      throw new Error(
+        `${mount.label} executable mount check failed: ${mount.componentSpecPath} requires ${field}=${JSON.stringify(expected)}, found ${JSON.stringify(dependencySurface[field])}`,
+      );
+    }
+  }
+
+  for (const evidence of mount.sourceEvidence) {
+    const source = await readFile(path.join(workspaceRoot, evidence.path), "utf8");
+    for (const requiredText of evidence.requiredText) {
+      if (!source.includes(requiredText)) {
+        throw new Error(
+          `${mount.label} executable mount check failed: ${evidence.path} is missing ${JSON.stringify(requiredText)}`,
+        );
+      }
+    }
+  }
+}
+
+async function assertExecutableDependencyMounts(target) {
+  if (target.mergeAppbaseIamRoutes) {
+    await assertExecutableDependencyMount(EXECUTABLE_DEPENDENCY_MOUNTS.iam);
+  }
+  if (target.mergeMembershipRoutes) {
+    await assertExecutableDependencyMount(EXECUTABLE_DEPENDENCY_MOUNTS.membership);
+  }
 }
 
 function renderManifest(
@@ -262,6 +376,7 @@ ${appManifestAlias}${appManifestTests}
 }
 
 async function processTarget(target, mode) {
+  await assertExecutableDependencyMounts(target);
   const manifest = JSON.parse(
     await readFile(path.join(workspaceRoot, target.manifestPath), "utf8"),
   );
