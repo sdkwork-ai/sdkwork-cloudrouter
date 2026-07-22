@@ -68,12 +68,12 @@ export class IntegrationChannelsApi {
 }
 
 export class IntegrationApi {
-  private client: HttpClient;
+
   public readonly channels: IntegrationChannelsApi;
   public readonly providerSecrets: IntegrationProviderSecretsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.channels = new IntegrationChannelsApi(client);
     this.providerSecrets = new IntegrationProviderSecretsApi(client);
   }
@@ -84,13 +84,7 @@ export function createIntegrationApi(client: HttpClient): IntegrationApi {
   return new IntegrationApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

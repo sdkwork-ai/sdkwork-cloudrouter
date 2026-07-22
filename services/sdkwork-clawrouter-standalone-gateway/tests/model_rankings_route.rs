@@ -5,29 +5,70 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+use hmac::{Hmac, Mac};
 use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_test_support::{
     api_key_security_config, app_session_config, payment_webhook_config, trusted_subject_config,
 };
-use sdkwork_web_core::encode_unsigned_test_jwt;
+use sdkwork_clawrouter_database_host::connect_claw_router_database;
+use sdkwork_database_config::{
+    DatabaseConfig as LifecycleDatabaseConfig, DatabaseEngine, DeploymentMode,
+};
+use sdkwork_database_lifecycle::LifecycleOrchestrator;
+use sdkwork_database_sqlx::{DatabasePool, PoolContext};
+use sdkwork_iam_database_host::{resolve_iam_app_root, IamDatabaseModule};
+use sdkwork_models_database_host::connect_models_database;
+use sdkwork_web_core::stamp_token_version;
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use sqlx::types::chrono::Utc;
 use std::str::FromStr;
+use std::sync::Arc;
 use tower::ServiceExt;
 
 static DB_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 static STANDARD_APP_API_INTEGRATION_ENV: Once = Once::new();
+static IAM_RESOLVER_ENV_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 const TEST_TENANT_ID: i64 = 100_001;
 const TEST_ORGANIZATION_ID: i64 = 0;
 const TEST_USER_ID: i64 = 30;
+const TEST_USERNAME: &str = "ranking-integration-user";
+
+#[derive(Clone)]
+struct AuthenticatedApp {
+    router: axum::Router,
+    auth_token: String,
+    access_token: String,
+}
+
+struct IamSessionTokens {
+    auth_token: String,
+    access_token: String,
+}
+
+impl AuthenticatedApp {
+    fn get_request(&self, uri: &str) -> Request<Body> {
+        Request::builder()
+            .method("GET")
+            .uri(uri)
+            .header("authorization", format!("Bearer {}", self.auth_token))
+            .header("Access-Token", &self.access_token)
+            .body(Body::empty())
+            .unwrap()
+    }
+}
 
 #[tokio::test]
 async fn database_config_app_model_rankings_route_reads_installed_catalog_snapshot() {
     let database_url = unique_sqlite_url();
-    let router = configured_router(&database_url).await;
+    let app = configured_router(&database_url).await;
 
-    let response = router
-        .oneshot(app_get_request("/app/v3/api/ai/model_rankings?page_size=5"))
+    let response = app
+        .router
+        .clone()
+        .oneshot(app.get_request("/app/v3/api/ai/model_rankings?page_size=5"))
         .await
         .unwrap();
 
@@ -94,6 +135,7 @@ async fn database_config_app_model_rankings_route_reads_installed_catalog_snapsh
 async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_scheduled_audit() {
     let database_url = unique_sqlite_url();
     let pool = connect_sqlite_for_test(&database_url).await;
+    migrate_test_database(pool.clone(), &database_url).await;
     sdkwork_clawrouter_router_service::infrastructure::sql::installer::DatabaseInstaller::for_sqlite(
         pool.clone(),
     )
@@ -137,15 +179,15 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
     sqlx::query(
         r#"
         INSERT INTO ai_usage
-            (id, uuid, tenant_id, organization_id, user_id, request_id, status, metadata,
+            (id, uuid, tenant_id, organization_id, user_id, request_id, idempotency_key, status, metadata,
              catalog_key, model, modality, usage_type, billing_meter_code, request_count,
              prompt_tokens, completion_tokens, total_tokens, billable_quantity, customer_charge_amount,
-             currency, pricing_snapshot, occurred_at)
+             currency, pricing_snapshot, occurred_at, settlement_status)
         VALUES
-            (9001, 'usage-app-startup-ranking', ?, ?, ?, 'app-startup-ranking-request', 1, '{}',
+            (9001, 'usage-app-startup-ranking', ?, ?, ?, 'app-startup-ranking-request', 'app-startup-ranking-idempotency', 1, '{}',
              ?, ?, 1, 1, 'llm_input_token', 11,
              800, 400, 1200, '1200', '2.500000',
-             'USD', '{"source":"app-startup-test"}', strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-1 day'))
+             'USD', '{"source":"app-startup-test"}', strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-1 day'), 0)
         "#,
     )
     .bind(TEST_TENANT_ID)
@@ -158,13 +200,13 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
     .unwrap();
     pool.close().await;
 
-    let router = configured_router(&database_url).await;
+    let app = configured_router(&database_url).await;
 
     let snapshot_count = wait_for_startup_ranking_snapshot(&database_url, &catalog_key).await;
     assert_eq!(1, snapshot_count);
 
     let payload = request_json(
-        router,
+        &app,
         "/app/v3/api/ai/model_rankings?rank_scope=commercial-default&page_size=5",
     )
     .await;
@@ -206,12 +248,14 @@ async fn database_config_app_startup_worker_auto_refreshes_rankings_and_records_
 #[tokio::test]
 async fn database_config_app_models_route_reads_global_commercial_catalog() {
     let database_url = unique_sqlite_url();
-    let router = configured_router(&database_url).await;
+    let app = configured_router(&database_url).await;
 
-    let response = router
-        .oneshot(app_get_request(
-            "/app/v3/api/ai/models?billing_meter=llm_input_token&page_size=200",
-        ))
+    let response = app
+        .router
+        .clone()
+        .oneshot(
+            app.get_request("/app/v3/api/ai/models?billing_meter=llm_input_token&page_size=200"),
+        )
         .await
         .unwrap();
 
@@ -303,35 +347,35 @@ async fn database_config_app_models_route_reads_global_commercial_catalog() {
 #[tokio::test]
 async fn database_config_app_models_route_reads_multimodal_reference_prices() {
     let database_url = unique_sqlite_url();
-    let router = configured_router(&database_url).await;
+    let app = configured_router(&database_url).await;
 
     assert_catalog_meter_contains(
-        &router,
+        &app,
         "image_result",
         &["stable-image-ultra", "imagen-4.0-generate-001"],
     )
     .await;
-    assert_catalog_meter_contains(&router, "image_megapixel", &["flux-2-pro"]).await;
+    assert_catalog_meter_contains(&app, "image_megapixel", &["flux-2-pro"]).await;
     assert_catalog_meter_contains(
-        &router,
+        &app,
         "video_output_second",
         &["veo-3.1-generate-preview", "doubao-seedance-2-0-260128"],
     )
     .await;
-    assert_catalog_meter_contains(&router, "stt_audio_minute", &["gpt-4o-transcribe"]).await;
-    assert_catalog_meter_contains(&router, "music_output_second", &["suno-v5"]).await;
-    assert_catalog_meter_contains(&router, "audio_output_minute", &["eleven_text_to_sound_v2"])
-        .await;
+    assert_catalog_meter_contains(&app, "stt_audio_minute", &["gpt-4o-transcribe"]).await;
+    assert_catalog_meter_contains(&app, "music_output_second", &["suno-v5"]).await;
+    assert_catalog_meter_contains(&app, "audio_output_minute", &["eleven_text_to_sound_v2"]).await;
 }
 
 async fn assert_catalog_meter_contains(
-    router: &axum::Router,
+    app: &AuthenticatedApp,
     billing_meter: &str,
     expected_models: &[&str],
 ) {
-    let response = router
+    let response = app
+        .router
         .clone()
-        .oneshot(app_get_request(&format!(
+        .oneshot(app.get_request(&format!(
             "/app/v3/api/ai/models?billing_meter={billing_meter}&page_size=200"
         )))
         .await
@@ -402,8 +446,13 @@ fn assert_model_catalog_has_reference_price(
         .is_some_and(|value| !value.is_empty()));
 }
 
-async fn request_json(router: axum::Router, path: &str) -> serde_json::Value {
-    let response = router.oneshot(app_get_request(path)).await.unwrap();
+async fn request_json(app: &AuthenticatedApp, path: &str) -> serde_json::Value {
+    let response = app
+        .router
+        .clone()
+        .oneshot(app.get_request(path))
+        .await
+        .unwrap();
     let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
@@ -412,8 +461,11 @@ async fn request_json(router: axum::Router, path: &str) -> serde_json::Value {
     serde_json::from_slice(&body).unwrap()
 }
 
-async fn configured_router(database_url: &str) -> axum::Router {
+async fn configured_router(database_url: &str) -> AuthenticatedApp {
     enable_standard_app_api_web_framework_for_integration_tests();
+    let pool = connect_sqlite_for_test(database_url).await;
+    migrate_test_database(pool.clone(), database_url).await;
+    pool.close().await;
     let database_config = DatabaseConfig::from_url_with_max_connections(database_url, 1).unwrap();
     let router =
         sdkwork_clawrouter_standalone_gateway::router_with_database_config_api_key_trusted_subject_and_app_session_config(
@@ -425,18 +477,204 @@ async fn configured_router(database_url: &str) -> axum::Router {
     )
     .await
     .unwrap();
-    sdkwork_clawrouter_standalone_gateway::maybe_wrap_router_with_web_framework_and_database_config(
+    let pool = connect_sqlite_for_test(database_url).await;
+    seed_test_iam_user(&pool).await;
+    let tokens = issue_test_iam_session(&pool).await;
+    pool.close().await;
+    let iam_resolver_guard = IAM_RESOLVER_ENV_LOCK.lock().await;
+    std::env::set_var("SDKWORK_IAM_DATABASE_URL", database_url);
+    std::env::set_var("SDKWORK_IAM_DATABASE_ENGINE", "sqlite");
+    std::env::set_var("SDKWORK_IAM_DATABASE_MAX_CONNECTIONS", "1");
+    let router = sdkwork_clawrouter_standalone_gateway::maybe_wrap_router_with_web_framework_and_database_config(
+            router,
+            &database_config,
+        )
+        .await;
+    drop(iam_resolver_guard);
+    AuthenticatedApp {
         router,
-        &database_config,
+        auth_token: tokens.auth_token,
+        access_token: tokens.access_token,
+    }
+}
+
+async fn seed_test_iam_user(pool: &sqlx::SqlitePool) {
+    let now = Utc::now().to_rfc3339();
+    sqlx::query(
+        "INSERT OR IGNORE INTO iam_tenant (id, code, name, status, created_at, updated_at) \
+         VALUES (?, ?, 'Ranking integration tenant', 'active', ?, ?)",
     )
+    .bind(TEST_TENANT_ID.to_string())
+    .bind(TEST_TENANT_ID.to_string())
+    .bind(&now)
+    .bind(&now)
+    .execute(pool)
     .await
+    .expect("seed ranking integration IAM tenant");
+    sqlx::query(
+        "INSERT INTO iam_user \
+         (id, tenant_id, username, display_name, email, status, email_verified, is_deleted, created_at, updated_at) \
+         VALUES (?, ?, ?, 'Ranking Integration User', 'ranking-integration@example.test', 'active', 1, 0, ?, ?)",
+    )
+    .bind(TEST_USER_ID.to_string())
+    .bind(TEST_TENANT_ID.to_string())
+    .bind(TEST_USERNAME)
+    .bind(&now)
+    .bind(&now)
+    .execute(pool)
+    .await
+    .expect("seed ranking integration IAM user");
+}
+
+async fn issue_test_iam_session(pool: &sqlx::SqlitePool) -> IamSessionTokens {
+    let tenant_id = TEST_TENANT_ID.to_string();
+    sdkwork_iam_bootstrap::ensure_sqlite_tenant_signing_key(pool, &tenant_id)
+        .await
+        .expect("ensure ranking integration IAM signing key");
+    let signing_key =
+        sdkwork_iam_bootstrap::load_sqlite_active_tenant_signing_key(pool, &tenant_id)
+            .await
+            .expect("load ranking integration IAM signing key")
+            .expect("ranking integration IAM signing key must exist");
+    let issued_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock should be after unix epoch")
+        .as_secs() as i64;
+    let expires_at = issued_at + 3600;
+    let expires_at_text = (Utc::now() + Duration::from_secs(3600)).to_rfc3339();
+    let session_id = "clawrouter-model-rankings-test-session";
+    let claims = json!({
+        "app_id": "sdkwork-clawrouter",
+        "aud": "sdkwork-clawrouter",
+        "auth_level": "password",
+        "data_scope": [format!("tenant:{tenant_id}"), format!("user:{TEST_USER_ID}")],
+        "deployment_mode": "local",
+        "environment": "dev",
+        "exp": expires_at,
+        "iat": issued_at,
+        "iss": "sdkwork-iam-local",
+        "login_scope": "TENANT",
+        "organization_id": TEST_ORGANIZATION_ID.to_string(),
+        "permission_scope": ["iam:self"],
+        "session_id": session_id,
+        "sid": session_id,
+        "sub": TEST_USER_ID.to_string(),
+        "tenant_id": tenant_id,
+        "token_version": stamp_token_version(),
+        "user_id": TEST_USER_ID.to_string(),
+    });
+    let auth_token = sign_test_iam_token(&signing_key, "auth", &claims);
+    let access_token = sign_test_iam_token(&signing_key, "access", &claims);
+    sqlx::query(
+        "INSERT INTO iam_session \
+         (id, tenant_id, organization_id, login_scope, user_id, app_id, environment, \
+          deployment_mode, auth_level, auth_token_hash, auth_token_kid, access_token_hash, \
+          access_token_kid, sharding_key, sharding_strategy, data_scope_json, \
+          permission_scope_json, expires_at, created_at, updated_at) \
+         VALUES (?, ?, NULL, 'TENANT', ?, 'sdkwork-clawrouter', 'dev', 'local', 'password', \
+                 ?, ?, ?, ?, ?, 'tenant', ?, '[\"iam:self\"]', ?, ?, ?)",
+    )
+    .bind(session_id)
+    .bind(TEST_TENANT_ID.to_string())
+    .bind(TEST_USER_ID.to_string())
+    .bind(hash_test_iam_token(&auth_token))
+    .bind(&signing_key.kid)
+    .bind(hash_test_iam_token(&access_token))
+    .bind(&signing_key.kid)
+    .bind(TEST_TENANT_ID.to_string())
+    .bind(
+        json!([
+            format!("tenant:{TEST_TENANT_ID}"),
+            format!("user:{TEST_USER_ID}")
+        ])
+        .to_string(),
+    )
+    .bind(&expires_at_text)
+    .bind(Utc::now().to_rfc3339())
+    .bind(Utc::now().to_rfc3339())
+    .execute(pool)
+    .await
+    .expect("insert ranking integration IAM session");
+    IamSessionTokens {
+        auth_token,
+        access_token,
+    }
+}
+
+fn sign_test_iam_token(
+    signing_key: &sdkwork_iam_bootstrap::TenantSigningKeyMaterial,
+    token_type: &str,
+    base_claims: &serde_json::Value,
+) -> String {
+    let header = json!({
+        "alg": "HS256",
+        "kid": signing_key.kid,
+        "typ": "JWT",
+    });
+    let mut claims = base_claims.clone();
+    claims["token_type"] = json!(token_type);
+    let encoded_header = URL_SAFE_NO_PAD.encode(serde_json::to_vec(&header).unwrap());
+    let encoded_claims = URL_SAFE_NO_PAD.encode(serde_json::to_vec(&claims).unwrap());
+    let signing_input = format!("{encoded_header}.{encoded_claims}");
+    let mut mac = Hmac::<Sha256>::new_from_slice(&signing_key.secret)
+        .expect("HS256 signing key must be valid");
+    mac.update(signing_input.as_bytes());
+    let signature = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
+    format!("{signing_input}.{signature}")
+}
+
+fn hash_test_iam_token(token: &str) -> String {
+    let digest = Sha256::digest(token.as_bytes());
+    format!("{digest:x}")
+}
+
+async fn migrate_test_database(pool: sqlx::SqlitePool, database_url: &str) {
+    let database_pool = database_pool_for_test(pool, database_url);
+    let iam_module = Arc::new(
+        IamDatabaseModule::from_app_root(&resolve_iam_app_root())
+            .expect("load sdkwork-iam database lifecycle module"),
+    );
+    let iam_lifecycle = LifecycleOrchestrator::new(database_pool.clone(), iam_module)
+        .with_applied_by("model-rankings-route-test:iam");
+    iam_lifecycle
+        .init()
+        .await
+        .expect("initialize sdkwork-iam database lifecycle");
+    iam_lifecycle
+        .migrate()
+        .await
+        .expect("migrate sdkwork-iam database before application bootstrap");
+    connect_models_database(database_pool.clone())
+        .expect("load sdkwork-models database lifecycle host")
+        .migrate("model-rankings-route-test:models")
+        .await
+        .expect("migrate sdkwork-models database before application bootstrap");
+    connect_claw_router_database(database_pool)
+        .expect("load Claw Router database lifecycle host")
+        .migrate("model-rankings-route-test")
+        .await
+        .expect("migrate Claw Router database before application bootstrap");
+}
+
+fn database_pool_for_test(pool: sqlx::SqlitePool, database_url: &str) -> DatabasePool {
+    DatabasePool::Sqlite(
+        pool,
+        PoolContext {
+            config: LifecycleDatabaseConfig {
+                engine: DatabaseEngine::Sqlite,
+                url: database_url.to_owned(),
+                max_connections: 1,
+                mode: DeploymentMode::Standalone,
+                ..LifecycleDatabaseConfig::default()
+            },
+        },
+    )
 }
 
 fn enable_standard_app_api_web_framework_for_integration_tests() {
     STANDARD_APP_API_INTEGRATION_ENV.call_once(|| {
         std::env::set_var("SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY", "false");
         std::env::set_var("SDKWORK_CLAW_WEB_FRAMEWORK_ENABLED", "true");
-        std::env::set_var("SDKWORK_IAM_ALLOW_DEV_AUTH_FALLBACK", "true");
         std::env::set_var("SDKWORK_CLAW_MODEL_RANKING_REFRESH_WORKER_ENABLED", "true");
         std::env::set_var(
             "SDKWORK_CLAW_MODEL_RANKING_TENANT_ID",
@@ -478,39 +716,6 @@ async fn wait_for_startup_ranking_snapshot(database_url: &str, catalog_key: &str
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
     0
-}
-
-fn app_get_request(uri: &str) -> Request<Body> {
-    let auth_token = encode_unsigned_test_jwt(json!({
-        "token_type": "auth",
-        "tenant_id": TEST_TENANT_ID.to_string(),
-        "organization_id": TEST_ORGANIZATION_ID.to_string(),
-        "user_id": TEST_USER_ID.to_string(),
-        "session_id": "clawrouter-model-rankings-test-session",
-        "app_id": "sdkwork-clawrouter",
-        "auth_level": "password",
-        "login_scope": "TENANT",
-        "subject_type": "user",
-    }));
-    let access_token = encode_unsigned_test_jwt(json!({
-        "token_type": "access",
-        "tenant_id": TEST_TENANT_ID.to_string(),
-        "organization_id": TEST_ORGANIZATION_ID.to_string(),
-        "user_id": TEST_USER_ID.to_string(),
-        "session_id": "clawrouter-model-rankings-test-session",
-        "app_id": "sdkwork-clawrouter",
-        "environment": "dev",
-        "deployment_mode": "local",
-        "login_scope": "TENANT",
-        "subject_type": "user",
-    }));
-    Request::builder()
-        .method("GET")
-        .uri(uri)
-        .header("authorization", format!("Bearer {auth_token}"))
-        .header("Access-Token", access_token)
-        .body(Body::empty())
-        .unwrap()
 }
 
 fn unique_sqlite_url() -> String {

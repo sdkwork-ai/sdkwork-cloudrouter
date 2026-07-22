@@ -145,6 +145,19 @@ test("T1 wallet package owns recharge checkout navigation", () => {
   assert.match(walletSource, /navigateWalletRechargeCheckout|checkoutBasePath/);
 });
 
+test("console wallet embeds the order-owned points recharge flow", () => {
+  const walletSource = readPortalFile("./src/console-business/ClawRouterWalletPage.tsx");
+  const ownershipSource = readPortalFile("./src/console-business/consoleBusinessDomains.ts");
+
+  assert.match(walletSource, /SdkworkPointsRechargeInline/);
+  assert.match(walletSource, /@sdkwork\/order-pc-recharge/);
+  assert.match(walletSource, /getClawRouterPointsRechargeService/);
+  assert.match(walletSource, /service=\{pointsRechargeService\}/);
+  assert.doesNotMatch(walletSource, /controller\.rechargePoints/);
+  assert.doesNotMatch(walletSource, /function RechargePanel/);
+  assert.match(ownershipSource, /rechargePackageName:\s*'@sdkwork\/order-pc-recharge'/);
+});
+
 test("console wallet derives authentication from the shared IAM session", () => {
   const walletSource = readPortalFile("./src/console-business/ClawRouterWalletPage.tsx");
   const withdrawSource = readPortalFile("./src/console-business/ClawRouterWithdrawDialog.tsx");
@@ -222,10 +235,17 @@ test("console payment host avoids duplicate bootstrap and waits for controller r
 test("console coupons page passes resolved locale", () => {
   const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
   const localeSource = readPortalFile("./src/console-business/consoleCommerceLocale.ts");
+  const styleSource = readPortalFile("./src/index.css");
 
   assert.match(mountSource, /resolveConsoleCouponLocale/);
   assert.match(mountSource, /<SdkworkCouponPage locale=\{locale\} \/>/);
+  assert.match(mountSource, /<ConsoleBusinessPageFrame surface="coupons">/);
   assert.match(localeSource, /normalizeSdkworkCouponLocale/);
+  assert.match(
+    styleSource,
+    /data-console-business-page='coupons'\] \[class~='max-w-5xl'\]/,
+  );
+  assert.match(styleSource, /max-width:\s*none/);
 });
 
 test("app bootstrap wires T1 domain service providers from independent owner SDKs", () => {

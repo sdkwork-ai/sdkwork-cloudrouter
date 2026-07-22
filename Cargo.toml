@@ -2,7 +2,6 @@
 members = [
     "crates/sdkwork-api-clawrouter-standalone-gateway",
     "crates/sdkwork-api-clawrouter-assembly",
-    "crates/sdkwork-api-clawrouter-assembly",
     "crates/sdkwork-claw-contract",
     "crates/sdkwork-claw-config",
     "crates/sdkwork-claw-health",
@@ -16,13 +15,13 @@ members = [
     "crates/sdkwork-claw-observability",
     "crates/sdkwork-claw-test-support",
     "crates/sdkwork-clawrouter-router-service-test-support",
-    "crates/sdkwork-routes-llm-open-api",
+    "crates/sdkwork-routes-clawrouter-llm-open-api",
     "crates/sdkwork-routes-image-open-api",
     "crates/sdkwork-routes-video-open-api",
     "crates/sdkwork-routes-audio-open-api",
-    "crates/sdkwork-routes-drive-open-api",
-    "crates/sdkwork-routes-knowledgebase-open-api",
-    "crates/sdkwork-routes-memory-open-api",
+    "crates/sdkwork-routes-clawrouter-drive-open-api",
+    "crates/sdkwork-routes-clawrouter-knowledgebase-open-api",
+    "crates/sdkwork-routes-clawrouter-memory-open-api",
     "crates/sdkwork-routes-agent-open-api",
     "crates/sdkwork-routes-payment-open-api",
     "crates/sdkwork-routes-iaas-open-api",
@@ -59,13 +58,13 @@ default-members = [
     "crates/sdkwork-claw-observability",
     "crates/sdkwork-claw-test-support",
     "crates/sdkwork-clawrouter-router-service-test-support",
-    "crates/sdkwork-routes-llm-open-api",
+    "crates/sdkwork-routes-clawrouter-llm-open-api",
     "crates/sdkwork-routes-image-open-api",
     "crates/sdkwork-routes-video-open-api",
     "crates/sdkwork-routes-audio-open-api",
-    "crates/sdkwork-routes-drive-open-api",
-    "crates/sdkwork-routes-knowledgebase-open-api",
-    "crates/sdkwork-routes-memory-open-api",
+    "crates/sdkwork-routes-clawrouter-drive-open-api",
+    "crates/sdkwork-routes-clawrouter-knowledgebase-open-api",
+    "crates/sdkwork-routes-clawrouter-memory-open-api",
     "crates/sdkwork-routes-agent-open-api",
     "crates/sdkwork-routes-payment-open-api",
     "crates/sdkwork-routes-iaas-open-api",
@@ -176,8 +175,8 @@ sdkwork-models-database-host = { path = "../sdkwork-models/crates/sdkwork-models
 sdkwork_models_database_bootstrap = { package = "sdkwork-models-database-bootstrap", path = "../sdkwork-models/crates/sdkwork-models-database-bootstrap" }
 sdkwork_models_catalog_repository_sqlx = { package = "sdkwork-models-catalog-repository-sqlx", path = "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx" }
 sdkwork_models_catalog_service = { package = "sdkwork-models-catalog-service", path = "../sdkwork-models/crates/sdkwork-models-catalog-service" }
-sdkwork_routes_models_catalog_app_api = { package = "sdkwork-routes-models-catalog-app-api", path = "../sdkwork-models/crates/sdkwork-routes-catalog-app-api" }
-sdkwork_routes_models_catalog_backend_api = { package = "sdkwork-routes-models-catalog-backend-api", path = "../sdkwork-models/crates/sdkwork-routes-catalog-backend-api" }
+sdkwork_routes_models_catalog_app_api = { package = "sdkwork-routes-models-catalog-app-api", path = "../sdkwork-models/crates/sdkwork-routes-models-catalog-app-api" }
+sdkwork_routes_models_catalog_backend_api = { package = "sdkwork-routes-models-catalog-backend-api", path = "../sdkwork-models/crates/sdkwork-routes-models-catalog-backend-api" }
 sdkwork-id-core = { path = "../sdkwork-id/crates/sdkwork-id-core" }
 sdkwork_iam_context_service = { package = "sdkwork-iam-context-service", path = "../sdkwork-iam/crates/sdkwork-iam-context-service" }
 sdkwork_iam_directory_repository_sqlx = { package = "sdkwork-iam-directory-repository-sqlx", path = "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx" }
@@ -224,7 +223,6 @@ sdkwork_payment_service = { package = "sdkwork-payment-service", path = "../sdkw
 sdkwork_membership_service = { package = "sdkwork-membership-service", path = "../sdkwork-membership/crates/sdkwork-membership-service" }
 sdkwork_membership_repository_sqlx = { package = "sdkwork-membership-repository-sqlx", path = "../sdkwork-membership/crates/sdkwork-membership-repository-sqlx" }
 sdkwork_routes_invoice_app_api = { package = "sdkwork-routes-invoice-app-api", path = "../sdkwork-invoice/crates/sdkwork-routes-invoice-app-api" }
-sdkwork_routes_invoice_backend_api = { package = "sdkwork-routes-invoice-backend-api", path = "../sdkwork-invoice/crates/sdkwork-routes-invoice-backend-api" }
 sdkwork_invoice_service_host = { package = "sdkwork-invoice-service-host", path = "../sdkwork-invoice/crates/sdkwork-invoice-service-host" }
 sdkwork_invoice_database_host = { package = "sdkwork-invoice-database-host", path = "../sdkwork-invoice/crates/sdkwork-invoice-database-host" }
 sdkwork_routes_account_app_api = { package = "sdkwork-routes-account-app-api", path = "../sdkwork-account/crates/sdkwork-routes-account-app-api" }

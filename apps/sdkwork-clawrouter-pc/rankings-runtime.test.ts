@@ -109,6 +109,10 @@ test("ranking page wires i18n keys and server-backed vendor loading", () => {
     "rankings.allModels",
     "rankings.modelVendors",
     "rankings.clear",
+    "rankings.loadingTitle",
+    "rankings.loadingDescription",
+    "rankings.loadErrorTitle",
+    "rankings.loadErrorDescription",
     "rankings.benchmarkIndex",
     "rankings.searchPlaceholder",
     "rankings.table.rank",
@@ -121,6 +125,16 @@ test("ranking page wires i18n keys and server-backed vendor loading", () => {
   assert.match(rankingsSource, /from 'react-i18next'/);
   assert.match(rankingsSource, /const \{ t \} = useTranslation\(\);/);
   assert.match(rankingsSource, /RankingService\.fetchModelVendors\(\)/);
+  assert.match(rankingsSource, /setRankingSearchQuery\(searchQuery\.trim\(\)\)/);
+  assert.match(rankingsSource, /searchQuery: rankingSearchQuery/);
+  assert.match(rankingsSource, /setVendorReloadVersion\(\(version\) => version \+ 1\)/);
+  assert.match(rankingsSource, /setRankingLoadFailed\(true\)/);
+  assert.match(rankingsSource, /setRankingReloadVersion\(\(version\) => version \+ 1\)/);
+  assert.doesNotMatch(
+    rankingsSource,
+    /\.catch\(\(\) => \{[\s\S]*?setRankingCatalog\(EMPTY_RANKING_CATALOG\)/,
+    "ranking request failures must preserve the last successful snapshot",
+  );
   assert.match(rankingsSource, /const vendorOptions = useMemo\(\s*\(\) => deriveVendorOptionsForRankings\(rankingCatalog, rankingVendors\),\s*\[rankingCatalog, rankingVendors\],\s*\);/);
   assert.match(rankingsSource, /const selectedVendorCode = selectedVendor\s*\?\s*vendorOptions\.vendorCodesByLabel\[selectedVendor\]/);
   assert.ok(
@@ -169,6 +183,7 @@ test("ranking service uses generated app SDK snapshot history instead of local s
     (url) => {
       const requestUrl = new URL(url, "http://localhost");
       assert.equal(requestUrl.pathname, "/app/v3/api/ai/model_rankings");
+      assert.equal(requestUrl.searchParams.get("page"), "1");
       assert.equal(requestUrl.searchParams.get("page_size"), "200");
       return {
         source: {
@@ -254,7 +269,7 @@ test("ranking service uses generated app SDK snapshot history instead of local s
       const snapshot = await RankingService.fetchModelRankings();
 
       assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
-        "GET /app/v3/api/ai/model_rankings?page_size=200",
+        "GET /app/v3/api/ai/model_rankings?page=1&page_size=200",
       ]);
       assert.equal(snapshot.catalog.length, 2);
       assert.deepEqual(snapshot.catalog.map((model) => ({
@@ -906,6 +921,7 @@ test("ranking service sends page filters through the generated app SDK query con
       assert.equal(requestUrl.searchParams.get("vendor_code"), "openai");
       assert.equal(requestUrl.searchParams.get("modality"), "llm");
       assert.equal(requestUrl.searchParams.get("q"), "gpt");
+      assert.equal(requestUrl.searchParams.get("page"), "2");
       assert.equal(requestUrl.searchParams.has("search_query"), false);
       assert.equal(requestUrl.searchParams.has("searchQuery"), false);
       assert.equal(requestUrl.searchParams.get("page_size"), "100");
@@ -954,11 +970,12 @@ test("ranking service sends page filters through the generated app SDK query con
         vendorCode: "openai",
         modality: "llm",
         searchQuery: "gpt",
+        page: 2,
         pageSize: 100,
       });
 
       assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
-        "GET /app/v3/api/ai/model_rankings?rank_scope=commercial-default&vendor_code=openai&modality=llm&q=gpt&page_size=100",
+        "GET /app/v3/api/ai/model_rankings?rank_scope=commercial-default&vendor_code=openai&modality=llm&q=gpt&page=2&page_size=100",
       ]);
       assert.equal(snapshot.catalog[0].vendorCode, "openai");
       assert.deepEqual(snapshot.history, []);

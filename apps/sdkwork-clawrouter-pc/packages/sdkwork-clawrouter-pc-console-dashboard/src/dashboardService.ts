@@ -1,8 +1,6 @@
 import {
   APP_API_PREFIX,
-  ensureSdkworkApiSuccess,
   isRecord,
-  readRequiredApiItem,
   readClawRouterRuntimeEnv,
   readRequiredNonNegativeNumber,
   type ApiRecord,
@@ -139,13 +137,10 @@ export class DashboardService {
   static async fetchDashboardOverview(timeRange: DashboardTimeRange): Promise<DashboardSnapshot> {
     const client = getClawRouterAppSdkClient();
     const params = buildTimeRangeParams(timeRange);
-    const result = await client.ai.dashboard.overview.retrieve(params);
-
-    ensureSdkworkApiSuccess(result, 'console.dashboard.dashboardview.text.loadErrorFallback');
-    return normalizeDashboardSnapshot(
-      readRequiredApiItem(result, 'console.dashboard.dashboardview.text.loadErrorFallback'),
-      timeRange,
-    );
+    const result: unknown = await client.ai.dashboard.overview.retrieve(params);
+    return isRecord(result) && Object.keys(result).length > 0
+      ? normalizeDashboardSnapshot(result, timeRange)
+      : createInitialDashboardSnapshot(timeRange);
   }
 }
 
@@ -204,7 +199,7 @@ function normalizeDashboardSnapshot(record: ApiRecord, timeRange: DashboardTimeR
   const performanceSparkline = normalizeSparkline(record, ['performanceSparkline', 'performance_sparkline'], 'performance', [], () => 0);
 
   return {
-    summary: normalizeSummary(readRequiredRecordProperty(record, 'summary', 'Dashboard overview summary is required')),
+    summary: normalizeSummary(record.summary, initialSnapshot.summary),
     requestSparkline: requestSparkline.length > 0 ? requestSparkline : initialSnapshot.requestSparkline,
     multimodalSparkline: multimodalSparkline.length > 0 ? multimodalSparkline : initialSnapshot.multimodalSparkline,
     performanceSparkline: performanceSparkline.length > 0 ? performanceSparkline : initialSnapshot.performanceSparkline,
@@ -357,7 +352,7 @@ function normalizeChartData(record: ApiRecord, timeRange: DashboardTimeRange): D
 }
 
 function normalizeTopModels(record: ApiRecord): ModelUsage[] {
-  return readRequiredRecordArray(record, 'topModels', 'Dashboard overview topModels is required', 'Dashboard top model record is required')
+  return readOptionalFirstRecordArray(record, ['topModels', 'top_models'], 'Dashboard top model record is required')
     .map((item) => {
       const trend = readRequiredFirstString(item, ['trend', 'change'], 'Dashboard top model trend is required');
       return {
@@ -375,7 +370,7 @@ function normalizeTopModels(record: ApiRecord): ModelUsage[] {
 }
 
 function normalizeAnnouncements(record: ApiRecord): Announcement[] {
-  return readRequiredRecordArray(record, 'announcements', 'Dashboard overview announcements is required', 'Dashboard announcement record is required')
+  return readOptionalFirstRecordArray(record, ['announcements'], 'Dashboard announcement record is required')
     .map((item) => ({
       id: readRequiredFirstString(item, ['id', 'messageId', 'message_id'], 'Dashboard announcement id is required'),
       text: readRequiredFirstString(item, ['text', 'title', 'summary', 'content'], 'Dashboard announcement text is required'),
@@ -414,20 +409,27 @@ function normalizeConfigurationDomains(record: ApiRecord): ConfigurationDomain[]
     });
 }
 
-function normalizeSummary(summaryRecord: ApiRecord): DashboardSummary {
+function normalizeSummary(value: unknown, fallback: DashboardSummary): DashboardSummary {
+  if (value === undefined || value === null) {
+    return { ...fallback };
+  }
+  if (!isRecord(value)) {
+    throw new Error('Dashboard overview summary must be an object');
+  }
+
   return {
-    availableCredits: readRequiredFirstNumber(summaryRecord, ['availableCredits', 'balance', 'credits'], 'Dashboard overview available credits are required'),
-    usedCredits: readRequiredFirstNumber(summaryRecord, ['usedCredits', 'cost', 'costAmount'], 'Dashboard overview used credits are required'),
-    requestCount: readRequiredFirstNumber(summaryRecord, ['requestCount', 'requests', 'totalRequests'], 'Dashboard overview request count is required'),
-    totalUsedCredits: readRequiredFirstNumber(summaryRecord, ['totalUsedCredits', 'totalCostAmount', 'totalCost', 'historyUsedCredits'], 'Dashboard overview total used credits are required'),
-    totalRequestCount: readRequiredFirstNumber(summaryRecord, ['totalRequestCount', 'historyRequestCount', 'lifetimeRequestCount'], 'Dashboard overview total request count is required'),
-    errorCount: readRequiredFirstNumber(summaryRecord, ['errorCount', 'errors', 'failedRequests'], 'Dashboard overview error count is required'),
-    imageRequests: readRequiredFirstNumber(summaryRecord, ['imageRequests'], 'Dashboard overview image requests are required'),
-    videoRequests: readRequiredFirstNumber(summaryRecord, ['videoRequests'], 'Dashboard overview video requests are required'),
-    audioRequests: readRequiredFirstNumber(summaryRecord, ['audioRequests'], 'Dashboard overview audio requests are required'),
-    musicRequests: readRequiredFirstNumber(summaryRecord, ['musicRequests'], 'Dashboard overview music requests are required'),
-    rpm: readRequiredFirstNumber(summaryRecord, ['rpm', 'requestsPerMinute'], 'Dashboard overview RPM is required'),
-    tpm: readRequiredFirstNumber(summaryRecord, ['tpm', 'tokensPerMinute', 'totalTokens'], 'Dashboard overview TPM is required'),
+    availableCredits: readOptionalFirstNumber(value, ['availableCredits', 'balance', 'credits'], fallback.availableCredits),
+    usedCredits: readOptionalFirstNumber(value, ['usedCredits', 'cost', 'costAmount'], fallback.usedCredits),
+    requestCount: readOptionalFirstNumber(value, ['requestCount', 'requests', 'totalRequests'], fallback.requestCount),
+    totalUsedCredits: readOptionalFirstNumber(value, ['totalUsedCredits', 'totalCostAmount', 'totalCost', 'historyUsedCredits'], fallback.totalUsedCredits),
+    totalRequestCount: readOptionalFirstNumber(value, ['totalRequestCount', 'historyRequestCount', 'lifetimeRequestCount'], fallback.totalRequestCount),
+    errorCount: readOptionalFirstNumber(value, ['errorCount', 'errors', 'failedRequests'], fallback.errorCount),
+    imageRequests: readOptionalFirstNumber(value, ['imageRequests'], fallback.imageRequests),
+    videoRequests: readOptionalFirstNumber(value, ['videoRequests'], fallback.videoRequests),
+    audioRequests: readOptionalFirstNumber(value, ['audioRequests'], fallback.audioRequests),
+    musicRequests: readOptionalFirstNumber(value, ['musicRequests'], fallback.musicRequests),
+    rpm: readOptionalFirstNumber(value, ['rpm', 'requestsPerMinute'], fallback.rpm),
+    tpm: readOptionalFirstNumber(value, ['tpm', 'tokensPerMinute', 'totalTokens'], fallback.tpm),
   };
 }
 
@@ -456,20 +458,15 @@ function normalizeSparkline(
 
 function normalizeWarnings(record: ApiRecord): string[] {
   const value = record.warnings;
+  if (value === undefined || value === null) {
+    return [];
+  }
   if (!Array.isArray(value)) {
-    throw new Error('Dashboard overview warnings is required');
+    throw new Error('Dashboard overview warnings must be an array');
   }
   return value
     .map((item) => (typeof item === 'string' ? item : null))
     .filter((item): item is string => item !== null && item.trim() !== '');
-}
-
-function readRequiredRecordProperty(record: ApiRecord, key: string, message: string): ApiRecord {
-  const value = record[key];
-  if (!isRecord(value)) {
-    throw new Error(message);
-  }
-  return value;
 }
 
 function readOptionalFirstRecordArray(record: ApiRecord, keys: readonly string[], itemMessage: string): ApiRecord[] {
@@ -539,17 +536,6 @@ function readRequiredPositiveRank(record: ApiRecord, keys: string[], message: st
     throw new Error(message);
   }
   return rank;
-}
-
-function readRequiredRecordArray(record: ApiRecord, key: string, missingMessage: string, itemMessage: string): ApiRecord[] {
-  const value = record[key];
-  if (value === undefined || value === null) {
-    throw new Error(missingMessage);
-  }
-  if (!Array.isArray(value)) {
-    throw new Error(`${key} must be an array`);
-  }
-  return value.map((item) => readRequiredRecord(item, itemMessage));
 }
 
 function readRequiredRecord(value: unknown, message: string): ApiRecord {

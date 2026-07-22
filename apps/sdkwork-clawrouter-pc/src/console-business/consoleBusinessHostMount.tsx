@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SdkworkSubscriptionPage } from '@sdkwork/membership-pc-subscription';
 import { SdkworkCouponPage } from '@sdkwork/promotion-pc-coupon';
@@ -18,6 +18,25 @@ import { ClawRouterWalletPage } from './ClawRouterWalletPage.tsx';
 import { ClawRouterMembershipPage } from './ClawRouterMembershipPage.tsx';
 
 export const CLAWROUTER_CONSOLE_BUSINESS_ROUTE_PREFIX = '/console';
+
+type ConsoleBusinessPageSurface = 'checkout' | 'coupons' | 'payment';
+
+function ConsoleBusinessPageFrame({
+  children,
+  surface,
+}: {
+  children: ReactNode;
+  surface: ConsoleBusinessPageSurface;
+}) {
+  return (
+    <div
+      className="claw-router-console-business-page h-full min-h-0 w-full max-w-none"
+      data-console-business-page={surface}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function ClawRouterConsoleBusinessHostRoutes() {
   return (
@@ -39,7 +58,11 @@ function ConsoleBusinessCouponsPage() {
   const { i18n } = useTranslation();
   const locale = resolveConsoleCouponLocale(i18n.resolvedLanguage ?? i18n.language);
 
-  return <SdkworkCouponPage locale={locale} />;
+  return (
+    <ConsoleBusinessPageFrame surface="coupons">
+      <SdkworkCouponPage locale={locale} />
+    </ConsoleBusinessPageFrame>
+  );
 }
 
 function ConsoleBusinessMembershipPage() {
@@ -50,7 +73,11 @@ function ConsoleBusinessCheckoutPage() {
   const { i18n } = useTranslation();
   const locale = resolveConsoleSubscriptionLocale(i18n.resolvedLanguage ?? i18n.language);
 
-  return <SdkworkSubscriptionPage locale={locale} />;
+  return (
+    <ConsoleBusinessPageFrame surface="checkout">
+      <SdkworkSubscriptionPage locale={locale} />
+    </ConsoleBusinessPageFrame>
+  );
 }
 
 function ConsoleBusinessPaymentPage() {
@@ -76,7 +103,11 @@ function ConsoleBusinessPaymentPageContent({
     void controller.openDetail(paymentId).catch(() => undefined);
   }, [controller, paymentId, state.isBootstrapped, state.isLoading, state.lastError]);
 
-  return <SdkworkPaymentPage controller={controller} />;
+  return (
+    <ConsoleBusinessPageFrame surface="payment">
+      <SdkworkPaymentPage controller={controller} />
+    </ConsoleBusinessPageFrame>
+  );
 }
 
 export type { ClawRouterConsoleBusinessHostConfig };

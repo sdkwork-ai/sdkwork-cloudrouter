@@ -174,7 +174,11 @@ const removedConsolePageTitlePatterns = [
 function viewportClassNames(source: string): string[] {
   return [...source.matchAll(/className=(?:"([^"]*)"|\{`([^`]*)`\})/g)]
     .map((match) => match[1] ?? match[2] ?? "")
-    .filter((className) => /(?:^|\s)(?:h|min-h)-\[calc\(100vh-64px\)\](?:\s|$)/.test(className));
+    .filter(
+      (className) =>
+        /(?:^|\s)(?:h-full|min-h-full)(?:\s|$)/.test(className) &&
+        /(?:^|\s)w-full(?:\s|$)/.test(className),
+    );
 }
 
 test("console usage logs copy is routed through i18n without read-only caveats", () => {
@@ -205,7 +209,7 @@ test("console usage page does not render a loaded summary header row", () => {
   assert.doesNotMatch(source, /className="[^"]*shrink-0[^"]*justify-end/);
 });
 
-test("console routed pages keep the viewport edge-to-edge below the global header", () => {
+test("console routed pages inherit shell-owned height and outer gutters", () => {
   for (const file of [...simplifiedConsolePageFiles, ...deferredConsolePageFiles]) {
     const source = readPortalFile(file);
     const viewportClasses = viewportClassNames(source);
@@ -249,7 +253,7 @@ test("console usage log time renders as local yyyy-MM-dd HH:mm:ss without ISO se
 test("console usage logs keep pagination visible while the table body scrolls inside the viewport", () => {
   const source = readPortalFile("./packages/sdkwork-clawrouter-pc-console-usage/src/UsageView.tsx");
 
-  assert.match(source, /h-\[calc\(100vh-64px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
+  assert.match(source, /className="[^"]*h-full[^"]*w-full[^"]*flex-col[^"]*overflow-hidden/);
   assert.match(source, /className="[^"]*shrink-0[^"]*flex[^"]*flex-col[^"]*md:flex-row/);
   assert.match(source, /className="[^"]*flex[^"]*flex-col[^"]*flex-1[^"]*min-h-0/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-auto/);
@@ -386,7 +390,7 @@ test("console message center stays product-focused without implementation caveat
 test("console message center constrains the detail pane to the available viewport height", { skip: !portalFileExists("./packages/sdkwork-clawrouter-pc-console-messages/src/MessagesView.tsx") }, () => {
   const source = readPortalFile("./packages/sdkwork-clawrouter-pc-console-messages/src/MessagesView.tsx");
 
-  assert.match(source, /h-\[calc\(100vh-64px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
+  assert.match(source, /className="[^"]*h-full[^"]*w-full[^"]*flex-col[^"]*overflow-hidden/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-hidden[^"]*flex[^"]*flex-col[^"]*md:flex-row/);
   assert.match(source, /className=\{`[^`]*flex-1[^`]*min-h-0[^`]*flex[^`]*flex-col/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-y-auto[^"]*custom-scrollbar/);
@@ -404,11 +408,13 @@ test("console gateway tooling stays product-focused without implementation cavea
 test("console account and recharge surfaces are owned by T1 domain PC packages", () => {
   const appSource = readPortalFile("./src/App.tsx");
   const accountSource = readPortalFile("./src/console-business/ConsoleAccountView.tsx");
+  const walletSource = readPortalFile("./src/console-business/ClawRouterWalletPage.tsx");
   const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
 
   assert.match(accountSource, /@sdkwork\/account-pc-wallet/);
-  assert.match(mountSource, /SdkworkWalletPage/);
+  assert.match(walletSource, /@sdkwork\/account-pc-wallet/);
+  assert.match(mountSource, /ClawRouterWalletPage/);
   assert.match(appSource, /ClawRouterConsoleBusinessHostRoutes/);
   assert.equal(packageJson.dependencies["@sdkwork/account-pc-wallet"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/commerce-pc-host"], undefined);
@@ -425,8 +431,8 @@ test("console user settings stay product-focused without implementation caveats"
 test("console settings center constrains the settings panel to the available viewport height", () => {
   const source = readPortalFile("./packages/sdkwork-clawrouter-pc-console-settings/src/SettingsView.tsx");
 
-  assert.match(source, /h-\[calc\(100vh-64px\)\][^"]*overflow-hidden[^"]*flex[^"]*flex-col/);
-  assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-hidden[^"]*flex[^"]*flex-col[^"]*md:flex-row/);
+  assert.match(source, /className="[^"]*h-full[^"]*w-full[^"]*flex-col[^"]*overflow-hidden/);
+  assert.match(source, /className="[^"]*flex[^"]*min-h-0[^"]*flex-1[^"]*flex-col[^"]*overflow-hidden[^"]*lg:flex-row/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-hidden[^"]*flex[^"]*flex-col[^"]*bg-white/);
   assert.match(source, /className="[^"]*flex-1[^"]*min-h-0[^"]*overflow-y-auto[^"]*custom-scrollbar[^"]*p-6/);
   assert.doesNotMatch(source, /min-h-\[500px\]/);
@@ -494,15 +500,20 @@ test("portal applies persisted theme preferences before first React render", () 
   assert.match(mainSource, /initializeThemePreferences\(\);[\s\S]*createRoot/);
 });
 
-test("console wallet recharge UI is owned by sdkwork-account wallet package", () => {
+test("console wallet uses order-owned inline recharge while account wallet retains checkout navigation", () => {
   const walletPagePath = "../../../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet/src/pages/WalletPage.tsx";
   if (!portalFileExists(walletPagePath)) {
     return;
   }
-  const source = readPortalFile(walletPagePath);
+  const accountWalletSource = readPortalFile(walletPagePath);
+  const consoleWalletSource = readPortalFile("./src/console-business/ClawRouterWalletPage.tsx");
 
-  assert.match(source, /navigateWalletRechargeCheckout|checkoutBasePath/);
-  assertNoImplementationCaveats(source);
+  assert.match(accountWalletSource, /navigateWalletRechargeCheckout|checkoutBasePath/);
+  assert.match(consoleWalletSource, /SdkworkPointsRechargeInline/);
+  assert.match(consoleWalletSource, /getClawRouterPointsRechargeService/);
+  assert.doesNotMatch(consoleWalletSource, /controller\.rechargePoints/);
+  assertNoImplementationCaveats(accountWalletSource);
+  assertNoImplementationCaveats(consoleWalletSource);
 });
 
 test("console auth unavailable copy stays product-focused without app-contract caveats", () => {

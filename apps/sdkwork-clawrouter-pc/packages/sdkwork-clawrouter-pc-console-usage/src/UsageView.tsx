@@ -213,7 +213,7 @@ export function UsageView() {
     : '0%';
 
   return (
-    <div className="w-full mx-auto box-border h-[calc(100vh-64px)] overflow-hidden flex flex-col gap-4 animate-in fade-in duration-500 bg-slate-50 dark:bg-[#121212]">
+    <div className="mx-auto box-border flex h-full w-full flex-col gap-4 overflow-hidden bg-slate-50 animate-in fade-in duration-500 dark:bg-[#121212]">
       {/* 页面标题 + 关键指标摘要 */}
       <div className="shrink-0 px-1 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex flex-col gap-1">

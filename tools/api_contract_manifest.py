@@ -88,6 +88,15 @@ class ApiContractManifestGenerator:
         "application/x-www-form-urlencoded",
         "multipart/form-data",
     }
+    VALID_RATE_LIMIT_TIERS = {
+        "auth-critical",
+        "open-api-default",
+        "upload",
+        "search",
+        "bulk",
+        "worker",
+        "internal",
+    }
     LEGACY_PROVIDER_PLATFORM_SNAKE = "open" + "_platform"
     LEGACY_PROVIDER_PLATFORM_CAMEL = "open" + "Platform"
     LEGACY_PROVIDER_PLATFORM_PATTERN = re.compile(r"open[_-]?platform", re.IGNORECASE)
@@ -511,6 +520,15 @@ class ApiContractManifestGenerator:
 
             if "openapi_exposed" in entry and not isinstance(openapi_exposed, bool):
                 messages.append(f"api contract {key} openapi_exposed must be boolean")
+            if "idempotency_required" in entry and not isinstance(entry.get("idempotency_required"), bool):
+                messages.append(f"api contract {key} idempotency_required must be boolean")
+            if "rate_limit_tier" in entry:
+                rate_limit_tier = self._normalize_rate_limit_tier(entry.get("rate_limit_tier"))
+                if rate_limit_tier not in self.VALID_RATE_LIMIT_TIERS:
+                    messages.append(
+                        f"api contract {key} rate_limit_tier must be one of "
+                        f"{', '.join(sorted(self.VALID_RATE_LIMIT_TIERS))}"
+                    )
             is_app_backend_openapi_operation = (
                 openapi_exposed is not False
                 and isinstance(api_surface, str)
@@ -702,6 +720,9 @@ class ApiContractManifestGenerator:
             "query_parameters_declared": "query_parameters" in entry,
             "query_parameters": self._normalize_query_parameters(entry.get("query_parameters")),
         }
+        rate_limit_tier = self._normalize_rate_limit_tier(entry.get("rate_limit_tier"))
+        if rate_limit_tier:
+            compiled["rate_limit_tier"] = rate_limit_tier
         description = self._string(entry.get("description"))
         if description:
             compiled["description"] = description
@@ -1634,6 +1655,13 @@ class ApiContractManifestGenerator:
         if route.startswith("/console"):
             return "console"
         return "public"
+
+    def _normalize_rate_limit_tier(self, value: Any) -> str:
+        raw = self._string(value)
+        if not raw:
+            return ""
+        kebab = re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", raw)
+        return re.sub(r"[-_\s]+", "-", kebab).strip("-").lower()
 
     def _operation_key(self, source: Any, operation: Any, route: Any = None) -> str:
         base = f"{self._string(source)}#{self._string(operation)}"

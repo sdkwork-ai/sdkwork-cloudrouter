@@ -61,12 +61,12 @@ export class MemoryEntriesApi {
 }
 
 export class MemoryApi {
-  private client: HttpClient;
+
   public readonly entries: MemoryEntriesApi;
   public readonly spaces: MemorySpacesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.entries = new MemoryEntriesApi(client);
     this.spaces = new MemorySpacesApi(client);
   }
@@ -77,13 +77,7 @@ export function createMemoryApi(client: HttpClient): MemoryApi {
   return new MemoryApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

@@ -83,12 +83,10 @@ const SCANNED_REPO_METADATA_FILES = [
   'sdks/clawrouter-backend-sdk/specs/component.spec.json',
   'sdks/clawrouter-app-sdk/README.md',
   'sdks/clawrouter-backend-sdk/README.md',
-  'sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/domains/server-openapi/sdkwork-sdk.json',
-  'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/domains/server-openapi/sdkwork-sdk.json',
-  'sdks/clawrouter-app-sdk/openapi/clawrouter-app-domain-transport.openapi.json',
-  'sdks/clawrouter-backend-sdk/openapi/clawrouter-backend-domain-transport.openapi.json',
-  'sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/domains/server-openapi/README.md',
-  'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/domains/server-openapi/README.md',
+  'sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/package.json',
+  'sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/domains/index.ts',
+  'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/package.json',
+  'sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/domains/index.ts',
   'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-core/specs/component.spec.json',
   'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core/specs/component.spec.json',
   'apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/specs/component.spec.json',
@@ -205,7 +203,7 @@ function collectIssues() {
     issues.push({
       severity: 'error',
       code: 'legacy-commerce-app-sdk-family',
-      message: 'sdks/sdkwork-commerce-app-sdk must be removed; federated app domains live under sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/generated/domains/server-openapi',
+      message: 'sdks/sdkwork-commerce-app-sdk must be removed; federated app domains use the owner SDK composed wrapper at @sdkwork/clawrouter-app-sdk/domains',
     });
   }
 
@@ -213,7 +211,7 @@ function collectIssues() {
     issues.push({
       severity: 'error',
       code: 'legacy-commerce-backend-sdk-family',
-      message: 'sdks/sdkwork-commerce-backend-sdk must be removed; federated backend domains live under sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/generated/domains/server-openapi',
+      message: 'sdks/sdkwork-commerce-backend-sdk must be removed; federated backend domains use the owner SDK composed wrapper at @sdkwork/clawrouter-backend-sdk/domains',
     });
   }
 

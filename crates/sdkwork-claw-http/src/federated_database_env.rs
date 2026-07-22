@@ -1,4 +1,5 @@
 use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
+use sdkwork_database_config::claw_database::postgres_url_with_search_path;
 use std::path::{Path, PathBuf};
 
 /// Ensures IAM database env is materialized from the canonical Claw database config.
@@ -126,10 +127,16 @@ fn materialize_capability_app_root_env(service_code: &str, app_root: PathBuf) {
 fn materialize_capability_database_env(service_code: &str, database_config: &DatabaseConfig) {
     let prefix = format!("SDKWORK_{}", service_code.to_uppercase());
     let database_url_key = format!("{prefix}_DATABASE_URL");
+    let database_url = match database_config.engine {
+        DatabaseEngine::Postgres => {
+            postgres_url_with_search_path(&database_config.url, prefix.as_str())
+        }
+        DatabaseEngine::Sqlite => database_config.url.clone(),
+    };
 
     // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
     unsafe {
-        std::env::set_var(&database_url_key, database_config.url.as_str());
+        std::env::set_var(&database_url_key, database_url);
         std::env::set_var(
             format!("{prefix}_DATABASE_ENGINE"),
             match database_config.engine {
@@ -166,7 +173,10 @@ fn resolve_clawrouter_app_root() -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use super::{ensure_iam_database_env_for_claw_database, resolve_clawrouter_app_root};
+    use super::{
+        ensure_iam_database_env_for_claw_database, materialize_capability_database_env,
+        resolve_clawrouter_app_root,
+    };
     use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
     use std::sync::{Mutex, OnceLock};
 
@@ -234,6 +244,39 @@ mod tests {
             std::env::var("SDKWORK_IAM_DATABASE_MAX_CONNECTIONS").unwrap(),
             "1"
         );
+        for (key, value) in previous {
+            match value {
+                Some(value) => std::env::set_var(key, value),
+                None => std::env::remove_var(key),
+            }
+        }
+    }
+
+    #[test]
+    fn materialize_postgres_capability_env_pins_the_claw_schema() {
+        let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+        let keys = [
+            "SDKWORK_CLAW_DATABASE_SCHEMA",
+            "SDKWORK_DATABASE_SCHEMA",
+            "SDKWORK_PAYMENT_DATABASE_SCHEMA",
+            "SDKWORK_PAYMENT_DATABASE_URL",
+        ];
+        let previous = keys.map(|key| (key, std::env::var(key).ok()));
+        std::env::set_var("SDKWORK_CLAW_DATABASE_SCHEMA", "sdkwork_ai_dev");
+        std::env::remove_var("SDKWORK_DATABASE_SCHEMA");
+        std::env::remove_var("SDKWORK_PAYMENT_DATABASE_SCHEMA");
+
+        let config = DatabaseConfig {
+            engine: DatabaseEngine::Postgres,
+            url: "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
+                .to_owned(),
+            max_connections: 5,
+        };
+        materialize_capability_database_env("PAYMENT", &config);
+
+        let url = std::env::var("SDKWORK_PAYMENT_DATABASE_URL").expect("payment database url");
+        assert!(url.contains("options=-c%20search_path%3Dsdkwork_ai_dev%2Cpublic"));
+
         for (key, value) in previous {
             match value {
                 Some(value) => std::env::set_var(key, value),

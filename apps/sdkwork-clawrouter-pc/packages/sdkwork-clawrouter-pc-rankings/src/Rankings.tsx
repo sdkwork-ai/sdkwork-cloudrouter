@@ -70,10 +70,15 @@ export function Rankings() {
   const [rankingSnapshotSource, setRankingSnapshotSource] = useState(DEFAULT_RANKING_SNAPSHOT_SOURCE);
   const [rankingVendors, setRankingVendors] = useState<RankingVendorOption[]>([]);
   const [vendorLoadError, setVendorLoadError] = useState<string | null>(null);
+  const [isRankingLoading, setIsRankingLoading] = useState(true);
+  const [rankingLoadFailed, setRankingLoadFailed] = useState(false);
+  const [rankingReloadVersion, setRankingReloadVersion] = useState(0);
+  const [vendorReloadVersion, setVendorReloadVersion] = useState(0);
   const [activeModality, setActiveModality] = useState<Modality>('All');
   const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [rankingSearchQuery, setRankingSearchQuery] = useState('');
   const [licenseFilter, setLicenseFilter] = useState<RankingLicense>('All');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -153,23 +158,31 @@ export function Rankings() {
       ? t('rankings.trending')
       : dynamicStats.trendingRankDisplay;
 
-  const loadModelVendors = () => {
-    setVendorLoadError(null);
-    RankingService.fetchModelVendors()
-      .then((vendors) => {
-        setRankingVendors(vendors);
-      })
-      .catch(() => {
-        setVendorLoadError(t('rankings.vendorLoadError'));
-      });
+  const retryModelVendors = () => {
+    setVendorReloadVersion((version) => version + 1);
+  };
+
+  const retryModelRankings = () => {
+    setRankingReloadVersion((version) => version + 1);
   };
 
   useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setRankingSearchQuery(searchQuery.trim());
+    }, 300);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
     let cancelled = false;
+    setIsRankingLoading(true);
+    setRankingLoadFailed(false);
     RankingService.fetchModelRankings({
       vendorCode: selectedVendorCode,
       modality: activeBackendModality,
-      searchQuery,
+      searchQuery: rankingSearchQuery,
       pageSize: 200,
     })
       .then((snapshot) => {
@@ -181,19 +194,19 @@ export function Rankings() {
         setRankingSnapshotSource(snapshot.source);
         setHoveredWeekIndex(null);
         setSelectedWeekIndex(null);
+        setIsRankingLoading(false);
       })
       .catch(() => {
         if (cancelled) {
           return;
         }
-        setRankingCatalog(EMPTY_RANKING_CATALOG);
-        setRankingHistory(EMPTY_RANKING_HISTORY);
-        setRankingSnapshotSource(DEFAULT_RANKING_SNAPSHOT_SOURCE);
+        setRankingLoadFailed(true);
+        setIsRankingLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [activeBackendModality, searchQuery, selectedVendorCode]);
+  }, [activeBackendModality, rankingReloadVersion, rankingSearchQuery, selectedVendorCode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,7 +227,7 @@ export function Rankings() {
     return () => {
       cancelled = true;
     };
-  }, [t]);
+  }, [t, vendorReloadVersion]);
 
   useEffect(() => {
     let interval: number | undefined;
@@ -475,7 +488,7 @@ export function Rankings() {
                   <span className="truncate">{vendorLoadError}</span>
                   <button
                     type="button"
-                    onClick={loadModelVendors}
+                    onClick={retryModelVendors}
                     className="shrink-0 font-bold uppercase text-amber-100 hover:text-white"
                   >
                     {t('rankings.retry')}
@@ -776,6 +789,7 @@ export function Rankings() {
                 <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
+                  maxLength={200}
                   placeholder={t('rankings.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -783,6 +797,19 @@ export function Rankings() {
                 />
               </div>
             </div>
+
+            {rankingLoadFailed && displayRankings.length > 0 && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                <span>{t('rankings.loadErrorDescription')}</span>
+                <button
+                  type="button"
+                  onClick={retryModelRankings}
+                  className="shrink-0 font-bold uppercase text-amber-100 hover:text-white"
+                >
+                  {t('rankings.retry')}
+                </button>
+              </div>
+            )}
 
             {/* Rich Table Container */}
             <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden">
@@ -800,10 +827,37 @@ export function Rankings() {
                   {displayRankings.length === 0 ? (
                     <div className="p-16 text-center flex flex-col items-center">
                       <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                        <Search className="w-8 h-8 text-slate-600" />
+                        {rankingLoadFailed ? (
+                          <AlertCircle className="w-8 h-8 text-amber-400" />
+                        ) : isRankingLoading ? (
+                          <Activity className="w-8 h-8 text-slate-500 animate-pulse" />
+                        ) : (
+                          <Search className="w-8 h-8 text-slate-600" />
+                        )}
                       </div>
-                      <h3 className="text-white font-bold text-lg">{t('rankings.emptyTitle')}</h3>
-                      <p className="text-slate-500 text-sm mt-1">{t('rankings.emptyDescription')}</p>
+                      <h3 className="text-white font-bold text-lg">
+                        {rankingLoadFailed
+                          ? t('rankings.loadErrorTitle')
+                          : isRankingLoading
+                            ? t('rankings.loadingTitle')
+                            : t('rankings.emptyTitle')}
+                      </h3>
+                      <p className="text-slate-500 text-sm mt-1">
+                        {rankingLoadFailed
+                          ? t('rankings.loadErrorDescription')
+                          : isRankingLoading
+                            ? t('rankings.loadingDescription')
+                            : t('rankings.emptyDescription')}
+                      </p>
+                      {rankingLoadFailed && (
+                        <button
+                          type="button"
+                          onClick={retryModelRankings}
+                          className="mt-4 font-bold uppercase text-sm text-amber-200 hover:text-white"
+                        >
+                          {t('rankings.retry')}
+                        </button>
+                      )}
                     </div>
                   ) : (
                     displayRankings.map((model) => {

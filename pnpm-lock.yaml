@@ -1718,9 +1718,15 @@ importers:
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
       react:
         specifier: 'catalog:'
         version: 19.2.4
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.4(react@19.2.4)
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
@@ -3530,6 +3536,10 @@ importers:
         version: 6.4.3(@types/node@25.9.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n:
+    dependencies:
+      '@sdkwork/i18n-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
     devDependencies:
       '@sdkwork/documents-pc-i18n':
         specifier: workspace:*
@@ -3724,6 +3734,24 @@ importers:
 
   sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript:
     dependencies:
+      '@sdkwork/account-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript
+      '@sdkwork/catalog-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-catalog/sdks/sdkwork-catalog-app-sdk/sdkwork-catalog-app-sdk-typescript
+      '@sdkwork/membership-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-membership/sdks/sdkwork-membership-app-sdk/sdkwork-membership-app-sdk-typescript
+      '@sdkwork/order-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-order/sdks/sdkwork-order-app-sdk/sdkwork-order-app-sdk-typescript
+      '@sdkwork/payment-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-payment/sdks/sdkwork-payment-app-sdk/sdkwork-payment-app-sdk-typescript
+      '@sdkwork/promotion-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-promotion/sdks/sdkwork-promotion-app-sdk/sdkwork-promotion-app-sdk-typescript
       '@sdkwork/sdk-common':
         specifier: ^1.0.2
         version: 1.0.3

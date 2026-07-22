@@ -8,13 +8,13 @@ const workspaceRoot = path.resolve(scriptDir, "..");
 
 const ORDER_APP_DEPENDENCY = {
   assemblyManifestPath:
-    "../sdkwork-order/crates/sdkwork-order-gateway-assembly/assembly-manifest.json",
+    "../sdkwork-order/crates/sdkwork-api-order-assembly/assembly-manifest.json",
   openApiAuthorityPath:
     "../sdkwork-order/apis/app-api/order/order-app-api.openapi.json",
   packageName: "sdkwork-routes-order-app-api",
   apiAuthority: "sdkwork-order-app-api",
   handlerModule:
-    "sdkwork_order_gateway_assembly::ApiAssembly::from_database_pool",
+    "sdkwork_api_order_assembly::ApiAssembly::from_database_pool",
 };
 
 const HTTP_METHODS = new Set([
@@ -70,7 +70,7 @@ const TARGETS = [
     apiAuthority: "sdkwork-clawrouter-open-api",
     sdkFamily: "clawrouter-open-sdk",
     prefix: "/v1",
-    crateRoot: "crates/sdkwork-routes-llm-open-api",
+    crateRoot: "crates/sdkwork-routes-clawrouter-llm-open-api",
     openApiPaths: [
       "apis/open-api/clawrouter/clawrouter-open-api.openapi.json",
       "sdks/clawrouter-open-sdk/openapi/clawrouter-open-sdk.openapi.json",
@@ -333,15 +333,14 @@ async function loadDependencyAssemblyDocuments(target) {
     const authorityPath = path.resolve(workspaceRoot, dependency.openApiAuthorityPath);
     const assembly = JSON.parse(await readFile(assemblyPath, "utf8"));
     const routeCrates = Array.isArray(assembly.routeCrates) ? assembly.routeCrates : [];
-    const declaresMountedSurface = routeCrates.some(
+    const declaresSurface = routeCrates.some(
       (routeCrate) =>
         routeCrate?.packageName === dependency.packageName &&
-        routeCrate?.surface === target.surface &&
-        routeCrate?.hasGatewayMount === true,
+        routeCrate?.surface === target.surface,
     );
-    if (!declaresMountedSurface) {
+    if (!declaresSurface) {
       throw new Error(
-        `${dependency.assemblyManifestPath} does not declare mounted ${target.surface} route crate ${dependency.packageName}`,
+        `${dependency.assemblyManifestPath} does not declare ${target.surface} route crate ${dependency.packageName}`,
       );
     }
 

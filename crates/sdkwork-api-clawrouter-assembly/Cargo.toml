@@ -9,25 +9,25 @@ name = "sdkwork_api_clawrouter_assembly"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow.workspace = true
 axum.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
 sdkwork-claw-http.workspace = true
 sdkwork-clawrouter-edge-runtime.workspace = true
 sdkwork-iam-database-host.workspace = true
 sdkwork-iam-embedded-application-bootstrap.workspace = true
 sdkwork-routes-iam-app-api.workspace = true
-tokio.workspace = true
 tower.workspace = true
 sdkwork-routes-agent-open-api = { path = "../sdkwork-routes-agent-open-api" }
 sdkwork-routes-audio-open-api = { path = "../sdkwork-routes-audio-open-api" }
 sdkwork-routes-clawrouter-app-api.workspace = true
 sdkwork-routes-clawrouter-backend-api.workspace = true
-sdkwork-routes-drive-open-api = { path = "../sdkwork-routes-drive-open-api" }
+sdkwork-routes-clawrouter-drive-open-api = { path = "../sdkwork-routes-clawrouter-drive-open-api" }
+sdkwork-routes-clawrouter-knowledgebase-open-api = { path = "../sdkwork-routes-clawrouter-knowledgebase-open-api" }
+sdkwork-routes-clawrouter-llm-open-api = { path = "../sdkwork-routes-clawrouter-llm-open-api" }
+sdkwork-routes-clawrouter-memory-open-api = { path = "../sdkwork-routes-clawrouter-memory-open-api" }
 sdkwork-routes-iaas-open-api = { path = "../sdkwork-routes-iaas-open-api" }
 sdkwork-routes-image-open-api = { path = "../sdkwork-routes-image-open-api" }
-sdkwork-routes-knowledgebase-open-api = { path = "../sdkwork-routes-knowledgebase-open-api" }
-sdkwork-routes-llm-open-api = { path = "../sdkwork-routes-llm-open-api" }
-sdkwork-routes-memory-open-api = { path = "../sdkwork-routes-memory-open-api" }
 sdkwork-routes-paas-open-api = { path = "../sdkwork-routes-paas-open-api" }
 sdkwork-routes-payment-open-api = { path = "../sdkwork-routes-payment-open-api" }
 sdkwork-routes-video-open-api = { path = "../sdkwork-routes-video-open-api" }

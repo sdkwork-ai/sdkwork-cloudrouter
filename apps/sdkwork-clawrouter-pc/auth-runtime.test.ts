@@ -1502,10 +1502,10 @@ test("admin layout enforces route permission guard for protected admin pages", a
 
 test("portal i18n keeps document language aligned with active locale", () => {
   const i18nSource = readPortalFile("./packages/sdkwork-clawrouter-pc-i18n/src/index.ts");
-  const syncSource = readPortalFile("./packages/sdkwork-clawrouter-pc-i18n/src/sync-document-language.ts");
-  assert.match(i18nSource, /syncDocumentLanguage/);
-  assert.match(syncSource, /document\.documentElement\.lang/);
-  assert.match(i18nSource, /i18n\.on\('languageChanged', syncDocumentLanguage\)/);
+  const mainSource = readPortalFile("./src/main.tsx");
+  assert.match(mainSource, /SdkworkI18nProvider/);
+  assert.match(mainSource, /syncDocumentLanguage/);
+  assert.doesNotMatch(i18nSource, /initReactI18next|\.use\(/);
 });
 
 test("generated SDK auth errors clear the app session and redirect protected pages to login", async () => {

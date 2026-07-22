@@ -22,7 +22,7 @@ export function ClawRouterConsoleCommerceSurface({
 
   return (
     <div
-      className="claw-router-console-commerce-surface min-h-full"
+      className="claw-router-console-commerce-surface h-full min-h-0"
       data-claw-router-commerce-surface=""
       style={themeStyle}
     >

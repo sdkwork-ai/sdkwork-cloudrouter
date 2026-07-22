@@ -220,7 +220,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="w-full max-w-none px-4 pb-6 sm:px-6 lg:px-8">
+      <div className="w-full max-w-none">
         <div className="space-y-4">
           {/* Header */}
           <header className="flex items-start justify-between gap-4">

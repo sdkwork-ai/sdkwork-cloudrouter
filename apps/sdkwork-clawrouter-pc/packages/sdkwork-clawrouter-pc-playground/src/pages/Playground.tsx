@@ -28,10 +28,21 @@ configureAgentsWorkbenchRuntime({
   },
 });
 
-export function Playground() {
+export interface PlaygroundProps {
+  overlayTopInset?: string;
+}
+
+const DEFAULT_PLAYGROUND_OVERLAY_TOP_INSET = 'var(--sdkwork-portal-navbar-height, 4rem)';
+
+export function Playground({
+  overlayTopInset = DEFAULT_PLAYGROUND_OVERLAY_TOP_INSET,
+}: PlaygroundProps) {
   return (
     <div className="sdkwork-playground-host flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
-      <AgentsWorkbench showSidebarLogo={false} />
+      <AgentsWorkbench
+        overlayTopInset={overlayTopInset}
+        showSidebarLogo={false}
+      />
     </div>
   );
 }

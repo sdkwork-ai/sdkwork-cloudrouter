@@ -798,6 +798,11 @@ class ClawRouterOpenApiGenerator:
             "x-file-targets": self._string_list(operation.get("file_targets")),
         }
         spec["security"] = self._operation_security(operation_id, surface=surface)
+        if bool(operation.get("idempotency_required")):
+            spec["x-sdkwork-idempotent"] = True
+        rate_limit_tier = self._string(operation.get("rate_limit_tier"))
+        if rate_limit_tier:
+            spec["x-sdkwork-rate-limit-tier"] = rate_limit_tier
         sdk_domain = self._string(operation.get("sdk_domain"))
         if sdk_domain:
             spec["x-sdkwork-domain"] = sdk_domain

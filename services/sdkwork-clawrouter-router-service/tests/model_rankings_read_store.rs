@@ -7,7 +7,7 @@ use sdkwork_clawrouter_router_service::ports::{
 use sqlx::sqlite::SqlitePoolOptions;
 
 #[tokio::test]
-async fn sqlite_model_rankings_read_store_reads_only_the_selected_latest_snapshot() {
+async fn sqlite_model_rankings_read_store_reads_latest_items_with_matching_period_history() {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect("sqlite::memory:")
@@ -46,7 +46,11 @@ async fn sqlite_model_rankings_read_store_reads_only_the_selected_latest_snapsho
     assert_eq!(1, snapshot.items.len());
     assert_eq!("qwen3-plus", snapshot.items[0].name);
     assert_eq!(
-        vec!["2026-06-03".to_owned()],
+        vec![
+            "2026-05-07".to_owned(),
+            "2026-05-08".to_owned(),
+            "2026-06-03".to_owned(),
+        ],
         snapshot
             .history
             .iter()
@@ -252,7 +256,7 @@ async fn sqlite_model_rankings_read_store_normalizes_negative_organization_to_te
         .unwrap();
 
     assert_eq!(1, snapshot.items.len());
-    assert_eq!("tenant-model", snapshot.items[0].name);
+    assert_eq!("platform-model", snapshot.items[0].name);
 }
 
 #[tokio::test]
@@ -315,12 +319,14 @@ async fn sqlite_model_rankings_read_store_exposes_task_metadata_and_history_from
             .all(|item| !item.id.starts_with("2026-05-08:")),
         "ranking item id must be the stable catalog identity, not a snapshot-scoped display key"
     );
-    assert_eq!(1, snapshot.history.len());
-    assert_eq!("2026-05-08", snapshot.history[0].date);
+    assert_eq!(2, snapshot.history.len());
+    assert_eq!("2026-05-07", snapshot.history[0].date);
     assert_eq!(0, snapshot.history[0].index);
+    assert_eq!("2026-05-08", snapshot.history[1].date);
+    assert_eq!(1, snapshot.history[1].index);
     assert_eq!(
         Some(320),
-        snapshot.history[0]
+        snapshot.history[1]
             .entries
             .iter()
             .find(|entry| entry.model == "gpt-5.2")
@@ -410,8 +416,9 @@ async fn sqlite_model_rankings_read_store_applies_query_filters_to_history() {
 
     assert_eq!(1, snapshot.items.len());
     assert_eq!("gpt-5.2", snapshot.items[0].name);
-    assert_eq!(1, snapshot.history.len());
-    assert_eq!("2026-05-08", snapshot.history[0].date);
+    assert_eq!(2, snapshot.history.len());
+    assert_eq!("2026-05-07", snapshot.history[0].date);
+    assert_eq!("2026-05-08", snapshot.history[1].date);
     assert!(snapshot
         .history
         .iter()
@@ -449,6 +456,7 @@ async fn sqlite_model_rankings_read_store_normalizes_query_filters_at_persistenc
                 modality: Some(" TEXT ".to_owned()),
                 search_query: Some(" GPT-5.2 ".to_owned()),
                 limit: 200,
+                offset: 0,
             },
             None,
         )
@@ -464,6 +472,136 @@ async fn sqlite_model_rankings_read_store_normalizes_query_filters_at_persistenc
         .iter()
         .flat_map(|point| &point.entries)
         .all(|entry| entry.model == "gpt-5.2"));
+}
+
+#[tokio::test]
+async fn sqlite_model_rankings_read_store_treats_like_wildcards_as_literal_search_text() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_rank_snapshot_table(&pool).await;
+
+    sqlx::query(
+        r#"
+        INSERT INTO ai_model_rank_snapshot
+            (id, tenant_id, organization_id, status, snapshot_date, snapshot_period, rank_scope, catalog_key, model, vendor_code, vendor_name_snapshot, modality, rank_no, request_count, base_volume)
+        VALUES
+            (96, 0, 0, 1, '2026-05-08', 1, 'commercial-default', 'test/model-50-percent', 'model-50%-off', 'literal', 'Literal Vendor', 1, 1, 120, 120),
+            (97, 0, 0, 1, '2026-05-08', 1, 'commercial-default', 'test/model_private', 'model_private', 'literal', 'Literal Vendor', 1, 2, 110, 110),
+            (98, 0, 0, 1, '2026-05-08', 1, 'commercial-default', 'test/model-plain', 'model-plain', 'literal', 'Literal Vendor', 1, 3, 100, 100)
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let store = SqliteModelRankingsReadStore::new(pool);
+    let percent_snapshot = store
+        .load_model_rankings(
+            ModelRankingsQuery {
+                search_query: Some("%".to_owned()),
+                limit: 200,
+                ..ModelRankingsQuery::default()
+            },
+            None,
+        )
+        .await
+        .unwrap();
+    let underscore_snapshot = store
+        .load_model_rankings(
+            ModelRankingsQuery {
+                search_query: Some("_".to_owned()),
+                limit: 200,
+                ..ModelRankingsQuery::default()
+            },
+            None,
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(
+        vec!["model-50%-off"],
+        percent_snapshot
+            .items
+            .iter()
+            .map(|item| item.name.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert!(percent_snapshot
+        .history
+        .iter()
+        .flat_map(|point| &point.entries)
+        .all(|entry| entry.model == "model-50%-off"));
+    assert_eq!(
+        vec!["model_private"],
+        underscore_snapshot
+            .items
+            .iter()
+            .map(|item| item.name.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert!(underscore_snapshot
+        .history
+        .iter()
+        .flat_map(|point| &point.entries)
+        .all(|entry| entry.model == "model_private"));
+}
+
+#[tokio::test]
+async fn sqlite_model_rankings_read_store_pages_items_history_and_preserves_total() {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .unwrap();
+    create_rank_snapshot_table(&pool).await;
+
+    sqlx::query(
+        r#"
+        INSERT INTO ai_model_rank_snapshot
+            (id, tenant_id, organization_id, status, snapshot_date, snapshot_period, rank_scope, catalog_key, model, vendor_code, vendor_name_snapshot, modality, rank_no, request_count, base_volume)
+        VALUES
+            (110, 0, 0, 1, '2026-05-07', 1, 'commercial-default', 'test/model-a', 'model-a', 'test', 'Test Vendor', 1, 1, 90, 90),
+            (111, 0, 0, 1, '2026-05-07', 1, 'commercial-default', 'test/model-b', 'model-b', 'test', 'Test Vendor', 1, 2, 80, 80),
+            (112, 0, 0, 1, '2026-05-07', 1, 'commercial-default', 'test/model-c', 'model-c', 'test', 'Test Vendor', 1, 3, 70, 70),
+            (113, 0, 0, 1, '2026-05-08', 1, 'commercial-default', 'test/model-a', 'model-a', 'test', 'Test Vendor', 1, 1, 120, 120),
+            (114, 0, 0, 1, '2026-05-08', 1, 'commercial-default', 'test/model-b', 'model-b', 'test', 'Test Vendor', 1, 2, 110, 110),
+            (115, 0, 0, 1, '2026-05-08', 1, 'commercial-default', 'test/model-c', 'model-c', 'test', 'Test Vendor', 1, 3, 100, 100)
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let snapshot = SqliteModelRankingsReadStore::new(pool)
+        .load_model_rankings(
+            ModelRankingsQuery {
+                limit: 1,
+                offset: 1,
+                ..ModelRankingsQuery::default()
+            },
+            None,
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(3, snapshot.total_items);
+    assert_eq!(
+        vec!["model-b"],
+        snapshot
+            .items
+            .iter()
+            .map(|item| item.name.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(2, snapshot.history.len());
+    assert!(snapshot
+        .history
+        .iter()
+        .flat_map(|point| &point.entries)
+        .all(|entry| entry.model == "model-b"));
 }
 
 #[tokio::test]
@@ -506,7 +644,7 @@ async fn sqlite_model_rankings_read_store_keeps_history_in_selected_visibility_s
 
     assert_eq!("2026-05-08", snapshot.source.snapshot_date);
     assert_eq!(
-        vec!["2026-05-08".to_owned()],
+        vec!["2026-05-07".to_owned(), "2026-05-08".to_owned()],
         snapshot
             .history
             .iter()
@@ -641,12 +779,14 @@ async fn sqlite_model_rankings_read_store_embeds_latest_refresh_job_in_refresh_s
         .expect("refresh status should include latest matching job");
     assert_eq!("job-failed-latest", latest_job.id);
     assert_eq!("failed", latest_job.status);
-    assert_eq!(10, latest_job.tenant_id);
-    assert_eq!(20, latest_job.organization_id);
+    assert_eq!(100001, latest_job.tenant_id);
+    assert_eq!(0, latest_job.organization_id);
     assert_eq!("2026-05-08T01:00:00Z", latest_job.started_at);
     assert_eq!(1, latest_job.failure_count);
     assert_eq!(
-        Some("usage aggregate failed".to_owned()),
+        Some(
+            "model ranking refresh failed because a required dependency is unavailable".to_owned()
+        ),
         latest_job.failure_reason
     );
 }
@@ -701,8 +841,8 @@ async fn sqlite_model_rankings_read_store_does_not_mix_latest_job_from_different
         .unwrap();
 
     assert_eq!("ready", status.status);
-    assert_eq!(10, status.tenant_id);
-    assert_eq!(20, status.organization_id);
+    assert_eq!(100001, status.tenant_id);
+    assert_eq!(0, status.organization_id);
     assert_eq!("2026-05-08", status.snapshot_date);
     assert_eq!(None, status.latest_job);
 }
@@ -747,6 +887,7 @@ async fn sqlite_model_rankings_read_store_keeps_refresh_job_history_in_selected_
             ModelRankingRefreshJobHistoryQuery {
                 rank_scope: Some("commercial-default".to_owned()),
                 limit: 10,
+                offset: 0,
             },
             Some(ModelRankingsSubject {
                 tenant_id: 100001,
@@ -767,7 +908,16 @@ async fn sqlite_model_rankings_read_store_keeps_refresh_job_history_in_selected_
     assert!(page
         .items
         .iter()
-        .all(|item| item.tenant_id == 10 && item.organization_id == 20));
+        .all(|item| item.tenant_id == 100001 && item.organization_id == 0));
+    assert_eq!(
+        page.items[0].failure_reason.as_deref(),
+        Some("model ranking refresh failed because a required dependency is unavailable")
+    );
+    assert!(!page.items[0]
+        .failure_reason
+        .as_deref()
+        .unwrap_or_default()
+        .contains("usage aggregate failed"));
 }
 
 #[tokio::test]
@@ -812,6 +962,7 @@ async fn sqlite_model_rankings_read_store_does_not_mix_job_history_from_differen
             ModelRankingRefreshJobHistoryQuery {
                 rank_scope: Some("commercial-default".to_owned()),
                 limit: 10,
+                offset: 0,
             },
             Some(ModelRankingsSubject {
                 tenant_id: 100001,
@@ -963,7 +1114,8 @@ async fn sqlite_model_rankings_read_store_reads_recent_refresh_job_history_from_
         .load_model_ranking_refresh_jobs(
             ModelRankingRefreshJobHistoryQuery {
                 rank_scope: Some("commercial-default".to_owned()),
-                limit: 2,
+                limit: 1,
+                offset: 1,
             },
             Some(ModelRankingsSubject {
                 tenant_id: 100001,
@@ -974,19 +1126,16 @@ async fn sqlite_model_rankings_read_store_reads_recent_refresh_job_history_from_
         .await
         .unwrap();
 
-    assert_eq!(2, page.items.len());
-    assert_eq!("job-failed", page.items[0].id);
-    assert_eq!("failed", page.items[0].status);
-    assert_eq!(10, page.items[0].tenant_id);
-    assert_eq!(20, page.items[0].organization_id);
-    assert_eq!("2026-05-08T01:00:00Z", page.items[0].started_at);
-    assert_eq!("2026-05-08T02:00:00Z", page.items[0].next_refresh_at);
-    assert_eq!("job-old", page.items[1].id);
-    assert_eq!("succeeded", page.items[1].status);
-    assert_eq!(10, page.items[1].tenant_id);
-    assert_eq!(20, page.items[1].organization_id);
-    assert_eq!(0, page.items[1].failure_count);
-    assert_eq!(None, page.items[1].failure_reason);
+    assert_eq!(2, page.total_items);
+    assert_eq!(1, page.items.len());
+    assert_eq!("job-old", page.items[0].id);
+    assert_eq!("succeeded", page.items[0].status);
+    assert_eq!(100001, page.items[0].tenant_id);
+    assert_eq!(0, page.items[0].organization_id);
+    assert_eq!("2026-05-08T00:00:00Z", page.items[0].started_at);
+    assert_eq!("2026-05-08T01:00:00Z", page.items[0].next_refresh_at);
+    assert_eq!(0, page.items[0].failure_count);
+    assert_eq!(None, page.items[0].failure_reason);
 }
 
 async fn create_rank_snapshot_table(pool: &sqlx::SqlitePool) {

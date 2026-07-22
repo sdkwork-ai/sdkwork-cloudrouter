@@ -118,7 +118,9 @@
     ],
     "sdkClients": [],
     "events": [],
-    "configKeys": [],
+    "configKeys": [
+      "src/index.ts#clawRouterI18nRuntimeConfig"
+    ],
     "routeManifest": null
   },
   "integration": {

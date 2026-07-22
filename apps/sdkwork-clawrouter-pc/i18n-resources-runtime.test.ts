@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 test("claw router i18n resources merge at runtime with aligned admin site navigation keys", async () => {
@@ -71,4 +72,29 @@ test("admin organization i18n bundle keeps aligned en and zh keys", async () => 
   assert.equal(resources.zh.translation["admin.organization.metrics.roleBindings"], "角色绑定");
   assert.equal(resources.en.translation["admin.organization.organizationKinds.businessUnit"], "Business unit");
   assert.equal(resources.zh.translation["admin.organization.organizationKinds.businessUnit"], "业务单元");
+});
+
+test("portal bootstrap composes Claw Router and Agents catalogs through the SDKWork provider", () => {
+  const mainSource = readFileSync(new URL("./src/main.tsx", import.meta.url), "utf8");
+  const i18nSource = readFileSync(
+    new URL("./packages/sdkwork-clawrouter-pc-i18n/src/index.ts", import.meta.url),
+    "utf8",
+  );
+  const agentsI18nSource = readFileSync(
+    new URL(
+      "../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-commons/src/i18n/index.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(i18nSource, /defineSdkworkI18nRuntimeConfig/);
+  assert.match(i18nSource, /defaultLocale: 'en-US'/);
+  assert.match(i18nSource, /fallbackLocale: 'en-US'/);
+  for (const locale of ["en-US", "zh-CN", "de-DE", "fr-FR", "ja-JP", "ko-KR", "ru-RU"]) {
+    assert.match(i18nSource, new RegExp(`['"]${locale}['"]`));
+  }
+  assert.match(i18nSource, /'zh-CN': resources\.zh\.translation/);
+  assert.match(mainSource, /catalogs=\{\[clawRouterI18nCatalog, \.\.\.agentsWorkbenchI18nCatalogs\]\}/);
+  assert.doesNotMatch(agentsI18nSource, /initReactI18next|createInstance|I18nextProvider/);
 });

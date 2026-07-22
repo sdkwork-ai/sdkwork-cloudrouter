@@ -89,11 +89,11 @@ export class RuntimeInvocationsApi {
 }
 
 export class RuntimeApi {
-  private client: HttpClient;
+
   public readonly invocations: RuntimeInvocationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.invocations = new RuntimeInvocationsApi(client);
   }
 
@@ -103,13 +103,7 @@ export function createRuntimeApi(client: HttpClient): RuntimeApi {
   return new RuntimeApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

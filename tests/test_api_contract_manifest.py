@@ -1938,6 +1938,98 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
 
             self.assertTrue(result.ok, result.messages)
 
+    def test_compiles_ranking_singleton_and_refresh_governance_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            contract = self.write_contract(
+                root,
+                """
+                frontend_operations:
+                  - route: /admin/model
+                    source: apps/demo/modelService.ts
+                    operation: fetchModelRankingRefreshStatus
+                    operation_id: modelRankings.status.retrieve
+                    kind: read
+                    api_surface: backend
+                    api_method: GET
+                    api_path: /backend/v3/api/ai/model_rankings/status
+                    sdk_domain: ai
+                    read_sources: [ops_job_execution]
+                    query_parameters: []
+                    response_schema:
+                      name: ModelRankingRefreshStatus
+                      properties:
+                        status: { type: string }
+                  - route: /admin/model
+                    source: apps/demo/modelService.ts
+                    operation: triggerModelRankingRefresh
+                    operation_id: modelRankings.refresh
+                    kind: action
+                    api_surface: backend
+                    api_method: POST
+                    api_path: /backend/v3/api/ai/model_rankings/refresh
+                    sdk_domain: ai
+                    idempotency_required: true
+                    rate_limit_tier: Bulk
+                    read_sources: [ai_usage]
+                    write_tables: [ai_model_rank_snapshot, ops_job_execution]
+                    request_schema:
+                      name: ModelRankingRefreshTriggerRequest
+                      properties: {}
+                    response_schema:
+                      name: ModelRankingRefreshTriggerResponse
+                      properties:
+                        triggered: { type: boolean }
+                """,
+            )
+
+            generator = ApiContractManifestGenerator(root=root, contract_path=contract)
+            validation = generator.validate()
+            self.assertTrue(validation.ok, validation.messages)
+            operations = {operation["operation"]: operation for operation in generator.generate()["operations"]}
+
+            self.assertEqual(
+                "modelRankings.status.retrieve",
+                operations["fetchModelRankingRefreshStatus"]["operation_id"],
+            )
+            refresh = operations["triggerModelRankingRefresh"]
+            self.assertEqual("modelRankings.refresh", refresh["operation_id"])
+            self.assertTrue(refresh["idempotency_required"])
+            self.assertEqual("bulk", refresh["rate_limit_tier"])
+
+    def test_rejects_invalid_ranking_governance_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_contract(
+                root,
+                """
+                frontend_operations:
+                  - route: /admin/model
+                    source: apps/demo/modelService.ts
+                    operation: triggerModelRankingRefresh
+                    kind: action
+                    api_surface: backend
+                    api_method: POST
+                    api_path: /backend/v3/api/ai/model_rankings/refresh
+                    idempotency_required: required
+                    rate_limit_tier: unlimited
+                    read_sources: [ai_usage]
+                    write_tables: [ops_job_execution]
+                    request_schema:
+                      name: ModelRankingRefreshTriggerRequest
+                      properties: {}
+                    response_schema:
+                      name: ModelRankingRefreshTriggerResponse
+                      properties: {}
+                """,
+            )
+
+            result = ApiContractManifestGenerator(root=root).validate()
+
+            self.assertFalse(result.ok)
+            self.assertTrue(any("idempotency_required must be boolean" in message for message in result.messages))
+            self.assertTrue(any("rate_limit_tier must be one of" in message for message in result.messages))
+
     def test_writes_and_checks_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

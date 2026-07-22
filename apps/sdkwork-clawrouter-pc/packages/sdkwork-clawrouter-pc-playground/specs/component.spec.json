@@ -110,7 +110,8 @@
   "contracts": {
     "layerRole": "frontend-feature",
     "publicExports": [
-      "."
+      ".",
+      "./i18n"
     ],
     "runtimeEntrypoints": [
       "package.json#scripts.dev",
@@ -121,7 +122,9 @@
     "requiredPorts": ["agents.workbench", "clawrouter.sdk-runtime"],
     "sdkClients": [],
     "events": [],
-    "configKeys": [],
+    "configKeys": [
+      "src/pages/Playground.tsx#PlaygroundProps.overlayTopInset"
+    ],
     "routeManifest": null
   },
   "integration": {
@@ -132,7 +135,7 @@
   },
   "verification": {
     "commands": [
-      "pnpm --filter sdkwork-clawrouter-pc-playground typecheck"
+      "pnpm --filter @sdkwork/clawrouter-pc-playground typecheck"
     ]
   },
   "metadata": {

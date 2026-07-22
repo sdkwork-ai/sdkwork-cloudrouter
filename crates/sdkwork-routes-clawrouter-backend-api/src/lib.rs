@@ -1,7 +1,6 @@
 #![forbid(unsafe_code)]
 
 mod http_route_manifest;
-mod invoice_runtime;
 pub mod manifest;
 pub mod paths;
 pub mod routes;

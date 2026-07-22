@@ -21,11 +21,11 @@ export class IamUsersSettingsApi {
 }
 
 export class IamUsersApi {
-  private client: HttpClient;
+
   public readonly settings: IamUsersSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.settings = new IamUsersSettingsApi(client);
   }
 
@@ -61,12 +61,12 @@ export class IamApiKeysApi {
 }
 
 export class IamApi {
-  private client: HttpClient;
+
   public readonly apiKeys: IamApiKeysApi;
   public readonly users: IamUsersApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.apiKeys = new IamApiKeysApi(client);
     this.users = new IamUsersApi(client);
   }
@@ -77,13 +77,7 @@ export function createIamApi(client: HttpClient): IamApi {
   return new IamApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

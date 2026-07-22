@@ -7,7 +7,7 @@ const testDir = path.dirname(fileURLToPath(import.meta.url));
 const sdksRoot = path.resolve(testDir, '..');
 const appRoot = path.resolve(sdksRoot, '..');
 const appsRoot = path.resolve(appRoot, '..');
-const appbaseRoot = path.join(appsRoot, 'sdkwork-appbase');
+const iamRoot = path.join(appsRoot, 'sdkwork-iam');
 
 const dependencyContracts = [
   {
@@ -16,8 +16,8 @@ const dependencyContracts = [
     prefix: '/app/v3/api',
     dependencyWorkspace: 'sdkwork-iam-app-sdk',
     role: 'appbase-app-capability',
-    appbaseAuthority: path.join(
-      appbaseRoot,
+    dependencyAuthority: path.join(
+      iamRoot,
       'sdks',
       'sdkwork-iam-app-sdk',
       'openapi',
@@ -30,8 +30,8 @@ const dependencyContracts = [
     prefix: '/backend/v3/api',
     dependencyWorkspace: 'sdkwork-iam-backend-sdk',
     role: 'appbase-backend-management-capability',
-    appbaseAuthority: path.join(
-      appbaseRoot,
+    dependencyAuthority: path.join(
+      iamRoot,
       'sdks',
       'sdkwork-iam-backend-sdk',
       'openapi',
@@ -91,9 +91,9 @@ function routeKeys(document, prefix) {
   return routes;
 }
 
-function assertNoOperationOverlap(contract, localDocument, appbaseDocument) {
+function assertNoOperationOverlap(contract, localDocument, dependencyDocument) {
   const localKeys = operationKeys(localDocument, contract.prefix);
-  const dependencyKeys = operationKeys(appbaseDocument, contract.prefix);
+  const dependencyKeys = operationKeys(dependencyDocument, contract.prefix);
   const overlaps = [...localKeys].filter((key) => dependencyKeys.has(key)).sort();
   assert.deepEqual(
     overlaps,
@@ -137,9 +137,9 @@ function generatedRoutePattern(route) {
   return new RegExp(`(?<![A-Za-z0-9_/-])/${escaped}(?:[?'\`")]|$)`, 'u');
 }
 
-function fullyRemovedDependencyRoutePatterns(contract, localDocument, appbaseDocument) {
+function fullyRemovedDependencyRoutePatterns(contract, localDocument, dependencyDocument) {
   const localRoutes = routeKeys(localDocument, contract.prefix);
-  return [...routeKeys(appbaseDocument, contract.prefix)]
+  return [...routeKeys(dependencyDocument, contract.prefix)]
     .filter((route) => !localRoutes.has(route))
     .map((route) => ({ route, pattern: generatedRoutePattern(route) }));
 }
@@ -175,9 +175,13 @@ function collectTextFiles(rootPath) {
   return files.sort();
 }
 
-function assertGeneratedOutputHasNoDependencySurface(contract, localDocument, appbaseDocument) {
+function assertGeneratedOutputHasNoDependencySurface(contract, localDocument, dependencyDocument) {
   const familyRoot = path.join(sdksRoot, contract.sdkFamily);
-  const forbiddenRoutes = fullyRemovedDependencyRoutePatterns(contract, localDocument, appbaseDocument);
+  const forbiddenRoutes = fullyRemovedDependencyRoutePatterns(
+    contract,
+    localDocument,
+    dependencyDocument,
+  );
   const violations = [];
   for (const languageRoot of readdirSync(familyRoot, { withFileTypes: true })) {
     if (!languageRoot.isDirectory() || !languageRoot.name.startsWith(`${contract.sdkFamily}-`)) {
@@ -197,7 +201,7 @@ function assertGeneratedOutputHasNoDependencySurface(contract, localDocument, ap
   assert.deepEqual(
     violations,
     [],
-    `${contract.label} generated output must not retain fully removed appbase-owned transport routes.`,
+    `${contract.label} generated output must not retain dependency-owned transport routes.`,
   );
 }
 
@@ -241,14 +245,14 @@ for (const contract of dependencyContracts) {
   const familyRoot = path.join(sdksRoot, contract.sdkFamily);
   const authority = readJson(path.join(familyRoot, 'openapi', `${contract.sdkFamily}.openapi.json`));
   const sdkgen = readJson(path.join(familyRoot, 'openapi', `${contract.sdkFamily}.sdkgen.json`));
-  const appbaseAuthority = readJson(contract.appbaseAuthority);
+  const dependencyAuthority = readJson(contract.dependencyAuthority);
 
-  assertNoOperationOverlap(contract, authority, appbaseAuthority);
-  assertNoOperationOverlap(contract, sdkgen, appbaseAuthority);
+  assertNoOperationOverlap(contract, authority, dependencyAuthority);
+  assertNoOperationOverlap(contract, sdkgen, dependencyAuthority);
   assertNoDependencyDomainOperations(contract, authority);
   assertNoDependencyDomainOperations(contract, sdkgen);
   assertDependencyMetadata(contract);
-  assertGeneratedOutputHasNoDependencySurface(contract, authority, appbaseAuthority);
+  assertGeneratedOutputHasNoDependencySurface(contract, authority, dependencyAuthority);
 }
 
 console.log('claw-router SDK dependency boundary contract passed');

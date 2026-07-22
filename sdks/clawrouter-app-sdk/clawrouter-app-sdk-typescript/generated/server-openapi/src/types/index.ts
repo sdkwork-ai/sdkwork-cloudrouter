@@ -1,5 +1,14 @@
 export * from './common';
 
+export type { DashboardAnnouncement } from './dashboard-announcement';
+export type { DashboardChartPoint } from './dashboard-chart-point';
+export type { DashboardConfigurationDomain } from './dashboard-configuration-domain';
+export type { DashboardOverviewResponse } from './dashboard-overview-response';
+
+export type { DashboardOverviewSummary } from './dashboard-overview-summary';
+export type { DashboardSparklinePoint } from './dashboard-sparkline-point';
+export type { DashboardTopModel } from './dashboard-top-model';
+
 export type { FieldError } from './field-error';
 
 export type { JsonNull } from './json-null';

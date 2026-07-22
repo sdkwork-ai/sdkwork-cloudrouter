@@ -245,6 +245,7 @@ export function ConsoleLayout({
       <div className="flex min-h-0 w-full max-w-none flex-1 overflow-hidden pt-16">
         {/* Sidebar */}
         <div
+          data-console-sidebar
           style={{ width: `${currentWidth}px` }}
           className={`shrink-0 bg-white dark:bg-[#1e1e1e] border-r border-slate-200 dark:border-white/5 flex flex-col relative z-20 group ${!isResizing && 'transition-all duration-300'}`}
         >
@@ -303,8 +304,14 @@ export function ConsoleLayout({
         </div>
 
         {/* Main Content Pane */}
-        <div className="custom-scrollbar flex h-full min-h-0 w-full max-w-none min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-[#121212]">
-          <main className="claw-router-console-commerce-surface min-w-0 w-full max-w-none flex-1">
+        <div
+          className="custom-scrollbar flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-slate-50 p-3 dark:bg-[#121212] sm:p-4 lg:p-5"
+          data-console-content
+        >
+          <main
+            className="claw-router-console-commerce-surface h-full min-h-0 min-w-0 w-full max-w-none flex-1"
+            data-console-content-main
+          >
             <Outlet context={{ isDark, toggleTheme, theme, setTheme, themeColor, setThemeColor }} />
           </main>
         </div>

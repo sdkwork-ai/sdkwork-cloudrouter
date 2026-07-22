@@ -63,7 +63,7 @@ export function MessagesView() {
 
   if (loading) {
     return (
-      <div className="w-full h-[calc(100vh-64px)] mx-auto overflow-hidden flex flex-col bg-slate-50 dark:bg-[#121212]">
+      <div className="mx-auto flex h-full w-full flex-col overflow-hidden bg-slate-50 dark:bg-[#121212]">
         <BusinessStatePanel kind="loading" title={t('console.messages.states.loading', 'Loading messages...')} />
       </div>
     );
@@ -71,14 +71,14 @@ export function MessagesView() {
 
   if (loadError) {
     return (
-      <div className="w-full h-[calc(100vh-64px)] mx-auto overflow-hidden flex flex-col bg-slate-50 dark:bg-[#121212]">
+      <div className="mx-auto flex h-full w-full flex-col overflow-hidden bg-slate-50 dark:bg-[#121212]">
         <BusinessStatePanel kind="error" title={loadError} onRetry={() => void loadMessages()} retryLabel={t('commons.actions.retry', 'Retry')} />
       </div>
     );
   }
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] mx-auto overflow-hidden flex flex-col animate-in fade-in duration-500 bg-slate-50 dark:bg-[#121212]">
+    <div className="mx-auto flex h-full w-full flex-col overflow-hidden bg-slate-50 animate-in fade-in duration-500 dark:bg-[#121212]">
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row gap-[5px]">
         <aside className="md:w-80 shrink-0 overflow-y-auto custom-scrollbar rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1e1e1e]">
           {messages.length === 0 ? (

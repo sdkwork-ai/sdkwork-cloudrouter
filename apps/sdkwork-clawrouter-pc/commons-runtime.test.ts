@@ -419,15 +419,15 @@ test("portal index.css registers tailwind sources for all external workspace UI 
 
 test("portal i18n consumes documents catalogs from sdkwork-documents", () => {
   const resourcesSource = readPortalSource("./packages/sdkwork-clawrouter-pc-i18n/src/resources/index.ts");
-  const i18nSource = readPortalSource("./packages/sdkwork-clawrouter-pc-i18n/src/index.ts");
+  const mainSource = readPortalSource("./src/main.tsx");
 
   assert.match(resourcesSource, /from '@sdkwork\/documents-pc-i18n'/);
   assert.match(resourcesSource, /publicDocsMessages/);
   assert.match(resourcesSource, /publicApiReferenceMessages/);
   assert.match(resourcesSource, /publicSdkReferenceMessages/);
   assert.doesNotMatch(resourcesSource, /\.\/public\/docs/);
-  assert.match(i18nSource, /platformName: "Claw Router"/);
-  assert.match(i18nSource, /defaultVariables:/);
+  assert.match(mainSource, /platformName: 'Claw Router'/);
+  assert.match(mainSource, /defaultVariables=/);
 });
 
 test("sdk clients use a static IAM runtime reset dependency so Vite can chunk the portal deterministically", () => {

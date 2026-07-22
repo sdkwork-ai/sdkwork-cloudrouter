@@ -503,6 +503,33 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             self.assertNotIn("requestId", problem_detail["properties"])
             self.assertIn("errors", problem_detail["properties"])
 
+    def test_emits_idempotency_and_rate_limit_governance_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = self.write_manifest(root)
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            operation = next(
+                item
+                for item in payload["operations"]
+                if item.get("operation_id") == "apiKeys.create"
+            )
+            operation["rate_limit_tier"] = "bulk"
+            manifest.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            app_spec = ClawRouterOpenApiGenerator(root=root).generate("app")
+            generated = app_spec["paths"]["/app/v3/api/iam/api_keys"]["post"]
+            idempotency = next(
+                parameter
+                for parameter in generated["parameters"]
+                if parameter.get("name") == "Idempotency-Key"
+            )
+
+            self.assertEqual("header", idempotency["in"])
+            self.assertTrue(idempotency["required"])
+            self.assertEqual(128, idempotency["schema"]["maxLength"])
+            self.assertTrue(generated["x-sdkwork-idempotent"])
+            self.assertEqual("bulk", generated["x-sdkwork-rate-limit-tier"])
+
     def test_emits_path_parameters_request_body_and_query_marker(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

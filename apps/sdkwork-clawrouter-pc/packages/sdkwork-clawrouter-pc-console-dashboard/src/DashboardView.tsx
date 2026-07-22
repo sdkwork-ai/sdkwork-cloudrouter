@@ -229,8 +229,8 @@ export function DashboardView() {
   const maxModelRequests = snapshot.topModels[0]?.requests ?? 0;
 
   return (
-    <div className="min-h-[calc(100vh-64px)] w-full space-y-2 bg-slate-50 text-slate-800 dark:bg-[#121212] dark:text-slate-100">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="min-h-full w-full space-y-2 bg-slate-50 text-slate-800 dark:bg-[#121212] dark:text-slate-100">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           icon={<Wallet className="h-4 w-4 text-blue-500" />}
           title={t("console.dashboard.dashboardview.text.uvto1d", "可用额度")}

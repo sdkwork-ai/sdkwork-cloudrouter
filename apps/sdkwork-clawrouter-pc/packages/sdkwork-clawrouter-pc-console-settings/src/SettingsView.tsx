@@ -165,12 +165,12 @@ export function SettingsView() {
   ] as const;
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] mx-auto overflow-hidden flex flex-col animate-in fade-in duration-500 bg-slate-50 dark:bg-[#121212]">
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row gap-6">
+    <div className="mx-auto flex h-full w-full flex-col overflow-hidden bg-slate-50 animate-in fade-in duration-500 dark:bg-[#121212]">
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden lg:flex-row">
 
         {/* Left Nav */}
-        <div className="w-full md:w-64 shrink-0 md:min-h-0">
-           <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible custom-scrollbar pb-2 md:pb-0">
+        <div className="w-full shrink-0 lg:min-h-0 lg:w-64">
+           <nav className="custom-scrollbar flex flex-row gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible lg:flex lg:flex-col lg:pb-0" data-console-settings-tabs>
              {tabs.map(tab => {
                const Icon = tab.icon;
                const isActive = activeTab === tab.id;
@@ -178,7 +178,7 @@ export function SettingsView() {
                  <button
                    key={tab.id}
                    onClick={() => setActiveTab(tab.id)}
-                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                    className={`flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all ${
                      isActive
                      ? 'bg-lobster-50 dark:bg-lobster-500/10 text-lobster-600 dark:text-lobster-400 border border-lobster-200 dark:border-lobster-500/20'
                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent'
@@ -193,7 +193,7 @@ export function SettingsView() {
         </div>
 
         {/* Right Content */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm" data-console-settings-content>
           <AnimatePresence mode="wait">
             {loading ? (
               <BusinessStatePanel

@@ -58,14 +58,14 @@ fn assemble_api_router_with_in_process_upstreams(
         open: OpenApiRouters {
             agent: sdkwork_routes_agent_open_api::gateway_mount(open_runtime.clone()),
             audio: sdkwork_routes_audio_open_api::gateway_mount(open_runtime.clone()),
-            drive: sdkwork_routes_drive_open_api::gateway_mount(open_runtime.clone()),
+            drive: sdkwork_routes_clawrouter_drive_open_api::gateway_mount(open_runtime.clone()),
             iaas: sdkwork_routes_iaas_open_api::gateway_mount(open_runtime.clone()),
             image: sdkwork_routes_image_open_api::gateway_mount(open_runtime.clone()),
-            knowledgebase: sdkwork_routes_knowledgebase_open_api::gateway_mount(
+            knowledgebase: sdkwork_routes_clawrouter_knowledgebase_open_api::gateway_mount(
                 open_runtime.clone(),
             ),
-            llm: sdkwork_routes_llm_open_api::gateway_mount(open_runtime.clone()),
-            memory: sdkwork_routes_memory_open_api::gateway_mount(open_runtime.clone()),
+            llm: sdkwork_routes_clawrouter_llm_open_api::gateway_mount(open_runtime.clone()),
+            memory: sdkwork_routes_clawrouter_memory_open_api::gateway_mount(open_runtime.clone()),
             paas: sdkwork_routes_paas_open_api::gateway_mount(open_runtime.clone()),
             payment: sdkwork_routes_payment_open_api::gateway_mount(open_runtime.clone()),
             video: sdkwork_routes_video_open_api::gateway_mount(open_runtime),

@@ -23,7 +23,7 @@ frontend_operations:
 - route: /console/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
   operation: fetchDashboardOverview
-  operation_id: ai.dashboard.overview.get
+  operation_id: dashboard.overview.retrieve
   kind: read
   api_surface: app
   api_method: GET
@@ -32,12 +32,125 @@ frontend_operations:
   read_sources:
   - ai_usage
   - ai_request_trace
+  - ai_model_rank_snapshot
+  - ops_notification_message
   - ops_metric_snapshot
   - ops_gateway_instance
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: DashboardOverviewResponse
+    required: [summary, requestSparkline, multimodalSparkline, performanceSparkline, chartData, topModels, announcements, warnings]
+    properties:
+      summary:
+        type: object
+        additionalProperties: false
+        name: DashboardOverviewSummary
+        required: [availableCredits, usedCredits, requestCount, totalUsedCredits, totalRequestCount, errorCount, imageRequests, videoRequests, audioRequests, musicRequests, rpm, tpm]
+        properties:
+          availableCredits: { type: number }
+          usedCredits: { type: number }
+          requestCount: { type: integer, format: int64 }
+          totalUsedCredits: { type: number }
+          totalRequestCount: { type: integer, format: int64 }
+          errorCount: { type: integer, format: int64 }
+          imageRequests: { type: integer, format: int64 }
+          videoRequests: { type: integer, format: int64 }
+          audioRequests: { type: integer, format: int64 }
+          musicRequests: { type: integer, format: int64 }
+          rpm: { type: number }
+          tpm: { type: number }
+      requestSparkline:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardSparklinePoint
+          required: [value]
+          properties:
+            value: { type: number }
+      multimodalSparkline:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardSparklinePoint
+          required: [value]
+          properties:
+            value: { type: number }
+      performanceSparkline:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardSparklinePoint
+          required: [value]
+          properties:
+            value: { type: number }
+      chartData:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardChartPoint
+          required: [time, llm (Text), image (Midjourney/DALL-E), video (Runway/Sora), audio (Whisper), music (Suno)]
+          properties:
+            time: { type: string }
+            llm (Text): { type: number }
+            image (Midjourney/DALL-E): { type: number }
+            video (Runway/Sora): { type: number }
+            audio (Whisper): { type: number }
+            music (Suno): { type: number }
+      topModels:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardTopModel
+          required: [rank, name, supplier, modality, requests, cost, trend, isUp]
+          properties:
+            rank: { type: integer, format: int64 }
+            name: { type: string }
+            supplier: { type: string }
+            modality: { type: string, enum: [text, image, video, audio, music, unknown] }
+            requests: { type: integer, format: int64 }
+            cost: { type: number }
+            trend: { type: string }
+            isUp: { type: boolean }
+      announcements:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardAnnouncement
+          required: [id, text, time, type]
+          properties:
+            id: { type: integer, format: int64 }
+            text: { type: string }
+            time: { type: string }
+            type: { type: string, enum: [success, info, warning, error, unknown] }
+      configurationDomains:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: DashboardConfigurationDomain
+          required: [id, name, domain, ip, status, remark]
+          properties:
+            id: { type: string }
+            name: { type: string }
+            domain: { type: string }
+            ip: { type: string }
+            status: { type: string, enum: [online, warning, offline, unknown] }
+            remark: { type: string }
+      warnings:
+        type: array
+        items: { type: string }
+  query_parameters:
+  - name: time_range
+    schema: { type: string, enum: [hourly, daily, monthly, yearly] }
+  - name: start_time
+    schema: { type: string, maxLength: 64 }
+  - name: end_time
+    schema: { type: string, maxLength: 64 }
 - route: /console/gateway
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts
   operation: fetchTraces
@@ -64,11 +177,109 @@ frontend_operations:
   api_path: /app/v3/api/ai/model_rankings
   sdk_domain: ai
   read_sources:
-  - ops_audit_log
+  - ai_model_rank_snapshot
+  - ai_model
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelRankingsPage
+    required: [source, items, history, pageInfo]
+    properties:
+      source:
+        type: object
+        additionalProperties: false
+        name: ModelRankingsSource
+        required: [sourceLabel, sourceDescription, observedAt, snapshotDate, snapshotPeriod, windowStart, windowEnd, generatedAt, refreshIntervalSeconds, nextRefreshAt, cacheMaxAgeSeconds, rankScope, sourceTables]
+        properties:
+          sourceLabel: { type: string }
+          sourceDescription: { type: string }
+          observedAt: { type: string }
+          snapshotDate: { type: string }
+          snapshotPeriod: { type: string, enum: [hourly, daily, weekly, monthly] }
+          windowStart: { type: string }
+          windowEnd: { type: string }
+          generatedAt: { type: string }
+          refreshIntervalSeconds: { type: integer, minimum: 1 }
+          nextRefreshAt: { type: string }
+          cacheMaxAgeSeconds: { type: integer, minimum: 0 }
+          rankScope: { type: string }
+          sourceTables: { type: array, items: { type: string } }
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: ModelRankingItem
+          required: [id, rank, prevRank, name, vendor, vendorCode, modality, baseVolume, costIndicator, latency, isNew, color, strengths, requests, tokens, cost, currency]
+          properties:
+            id: { type: string }
+            rank: { type: integer, minimum: 1 }
+            prevRank: { type: integer, minimum: 0 }
+            name: { type: string }
+            vendor: { type: string }
+            vendorCode: { type: string }
+            modality: { type: string }
+            baseVolume: { type: integer, minimum: 0 }
+            costIndicator: { type: integer, minimum: 0 }
+            latency: { type: integer, minimum: 0 }
+            contextSize: { type: string }
+            isNew: { type: boolean }
+            color: { type: string }
+            winRate: { type: number }
+            pricing: { type: string }
+            license: { type: string }
+            strengths: { type: array, items: { type: string } }
+            requests: { type: integer, minimum: 0 }
+            tokens: { type: integer, minimum: 0 }
+            cost: { type: number, minimum: 0 }
+            currency: { type: string }
+            trendScore: { type: number }
+      history:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: ModelRankingHistoryPoint
+          required: [date, index, entries]
+          properties:
+            date: { type: string }
+            index: { type: integer, minimum: 0 }
+            entries:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                name: ModelRankingHistoryEntry
+                required: [model, catalogKey, rank, volume, color]
+                properties:
+                  model: { type: string }
+                  catalogKey: { type: string }
+                  rank: { type: integer, minimum: 1 }
+                  volume: { type: integer, minimum: 0 }
+                  color: { type: string }
+      pageInfo:
+        type: object
+        additionalProperties: false
+        name: PageInfo
+        required: [mode, page, pageSize, totalItems, totalPages, hasMore]
+        properties:
+          mode: { type: string, enum: [offset] }
+          page: { type: integer, minimum: 1 }
+          pageSize: { type: integer, minimum: 1, maximum: 200 }
+          totalItems: { type: string, pattern: '^[0-9]+$' }
+          totalPages: { type: integer, minimum: 0 }
+          hasMore: { type: boolean }
+  query_parameters:
+  - name: rank_scope
+    schema: { type: string, maxLength: 64 }
+  - name: vendor_code
+    schema: { type: string, maxLength: 64 }
+  - name: modality
+    schema: { type: string, maxLength: 32 }
+  - name: q
+    schema: { type: string, maxLength: 200 }
+  - name: page
+    schema: { type: integer, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
 - route: /rankings
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
   operation: fetchModelVendors
@@ -1839,11 +2050,109 @@ frontend_operations:
   api_path: /backend/v3/api/ai/model_rankings
   sdk_domain: ai
   read_sources:
-  - ai_pricing_import_snapshot
+  - ai_model_rank_snapshot
+  - ai_model
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelRankingsPage
+    required: [source, items, history, pageInfo]
+    properties:
+      source:
+        type: object
+        additionalProperties: false
+        name: ModelRankingsSource
+        required: [sourceLabel, sourceDescription, observedAt, snapshotDate, snapshotPeriod, windowStart, windowEnd, generatedAt, refreshIntervalSeconds, nextRefreshAt, cacheMaxAgeSeconds, rankScope, sourceTables]
+        properties:
+          sourceLabel: { type: string }
+          sourceDescription: { type: string }
+          observedAt: { type: string }
+          snapshotDate: { type: string }
+          snapshotPeriod: { type: string, enum: [hourly, daily, weekly, monthly] }
+          windowStart: { type: string }
+          windowEnd: { type: string }
+          generatedAt: { type: string }
+          refreshIntervalSeconds: { type: integer, minimum: 1 }
+          nextRefreshAt: { type: string }
+          cacheMaxAgeSeconds: { type: integer, minimum: 0 }
+          rankScope: { type: string }
+          sourceTables: { type: array, items: { type: string } }
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: ModelRankingItem
+          required: [id, rank, prevRank, name, vendor, vendorCode, modality, baseVolume, costIndicator, latency, isNew, color, strengths, requests, tokens, cost, currency]
+          properties:
+            id: { type: string }
+            rank: { type: integer, minimum: 1 }
+            prevRank: { type: integer, minimum: 0 }
+            name: { type: string }
+            vendor: { type: string }
+            vendorCode: { type: string }
+            modality: { type: string }
+            baseVolume: { type: integer, minimum: 0 }
+            costIndicator: { type: integer, minimum: 0 }
+            latency: { type: integer, minimum: 0 }
+            contextSize: { type: string }
+            isNew: { type: boolean }
+            color: { type: string }
+            winRate: { type: number }
+            pricing: { type: string }
+            license: { type: string }
+            strengths: { type: array, items: { type: string } }
+            requests: { type: integer, minimum: 0 }
+            tokens: { type: integer, minimum: 0 }
+            cost: { type: number, minimum: 0 }
+            currency: { type: string }
+            trendScore: { type: number }
+      history:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: ModelRankingHistoryPoint
+          required: [date, index, entries]
+          properties:
+            date: { type: string }
+            index: { type: integer, minimum: 0 }
+            entries:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                name: ModelRankingHistoryEntry
+                required: [model, catalogKey, rank, volume, color]
+                properties:
+                  model: { type: string }
+                  catalogKey: { type: string }
+                  rank: { type: integer, minimum: 1 }
+                  volume: { type: integer, minimum: 0 }
+                  color: { type: string }
+      pageInfo:
+        type: object
+        additionalProperties: false
+        name: PageInfo
+        required: [mode, page, pageSize, totalItems, totalPages, hasMore]
+        properties:
+          mode: { type: string, enum: [offset] }
+          page: { type: integer, minimum: 1 }
+          pageSize: { type: integer, minimum: 1, maximum: 200 }
+          totalItems: { type: string, pattern: '^[0-9]+$' }
+          totalPages: { type: integer, minimum: 0 }
+          hasMore: { type: boolean }
+  query_parameters:
+  - name: rank_scope
+    schema: { type: string, maxLength: 64 }
+  - name: vendor_code
+    schema: { type: string, maxLength: 64 }
+  - name: modality
+    schema: { type: string, maxLength: 32 }
+  - name: q
+    schema: { type: string, maxLength: 200 }
+  - name: page
+    schema: { type: integer, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchModelRankingRefreshJobs
@@ -1855,10 +2164,57 @@ frontend_operations:
   sdk_domain: ai
   read_sources:
   - ops_job_execution
+  - ai_model_rank_snapshot
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelRankingRefreshJobHistoryPage
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: ModelRankingRefreshJobItem
+          required: [id, jobName, status, tenantId, organizationId, rankScope, snapshotDate, snapshotPeriod, windowStart, windowEnd, startedAt, endedAt, durationMs, generatedCount, sourceCount, successCount, failureCount, nextRefreshAt]
+          properties:
+            id: { type: string }
+            jobName: { type: string }
+            status: { type: string, enum: [succeeded, failed, skipped, empty, running] }
+            tenantId: { type: integer, format: int64 }
+            organizationId: { type: integer, format: int64 }
+            rankScope: { type: string }
+            snapshotDate: { type: string }
+            snapshotPeriod: { type: string, enum: [hourly, daily, weekly, monthly] }
+            windowStart: { type: string }
+            windowEnd: { type: string }
+            startedAt: { type: string }
+            endedAt: { type: string }
+            durationMs: { type: integer, minimum: 0 }
+            generatedCount: { type: integer, minimum: 0 }
+            sourceCount: { type: integer, minimum: 0 }
+            successCount: { type: integer, minimum: 0 }
+            failureCount: { type: integer, minimum: 0 }
+            nextRefreshAt: { type: string }
+            failureReason: { type: string }
+      pageInfo:
+        type: object
+        additionalProperties: false
+        name: PageInfo
+        required: [mode, page, pageSize, totalItems, totalPages, hasMore]
+        properties:
+          mode: { type: string, enum: [offset] }
+          page: { type: integer, minimum: 1 }
+          pageSize: { type: integer, minimum: 1, maximum: 200 }
+          totalItems: { type: string, pattern: '^[0-9]+$' }
+          totalPages: { type: integer, minimum: 0 }
+          hasMore: { type: boolean }
+  query_parameters:
+  - name: rank_scope
+    schema: { type: string, maxLength: 64 }
+  - name: page
+    schema: { type: integer, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: triggerModelRankingRefresh
@@ -1868,29 +2224,102 @@ frontend_operations:
   api_method: POST
   api_path: /backend/v3/api/ai/model_rankings/refresh
   sdk_domain: ai
+  idempotency_required: true
+  rate_limit_tier: bulk
   read_sources:
   - ai_usage
+  - ai_model
+  request_schema:
+    name: ModelRankingRefreshTriggerRequest
+    properties:
+      rankScope: { type: string, maxLength: 64 }
+      snapshotPeriod: { type: string, enum: [hourly, daily, weekly, monthly] }
+      pageSize: { type: integer, minimum: 1, maximum: 1000 }
+      lookbackDays: { type: integer, minimum: 1, maximum: 366 }
+      refreshIntervalSeconds: { type: integer, minimum: 60, maximum: 86400 }
+      cacheMaxAgeSeconds: { type: integer, minimum: 1, maximum: 86400 }
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: ModelRankingRefreshTriggerResponse
+    required: [triggered, status, tenantId, organizationId, rankScope, snapshotDate, snapshotPeriod, windowStart, windowEnd, generatedCount, sourceCount, refreshIntervalSeconds, cacheMaxAgeSeconds, nextRefreshAt]
+    properties:
+      triggered: { type: boolean }
+      status: { type: string, enum: [succeeded, failed, skipped, empty] }
+      tenantId: { type: string, pattern: '^[0-9]+$' }
+      organizationId: { type: string, pattern: '^[0-9]+$' }
+      rankScope: { type: string }
+      snapshotDate: { type: string }
+      snapshotPeriod: { type: string, enum: [hourly, daily, weekly, monthly] }
+      windowStart: { type: string }
+      windowEnd: { type: string }
+      generatedCount: { type: string, pattern: '^[0-9]+$' }
+      sourceCount: { type: string, pattern: '^[0-9]+$' }
+      refreshIntervalSeconds: { type: string, pattern: '^[0-9]+$' }
+      cacheMaxAgeSeconds: { type: string, pattern: '^[0-9]+$' }
+      nextRefreshAt: { type: string }
+  request_body_required: true
   write_tables:
+  - ai_model_rank_snapshot
   - ops_job_execution
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchModelRankingRefreshStatus
-  operation_id: ai.model.rankings.status.get
+  operation_id: modelRankings.status.retrieve
   kind: read
   api_surface: backend
   api_method: GET
   api_path: /backend/v3/api/ai/model_rankings/status
   sdk_domain: ai
+  summary: Retrieve model ranking refresh status
   read_sources:
   - ops_job_execution
+  - ai_model_rank_snapshot
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ModelRankingRefreshStatus
+    required: [status, tenantId, organizationId, rankScope, snapshotDate, snapshotPeriod, windowStart, windowEnd, generatedAt, refreshIntervalSeconds, nextRefreshAt, cacheMaxAgeSeconds, generatedCount, sourceCount, sourceTables]
+    properties:
+      status: { type: string, enum: [ready, empty] }
+      tenantId: { type: integer, format: int64 }
+      organizationId: { type: integer, format: int64 }
+      rankScope: { type: string }
+      snapshotDate: { type: string }
+      snapshotPeriod: { type: string, enum: [hourly, daily, weekly, monthly] }
+      windowStart: { type: string }
+      windowEnd: { type: string }
+      generatedAt: { type: string }
+      refreshIntervalSeconds: { type: integer, minimum: 1 }
+      nextRefreshAt: { type: string }
+      cacheMaxAgeSeconds: { type: integer, minimum: 0 }
+      generatedCount: { type: integer, minimum: 0 }
+      sourceCount: { type: integer, minimum: 0 }
+      sourceTables: { type: array, items: { type: string } }
+      latestJob:
+        type: object
+        additionalProperties: false
+        name: ModelRankingRefreshJobItem
+        required: [id, jobName, status, tenantId, organizationId, rankScope, snapshotDate, snapshotPeriod, windowStart, windowEnd, startedAt, endedAt, durationMs, generatedCount, sourceCount, successCount, failureCount, nextRefreshAt]
+        properties:
+          id: { type: string }
+          jobName: { type: string }
+          status: { type: string, enum: [succeeded, failed, skipped, empty, running] }
+          tenantId: { type: integer, format: int64 }
+          organizationId: { type: integer, format: int64 }
+          rankScope: { type: string }
+          snapshotDate: { type: string }
+          snapshotPeriod: { type: string, enum: [hourly, daily, weekly, monthly] }
+          windowStart: { type: string }
+          windowEnd: { type: string }
+          startedAt: { type: string }
+          endedAt: { type: string }
+          durationMs: { type: integer, minimum: 0 }
+          generatedCount: { type: integer, minimum: 0 }
+          sourceCount: { type: integer, minimum: 0 }
+          successCount: { type: integer, minimum: 0 }
+          failureCount: { type: integer, minimum: 0 }
+          nextRefreshAt: { type: string }
+          failureReason: { type: string }
+  query_parameters:
+  - name: rank_scope
+    schema: { type: string, maxLength: 64 }
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchVendors
@@ -5630,7 +6059,8 @@ frontend_models:
   - vendorCode
   - modality
   - searchQuery
-  - limit
+  - page
+  - pageSize
   data_sources:
   - ai_model_rank_snapshot
 - route: /rankings
@@ -5730,6 +6160,8 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/model
   required_tables:
+  - ai_model
+  - ai_model_rank_snapshot
   - ai_pricing_import_snapshot
   - ai_pricing_plan
   - ai_pricing_rule
@@ -5895,10 +6327,12 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /console/dashboard
   required_tables:
+  - ai_model_rank_snapshot
   - ai_request_trace
   - ai_usage
   - ops_gateway_instance
   - ops_metric_snapshot
+  - ops_notification_message
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /console/gateway
@@ -6005,6 +6439,8 @@ routes:
   dependency_sdk_family: sdkwork-documents-app-sdk
 - route: /rankings
   required_tables:
+  - ai_model
+  - ai_model_rank_snapshot
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk

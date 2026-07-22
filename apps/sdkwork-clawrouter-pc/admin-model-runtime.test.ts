@@ -1306,11 +1306,15 @@ test("admin model service triggers model ranking refresh through generated backe
       assert.deepEqual(JSON.parse(captured[0].body), {
         rankScope: "commercial-default",
         snapshotPeriod: "daily",
-        limit: "200",
+        pageSize: "200",
         lookbackDays: "7",
         refreshIntervalSeconds: "3600",
         cacheMaxAgeSeconds: "60",
       });
+      assert.match(
+        captured[0].headers["idempotency-key"] ?? "",
+        /^model-ranking-refresh-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
       assert.equal(captured[0].headers["x-request-id"], undefined);
     },
   );

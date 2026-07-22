@@ -390,19 +390,210 @@
       "operation": "fetchModelRankingRefreshJobs",
       "operation_id": "modelRankings.jobs.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "rank_scope",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
-        "ops_job_execution"
+        "ops_job_execution",
+        "ai_model_rank_snapshot"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelRankingRefreshJobHistoryPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelRankingRefreshJobHistoryPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "ModelRankingRefreshJobItem",
+                "properties": {
+                  "durationMs": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "endedAt": {
+                    "type": "string"
+                  },
+                  "failureCount": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "failureReason": {
+                    "type": "string"
+                  },
+                  "generatedCount": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "jobName": {
+                    "type": "string"
+                  },
+                  "nextRefreshAt": {
+                    "type": "string"
+                  },
+                  "organizationId": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "rankScope": {
+                    "type": "string"
+                  },
+                  "snapshotDate": {
+                    "type": "string"
+                  },
+                  "snapshotPeriod": {
+                    "enum": [
+                      "hourly",
+                      "daily",
+                      "weekly",
+                      "monthly"
+                    ],
+                    "type": "string"
+                  },
+                  "sourceCount": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "startedAt": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "succeeded",
+                      "failed",
+                      "skipped",
+                      "empty",
+                      "running"
+                    ],
+                    "type": "string"
+                  },
+                  "successCount": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "tenantId": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "windowEnd": {
+                    "type": "string"
+                  },
+                  "windowStart": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "jobName",
+                  "status",
+                  "tenantId",
+                  "organizationId",
+                  "rankScope",
+                  "snapshotDate",
+                  "snapshotPeriod",
+                  "windowStart",
+                  "windowEnd",
+                  "startedAt",
+                  "endedAt",
+                  "durationMs",
+                  "generatedCount",
+                  "sourceCount",
+                  "successCount",
+                  "failureCount",
+                  "nextRefreshAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "additionalProperties": false,
+              "name": "PageInfo",
+              "properties": {
+                "hasMore": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "enum": [
+                    "offset"
+                  ],
+                  "type": "string"
+                },
+                "page": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "pageSize": {
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "totalItems": {
+                  "pattern": "^[0-9]+$",
+                  "type": "string"
+                },
+                "totalPages": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "mode",
+                "page",
+                "pageSize",
+                "totalItems",
+                "totalPages",
+                "hasMore"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -427,21 +618,230 @@
       "module": "sdkwork-models-pc-admin-catalog",
       "openapi_exposed": true,
       "operation": "fetchModelRankingRefreshStatus",
-      "operation_id": "modelRankings.status.list",
+      "operation_id": "modelRankings.status.retrieve",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "rank_scope",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
-        "ops_job_execution"
+        "ops_job_execution",
+        "ai_model_rank_snapshot"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelRankingRefreshStatus",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelRankingRefreshStatus",
+          "properties": {
+            "cacheMaxAgeSeconds": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "generatedAt": {
+              "type": "string"
+            },
+            "generatedCount": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "latestJob": {
+              "additionalProperties": false,
+              "name": "ModelRankingRefreshJobItem",
+              "properties": {
+                "durationMs": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "endedAt": {
+                  "type": "string"
+                },
+                "failureCount": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "failureReason": {
+                  "type": "string"
+                },
+                "generatedCount": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "jobName": {
+                  "type": "string"
+                },
+                "nextRefreshAt": {
+                  "type": "string"
+                },
+                "organizationId": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "rankScope": {
+                  "type": "string"
+                },
+                "snapshotDate": {
+                  "type": "string"
+                },
+                "snapshotPeriod": {
+                  "enum": [
+                    "hourly",
+                    "daily",
+                    "weekly",
+                    "monthly"
+                  ],
+                  "type": "string"
+                },
+                "sourceCount": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "startedAt": {
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "succeeded",
+                    "failed",
+                    "skipped",
+                    "empty",
+                    "running"
+                  ],
+                  "type": "string"
+                },
+                "successCount": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "tenantId": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "windowEnd": {
+                  "type": "string"
+                },
+                "windowStart": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "jobName",
+                "status",
+                "tenantId",
+                "organizationId",
+                "rankScope",
+                "snapshotDate",
+                "snapshotPeriod",
+                "windowStart",
+                "windowEnd",
+                "startedAt",
+                "endedAt",
+                "durationMs",
+                "generatedCount",
+                "sourceCount",
+                "successCount",
+                "failureCount",
+                "nextRefreshAt"
+              ],
+              "type": "object"
+            },
+            "nextRefreshAt": {
+              "type": "string"
+            },
+            "organizationId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "rankScope": {
+              "type": "string"
+            },
+            "refreshIntervalSeconds": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "snapshotDate": {
+              "type": "string"
+            },
+            "snapshotPeriod": {
+              "enum": [
+                "hourly",
+                "daily",
+                "weekly",
+                "monthly"
+              ],
+              "type": "string"
+            },
+            "sourceCount": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "sourceTables": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "status": {
+              "enum": [
+                "ready",
+                "empty"
+              ],
+              "type": "string"
+            },
+            "tenantId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "windowEnd": {
+              "type": "string"
+            },
+            "windowStart": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "tenantId",
+            "organizationId",
+            "rankScope",
+            "snapshotDate",
+            "snapshotPeriod",
+            "windowStart",
+            "windowEnd",
+            "generatedAt",
+            "refreshIntervalSeconds",
+            "nextRefreshAt",
+            "cacheMaxAgeSeconds",
+            "generatedCount",
+            "sourceCount",
+            "sourceTables"
+          ],
           "type": "object"
         }
       },
@@ -452,6 +852,7 @@
       "sdk_domain": "intelligence",
       "sdk_family": "clawrouter-backend-sdk",
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
+      "summary": "Retrieve model ranking refresh status",
       "tag": "ai",
       "write_tables": []
     },
@@ -468,19 +869,360 @@
       "operation": "fetchModelRankings",
       "operation_id": "modelRankings.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "rank_scope",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "modality",
+          "required": false,
+          "schema": {
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_rank_snapshot",
+        "ai_model"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelRankingsPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelRankingsPage",
+          "properties": {
+            "history": {
+              "items": {
+                "additionalProperties": false,
+                "name": "ModelRankingHistoryPoint",
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "entries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "ModelRankingHistoryEntry",
+                      "properties": {
+                        "catalogKey": {
+                          "type": "string"
+                        },
+                        "color": {
+                          "type": "string"
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "rank": {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "volume": {
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "model",
+                        "catalogKey",
+                        "rank",
+                        "volume",
+                        "color"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "index": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "date",
+                  "index",
+                  "entries"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "ModelRankingItem",
+                "properties": {
+                  "baseVolume": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "contextSize": {
+                    "type": "string"
+                  },
+                  "cost": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "costIndicator": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "isNew": {
+                    "type": "boolean"
+                  },
+                  "latency": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "license": {
+                    "type": "string"
+                  },
+                  "modality": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "prevRank": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "pricing": {
+                    "type": "string"
+                  },
+                  "rank": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "requests": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "strengths": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "trendScore": {
+                    "type": "number"
+                  },
+                  "vendor": {
+                    "type": "string"
+                  },
+                  "vendorCode": {
+                    "type": "string"
+                  },
+                  "winRate": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "id",
+                  "rank",
+                  "prevRank",
+                  "name",
+                  "vendor",
+                  "vendorCode",
+                  "modality",
+                  "baseVolume",
+                  "costIndicator",
+                  "latency",
+                  "isNew",
+                  "color",
+                  "strengths",
+                  "requests",
+                  "tokens",
+                  "cost",
+                  "currency"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "additionalProperties": false,
+              "name": "PageInfo",
+              "properties": {
+                "hasMore": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "enum": [
+                    "offset"
+                  ],
+                  "type": "string"
+                },
+                "page": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "pageSize": {
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "totalItems": {
+                  "pattern": "^[0-9]+$",
+                  "type": "string"
+                },
+                "totalPages": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "mode",
+                "page",
+                "pageSize",
+                "totalItems",
+                "totalPages",
+                "hasMore"
+              ],
+              "type": "object"
+            },
+            "source": {
+              "additionalProperties": false,
+              "name": "ModelRankingsSource",
+              "properties": {
+                "cacheMaxAgeSeconds": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generatedAt": {
+                  "type": "string"
+                },
+                "nextRefreshAt": {
+                  "type": "string"
+                },
+                "observedAt": {
+                  "type": "string"
+                },
+                "rankScope": {
+                  "type": "string"
+                },
+                "refreshIntervalSeconds": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "snapshotDate": {
+                  "type": "string"
+                },
+                "snapshotPeriod": {
+                  "enum": [
+                    "hourly",
+                    "daily",
+                    "weekly",
+                    "monthly"
+                  ],
+                  "type": "string"
+                },
+                "sourceDescription": {
+                  "type": "string"
+                },
+                "sourceLabel": {
+                  "type": "string"
+                },
+                "sourceTables": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "windowEnd": {
+                  "type": "string"
+                },
+                "windowStart": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sourceLabel",
+                "sourceDescription",
+                "observedAt",
+                "snapshotDate",
+                "snapshotPeriod",
+                "windowStart",
+                "windowEnd",
+                "generatedAt",
+                "refreshIntervalSeconds",
+                "nextRefreshAt",
+                "cacheMaxAgeSeconds",
+                "rankScope",
+                "sourceTables"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "source",
+            "items",
+            "history",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -701,7 +1443,7 @@
       "api_path": "/backend/v3/api/ai/model_rankings/refresh",
       "api_surface": "backend",
       "file_targets": [],
-      "idempotency_required": false,
+      "idempotency_required": true,
       "key": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#triggerModelRankingRefresh@/admin/model",
       "kind": "action",
       "module": "sdkwork-models-pc-admin-catalog",
@@ -711,17 +1453,139 @@
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
+      "rate_limit_tier": "bulk",
       "read_sources": [
-        "ai_usage"
+        "ai_usage",
+        "ai_model"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "ModelRankingRefreshTriggerRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelRankingRefreshTriggerRequest",
+          "properties": {
+            "cacheMaxAgeSeconds": {
+              "maximum": 86400,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "lookbackDays": {
+              "maximum": 366,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "pageSize": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "rankScope": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "refreshIntervalSeconds": {
+              "maximum": 86400,
+              "minimum": 60,
+              "type": "integer"
+            },
+            "snapshotPeriod": {
+              "enum": [
+                "hourly",
+                "daily",
+                "weekly",
+                "monthly"
+              ],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "ModelRankingRefreshTriggerResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ModelRankingRefreshTriggerResponse",
+          "properties": {
+            "cacheMaxAgeSeconds": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "generatedCount": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "nextRefreshAt": {
+              "type": "string"
+            },
+            "organizationId": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "rankScope": {
+              "type": "string"
+            },
+            "refreshIntervalSeconds": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "snapshotDate": {
+              "type": "string"
+            },
+            "snapshotPeriod": {
+              "enum": [
+                "hourly",
+                "daily",
+                "weekly",
+                "monthly"
+              ],
+              "type": "string"
+            },
+            "sourceCount": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "succeeded",
+                "failed",
+                "skipped",
+                "empty"
+              ],
+              "type": "string"
+            },
+            "tenantId": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "triggered": {
+              "type": "boolean"
+            },
+            "windowEnd": {
+              "type": "string"
+            },
+            "windowStart": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "triggered",
+            "status",
+            "tenantId",
+            "organizationId",
+            "rankScope",
+            "snapshotDate",
+            "snapshotPeriod",
+            "windowStart",
+            "windowEnd",
+            "generatedCount",
+            "sourceCount",
+            "refreshIntervalSeconds",
+            "cacheMaxAgeSeconds",
+            "nextRefreshAt"
+          ],
           "type": "object"
         }
       },
@@ -734,6 +1598,7 @@
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "tag": "ai",
       "write_tables": [
+        "ai_model_rank_snapshot",
         "ops_job_execution"
       ]
     },
@@ -4092,24 +4957,386 @@
       "module": "pc-console-dashboard",
       "openapi_exposed": true,
       "operation": "fetchDashboardOverview",
-      "operation_id": "dashboard.overview.list",
+      "operation_id": "dashboard.overview.retrieve",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "time_range",
+          "required": false,
+          "schema": {
+            "enum": [
+              "hourly",
+              "daily",
+              "monthly",
+              "yearly"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "start_time",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "end_time",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_usage",
         "ai_request_trace",
+        "ai_model_rank_snapshot",
+        "ops_notification_message",
         "ops_metric_snapshot",
         "ops_gateway_instance"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "DashboardOverviewResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "DashboardOverviewResponse",
+          "properties": {
+            "announcements": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DashboardAnnouncement",
+                "properties": {
+                  "id": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "time": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "success",
+                      "info",
+                      "warning",
+                      "error",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "text",
+                  "time",
+                  "type"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "chartData": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DashboardChartPoint",
+                "properties": {
+                  "audio (Whisper)": {
+                    "type": "number"
+                  },
+                  "image (Midjourney/DALL-E)": {
+                    "type": "number"
+                  },
+                  "llm (Text)": {
+                    "type": "number"
+                  },
+                  "music (Suno)": {
+                    "type": "number"
+                  },
+                  "time": {
+                    "type": "string"
+                  },
+                  "video (Runway/Sora)": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "time",
+                  "llm (Text)",
+                  "image (Midjourney/DALL-E)",
+                  "video (Runway/Sora)",
+                  "audio (Whisper)",
+                  "music (Suno)"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "configurationDomains": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DashboardConfigurationDomain",
+                "properties": {
+                  "domain": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "ip": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "remark": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "online",
+                      "warning",
+                      "offline",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "domain",
+                  "ip",
+                  "status",
+                  "remark"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "multimodalSparkline": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DashboardSparklinePoint",
+                "properties": {
+                  "value": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "value"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "performanceSparkline": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DashboardSparklinePoint",
+                "properties": {
+                  "value": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "value"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "requestSparkline": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DashboardSparklinePoint",
+                "properties": {
+                  "value": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "value"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "summary": {
+              "additionalProperties": false,
+              "name": "DashboardOverviewSummary",
+              "properties": {
+                "audioRequests": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "availableCredits": {
+                  "type": "number"
+                },
+                "errorCount": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "imageRequests": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "musicRequests": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "requestCount": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "rpm": {
+                  "type": "number"
+                },
+                "totalRequestCount": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalUsedCredits": {
+                  "type": "number"
+                },
+                "tpm": {
+                  "type": "number"
+                },
+                "usedCredits": {
+                  "type": "number"
+                },
+                "videoRequests": {
+                  "format": "int64",
+                  "pattern": "^-?[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                }
+              },
+              "required": [
+                "availableCredits",
+                "usedCredits",
+                "requestCount",
+                "totalUsedCredits",
+                "totalRequestCount",
+                "errorCount",
+                "imageRequests",
+                "videoRequests",
+                "audioRequests",
+                "musicRequests",
+                "rpm",
+                "tpm"
+              ],
+              "type": "object"
+            },
+            "topModels": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DashboardTopModel",
+                "properties": {
+                  "cost": {
+                    "type": "number"
+                  },
+                  "isUp": {
+                    "type": "boolean"
+                  },
+                  "modality": {
+                    "enum": [
+                      "text",
+                      "image",
+                      "video",
+                      "audio",
+                      "music",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "rank": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "requests": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "supplier": {
+                    "type": "string"
+                  },
+                  "trend": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "rank",
+                  "name",
+                  "supplier",
+                  "modality",
+                  "requests",
+                  "cost",
+                  "trend",
+                  "isUp"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "warnings": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "summary",
+            "requestSparkline",
+            "multimodalSparkline",
+            "performanceSparkline",
+            "chartData",
+            "topModels",
+            "announcements",
+            "warnings"
+          ],
           "type": "object"
         }
       },
@@ -5945,19 +7172,360 @@
       "operation": "fetchModelRankings",
       "operation_id": "modelRankings.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "rank_scope",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "modality",
+          "required": false,
+          "schema": {
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
-        "ops_audit_log"
+        "ai_model_rank_snapshot",
+        "ai_model"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelRankingsPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ModelRankingsPage",
+          "properties": {
+            "history": {
+              "items": {
+                "additionalProperties": false,
+                "name": "ModelRankingHistoryPoint",
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "entries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "ModelRankingHistoryEntry",
+                      "properties": {
+                        "catalogKey": {
+                          "type": "string"
+                        },
+                        "color": {
+                          "type": "string"
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "rank": {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "volume": {
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "model",
+                        "catalogKey",
+                        "rank",
+                        "volume",
+                        "color"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "index": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "date",
+                  "index",
+                  "entries"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "ModelRankingItem",
+                "properties": {
+                  "baseVolume": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "contextSize": {
+                    "type": "string"
+                  },
+                  "cost": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "costIndicator": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "isNew": {
+                    "type": "boolean"
+                  },
+                  "latency": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "license": {
+                    "type": "string"
+                  },
+                  "modality": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "prevRank": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "pricing": {
+                    "type": "string"
+                  },
+                  "rank": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "requests": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "strengths": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "trendScore": {
+                    "type": "number"
+                  },
+                  "vendor": {
+                    "type": "string"
+                  },
+                  "vendorCode": {
+                    "type": "string"
+                  },
+                  "winRate": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "id",
+                  "rank",
+                  "prevRank",
+                  "name",
+                  "vendor",
+                  "vendorCode",
+                  "modality",
+                  "baseVolume",
+                  "costIndicator",
+                  "latency",
+                  "isNew",
+                  "color",
+                  "strengths",
+                  "requests",
+                  "tokens",
+                  "cost",
+                  "currency"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "additionalProperties": false,
+              "name": "PageInfo",
+              "properties": {
+                "hasMore": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "enum": [
+                    "offset"
+                  ],
+                  "type": "string"
+                },
+                "page": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "pageSize": {
+                  "maximum": 200,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "totalItems": {
+                  "pattern": "^[0-9]+$",
+                  "type": "string"
+                },
+                "totalPages": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "mode",
+                "page",
+                "pageSize",
+                "totalItems",
+                "totalPages",
+                "hasMore"
+              ],
+              "type": "object"
+            },
+            "source": {
+              "additionalProperties": false,
+              "name": "ModelRankingsSource",
+              "properties": {
+                "cacheMaxAgeSeconds": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "generatedAt": {
+                  "type": "string"
+                },
+                "nextRefreshAt": {
+                  "type": "string"
+                },
+                "observedAt": {
+                  "type": "string"
+                },
+                "rankScope": {
+                  "type": "string"
+                },
+                "refreshIntervalSeconds": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "snapshotDate": {
+                  "type": "string"
+                },
+                "snapshotPeriod": {
+                  "enum": [
+                    "hourly",
+                    "daily",
+                    "weekly",
+                    "monthly"
+                  ],
+                  "type": "string"
+                },
+                "sourceDescription": {
+                  "type": "string"
+                },
+                "sourceLabel": {
+                  "type": "string"
+                },
+                "sourceTables": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "windowEnd": {
+                  "type": "string"
+                },
+                "windowStart": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sourceLabel",
+                "sourceDescription",
+                "observedAt",
+                "snapshotDate",
+                "snapshotPeriod",
+                "windowStart",
+                "windowEnd",
+                "generatedAt",
+                "refreshIntervalSeconds",
+                "nextRefreshAt",
+                "cacheMaxAgeSeconds",
+                "rankScope",
+                "sourceTables"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "source",
+            "items",
+            "history",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },

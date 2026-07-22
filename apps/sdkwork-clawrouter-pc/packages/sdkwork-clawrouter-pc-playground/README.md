@@ -19,6 +19,8 @@ This README is the SDKWork module entrypoint for `sdkwork-clawrouter-pc-playgrou
 
 Configuration keys, runtime entrypoints, and integration contracts are declared in `specs/component.spec.json`. Shared modules must receive configuration through typed bootstrap or service boundaries rather than reading host-local environment state directly.
 
+`Playground` accepts an optional `overlayTopInset` CSS length. It defaults to `var(--sdkwork-portal-navbar-height, 4rem)` so Agents full-screen previews and dialogs remain below the Claw Router header. Hosts without a fixed header can pass `overlayTopInset="0px"`.
+
 ## SaaS/Private/Local Behavior
 
 This component follows the deployment and runtime rules referenced by its `canonicalSpecs` entries. SaaS, private, and local behavior must stay compatible with the relevant SDKWork specs before implementation changes are made.
@@ -33,7 +35,7 @@ Extension points are limited to public exports, runtime entrypoints, SDK clients
 
 ## Verification
 
-- `pnpm --filter sdkwork-clawrouter-pc-playground typecheck`
+- `pnpm --filter @sdkwork/clawrouter-pc-playground typecheck`
 
 ## Owner And Status
 

@@ -73,6 +73,22 @@
   --sdk-shadow-lg: 0 12px 28px rgb(15 23 42 / 0.12);
 }
 
+.claw-router-console-business-page[data-console-business-page='coupons'] > div > div,
+.claw-router-console-business-page[data-console-business-page='checkout'] > div > .relative,
+.claw-router-console-business-page[data-console-business-page='payment'] > div > .relative {
+  padding: 0;
+}
+
+.claw-router-console-business-page[data-console-business-page='coupons'] [class~='max-w-5xl'] {
+  max-width: none;
+}
+
+.claw-router-console-business-page[data-console-business-page='checkout'] section[style*='gradient'],
+.claw-router-console-business-page[data-console-business-page='payment'] section:first-child
+  > div:first-child[style*='gradient'] {
+  background-color: #18181b !important;
+}
+
 .sdkwork-console-shell [class*='gradient'],
 .sdkwork-admin-shell [class*='gradient'],
 .sdkwork-console-shell [style*='gradient'],

@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "7352618ffce8676b4d6050eedfecce9eaeaf86609745b64d3347ccf9b3e9dc2b"
+      "sha256": "c84bf6c8855f0d3bf157122ad26b1d0f6f5e96f40e608a0cee3f622babfd9ff7"
     },
     {
       "path": "src/api/base.ts",
@@ -64,7 +64,7 @@
     },
     {
       "path": "src/api/integration.ts",
-      "sha256": "3dbd4eed4dde402cfd26a49d3d09c99a2db8ba3dee614107238a29622220995a"
+      "sha256": "4a75523ea886a9c9739d4082ac983e0391d4cdb755ebf3e31da0cdfcf82cbfa7"
     },
     {
       "path": "src/api/paths.ts",
@@ -72,11 +72,11 @@
     },
     {
       "path": "src/api/sites.ts",
-      "sha256": "f1224a27861fda364e4b3c61c74383f3b5d09876e2892dc209f98bdaa945e148"
+      "sha256": "ef92a9905db715c65af492ae1912ef8124db63cb09a9856cd5009d3e6d2ed721"
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "60368b744536c66e5451f7b8cc7959b2b9fa6f47275b647685aae055b7cf4482"
+      "sha256": "c080ba97a363c32c6cb0da33bf778b8db5e93bb736ddbe0a0d2bf592d7a20271"
     },
     {
       "path": "src/auth/index.ts",

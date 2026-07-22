@@ -86,7 +86,7 @@ export function AdminHeader({
   const navigate = useNavigate();
   const displaySiteName = siteBranding.shortName || siteBranding.siteName;
   const logoSource = readMediaResourceUrl(siteBranding.logo);
-  const resolvedLanguage = i18n.resolvedLanguage || 'en';
+  const resolvedLanguage = i18n.resolvedLanguage || 'en-US';
   const themeToggleLabel = isDark
     ? t('navbar.theme.switchToLight', 'Switch to light theme')
     : t('navbar.theme.switchToDark', 'Switch to dark theme');
@@ -283,8 +283,8 @@ export function AdminHeader({
   };
 
   const languages = [
-    { code: 'en', name: t('commons.navbar.language.en', 'English') },
-    { code: 'zh', name: t('admin.header.lang.zh', 'Chinese') },
+    { code: 'en-US', name: t('commons.navbar.language.en', 'English') },
+    { code: 'zh-CN', name: t('admin.header.lang.zh', 'Chinese') },
   ];
 
   return (

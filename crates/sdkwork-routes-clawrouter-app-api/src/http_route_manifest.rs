@@ -401,7 +401,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/ai/dashboard/overview",
         "ai",
-        "dashboard.overview.list",
+        "dashboard.overview.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

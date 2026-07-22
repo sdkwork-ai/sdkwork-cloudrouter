@@ -57,7 +57,7 @@ function ClawRouterMembershipPageContent() {
 
   return (
     <div className="h-full overflow-y-auto bg-zinc-50 text-zinc-950 dark:bg-black dark:text-white">
-      <div className="w-full max-w-none px-4 pb-8 pt-5 sm:px-6 sm:pt-7 lg:px-8">
+      <div className="w-full max-w-none">
         <MembershipOverview
           isLoading={state.isLoading}
           onRefresh={() => void controller.refresh().catch(() => undefined)}

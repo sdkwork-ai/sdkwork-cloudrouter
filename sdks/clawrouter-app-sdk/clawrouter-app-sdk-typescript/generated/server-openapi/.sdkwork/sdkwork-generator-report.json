@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "62e21a440beca7b8328e3f9228d06600d16b187cc2b0b9f0257c64825851fa1b",
+  "changeFingerprint": "9099f0a3b47eb8970c7fdfbc15121ed3f332246643bb5fe6ca59ad013743cdef",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -47,6 +47,13 @@
         "area": "models",
         "paths": [
           "src/types/common.ts",
+          "src/types/dashboard-announcement.ts",
+          "src/types/dashboard-chart-point.ts",
+          "src/types/dashboard-configuration-domain.ts",
+          "src/types/dashboard-overview-response.ts",
+          "src/types/dashboard-overview-summary.ts",
+          "src/types/dashboard-sparkline-point.ts",
+          "src/types/dashboard-top-model.ts",
           "src/types/field-error.ts",
           "src/types/index.ts",
           "src/types/json-null.ts",
@@ -229,10 +236,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 86,
-    "models": 56,
+    "totalFiles": 93,
+    "models": 63,
     "apis": 7,
-    "types": 58
+    "types": 65
   },
   "warnings": [
     {
@@ -295,12 +302,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 44,
+    "writtenFiles": 51,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "62e21a440beca7b8328e3f9228d06600d16b187cc2b0b9f0257c64825851fa1b",
+    "changeFingerprint": "9099f0a3b47eb8970c7fdfbc15121ed3f332246643bb5fe6ca59ad013743cdef",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -329,6 +336,13 @@
         "src/index.ts",
         "src/sdk.ts",
         "src/types/common.ts",
+        "src/types/dashboard-announcement.ts",
+        "src/types/dashboard-chart-point.ts",
+        "src/types/dashboard-configuration-domain.ts",
+        "src/types/dashboard-overview-response.ts",
+        "src/types/dashboard-overview-summary.ts",
+        "src/types/dashboard-sparkline-point.ts",
+        "src/types/dashboard-top-model.ts",
         "src/types/field-error.ts",
         "src/types/index.ts",
         "src/types/json-null.ts",
@@ -390,6 +404,13 @@
           "area": "models",
           "paths": [
             "src/types/common.ts",
+            "src/types/dashboard-announcement.ts",
+            "src/types/dashboard-chart-point.ts",
+            "src/types/dashboard-configuration-domain.ts",
+            "src/types/dashboard-overview-response.ts",
+            "src/types/dashboard-overview-summary.ts",
+            "src/types/dashboard-sparkline-point.ts",
+            "src/types/dashboard-top-model.ts",
             "src/types/field-error.ts",
             "src/types/index.ts",
             "src/types/json-null.ts",

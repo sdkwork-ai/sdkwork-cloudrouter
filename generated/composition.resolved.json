@@ -1447,7 +1447,8 @@
         "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/specs/component.spec.json",
         "layerRole": "frontend-feature",
         "publicExports": [
-          "."
+          ".",
+          "./i18n"
         ],
         "providedPorts": [
           "clawrouter.playground"
@@ -2406,6 +2407,122 @@
         "dependencyApiSurfaces": []
       },
       {
+        "name": "sdkwork-routes-clawrouter-drive-open-api",
+        "type": "rust-route-crate",
+        "root": "sdkwork-clawrouter/crates/sdkwork-routes-clawrouter-drive-open-api",
+        "domain": "platform",
+        "capability": "clawrouter-drive",
+        "surface": "open-api",
+        "languages": [
+          "rust"
+        ],
+        "source": "crates/sdkwork-routes-clawrouter-drive-open-api/specs/component.spec.json",
+        "layerRole": "backend-route",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "drive-open-api-router",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": "src/manifest.rs",
+        "runtimeEntrypoints": [
+          "src/lib.rs#gateway_mount"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork-routes-clawrouter-knowledgebase-open-api",
+        "type": "rust-route-crate",
+        "root": "sdkwork-clawrouter/crates/sdkwork-routes-clawrouter-knowledgebase-open-api",
+        "domain": "platform",
+        "capability": "clawrouter-knowledgebase",
+        "surface": "open-api",
+        "languages": [
+          "rust"
+        ],
+        "source": "crates/sdkwork-routes-clawrouter-knowledgebase-open-api/specs/component.spec.json",
+        "layerRole": "backend-route",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "knowledgebase-open-api-router",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": "src/manifest.rs",
+        "runtimeEntrypoints": [
+          "src/lib.rs#gateway_mount"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork-routes-clawrouter-llm-open-api",
+        "type": "rust-route-crate",
+        "root": "sdkwork-clawrouter/crates/sdkwork-routes-clawrouter-llm-open-api",
+        "domain": "platform",
+        "capability": "clawrouter-llm",
+        "surface": "open-api",
+        "languages": [
+          "rust"
+        ],
+        "source": "crates/sdkwork-routes-clawrouter-llm-open-api/specs/component.spec.json",
+        "layerRole": "backend-route",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "llm-open-api-router",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": "src/manifest.rs",
+        "runtimeEntrypoints": [
+          "src/lib.rs#gateway_mount"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork-routes-clawrouter-memory-open-api",
+        "type": "rust-route-crate",
+        "root": "sdkwork-clawrouter/crates/sdkwork-routes-clawrouter-memory-open-api",
+        "domain": "platform",
+        "capability": "clawrouter-memory",
+        "surface": "open-api",
+        "languages": [
+          "rust"
+        ],
+        "source": "crates/sdkwork-routes-clawrouter-memory-open-api/specs/component.spec.json",
+        "layerRole": "backend-route",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "memory-open-api-router",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": "src/manifest.rs",
+        "runtimeEntrypoints": [
+          "src/lib.rs#gateway_mount"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
         "name": "sdkwork-routes-drive-open-api",
         "type": "rust-route-crate",
         "root": "sdkwork-clawrouter/crates/sdkwork-routes-drive-open-api",
@@ -2710,7 +2827,10 @@
         ],
         "source": "sdks/clawrouter-app-sdk/specs/component.spec.json",
         "layerRole": null,
-        "publicExports": [],
+        "publicExports": [
+          "@sdkwork/clawrouter-app-sdk",
+          "@sdkwork/clawrouter-app-sdk/domains"
+        ],
         "providedPorts": [],
         "requiredPorts": [],
         "sdkDependencies": [
@@ -3403,25 +3523,25 @@
           "packageName": "sdkwork-api-clawrouter-assembly",
           "manifest": "crates/sdkwork-api-clawrouter-assembly/Cargo.toml",
           "dependencies": [
-            "anyhow",
             "axum",
+            "tokio",
+            "anyhow",
             "sdkwork-claw-http",
             "sdkwork-clawrouter-edge-runtime",
             "sdkwork-iam-database-host",
             "sdkwork-iam-embedded-application-bootstrap",
             "sdkwork-routes-iam-app-api",
-            "tokio",
             "tower",
             "sdkwork-routes-agent-open-api",
             "sdkwork-routes-audio-open-api",
             "sdkwork-routes-clawrouter-app-api",
             "sdkwork-routes-clawrouter-backend-api",
-            "sdkwork-routes-drive-open-api",
+            "sdkwork-routes-clawrouter-drive-open-api",
+            "sdkwork-routes-clawrouter-knowledgebase-open-api",
+            "sdkwork-routes-clawrouter-llm-open-api",
+            "sdkwork-routes-clawrouter-memory-open-api",
             "sdkwork-routes-iaas-open-api",
             "sdkwork-routes-image-open-api",
-            "sdkwork-routes-knowledgebase-open-api",
-            "sdkwork-routes-llm-open-api",
-            "sdkwork-routes-memory-open-api",
             "sdkwork-routes-paas-open-api",
             "sdkwork-routes-payment-open-api",
             "sdkwork-routes-video-open-api"
@@ -3481,6 +3601,7 @@
             "sdkwork-claw-health",
             "sdkwork-claw-paas-plugin",
             "sdkwork-claw-security",
+            "sdkwork-database-config",
             "sdkwork-iam-context-service",
             "sdkwork-iam-web-adapter",
             "sdkwork-iam-bootstrap",
@@ -3827,9 +3948,6 @@
             "sdkwork-clawrouter-database-host",
             "sdkwork-iam-web-adapter",
             "sdkwork-routes-iam-backend-api",
-            "sdkwork-routes-invoice-backend-api",
-            "sdkwork-invoice-service-host",
-            "sdkwork-invoice-database-host",
             "sdkwork-database-config",
             "sdkwork-database-sqlx",
             "sdkwork-web-axum",
@@ -3840,6 +3958,38 @@
             "tokio",
             "tracing",
             "serde-json"
+          ]
+        },
+        {
+          "packageName": "sdkwork-routes-clawrouter-drive-open-api",
+          "manifest": "crates/sdkwork-routes-clawrouter-drive-open-api/Cargo.toml",
+          "dependencies": [
+            "axum",
+            "sdkwork-claw-http"
+          ]
+        },
+        {
+          "packageName": "sdkwork-routes-clawrouter-knowledgebase-open-api",
+          "manifest": "crates/sdkwork-routes-clawrouter-knowledgebase-open-api/Cargo.toml",
+          "dependencies": [
+            "axum",
+            "sdkwork-claw-http"
+          ]
+        },
+        {
+          "packageName": "sdkwork-routes-clawrouter-llm-open-api",
+          "manifest": "crates/sdkwork-routes-clawrouter-llm-open-api/Cargo.toml",
+          "dependencies": [
+            "axum",
+            "sdkwork-claw-http"
+          ]
+        },
+        {
+          "packageName": "sdkwork-routes-clawrouter-memory-open-api",
+          "manifest": "crates/sdkwork-routes-clawrouter-memory-open-api/Cargo.toml",
+          "dependencies": [
+            "axum",
+            "sdkwork-claw-http"
           ]
         },
         {
@@ -4090,11 +4240,20 @@
             "sdkwork-database-sqlx",
             "tokio",
             "axum",
+            "base64",
+            "hmac",
+            "sdkwork-clawrouter-database-host",
             "sdkwork-clawrouter-router-service",
             "sdkwork-claw-test-support",
+            "sdkwork-database-config",
+            "sdkwork-database-lifecycle",
+            "sdkwork-iam-bootstrap",
+            "sdkwork-iam-database-host",
             "sdkwork-models",
+            "sdkwork-models-database-host",
             "sdkwork-web-core",
             "serde-json",
+            "sha2",
             "sqlx",
             "tower"
           ]

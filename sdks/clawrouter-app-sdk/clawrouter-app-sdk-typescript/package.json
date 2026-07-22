@@ -19,19 +19,18 @@
       "require": "./dist/index.cjs"
     }
   },
-  "imports": {
-    "#clawrouter-app-domains-generated": {
-      "types": "./dist/domains-generated/index.d.ts",
-      "import": "./dist/domains-generated/index.js",
-      "require": "./dist/domains-generated/index.cjs"
-    }
-  },
   "scripts": {
     "build": "node custom/build-runtime.mjs",
     "dev": "node custom/build-runtime.mjs",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "@sdkwork/account-app-sdk": "workspace:*",
+    "@sdkwork/catalog-app-sdk": "workspace:*",
+    "@sdkwork/membership-app-sdk": "workspace:*",
+    "@sdkwork/order-app-sdk": "workspace:*",
+    "@sdkwork/payment-app-sdk": "workspace:*",
+    "@sdkwork/promotion-app-sdk": "workspace:*",
     "@sdkwork/sdk-common": "^1.0.2"
   },
   "devDependencies": {

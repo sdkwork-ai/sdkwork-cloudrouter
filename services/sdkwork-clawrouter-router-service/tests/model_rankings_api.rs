@@ -108,8 +108,8 @@ async fn admin_model_ranking_status_route_returns_refresh_observability_snapshot
 
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("ready", payload["data"]["status"]);
-    assert_eq!(100001, payload["data"]["tenantId"]);
-    assert_eq!(0, payload["data"]["organizationId"]);
+    assert_eq!("100001", payload["data"]["tenantId"]);
+    assert_eq!("0", payload["data"]["organizationId"]);
     assert_eq!("commercial-default", payload["data"]["rankScope"]);
     assert_eq!("2026-05-08", payload["data"]["snapshotDate"]);
     assert_eq!(2, payload["data"]["generatedCount"]);
@@ -131,7 +131,7 @@ async fn admin_model_ranking_jobs_route_returns_recent_refresh_execution_history
     let response = router
         .oneshot(common::web_framework_backend_request(
             "GET",
-            "/backend/v3/api/ai/model_rankings/jobs?rank_scope=commercial-default&page_size=20",
+            "/backend/v3/api/ai/model_rankings/jobs?rank_scope=commercial-default&page=2&page_size=1",
             Body::empty(),
             "100001",
             Some("0"),
@@ -156,12 +156,45 @@ async fn admin_model_ranking_jobs_route_returns_recent_refresh_execution_history
         "commercial-default",
         payload["data"]["items"][0]["rankScope"]
     );
-    assert_eq!(100001, payload["data"]["items"][0]["tenantId"]);
-    assert_eq!(0, payload["data"]["items"][0]["organizationId"]);
+    assert_eq!("100001", payload["data"]["items"][0]["tenantId"]);
+    assert_eq!("0", payload["data"]["items"][0]["organizationId"]);
     assert_eq!(
         "usage aggregate failed",
         payload["data"]["items"][0]["failureReason"]
     );
+    assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
+    assert_eq!(2, payload["data"]["pageInfo"]["page"]);
+    assert_eq!(1, payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!("3", payload["data"]["pageInfo"]["totalItems"]);
+    assert_eq!(3, payload["data"]["pageInfo"]["totalPages"]);
+    assert_eq!(true, payload["data"]["pageInfo"]["hasMore"]);
+}
+
+#[tokio::test]
+async fn model_ranking_list_routes_reject_invalid_or_overflowing_pages() {
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_model_rankings_router_with_read_store(
+            Arc::new(StubModelRankingsReadStore),
+        );
+    for path in [
+        "/backend/v3/api/ai/model_rankings?page=0&page_size=20",
+        "/backend/v3/api/ai/model_rankings/jobs?page=9223372036854775807&page_size=200",
+    ] {
+        let response = router
+            .clone()
+            .oneshot(common::web_framework_backend_request(
+                "GET",
+                path,
+                Body::empty(),
+                "100001",
+                Some("0"),
+                "30",
+            ))
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::BAD_REQUEST, response.status(), "{path}");
+    }
 }
 
 #[tokio::test]
@@ -196,7 +229,7 @@ async fn admin_model_ranking_manual_refresh_route_runs_worker_and_returns_result
         "POST",
         "/backend/v3/api/ai/model_rankings/refresh",
         Body::from(
-            r#"{"rankScope":"Commercial-Default","snapshotPeriod":"daily","limit":5,"lookbackDays":3,"refreshIntervalSeconds":1800,"cacheMaxAgeSeconds":30}"#,
+            r#"{"rankScope":"Commercial-Default","snapshotPeriod":"daily","pageSize":5,"lookbackDays":3,"refreshIntervalSeconds":1800,"cacheMaxAgeSeconds":30}"#,
         ),
         "100001",
         Some("0"),
@@ -218,13 +251,13 @@ async fn admin_model_ranking_manual_refresh_route_runs_worker_and_returns_result
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!(true, payload["data"]["triggered"]);
     assert_eq!("succeeded", payload["data"]["status"]);
-    assert_eq!(100001, payload["data"]["tenantId"]);
-    assert_eq!(0, payload["data"]["organizationId"]);
+    assert_eq!("100001", payload["data"]["tenantId"]);
+    assert_eq!("0", payload["data"]["organizationId"]);
     assert_eq!("commercial-default", payload["data"]["rankScope"]);
-    assert_eq!(7, payload["data"]["generatedCount"]);
-    assert_eq!(9, payload["data"]["sourceCount"]);
-    assert_eq!(1800, payload["data"]["refreshIntervalSeconds"]);
-    assert_eq!(30, payload["data"]["cacheMaxAgeSeconds"]);
+    assert_eq!("7", payload["data"]["generatedCount"]);
+    assert_eq!("9", payload["data"]["sourceCount"]);
+    assert_eq!("1800", payload["data"]["refreshIntervalSeconds"]);
+    assert_eq!("30", payload["data"]["cacheMaxAgeSeconds"]);
 
     let commands = refresh_store.commands.lock().unwrap();
     assert_eq!(1, commands.len());
@@ -378,7 +411,10 @@ impl ModelRankingRefreshJobHistoryReadStore for StubModelRankingsReadStore {
     ) -> ModelRankingRefreshJobHistoryReadFuture<'a> {
         Box::pin(async move {
             let subject = subject.unwrap();
+            assert_eq!(1, query.limit);
+            assert_eq!(1, query.offset);
             DomainResult::Ok(ModelRankingRefreshJobHistoryPage {
+                total_items: 3,
                 items: vec![ModelRankingRefreshJobItem {
                     id: "job-failed".to_owned(),
                     job_name: "model_ranking_refresh".to_owned(),

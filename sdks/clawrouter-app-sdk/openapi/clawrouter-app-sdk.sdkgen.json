@@ -271,22 +271,229 @@
         "description": "Conversations turns response create result schema exposed by Claw Router.",
         "x-operation-id": "conversations.turns.response.create"
       },
-      "DashboardOverviewListResult": {
+      "DashboardAnnouncement": {
+        "additionalProperties": false,
+        "description": "Dashboard announcement schema exposed by Claw Router.",
+        "properties": {
+          "id": {
+            "description": "Id field on dashboard announcement.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "text": {
+            "description": "Text field on dashboard announcement.",
+            "type": "string"
+          },
+          "time": {
+            "description": "Time field on dashboard announcement.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Type field on dashboard announcement.",
+            "enum": [
+              "success",
+              "info",
+              "warning",
+              "error",
+              "unknown"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "time",
+          "type"
+        ],
+        "type": "object"
+      },
+      "DashboardChartPoint": {
+        "additionalProperties": false,
+        "description": "Dashboard chart point schema exposed by Claw Router.",
+        "properties": {
+          "audio (Whisper)": {
+            "description": "Audio whisper field on dashboard chart point.",
+            "type": "number"
+          },
+          "image (Midjourney/DALL-E)": {
+            "description": "Image midjourney field on dashboard chart point.",
+            "type": "number"
+          },
+          "llm (Text)": {
+            "description": "Llm text field on dashboard chart point.",
+            "type": "number"
+          },
+          "music (Suno)": {
+            "description": "Music suno field on dashboard chart point.",
+            "type": "number"
+          },
+          "time": {
+            "description": "Time field on dashboard chart point.",
+            "type": "string"
+          },
+          "video (Runway/Sora)": {
+            "description": "Video runway sora field on dashboard chart point.",
+            "type": "number"
+          }
+        },
+        "required": [
+          "time",
+          "llm (Text)",
+          "image (Midjourney/DALL-E)",
+          "video (Runway/Sora)",
+          "audio (Whisper)",
+          "music (Suno)"
+        ],
+        "type": "object"
+      },
+      "DashboardConfigurationDomain": {
+        "additionalProperties": false,
+        "description": "Dashboard configuration domain schema exposed by Claw Router.",
+        "properties": {
+          "domain": {
+            "description": "Domain field on dashboard configuration domain.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on dashboard configuration domain.",
+            "type": "string"
+          },
+          "ip": {
+            "description": "Ip field on dashboard configuration domain.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on dashboard configuration domain.",
+            "type": "string"
+          },
+          "remark": {
+            "description": "Remark field on dashboard configuration domain.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on dashboard configuration domain.",
+            "enum": [
+              "online",
+              "warning",
+              "offline",
+              "unknown"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "domain",
+          "ip",
+          "status",
+          "remark"
+        ],
+        "type": "object"
+      },
+      "DashboardOverviewResponse": {
+        "additionalProperties": false,
+        "description": "Dashboard overview response schema exposed by Claw Router.",
+        "name": "DashboardOverviewResponse",
+        "properties": {
+          "announcements": {
+            "description": "Announcements field on dashboard overview response.",
+            "items": {
+              "$ref": "#/components/schemas/DashboardAnnouncement"
+            },
+            "type": "array"
+          },
+          "chartData": {
+            "description": "Chart data field on dashboard overview response.",
+            "items": {
+              "$ref": "#/components/schemas/DashboardChartPoint"
+            },
+            "type": "array"
+          },
+          "configurationDomains": {
+            "description": "Configuration domains field on dashboard overview response.",
+            "items": {
+              "$ref": "#/components/schemas/DashboardConfigurationDomain"
+            },
+            "type": "array"
+          },
+          "multimodalSparkline": {
+            "description": "Multimodal sparkline field on dashboard overview response.",
+            "items": {
+              "$ref": "#/components/schemas/DashboardSparklinePoint"
+            },
+            "type": "array"
+          },
+          "performanceSparkline": {
+            "description": "Performance sparkline field on dashboard overview response.",
+            "items": {
+              "$ref": "#/components/schemas/DashboardSparklinePoint"
+            },
+            "type": "array"
+          },
+          "requestSparkline": {
+            "description": "Request sparkline field on dashboard overview response.",
+            "items": {
+              "$ref": "#/components/schemas/DashboardSparklinePoint"
+            },
+            "type": "array"
+          },
+          "summary": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardOverviewSummary"
+              }
+            ],
+            "description": "Summary field on dashboard overview response."
+          },
+          "topModels": {
+            "description": "Top models field on dashboard overview response.",
+            "items": {
+              "$ref": "#/components/schemas/DashboardTopModel"
+            },
+            "type": "array"
+          },
+          "warnings": {
+            "description": "Warnings field on dashboard overview response.",
+            "items": {
+              "description": "Warnings field on dashboard overview response.",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "summary",
+          "requestSparkline",
+          "multimodalSparkline",
+          "performanceSparkline",
+          "chartData",
+          "topModels",
+          "announcements",
+          "warnings"
+        ],
+        "type": "object"
+      },
+      "DashboardOverviewRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by dashboard overview list result.",
+            "description": "Object schema used by dashboard overview retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/DashboardOverviewResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on dashboard overview retrieve result."
               }
             },
             "required": [
@@ -295,8 +502,184 @@
             "type": "object"
           }
         ],
-        "description": "Dashboard overview list result schema exposed by Claw Router.",
-        "x-operation-id": "dashboard.overview.list"
+        "description": "Dashboard overview retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "dashboard.overview.retrieve"
+      },
+      "DashboardOverviewSummary": {
+        "additionalProperties": false,
+        "description": "Dashboard overview summary schema exposed by Claw Router.",
+        "properties": {
+          "audioRequests": {
+            "description": "Audio requests field on dashboard overview summary.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "availableCredits": {
+            "description": "Available credits field on dashboard overview summary.",
+            "type": "number"
+          },
+          "errorCount": {
+            "description": "Error count field on dashboard overview summary.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "imageRequests": {
+            "description": "Image requests field on dashboard overview summary.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "musicRequests": {
+            "description": "Music requests field on dashboard overview summary.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "requestCount": {
+            "description": "Request count field on dashboard overview summary.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "rpm": {
+            "description": "Rpm field on dashboard overview summary.",
+            "type": "number"
+          },
+          "totalRequestCount": {
+            "description": "Total request count field on dashboard overview summary.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "totalUsedCredits": {
+            "description": "Total used credits field on dashboard overview summary.",
+            "type": "number"
+          },
+          "tpm": {
+            "description": "Tpm field on dashboard overview summary.",
+            "type": "number"
+          },
+          "usedCredits": {
+            "description": "Used credits field on dashboard overview summary.",
+            "type": "number"
+          },
+          "videoRequests": {
+            "description": "Video requests field on dashboard overview summary.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "availableCredits",
+          "usedCredits",
+          "requestCount",
+          "totalUsedCredits",
+          "totalRequestCount",
+          "errorCount",
+          "imageRequests",
+          "videoRequests",
+          "audioRequests",
+          "musicRequests",
+          "rpm",
+          "tpm"
+        ],
+        "type": "object"
+      },
+      "DashboardSparklinePoint": {
+        "additionalProperties": false,
+        "description": "Dashboard sparkline point schema exposed by Claw Router.",
+        "properties": {
+          "value": {
+            "description": "Value field on dashboard sparkline point.",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "type": "object"
+      },
+      "DashboardTopModel": {
+        "additionalProperties": false,
+        "description": "Dashboard top model schema exposed by Claw Router.",
+        "properties": {
+          "cost": {
+            "description": "Cost field on dashboard top model.",
+            "type": "number"
+          },
+          "isUp": {
+            "description": "Is up field on dashboard top model.",
+            "type": "boolean"
+          },
+          "modality": {
+            "description": "Modality field on dashboard top model.",
+            "enum": [
+              "text",
+              "image",
+              "video",
+              "audio",
+              "music",
+              "unknown"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on dashboard top model.",
+            "type": "string"
+          },
+          "rank": {
+            "description": "Rank field on dashboard top model.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "requests": {
+            "description": "Requests field on dashboard top model.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "supplier": {
+            "description": "Supplier field on dashboard top model.",
+            "type": "string"
+          },
+          "trend": {
+            "description": "Trend field on dashboard top model.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "name",
+          "supplier",
+          "modality",
+          "requests",
+          "cost",
+          "trend",
+          "isUp"
+        ],
+        "type": "object"
       },
       "EntriesRetrieveResult": {
         "allOf": [
@@ -1564,15 +1947,51 @@
     },
     "/app/v3/api/ai/dashboard/overview": {
       "get": {
-        "description": "List dashboard overview. Reads ai_usage, ai_request_trace, ops_metric_snapshot, ops_gateway_instance. Writes none. File targets none.",
-        "operationId": "dashboard.overview.list",
-        "parameters": [],
+        "description": "List dashboard overview. Reads ai_usage, ai_request_trace, ai_model_rank_snapshot, ops_notification_message, ops_metric_snapshot, ops_gateway_instance. Writes none. File targets none.",
+        "operationId": "dashboard.overview.retrieve",
+        "parameters": [
+          {
+            "description": "Time range query parameter.",
+            "in": "query",
+            "name": "time_range",
+            "required": false,
+            "schema": {
+              "enum": [
+                "hourly",
+                "daily",
+                "monthly",
+                "yearly"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start time query parameter.",
+            "in": "query",
+            "name": "start_time",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "description": "End time query parameter.",
+            "in": "query",
+            "name": "end_time",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DashboardOverviewListResult"
+                  "$ref": "#/components/schemas/DashboardOverviewRetrieveResult"
                 }
               }
             },
@@ -1634,6 +2053,8 @@
         "x-read-sources": [
           "ai_usage",
           "ai_request_trace",
+          "ai_model_rank_snapshot",
+          "ops_notification_message",
           "ops_metric_snapshot",
           "ops_gateway_instance"
         ],

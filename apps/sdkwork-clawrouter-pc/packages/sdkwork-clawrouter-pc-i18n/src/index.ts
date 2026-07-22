@@ -1,7 +1,9 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import {
+  createSdkworkMessageCatalog,
+  defineSdkworkI18nRuntimeConfig,
+  normalizeSdkworkLocale,
+} from '@sdkwork/i18n-pc-react';
 import { resources } from './resources';
-import { syncDocumentLanguage } from './sync-document-language.ts';
 
 export { consoleGatewayI18nKeyRegistry } from './console-gateway-i18n-key-registry.ts';
 
@@ -9,32 +11,38 @@ interface LegacyNavigatorLanguage {
   userLanguage?: string;
 }
 
-const SUPPORTED_LNGS = ['en', 'zh', 'de', 'fr', 'ja', 'ko', 'ru'] as const;
+export const clawRouterI18nRuntimeConfig = defineSdkworkI18nRuntimeConfig({
+  activeLocales: ['en-US', 'zh-CN', 'de-DE', 'fr-FR', 'ja-JP', 'ko-KR', 'ru-RU'],
+  defaultLocale: 'en-US',
+  fallbackLocale: 'en-US',
+  loadingStrategy: 'eager-core-lazy-feature',
+  supportedLocales: ['en-US', 'zh-CN', 'de-DE', 'fr-FR', 'ja-JP', 'ko-KR', 'ru-RU'],
+});
 
-/**
- * Maps a raw browser/storage locale string to one of the supported language codes.
- * Falls back to `'en'` when no supported language can be resolved.
- */
-function resolveSupportedLocale(raw: string | undefined): string | undefined {
-  if (!raw) return undefined;
-  const lower = raw.toLowerCase();
-  if (lower.startsWith('zh')) return 'zh';
-  if (lower.startsWith('en')) return 'en';
-  if (lower.startsWith('de')) return 'de';
-  if (lower.startsWith('fr')) return 'fr';
-  if (lower.startsWith('ja')) return 'ja';
-  if (lower.startsWith('ko')) return 'ko';
-  if (lower.startsWith('ru')) return 'ru';
-  return undefined;
-}
+export const clawRouterI18nCatalog = createSdkworkMessageCatalog({
+  defaultLocale: 'en-US',
+  locales: {
+    'de-DE': resources.de.translation,
+    'en-US': resources.en.translation,
+    'fr-FR': resources.fr.translation,
+    'ja-JP': resources.ja.translation,
+    'ko-KR': resources.ko.translation,
+    'ru-RU': resources.ru.translation,
+    'zh-CN': resources.zh.translation,
+  },
+  namespace: 'translation',
+});
 
-const getBrowserLanguage = () => {
-  // 1. Explicit user selection (ignore legacy i18nextLng cache from plugin)
-  const userSelected = localStorage.getItem('user_explicit_lang');
-  const explicit = resolveSupportedLocale(userSelected ?? undefined);
-  if (explicit) return explicit;
+export function resolveClawRouterInitialLocale(): string {
+  if (typeof window === 'undefined') {
+    return clawRouterI18nRuntimeConfig.defaultLocale;
+  }
 
-  // 2. OS / browser language detection
+  const explicitLocale = window.localStorage.getItem('user_explicit_lang');
+  if (explicitLocale) {
+    return normalizeSdkworkLocale(explicitLocale, clawRouterI18nRuntimeConfig);
+  }
+
   const navigatorLanguage = window.navigator as Navigator & LegacyNavigatorLanguage;
   const candidates = [
     navigatorLanguage.language,
@@ -42,29 +50,19 @@ const getBrowserLanguage = () => {
     ...(navigatorLanguage.languages ?? []),
   ];
   for (const candidate of candidates) {
-    const resolved = resolveSupportedLocale(candidate);
-    if (resolved) return resolved;
+    if (!candidate) {
+      continue;
+    }
+    const resolvedLocale = normalizeSdkworkLocale(candidate, clawRouterI18nRuntimeConfig);
+    if (
+      resolvedLocale !== clawRouterI18nRuntimeConfig.defaultLocale
+      || candidate.toLowerCase().startsWith('en')
+    ) {
+      return resolvedLocale;
+    }
   }
 
-  return 'en'; // default to english
-};
+  return clawRouterI18nRuntimeConfig.defaultLocale;
+}
 
-i18n
-  .use(initReactI18next)
-  .init({
-    lng: getBrowserLanguage(),
-    resources,
-    fallbackLng: 'en',
-    supportedLngs: [...SUPPORTED_LNGS],
-    interpolation: {
-      escapeValue: false,
-      defaultVariables: {
-        platformName: 'Claw Router',
-      },
-    },
-  });
-
-syncDocumentLanguage(i18n.language);
-i18n.on('languageChanged', syncDocumentLanguage);
-
-export default i18n;
+export { resources } from './resources';

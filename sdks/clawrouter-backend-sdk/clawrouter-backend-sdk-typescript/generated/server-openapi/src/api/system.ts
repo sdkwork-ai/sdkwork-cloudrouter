@@ -21,11 +21,11 @@ export class SystemSiteSettingsApi {
 }
 
 export class SystemSiteApi {
-  private client: HttpClient;
+
   public readonly settings: SystemSiteSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.settings = new SystemSiteSettingsApi(client);
   }
 
@@ -96,11 +96,11 @@ export class SystemRuntimeRegionSettingsApi {
 }
 
 export class SystemRuntimeRegionApi {
-  private client: HttpClient;
+
   public readonly settings: SystemRuntimeRegionSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.settings = new SystemRuntimeRegionSettingsApi(client);
   }
 
@@ -178,13 +178,13 @@ export class SystemRateLimitsApiKeysApi {
 }
 
 export class SystemRateLimitsApi {
-  private client: HttpClient;
+
   public readonly apiKeys: SystemRateLimitsApiKeysApi;
   public readonly ip: SystemRateLimitsIpApi;
   public readonly models: SystemRateLimitsModelsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.apiKeys = new SystemRateLimitsApiKeysApi(client);
     this.ip = new SystemRateLimitsIpApi(client);
     this.models = new SystemRateLimitsModelsApi(client);
@@ -235,13 +235,13 @@ export class SystemMonitorAlertsApi {
 }
 
 export class SystemMonitorApi {
-  private client: HttpClient;
+
   public readonly alerts: SystemMonitorAlertsApi;
   public readonly nodes: SystemMonitorNodesApi;
   public readonly performance: SystemMonitorPerformanceApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.alerts = new SystemMonitorAlertsApi(client);
     this.nodes = new SystemMonitorNodesApi(client);
     this.performance = new SystemMonitorPerformanceApi(client);
@@ -264,11 +264,11 @@ export class SystemInstallationStatusApi {
 }
 
 export class SystemInstallationApi {
-  private client: HttpClient;
+
   public readonly status: SystemInstallationStatusApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.status = new SystemInstallationStatusApi(client);
   }
 
@@ -299,11 +299,11 @@ export class SystemFirewallsRulesApi {
 }
 
 export class SystemFirewallsApi {
-  private client: HttpClient;
+
   public readonly rules: SystemFirewallsRulesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.rules = new SystemFirewallsRulesApi(client);
   }
 
@@ -324,22 +324,22 @@ export class SystemDashboardAdminOverviewApi {
 }
 
 export class SystemDashboardAdminApi {
-  private client: HttpClient;
+
   public readonly overview: SystemDashboardAdminOverviewApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.overview = new SystemDashboardAdminOverviewApi(client);
   }
 
 }
 
 export class SystemDashboardApi {
-  private client: HttpClient;
+
   public readonly admin: SystemDashboardAdminApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.admin = new SystemDashboardAdminApi(client);
   }
 
@@ -458,11 +458,11 @@ export class SystemAuthSettingsApi {
 }
 
 export class SystemAuthApi {
-  private client: HttpClient;
+
   public readonly settings: SystemAuthSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.settings = new SystemAuthSettingsApi(client);
   }
 
@@ -483,29 +483,29 @@ export class SystemAnalyticsAdminOverviewApi {
 }
 
 export class SystemAnalyticsAdminApi {
-  private client: HttpClient;
+
   public readonly overview: SystemAnalyticsAdminOverviewApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.overview = new SystemAnalyticsAdminOverviewApi(client);
   }
 
 }
 
 export class SystemAnalyticsApi {
-  private client: HttpClient;
+
   public readonly admin: SystemAnalyticsAdminApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.admin = new SystemAnalyticsAdminApi(client);
   }
 
 }
 
 export class SystemApi {
-  private client: HttpClient;
+
   public readonly analytics: SystemAnalyticsApi;
   public readonly auth: SystemAuthApi;
   public readonly cache: SystemCacheApi;
@@ -520,7 +520,7 @@ export class SystemApi {
   public readonly site: SystemSiteApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.analytics = new SystemAnalyticsApi(client);
     this.auth = new SystemAuthApi(client);
     this.cache = new SystemCacheApi(client);
@@ -541,13 +541,7 @@ export function createSystemApi(client: HttpClient): SystemApi {
   return new SystemApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

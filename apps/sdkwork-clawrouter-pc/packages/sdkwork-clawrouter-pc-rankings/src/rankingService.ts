@@ -34,6 +34,7 @@ export interface RankingServiceFilters {
   vendorCode?: string;
   modality?: string;
   searchQuery?: string;
+  page?: number;
   pageSize?: number;
 }
 
@@ -44,6 +45,7 @@ export class RankingService {
       vendorCode: normalizeQueryString(filters.vendorCode),
       modality: normalizeQueryString(filters.modality),
       q: normalizeQueryString(filters.searchQuery),
+      page: filters.page ?? 1,
       pageSize: filters.pageSize ?? 200,
     });
     const data = readApiRecord(result);

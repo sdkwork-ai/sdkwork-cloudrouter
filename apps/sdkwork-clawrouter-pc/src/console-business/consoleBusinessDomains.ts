@@ -4,7 +4,8 @@
  * | User-facing capability | Domain workspace   | PC package                      | Console route        |
  * |------------------------|--------------------|---------------------------------|----------------------|
  * | Account summary        | sdkwork-account    | @sdkwork/account-pc-wallet      | /console/account     |
- * | Recharge & withdraw    | sdkwork-account    | @sdkwork/account-pc-wallet      | /console/wallet      |
+ * | Wallet & withdraw      | sdkwork-account    | @sdkwork/account-pc-wallet      | /console/wallet      |
+ * | Points recharge        | sdkwork-order      | @sdkwork/order-pc-recharge      | /console/wallet      |
  * | Coupons & promo codes  | sdkwork-promotion  | @sdkwork/promotion-pc-coupon    | /console/coupons     |
  * | Membership             | sdkwork-membership | @sdkwork/membership-pc-membership | /console/memberships |
  * | Subscription checkout  | sdkwork-membership | @sdkwork/membership-pc-subscription | /console/checkout |
@@ -23,6 +24,8 @@ export const CLAWROUTER_CONSOLE_BUSINESS_DOMAIN_OWNERSHIP = {
     capability: 'recharge-withdraw',
     domainWorkspace: 'sdkwork-account',
     packageName: '@sdkwork/account-pc-wallet',
+    rechargeDomainWorkspace: 'sdkwork-order',
+    rechargePackageName: '@sdkwork/order-pc-recharge',
     routeSegment: 'wallet',
   },
   coupons: {

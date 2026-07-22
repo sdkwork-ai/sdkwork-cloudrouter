@@ -1,0 +1,12 @@
+[package]
+name = "sdkwork-routes-clawrouter-knowledgebase-open-api"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+axum.workspace = true
+sdkwork-claw-http.workspace = true

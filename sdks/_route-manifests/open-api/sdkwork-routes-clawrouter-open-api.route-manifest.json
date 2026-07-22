@@ -10,7 +10,7 @@
   "sdkFamily": "clawrouter-open-sdk",
   "prefix": "/v1",
   "source": {
-    "crateRoot": "crates/sdkwork-routes-llm-open-api",
+    "crateRoot": "crates/sdkwork-routes-clawrouter-llm-open-api",
     "crateImport": "sdkwork_routes_clawrouter_open_api",
     "openApiAuthority": "apis/open-api/clawrouter/clawrouter-open-api.openapi.json"
   },

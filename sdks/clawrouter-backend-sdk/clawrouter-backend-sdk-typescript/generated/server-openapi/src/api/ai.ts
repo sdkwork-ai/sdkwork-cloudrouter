@@ -96,13 +96,13 @@ export class AiChannelGroupsApi {
 }
 
 export class AiApi {
-  private client: HttpClient;
+
   public readonly channelGroups: AiChannelGroupsApi;
   public readonly modelMappingOptions: AiModelMappingOptionsApi;
   public readonly routeExplain: AiRouteExplainApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
+
     this.channelGroups = new AiChannelGroupsApi(client);
     this.modelMappingOptions = new AiModelMappingOptionsApi(client);
     this.routeExplain = new AiRouteExplainApi(client);
@@ -114,13 +114,7 @@ export function createAiApi(client: HttpClient): AiApi {
   return new AiApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

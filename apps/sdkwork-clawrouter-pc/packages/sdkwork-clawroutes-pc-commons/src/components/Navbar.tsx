@@ -32,14 +32,14 @@ const NAVBAR_HEADER_ACTION_CLASS =
 
 function resolveNavbarLanguageCode(raw: string | undefined): string {
   const normalized = raw?.toLowerCase() ?? '';
-  if (normalized.startsWith('zh')) return 'zh';
-  if (normalized.startsWith('en')) return 'en';
-  if (normalized.startsWith('de')) return 'de';
-  if (normalized.startsWith('fr')) return 'fr';
-  if (normalized.startsWith('ja')) return 'ja';
-  if (normalized.startsWith('ko')) return 'ko';
-  if (normalized.startsWith('ru')) return 'ru';
-  return 'en';
+  if (normalized.startsWith('zh')) return 'zh-CN';
+  if (normalized.startsWith('en')) return 'en-US';
+  if (normalized.startsWith('de')) return 'de-DE';
+  if (normalized.startsWith('fr')) return 'fr-FR';
+  if (normalized.startsWith('ja')) return 'ja-JP';
+  if (normalized.startsWith('ko')) return 'ko-KR';
+  if (normalized.startsWith('ru')) return 'ru-RU';
+  return 'en-US';
 }
 
 export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: NavbarProps) {
@@ -110,8 +110,8 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
   const activeLanguageCode = resolveNavbarLanguageCode(i18n.resolvedLanguage ?? i18n.language);
 
   const languages = [
-    { code: 'en', name: 'English' },
-    { code: 'zh', name: '中文' },
+    { code: 'en-US', name: 'English' },
+    { code: 'zh-CN', name: '中文' },
   ];
 
   const navLinks = [
