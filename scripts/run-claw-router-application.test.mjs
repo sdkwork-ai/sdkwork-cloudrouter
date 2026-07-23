@@ -3454,19 +3454,6 @@ test('workspace startup output includes every non-internal IPv4 OpenAPI link for
     1,
   );
 
-  const successLines = module.successfulStartupAccessLines(settings, {
-    Ethernet: [
-      { family: 'IPv4', address: '198.18.0.1', internal: false },
-      { family: 'IPv4', address: '192.168.50.12', internal: false },
-    ],
-    WiFi: [{ family: 'IPv4', address: '169.254.30.58', internal: false }],
-  });
-  assert.deepEqual(successLines, [
-    '[start-workspace] application started successfully',
-    '[start-workspace] Access URLs',
-    '[start-workspace]   Local: http://127.0.0.1:3901/',
-    '[start-workspace]   Network: unavailable (listener is loopback-only or no LAN IPv4 address was detected)',
-  ]);
 });
 
 test('workspace reports successful startup only after the portal is ready', async () => {

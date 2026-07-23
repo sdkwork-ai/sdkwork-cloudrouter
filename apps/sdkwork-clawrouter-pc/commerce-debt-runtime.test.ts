@@ -191,13 +191,12 @@ test('console bootstrap wires T1 domain service providers from clawroutes common
   assert.doesNotMatch(mainSource, /getClawRouterAppSdkClient/);
   assert.match(providerSource, /buildAccountCommercePort/);
   assert.match(providerSource, /accountClient\.wallet/);
-  assert.match(providerSource, /memberships:\s*orderClient\.memberships/);
-  assert.match(providerSource, /orders:\s*orderClient\.orders/);
-  assert.match(providerSource, /recharges:\s*orderClient\.recharges/);
-  assert.doesNotMatch(
+  assert.match(
     providerSource,
-    /function buildOrderCommercePort\(\s*(?:catalogClient|membershipClient|paymentClient):/,
+    /createSdkworkOrderAppService\(\{\s*appClient:\s*orderClient,\s*\}\)/,
   );
+  assert.match(providerSource, /recharges:\s*orderClient\.recharges/);
+  assert.doesNotMatch(providerSource, /function buildOrderCommercePort/);
   assert.match(providerSource, /client\.commerce\.payments/);
   assert.match(providerSource, /client\.promotions/);
   assert.doesNotMatch(providerSource, /getClawRouterAppSdkClient\(\)\.commerce/);

@@ -3,9 +3,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, CheckCircle2, Crown, Loader2, Sparkles, Wallet, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@sdkwork/ui-pc-react";
-import type {
-  SdkworkSubscriptionCatalogCheckoutModalProps,
-  SdkworkSubscriptionCatalogModalProps,
+import {
+  SDKWORK_SUBSCRIPTION_I18N_KEYS,
+  type SdkworkSubscriptionCatalogCheckoutModalProps,
+  type SdkworkSubscriptionCatalogModalProps,
 } from "@sdkwork/membership-pc-subscription/catalog";
 import { SdkworkOrderCheckoutDialog } from "@sdkwork/order-pc-checkout";
 import { SdkworkPointsRechargeDialog } from "@sdkwork/order-pc-recharge";
@@ -240,20 +241,38 @@ export function ClawRouterTokenPlanCheckoutModal({
   return (
     <SdkworkOrderCheckoutDialog
       copy={{
-        activationDescription: t("membership_checkout.activation_description", "Payment confirmation activates your membership automatically."),
-        activationTitle: t("membership_checkout.activation_title", "Automatic activation"),
-        close: t("close", "Close"),
-        completed: t("membership_checkout.completed", "Payment completed"),
-        creatingPayment: t("membership_checkout.creating_payment", "Creating payment..."),
-        paymentUnavailable: t("membership_checkout.payment_unavailable", "Payment unavailable"),
-        paymentUnavailableDescription: t("membership_checkout.payment_unavailable_description", "Unable to create this payment. Please try again."),
-        payByQr: t("membership_checkout.pay_by_qr", "Pay by QR code"),
-        price: t("membership_checkout.price", "Price"),
-        retry: t("membership_checkout.retry", "Retry"),
-        scanPrompt: t("membership_checkout.scan_prompt", "Scan the QR code to complete payment"),
-        secureDescription: t("membership_checkout.secure_description", "Checkout is processed by SDKWork Order."),
-        secureTitle: t("membership_checkout.secure_title", "Secure checkout"),
-        selectedItem: t("membership_checkout.selected_item", "Selected membership"),
+        activationDescription: t(
+          SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.activationDescription,
+          "Payment activates the selected membership automatically.",
+        ),
+        activationTitle: t(SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.activationTitle, "Instant activation"),
+        close: t(SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.close, "Close"),
+        completed: t(SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.completed, "Payment completed"),
+        creatingPayment: t(
+          SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.creatingPayment,
+          "Creating payment QR code...",
+        ),
+        paymentUnavailable: t(
+          SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.paymentUnavailableTitle,
+          "Payment QR code unavailable",
+        ),
+        paymentUnavailableDescription: t(
+          SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.paymentUnavailableDescription,
+          "The payment QR code is unavailable. Please try again.",
+        ),
+        payByQr: t(SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.payByQr, "Scan to pay"),
+        price: t(SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.price, "Price"),
+        retry: t(SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.retry, "Retry"),
+        scanPrompt: t(
+          SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.scanPrompt,
+          "Scan with a mobile payment app to complete payment",
+        ),
+        secureDescription: t(
+          SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.secureDescription,
+          "Payment data is used for this order only.",
+        ),
+        secureTitle: t(SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.secureTitle, "Secure checkout"),
+        selectedItem: t(SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout.selectedPlan, "Selected plan"),
       }}
       driver={{
         createPayment: onPurchase,

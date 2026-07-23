@@ -8,7 +8,6 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import {
   formatAccessEndpointCatalogLines,
-  formatPrimaryAccessLines,
   resolveAccessEndpointReports,
 } from '@sdkwork/app-topology/access-endpoints';
 import { formatResolvedNetworkAccessLines } from '@sdkwork/app-topology/network-access';
@@ -122,15 +121,6 @@ function loopbackUrl(bind, pathSuffix) {
     ? '127.0.0.1'
     : host;
   return `http://${loopbackHost}:${port}${pathSuffix}`;
-}
-
-export function successfulStartupAccessLines(settings, interfaces) {
-  return formatPrimaryAccessLines(resolveWorkspaceRuntimePlan(settings), {
-    networkInterfaces: interfaces,
-    prefix: '[start-workspace] ',
-    statusText: 'application started successfully',
-    unavailableText: 'unavailable (listener is loopback-only or no LAN IPv4 address was detected)',
-  });
 }
 
 export async function waitForPortalReady(settings, {
@@ -1450,9 +1440,7 @@ async function main() {
   if (portalSteps.length > 0) {
     try {
       await waitForPortalReady(settings);
-      for (const line of successfulStartupAccessLines(settings)) {
-        console.log(line);
-      }
+      console.log('[start-workspace] application started successfully');
     } catch (error) {
       console.error(`[start-workspace] ${error.message}`);
       shutdown('portal readiness check failed', 1);

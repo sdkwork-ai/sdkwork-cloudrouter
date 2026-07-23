@@ -10,7 +10,6 @@ import {
   configureSdkworkMembershipSessionTokenProvider,
   createSdkworkMembershipAppService,
 } from '@sdkwork/membership-service';
-import type { OrderAppSdkClient } from '@sdkwork/order-sdk-ports';
 import {
   configureSdkworkOrderAppServiceProvider,
   configureSdkworkOrderSessionTokenProvider,
@@ -89,16 +88,6 @@ function buildPaymentCommercePort(client: SdkworkPaymentAppSdkClient): PaymentAp
   } as unknown as PaymentAppSdkClient['commerce'];
 }
 
-function buildOrderCommercePort(
-  orderClient: SdkworkOrderAppSdkClient,
-): OrderAppSdkClient['commerce'] {
-  return {
-    memberships: orderClient.memberships,
-    orders: orderClient.orders,
-    recharges: orderClient.recharges,
-  };
-}
-
 function buildPromotionCommercePort(client: SdkworkPromotionAppSdkClient): PromotionAppSdkClient['commerce'] {
   return {
     promotions: client.promotions,
@@ -113,9 +102,7 @@ export function configureClawRouterDomainServiceProviders(): void {
   const paymentClient = getSdkworkPaymentAppSdkClient();
   const promotionClient = getSdkworkPromotionAppSdkClient();
   const orderAppService = createSdkworkOrderAppService({
-    appClient: {
-      commerce: buildOrderCommercePort(orderClient),
-    } as OrderAppSdkClient,
+    appClient: orderClient,
   });
 
   configureSdkworkAccountAppServiceProvider(() => createSdkworkAccountAppService({

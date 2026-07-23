@@ -69,6 +69,9 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   const providerSource = readPortalFile(
     "./packages/sdkwork-clawroutes-pc-commons/src/domain-service-providers.ts",
   );
+  const i18nResourcesSource = readPortalFile(
+    "./packages/sdkwork-clawrouter-pc-i18n/src/resources/index.ts",
+  );
   const summarySource = readPortalFile("./src/token-plan/tokenPlanMemberSummary.ts");
   const packageJson = JSON.parse(readPortalFile("./package.json")) as {
     dependencies: Record<string, string>;
@@ -78,6 +81,11 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   assert.equal(packageJson.dependencies["@sdkwork/order-pc-checkout"], "workspace:*");
   assert.match(modalSource, /@sdkwork\/order-pc-checkout/);
   assert.match(modalSource, /SdkworkOrderCheckoutDialog/);
+  assert.match(modalSource, /SDKWORK_SUBSCRIPTION_I18N_KEYS/);
+  assert.match(modalSource, /SDKWORK_SUBSCRIPTION_I18N_KEYS\.checkout\.selectedPlan/);
+  assert.match(modalSource, /SDKWORK_SUBSCRIPTION_I18N_KEYS\.checkout\.paymentUnavailableDescription/);
+  assert.doesNotMatch(modalSource, /membership_checkout\./);
+  assert.match(i18nResourcesSource, /sdkworkSubscriptionCheckoutI18nBundle/);
   assert.match(modalSource, /@sdkwork\/order-pc-recharge/);
   assert.match(modalSource, /SdkworkPointsRechargeDialog/);
   assert.match(modalSource, /getClawRouterPointsRechargeService/);
@@ -89,13 +97,12 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   assert.doesNotMatch(modalSource, /createTokenPlanCommerceModal\("points-purchase"\)/);
   assert.doesNotMatch(modalSource, /登录后将跳转到控制台钱包完成操作/);
   assert.match(providerSource, /recharges:\s*orderClient\.recharges/);
-  assert.match(providerSource, /const orderAppService = createSdkworkOrderAppService/);
-  assert.match(providerSource, /configureSdkworkOrderAppServiceProvider\(\(\) => orderAppService\)/);
-  assert.match(providerSource, /memberships:\s*orderClient\.memberships/);
-  assert.doesNotMatch(
+  assert.match(
     providerSource,
-    /function buildOrderCommercePort\(\s*(?:catalogClient|membershipClient|paymentClient):/,
+    /const orderAppService = createSdkworkOrderAppService\(\{\s*appClient:\s*orderClient,\s*\}\);/,
   );
+  assert.doesNotMatch(providerSource, /function buildOrderCommercePort/);
+  assert.match(providerSource, /configureSdkworkOrderAppServiceProvider\(\(\) => orderAppService\)/);
   assert.match(providerSource, /createSdkworkMembershipCheckoutService/);
   assert.match(providerSource, /createSdkworkCouponRechargeService/);
   assert.match(providerSource, /getClawRouterCouponRechargeService/);
@@ -258,8 +265,9 @@ test("app bootstrap wires T1 domain service providers from independent owner SDK
   assert.match(providersSource, /createSdkworkOrderAppService/);
   assert.match(
     providersSource,
-    /buildOrderCommercePort\(orderClient\)/,
+    /createSdkworkOrderAppService\(\{\s*appClient:\s*orderClient,\s*\}\)/,
   );
+  assert.doesNotMatch(providersSource, /buildOrderCommercePort/);
   assert.match(providersSource, /getSdkworkOrderAppSdkClient\(\)/);
   assert.match(providersSource, /getSdkworkPaymentAppSdkClient\(\)/);
   assert.match(providersSource, /configureSdkworkOrderSessionTokenProvider\(readSessionTokens\)/);
