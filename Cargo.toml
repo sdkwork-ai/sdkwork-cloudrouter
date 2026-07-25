@@ -175,8 +175,8 @@ sdkwork-models-database-host = { path = "../sdkwork-models/crates/sdkwork-models
 sdkwork_models_database_bootstrap = { package = "sdkwork-models-database-bootstrap", path = "../sdkwork-models/crates/sdkwork-models-database-bootstrap" }
 sdkwork_models_catalog_repository_sqlx = { package = "sdkwork-models-catalog-repository-sqlx", path = "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx" }
 sdkwork_models_catalog_service = { package = "sdkwork-models-catalog-service", path = "../sdkwork-models/crates/sdkwork-models-catalog-service" }
-sdkwork_routes_models_catalog_app_api = { package = "sdkwork-routes-models-catalog-app-api", path = "../sdkwork-models/crates/sdkwork-routes-models-catalog-app-api" }
-sdkwork_routes_models_catalog_backend_api = { package = "sdkwork-routes-models-catalog-backend-api", path = "../sdkwork-models/crates/sdkwork-routes-models-catalog-backend-api" }
+sdkwork_routes_models_catalog_app_api = { package = "sdkwork-routes-models-catalog-app-api", path = "../sdkwork-models/crates/sdkwork-routes-catalog-app-api" }
+sdkwork_routes_models_catalog_backend_api = { package = "sdkwork-routes-models-catalog-backend-api", path = "../sdkwork-models/crates/sdkwork-routes-catalog-backend-api" }
 sdkwork-id-core = { path = "../sdkwork-id/crates/sdkwork-id-core" }
 sdkwork_iam_context_service = { package = "sdkwork-iam-context-service", path = "../sdkwork-iam/crates/sdkwork-iam-context-service" }
 sdkwork_iam_directory_repository_sqlx = { package = "sdkwork-iam-directory-repository-sqlx", path = "../sdkwork-iam/crates/sdkwork-iam-directory-repository-sqlx" }
