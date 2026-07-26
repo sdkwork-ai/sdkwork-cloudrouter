@@ -231,6 +231,22 @@ test("membership page renders all sections with sticky anchor navigation", () =>
   assert.match(source, /membership-section-levels/);
 });
 
+test("membership catalog SDK requests preserve the anonymous credential profile", () => {
+  const membershipSdkPath = "../../../sdkwork-membership/sdks/sdkwork-membership-app-sdk/sdkwork-membership-app-sdk-typescript/generated/server-openapi/src/api/memberships.ts";
+  if (!portalFileExists(membershipSdkPath)) {
+    return;
+  }
+
+  const source = readPortalFile(membershipSdkPath);
+  for (const resource of ["plans", "benefits", "packages"]) {
+    assert.match(
+      source,
+      new RegExp("appApiPath\\(`/memberships/" + resource + "`\\)[\\s\\S]{0,320}skipAuth: true"),
+      `memberships.${resource}.list must not send TokenManager credentials`,
+    );
+  }
+});
+
 test("console payment host avoids duplicate bootstrap and waits for controller readiness", () => {
   const mountSource = readPortalFile("./src/console-business/consoleBusinessHostMount.tsx");
 
