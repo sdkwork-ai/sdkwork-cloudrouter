@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pencil, Plus, Power, RefreshCw, Search, Server, Trash2 } from 'lucide-react';
+import { Cloud, CopyPlus, HardDrive, Pencil, Plus, Power, RefreshCw, Search, Server, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   AdminTableShell,
@@ -9,6 +9,7 @@ import {
 import {
   ServiceNodeService,
   type ServiceNode,
+  type ServiceNodeDeploymentProfile,
   type ServiceNodeInput,
   type ServiceNodeStatus,
 } from './serviceNodeService';
@@ -18,10 +19,22 @@ type DialogState =
   | { mode: 'create'; node?: undefined }
   | { mode: 'edit'; node: ServiceNode };
 
-const EMPTY_FORM: Required<ServiceNodeInput> = {
+interface ServiceNodeForm {
+  name: string;
+  deploymentProfile: ServiceNodeDeploymentProfile;
+  baseUrl: string;
+  domainsText: string;
+  ip: string;
+  remark: string;
+  status: ServiceNodeStatus;
+}
+
+const EMPTY_FORM: ServiceNodeForm = {
   name: '',
-  domain: '',
-  ip: '',
+  deploymentProfile: 'standalone',
+  baseUrl: 'http://127.0.0.1:8080/v1',
+  domainsText: '127.0.0.1:8080\nlocalhost:8080',
+  ip: '127.0.0.1',
   remark: '',
   status: 'enabled',
 };
@@ -187,11 +200,12 @@ export function ServiceNodesAdmin() {
         viewportClassName="min-h-0 flex-1 relative"
         viewportProps={{ 'data-admin-service-nodes-table-viewport': true }}
       >
-        <table className="min-w-[980px] w-full whitespace-nowrap text-left text-sm">
+        <table className="min-w-[1180px] w-full whitespace-nowrap text-left text-sm">
           <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500 dark:border-white/10 dark:bg-[#121212] dark:text-slate-400">
             <tr>
               <th className="px-5 py-3 font-medium">{t('admin.serviceNodes.columns.node', 'Node')}</th>
-              <th className="px-5 py-3 font-medium">{t('admin.serviceNodes.columns.domain', 'Domain')}</th>
+              <th className="px-5 py-3 font-medium">{t('admin.serviceNodes.columns.deployment', 'Deployment')}</th>
+              <th className="px-5 py-3 font-medium">{t('admin.serviceNodes.columns.baseUrl', 'Base URL')}</th>
               <th className="px-5 py-3 font-medium">{t('admin.serviceNodes.columns.ip', 'IP')}</th>
               <th className="px-5 py-3 font-medium">{t('admin.serviceNodes.columns.status', 'Status')}</th>
               <th className="px-5 py-3 font-medium">{t('admin.serviceNodes.columns.health', 'Health')}</th>
@@ -201,10 +215,10 @@ export function ServiceNodesAdmin() {
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs text-slate-700 dark:divide-white/5 dark:text-slate-300">
             {loading ? (
-              <BusinessStateTableRow colSpan={7} kind="loading" title={t('admin.serviceNodes.states.loading', 'Loading service nodes...')} />
+              <BusinessStateTableRow colSpan={8} kind="loading" title={t('admin.serviceNodes.states.loading', 'Loading service nodes...')} />
             ) : loadError ? (
               <BusinessStateTableRow
-                colSpan={7}
+                colSpan={8}
                 kind="error"
                 title={t('admin.serviceNodes.states.error', 'Service nodes could not be loaded')}
                 description={loadError}
@@ -213,7 +227,7 @@ export function ServiceNodesAdmin() {
               />
             ) : nodes.length === 0 ? (
               <BusinessStateTableRow
-                colSpan={7}
+                colSpan={8}
                 kind="empty"
                 title={t('admin.serviceNodes.states.empty', 'No service nodes found')}
                 description={t('admin.serviceNodes.states.emptyDesc', 'Create a node or adjust the filters.')}
@@ -232,8 +246,14 @@ export function ServiceNodesAdmin() {
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-3 font-mono text-[12px] text-slate-600 dark:text-slate-300">{node.domain}</td>
-                <td className="px-5 py-3 font-mono text-[12px] text-slate-600 dark:text-slate-300">{node.ip}</td>
+                <td className="px-5 py-3"><DeploymentBadge profile={node.deploymentProfile} t={t} /></td>
+                <td className="px-5 py-3">
+                  <div className="max-w-[340px] truncate font-mono text-[12px] text-slate-700 dark:text-slate-200" title={node.baseUrl}>{node.baseUrl}</div>
+                  <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    {t('admin.serviceNodes.columns.domainCount', '{{count}} domains').replace('{{count}}', String(node.domains.length))}
+                  </div>
+                </td>
+                <td className="px-5 py-3 font-mono text-[12px] text-slate-600 dark:text-slate-300">{node.ip || '-'}</td>
                 <td className="px-5 py-3"><StatusBadge status={node.status} t={t} /></td>
                 <td className="px-5 py-3"><HealthBadge status={node.healthStatus} t={t} /></td>
                 <td className="px-5 py-3 text-slate-500 dark:text-slate-400">{formatUpdatedAt(node.updatedAt)}</td>
@@ -301,8 +321,14 @@ function serviceNodeDetailUpdates(node: ServiceNode, input: ServiceNodeInput): S
   if (input.name !== undefined && input.name !== node.name) {
     updates.name = input.name;
   }
-  if (input.domain !== undefined && input.domain !== node.domain) {
-    updates.domain = input.domain;
+  if (input.deploymentProfile !== undefined && input.deploymentProfile !== node.deploymentProfile) {
+    updates.deploymentProfile = input.deploymentProfile;
+  }
+  if (input.baseUrl !== undefined && input.baseUrl !== node.baseUrl) {
+    updates.baseUrl = input.baseUrl;
+  }
+  if (input.domains !== undefined && !sameStringArray(input.domains, node.domains)) {
+    updates.domains = input.domains;
   }
   if (input.ip !== undefined && input.ip !== node.ip) {
     updates.ip = input.ip;
@@ -311,6 +337,10 @@ function serviceNodeDetailUpdates(node: ServiceNode, input: ServiceNodeInput): S
     updates.remark = input.remark;
   }
   return updates;
+}
+
+function sameStringArray(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function MetricCard({ label, value, tone }: { label: string; value: number; tone: string }) {
@@ -347,6 +377,29 @@ function HealthBadge({ status, t }: { status: ServiceNode['healthStatus']; t: (k
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status]}`}>
       {t(`admin.serviceNodes.health.${status}`, status)}
+    </span>
+  );
+}
+
+function DeploymentBadge({
+  profile,
+  t,
+}: {
+  profile: ServiceNodeDeploymentProfile;
+  t: (key: string, fallback: string) => string;
+}) {
+  const cloud = profile === 'cloud';
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold ${
+      cloud
+        ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'
+        : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+    }`}
+    >
+      {cloud ? <Cloud className="h-3.5 w-3.5" /> : <HardDrive className="h-3.5 w-3.5" />}
+      {cloud
+        ? t('admin.serviceNodes.deployment.cloud', 'SDKWork Cloud Gateway')
+        : t('admin.serviceNodes.deployment.standalone', 'Standalone')}
     </span>
   );
 }
@@ -392,10 +445,12 @@ function ServiceNodeDialog({
   onSubmit: (input: ServiceNodeInput) => Promise<void>;
   t: (key: string, fallback: string) => string;
 }) {
-  const [form, setForm] = useState<Required<ServiceNodeInput>>(() => state.mode === 'edit'
+  const [form, setForm] = useState<ServiceNodeForm>(() => state.mode === 'edit'
     ? {
       name: state.node.name,
-      domain: state.node.domain,
+      deploymentProfile: state.node.deploymentProfile,
+      baseUrl: state.node.baseUrl,
+      domainsText: state.node.domains.join('\n'),
       ip: state.node.ip,
       remark: state.node.remark,
       status: state.node.status,
@@ -409,7 +464,15 @@ function ServiceNodeDialog({
     setSaving(true);
     setError(null);
     try {
-      await onSubmit(form);
+      await onSubmit({
+        name: form.name,
+        deploymentProfile: form.deploymentProfile,
+        baseUrl: form.baseUrl,
+        domains: parseDomainsText(form.domainsText),
+        ip: form.ip,
+        remark: form.remark,
+        status: form.status,
+      });
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to save service node');
     } finally {
@@ -417,11 +480,29 @@ function ServiceNodeDialog({
     }
   };
 
+  const applyPreset = (profile: ServiceNodeDeploymentProfile) => {
+    setForm((current) => profile === 'cloud'
+      ? {
+        ...current,
+        deploymentProfile: 'cloud',
+        baseUrl: 'https://api.sdkwork.com/v1',
+        domainsText: 'api.sdkwork.com',
+        ip: '',
+      }
+      : {
+        ...current,
+        deploymentProfile: 'standalone',
+        baseUrl: 'http://127.0.0.1:8080/v1',
+        domainsText: '127.0.0.1:8080\nlocalhost:8080',
+        ip: '127.0.0.1',
+      });
+  };
+
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-slate-950/50 px-4 py-4 backdrop-blur-sm sm:items-center">
       <form
         onSubmit={save}
-        className="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]"
+        className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-[#1a1a1a]"
       >
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-300">
@@ -436,6 +517,28 @@ function ServiceNodeDialog({
           </div>
         </div>
 
+        <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-slate-100 pb-4 dark:border-white/10">
+          <span className="mr-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+            {t('admin.serviceNodes.quickConfig.label', 'Quick configuration')}
+          </span>
+          <button
+            type="button"
+            onClick={() => applyPreset('standalone')}
+            className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-emerald-500/10"
+          >
+            <HardDrive className="h-3.5 w-3.5" />
+            {t('admin.serviceNodes.quickConfig.standalone', 'Local standalone')}
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset('cloud')}
+            className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-blue-500/10"
+          >
+            <CopyPlus className="h-3.5 w-3.5" />
+            {t('admin.serviceNodes.quickConfig.cloud', 'SDKWork Cloud Gateway')}
+          </button>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
           <TextField
             label={t('admin.serviceNodes.fields.name', 'Name')}
@@ -443,11 +546,47 @@ function ServiceNodeDialog({
             onChange={(value) => setForm((current) => ({ ...current, name: value }))}
             autoFocus
           />
-          <TextField
-            label={t('admin.serviceNodes.fields.domain', 'Domain')}
-            value={form.domain}
-            onChange={(value) => setForm((current) => ({ ...current, domain: value }))}
-          />
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700 dark:text-slate-200">
+              {t('admin.serviceNodes.fields.deploymentProfile', 'Deployment')}
+            </span>
+            <span className="grid h-10 grid-cols-2 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-white/10 dark:bg-[#121212]">
+              {(['standalone', 'cloud'] as const).map((profile) => (
+                <button
+                  key={profile}
+                  type="button"
+                  onClick={() => setForm((current) => ({ ...current, deploymentProfile: profile }))}
+                  className={`rounded-md px-2 text-xs font-semibold transition ${form.deploymentProfile === profile
+                    ? 'bg-white text-slate-900 shadow-sm dark:bg-white/10 dark:text-white'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
+                >
+                  {profile === 'standalone'
+                    ? t('admin.serviceNodes.deployment.standalone', 'Standalone')
+                    : t('admin.serviceNodes.deployment.cloud', 'Cloud Gateway')}
+                </button>
+              ))}
+            </span>
+          </label>
+          <div className="md:col-span-2">
+            <TextField
+              label={t('admin.serviceNodes.fields.baseUrl', 'API Base URL')}
+              value={form.baseUrl}
+              onChange={(value) => setForm((current) => ({ ...current, baseUrl: value }))}
+            />
+          </div>
+          <label className="block text-sm md:col-span-2">
+            <span className="mb-1 flex items-center justify-between gap-3 font-medium text-slate-700 dark:text-slate-200">
+              <span>{t('admin.serviceNodes.fields.domains', 'Domains')}</span>
+              <span className="text-xs font-normal text-slate-400">{parseDomainsText(form.domainsText).length}/20</span>
+            </span>
+            <textarea
+              value={form.domainsText}
+              onChange={(event) => setForm((current) => ({ ...current, domainsText: event.target.value }))}
+              rows={3}
+              placeholder={t('admin.serviceNodes.fields.domainsPlaceholder', 'One domain per line')}
+              className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+            />
+          </label>
           <TextField
             label={t('admin.serviceNodes.fields.ip', 'IP')}
             value={form.ip}
@@ -505,6 +644,22 @@ function ServiceNodeDialog({
       </form>
     </div>
   );
+}
+
+function parseDomainsText(value: string): string[] {
+  const domains = value
+    .split(/[\n,]/u)
+    .map((domain) => domain.trim())
+    .filter(Boolean);
+  const seen = new Set<string>();
+  return domains.filter((domain) => {
+    const key = domain.toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 function TextField({

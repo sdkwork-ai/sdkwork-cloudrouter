@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "component": {
+    "name": "sdkwork-clawrouter-pc-admin-storage",
+    "package": "@sdkwork/clawrouter-pc-admin-storage",
+    "owner": "sdkwork-clawrouter",
+    "surface": "backend-admin"
+  },
+  "contracts": {
+    "backendSdkFamilies": ["clawrouter-backend-sdk"],
+    "apiSurface": "backend",
+    "routes": ["/admin/storage/:sectionId?"],
+    "permissions": ["clawrouter.admin.access"]
+  }
+}

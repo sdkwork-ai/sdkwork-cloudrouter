@@ -1,10 +1,14 @@
 import {
   APP_API_PREFIX,
+  OPEN_API_PREFIX,
+  ensureSdkworkApiSuccess,
   isRecord,
   readClawRouterRuntimeEnv,
+  readRequiredApiItem,
   readRequiredNonNegativeNumber,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
+import { getClawRouterAccountAppService } from '@sdkwork/clawroutes-pc-commons/domain-service-providers';
 import { getClawRouterAppSdkClient } from '@sdkwork/clawrouter-pc-console-core/sdk';
 import type {
   DashboardConfigurationDomain as SdkDashboardConfigurationDomain,
@@ -14,7 +18,7 @@ import type {
 export type DashboardTimeRange = 'hourly' | 'daily' | 'monthly' | 'yearly';
 
 interface DashboardSummary {
-  availableCredits: number;
+  tokenBankAvailable: number;
   usedCredits: number;
   requestCount: number;
   totalUsedCredits: number;
@@ -112,10 +116,8 @@ export const DASHBOARD_RUNTIME_I18N_KEYS = {
   domainProtocolError: 'console.dashboard.dashboardview.text.domainProtocolError',
 } as const;
 
-const DEFAULT_GATEWAY_DOMAIN = 'https://api.sdkwork.com/v1';
-
 const EMPTY_SUMMARY: DashboardSummary = {
-  availableCredits: 0,
+  tokenBankAvailable: 0,
   usedCredits: 0,
   requestCount: 0,
   totalUsedCredits: 0,
@@ -135,13 +137,54 @@ export class DashboardService {
   }
 
   static async fetchDashboardOverview(timeRange: DashboardTimeRange): Promise<DashboardSnapshot> {
-    const client = getClawRouterAppSdkClient();
     const params = buildTimeRangeParams(timeRange);
-    const result: unknown = await client.ai.dashboard.overview.retrieve(params);
-    return isRecord(result) && Object.keys(result).length > 0
-      ? normalizeDashboardSnapshot(result, timeRange)
-      : createInitialDashboardSnapshot(timeRange);
+    const [overviewResult, tokenBankResult] = await Promise.allSettled([
+      Promise.resolve().then(() => retrieveDashboardOverview(getClawRouterAppSdkClient(), params)),
+      Promise.resolve().then(() => {
+        const accountService = getClawRouterAccountAppService();
+        return accountService.tokenBank.account.retrieve();
+      }),
+    ]);
+    let snapshot = createInitialDashboardSnapshot(timeRange);
+
+    if (overviewResult.status === 'fulfilled') {
+      try {
+        const result = overviewResult.value;
+        ensureSdkworkApiSuccess(result, 'Failed to fetch dashboard overview');
+        snapshot = normalizeDashboardSnapshot(
+          readRequiredApiItem(result, 'Dashboard overview response is missing data'),
+          timeRange,
+        );
+      } catch {
+        // Keep the complete default snapshot when the response cannot be normalized.
+      }
+    }
+
+    let tokenBankAvailable = snapshot.summary.tokenBankAvailable;
+    if (tokenBankResult.status === 'fulfilled') {
+      try {
+        tokenBankAvailable = readTokenBankAvailableAmount(tokenBankResult.value);
+      } catch {
+        // Keep the default zero balance when the Token Bank response is unavailable.
+      }
+    }
+
+    return {
+      ...snapshot,
+      summary: {
+        ...snapshot.summary,
+        tokenBankAvailable,
+      },
+    };
   }
+}
+
+async function retrieveDashboardOverview(
+  client: ReturnType<typeof getClawRouterAppSdkClient>,
+  params: Record<string, string>,
+): Promise<unknown> {
+  const result: unknown = await client.ai.dashboard.overview.retrieve(params);
+  return result;
 }
 
 function buildTimeRangeParams(timeRange: DashboardTimeRange): Record<string, string> {
@@ -295,7 +338,7 @@ function createInitialConfigurationDomains(): ConfigurationDomain[] {
       domain: normalizeConfigurationDomainUrl(
         readClawRouterRuntimeEnv('VITE_CLAWROUTER_OPEN_API_BASE_URL')
           ?? readClawRouterRuntimeEnv('VITE_API_BASE_URL')
-          ?? DEFAULT_GATEWAY_DOMAIN,
+          ?? OPEN_API_PREFIX,
       ),
       ip: '',
       status: 'unknown',
@@ -418,7 +461,7 @@ function normalizeSummary(value: unknown, fallback: DashboardSummary): Dashboard
   }
 
   return {
-    availableCredits: readOptionalFirstNumber(value, ['availableCredits', 'balance', 'credits'], fallback.availableCredits),
+    tokenBankAvailable: fallback.tokenBankAvailable,
     usedCredits: readOptionalFirstNumber(value, ['usedCredits', 'cost', 'costAmount'], fallback.usedCredits),
     requestCount: readOptionalFirstNumber(value, ['requestCount', 'requests', 'totalRequests'], fallback.requestCount),
     totalUsedCredits: readOptionalFirstNumber(value, ['totalUsedCredits', 'totalCostAmount', 'totalCost', 'historyUsedCredits'], fallback.totalUsedCredits),
@@ -431,6 +474,17 @@ function normalizeSummary(value: unknown, fallback: DashboardSummary): Dashboard
     rpm: readOptionalFirstNumber(value, ['rpm', 'requestsPerMinute'], fallback.rpm),
     tpm: readOptionalFirstNumber(value, ['tpm', 'tokensPerMinute', 'totalTokens'], fallback.tpm),
   };
+}
+
+function readTokenBankAvailableAmount(value: unknown): number {
+  if (!isRecord(value)) {
+    throw new Error('Token Bank account must be an object');
+  }
+  return readRequiredNonNegativeNumber(
+    value,
+    'availableAmount',
+    'Token Bank available amount must be a non-negative number',
+  );
 }
 
 function normalizeSparkline(

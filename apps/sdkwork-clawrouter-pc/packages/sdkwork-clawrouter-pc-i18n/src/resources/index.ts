@@ -7,6 +7,7 @@ import { sdkworkSubscriptionCheckoutI18nBundle } from '@sdkwork/membership-pc-su
 import { mergeI18nBundles } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
 import { adminAuthSettingsMessages } from './admin/auth-settings';
+import { adminBusinessManagementMessages } from './admin/business-management';
 import { adminCacheMessages } from './admin/cache';
 import { adminChannelMessages } from './admin/channel';
 import { adminChannelResourceRoutingMessages } from './admin/channel-resource-routing';
@@ -48,6 +49,7 @@ import { sharedNavigationMessages } from './shared/navigation';
 export const resources = mergeI18nBundles([
   adminAnalyticsRecordMessages,
   adminAuthSettingsMessages,
+  adminBusinessManagementMessages,
   adminCacheMessages,
   adminChannelMessages,
   adminChannelResourceRoutingMessages,

@@ -1,5 +1,5 @@
-import React, { lazy, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
-import { Route } from 'react-router-dom';
+import { lazy, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
+import { Route, useParams } from 'react-router-dom';
 
 export type ClawRouterAdminRouteContribution = {
   path: string;
@@ -36,6 +36,10 @@ const ServiceNodesAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-ad
 const RuntimeRegionAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-runtime-region'), 'RuntimeRegionAdmin');
 const ClawRouterAuthSettingsPage = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-site'), 'ClawRouterAuthSettingsPage');
 const ClawRouterSiteSettingsPage = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-site'), 'ClawRouterSiteSettingsPage');
+const MembershipsAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-memberships'), 'MembershipsAdmin');
+const MarketingAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-marketing'), 'MarketingAdmin');
+const PaymentsAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-payments'), 'PaymentsAdmin');
+const StorageAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-storage'), 'StorageAdmin');
 
 export const CLAWROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly ClawRouterAdminRouteContribution[] = [
   route('dashboard', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-dashboard', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <DashboardAdmin />),
@@ -54,7 +58,16 @@ export const CLAWROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly ClawRouterAdminRoute
   route('settings', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-site', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <ClawRouterAuthSettingsPage />),
   route('runtime-region', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-runtime-region', ['clawrouter-backend-sdk'], 'clawrouter.system.read', <RuntimeRegionAdmin />),
   route('site', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-site', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <ClawRouterSiteSettingsPage />),
+  route('memberships/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-memberships', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
+  route('marketing/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-marketing', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={MarketingAdmin} />),
+  route('payments/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-payments', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
+  route('storage/:sectionId?', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-storage', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <AdminSectionRoute component={StorageAdmin} />),
 ];
+
+function AdminSectionRoute({ component: Component }: { component: ComponentType<{ sectionId?: string }> }) {
+  const { sectionId } = useParams<{ sectionId?: string }>();
+  return <Component sectionId={sectionId} />;
+}
 
 function route(
   path: string,

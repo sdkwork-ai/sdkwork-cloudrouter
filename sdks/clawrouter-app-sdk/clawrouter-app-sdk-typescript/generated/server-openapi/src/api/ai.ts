@@ -1,6 +1,6 @@
 import { appApiPath } from './paths';
-import type { HttpClient } from '../http/client';
-import type { DashboardOverviewResponse } from '../types';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
+import type { AppChannelGroupListResponse, DashboardOverviewResponse } from '../types';
 export class AiUsageLogsApi {
   private client: HttpClient;
 
@@ -10,17 +10,17 @@ export class AiUsageLogsApi {
 
 
 /** List logs */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/usage/logs`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/usage/logs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
 export class AiUsageApi {
-
+  private client: HttpClient;
   public readonly logs: AiUsageLogsApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.logs = new AiUsageLogsApi(client);
   }
 
@@ -35,8 +35,8 @@ export class AiRoutingUsageApi {
 
 
 /** List routing usage */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/routing/usage`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/routing/usage`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -49,8 +49,8 @@ export class AiRoutingRequestTracesApi {
 
 
 /** List routing request traces */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/routing/request_traces`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/routing/request_traces`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -63,8 +63,8 @@ export class AiRoutingChannelsApi {
 
 
 /** List routing channels */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/routing/channels`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/routing/channels`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -77,20 +77,20 @@ export class AiRoutingApiKeysApi {
 
 
 /** List routing API keys */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/routing/api_keys`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/routing/api_keys`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
 export class AiRoutingApi {
-
+  private client: HttpClient;
   public readonly apiKeys: AiRoutingApiKeysApi;
   public readonly channels: AiRoutingChannelsApi;
   public readonly requestTraces: AiRoutingRequestTracesApi;
   public readonly usage: AiRoutingUsageApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.apiKeys = new AiRoutingApiKeysApi(client);
     this.channels = new AiRoutingChannelsApi(client);
     this.requestTraces = new AiRoutingRequestTracesApi(client);
@@ -108,8 +108,8 @@ export class AiGenerationsWorkspaceApi {
 
 
 /** List playground generation history from service */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/generations/workspace`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations/workspace`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -122,17 +122,17 @@ export class AiGenerationsImagesTextToImageApi {
 
 
 /** Run playground asset generation */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/ai/generations/images/text_to_image`));
+  async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations/images/text_to_image`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
 export class AiGenerationsImagesApi {
-
+  private client: HttpClient;
   public readonly textToImage: AiGenerationsImagesTextToImageApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.textToImage = new AiGenerationsImagesTextToImageApi(client);
   }
 
@@ -151,8 +151,8 @@ export class AiGenerationsApi {
 
 
 /** List generation history */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/generations`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -165,17 +165,17 @@ export class AiGatewayTracesApi {
 
 
 /** List traces */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/gateway/traces`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/gateway/traces`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
 export class AiGatewayApi {
-
+  private client: HttpClient;
   public readonly traces: AiGatewayTracesApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.traces = new AiGatewayTracesApi(client);
   }
 
@@ -196,22 +196,22 @@ export class AiDashboardOverviewApi {
 
 
 /** List dashboard overview */
-  async retrieve(params?: AiDashboardOverviewRetrieveParams): Promise<DashboardOverviewResponse> {
+  async retrieve(params?: AiDashboardOverviewRetrieveParams, requestOptions?: ApiRequestOptions): Promise<DashboardOverviewResponse> {
     const query = buildQueryString([
       { name: 'time_range', value: params?.timeRange, style: 'form', explode: true, allowReserved: false },
       { name: 'start_time', value: params?.startTime, style: 'form', explode: true, allowReserved: false },
       { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<DashboardOverviewResponse>(appendQueryString(appApiPath(`/ai/dashboard/overview`), query));
+    return this.client.request<DashboardOverviewResponse>(appendQueryString(appApiPath(`/ai/dashboard/overview`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
 export class AiDashboardApi {
-
+  private client: HttpClient;
   public readonly overview: AiDashboardOverviewApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.overview = new AiDashboardOverviewApi(client);
   }
 
@@ -226,13 +226,13 @@ export class AiChannelGroupsApi {
 
 
 /** List groups */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/ai/channel_groups`));
+  async list(requestOptions?: ApiRequestOptions): Promise<AppChannelGroupListResponse> {
+    return this.client.request<AppChannelGroupListResponse>(appApiPath(`/ai/channel_groups`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
 export class AiApi {
-
+  private client: HttpClient;
   public readonly channelGroups: AiChannelGroupsApi;
   public readonly dashboard: AiDashboardApi;
   public readonly gateway: AiGatewayApi;
@@ -241,7 +241,7 @@ export class AiApi {
   public readonly usage: AiUsageApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.channelGroups = new AiChannelGroupsApi(client);
     this.dashboard = new AiDashboardApi(client);
     this.gateway = new AiGatewayApi(client);

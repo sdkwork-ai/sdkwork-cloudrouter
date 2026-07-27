@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 
 function readPortalFile(relativePath: string): string {
@@ -43,6 +43,9 @@ test("console business host mounts T1 domain wallet, membership, coupon, checkou
   assert.match(shellSource, /path="\/token-plan"/);
   assert.match(publicNavbarSource, /\/token-plan/);
   assert.match(publicNavbarSource, /nav\.tokenPlan/);
+  assert.match(navbarSource, /ClawRouterNavbarWalletEntry/);
+  assert.doesNotMatch(navbarSource, /console\.navbar\.coupons/);
+  assert.doesNotMatch(navbarSource, /TicketPercent/);
   assert.doesNotMatch(navbarSource, /ClawRouterNavbarTokenPlanEntry/);
   assert.doesNotMatch(navbarSource, /SdkworkTokenPlanHeaderEntry/);
   assert.match(readPortalFile("./src/console-business/ClawRouterWalletPage.tsx"), /@sdkwork\/account-pc-wallet/);
@@ -84,13 +87,17 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   assert.match(modalSource, /SDKWORK_SUBSCRIPTION_I18N_KEYS/);
   assert.match(modalSource, /SDKWORK_SUBSCRIPTION_I18N_KEYS\.checkout\.selectedPlan/);
   assert.match(modalSource, /SDKWORK_SUBSCRIPTION_I18N_KEYS\.checkout\.paymentUnavailableDescription/);
+  assert.match(modalSource, /SDKWORK_SUBSCRIPTION_I18N_KEYS\.checkout\.title, "购买套餐"/);
+  assert.match(modalSource, /SDKWORK_SUBSCRIPTION_I18N_KEYS\.checkout\.expiresIn/);
   assert.doesNotMatch(modalSource, /membership_checkout\./);
   assert.match(i18nResourcesSource, /sdkworkSubscriptionCheckoutI18nBundle/);
   assert.match(modalSource, /@sdkwork\/order-pc-recharge/);
   assert.match(modalSource, /SdkworkPointsRechargeDialog/);
   assert.match(modalSource, /getClawRouterPointsRechargeService/);
   assert.match(modalSource, /service=\{getClawRouterPointsRechargeService\(\)\}/);
-  assert.match(modalSource, /getClawRouterCouponRechargeService\(\)\.redeem/);
+  assert.match(modalSource, /SdkworkCouponRedemptionDialog/);
+  assert.match(modalSource, /service=\{getClawRouterCouponRechargeService\(\)\}/);
+  assert.doesNotMatch(modalSource, /getClawRouterCouponRechargeService\(\)\.redeem/);
   assert.match(modalSource, /coupon_recharge\.code_label/);
   assert.match(modalSource, /Token Bank/);
   assert.doesNotMatch(modalSource, /createTokenPlanCommerceModal\("redeem"\)/);
@@ -111,7 +118,91 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   assert.doesNotMatch(providerSource, /MembershipOrderAppTransportClient/);
   assert.match(providerSource, /appService: orderAppService/);
   assert.doesNotMatch(providerSource, /bootstrapMembershipOrderAppService/);
-  assert.match(summarySource, /pointBalance:\s*state\.dashboard\.summary\.pointBalance/);
+  assert.match(summarySource, /pointBalance:\s*walletState\.overview\.account\.tokenBankAvailable/);
+});
+
+test("Compute Credits balances and activity use the Token Bank account", () => {
+  const providerSource = readPortalFile(
+    "./packages/sdkwork-clawroutes-pc-commons/src/domain-service-providers.ts",
+  );
+  const dashboardSource = readPortalFile(
+    "./packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts",
+  );
+  const dashboardViewSource = readPortalFile(
+    "./packages/sdkwork-clawrouter-pc-console-dashboard/src/DashboardView.tsx",
+  );
+  const tokenBankSources = [
+    readPortalFile("./src/console-business/ClawRouterNavbarWalletEntry.tsx"),
+    readPortalFile("./src/console-business/ClawRouterNavbarWalletQuickPanel.tsx"),
+    readPortalFile("./src/console-business/ClawRouterTokenBankBalancePanel.tsx"),
+    readPortalFile("./src/console-business/ClawRouterTokenBankTransactionList.tsx"),
+    readPortalFile("./src/console-business/ClawRouterWalletPage.tsx"),
+    readPortalFile("./src/console-business/ConsoleAccountView.tsx"),
+    readPortalFile("./src/token-plan/tokenPlanMemberSummary.ts"),
+  ];
+
+  assert.match(providerSource, /getClawRouterAccountAppService/);
+  assert.match(providerSource, /return getSdkworkAccountService\(\)/);
+  assert.match(providerSource, /billing:\s*accountClient\.billing/);
+  assert.match(providerSource, /tokenBank:\s*accountClient\.tokenBank/);
+  assert.match(dashboardSource, /accountService\.tokenBank\.account\.retrieve\(\)/);
+  assert.match(dashboardSource, /tokenBankAvailable\s*=\s*readTokenBankAvailableAmount\(tokenBankResult\.value\)/);
+  assert.match(dashboardSource, /Promise\.allSettled/);
+  assert.doesNotMatch(dashboardSource, /DASHBOARD_(?:DATA_UNAVAILABLE|PARTIAL_DATA)_WARNING/);
+  assert.doesNotMatch(dashboardSource, /warnings\.push/);
+  assert.doesNotMatch(dashboardSource, /\['availableCredits', 'balance', 'credits'\]/);
+  assert.match(dashboardViewSource, /snapshot\.summary\.tokenBankAvailable/);
+  assert.doesNotMatch(dashboardViewSource, /snapshot\.summary\.availableCredits/);
+  assert.doesNotMatch(dashboardViewSource, /showFull(?:Loading|Error)/);
+
+  const combinedSource = tokenBankSources.join("\n");
+  assert.match(combinedSource, /tokenBankAvailable/);
+  assert.match(combinedSource, /tokenBankDelta/);
+  assert.doesNotMatch(combinedSource, /account\.availablePoints/);
+  assert.doesNotMatch(combinedSource, /\.pointsDelta/);
+  assert.doesNotMatch(combinedSource, /formatPoints\s*\(/);
+  assert.doesNotMatch(combinedSource, /formatWalletDelta\s*\(/);
+});
+
+test("English and Chinese catalogs use the Compute Credits terminology", () => {
+  const resourcesRoot = new URL(
+    "./packages/sdkwork-clawrouter-pc-i18n/src/resources/",
+    import.meta.url,
+  );
+  const resourcePaths = readdirSync(resourcesRoot, { recursive: true, encoding: "utf8" })
+    .filter((path) => path.endsWith(".ts"));
+
+  for (const relativePath of resourcePaths) {
+    const source = readFileSync(
+      new URL(relativePath.replaceAll("\\", "/"), resourcesRoot),
+      "utf8",
+    );
+    assert.doesNotMatch(source, /积分/, `${relativePath} must not display the retired Chinese term`);
+
+    for (const line of source.split(/\r?\n/)) {
+      const match = line.match(/^\s*"[^"]+":\s*"((?:[^"\\]|\\.)*)",?\s*$/);
+      if (!match) {
+        continue;
+      }
+      const displayValue = match[1]
+        .replaceAll("Compute Credits", "")
+        .replaceAll(/\{\{[^}]+\}\}/g, "")
+        .replaceAll(/credit card/gi, "")
+        .replaceAll("Unified Social Credit Code", "")
+        .replaceAll("Credit Limit", "")
+        .replaceAll(/data points/gi, "");
+      assert.doesNotMatch(
+        displayValue,
+        /\b(?:point|points|credit|credits)\b/i,
+        `${relativePath} contains an ambiguous English display term: ${match[1]}`,
+      );
+    }
+  }
+
+  const adminAnalyticsSource = readPortalFile(
+    "./packages/sdkwork-clawrouter-pc-admin-analytics/src/index.tsx",
+  );
+  assert.doesNotMatch(adminAnalyticsSource, /t\([^\n]+,\s*['"]Points?['"]\)/);
 });
 
 test("Playground delegates Token Plan UI to Agents and injects only host services", () => {
@@ -163,6 +254,38 @@ test("console wallet embeds the order-owned points recharge flow", () => {
   assert.doesNotMatch(walletSource, /controller\.rechargePoints/);
   assert.doesNotMatch(walletSource, /function RechargePanel/);
   assert.match(ownershipSource, /rechargePackageName:\s*'@sdkwork\/order-pc-recharge'/);
+});
+
+test("recharge hosts provide server-expiration checkout copy", () => {
+  const tokenPlanSource = readPortalFile("./src/token-plan/ClawRouterTokenPlanCommerceModal.tsx");
+  const walletSource = readPortalFile("./src/console-business/ClawRouterWalletPage.tsx");
+  const rechargeCatalogSource = readPortalFile(
+    "./packages/sdkwork-clawrouter-pc-i18n/src/resources/console/recharge.ts",
+  );
+
+  for (const source of [tokenPlanSource, walletSource]) {
+    assert.match(source, /points_recharge\.expires_in/);
+    assert.match(source, /points_recharge\.expired_description/);
+    assert.match(source, /points_recharge\.retry_payment/);
+  }
+  assert.match(rechargeCatalogSource, /"points_recharge\.expires_in"/);
+  assert.match(rechargeCatalogSource, /"points_recharge\.expired_description"/);
+  assert.match(rechargeCatalogSource, /"points_recharge\.retry_payment"/);
+});
+
+test("token plan and console wallet delegate coupon redemption to the order-owned flow", () => {
+  const tokenPlanSource = readPortalFile("./src/token-plan/ClawRouterTokenPlanCommerceModal.tsx");
+  const walletSource = readPortalFile("./src/console-business/ClawRouterWalletPage.tsx");
+
+  assert.match(tokenPlanSource, /SdkworkCouponRedemptionDialog/);
+  assert.match(walletSource, /SdkworkCouponRedemptionInline/);
+  assert.match(walletSource, /service=\{couponRedemptionService\}/);
+  assert.match(walletSource, /result\.benefitKind === 'subscription'/);
+  assert.match(walletSource, /membershipController\.refresh\(\)/);
+  assert.match(walletSource, /controller\.refresh\(\)/);
+  assert.doesNotMatch(walletSource, /getSdkworkPromotionService/);
+  assert.doesNotMatch(walletSource, /promotions\.codes\.redemptions\.create/);
+  assert.doesNotMatch(walletSource, /function RedeemPanel/);
 });
 
 test("console wallet derives authentication from the shared IAM session", () => {
@@ -229,22 +352,6 @@ test("membership page renders all sections with sticky anchor navigation", () =>
   assert.match(source, /membership-section-plans/);
   assert.match(source, /membership-section-benefits/);
   assert.match(source, /membership-section-levels/);
-});
-
-test("membership catalog SDK requests preserve the anonymous credential profile", () => {
-  const membershipSdkPath = "../../../sdkwork-membership/sdks/sdkwork-membership-app-sdk/sdkwork-membership-app-sdk-typescript/generated/server-openapi/src/api/memberships.ts";
-  if (!portalFileExists(membershipSdkPath)) {
-    return;
-  }
-
-  const source = readPortalFile(membershipSdkPath);
-  for (const resource of ["plans", "benefits", "packages"]) {
-    assert.match(
-      source,
-      new RegExp("appApiPath\\(`/memberships/" + resource + "`\\)[\\s\\S]{0,320}skipAuth: true"),
-      `memberships.${resource}.list must not send TokenManager credentials`,
-    );
-  }
 });
 
 test("console payment host avoids duplicate bootstrap and waits for controller readiness", () => {

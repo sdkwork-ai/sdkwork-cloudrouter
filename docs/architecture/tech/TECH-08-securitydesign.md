@@ -115,7 +115,7 @@ Secret backend：
 
 ## 7. 资金和交易安全
 
-1. 账户、VIP、优惠券、积分充值、订单支付复用既有 `plus_*` 表。
+1. 账户、VIP、优惠券、算力元充值（Token Bank）、订单支付复用其领域所有者的既有存储。
 2. 余额变更必须写流水。
 3. 支付回调必须有外部事件唯一约束。
 4. 充值和兑换必须有 idempotency key。
@@ -196,4 +196,3 @@ Gateway：
 - [ ] 日志脱敏检查通过。
 - [ ] Docker/K8S secret 不写入镜像。
 - [ ] Desktop 默认只绑定 localhost。
-

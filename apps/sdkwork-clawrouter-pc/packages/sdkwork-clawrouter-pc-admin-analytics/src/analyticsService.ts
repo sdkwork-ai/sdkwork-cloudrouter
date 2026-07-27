@@ -186,10 +186,10 @@ function normalizeSummary(record: ApiRecord): AdminAnalyticsSummary {
     successfulRequests: readRequiredNonNegativeNumber(record, 'successfulRequests', 'Analytics successful requests are required'),
     failedRequests: readRequiredNonNegativeNumber(record, 'failedRequests', 'Analytics failed requests are required'),
     totalTokens: readRequiredNonNegativeNumber(record, 'totalTokens', 'Analytics total tokens are required'),
-    totalPoints: readRequiredNonNegativeNumber(record, 'totalPoints', 'Analytics total points are required'),
+    totalPoints: readRequiredNonNegativeNumber(record, 'totalPoints', 'Analytics total Compute Credits are required'),
     upstreamCost: readRequiredNonNegativeNumber(record, 'upstreamCost', 'Analytics upstream cost is required'),
     averageTokensPerRequest: readRequiredNonNegativeNumber(record, 'averageTokensPerRequest', 'Analytics average tokens are required'),
-    averagePointsPerRequest: readRequiredNonNegativeNumber(record, 'averagePointsPerRequest', 'Analytics average points are required'),
+    averagePointsPerRequest: readRequiredNonNegativeNumber(record, 'averagePointsPerRequest', 'Analytics average Compute Credits are required'),
     errorRate: readRequiredNonNegativeNumber(record, 'errorRate', 'Analytics error rate is required'),
   };
 }
@@ -199,7 +199,7 @@ function normalizeTrendPoint(value: ApiRecord): AdminAnalyticsTrendPoint {
     time: readRequiredString(value, 'time', 'Analytics trend time is required'),
     requests: readRequiredNonNegativeNumber(value, 'requests', 'Analytics trend requests are required'),
     tokens: readRequiredNonNegativeNumber(value, 'tokens', 'Analytics trend tokens are required'),
-    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics trend points are required'),
+    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics trend Compute Credits are required'),
     users: readRequiredNonNegativeNumber(value, 'users', 'Analytics trend users are required'),
   };
 }
@@ -212,7 +212,7 @@ function normalizeUserRankItem(value: ApiRecord): AdminAnalyticsUserRankItem {
     email: readNullableString(value, 'email'),
     requestCount: readRequiredNonNegativeNumber(value, 'requestCount', 'Analytics user request count is required'),
     totalTokens: readRequiredNonNegativeNumber(value, 'totalTokens', 'Analytics user tokens are required'),
-    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics user points are required'),
+    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics user Compute Credits are required'),
     modelDistribution: readRequiredRecordArray(
       value,
       'modelDistribution',
@@ -231,7 +231,7 @@ function normalizeModelRankItem(value: ApiRecord): AdminAnalyticsModelRankItem {
     modality: readRequiredString(value, 'modality', 'Analytics model modality is required'),
     requestCount: readRequiredNonNegativeNumber(value, 'requestCount', 'Analytics model request count is required'),
     totalTokens: readRequiredNonNegativeNumber(value, 'totalTokens', 'Analytics model tokens are required'),
-    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics model points are required'),
+    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics model Compute Credits are required'),
     upstreamCost: readRequiredNonNegativeNumber(value, 'upstreamCost', 'Analytics model upstream cost is required'),
     userCount: readRequiredNonNegativeNumber(value, 'userCount', 'Analytics model user count is required'),
     averageTokensPerRequest: readRequiredNonNegativeNumber(
@@ -271,7 +271,7 @@ function normalizeRankings<T>(
   itemMessage: string,
 ): AdminAnalyticsRankings<T> {
   return {
-    points: readRequiredRecordArray(record, 'points', 'Analytics points ranking is required', itemMessage).map(normalizeItem),
+    points: readRequiredRecordArray(record, 'points', 'Analytics Compute Credits ranking is required', itemMessage).map(normalizeItem),
     tokens: readRequiredRecordArray(record, 'tokens', 'Analytics tokens ranking is required', itemMessage).map(normalizeItem),
     requests: readRequiredRecordArray(record, 'requests', 'Analytics requests ranking is required', itemMessage).map(normalizeItem),
   };

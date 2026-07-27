@@ -219,7 +219,7 @@ function normalizeTrafficData(value: unknown): TrafficData {
   const item = readRequiredRecord(value, 'Dashboard traffic record is required');
   const tokens = readRequiredNonNegativeNumber(item, 'tokens', 'Dashboard traffic tokens are required');
   const requests = readRequiredNonNegativeNumber(item, 'requests', 'Dashboard traffic requests are required');
-  const points = readRequiredNonNegativeNumber(item, 'cost', 'Dashboard traffic billing points are required');
+  const points = readRequiredNonNegativeNumber(item, 'cost', 'Dashboard traffic billing Compute Credits are required');
   return {
     time: readRequiredString(item, 'time', 'Dashboard traffic time is required'),
     tokens,
@@ -235,7 +235,7 @@ export function normalizeAnalyticsTrafficData(value: unknown): TrafficData {
   const item = readRequiredRecord(value, 'Dashboard traffic analytics trend point is required');
   const tokens = readRequiredNonNegativeNumber(item, 'tokens', 'Dashboard traffic analytics tokens are required');
   const requests = readRequiredNonNegativeNumber(item, 'requests', 'Dashboard traffic analytics requests are required');
-  const points = readRequiredNonNegativeNumber(item, 'points', 'Dashboard traffic analytics points are required');
+  const points = readRequiredNonNegativeNumber(item, 'points', 'Dashboard traffic analytics Compute Credits are required');
   return {
     time: readRequiredString(item, 'time', 'Dashboard traffic analytics time is required'),
     tokens,
@@ -256,10 +256,10 @@ function normalizeAnalyticsSummary(record: ApiRecord): DashboardAnalyticsSummary
     successfulRequests: readRequiredNonNegativeNumber(record, 'successfulRequests', 'Dashboard traffic analytics successful requests are required'),
     failedRequests: readRequiredNonNegativeNumber(record, 'failedRequests', 'Dashboard traffic analytics failed requests are required'),
     totalTokens: readRequiredNonNegativeNumber(record, 'totalTokens', 'Dashboard traffic analytics total tokens are required'),
-    totalPoints: readRequiredNonNegativeNumber(record, 'totalPoints', 'Dashboard traffic analytics total points are required'),
+    totalPoints: readRequiredNonNegativeNumber(record, 'totalPoints', 'Dashboard traffic analytics total Compute Credits are required'),
     upstreamCost: readRequiredNonNegativeNumber(record, 'upstreamCost', 'Dashboard traffic analytics upstream cost is required'),
     averageTokensPerRequest: readRequiredNonNegativeNumber(record, 'averageTokensPerRequest', 'Dashboard traffic analytics average tokens are required'),
-    averagePointsPerRequest: readRequiredNonNegativeNumber(record, 'averagePointsPerRequest', 'Dashboard traffic analytics average points are required'),
+    averagePointsPerRequest: readRequiredNonNegativeNumber(record, 'averagePointsPerRequest', 'Dashboard traffic analytics average Compute Credits are required'),
     errorRate: readRequiredNonNegativeNumber(record, 'errorRate', 'Dashboard traffic analytics error rate is required'),
   };
 }
@@ -445,9 +445,9 @@ export function createDashboardSummaryCards(snapshot: {
       }),
     },
     {
-      label: t('admin.dashboard.summary.pointsConsumed.label', '消耗积分'),
+      label: t('admin.dashboard.summary.pointsConsumed.label', 'Compute Credits consumed'),
       value: formatDecimal(summary.totalPoints),
-      detail: t('admin.dashboard.summary.pointsConsumed.detail', '平均每次 {{average}} 积分', {
+      detail: t('admin.dashboard.summary.pointsConsumed.detail', '{{average}} Compute Credits per request', {
         average: formatDecimal(summary.averagePointsPerRequest),
       }),
     },

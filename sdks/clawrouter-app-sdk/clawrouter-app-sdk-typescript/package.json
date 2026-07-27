@@ -31,7 +31,7 @@
     "@sdkwork/order-app-sdk": "workspace:*",
     "@sdkwork/payment-app-sdk": "workspace:*",
     "@sdkwork/promotion-app-sdk": "workspace:*",
-    "@sdkwork/sdk-common": "^1.0.2"
+    "@sdkwork/sdk-common": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "20.19.39",

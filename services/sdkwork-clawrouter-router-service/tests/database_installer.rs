@@ -25,6 +25,7 @@ struct LifecycleSnapshot {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct SeedSnapshot {
+    gateway_instance_rows: i64,
     model_rows: i64,
     pricing_rows: i64,
     ranking_rows: i64,
@@ -82,7 +83,7 @@ async fn lifecycle_snapshot(pool: &SqlitePool) -> LifecycleSnapshot {
         r#"
         SELECT module_id, contract_version, seed_locale, seed_profile, status
         FROM ops_database_installation_state
-        WHERE id = 1
+        WHERE module_id = 'clawrouter'
         "#,
     )
     .fetch_optional(pool)
@@ -119,6 +120,15 @@ async fn lifecycle_snapshot(pool: &SqlitePool) -> LifecycleSnapshot {
 
 async fn seed_snapshot(pool: &SqlitePool) -> SeedSnapshot {
     SeedSnapshot {
+        gateway_instance_rows: sqlx::query_scalar(
+            r#"SELECT COUNT(*) FROM ops_gateway_instance
+               WHERE tenant_id = 100001 AND organization_id = 0
+                 AND instance_code = 'clawrouter-default-standalone'
+                 AND deleted_at IS NULL"#,
+        )
+        .fetch_one(pool)
+        .await
+        .expect("count default gateway instance rows"),
         model_rows: sqlx::query_scalar(
             "SELECT COUNT(*) FROM ai_model WHERE status = 1 AND deleted_at IS NULL",
         )
@@ -304,6 +314,7 @@ async fn repeated_application_bootstrap_is_a_noop_for_seed_cardinality() {
         .await
         .expect("initial application bootstrap");
     let before = seed_snapshot(&pool).await;
+    assert_eq!(1, before.gateway_instance_rows);
 
     let report = installer
         .ensure_bootstrap_data()

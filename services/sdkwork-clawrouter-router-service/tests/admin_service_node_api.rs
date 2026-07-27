@@ -37,6 +37,10 @@ async fn admin_service_node_routes_support_full_crud() {
         list_payload["data"]["items"][0]["domain"]
     );
     assert_eq!("enabled", list_payload["data"]["items"][0]["status"]);
+    assert_eq!(
+        "https://edge-shanghai.example.com/v1",
+        list_payload["data"]["items"][0]["baseUrl"]
+    );
 
     let create_response = router
         .clone()
@@ -45,7 +49,9 @@ async fn admin_service_node_routes_support_full_crud() {
             "/backend/v3/api/system/service_nodes",
             Some(json!({
                 "name": "edge-beijing-01",
-                "domain": "edge-beijing.example.com",
+                "deploymentProfile": "cloud",
+                "baseUrl": "https://api.example.com/v1/",
+                "domains": ["api.example.com", "api-alt.example.com", "API.EXAMPLE.COM"],
                 "ip": "10.0.1.10",
                 "remark": "Beijing relay node",
                 "status": "enabled"
@@ -56,6 +62,11 @@ async fn admin_service_node_routes_support_full_crud() {
     assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!("node-created", create_payload["data"]["item"]["id"]);
+    assert_eq!("cloud", create_payload["data"]["item"]["deploymentProfile"]);
+    assert_eq!(
+        json!(["api.example.com", "api-alt.example.com"]),
+        create_payload["data"]["item"]["domains"]
+    );
 
     let localized_create_response = router
         .clone()
@@ -90,8 +101,10 @@ async fn admin_service_node_routes_support_full_crud() {
             "/backend/v3/api/system/service_nodes/node-1",
             Some(json!({
                 "name": "edge-shanghai-01",
-                "domain": "edge-shanghai.example.com",
-                "ip": "10.0.0.10",
+                "deploymentProfile": "cloud",
+                "baseUrl": "https://api.example.com/openai/v1",
+                "domains": ["api.example.com", "api-backup.example.com"],
+                "ip": "",
                 "remark": "Primary Shanghai relay"
             })),
         ))
@@ -339,8 +352,10 @@ impl AdminServiceNodeStore for TestAdminServiceNodeStore {
         Box::pin(async move {
             assert_eq!(subject(), command.subject);
             if command.name == "Beijing-Relay-01" {
-                assert_eq!("edge-beijing.example.com", command.domain);
-                assert_eq!("2001:db8::1", command.ip);
+                assert_eq!("standalone", command.deployment_profile);
+                assert_eq!("https://edge-beijing.example.com/v1", command.base_url);
+                assert_eq!(vec!["edge-beijing.example.com"], command.domains);
+                assert_eq!(Some("2001:db8::1".to_owned()), command.ip);
                 assert_eq!("North-China primary node", command.remark);
                 assert_eq!(Some("enabled".to_owned()), command.status);
                 return Ok(service_node_item(
@@ -354,19 +369,31 @@ impl AdminServiceNodeStore for TestAdminServiceNodeStore {
                 ));
             }
             assert_eq!("edge-beijing-01", command.name);
-            assert_eq!("edge-beijing.example.com", command.domain);
-            assert_eq!("10.0.1.10", command.ip);
+            assert_eq!("cloud", command.deployment_profile);
+            assert_eq!("https://api.example.com/v1", command.base_url);
+            assert_eq!(
+                vec!["api.example.com", "api-alt.example.com"],
+                command.domains
+            );
+            assert_eq!(Some("10.0.1.10".to_owned()), command.ip);
             assert_eq!("Beijing relay node", command.remark);
             assert_eq!(Some("enabled".to_owned()), command.status);
-            Ok(service_node_item(
+            let mut item = service_node_item(
                 "node-created",
                 "edge-beijing-01",
-                "edge-beijing.example.com",
+                "api.example.com",
                 "10.0.1.10",
                 "Beijing relay node",
                 "enabled",
                 "unknown",
-            ))
+            );
+            item.deployment_profile = "cloud".to_owned();
+            item.base_url = "https://api.example.com/v1".to_owned();
+            item.domains = vec![
+                "api.example.com".to_owned(),
+                "api-alt.example.com".to_owned(),
+            ];
+            Ok(item)
         })
     }
 
@@ -381,6 +408,19 @@ impl AdminServiceNodeStore for TestAdminServiceNodeStore {
                 ""
             } else {
                 assert_eq!("node-1", command.node_id);
+                assert_eq!(Some("cloud".to_owned()), command.deployment_profile);
+                assert_eq!(
+                    Some("https://api.example.com/openai/v1".to_owned()),
+                    command.base_url
+                );
+                assert_eq!(
+                    Some(vec![
+                        "api.example.com".to_owned(),
+                        "api-backup.example.com".to_owned(),
+                    ]),
+                    command.domains
+                );
+                assert_eq!(Some("".to_owned()), command.ip);
                 assert_eq!(Some("Primary Shanghai relay".to_owned()), command.remark);
                 "Primary Shanghai relay"
             };
@@ -449,6 +489,9 @@ fn service_node_item(
     AdminServiceNodeItem {
         id: id.to_owned(),
         name: name.to_owned(),
+        deployment_profile: "standalone".to_owned(),
+        base_url: format!("https://{domain}/v1"),
+        domains: vec![domain.to_owned()],
         domain: domain.to_owned(),
         ip: ip.to_owned(),
         remark: remark.to_owned(),

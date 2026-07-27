@@ -920,7 +920,7 @@ mod tests {
                 method,
                 path,
                 &WebRequestContextProfile::default(),
-                Some(manifest),
+                Some(&manifest),
             ),
             "{method} {path} must resolve as a public path",
         );

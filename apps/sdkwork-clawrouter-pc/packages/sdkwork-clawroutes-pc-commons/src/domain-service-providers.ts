@@ -3,6 +3,8 @@ import {
   configureSdkworkAccountAppServiceProvider,
   configureSdkworkAccountSessionTokenProvider,
   createSdkworkAccountAppService,
+  getSdkworkAccountService,
+  type SdkworkAccountAppService,
 } from '@sdkwork/account-service';
 import type { MembershipAppSdkClient } from '@sdkwork/membership-sdk-ports';
 import {
@@ -67,7 +69,9 @@ function buildAccountCommercePort(
 ): AccountAppSdkClient['commerce'] {
   return {
     accounts: accountClient.accounts,
+    billing: accountClient.billing,
     recharges: orderClient.recharges,
+    tokenBank: accountClient.tokenBank,
     wallet: accountClient.wallet,
   } as unknown as AccountAppSdkClient['commerce'];
 }
@@ -142,9 +146,13 @@ export function getClawRouterMembershipCheckoutService(): SdkworkMembershipCheck
   return membershipCheckoutService;
 }
 
+export function getClawRouterAccountAppService(): SdkworkAccountAppService {
+  return getSdkworkAccountService();
+}
+
 export function getClawRouterPointsRechargeService(): SdkworkPointsRechargeService {
   if (!pointsRechargeService) {
-    throw new Error('Claw Router points recharge service is not configured.');
+    throw new Error('Claw Router Compute Credits recharge service is not configured.');
   }
   return pointsRechargeService;
 }

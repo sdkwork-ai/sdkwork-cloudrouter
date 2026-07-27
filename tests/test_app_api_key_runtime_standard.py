@@ -107,18 +107,23 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         self.assertIn('"required": true', openapi)
         self.assertNotIn('"name": "X-Request-Id"', openapi)
         self.assertIn("CreateApiKeyRequest", sdk)
-        self.assertIn("ApiKeysCreateResult", sdk)
-        self.assertIn("create(body: CreateApiKeyRequest, params: IamApiKeysCreateParams)", sdk)
-        self.assertIn("post<ApiKeysCreateResult>", sdk)
+        self.assertIn("AppApiKeyItem", sdk)
+        self.assertIn(
+            "create(body: CreateApiKeyRequest, params: IamApiKeysCreateParams, requestOptions?: ApiRequestOptions): Promise<AppApiKeyItem>",
+            sdk,
+        )
+        self.assertIn("body, headers: requestHeaders, contentType: 'application/json'", sdk)
         self.assertNotIn("xRequestId", sdk)
         self.assertIn("createClientOperationToken", frontend)
-        self.assertIn("from 'sdkwork-clawroutes-pc-commons/idempotency'", frontend)
-        self.assertIn("from 'sdkwork-clawroutes-pc-commons/sdk-clients'", frontend)
-        self.assertIn("from 'sdkwork-clawroutes-pc-commons/api-result'", frontend)
+        self.assertIn("from '@sdkwork/clawroutes-pc-commons/idempotency'", frontend)
+        self.assertIn("from '@sdkwork/clawrouter-pc-console-core/sdk'", frontend)
+        self.assertIn("from '@sdkwork/clawroutes-pc-commons/runtime'", frontend)
         self.assertNotIn("function createClientOperationToken", frontend)
         self.assertIn("const idempotencyKey = createClientOperationToken('create-api-key');", frontend)
         self.assertNotIn("createClientOperationToken('request')", frontend)
         self.assertIn("{ idempotencyKey }", frontend)
+        self.assertIn("const rawKey = readString(data, 'copyableKey');", frontend)
+        self.assertIn("const key = normalizeCreatedApiKey(data, rawKey);", frontend)
         self.assertNotIn("xRequestId", frontend)
         self.assertNotIn("x-sdkwork-tenant-id", frontend.lower())
         self.assertNotIn("x-sdkwork-organization-id", frontend.lower())
@@ -137,14 +142,13 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         create_key_body = frontend.split("static async createKey", 1)[1]
 
         self.assertIn("CreateApiKeyRequest", frontend)
-        self.assertIn("from '@sdkwork/clawrouter-app-sdk'", frontend)
+        self.assertIn("from '@sdkwork/clawrouter-pc-console-core/sdk'", frontend)
         self.assertIn("type ApiKeyModality = NonNullable<CreateApiKeyRequest['modalities']>[number]", frontend)
         self.assertIn("toApiKeyModalities(input.modalities)", frontend)
         self.assertIn("const data = readApiRecord(result)", create_key_body)
-        self.assertIn(
-            "readRequiredApiItem(result, 'API key creation response is missing key data', ['item'])",
-            create_key_body,
-        )
+        self.assertIn("const rawKey = readString(data, 'copyableKey')", create_key_body)
+        self.assertIn("normalizeCreatedApiKey(data, rawKey)", create_key_body)
+        self.assertNotIn("readRequiredApiItem", create_key_body)
         self.assertNotIn("normalizeApiKey(data.item)", create_key_body)
         self.assertNotIn("const data = result.data", create_key_body)
         self.assertNotIn("const data = isRecord(result.data) ? result.data : {}", create_key_body)
@@ -299,10 +303,16 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         self.assertIn('"AppApiKeyListResponse"', openapi)
         self.assertIn('"ApiKeysListResult"', openapi)
         self.assertIn('"$ref": "#/components/schemas/AppApiKeyListResponse"', openapi)
-        self.assertIn("async list(): Promise<ApiKeysListResult>", sdk_iam)
+        self.assertIn(
+            "async list(params?: IamApiKeysListParams, requestOptions?: ApiRequestOptions): Promise<AppApiKeyListResponse>",
+            sdk_iam,
+        )
         self.assertIn("appApiPath(`/iam/api_keys`)", sdk_iam)
-        self.assertIn("get<ApiKeysListResult>", sdk_iam)
-        self.assertIn("async list(): Promise<ChannelGroupsListResult>", sdk_ai)
+        self.assertIn("request<AppApiKeyListResponse>", sdk_iam)
+        self.assertIn(
+            "async list(requestOptions?: ApiRequestOptions): Promise<AppChannelGroupListResponse>",
+            sdk_ai,
+        )
         self.assertIn("appApiPath(`/ai/channel_groups`)", sdk_ai)
         self.assertNotIn(legacy_group_snake_plural, sdk_ai)
         self.assertNotIn(legacy_group_camel_plural, sdk_iam)
@@ -318,8 +328,8 @@ class AppApiKeyRuntimeStandardTest(unittest.TestCase):
         self.assertTrue(group_path.exists())
         self.assertFalse(old_group_path.exists())
         self.assertIn("items: AppApiKeyItem[];", response_path.read_text(encoding="utf-8"))
-        self.assertIn("groups: AppChannelGroup[];", response_path.read_text(encoding="utf-8"))
-        self.assertIn("data?: AppApiKeyListResponse;", result_path.read_text(encoding="utf-8"))
+        self.assertIn("pageInfo: PageInfo;", response_path.read_text(encoding="utf-8"))
+        self.assertIn("data: AppApiKeyListResponse;", result_path.read_text(encoding="utf-8"))
 
         self.assertIn("AppApiKeyListResponse as SdkAppApiKeyListResponse", frontend)
         self.assertIn("id: SdkAppApiKeyListResponse['items'][number]['id'];", frontend)

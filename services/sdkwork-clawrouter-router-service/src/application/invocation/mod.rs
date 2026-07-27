@@ -83,9 +83,7 @@ pub use settlement::PricingSettlementInterceptor;
 pub use sticky::{StickyCommitInterceptor, StickyResolutionInterceptor};
 pub use subject::{InvocationAuthType, InvocationSubject};
 pub use telemetry::{InvocationNormalizedResponse, InvocationTelemetry};
-pub use tenant_inflight::{
-    TenantInflightConfig, TenantInflightInterceptor,
-};
+pub use tenant_inflight::{TenantInflightConfig, TenantInflightInterceptor};
 pub use trace::TraceTelemetryInterceptor;
 pub use usage::{
     InvocationPricingQuote, InvocationUsage, InvocationUsageLine, InvocationUsageLineRole,

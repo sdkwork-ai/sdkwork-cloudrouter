@@ -39,6 +39,9 @@ const REFRESH_TENANT_ID: i64 = 100_001;
 const REFRESH_ORGANIZATION_ID: i64 = 0;
 const REFRESH_OPERATOR_ID: i64 = 0;
 const REFRESH_OPERATOR_TYPE: i32 = 1;
+const DEFAULT_SERVICE_NODE_INSTANCE_CODE: &str = "clawrouter-default-standalone";
+const DEFAULT_SERVICE_NODE_SEED_SQL: &str =
+    include_str!("../../../../../database/seeds/common/001_bootstrap.sql");
 
 /// Tables read or written by the catalog bootstrap. Their schema is owned by
 /// the sdkwork-models database module and must already have been migrated by
@@ -291,6 +294,8 @@ impl DatabaseInstaller {
         self.require_application_schema().await?;
         self.require_model_catalog_schema().await?;
 
+        let service_node_changed = self.ensure_default_service_node().await?;
+
         let refresh_options = CatalogRefreshOptions {
             catalog_root: self.options.models_catalog_root.clone(),
             ..CatalogRefreshOptions::default()
@@ -302,7 +307,7 @@ impl DatabaseInstaller {
                 "catalog/seed bootstrap did not reach installed state: {status:?}"
             )));
         }
-        self.status_report_with_options(&self.options, refresh.synced)
+        self.status_report_with_options(&self.options, refresh.synced || service_node_changed)
             .await
     }
 
@@ -444,7 +449,46 @@ impl DatabaseInstaller {
         if !routing_seed_complete {
             return Ok(InstallationStatus::UpgradeRequired);
         }
+        if !self.default_service_node_complete().await? {
+            return Ok(InstallationStatus::UpgradeRequired);
+        }
         Ok(InstallationStatus::Installed)
+    }
+
+    async fn ensure_default_service_node(&self) -> Result<bool, DatabaseInstallError> {
+        let rows_affected = match &self.backend {
+            InstallerBackend::Sqlite(pool) => sqlx::query(DEFAULT_SERVICE_NODE_SEED_SQL)
+                .execute(pool)
+                .await?
+                .rows_affected(),
+            InstallerBackend::Postgres(pool) => sqlx::query(DEFAULT_SERVICE_NODE_SEED_SQL)
+                .execute(pool)
+                .await?
+                .rows_affected(),
+        };
+        Ok(rows_affected > 0)
+    }
+
+    async fn default_service_node_complete(&self) -> Result<bool, DatabaseInstallError> {
+        let count = match &self.backend {
+            InstallerBackend::Sqlite(pool) => {
+                sqlx::query_scalar::<_, i64>(
+                    "SELECT COUNT(*) FROM ops_gateway_instance WHERE instance_code = ? AND deleted_at IS NULL",
+                )
+                .bind(DEFAULT_SERVICE_NODE_INSTANCE_CODE)
+                .fetch_one(pool)
+                .await?
+            }
+            InstallerBackend::Postgres(pool) => {
+                sqlx::query_scalar::<_, i64>(
+                    "SELECT COUNT(*) FROM ops_gateway_instance WHERE instance_code = $1 AND deleted_at IS NULL",
+                )
+                .bind(DEFAULT_SERVICE_NODE_INSTANCE_CODE)
+                .fetch_one(pool)
+                .await?
+            }
+        };
+        Ok(count == 1)
     }
 
     async fn require_application_schema(&self) -> Result<(), DatabaseInstallError> {

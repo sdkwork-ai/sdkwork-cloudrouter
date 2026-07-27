@@ -4,9 +4,6 @@ import {
   type SdkworkAppbasePcAuthRuntimeSdkClient,
 } from '@sdkwork/auth-runtime-pc-react/appbasePcAuthRuntime';
 import {
-  wrapCredentialEntryClient,
-} from '@sdkwork/iam-credential-entry';
-import {
   type IamRuntime,
 } from '@sdkwork/iam-runtime';
 import {
@@ -62,12 +59,9 @@ export function createClawRouterIamRuntimeComposition(): SdkworkAppbasePcAuthRun
     baseUrls: {
       appbaseAppApiBaseUrl: resolveAppbaseAppApiBaseUrl(),
     },
-    createAppbaseAppClient: () => wrapCredentialEntryClient(getSdkworkAppbaseAppSdkClient(), {
-      tokenManager,
-      prepareTokens: prepareClawRouterCredentialEntryTokens,
-    }),
+    createAppbaseAppClient: getSdkworkAppbaseAppSdkClient,
     credentialEntry: {
-      skipWrap: true,
+      prepareTokens: prepareClawRouterCredentialEntryTokens,
     },
     hooks: {
       onSessionChanged: () => {
@@ -112,8 +106,6 @@ export function getClawRouterIamRuntime(): IamRuntime {
 export function resetClawRouterIamRuntime(): void {
   runtimeComposition = null;
 }
-
-export { wrapCredentialEntryClient } from '@sdkwork/iam-credential-entry';
 
 function clearClawRouterIamRuntimeSession(): void {
   clearStoredAppSessionToken();

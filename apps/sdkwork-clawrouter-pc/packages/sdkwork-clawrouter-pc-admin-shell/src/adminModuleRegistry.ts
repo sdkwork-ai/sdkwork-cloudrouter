@@ -1,24 +1,46 @@
 import {
   Activity,
   ArrowRightLeft,
+  BadgePercent,
   BarChart3,
   Boxes,
+  CloudCog,
+  CreditCard,
+  Crown,
   Database,
+  DatabaseZap,
+  FolderCog,
+  Gauge,
+  Gift,
   Globe2,
   HardDrive,
   Home,
   LayoutDashboard,
   Network,
+  Package,
+  ReceiptText,
+  Recycle,
+  RefreshCcw,
   Server,
   Settings,
   ShieldAlert,
   ShieldCheck,
+  Tags,
+  TicketPercent,
   UserCog,
+  Users,
+  WalletCards,
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
 
-export type AdminModuleId = 'home' | 'operations';
+export type AdminModuleId =
+  | 'home'
+  | 'membershipCenter'
+  | 'marketingCenter'
+  | 'paymentCenter'
+  | 'storageCenter'
+  | 'operations';
 
 export interface AdminModuleDef {
   id: AdminModuleId;
@@ -74,6 +96,34 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     ],
   }),
   moduleBlock({
+    id: 'membershipCenter',
+    nameKey: 'admin.header.membershipCenter',
+    icon: Crown,
+    defaultPath: '/admin/memberships/plans',
+    pathPrefixes: ['/admin/memberships', '/admin/recharges'],
+  }),
+  moduleBlock({
+    id: 'marketingCenter',
+    nameKey: 'admin.header.marketingCenter',
+    icon: BadgePercent,
+    defaultPath: '/admin/marketing/promotionOffers',
+    pathPrefixes: ['/admin/marketing', '/admin/promotions'],
+  }),
+  moduleBlock({
+    id: 'paymentCenter',
+    nameKey: 'admin.header.paymentCenter',
+    icon: CreditCard,
+    defaultPath: '/admin/payments/providerAccounts',
+    pathPrefixes: ['/admin/payments'],
+  }),
+  moduleBlock({
+    id: 'storageCenter',
+    nameKey: 'admin.header.storageCenter',
+    icon: CloudCog,
+    defaultPath: '/admin/storage/providers',
+    pathPrefixes: ['/admin/storage'],
+  }),
+  moduleBlock({
     id: 'operations',
     nameKey: 'admin.header.operations',
     icon: Wrench,
@@ -110,6 +160,81 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       groupBlock('admin.menu.home.dataManagement', [
         itemBlock({ path: '/admin/record', labelKey: 'admin.menu.records', icon: Activity }),
         itemBlock({ path: '/admin/analytics', labelKey: 'admin.menu.analytics', icon: BarChart3 }),
+      ]),
+    ],
+  },
+  {
+    moduleId: 'membershipCenter',
+    groups: [
+      groupBlock('admin.menu.memberships.catalog', [
+        itemBlock({ path: '/admin/memberships/plans', labelKey: 'admin.menu.memberships.plans', icon: Crown }),
+        itemBlock({ path: '/admin/memberships/packageGroups', labelKey: 'admin.menu.memberships.packageGroups', icon: Boxes }),
+        itemBlock({ path: '/admin/memberships/packages', labelKey: 'admin.menu.memberships.packages', icon: Package }),
+        itemBlock({ path: '/admin/memberships/vipPackages', labelKey: 'admin.menu.memberships.vipPackages', icon: Gift }),
+      ]),
+      groupBlock('admin.menu.memberships.users', [
+        itemBlock({ path: '/admin/memberships/members', labelKey: 'admin.menu.memberships.members', icon: Users }),
+        itemBlock({ path: '/admin/memberships/entitlements', labelKey: 'admin.menu.memberships.entitlements', icon: ShieldCheck }),
+      ]),
+      groupBlock('admin.menu.memberships.recharge', [
+        itemBlock({ path: '/admin/memberships/rechargePackages', labelKey: 'admin.menu.memberships.rechargePackages', icon: WalletCards }),
+      ]),
+    ],
+  },
+  {
+    moduleId: 'marketingCenter',
+    groups: [
+      groupBlock('admin.menu.marketing.design', [
+        itemBlock({ path: '/admin/marketing/promotionOffers', labelKey: 'admin.menu.marketing.offers', icon: BadgePercent }),
+        itemBlock({ path: '/admin/marketing/promotionCouponStocks', labelKey: 'admin.menu.marketing.couponStocks', icon: Boxes }),
+        itemBlock({ path: '/admin/marketing/promotionCodes', labelKey: 'admin.menu.marketing.codes', icon: TicketPercent }),
+        itemBlock({ path: '/admin/marketing/promotionCodeRedemptions', labelKey: 'admin.menu.marketing.redemptions', icon: Gift }),
+      ]),
+      groupBlock('admin.menu.marketing.lifecycle', [
+        itemBlock({ path: '/admin/marketing/userCoupons', labelKey: 'admin.menu.marketing.userCoupons', icon: WalletCards }),
+        itemBlock({ path: '/admin/marketing/discountApplications', labelKey: 'admin.menu.marketing.discountApplications', icon: ReceiptText }),
+        itemBlock({ path: '/admin/marketing/discountAllocations', labelKey: 'admin.menu.marketing.discountAllocations', icon: Tags }),
+      ]),
+      groupBlock('admin.menu.marketing.growth', [
+        itemBlock({ path: '/admin/marketing/promotionCouponLedger', labelKey: 'admin.menu.marketing.couponLedger', icon: Database }),
+        itemBlock({ path: '/admin/marketing/budgetLedger', labelKey: 'admin.menu.marketing.budgetLedger', icon: BarChart3 }),
+        itemBlock({ path: '/admin/marketing/externalBindings', labelKey: 'admin.menu.marketing.externalBindings', icon: ArrowRightLeft }),
+        itemBlock({ path: '/admin/marketing/promotionEvents', labelKey: 'admin.menu.marketing.events', icon: Activity }),
+        itemBlock({ path: '/admin/marketing/referrals', labelKey: 'admin.menu.marketing.referrals', icon: Users }),
+      ]),
+    ],
+  },
+  {
+    moduleId: 'paymentCenter',
+    groups: [
+      groupBlock('admin.menu.payments.configuration', [
+        itemBlock({ path: '/admin/payments/providers', labelKey: 'admin.menu.payments.providers', icon: CloudCog }),
+        itemBlock({ path: '/admin/payments/providerAccounts', labelKey: 'admin.menu.payments.providerAccounts', icon: CreditCard }),
+        itemBlock({ path: '/admin/payments/methods', labelKey: 'admin.menu.payments.methods', icon: WalletCards }),
+        itemBlock({ path: '/admin/payments/channels', labelKey: 'admin.menu.payments.channels', icon: Network }),
+        itemBlock({ path: '/admin/payments/routeRules', labelKey: 'admin.menu.payments.routeRules', icon: ArrowRightLeft }),
+      ]),
+      groupBlock('admin.menu.payments.monitoring', [
+        itemBlock({ path: '/admin/payments/intents', labelKey: 'admin.menu.payments.intents', icon: ReceiptText }),
+        itemBlock({ path: '/admin/payments/attempts', labelKey: 'admin.menu.payments.attempts', icon: Activity }),
+        itemBlock({ path: '/admin/payments/webhookEvents', labelKey: 'admin.menu.payments.webhookEvents', icon: RefreshCcw }),
+        itemBlock({ path: '/admin/payments/reconciliationRuns', labelKey: 'admin.menu.payments.reconciliation', icon: DatabaseZap }),
+      ]),
+    ],
+  },
+  {
+    moduleId: 'storageCenter',
+    groups: [
+      groupBlock('admin.menu.storage.configuration', [
+        itemBlock({ path: '/admin/storage/providers', labelKey: 'admin.menu.storage.providers', icon: CloudCog }),
+        itemBlock({ path: '/admin/storage/buckets', labelKey: 'admin.menu.storage.buckets', icon: FolderCog }),
+        itemBlock({ path: '/admin/storage/defaultBuckets', labelKey: 'admin.menu.storage.defaultBuckets', icon: HardDrive }),
+      ]),
+      groupBlock('admin.menu.storage.governance', [
+        itemBlock({ path: '/admin/storage/quotas', labelKey: 'admin.menu.storage.quotas', icon: Gauge }),
+        itemBlock({ path: '/admin/storage/usage', labelKey: 'admin.menu.storage.usage', icon: BarChart3 }),
+        itemBlock({ path: '/admin/storage/reconciliation', labelKey: 'admin.menu.storage.reconciliation', icon: RefreshCcw }),
+        itemBlock({ path: '/admin/storage/garbageCollection', labelKey: 'admin.menu.storage.garbageCollection', icon: Recycle }),
       ]),
     ],
   },

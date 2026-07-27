@@ -273,7 +273,7 @@ export const adminGroupUserMessages = {
     "admin.user.index.text.15axwxa": "API Key Management -",
     "admin.user.index.text.jegmxz": "Add new API Key",
     "admin.user.index.text.1sj8iyg": "key value",
-    "admin.user.index.text.i2uwd4": "Used credit",
+    "admin.user.index.text.i2uwd4": "Compute Credits used",
     "admin.user.index.text.1yo705o": "No API Key yet",
     "admin.user.index.text.1sl0na6": "Assign groups",
     "admin.user.index.text.zv14s8": "for users",

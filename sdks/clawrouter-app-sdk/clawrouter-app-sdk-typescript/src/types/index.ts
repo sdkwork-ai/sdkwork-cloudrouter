@@ -1,5 +1,12 @@
 export * from './common';
 
+export type { AppApiKeyItem } from './app-api-key-item';
+export type { AppApiKeyListResponse } from './app-api-key-list-response';
+export type { AppChannelGroup } from './app-channel-group';
+export type { AppChannelGroupListResponse } from './app-channel-group-list-response';
+
+export type { CreateApiKeyRequest } from './create-api-key-request';
+export type { CreateApiKeyResponse } from './create-api-key-response';
 export type { DashboardAnnouncement } from './dashboard-announcement';
 export type { DashboardChartPoint } from './dashboard-chart-point';
 export type { DashboardConfigurationDomain } from './dashboard-configuration-domain';
@@ -26,3 +33,6 @@ export type { SdkWorkPageData } from './sdk-work-page-data';
 export type { SdkWorkPlatformErrorCode } from './sdk-work-platform-error-code';
 export type { SdkWorkResourceData } from './sdk-work-resource-data';
 export type { SdkWorkResourceResponse } from './sdk-work-resource-response';
+
+export type { UpdateApiKeyRequest } from './update-api-key-request';
+export type { UpdateApiKeyResponse } from './update-api-key-response';

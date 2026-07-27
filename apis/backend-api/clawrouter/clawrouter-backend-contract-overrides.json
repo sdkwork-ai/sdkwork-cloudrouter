@@ -1484,18 +1484,41 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "domain",
-        "ip",
         "name"
       ],
       "properties": {
+        "baseUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048,
+          "description": "Primary public HTTP(S) API base URL, including the API path prefix."
+        },
+        "deploymentProfile": {
+          "type": "string",
+          "enum": [
+            "standalone",
+            "cloud"
+          ],
+          "description": "Deployment topology used to expose this API ingress."
+        },
         "domain": {
           "type": "string",
-          "description": "domain field on AdminServiceNodeCreateRequest."
+          "maxLength": 255,
+          "description": "Legacy primary domain alias retained for backward compatibility."
+        },
+        "domains": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "description": "Public domain aliases served by this deployment node."
         },
         "ip": {
           "type": "string",
-          "description": "ip field on AdminServiceNodeCreateRequest."
+          "maxLength": 64,
+          "description": "Optional node IP address; cloud gateway deployments may omit it."
         },
         "name": {
           "type": "string",
@@ -1520,7 +1543,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "baseUrl",
+        "deploymentProfile",
         "domain",
+        "domains",
         "healthStatus",
         "id",
         "ip",
@@ -1530,9 +1556,29 @@
         "updatedAt"
       ],
       "properties": {
+        "baseUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Primary public HTTP(S) API base URL."
+        },
+        "deploymentProfile": {
+          "type": "string",
+          "enum": [
+            "standalone",
+            "cloud"
+          ],
+          "description": "Deployment topology used to expose this API ingress."
+        },
         "domain": {
           "type": "string",
-          "description": "domain field on AdminServiceNodeItem."
+          "description": "Compatibility mirror of the first configured domain."
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Normalized public domain aliases served by this node."
         },
         "healthStatus": {
           "type": "string",
@@ -1620,9 +1666,33 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "baseUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048,
+          "description": "Primary public HTTP(S) API base URL."
+        },
+        "deploymentProfile": {
+          "type": "string",
+          "enum": [
+            "standalone",
+            "cloud"
+          ],
+          "description": "Deployment topology used to expose this API ingress."
+        },
         "domain": {
           "type": "string",
-          "description": "domain field on AdminServiceNodeUpdateRequest."
+          "maxLength": 255,
+          "description": "Legacy primary domain alias retained for backward compatibility."
+        },
+        "domains": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "description": "Public domain aliases served by this deployment node."
         },
         "ip": {
           "type": "string",

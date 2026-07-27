@@ -1,5 +1,5 @@
 import { backendApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 import type { AdminSiteConnectionCheckResult, AdminSiteCreateRequest, AdminSiteItem, AdminSiteUpdateRequest } from '../types';
 export class SitesTestConnectionApi {
   private client: HttpClient;
@@ -10,8 +10,8 @@ export class SitesTestConnectionApi {
 
 
 /** Test site connection */
-  async create(siteId: string): Promise<AdminSiteConnectionCheckResult> {
-    return this.client.post<AdminSiteConnectionCheckResult>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/test_connection`));
+  async create(siteId: string, requestOptions?: ApiRequestOptions): Promise<AdminSiteConnectionCheckResult> {
+    return this.client.request<AdminSiteConnectionCheckResult>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/test_connection`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
@@ -24,8 +24,8 @@ export class SitesHealthCheckApi {
 
 
 /** Health check site */
-  async create(siteId: string): Promise<AdminSiteConnectionCheckResult> {
-    return this.client.post<AdminSiteConnectionCheckResult>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/health_check`));
+  async create(siteId: string, requestOptions?: ApiRequestOptions): Promise<AdminSiteConnectionCheckResult> {
+    return this.client.request<AdminSiteConnectionCheckResult>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/health_check`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
@@ -38,8 +38,8 @@ export class SitesChannelsApi {
 
 
 /** List site channels */
-  async list(siteId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/channels`));
+  async list(siteId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}/channels`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -58,23 +58,23 @@ export class SitesApi {
 
 
 /** List sites */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/sites`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/sites`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create site */
-  async create(body: AdminSiteCreateRequest): Promise<AdminSiteItem> {
-    return this.client.post<AdminSiteItem>(backendApiPath(`/sites`), body, undefined, undefined, 'application/json');
+  async create(body: AdminSiteCreateRequest, requestOptions?: ApiRequestOptions): Promise<AdminSiteItem> {
+    return this.client.request<AdminSiteItem>(backendApiPath(`/sites`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete site */
-  async delete(siteId: string): Promise<void> {
-    return this.client.delete<void>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`));
+  async delete(siteId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Update site */
-  async update(siteId: string, body: AdminSiteUpdateRequest): Promise<AdminSiteItem> {
-    return this.client.patch<AdminSiteItem>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(siteId: string, body: AdminSiteUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminSiteItem> {
+    return this.client.request<AdminSiteItem>(backendApiPath(`/sites/${serializePathParameter(siteId, { name: 'siteId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -82,7 +82,13 @@ export function createSitesApi(client: HttpClient): SitesApi {
   return new SitesApi(client);
 }
 
-
+function appendQueryString(path: string, rawQueryString: string): string {
+  const query = rawQueryString.replace(/^\?+/, '');
+  if (!query) {
+    return path;
+  }
+  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
+}
 
 interface PathParameterSpec {
   name: string;

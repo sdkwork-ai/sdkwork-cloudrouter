@@ -4,15 +4,18 @@ import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons/components/BusinessState';
 import {
-  SdkworkWalletBalancePanel,
-  SdkworkWalletIntlProvider,
-  SdkworkWalletTransactionList,
   useSdkworkWalletController,
   useSdkworkWalletControllerState,
   useSdkworkWalletIntl,
 } from '@sdkwork/account-pc-wallet';
 
 import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
+import { ClawRouterTokenBankBalancePanel } from './ClawRouterTokenBankBalancePanel.tsx';
+import { ClawRouterTokenBankIntlProvider } from './ClawRouterTokenBankIntlProvider.tsx';
+import {
+  ClawRouterTokenBankTransactionList,
+  getTokenBankTransactions,
+} from './ClawRouterTokenBankTransactionList.tsx';
 import { ConsoleAccountQuickActions } from './ConsoleAccountQuickActions.tsx';
 import { resolveConsoleWalletLocale } from './consoleCommerceLocale.ts';
 import { CLAW_ROUTER_COMMERCE_LINK_CLASS } from './consoleCommerceTheme.ts';
@@ -25,9 +28,9 @@ export function ConsoleAccountView() {
   const walletLocale = resolveConsoleWalletLocale(i18n.resolvedLanguage ?? i18n.language);
 
   return (
-    <SdkworkWalletIntlProvider locale={walletLocale}>
+    <ClawRouterTokenBankIntlProvider locale={walletLocale}>
       <ConsoleAccountViewContent />
-    </SdkworkWalletIntlProvider>
+    </ClawRouterTokenBankIntlProvider>
   );
 }
 
@@ -55,13 +58,13 @@ function ConsoleAccountViewContent() {
     );
   }
 
-  const recentTransactions = state.overview.transactions.slice(0, RECENT_TRANSACTION_LIMIT);
+  const tokenBankTransactions = getTokenBankTransactions(state.overview.transactions);
 
   return (
     <div className="h-full overflow-y-auto">
       <div className="w-full max-w-none">
         <div className="flex w-full max-w-none flex-col gap-3">
-          <SdkworkWalletBalancePanel
+          <ClawRouterTokenBankBalancePanel
             onOpenRecharge={() => {
               onNavigate(walletPath);
             }}
@@ -74,9 +77,12 @@ function ConsoleAccountViewContent() {
           <ConsoleAccountQuickActions />
 
           <div className="space-y-3">
-            <SdkworkWalletTransactionList transactions={recentTransactions} />
+            <ClawRouterTokenBankTransactionList
+              limit={RECENT_TRANSACTION_LIMIT}
+              transactions={tokenBankTransactions}
+            />
 
-            {state.overview.transactions.length > RECENT_TRANSACTION_LIMIT ? (
+            {tokenBankTransactions.length > RECENT_TRANSACTION_LIMIT ? (
               <div className="flex justify-end">
                 <Link className={CLAW_ROUTER_COMMERCE_LINK_CLASS} to={walletPath}>
                   {t('console.account.viewAllActivity', 'View all activity')}

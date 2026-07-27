@@ -75,7 +75,7 @@ fn materialize_capability_env_when_unset(key: &str, value: &str) {
 }
 
 fn materialize_capability_auto_migrate_env(service_code: &str, auto_migrate: bool) {
-    let key = format!("SDKWORK_{service_code}_AUTO_MIGRATE");
+    let key = format!("SDKWORK_{service_code}_DATABASE_AUTO_MIGRATE");
     if std::env::var(&key)
         .ok()
         .filter(|value| !value.trim().is_empty())
@@ -175,7 +175,7 @@ fn resolve_clawrouter_app_root() -> PathBuf {
 mod tests {
     use super::{
         ensure_iam_database_env_for_claw_database, materialize_capability_database_env,
-        resolve_clawrouter_app_root,
+        materialize_federated_commerce_lifecycle_env, resolve_clawrouter_app_root,
     };
     use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
     use std::sync::{Mutex, OnceLock};
@@ -244,6 +244,42 @@ mod tests {
             std::env::var("SDKWORK_IAM_DATABASE_MAX_CONNECTIONS").unwrap(),
             "1"
         );
+        for (key, value) in previous {
+            match value {
+                Some(value) => std::env::set_var(key, value),
+                None => std::env::remove_var(key),
+            }
+        }
+    }
+
+    #[test]
+    fn federated_commerce_lifecycle_uses_database_scoped_env_keys() {
+        let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+        let keys = [
+            "SDKWORK_ACCOUNT_DATABASE_AUTO_MIGRATE",
+            "SDKWORK_MEMBERSHIP_DATABASE_AUTO_MIGRATE",
+            "SDKWORK_ACCOUNT_AUTO_MIGRATE",
+            "SDKWORK_MEMBERSHIP_AUTO_MIGRATE",
+            "SDKWORK_PAYMENT_FEDERATED_COMMERCE",
+        ];
+        let previous = keys.map(|key| (key, std::env::var(key).ok()));
+        for key in keys {
+            std::env::remove_var(key);
+        }
+
+        materialize_federated_commerce_lifecycle_env();
+
+        assert_eq!(
+            std::env::var("SDKWORK_ACCOUNT_DATABASE_AUTO_MIGRATE").unwrap(),
+            "false"
+        );
+        assert_eq!(
+            std::env::var("SDKWORK_MEMBERSHIP_DATABASE_AUTO_MIGRATE").unwrap(),
+            "false"
+        );
+        assert!(std::env::var("SDKWORK_ACCOUNT_AUTO_MIGRATE").is_err());
+        assert!(std::env::var("SDKWORK_MEMBERSHIP_AUTO_MIGRATE").is_err());
+
         for (key, value) in previous {
             match value {
                 Some(value) => std::env::set_var(key, value),

@@ -1,5 +1,5 @@
 import { appApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 export class MemorySpacesEntriesApi {
   private client: HttpClient;
@@ -10,13 +10,13 @@ export class MemorySpacesEntriesApi {
 
 
 /** List memory entries */
-  async list(spaceId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/memory/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/entries`));
+  async list(spaceId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/memory/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/entries`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create memory entry */
-  async create(spaceId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/memory/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/entries`));
+  async create(spaceId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/memory/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}/entries`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
@@ -31,18 +31,18 @@ export class MemorySpacesApi {
 
 
 /** List memory spaces */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/memory/spaces`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/memory/spaces`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create memory space */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/memory/spaces`));
+  async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/memory/spaces`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 
 /** Retrieve memory space */
-  async retrieve(spaceId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/memory/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}`));
+  async retrieve(spaceId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/memory/spaces/${serializePathParameter(spaceId, { name: 'spaceId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -55,18 +55,18 @@ export class MemoryEntriesApi {
 
 
 /** Retrieve memory entry */
-  async retrieve(entryId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/memory/entries/${serializePathParameter(entryId, { name: 'entryId', style: 'simple', explode: false })}`));
+  async retrieve(entryId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/memory/entries/${serializePathParameter(entryId, { name: 'entryId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
 export class MemoryApi {
-
+  private client: HttpClient;
   public readonly entries: MemoryEntriesApi;
   public readonly spaces: MemorySpacesApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.entries = new MemoryEntriesApi(client);
     this.spaces = new MemorySpacesApi(client);
   }
@@ -77,7 +77,13 @@ export function createMemoryApi(client: HttpClient): MemoryApi {
   return new MemoryApi(client);
 }
 
-
+function appendQueryString(path: string, rawQueryString: string): string {
+  const query = rawQueryString.replace(/^\?+/, '');
+  if (!query) {
+    return path;
+  }
+  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
+}
 
 interface PathParameterSpec {
   name: string;

@@ -356,9 +356,9 @@ test('IAM runtime uses the high-level appbase auth runtime while binding app SDK
   const iamRuntimeSource = source('packages/sdkwork-clawroutes-pc-commons/src/iam-runtime.ts');
 
   assert.match(iamRuntimeSource, /createSdkworkAppbasePcAuthRuntime/);
-  assert.match(iamRuntimeSource, /createAppbaseAppClient:\s*\(\)\s*=>\s*wrapCredentialEntryClient\(getSdkworkAppbaseAppSdkClient\(\)/);
-  assert.match(iamRuntimeSource, /credentialEntry:\s*\{[\s\S]*skipWrap:\s*true/u);
-  assert.match(iamRuntimeSource, /from '@sdkwork\/iam-credential-entry'/);
+  assert.match(iamRuntimeSource, /createAppbaseAppClient:\s*getSdkworkAppbaseAppSdkClient/);
+  assert.match(iamRuntimeSource, /credentialEntry:\s*\{[\s\S]*prepareTokens:\s*prepareClawRouterCredentialEntryTokens/u);
+  assert.doesNotMatch(iamRuntimeSource, /wrapCredentialEntryClient|skipWrap/u);
   assert.match(iamRuntimeSource, /tokenManager,/);
   assert.match(iamRuntimeSource, /sessionBridge:/);
   assert.doesNotMatch(iamRuntimeSource, /createAppbaseBackendClient/);

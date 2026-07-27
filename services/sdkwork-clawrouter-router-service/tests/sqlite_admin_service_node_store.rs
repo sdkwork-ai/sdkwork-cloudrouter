@@ -41,9 +41,14 @@ async fn sqlite_admin_service_node_store_manages_gateway_instance_configuration(
     let created = store
         .create_service_node(CreateAdminServiceNodeCommand {
             subject: subject(),
-            name: "edge-beijing-01".to_owned(),
-            domain: "edge-beijing.example.com".to_owned(),
-            ip: "10.0.1.10".to_owned(),
+            name: "edge-beijing-production-cloud-gateway-with-a-long-display-name".to_owned(),
+            deployment_profile: "cloud".to_owned(),
+            base_url: "https://api.example.com/v1".to_owned(),
+            domains: vec![
+                "api.example.com".to_owned(),
+                "api-alt.example.com".to_owned(),
+            ],
+            ip: None,
             remark: "Beijing relay node".to_owned(),
             status: Some("enabled".to_owned()),
         })
@@ -51,9 +56,18 @@ async fn sqlite_admin_service_node_store_manages_gateway_instance_configuration(
         .unwrap();
 
     assert!(!created.id.is_empty());
-    assert_eq!("edge-beijing-01", created.name);
-    assert_eq!("edge-beijing.example.com", created.domain);
-    assert_eq!("10.0.1.10", created.ip);
+    assert_eq!(
+        "edge-beijing-production-cloud-gateway-with-a-long-display-name",
+        created.name
+    );
+    assert_eq!("cloud", created.deployment_profile);
+    assert_eq!("https://api.example.com/v1", created.base_url);
+    assert_eq!(
+        vec!["api.example.com", "api-alt.example.com"],
+        created.domains
+    );
+    assert_eq!("api.example.com", created.domain);
+    assert_eq!("", created.ip);
     assert_eq!("Beijing relay node", created.remark);
     assert_eq!("enabled", created.status);
     assert_eq!("unknown", created.health_status);
@@ -63,16 +77,24 @@ async fn sqlite_admin_service_node_store_manages_gateway_instance_configuration(
             subject: subject(),
             node_id: created.id.clone(),
             name: Some("edge-beijing-primary".to_owned()),
-            domain: Some("edge-bj.example.com".to_owned()),
-            ip: Some("10.0.1.11".to_owned()),
+            deployment_profile: Some("standalone".to_owned()),
+            base_url: Some("http://127.0.0.1:8080/v1".to_owned()),
+            domains: Some(vec![
+                "127.0.0.1:8080".to_owned(),
+                "localhost:8080".to_owned(),
+            ]),
+            ip: Some("127.0.0.1".to_owned()),
             remark: Some("Primary Beijing relay".to_owned()),
         })
         .await
         .unwrap();
 
     assert_eq!("edge-beijing-primary", updated.name);
-    assert_eq!("edge-bj.example.com", updated.domain);
-    assert_eq!("10.0.1.11", updated.ip);
+    assert_eq!("standalone", updated.deployment_profile);
+    assert_eq!("http://127.0.0.1:8080/v1", updated.base_url);
+    assert_eq!(vec!["127.0.0.1:8080", "localhost:8080"], updated.domains);
+    assert_eq!("127.0.0.1:8080", updated.domain);
+    assert_eq!("127.0.0.1", updated.ip);
     assert_eq!("Primary Beijing relay", updated.remark);
 
     let disabled = store
@@ -131,7 +153,7 @@ async fn create_gateway_instance_table(pool: &SqlitePool) {
         r#"
         CREATE TABLE ops_gateway_instance (
             id INTEGER PRIMARY KEY,
-            uuid TEXT NOT NULL,
+            uuid TEXT NOT NULL CHECK (length(uuid) <= 64),
             tenant_id INTEGER,
             organization_id INTEGER,
             data_scope INTEGER,

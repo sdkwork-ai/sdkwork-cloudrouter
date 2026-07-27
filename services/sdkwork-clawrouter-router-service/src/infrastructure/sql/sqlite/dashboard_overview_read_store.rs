@@ -5,6 +5,9 @@ use sqlx::{Row, SqlitePool};
 use crate::domain::DomainError;
 use crate::infrastructure::sql::dashboard_overview_metrics::derive_dashboard_summary_rates;
 use crate::infrastructure::sql::model_modality;
+use crate::infrastructure::sql::service_node_metadata::{
+    parse_metadata as parse_service_node_metadata, ServiceNodeMetadata,
+};
 use crate::ports::{
     DashboardAnnouncement, DashboardChartPoint, DashboardConfigurationDomain,
     DashboardOverviewQuery, DashboardOverviewReadFuture, DashboardOverviewReadStore,
@@ -426,38 +429,50 @@ async fn load_configuration_nodes(
         .await
         .map_err(sql_error)?;
 
-    Ok(rows.into_iter().map(configuration_node_from_row).collect())
+    Ok(rows
+        .into_iter()
+        .flat_map(configuration_nodes_from_row)
+        .collect())
 }
 
-fn configuration_node_from_row(row: sqlx::sqlite::SqliteRow) -> DashboardConfigurationDomain {
-    let metadata = parse_metadata(&string_cell(&row, "metadata"));
+fn configuration_nodes_from_row(row: sqlx::sqlite::SqliteRow) -> Vec<DashboardConfigurationDomain> {
+    let raw_metadata = string_cell(&row, "metadata");
+    let metadata = parse_metadata(&raw_metadata);
+    let configuration = ServiceNodeMetadata::from_map(&parse_service_node_metadata(&raw_metadata));
     let host_name = string_cell(&row, "host_name");
     let region = string_cell(&row, "region");
     let cell = string_cell(&row, "cell");
-    DashboardConfigurationDomain {
-        id: string_cell(&row, "id"),
-        name: string_cell(&row, "name"),
-        domain: metadata_text(
-            &metadata,
-            &[
-                "domain",
-                "baseUrl",
-                "base_url",
-                "endpoint",
-                "publicUrl",
-                "public_url",
-                "origin",
-            ],
-        )
-        .unwrap_or(host_name),
-        ip: string_cell(&row, "ip"),
-        status: configuration_node_status(optional_integer_cell(&row, "health_status")),
-        remark: metadata_text(
-            &metadata,
-            &["remark", "remarks", "description", "note", "memo"],
-        )
-        .unwrap_or_else(|| configuration_node_remark(&region, &cell)),
+    let node_id = string_cell(&row, "id");
+    let name = string_cell(&row, "name");
+    let ip = string_cell(&row, "ip");
+    let status = configuration_node_status(optional_integer_cell(&row, "health_status"));
+    let remark = metadata_text(
+        &metadata,
+        &["remark", "remarks", "description", "note", "memo"],
+    )
+    .unwrap_or_else(|| configuration_node_remark(&region, &cell));
+    let mut urls = configuration.public_urls();
+    if urls.is_empty() && !host_name.is_empty() {
+        urls.push(host_name);
     }
+    urls.into_iter()
+        .enumerate()
+        .map(|(index, domain)| DashboardConfigurationDomain {
+            id: format!(
+                "{node_id}:{}",
+                if index == 0 {
+                    "base".to_owned()
+                } else {
+                    format!("domain:{index}")
+                }
+            ),
+            name: name.clone(),
+            domain,
+            ip: ip.clone(),
+            status: status.clone(),
+            remark: remark.clone(),
+        })
+        .collect()
 }
 
 fn build_sparkline(

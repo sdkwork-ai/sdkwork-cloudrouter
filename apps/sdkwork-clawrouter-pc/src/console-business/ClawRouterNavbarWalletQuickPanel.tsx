@@ -9,7 +9,6 @@ import {
 import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
 import { useConsoleBusinessNavigation } from './consoleBusinessNavigation.ts';
 
-// 顶部积分弹出框：主操作为「充值&兑换」，进入钱包中心后同时支持充值与兑换两个能力。
 export function ClawRouterNavbarWalletQuickPanel({
   onWithdraw,
   overview,
@@ -21,12 +20,13 @@ export function ClawRouterNavbarWalletQuickPanel({
     copy,
     formatAccountLevelSummary,
     formatCurrencyCny,
-    formatPoints,
-    formatPointsRate,
-    formatWalletDelta,
+    formatTokenBank,
+    formatTokenBankDelta,
   } = useSdkworkWalletIntl();
 
-  const recentTransactions = overview.transactions.slice(0, 4);
+  const recentTransactions = overview.transactions
+    .filter((transaction) => transaction.tokenBankDelta !== 0)
+    .slice(0, 4);
   const openWalletCenter = () => {
     onNavigate(walletPath);
   };
@@ -35,10 +35,10 @@ export function ClawRouterNavbarWalletQuickPanel({
     <div className="w-[20rem] rounded-[var(--sdk-radius-panel)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-[var(--sdk-shadow-md)]">
       <div className="border-b border-[var(--sdk-color-border-subtle)] px-4 py-4">
         <p className="text-xs text-[var(--sdk-color-text-muted)]">
-          {copy.quickPanel.availablePointsLabel}
+          {copy.quickPanel.tokenBankAvailableLabel}
         </p>
         <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-[var(--sdk-color-text-primary)]">
-          {formatPoints(overview.account.availablePoints)}
+          {formatTokenBank(overview.account.tokenBankAvailable)}
         </p>
         <p className="mt-1 text-xs text-[var(--sdk-color-text-secondary)]">
           {isAuthenticated
@@ -48,9 +48,6 @@ export function ClawRouterNavbarWalletQuickPanel({
         <div className="mt-3 flex gap-4 text-xs text-[var(--sdk-color-text-muted)]">
           <span>
             {copy.quickPanel.cashAvailableLabel}: {formatCurrencyCny(overview.account.cashAvailable)}
-          </span>
-          <span>
-            {copy.quickPanel.rateLabel}: {formatPointsRate(overview.pointsToCashRate)}
           </span>
         </div>
       </div>
@@ -105,8 +102,8 @@ export function ClawRouterNavbarWalletQuickPanel({
                   {transaction.title}
                 </p>
               </div>
-              <span className={`shrink-0 text-xs tabular-nums ${transaction.pointsDelta >= 0 ? 'text-[var(--sdk-color-state-success)]' : 'text-[var(--sdk-color-text-primary)]'}`}>
-                {formatWalletDelta(transaction.pointsDelta)}
+              <span className={`shrink-0 text-xs tabular-nums ${transaction.tokenBankDelta >= 0 ? 'text-[var(--sdk-color-state-success)]' : 'text-[var(--sdk-color-text-primary)]'}`}>
+                {formatTokenBankDelta(transaction.tokenBankDelta)}
               </span>
             </div>
           ))}

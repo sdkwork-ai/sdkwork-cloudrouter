@@ -1,5 +1,5 @@
 import { appApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 export class ChatConversationsTurnsResponseApi {
   private client: HttpClient;
@@ -10,8 +10,8 @@ export class ChatConversationsTurnsResponseApi {
 
 
 /** Complete chat turn response */
-  async create(conversationId: string, turnId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/turns/${serializePathParameter(turnId, { name: 'turnId', style: 'simple', explode: false })}/response`));
+  async create(conversationId: string, turnId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/turns/${serializePathParameter(turnId, { name: 'turnId', style: 'simple', explode: false })}/response`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
@@ -26,8 +26,8 @@ export class ChatConversationsTurnsApi {
 
 
 /** Create chat turn */
-  async create(conversationId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/turns`));
+  async create(conversationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/turns`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
@@ -40,8 +40,8 @@ export class ChatConversationsMessagesApi {
 
 
 /** List chat messages */
-  async list(conversationId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/messages`));
+  async list(conversationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}/messages`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -58,27 +58,27 @@ export class ChatConversationsApi {
 
 
 /** List chat conversations */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/chat/conversations`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/chat/conversations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create chat conversation */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/chat/conversations`));
+  async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/chat/conversations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 
 /** Retrieve chat conversation */
-  async retrieve(conversationId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}`));
+  async retrieve(conversationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/chat/conversations/${serializePathParameter(conversationId, { name: 'conversationId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
 export class ChatApi {
-
+  private client: HttpClient;
   public readonly conversations: ChatConversationsApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.conversations = new ChatConversationsApi(client);
   }
 
@@ -88,7 +88,13 @@ export function createChatApi(client: HttpClient): ChatApi {
   return new ChatApi(client);
 }
 
-
+function appendQueryString(path: string, rawQueryString: string): string {
+  const query = rawQueryString.replace(/^\?+/, '');
+  if (!query) {
+    return path;
+  }
+  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
+}
 
 interface PathParameterSpec {
   name: string;

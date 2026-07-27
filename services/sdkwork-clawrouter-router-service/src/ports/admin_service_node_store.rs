@@ -39,6 +39,9 @@ pub struct AdminServiceNodeListPage {
 pub struct AdminServiceNodeItem {
     pub id: String,
     pub name: String,
+    pub deployment_profile: String,
+    pub base_url: String,
+    pub domains: Vec<String>,
     pub domain: String,
     pub ip: String,
     pub remark: String,
@@ -51,8 +54,10 @@ pub struct AdminServiceNodeItem {
 pub struct CreateAdminServiceNodeCommand {
     pub subject: AdminServiceNodeSubject,
     pub name: String,
-    pub domain: String,
-    pub ip: String,
+    pub deployment_profile: String,
+    pub base_url: String,
+    pub domains: Vec<String>,
+    pub ip: Option<String>,
     pub remark: String,
     pub status: Option<String>,
 }
@@ -62,7 +67,9 @@ pub struct UpdateAdminServiceNodeCommand {
     pub subject: AdminServiceNodeSubject,
     pub node_id: String,
     pub name: Option<String>,
-    pub domain: Option<String>,
+    pub deployment_profile: Option<String>,
+    pub base_url: Option<String>,
+    pub domains: Option<Vec<String>>,
     pub ip: Option<String>,
     pub remark: Option<String>,
 }

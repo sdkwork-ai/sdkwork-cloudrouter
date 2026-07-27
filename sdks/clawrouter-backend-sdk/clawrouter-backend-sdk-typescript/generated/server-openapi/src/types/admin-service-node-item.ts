@@ -1,7 +1,13 @@
 /** AdminServiceNodeItem contract. */
 export interface AdminServiceNodeItem {
-  /** domain field on AdminServiceNodeItem. */
+  /** Primary public HTTP(S) API base URL. */
+  baseUrl: string;
+  /** Deployment topology used to expose this API ingress. */
+  deploymentProfile: 'standalone' | 'cloud';
+  /** Compatibility mirror of the first configured domain. */
   domain: string;
+  /** Normalized public domain aliases served by this node. */
+  domains: string[];
   /** healthStatus field on AdminServiceNodeItem. */
   healthStatus: 'online' | 'warning' | 'offline' | 'unknown';
   /** id field on AdminServiceNodeItem. */

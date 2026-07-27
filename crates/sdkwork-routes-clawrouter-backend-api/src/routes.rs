@@ -45,8 +45,9 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore, PostgresAdminMcpStore,
     PostgresAdminModelRateLimitStore, PostgresAdminMonitorReadStore,
     PostgresAdminProviderSecretStore, PostgresAdminRecordStore, PostgresAdminServiceNodeStore,
-    PostgresAdminServiceProviderStore, PostgresAdminSiteStore, PostgresAdminTransactionCenterStore,
-    PostgresCatalogLoadError, PostgresGatewayApiKeyCommandStore, PostgresPricingCatalogLoader,
+    PostgresAdminServiceProviderStore, PostgresAdminSiteStore, PostgresAdminStorageStore,
+    PostgresAdminTransactionCenterStore, PostgresCatalogLoadError,
+    PostgresGatewayApiKeyCommandStore, PostgresPricingCatalogLoader,
     PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
@@ -57,8 +58,9 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
     SqliteAdminIpRateLimitStore, SqliteAdminMarketingStore, SqliteAdminMcpStore,
     SqliteAdminModelRateLimitStore, SqliteAdminMonitorReadStore, SqliteAdminProviderSecretStore,
     SqliteAdminRecordStore, SqliteAdminServiceNodeStore, SqliteAdminServiceProviderStore,
-    SqliteAdminSiteStore, SqliteAdminTransactionCenterStore, SqliteGatewayApiKeyCommandStore,
-    SqlitePricingCatalogLoader, SqliteRuntimeRegionSettingsStore, SqliteSiteSettingsStore,
+    SqliteAdminSiteStore, SqliteAdminStorageStore, SqliteAdminTransactionCenterStore,
+    SqliteGatewayApiKeyCommandStore, SqlitePricingCatalogLoader, SqliteRuntimeRegionSettingsStore,
+    SqliteSiteSettingsStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::OsApiKeySecretGenerator;
 use sdkwork_clawrouter_router_service::ports::{
@@ -242,7 +244,6 @@ fn router_with_database_status(
 
 fn product_local_contract_operation(operation: &sdkwork_claw_http::ContractOperation) -> bool {
     operation.sdk_domain.as_deref() != Some("commerce")
-        && !matches!(operation.sdk_domain.as_deref(), Some("oss" | "storage"))
         && !is_commerce_dependency_contract_path(&operation.path)
         && !is_drive_dependency_contract_path(&operation.path)
         && !is_appbase_dependency_contract_path(&operation.path)
@@ -268,8 +269,6 @@ fn is_commerce_dependency_contract_path(path: &str) -> bool {
         "/backend/v3/api/inventory/",
         "/backend/v3/api/memberships/",
         "/backend/v3/api/orders",
-        "/backend/v3/api/payments/",
-        "/backend/v3/api/promotions/",
         "/backend/v3/api/refunds",
         "/backend/v3/api/shipments",
         "/backend/v3/api/wallet/",
@@ -281,7 +280,7 @@ fn is_commerce_dependency_contract_path(path: &str) -> bool {
 }
 
 fn is_drive_dependency_contract_path(path: &str) -> bool {
-    const DRIVE_BACKEND_PREFIXES: &[&str] = &["/backend/v3/api/drive/", "/backend/v3/api/storage/"];
+    const DRIVE_BACKEND_PREFIXES: &[&str] = &["/backend/v3/api/drive/"];
 
     DRIVE_BACKEND_PREFIXES
         .iter()
@@ -336,7 +335,7 @@ where
         service_node_store,
         service_provider_store,
         site_store,
-        storage_store: _storage_store,
+        storage_store,
         transaction_center_store,
         dashboard_read_store,
         analytics_read_store,
@@ -643,6 +642,12 @@ where
                 ),
             ));
         }
+        if let Some(store) = storage_store {
+            router = router.merge(layer_with_admin_subject_boundary(
+                admin_subject_boundary_config.clone(),
+                sdkwork_clawrouter_router_service::api::admin_storage_router_with_store(store),
+            ));
+        }
         if let Some(store) = transaction_center_store {
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
@@ -860,7 +865,8 @@ pub fn router_with_sqlite_shared_runtime(
     let site_store: AdminSiteRuntimeStore = Arc::new(SqliteAdminSiteStore::new(pool.clone()));
     let service_node_store: AdminServiceNodeRuntimeStore =
         Arc::new(SqliteAdminServiceNodeStore::new(pool.clone()));
-    let storage_store: Option<AdminStorageRuntimeStore> = None;
+    let storage_store: Option<AdminStorageRuntimeStore> =
+        Some(Arc::new(SqliteAdminStorageStore::new(pool.clone())));
     let transaction_center_store: AdminTransactionCenterRuntimeStore =
         Arc::new(SqliteAdminTransactionCenterStore::new(pool.clone()));
     let dashboard_read_store: AdminDashboardRuntimeReadStore =
@@ -988,7 +994,8 @@ pub fn router_with_postgres_shared_runtime(
     let site_store: AdminSiteRuntimeStore = Arc::new(PostgresAdminSiteStore::new(pool.clone()));
     let service_node_store: AdminServiceNodeRuntimeStore =
         Arc::new(PostgresAdminServiceNodeStore::new(pool.clone()));
-    let storage_store: Option<AdminStorageRuntimeStore> = None;
+    let storage_store: Option<AdminStorageRuntimeStore> =
+        Some(Arc::new(PostgresAdminStorageStore::new(pool.clone())));
     let transaction_center_store: AdminTransactionCenterRuntimeStore =
         Arc::new(PostgresAdminTransactionCenterStore::new(pool.clone()));
     let dashboard_read_store: AdminDashboardRuntimeReadStore =
@@ -1318,7 +1325,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
                 Arc::new(SqliteAdminSiteStore::new(pool.clone()));
             let service_node_store: AdminServiceNodeRuntimeStore =
                 Arc::new(SqliteAdminServiceNodeStore::new(pool.clone()));
-            let storage_store: Option<AdminStorageRuntimeStore> = None;
+            let storage_store: Option<AdminStorageRuntimeStore> =
+                Some(Arc::new(SqliteAdminStorageStore::new(pool.clone())));
             let transaction_center_store: AdminTransactionCenterRuntimeStore =
                 Arc::new(SqliteAdminTransactionCenterStore::new(pool.clone()));
             let dashboard_read_store: AdminDashboardRuntimeReadStore =
@@ -1463,7 +1471,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
                 Arc::new(PostgresAdminSiteStore::new(pool.clone()));
             let service_node_store: AdminServiceNodeRuntimeStore =
                 Arc::new(PostgresAdminServiceNodeStore::new(pool.clone()));
-            let storage_store: Option<AdminStorageRuntimeStore> = None;
+            let storage_store: Option<AdminStorageRuntimeStore> =
+                Some(Arc::new(PostgresAdminStorageStore::new(pool.clone())));
             let transaction_center_store: AdminTransactionCenterRuntimeStore =
                 Arc::new(PostgresAdminTransactionCenterStore::new(pool.clone()));
             let dashboard_read_store: AdminDashboardRuntimeReadStore =
@@ -2030,7 +2039,7 @@ pub async fn serve_with_runtime_config(
 mod tests {
     use super::{
         admin_forbidden_response, has_sqlite_admin_access, has_web_framework_admin_access,
-        router_from_env, router_without_database,
+        is_commerce_dependency_contract_path, router_from_env, router_without_database,
     };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
@@ -2147,6 +2156,22 @@ mod tests {
                 "ordinary, inactive, and missing memberships must remain forbidden"
             );
         }
+    }
+
+    #[test]
+    fn standalone_contract_filter_keeps_membership_management_external() {
+        assert!(is_commerce_dependency_contract_path(
+            "/backend/v3/api/memberships/plans"
+        ));
+        assert!(!is_commerce_dependency_contract_path(
+            "/backend/v3/api/payments/providers"
+        ));
+        assert!(!is_commerce_dependency_contract_path(
+            "/backend/v3/api/promotions/offers"
+        ));
+        assert!(!is_commerce_dependency_contract_path(
+            "/backend/v3/api/storage/providers"
+        ));
     }
 
     #[test]

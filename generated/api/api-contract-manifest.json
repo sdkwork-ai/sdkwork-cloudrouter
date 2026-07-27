@@ -3433,6 +3433,62 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/marketing/referral_stats",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts#list@/admin/marketing/referrals",
+      "kind": "read",
+      "module": "pc-admin-marketing",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "system.marketing.referralStats.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "growth_referral_stats"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/marketing/referrals",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/system/monitor/alerts",
       "api_surface": "backend",
       "file_targets": [],
@@ -4449,7 +4505,50 @@
       "operation": "fetchNodes",
       "operation_id": "serviceNodes.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ops_gateway_instance"
@@ -4725,10 +4824,1375 @@
     },
     {
       "api_method": "POST",
+      "api_path": "/backend/v3/api/storage/buckets",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/buckets",
+      "kind": "create",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "oss.buckets.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageBucketCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageBucketCreateRequest",
+          "properties": {
+            "bucketName": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "bucketRegion": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "dataResidencyRegion": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "defaultEncryptionMode": {
+              "enum": [
+                "none",
+                "sse_kms",
+                "sse_s3"
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "defaultStorageClass": {
+              "enum": [
+                "STANDARD",
+                "INTELLIGENT_TIERING",
+                "STANDARD_IA",
+                "ONEZONE_IA",
+                "GLACIER_IR",
+                "GLACIER",
+                "DEEP_ARCHIVE"
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "kmsKeyRef": {
+              "maxLength": 256,
+              "nullable": true,
+              "type": "string"
+            },
+            "lifecycleEnabled": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "logicalScope": {
+              "enum": [
+                "migration_import",
+                "system_archive",
+                "system_quarantine",
+                "system_temp",
+                "system_variant",
+                "tenant_private",
+                "tenant_public_asset"
+              ],
+              "type": "string"
+            },
+            "objectKeyPrefix": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "objectLockEnabled": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "providerId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "publicAccessBlocked": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "versioningEnabled": {
+              "nullable": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "bucketName",
+            "providerId",
+            "logicalScope"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/buckets",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/storage/gc_jobs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/gc_jobs",
+      "kind": "create",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "gcJobs.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageGarbageCollectionCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageGarbageCollectionCreateRequest",
+          "properties": {
+            "criteria": {
+              "additionalProperties": true,
+              "nullable": true,
+              "type": "object"
+            },
+            "dryRun": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "dryRunSample": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "jobType": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "retentionWindow": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "target": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/gc_jobs",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/storage/providers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/providers",
+      "kind": "create",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "oss.providers.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageProviderCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageProviderCreateRequest",
+          "properties": {
+            "credentialRef": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "endpointUrl": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "pathStyleEnabled": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "providerCode": {
+              "maxLength": 96,
+              "minLength": 1,
+              "type": "string"
+            },
+            "providerType": {
+              "enum": [
+                "aws_s3",
+                "cloudflare_r2",
+                "cos_s3",
+                "local_dev_s3",
+                "minio",
+                "oss_s3",
+                "s3_compatible"
+              ],
+              "type": "string"
+            },
+            "region": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "supportsLifecycle": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "supportsMultipart": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "supportsObjectLock": {
+              "nullable": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "providerCode",
+            "providerType",
+            "credentialRef"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/providers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/storage/quotas",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/quotas",
+      "kind": "create",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "oss.quotas.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageQuotaCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageQuotaCreateRequest",
+          "properties": {
+            "enforcement": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "quotaLimitBytes": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "scopeId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "scopeType": {
+              "enum": [
+                "app",
+                "organization",
+                "space",
+                "tenant",
+                "user"
+              ],
+              "type": "string"
+            },
+            "singleFileLimitBytes": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "required": [
+            "scopeType",
+            "scopeId",
+            "quotaLimitBytes"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/quotas",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/storage/reconciliation_runs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/reconciliation_runs",
+      "kind": "create",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "oss.storageReconciliationRuns.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageReconciliationCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageReconciliationCreateRequest",
+          "properties": {
+            "bucketId": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            },
+            "dryRun": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "providerId": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            },
+            "reason": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "runType": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/reconciliation_runs",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/buckets",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/buckets",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "oss.buckets.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/buckets",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/default_buckets",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/default_buckets",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "defaultBuckets.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/default_buckets",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/gc_jobs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/gc_jobs",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "gcJobs.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/gc_jobs",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/providers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/providers",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "oss.providers.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/providers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/quotas",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/quotas",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "oss.quotas.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/quotas",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/reconciliation_runs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/reconciliation_runs",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "oss.storageReconciliationRuns.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/reconciliation_runs",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/usage",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/usage",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "oss.usage.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/usage",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/storage/buckets/{bucketId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#update@/admin/storage/buckets/{bucketId}",
+      "kind": "update",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "oss.buckets.update",
+      "path_params": [
+        "bucketId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageStatusUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageStatusUpdateRequest",
+          "properties": {
+            "reason": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "archived",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/buckets/{bucketId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/storage/default_buckets/{logicalScope}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#update@/admin/storage/default_buckets/{logicalScope}",
+      "kind": "update",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "defaultBuckets.update",
+      "path_params": [
+        "logicalScope"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageDefaultBucketUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageDefaultBucketUpdateRequest",
+          "properties": {
+            "bucketId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "reason": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "bucketId",
+            "reason"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/default_buckets/{logicalScope}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/storage/providers/{providerId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#update@/admin/storage/providers/{providerId}",
+      "kind": "update",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "oss.providers.update",
+      "path_params": [
+        "providerId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageStatusUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageStatusUpdateRequest",
+          "properties": {
+            "reason": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "archived",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/providers/{providerId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
       "api_path": "/app/v3/api/iam/api_keys",
       "api_surface": "app",
       "file_targets": [],
-      "idempotency_required": false,
+      "idempotency_required": true,
       "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts#createKey@/console/api-keys",
       "kind": "create",
       "module": "pc-console-api-keys",
@@ -4741,14 +6205,198 @@
       "read_sources": [
         "ai_channel_group"
       ],
-      "request_body_required": false,
+      "request_body_required": null,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "CreateApiKeyRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CreateApiKeyRequest",
+          "properties": {
+            "channelGroup": {
+              "description": "API key channel group code.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "defaultForRuntime": {
+              "description": "Create this key as the default backend runtime API key.",
+              "type": "boolean"
+            },
+            "expires": {
+              "description": "Expiration timestamp in YYYY-MM-DDTHH:mm format, or never.",
+              "maxLength": 32,
+              "type": "string"
+            },
+            "ipLimit": {
+              "description": "Comma-separated IP or CIDR allowlist, or unrestricted.",
+              "maxLength": 1024,
+              "type": "string"
+            },
+            "isUnlimitedQuota": {
+              "description": "Whether the quota is unlimited.",
+              "type": "boolean"
+            },
+            "modalities": {
+              "items": {
+                "enum": [
+                  "text",
+                  "image",
+                  "video",
+                  "audio",
+                  "music"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "name": {
+              "description": "API key display name.",
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "quota": {
+              "description": "Quota limit as a canonical decimal string.",
+              "format": "decimal",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "channelGroup",
+            "quota",
+            "isUnlimitedQuota",
+            "modalities",
+            "ipLimit",
+            "expires"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "CreateApiKeyResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "CreateApiKeyResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "description": "Created API key metadata. Authenticated owner management responses include copyableKey matching rawKey.",
+              "name": "AppApiKeyItem",
+              "properties": {
+                "channelGroup": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "channelGroupName": {
+                  "description": "Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.",
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "copyableKey": {
+                  "description": "Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.",
+                  "maxLength": 256,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "created": {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                "defaultForRuntime": {
+                  "description": "Whether this key is the current console default for backend runtime API key selection.",
+                  "type": "boolean"
+                },
+                "expires": {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                "id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "ipLimit": {
+                  "maxLength": 1024,
+                  "type": "string"
+                },
+                "maskedKey": {
+                  "maxLength": 256,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "modalities": {
+                  "items": {
+                    "enum": [
+                      "text",
+                      "image",
+                      "video",
+                      "audio",
+                      "music"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "quota": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "rate": {
+                  "maxLength": 64,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "enabled",
+                    "disabled"
+                  ],
+                  "type": "string"
+                },
+                "usedQuota": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "maskedKey",
+                "channelGroup",
+                "quota",
+                "usedQuota",
+                "modalities",
+                "ipLimit",
+                "created",
+                "expires",
+                "status",
+                "defaultForRuntime"
+              ],
+              "type": "object"
+            },
+            "rawKey": {
+              "description": "Full raw API key secret returned by create responses. Authenticated owner management list and update responses also expose this value as item.copyableKey for console copy actions.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "item",
+            "rawKey"
+          ],
           "type": "object"
         }
       },
@@ -4835,11 +6483,55 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AppChannelGroupListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AppChannelGroupListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AppChannelGroup",
+                "properties": {
+                  "code": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "rate": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "name",
+                  "rate"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4866,7 +6558,40 @@
       "operation": "fetchKeys",
       "operation_id": "apiKeys.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "iam_gateway_api_key",
@@ -4874,16 +6599,133 @@
         "ai_channel_group_metric_snapshot",
         "iam_gateway_access_policy",
         "ai_quota_policy",
+        "ai_model_pricing",
         "ai_pricing_plan"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AppApiKeyListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AppApiKeyListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "description": "API key metadata with masked key material and authenticated owner copyable key material.",
+                "name": "AppApiKeyItem",
+                "properties": {
+                  "channelGroup": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "channelGroupName": {
+                    "description": "Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "copyableKey": {
+                    "description": "Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.",
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "created": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "defaultForRuntime": {
+                    "description": "Whether this key is the current console default for backend runtime API key selection.",
+                    "type": "boolean"
+                  },
+                  "expires": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "ipLimit": {
+                    "maxLength": 1024,
+                    "type": "string"
+                  },
+                  "maskedKey": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "modalities": {
+                    "items": {
+                      "enum": [
+                        "text",
+                        "image",
+                        "video",
+                        "audio",
+                        "music"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "name": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "quota": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "rate": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "enabled",
+                      "disabled"
+                    ],
+                    "type": "string"
+                  },
+                  "usedQuota": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "maskedKey",
+                  "channelGroup",
+                  "quota",
+                  "usedQuota",
+                  "modalities",
+                  "ipLimit",
+                  "created",
+                  "expires",
+                  "status",
+                  "defaultForRuntime"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4920,14 +6762,184 @@
         "iam_gateway_access_policy",
         "ai_quota_policy"
       ],
-      "request_body_required": false,
+      "request_body_required": null,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "UpdateApiKeyRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "UpdateApiKeyRequest",
+          "properties": {
+            "channelGroup": {
+              "description": "API key channel group code to bind to this key.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "defaultForRuntime": {
+              "description": "Marks this API key as the default backend runtime API key for Playground and app runtime calls.",
+              "type": "boolean"
+            },
+            "expires": {
+              "description": "Expiration timestamp in YYYY-MM-DDTHH:mm format, or never.",
+              "maxLength": 32,
+              "type": "string"
+            },
+            "ipLimit": {
+              "description": "Comma-separated IP or CIDR allowlist, or unrestricted.",
+              "maxLength": 1024,
+              "type": "string"
+            },
+            "isUnlimitedQuota": {
+              "description": "Whether the quota is unlimited.",
+              "type": "boolean"
+            },
+            "modalities": {
+              "items": {
+                "enum": [
+                  "text",
+                  "image",
+                  "video",
+                  "audio",
+                  "music"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "name": {
+              "description": "API key display name.",
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "quota": {
+              "description": "Optional quota limit as a canonical decimal string.",
+              "format": "decimal",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "UpdateApiKeyResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpdateApiKeyResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "description": "Updated API key metadata. Authenticated owner management responses include copyableKey for console copy actions.",
+              "name": "AppApiKeyItem",
+              "properties": {
+                "channelGroup": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "channelGroupName": {
+                  "description": "Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.",
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "copyableKey": {
+                  "description": "Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.",
+                  "maxLength": 256,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "created": {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                "defaultForRuntime": {
+                  "description": "Whether this key is the current console default for backend runtime API key selection.",
+                  "type": "boolean"
+                },
+                "expires": {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                "id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "ipLimit": {
+                  "maxLength": 1024,
+                  "type": "string"
+                },
+                "maskedKey": {
+                  "maxLength": 256,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "modalities": {
+                  "items": {
+                    "enum": [
+                      "text",
+                      "image",
+                      "video",
+                      "audio",
+                      "music"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "name": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "quota": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "rate": {
+                  "maxLength": 64,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "enabled",
+                    "disabled"
+                  ],
+                  "type": "string"
+                },
+                "usedQuota": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "maskedKey",
+                "channelGroup",
+                "quota",
+                "usedQuota",
+                "modalities",
+                "ipLimit",
+                "created",
+                "expires",
+                "status",
+                "defaultForRuntime"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
           "type": "object"
         }
       },
@@ -9188,6 +11200,4473 @@
         "ops_config_snapshot",
         "ops_audit_log"
       ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/memberships/package_groups",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/memberships/package_groups",
+      "kind": "create",
+      "module": "package_groups",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "memberships.packageGroups.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MembershipPackageGroupMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MembershipPackageGroupMutationRequest",
+          "properties": {
+            "billingCycle": {
+              "maxLength": 32,
+              "minLength": 1,
+              "type": "string"
+            },
+            "code": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "durationDays": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "sortWeight": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "name",
+            "billingCycle",
+            "durationDays",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/package_groups",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/memberships/packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/memberships/packages",
+      "kind": "create",
+      "module": "packages",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "memberships.packages.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MembershipPackageMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MembershipPackageMutationRequest",
+          "properties": {
+            "code": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "durationDays": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "packageGroupId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "planId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "priceAmount": {
+              "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "packageGroupId",
+            "planId",
+            "name",
+            "priceAmount",
+            "currencyCode",
+            "durationDays",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/packages",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/memberships/plans",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/memberships/plans",
+      "kind": "create",
+      "module": "plans",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "memberships.plans.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MembershipPlanMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MembershipPlanMutationRequest",
+          "properties": {
+            "benefits": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "code": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "rank": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "name",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/plans",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/payments/channels",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/payments/channels",
+      "kind": "create",
+      "module": "channels",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "payments.channels.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/channels",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/payments/methods",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/payments/methods",
+      "kind": "create",
+      "module": "methods",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "payments.methods.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/methods",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/payments/provider_accounts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/payments/provider_accounts",
+      "kind": "create",
+      "module": "provider_accounts",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "payments.providerAccounts.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PaymentProviderAccountMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PaymentProviderAccountMutationRequest",
+          "properties": {
+            "accountRole": {
+              "enum": [
+                "merchant",
+                "service_provider"
+              ],
+              "type": "string"
+            },
+            "certificateRef": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "clientRequestNo": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "countryCode": {
+              "maxLength": 16,
+              "minLength": 2,
+              "type": "string"
+            },
+            "environment": {
+              "enum": [
+                "sandbox",
+                "production"
+              ],
+              "type": "string"
+            },
+            "merchantId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "note": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "rotatedAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "secretRef": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "settlementCurrency": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            },
+            "webhookSecretRef": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          },
+          "required": [
+            "providerCode",
+            "merchantId",
+            "environment",
+            "countryCode",
+            "settlementCurrency",
+            "secretRef",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/provider_accounts",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/payments/reconciliation_runs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/payments/reconciliation_runs",
+      "kind": "create",
+      "module": "reconciliation_runs",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "payments.reconciliationRuns.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/reconciliation_runs",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/payments/route_rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/payments/route_rules",
+      "kind": "create",
+      "module": "route_rules",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "payments.routeRules.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/route_rules",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/payments/webhook_events/{eventId}/replays",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/payments/webhook_events/{eventId}/replays",
+      "kind": "create",
+      "module": "replays",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "payments.webhookEvents.replays.create",
+      "path_params": [
+        "eventId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/webhook_events/{eventId}/replays",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/promotions/codes",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/promotions/codes",
+      "kind": "create",
+      "module": "codes",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "promotions.codes.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/codes",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/promotions/coupon_stocks",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/promotions/coupon_stocks",
+      "kind": "create",
+      "module": "coupon_stocks",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "promotions.couponStocks.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/coupon_stocks",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/promotions/offers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/promotions/offers",
+      "kind": "create",
+      "module": "offers",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "promotions.offers.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/offers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/recharges/packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/recharges/packages",
+      "kind": "create",
+      "module": "packages",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "recharges.packages.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "RechargePackageMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RechargePackageMutationRequest",
+          "properties": {
+            "bonusPoints": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "priceAmount": {
+              "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "priceAmount",
+            "currencyCode",
+            "bonusPoints",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/packages",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/storage/providers/{providerId}/health_check",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/storage/providers/{providerId}/health_check",
+      "kind": "create",
+      "module": "health_check",
+      "openapi_exposed": true,
+      "operation": "create",
+      "operation_id": "providers.healthCheck",
+      "path_params": [
+        "providerId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/providers/{providerId}/health_check",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/memberships/package_groups/{packageGroupId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#delete@/admin/memberships/package_groups/{packageGroupId}",
+      "kind": "delete",
+      "module": "{packageGroupId}",
+      "openapi_exposed": true,
+      "operation": "delete",
+      "operation_id": "memberships.packageGroups.delete",
+      "path_params": [
+        "packageGroupId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/package_groups/{packageGroupId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/memberships/packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#delete@/admin/memberships/packages/{packageId}",
+      "kind": "delete",
+      "module": "{packageId}",
+      "openapi_exposed": true,
+      "operation": "delete",
+      "operation_id": "memberships.packages.delete",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/packages/{packageId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/payments/provider_accounts/{providerAccountId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#delete@/admin/payments/provider_accounts/{providerAccountId}",
+      "kind": "delete",
+      "module": "{providerAccountId}",
+      "openapi_exposed": true,
+      "operation": "delete",
+      "operation_id": "payments.providerAccounts.delete",
+      "path_params": [
+        "providerAccountId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/provider_accounts/{providerAccountId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/recharges/packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#delete@/admin/recharges/packages/{packageId}",
+      "kind": "delete",
+      "module": "{packageId}",
+      "openapi_exposed": true,
+      "operation": "delete",
+      "operation_id": "recharges.packages.delete",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/packages/{packageId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/memberships/entitlements",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/memberships/entitlements",
+      "kind": "read",
+      "module": "entitlements",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "memberships.entitlements.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "membership_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "plan_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/entitlements",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/memberships/members",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/memberships/members",
+      "kind": "read",
+      "module": "members",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "memberships.members.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "user_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "plan_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/members",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/memberships/package_groups",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/memberships/package_groups",
+      "kind": "read",
+      "module": "package_groups",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "memberships.packageGroups.management.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/package_groups",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/memberships/packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/memberships/packages",
+      "kind": "read",
+      "module": "packages",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "memberships.packages.management.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "plan_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/packages",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/memberships/plans",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/memberships/plans",
+      "kind": "read",
+      "module": "plans",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "memberships.plans.management.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/plans",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/attempts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/attempts",
+      "kind": "read",
+      "module": "attempts",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.attempts.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/attempts",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/channels",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/channels",
+      "kind": "read",
+      "module": "channels",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.channels.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/channels",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/disputes",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/disputes",
+      "kind": "read",
+      "module": "disputes",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.disputes.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/disputes",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/intents",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/intents",
+      "kind": "read",
+      "module": "intents",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.intents.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/intents",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/methods",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/methods",
+      "kind": "read",
+      "module": "methods",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.methods.management.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/methods",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/provider_accounts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/provider_accounts",
+      "kind": "read",
+      "module": "provider_accounts",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.providerAccounts.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/provider_accounts",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/providers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/providers",
+      "kind": "read",
+      "module": "providers",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.providers.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/providers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/reconciliation_runs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/reconciliation_runs",
+      "kind": "read",
+      "module": "reconciliation_runs",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.reconciliationRuns.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/reconciliation_runs",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/route_rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/route_rules",
+      "kind": "read",
+      "module": "route_rules",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.routeRules.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/route_rules",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/webhook_events",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/payments/webhook_events",
+      "kind": "read",
+      "module": "webhook_events",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "payments.webhookEvents.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "provider_account_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "method_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "country_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "order_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "intent_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "business_date",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/webhook_events",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/budget_ledger_entries",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/budget_ledger_entries",
+      "kind": "read",
+      "module": "budget_ledger_entries",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.budgetLedgerEntries.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/budget_ledger_entries",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/codes",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/codes",
+      "kind": "read",
+      "module": "codes",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.codes.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/codes",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/codes/redemptions",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/codes/redemptions",
+      "kind": "read",
+      "module": "redemptions",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.codes.redemptions.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/codes/redemptions",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/coupon_ledger_entries",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/coupon_ledger_entries",
+      "kind": "read",
+      "module": "coupon_ledger_entries",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.couponLedgerEntries.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/coupon_ledger_entries",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/coupon_stocks",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/coupon_stocks",
+      "kind": "read",
+      "module": "coupon_stocks",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.couponStocks.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/coupon_stocks",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/discount_allocations",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/discount_allocations",
+      "kind": "read",
+      "module": "discount_allocations",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.discountAllocations.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/discount_allocations",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/discount_applications",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/discount_applications",
+      "kind": "read",
+      "module": "discount_applications",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.discountApplications.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/discount_applications",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/events",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/events",
+      "kind": "read",
+      "module": "events",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.events.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/events",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/external_bindings",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/external_bindings",
+      "kind": "read",
+      "module": "external_bindings",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.externalBindings.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/external_bindings",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/offers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/offers",
+      "kind": "read",
+      "module": "offers",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.offers.management.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/offers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/promotions/user_coupons",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/promotions/user_coupons",
+      "kind": "read",
+      "module": "user_coupons",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "promotions.userCoupons.management.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/user_coupons",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/recharges/orders",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/recharges/orders",
+      "kind": "read",
+      "module": "orders",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "recharges.orders.management.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/orders",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/recharges/packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#list@/admin/recharges/packages",
+      "kind": "read",
+      "module": "packages",
+      "openapi_exposed": true,
+      "operation": "list",
+      "operation_id": "recharges.packages.management.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/packages",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/intents/{paymentIntentId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#retrieve@/admin/payments/intents/{paymentIntentId}",
+      "kind": "read",
+      "module": "{paymentIntentId}",
+      "openapi_exposed": true,
+      "operation": "retrieve",
+      "operation_id": "payments.intents.management.retrieve",
+      "path_params": [
+        "paymentIntentId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/intents/{paymentIntentId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/payments/runtime/snapshot",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#retrieve@/admin/payments/runtime/snapshot",
+      "kind": "read",
+      "module": "snapshot",
+      "openapi_exposed": true,
+      "operation": "retrieve",
+      "operation_id": "payments.runtime.snapshot.retrieve",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/runtime/snapshot",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/recharges/orders/{orderId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#retrieve@/admin/recharges/orders/{orderId}",
+      "kind": "read",
+      "module": "{orderId}",
+      "openapi_exposed": true,
+      "operation": "retrieve",
+      "operation_id": "recharges.orders.management.retrieve",
+      "path_params": [
+        "orderId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/orders/{orderId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/recharges/settings",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#retrieve@/admin/recharges/settings",
+      "kind": "read",
+      "module": "settings",
+      "openapi_exposed": true,
+      "operation": "retrieve",
+      "operation_id": "recharges.settings.management.retrieve",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/settings",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/memberships/members/{membershipId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/memberships/members/{membershipId}",
+      "kind": "update",
+      "module": "{membershipId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "memberships.members.update",
+      "path_params": [
+        "membershipId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MembershipStatusUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MembershipStatusUpdateRequest",
+          "properties": {
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "expired",
+                "suspended",
+                "cancelled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/members/{membershipId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/memberships/package_groups/{packageGroupId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/memberships/package_groups/{packageGroupId}",
+      "kind": "update",
+      "module": "{packageGroupId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "memberships.packageGroups.update",
+      "path_params": [
+        "packageGroupId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MembershipPackageGroupMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MembershipPackageGroupMutationRequest",
+          "properties": {
+            "billingCycle": {
+              "maxLength": 32,
+              "minLength": 1,
+              "type": "string"
+            },
+            "code": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "durationDays": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "sortWeight": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "name",
+            "billingCycle",
+            "durationDays",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/package_groups/{packageGroupId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/memberships/packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/memberships/packages/{packageId}",
+      "kind": "update",
+      "module": "{packageId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "memberships.packages.update",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MembershipPackageMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MembershipPackageMutationRequest",
+          "properties": {
+            "code": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "durationDays": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "packageGroupId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "planId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "priceAmount": {
+              "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "packageGroupId",
+            "planId",
+            "name",
+            "priceAmount",
+            "currencyCode",
+            "durationDays",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/packages/{packageId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/memberships/plans/{planId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/memberships/plans/{planId}",
+      "kind": "update",
+      "module": "{planId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "memberships.plans.update",
+      "path_params": [
+        "planId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "memberships"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "MembershipPlanMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "MembershipPlanMutationRequest",
+          "properties": {
+            "benefits": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "code": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "rank": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "name",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memberships/plans/{planId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "memberships",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/payments/channels/{channelId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/channels/{channelId}",
+      "kind": "update",
+      "module": "{channelId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "payments.channels.update",
+      "path_params": [
+        "channelId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/channels/{channelId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/payments/methods/{methodId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/methods/{methodId}",
+      "kind": "update",
+      "module": "{methodId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "payments.methods.update",
+      "path_params": [
+        "methodId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/methods/{methodId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/payments/provider_accounts/{providerAccountId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/provider_accounts/{providerAccountId}",
+      "kind": "update",
+      "module": "{providerAccountId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "payments.providerAccounts.update",
+      "path_params": [
+        "providerAccountId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PaymentProviderAccountMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PaymentProviderAccountMutationRequest",
+          "properties": {
+            "accountRole": {
+              "enum": [
+                "merchant",
+                "service_provider"
+              ],
+              "type": "string"
+            },
+            "certificateRef": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "clientRequestNo": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "countryCode": {
+              "maxLength": 16,
+              "minLength": 2,
+              "type": "string"
+            },
+            "environment": {
+              "enum": [
+                "sandbox",
+                "production"
+              ],
+              "type": "string"
+            },
+            "merchantId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "note": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "rotatedAt": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "secretRef": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "settlementCurrency": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            },
+            "webhookSecretRef": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          },
+          "required": [
+            "providerCode",
+            "merchantId",
+            "environment",
+            "countryCode",
+            "settlementCurrency",
+            "secretRef",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/provider_accounts/{providerAccountId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/payments/provider_accounts/{providerAccountId}/status",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/provider_accounts/{providerAccountId}/status",
+      "kind": "update",
+      "module": "status",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "payments.providerAccounts.status.update",
+      "path_params": [
+        "providerAccountId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PaymentProviderAccountStatusUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PaymentProviderAccountStatusUpdateRequest",
+          "properties": {
+            "clientRequestNo": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "note": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/provider_accounts/{providerAccountId}/status",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/payments/providers/{providerCode}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/providers/{providerCode}",
+      "kind": "update",
+      "module": "{providerCode}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "payments.providers.update",
+      "path_params": [
+        "providerCode"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/providers/{providerCode}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/payments/route_rules/{routeRuleId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/payments/route_rules/{routeRuleId}",
+      "kind": "update",
+      "module": "{routeRuleId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "payments.routeRules.update",
+      "path_params": [
+        "routeRuleId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "payments"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/payments/route_rules/{routeRuleId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "payments",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/promotions/offers/{offerId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/promotions/offers/{offerId}",
+      "kind": "update",
+      "module": "{offerId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "promotions.offers.update",
+      "path_params": [
+        "offerId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "promotions"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/promotions/offers/{offerId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "promotion",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "promotions",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/recharges/packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/recharges/packages/{packageId}",
+      "kind": "update",
+      "module": "{packageId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "recharges.packages.update",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "RechargePackageMutationRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RechargePackageMutationRequest",
+          "properties": {
+            "bonusPoints": {
+              "pattern": "^[0-9]+$",
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "priceAmount": {
+              "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "priceAmount",
+            "currencyCode",
+            "bonusPoints",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/packages/{packageId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/recharges/settings",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/recharges/settings",
+      "kind": "update",
+      "module": "settings",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "recharges.settings.update",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "recharges"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "RechargeSettingsUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RechargeSettingsUpdateRequest",
+          "properties": {
+            "baseCurrencyCode": {
+              "maxLength": 16,
+              "minLength": 3,
+              "type": "string"
+            },
+            "basePointsPerCny": {
+              "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
+              "type": "string"
+            },
+            "currencyToCnyRates": {
+              "additionalProperties": {
+                "pattern": "^[0-9]+(\\\\.[0-9]{1,8})?$",
+                "type": "string"
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "baseCurrencyCode",
+            "basePointsPerCny",
+            "currencyToCnyRates"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/recharges/settings",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "commerce",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "recharges",
+      "write_tables": [
+        "ops_audit_log"
+      ]
     }
   ],
   "schema": {
@@ -9223,25 +15702,25 @@
   },
   "summary": {
     "api_method_counts": {
-      "DELETE": 15,
-      "GET": 92,
-      "PATCH": 10,
-      "POST": 56,
-      "PUT": 8
+      "DELETE": 19,
+      "GET": 132,
+      "PATCH": 25,
+      "POST": 75,
+      "PUT": 9
     },
     "api_surface_counts": {
       "app": 86,
-      "backend": 95
+      "backend": 174
     },
-    "operation_count": 181,
+    "operation_count": 260,
     "route_scope_counts": {
-      "admin": 95,
+      "admin": 174,
       "console": 31,
       "public": 55
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 86,
-      "SdkworkBackendClient": 95
+      "SdkworkBackendClient": 174
     }
   }
 }

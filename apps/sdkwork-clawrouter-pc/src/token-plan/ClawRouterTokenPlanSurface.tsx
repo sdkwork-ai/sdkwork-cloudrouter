@@ -6,9 +6,9 @@ import { buildPortalAuthLoginRedirect } from '@sdkwork/clawroutes-pc-commons';
 import { getClawRouterMembershipCheckoutService } from '@sdkwork/clawroutes-pc-commons/domain-service-providers';
 
 import {
-  ClawRouterTokenPlanPointsDetailsModal,
+  ClawRouterTokenPlanTokenBankDetailsModal,
   ClawRouterTokenPlanCheckoutModal,
-  ClawRouterTokenPlanPointsPurchaseModal,
+  ClawRouterTokenPlanTokenBankPurchaseModal,
   ClawRouterTokenPlanRedeemModal,
 } from './ClawRouterTokenPlanCommerceModal.tsx';
 import { useTokenPlanMemberSummary } from './tokenPlanMemberSummary.ts';
@@ -30,8 +30,8 @@ export function ClawRouterTokenPlanSurface() {
         components={{
           ...sdkworkSubscriptionCatalogHostComponents,
           checkoutModal: ClawRouterTokenPlanCheckoutModal,
-          pointsDetailsModal: ClawRouterTokenPlanPointsDetailsModal,
-          pointsPurchaseModal: ClawRouterTokenPlanPointsPurchaseModal,
+          pointsDetailsModal: ClawRouterTokenPlanTokenBankDetailsModal,
+          pointsPurchaseModal: ClawRouterTokenPlanTokenBankPurchaseModal,
           redeemModal: ClawRouterTokenPlanRedeemModal,
         }}
         checkoutPort={getClawRouterMembershipCheckoutService()}

@@ -1,5 +1,5 @@
 import { appApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 export class RuntimeInvocationsEventsStreamApi {
   private client: HttpClient;
@@ -10,8 +10,8 @@ export class RuntimeInvocationsEventsStreamApi {
 
 
 /** Stream runtime events */
-  async list(invocationId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events/stream`));
+  async list(invocationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events/stream`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -26,13 +26,13 @@ export class RuntimeInvocationsEventsApi {
 
 
 /** List runtime events */
-  async list(invocationId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`));
+  async list(invocationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create runtime event */
-  async create(invocationId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`));
+  async create(invocationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
@@ -45,13 +45,13 @@ export class RuntimeInvocationsArtifactsApi {
 
 
 /** List runtime artifacts */
-  async list(invocationId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`));
+  async list(invocationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create runtime artifact */
-  async create(invocationId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`));
+  async create(invocationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
@@ -68,32 +68,32 @@ export class RuntimeInvocationsApi {
 
 
 /** List runtime invocations */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create runtime invocation */
-  async create(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations`));
+  async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 
 /** Retrieve runtime invocation */
-  async retrieve(invocationId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`));
+  async retrieve(invocationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Complete runtime invocation */
-  async complete(invocationId: string): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/complete`));
+  async complete(invocationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/complete`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
 export class RuntimeApi {
-
+  private client: HttpClient;
   public readonly invocations: RuntimeInvocationsApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.invocations = new RuntimeInvocationsApi(client);
   }
 
@@ -103,7 +103,13 @@ export function createRuntimeApi(client: HttpClient): RuntimeApi {
   return new RuntimeApi(client);
 }
 
-
+function appendQueryString(path: string, rawQueryString: string): string {
+  const query = rawQueryString.replace(/^\?+/, '');
+  if (!query) {
+    return path;
+  }
+  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
+}
 
 interface PathParameterSpec {
   name: string;

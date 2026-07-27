@@ -30,8 +30,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
-
 import {
   DashboardService,
   type Announcement,
@@ -90,13 +88,11 @@ export function DashboardView() {
   const [visibleSeries, setVisibleSeries] = useState(DEFAULT_VISIBLE_SERIES);
   const [domainSpeedStates, setDomainSpeedStates] = useState<Record<string, ConfigurationDomainSpeedState>>({});
   const [snapshot, setSnapshot] = useState(() => DashboardService.emptyDashboardSnapshot());
-  const [hasData, setHasData] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadMessage, setLoadMessage] = useState<string | null>(null);
-  // Refs avoid re-creating loadDashboard (and thus re-triggering the effect) on data arrival,
-  // while still letting the render branch read `hasData` reactively.
+  // Track whether a prior snapshot exists without re-creating loadDashboard on data arrival.
   const hasDataRef = useRef(false);
   const requestIdRef = useRef(0);
 
@@ -117,7 +113,6 @@ export function DashboardView() {
       }
       setSnapshot(data);
       hasDataRef.current = true;
-      setHasData(true);
       setLoadMessage(data.warnings[0] ?? null);
     } catch (error) {
       if (currentRequestId !== requestIdRef.current) {
@@ -149,8 +144,6 @@ export function DashboardView() {
   }, [loadDashboard]);
 
   const isBusy = isInitialLoading || isRefreshing;
-  const showFullLoading = isInitialLoading && !hasData;
-  const showFullError = Boolean(loadError) && !hasData;
 
   const chartData = useMemo(() => {
     return snapshot.chartData.map((item) => {
@@ -179,13 +172,16 @@ export function DashboardView() {
       const requests = snapshot.topModels
         .filter((item) => item.modality === series.modality)
         .reduce((sum, item) => sum + item.requests, 0);
+      const percentage = totalRequests > 0 ? Math.round((requests / totalRequests) * 100) : 0;
       return {
         name: series.label(t),
-        value: totalRequests > 0 ? Math.round((requests / totalRequests) * 100) : 0,
+        value: percentage,
+        chartValue: totalRequests > 0 ? percentage : 1,
         color: series.color,
       };
     });
   }, [snapshot.topModels, t]);
+  const hasModalityData = pieData.some((item) => item.value > 0);
 
   const chartTooltipStyle = {
     backgroundColor: '#ffffff',
@@ -234,10 +230,10 @@ export function DashboardView() {
         <MetricCard
           icon={<Wallet className="h-4 w-4 text-blue-500" />}
           title={t("console.dashboard.dashboardview.text.uvto1d", "可用额度")}
-          value={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} 点", { value: formatCredits(snapshot.summary.availableCredits) })}
+          value={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} Compute Credits", { value: formatCredits(snapshot.summary.tokenBankAvailable) })}
           valueIcon={<Zap className="h-6 w-6 text-amber-500" />}
           footerLabel={t("console.dashboard.dashboardview.text.totalUsedCredits", "历史总消耗")}
-          footerValue={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} 点", { value: formatCredits(snapshot.summary.totalUsedCredits) })}
+          footerValue={t("console.dashboard.dashboardview.text.pointsValue", "{{value}} Compute Credits", { value: formatCredits(snapshot.summary.totalUsedCredits) })}
           action={
             <button
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-[#1f1f1f] dark:text-slate-300 dark:hover:bg-white/10"
@@ -286,27 +282,17 @@ export function DashboardView() {
 
       {loadMessage && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-          {loadMessage}
+          {translateDashboardLocalValue(loadMessage, loadMessage, t)}
         </div>
       )}
 
-      {showFullLoading ? (
-        <BusinessStatePanel
-          kind="loading"
-          title={t("console.dashboard.dashboardview.text.loadingTitle", "正在加载看板数据...")}
-          description={t("console.dashboard.dashboardview.text.loadingDescription", "正在获取用量、模型排行和系统消息。")}
-          className="rounded-lg border border-slate-200 bg-white dark:border-white/5 dark:bg-[#252525]"
-        />
-      ) : showFullError ? (
-        <BusinessStatePanel
-          kind="error"
-          title={t("console.dashboard.dashboardview.text.loadErrorTitle", "看板数据加载失败")}
-          description={loadError ?? undefined}
-          onRetry={() => void loadDashboard()}
-          className="rounded-lg border border-slate-200 bg-white dark:border-white/5 dark:bg-[#252525]"
-        />
-      ) : (
-        <>
+      {isInitialLoading && (
+        <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+          {t("console.dashboard.dashboardview.text.loadingTitle", "正在加载看板数据...")}
+        </div>
+      )}
+
       {loadError && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
           <span className="flex items-center gap-2">
@@ -478,7 +464,7 @@ export function DashboardView() {
                             </div>
                           </td>
                           <td className="px-3 py-2.5 text-right">
-                            <span className="font-mono text-sm font-bold text-slate-800 dark:text-white">{formatCredits(row.cost)} {t("console.dashboard.dashboardview.text.1gb9aus", "点")}</span>
+                            <span className="font-mono text-sm font-bold text-slate-800 dark:text-white">{formatCredits(row.cost)} {t("console.dashboard.dashboardview.text.1gb9aus", "Compute Credits")}</span>
                           </td>
                         </tr>
                       );
@@ -584,33 +570,49 @@ export function DashboardView() {
                 <PieChartIcon className="h-4 w-4 text-blue-500" /> {t("console.dashboard.dashboardview.text.da5r28", "模态分布")}</h3>
             </div>
             <div className="flex flex-1 items-center p-2.5">
-              {pieData.length === 0 ? (
-                <EmptyState label={t("console.dashboard.dashboardview.text.q1xtoy", "暂无分布数据")} />
-              ) : (
-                <>
-                  <div className="h-full w-1/2">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={pieData} cx="50%" cy="50%" dataKey="value" innerRadius={45} outerRadius={70} paddingAngle={5} stroke="none">
-                          {pieData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
-                        </Pie>
+              <>
+                <div className="relative h-full w-1/2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        dataKey="chartValue"
+                        innerRadius={45}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        stroke="none"
+                        opacity={hasModalityData ? 1 : 0.35}
+                      >
+                        {pieData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
+                      </Pie>
+                      {hasModalityData && (
                         <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [`${value}%`, t("console.dashboard.dashboardview.text.wu2yr5", "占比")]} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                      )}
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="font-mono text-lg font-bold text-slate-700 dark:text-slate-100">
+                      {hasModalityData ? '100%' : '0%'}
+                    </span>
+                    <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                      {t("console.dashboard.dashboardview.text.wu2yr5", "占比")}
+                    </span>
                   </div>
-                  <div className="flex w-1/2 flex-col justify-center gap-2 pl-2">
-                    {pieData.map((item) => (
-                      <div key={item.name} className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                          {item.name}
-                        </span>
-                        <span className="text-xs font-bold">{item.value}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+                </div>
+                <div className={`flex w-1/2 flex-col justify-center gap-2 pl-2 ${hasModalityData ? '' : 'opacity-60'}`}>
+                  {pieData.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                        {item.name}
+                      </span>
+                      <span className="text-xs font-bold">{item.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             </div>
           </section>
 
@@ -637,8 +639,6 @@ export function DashboardView() {
           </section>
         </div>
       </div>
-        </>
-      )}
     </div>
   );
 }

@@ -1,0 +1,564 @@
+import { backendApiPath } from './paths';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
+
+export interface PromotionsUserCouponsManagementListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsUserCouponsManagementApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsUserCouponsManagementListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/user_coupons`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export class PromotionsUserCouponsApi {
+  private client: HttpClient;
+  public readonly management: PromotionsUserCouponsManagementApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.management = new PromotionsUserCouponsManagementApi(client);
+  }
+
+}
+
+export interface PromotionsOffersManagementListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsOffersManagementApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsOffersManagementListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/offers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export class PromotionsOffersApi {
+  private client: HttpClient;
+  public readonly management: PromotionsOffersManagementApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.management = new PromotionsOffersManagementApi(client);
+  }
+
+
+/** Create */
+  async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/promotions/offers`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+  }
+
+/** Update */
+  async update(offerId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/promotions/offers/${serializePathParameter(offerId, { name: 'offerId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any });
+  }
+}
+
+export interface PromotionsExternalBindingsListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsExternalBindingsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsExternalBindingsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/external_bindings`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export interface PromotionsEventsListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsEventsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsEventsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/events`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export interface PromotionsDiscountApplicationsListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsDiscountApplicationsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsDiscountApplicationsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/discount_applications`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export interface PromotionsDiscountAllocationsListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsDiscountAllocationsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsDiscountAllocationsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/discount_allocations`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export interface PromotionsCouponStocksListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsCouponStocksApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsCouponStocksListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/coupon_stocks`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+
+/** Create */
+  async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/promotions/coupon_stocks`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+  }
+}
+
+export interface PromotionsCouponLedgerEntriesListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsCouponLedgerEntriesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsCouponLedgerEntriesListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/coupon_ledger_entries`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export interface PromotionsCodesRedemptionsListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsCodesRedemptionsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsCodesRedemptionsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/codes/redemptions`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export interface PromotionsCodesListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsCodesApi {
+  private client: HttpClient;
+  public readonly redemptions: PromotionsCodesRedemptionsApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.redemptions = new PromotionsCodesRedemptionsApi(client);
+  }
+
+
+/** List */
+  async list(params?: PromotionsCodesListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/codes`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+
+/** Create */
+  async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/promotions/codes`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+  }
+}
+
+export interface PromotionsBudgetLedgerEntriesListParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export class PromotionsBudgetLedgerEntriesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List */
+  async list(params?: PromotionsBudgetLedgerEntriesListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/promotions/budget_ledger_entries`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
+export class PromotionsApi {
+  private client: HttpClient;
+  public readonly budgetLedgerEntries: PromotionsBudgetLedgerEntriesApi;
+  public readonly codes: PromotionsCodesApi;
+  public readonly couponLedgerEntries: PromotionsCouponLedgerEntriesApi;
+  public readonly couponStocks: PromotionsCouponStocksApi;
+  public readonly discountAllocations: PromotionsDiscountAllocationsApi;
+  public readonly discountApplications: PromotionsDiscountApplicationsApi;
+  public readonly events: PromotionsEventsApi;
+  public readonly externalBindings: PromotionsExternalBindingsApi;
+  public readonly offers: PromotionsOffersApi;
+  public readonly userCoupons: PromotionsUserCouponsApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.budgetLedgerEntries = new PromotionsBudgetLedgerEntriesApi(client);
+    this.codes = new PromotionsCodesApi(client);
+    this.couponLedgerEntries = new PromotionsCouponLedgerEntriesApi(client);
+    this.couponStocks = new PromotionsCouponStocksApi(client);
+    this.discountAllocations = new PromotionsDiscountAllocationsApi(client);
+    this.discountApplications = new PromotionsDiscountApplicationsApi(client);
+    this.events = new PromotionsEventsApi(client);
+    this.externalBindings = new PromotionsExternalBindingsApi(client);
+    this.offers = new PromotionsOffersApi(client);
+    this.userCoupons = new PromotionsUserCouponsApi(client);
+  }
+
+}
+
+export function createPromotionsApi(client: HttpClient): PromotionsApi {
+  return new PromotionsApi(client);
+}
+
+function appendQueryString(path: string, rawQueryString: string): string {
+  const query = rawQueryString.replace(/^\?+/, '');
+  if (!query) {
+    return path;
+  }
+  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
+}
+
+interface PathParameterSpec {
+  name: string;
+  style: string;
+  explode: boolean;
+}
+
+function serializePathParameter(value: unknown, spec: PathParameterSpec): string {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  const style = spec.style || 'simple';
+  if (Array.isArray(value)) {
+    return serializePathArray(spec.name, value, style, spec.explode);
+  }
+  if (typeof value === 'object') {
+    return serializePathObject(spec.name, value as Record<string, unknown>, style, spec.explode);
+  }
+  return pathPrefix(spec.name, style, false) + encodePathValue(serializePathPrimitive(value));
+}
+
+function serializePathArray(name: string, values: unknown[], style: string, explode: boolean): string {
+  const serialized = values
+    .filter((item) => item !== undefined && item !== null)
+    .map((item) => encodePathValue(serializePathPrimitive(item)));
+  if (serialized.length === 0) {
+    return pathPrefix(name, style, false);
+  }
+  if (style === 'matrix') {
+    return explode
+      ? serialized.map((item) => `;${name}=${item}`).join('')
+      : `;${name}=${serialized.join(',')}`;
+  }
+  return pathPrefix(name, style, false) + serialized.join(explode ? '.' : ',');
+}
+
+function serializePathObject(name: string, value: Record<string, unknown>, style: string, explode: boolean): string {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (entries.length === 0) {
+    return pathPrefix(name, style, true);
+  }
+  if (style === 'matrix') {
+    return explode
+      ? entries.map(([key, entryValue]) => `;${encodePathValue(key)}=${encodePathValue(serializePathPrimitive(entryValue))}`).join('')
+      : `;${name}=${entries.flatMap(([key, entryValue]) => [encodePathValue(key), encodePathValue(serializePathPrimitive(entryValue))]).join(',')}`;
+  }
+  const serialized = explode
+    ? entries.map(([key, entryValue]) => `${encodePathValue(key)}=${encodePathValue(serializePathPrimitive(entryValue))}`).join(style === 'label' ? '.' : ',')
+    : entries.flatMap(([key, entryValue]) => [encodePathValue(key), encodePathValue(serializePathPrimitive(entryValue))]).join(',');
+  return pathPrefix(name, style, true) + serialized;
+}
+
+function pathPrefix(name: string, style: string, _objectValue: boolean): string {
+  if (style === 'label') return '.';
+  if (style === 'matrix') return `;${name}`;
+  return '';
+}
+
+function encodePathValue(value: string): string {
+  return encodeURIComponent(value);
+}
+
+function serializePathPrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+interface QueryParameterSpec {
+  name: string;
+  value: unknown;
+  style: string;
+  explode: boolean;
+  allowReserved: boolean;
+  contentType?: string;
+}
+
+function buildQueryString(parameters: QueryParameterSpec[]): string {
+  const pairs: string[] = [];
+  for (const parameter of parameters) {
+    appendSerializedParameter(pairs, parameter);
+  }
+  return pairs.join('&');
+}
+
+function appendSerializedParameter(pairs: string[], parameter: QueryParameterSpec): void {
+  if (parameter.value === undefined || parameter.value === null) {
+    return;
+  }
+
+  if (parameter.contentType) {
+    pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(JSON.stringify(parameter.value), parameter.allowReserved)}`);
+    return;
+  }
+
+  const style = parameter.style || 'form';
+  if (style === 'deepObject') {
+    appendDeepObjectParameter(pairs, parameter.name, parameter.value, parameter.allowReserved);
+    return;
+  }
+
+  if (Array.isArray(parameter.value)) {
+    appendArrayParameter(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+
+  if (typeof parameter.value === 'object') {
+    appendObjectParameter(pairs, parameter.name, parameter.value as Record<string, unknown>, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+
+  pairs.push(`${encodeQueryComponent(parameter.name)}=${encodeQueryValue(serializePrimitive(parameter.value), parameter.allowReserved)}`);
+}
+
+function appendArrayParameter(
+  pairs: string[],
+  name: string,
+  value: unknown[],
+  style: string,
+  explode: boolean,
+  allowReserved: boolean,
+): void {
+  const values = value
+    .filter((item) => item !== undefined && item !== null)
+    .map((item) => serializePrimitive(item));
+  if (values.length === 0) {
+    return;
+  }
+
+  if (style === 'form' && explode) {
+    for (const item of values) {
+      pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(item, allowReserved)}`);
+    }
+    return;
+  }
+
+  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(values.join(','), allowReserved)}`);
+}
+
+function appendObjectParameter(
+  pairs: string[],
+  name: string,
+  value: Record<string, unknown>,
+  style: string,
+  explode: boolean,
+  allowReserved: boolean,
+): void {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined && entryValue !== null);
+  if (entries.length === 0) {
+    return;
+  }
+
+  if (style === 'form' && explode) {
+    for (const [key, entryValue] of entries) {
+      pairs.push(`${encodeQueryComponent(key)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
+    }
+    return;
+  }
+
+  const serialized = entries.flatMap(([key, entryValue]) => [key, serializePrimitive(entryValue)]).join(',');
+  pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serialized, allowReserved)}`);
+}
+
+function appendDeepObjectParameter(
+  pairs: string[],
+  name: string,
+  value: unknown,
+  allowReserved: boolean,
+): void {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    pairs.push(`${encodeQueryComponent(name)}=${encodeQueryValue(serializePrimitive(value), allowReserved)}`);
+    return;
+  }
+
+  for (const [key, entryValue] of Object.entries(value as Record<string, unknown>)) {
+    if (entryValue === undefined || entryValue === null) {
+      continue;
+    }
+    pairs.push(`${encodeQueryComponent(`${name}[${key}]`)}=${encodeQueryValue(serializePrimitive(entryValue), allowReserved)}`);
+  }
+}
+
+function serializePrimitive(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function encodeQueryComponent(value: string): string {
+  return encodeURIComponent(value);
+}
+
+function encodeQueryValue(value: string, allowReserved: boolean): string {
+  const encoded = encodeURIComponent(value);
+  if (!allowReserved) {
+    return encoded;
+  }
+  return encoded.replace(/%3A/gi, ':')
+    .replace(/%2F/gi, '/')
+    .replace(/%3F/gi, '?')
+    .replace(/%23/gi, '#')
+    .replace(/%5B/gi, '[')
+    .replace(/%5D/gi, ']')
+    .replace(/%40/gi, '@')
+    .replace(/%21/gi, '!')
+    .replace(/%24/gi, '$')
+    .replace(/%26/gi, '&')
+    .replace(/%27/gi, "'")
+    .replace(/%28/gi, '(')
+    .replace(/%29/gi, ')')
+    .replace(/%2A/gi, '*')
+    .replace(/%2B/gi, '+')
+    .replace(/%2C/gi, ',')
+    .replace(/%3B/gi, ';')
+    .replace(/%3D/gi, '=');
+}

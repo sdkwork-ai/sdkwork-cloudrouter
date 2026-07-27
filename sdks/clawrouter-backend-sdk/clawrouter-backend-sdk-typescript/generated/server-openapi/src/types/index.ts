@@ -34,6 +34,13 @@ export type { AdminSiteItem } from './admin-site-item';
 export type { AdminSiteSettingsResponse } from './admin-site-settings-response';
 export type { AdminSiteSettingsUpdateRequest } from './admin-site-settings-update-request';
 export type { AdminSiteUpdateRequest } from './admin-site-update-request';
+export type { AdminStorageBucketCreateRequest } from './admin-storage-bucket-create-request';
+export type { AdminStorageDefaultBucketUpdateRequest } from './admin-storage-default-bucket-update-request';
+export type { AdminStorageGarbageCollectionCreateRequest } from './admin-storage-garbage-collection-create-request';
+export type { AdminStorageProviderCreateRequest } from './admin-storage-provider-create-request';
+export type { AdminStorageQuotaCreateRequest } from './admin-storage-quota-create-request';
+export type { AdminStorageReconciliationCreateRequest } from './admin-storage-reconciliation-create-request';
+export type { AdminStorageStatusUpdateRequest } from './admin-storage-status-update-request';
 export type { AdminTokenLimitCreateRequest } from './admin-token-limit-create-request';
 
 export type { CacheNamespaceKeyPage } from './cache-namespace-key-page';
@@ -52,6 +59,11 @@ export type { IpLimitRulePage } from './ip-limit-rule-page';
 export type { JsonNull } from './json-null';
 export type { JsonObject } from './json-object';
 export type { JsonValue } from './json-value';
+export type { MembershipPackageGroupMutationRequest } from './membership-package-group-mutation-request';
+export type { MembershipPackageMutationRequest } from './membership-package-mutation-request';
+export type { MembershipPlanMutationRequest } from './membership-plan-mutation-request';
+export type { MembershipStatusUpdateRequest } from './membership-status-update-request';
+
 export type { ModelLimitRuleItem } from './model-limit-rule-item';
 export type { ModelLimitRulePage } from './model-limit-rule-page';
 
@@ -60,8 +72,15 @@ export type { MonitorAlertPage } from './monitor-alert-page';
 export type { MonitorNodePage } from './monitor-node-page';
 
 export type { MonitorPerformancePage } from './monitor-performance-page';
+
 export type { PageInfo } from './page-info';
+export type { PaymentProviderAccountMutationRequest } from './payment-provider-account-mutation-request';
+export type { PaymentProviderAccountStatusUpdateRequest } from './payment-provider-account-status-update-request';
+
 export type { ProblemDetail } from './problem-detail';
+
+export type { RechargePackageMutationRequest } from './recharge-package-mutation-request';
+export type { RechargeSettingsUpdateRequest } from './recharge-settings-update-request';
 
 export type { SdkWorkApiResponse } from './sdk-work-api-response';
 export type { SdkWorkCommandData } from './sdk-work-command-data';

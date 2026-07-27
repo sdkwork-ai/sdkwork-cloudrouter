@@ -13,10 +13,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/CreateApiKeyResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on api keys create result."
               }
             },
             "required": [
@@ -40,10 +40,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AppApiKeyListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on api keys list result."
               }
             },
             "required": [
@@ -67,10 +67,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/UpdateApiKeyResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on api keys update result."
               }
             },
             "required": [
@@ -81,6 +81,214 @@
         ],
         "description": "Api keys update result schema exposed by Claw Router.",
         "x-operation-id": "apiKeys.update"
+      },
+      "AppApiKeyItem": {
+        "additionalProperties": false,
+        "description": "Updated API key metadata. Authenticated owner management responses include copyableKey for console copy actions.",
+        "properties": {
+          "channelGroup": {
+            "description": "Channel group field on app api key item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "channelGroupName": {
+            "description": "Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "copyableKey": {
+            "description": "Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "created": {
+            "description": "Created field on app api key item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "defaultForRuntime": {
+            "description": "Whether this key is the current console default for backend runtime API key selection.",
+            "type": "boolean"
+          },
+          "expires": {
+            "description": "Expires field on app api key item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on app api key item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "ipLimit": {
+            "description": "Ip limit field on app api key item.",
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "maskedKey": {
+            "description": "Masked key field on app api key item.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "modalities": {
+            "description": "Modalities field on app api key item.",
+            "items": {
+              "description": "Modalities field on app api key item.",
+              "enum": [
+                "text",
+                "image",
+                "video",
+                "audio",
+                "music"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "Name field on app api key item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "quota": {
+            "description": "Quota field on app api key item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "rate": {
+            "description": "Rate field on app api key item.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on app api key item.",
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "type": "string"
+          },
+          "usedQuota": {
+            "description": "Used quota field on app api key item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "maskedKey",
+          "channelGroup",
+          "quota",
+          "usedQuota",
+          "modalities",
+          "ipLimit",
+          "created",
+          "expires",
+          "status",
+          "defaultForRuntime"
+        ],
+        "type": "object"
+      },
+      "AppApiKeyListResponse": {
+        "additionalProperties": false,
+        "description": "App api key list response schema exposed by Claw Router.",
+        "name": "AppApiKeyListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on app api key list response.",
+            "items": {
+              "$ref": "#/components/schemas/AppApiKeyItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on app api key list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "AppChannelGroup": {
+        "additionalProperties": false,
+        "description": "App channel group schema exposed by Claw Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on app channel group.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on app channel group.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on app channel group.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "rate": {
+            "description": "Rate field on app channel group.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "rate"
+        ],
+        "type": "object"
+      },
+      "AppChannelGroupListResponse": {
+        "additionalProperties": false,
+        "description": "App channel group list response schema exposed by Claw Router.",
+        "name": "AppChannelGroupListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on app channel group list response.",
+            "items": {
+              "$ref": "#/components/schemas/AppChannelGroup"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on app channel group list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
       },
       "ChannelGroupsListResult": {
         "allOf": [
@@ -94,10 +302,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AppChannelGroupListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on channel groups list result."
               }
             },
             "required": [
@@ -270,6 +478,100 @@
         ],
         "description": "Conversations turns response create result schema exposed by Claw Router.",
         "x-operation-id": "conversations.turns.response.create"
+      },
+      "CreateApiKeyRequest": {
+        "additionalProperties": false,
+        "description": "Create api key request schema exposed by Claw Router.",
+        "name": "CreateApiKeyRequest",
+        "properties": {
+          "channelGroup": {
+            "description": "API key channel group code.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "defaultForRuntime": {
+            "description": "Create this key as the default backend runtime API key.",
+            "type": "boolean"
+          },
+          "expires": {
+            "description": "Expiration timestamp in YYYY-MM-DDTHH:mm format, or never.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "ipLimit": {
+            "description": "Comma-separated IP or CIDR allowlist, or unrestricted.",
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "isUnlimitedQuota": {
+            "description": "Whether the quota is unlimited.",
+            "type": "boolean"
+          },
+          "modalities": {
+            "description": "Modalities field on create api key request.",
+            "items": {
+              "description": "Modalities field on create api key request.",
+              "enum": [
+                "text",
+                "image",
+                "video",
+                "audio",
+                "music"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "name": {
+            "description": "API key display name.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "quota": {
+            "description": "Quota limit as a canonical decimal string.",
+            "format": "decimal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "channelGroup",
+          "quota",
+          "isUnlimitedQuota",
+          "modalities",
+          "ipLimit",
+          "expires"
+        ],
+        "type": "object"
+      },
+      "CreateApiKeyResponse": {
+        "additionalProperties": false,
+        "description": "Create api key response schema exposed by Claw Router.",
+        "name": "CreateApiKeyResponse",
+        "properties": {
+          "item": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AppApiKeyItem"
+              }
+            ],
+            "description": "Item field on create api key response."
+          },
+          "rawKey": {
+            "description": "Full raw API key secret returned by create responses. Authenticated owner management list and update responses also expose this value as item.copyableKey for console copy actions.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "item",
+          "rawKey"
+        ],
+        "type": "object"
       },
       "DashboardAnnouncement": {
         "additionalProperties": false,
@@ -1757,6 +2059,85 @@
         ],
         "description": "Spaces retrieve result schema exposed by Claw Router.",
         "x-operation-id": "spaces.retrieve"
+      },
+      "UpdateApiKeyRequest": {
+        "additionalProperties": false,
+        "description": "Update api key request schema exposed by Claw Router.",
+        "name": "UpdateApiKeyRequest",
+        "properties": {
+          "channelGroup": {
+            "description": "API key channel group code to bind to this key.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "defaultForRuntime": {
+            "description": "Marks this API key as the default backend runtime API key for Playground and app runtime calls.",
+            "type": "boolean"
+          },
+          "expires": {
+            "description": "Expiration timestamp in YYYY-MM-DDTHH:mm format, or never.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "ipLimit": {
+            "description": "Comma-separated IP or CIDR allowlist, or unrestricted.",
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "isUnlimitedQuota": {
+            "description": "Whether the quota is unlimited.",
+            "type": "boolean"
+          },
+          "modalities": {
+            "description": "Modalities field on update api key request.",
+            "items": {
+              "description": "Modalities field on update api key request.",
+              "enum": [
+                "text",
+                "image",
+                "video",
+                "audio",
+                "music"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "name": {
+            "description": "API key display name.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "quota": {
+            "description": "Optional quota limit as a canonical decimal string.",
+            "format": "decimal",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateApiKeyResponse": {
+        "additionalProperties": false,
+        "description": "Update api key response schema exposed by Claw Router.",
+        "name": "UpdateApiKeyResponse",
+        "properties": {
+          "item": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AppApiKeyItem"
+              }
+            ],
+            "description": "Item field on update api key response."
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
       },
       "UsageLogsListResult": {
         "allOf": [
@@ -3385,9 +3766,45 @@
     },
     "/app/v3/api/iam/api_keys": {
       "get": {
-        "description": "List keys. Reads iam_gateway_api_key, ai_channel_group, ai_channel_group_metric_snapshot, iam_gateway_access_policy, ai_quota_policy, ai_pricing_plan. Writes none. File targets none.",
+        "description": "List keys. Reads iam_gateway_api_key, ai_channel_group, ai_channel_group_metric_snapshot, iam_gateway_access_policy, ai_quota_policy, ai_model_pricing, ai_pricing_plan. Writes none. File targets none.",
         "operationId": "apiKeys.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3458,6 +3875,7 @@
           "ai_channel_group_metric_snapshot",
           "iam_gateway_access_policy",
           "ai_quota_policy",
+          "ai_model_pricing",
           "ai_pricing_plan"
         ],
         "x-route-scope": "console",
@@ -3472,7 +3890,29 @@
       "post": {
         "description": "Create key. Reads ai_channel_group. Writes ai_channel_group, iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
         "operationId": "apiKeys.create",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Required stable idempotency key for this write operation.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiKeyRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create key.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -3543,6 +3983,7 @@
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
         "x-sdkwork-domain": "iam",
+        "x-sdkwork-idempotent": true,
         "x-sdkwork-resource": "apiKeys",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
         "x-write-tables": [
@@ -3657,6 +4098,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApiKeyRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for update key.",
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {

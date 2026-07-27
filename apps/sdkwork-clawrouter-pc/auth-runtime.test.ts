@@ -430,9 +430,9 @@ test("claw router auth controller reuses appbase runtime while preserving app SD
   assert.match(controllerSource, /createSdkworkIamRuntimeAuthController/);
   assert.match(controllerSource, /getClawRouterIamRuntime/);
   assert.match(iamRuntimeSource, /createSdkworkAppbasePcAuthRuntime/);
-  assert.match(iamRuntimeSource, /createAppbaseAppClient:\s*\(\)\s*=>\s*wrapCredentialEntryClient\(getSdkworkAppbaseAppSdkClient\(\)/);
-  assert.match(iamRuntimeSource, /credentialEntry:\s*\{[\s\S]*skipWrap:\s*true/u);
-  assert.match(iamRuntimeSource, /from '@sdkwork\/iam-credential-entry'/);
+  assert.match(iamRuntimeSource, /createAppbaseAppClient:\s*getSdkworkAppbaseAppSdkClient/);
+  assert.match(iamRuntimeSource, /credentialEntry:\s*\{[\s\S]*prepareTokens:\s*prepareClawRouterCredentialEntryTokens/u);
+  assert.doesNotMatch(iamRuntimeSource, /wrapCredentialEntryClient|skipWrap/u);
   assert.match(iamRuntimeSource, /prepareTokens:\s*prepareClawRouterCredentialEntryTokens/);
   assert.match(iamRuntimeSource, /bindClawRouterIamSessionProjection/);
   assert.match(iamRuntimeSource, /patchClawRouterIamContextStore/);
@@ -668,8 +668,8 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   const retiredQrNamespace = "qr" + "Auth";
 
   const iamAppbaseOperationIds = [
-    "oauth.authorizationUrls.create",
-    "oauth.sessions.create",
+    "authorizationUrls.create",
+    "sessions.create",
     "sessions.create",
     "sessions.current.retrieve",
     "sessions.current.update",
@@ -746,12 +746,12 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
     };
   };
   const appbaseOwnedAppRoutes = [
-    ["/app/v3/api/oauth/authorization_urls", "post", "oauth.authorizationUrls.create"],
-    ["/app/v3/api/oauth/sessions", "post", "oauth.sessions.create"],
-    ["/app/v3/api/oauth/device_authorizations", "post", "oauth.deviceAuthorizations.create"],
-    ["/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}", "get", "oauth.deviceAuthorizations.retrieve"],
-    ["/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/scans", "post", "oauth.deviceAuthorizations.scans.create"],
-    ["/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/password_completions", "post", "oauth.deviceAuthorizations.passwordCompletions.create"],
+    ["/app/v3/api/oauth/authorization_urls", "post", "authorizationUrls.create"],
+    ["/app/v3/api/oauth/sessions", "post", "sessions.create"],
+    ["/app/v3/api/oauth/device_authorizations", "post", "deviceAuthorizations.create"],
+    ["/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}", "get", "deviceAuthorizations.retrieve"],
+    ["/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/scans", "post", "deviceAuthorizations.scans.create"],
+    ["/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/password_completions", "post", "deviceAuthorizations.passwordCompletions.create"],
     ["/app/v3/api/auth/password_reset_requests", "post", "passwordResetRequests.create"],
     ["/app/v3/api/auth/password_resets", "post", "passwordResets.create"],
     ["/app/v3/api/auth/registrations", "post", "registrations.create"],
@@ -836,7 +836,10 @@ test("claw router app auth composes the appbase IAM OAuth dependency SDK without
   assert.doesNotMatch(backendSdkIndexSource, /public readonly auth:/);
   assert.match(backendSdkSystemSource, /public readonly auth: SystemAuthApi/);
   assert.match(backendSdkSystemSource, /public readonly settings: SystemAuthSettingsApi/);
-  assert.match(backendSdkSystemSource, /async retrieve\(\): Promise<AdminAuthSettingsResponse>/);
+  assert.match(
+    backendSdkSystemSource,
+    /async retrieve\(requestOptions\?: ApiRequestOptions\): Promise<AdminAuthSettingsResponse>/,
+  );
   assert.match(backendSdkSystemSource, /async update\(body: AdminAuthSettingsUpdateRequest/);
   assert.match(backendSdkAuthSettingsUpdateSource, /qrLoginType\?: 'web' \| 'official' \| 'mini'/);
   assert.match(backendSdkAuthSettingsUpdateSource, /wechat\?: Record<string, unknown>/);

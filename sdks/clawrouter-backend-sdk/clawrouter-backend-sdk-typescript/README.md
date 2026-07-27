@@ -56,8 +56,13 @@ const client = new SdkworkBackendClient({
 
 - `client.ai` - ai API
 - `client.integration` - integration API
-- `client.sites` - sites API
 - `client.system` - system API
+- `client.memberships` - memberships API
+- `client.payments` - payments API
+- `client.promotions` - promotions API
+- `client.recharges` - recharges API
+- `client.sites` - sites API
+- `client.storage` - storage API
 
 ## Usage Examples
 
@@ -75,6 +80,50 @@ const result = await client.ai.channelGroups.list();
 const result = await client.integration.channels.list();
 ```
 
+### system
+
+```typescript
+// List overview
+const result = await client.system.analytics.admin.overview.list();
+```
+
+### memberships
+
+```typescript
+// List
+const params = {
+  page: 'page',
+  page_size: 'page_size',
+  status: 'status',
+};
+const result = await client.memberships.packageGroups.management.list(params);
+```
+
+### payments
+
+```typescript
+// Retrieve
+const result = await client.payments.runtime.snapshot.retrieve();
+```
+
+### promotions
+
+```typescript
+// List
+const params = {
+  page: 'page',
+  page_size: 'page_size',
+};
+const result = await client.promotions.budgetLedgerEntries.list(params);
+```
+
+### recharges
+
+```typescript
+// List
+const result = await client.recharges.orders.management.list();
+```
+
 ### sites
 
 ```typescript
@@ -82,11 +131,20 @@ const result = await client.integration.channels.list();
 const result = await client.sites.list();
 ```
 
-### system
+### storage
 
 ```typescript
-// List overview
-const result = await client.system.analytics.admin.overview.list();
+// List
+const params = {
+  cursor: 'cursor',
+  page_size: 'page_size',
+  status: 'status',
+  logical_scope: 'logical_scope',
+  scope_type: 'scope_type',
+  scope_id: 'scope_id',
+  run_type: 'run_type',
+};
+const result = await client.storage.oss.buckets.list(params);
 ```
 
 ## Error Handling

@@ -136,7 +136,8 @@
     }
   },
   "publish": {
-    "status": "ACTIVE",
+    "status": "DRAFT",
+    "preLaunch": true,
     "installSkill": {
       "name": "sdkwork-skills-app"
     },
@@ -176,15 +177,19 @@
           "packageFormat": "ZIP",
           "platform": "WEB",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/web.zip",
-          "enabled": true,
+          "enabled": false,
           "metadata": {
-            "checksumPendingBuild": true
+            "checksumPendingBuild": true,
+            "releaseBuildDeferred": true
           },
           "checksumAlgorithm": "SHA-256",
           "checksum": "",
           "architecture": "universal",
+          "profileBinding": "fixed",
           "deploymentProfile": "cloud",
-          "runtimeTarget": "browser"
+          "runtimeTarget": "browser",
+          "targetPlatform": "web",
+          "clientArchitecture": "pc-web"
         },
         {
           "id": "web-universal-standalone-browser-zip",
@@ -193,15 +198,19 @@
           "packageFormat": "ZIP",
           "platform": "WEB",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/standalone/web.zip",
-          "enabled": true,
+          "enabled": false,
           "metadata": {
-            "checksumPendingBuild": true
+            "checksumPendingBuild": true,
+            "releaseBuildDeferred": true
           },
           "checksumAlgorithm": "SHA-256",
           "checksum": "",
           "architecture": "universal",
+          "profileBinding": "fixed",
           "deploymentProfile": "standalone",
-          "runtimeTarget": "browser"
+          "runtimeTarget": "browser",
+          "targetPlatform": "web",
+          "clientArchitecture": "pc-web"
         },
         {
           "id": "windows-x64-standalone-desktop-zip",
@@ -210,15 +219,19 @@
           "packageFormat": "ZIP",
           "platform": "DESKTOP_WINDOWS",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/windows/x64/app.zip",
-          "enabled": true,
+          "enabled": false,
           "metadata": {
-            "checksumPendingBuild": true
+            "checksumPendingBuild": true,
+            "releaseBuildDeferred": true
           },
           "architecture": "x64",
           "checksumAlgorithm": "SHA-256",
           "checksum": "",
+          "profileBinding": "fixed",
           "deploymentProfile": "standalone",
-          "runtimeTarget": "desktop"
+          "runtimeTarget": "desktop",
+          "targetPlatform": "windows",
+          "clientArchitecture": "tauri"
         },
         {
           "id": "macos-universal-standalone-desktop-dmg",
@@ -227,15 +240,19 @@
           "packageFormat": "DMG",
           "platform": "DESKTOP_MACOS",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/macos/universal/app.dmg",
-          "enabled": true,
+          "enabled": false,
           "metadata": {
-            "checksumPendingBuild": true
+            "checksumPendingBuild": true,
+            "releaseBuildDeferred": true
           },
           "architecture": "universal",
           "checksumAlgorithm": "SHA-256",
           "checksum": "",
+          "profileBinding": "fixed",
           "deploymentProfile": "standalone",
-          "runtimeTarget": "desktop"
+          "runtimeTarget": "desktop",
+          "targetPlatform": "macos",
+          "clientArchitecture": "tauri"
         },
         {
           "id": "linux-x64-standalone-desktop-appimage",
@@ -244,18 +261,22 @@
           "packageFormat": "APPIMAGE",
           "platform": "DESKTOP_LINUX",
           "url": "https://cdn.sdkwork.com/apps/sdkwork-clawrouter/STABLE/0.3.0/linux/generic/x64/app.AppImage",
-          "enabled": true,
+          "enabled": false,
           "metadata": {
             "linux": {
               "distro": "generic"
             },
-            "checksumPendingBuild": true
+            "checksumPendingBuild": true,
+            "releaseBuildDeferred": true
           },
           "architecture": "x64",
           "checksumAlgorithm": "SHA-256",
           "checksum": "",
+          "profileBinding": "fixed",
           "deploymentProfile": "standalone",
-          "runtimeTarget": "desktop"
+          "runtimeTarget": "desktop",
+          "targetPlatform": "linux",
+          "clientArchitecture": "tauri"
         }
       ],
       "metadata": {
@@ -312,6 +333,7 @@
   },
   "metadata": {
     "standardOwner": "sdkwork-platform",
-    "initializedAt": "2026-05-07T00:00:00Z"
+    "initializedAt": "2026-05-07T00:00:00Z",
+    "deploymentConfig": "etc/sdkwork.deployment.config.json"
   }
 }

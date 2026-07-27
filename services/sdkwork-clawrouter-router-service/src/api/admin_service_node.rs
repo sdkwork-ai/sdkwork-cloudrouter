@@ -7,6 +7,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, put};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 use crate::api::response::{
     json_created_response, json_success_list_response, no_content_response,
@@ -22,6 +23,8 @@ use crate::ports::{
 const MAX_ID_LEN: usize = 128;
 const MAX_TEXT_LEN: usize = 128;
 const MAX_DOMAIN_LEN: usize = 255;
+const MAX_BASE_URL_LEN: usize = 2048;
+const MAX_DOMAINS: usize = 20;
 const MAX_IP_LEN: usize = 64;
 const MAX_REMARK_LEN: usize = 512;
 
@@ -42,8 +45,11 @@ struct AdminServiceNodeListQuery {
 #[serde(rename_all = "camelCase")]
 struct AdminServiceNodeCreateRequest {
     name: String,
-    domain: String,
-    ip: String,
+    deployment_profile: Option<String>,
+    base_url: Option<String>,
+    domains: Option<Vec<String>>,
+    domain: Option<String>,
+    ip: Option<String>,
     remark: Option<String>,
     status: Option<String>,
 }
@@ -52,6 +58,9 @@ struct AdminServiceNodeCreateRequest {
 #[serde(rename_all = "camelCase")]
 struct AdminServiceNodeUpdateRequest {
     name: Option<String>,
+    deployment_profile: Option<String>,
+    base_url: Option<String>,
+    domains: Option<Vec<String>>,
     domain: Option<String>,
     ip: Option<String>,
     remark: Option<String>,
@@ -203,11 +212,19 @@ fn build_create_command(
     subject: AdminServiceNodeSubject,
     payload: AdminServiceNodeCreateRequest,
 ) -> Result<CreateAdminServiceNodeCommand, Response> {
+    let domains = required_domains(payload.domains, payload.domain)?;
+    let base_url = required_base_url_or_legacy_domain(payload.base_url, &domains)?;
     Ok(CreateAdminServiceNodeCommand {
         subject,
         name: required_visible_text(payload.name, "name", MAX_TEXT_LEN)?,
-        domain: required_domain(payload.domain)?,
-        ip: required_ip(payload.ip)?,
+        deployment_profile: required_deployment_profile(
+            payload
+                .deployment_profile
+                .unwrap_or_else(|| "standalone".to_owned()),
+        )?,
+        base_url,
+        domains,
+        ip: optional_ip(payload.ip)?,
         remark: optional_remark(payload.remark)?.unwrap_or_default(),
         status: optional_status(payload.status)?,
     })
@@ -224,17 +241,30 @@ fn build_update_command(
         ));
     }
     let name = optional_visible_text(payload.name, "name", MAX_TEXT_LEN)?;
-    let domain = optional_domain(payload.domain)?;
+    let deployment_profile = payload
+        .deployment_profile
+        .map(required_deployment_profile)
+        .transpose()?;
+    let base_url = payload.base_url.map(required_base_url).transpose()?;
+    let domains = optional_domains(payload.domains, payload.domain)?;
     let ip = optional_ip(payload.ip)?;
     let remark = optional_remark(payload.remark)?;
-    if name.is_none() && domain.is_none() && ip.is_none() && remark.is_none() {
+    if name.is_none()
+        && deployment_profile.is_none()
+        && base_url.is_none()
+        && domains.is_none()
+        && ip.is_none()
+        && remark.is_none()
+    {
         return Err(bad_request("service node update fields are required"));
     }
     Ok(UpdateAdminServiceNodeCommand {
         subject,
         node_id: required_visible_text(node_id, "node id", MAX_ID_LEN)?,
         name,
-        domain,
+        deployment_profile,
+        base_url,
+        domains,
         ip,
         remark,
     })
@@ -264,22 +294,133 @@ fn required_status(value: String) -> Result<String, Response> {
     }
 }
 
-fn optional_domain(value: Option<String>) -> Result<Option<String>, Response> {
-    value.map(required_domain).transpose()
+fn required_deployment_profile(value: String) -> Result<String, Response> {
+    let value = required_visible_text(value, "deployment profile", 32)?.to_ascii_lowercase();
+    match value.as_str() {
+        "standalone" | "cloud" => Ok(value),
+        _ => Err(bad_request(
+            "deployment profile must be standalone or cloud",
+        )),
+    }
+}
+
+fn required_base_url_or_legacy_domain(
+    base_url: Option<String>,
+    domains: &[String],
+) -> Result<String, Response> {
+    match base_url {
+        Some(base_url) => required_base_url(base_url),
+        None => Ok(format!("https://{}/v1", domains[0])),
+    }
+}
+
+fn required_base_url(value: String) -> Result<String, Response> {
+    let value = required_visible_text(value, "base URL", MAX_BASE_URL_LEN)?;
+    let mut parsed = Url::parse(&value).map_err(|_| bad_request("base URL must be a valid URL"))?;
+    if !matches!(parsed.scheme(), "http" | "https")
+        || parsed.host_str().is_none()
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+    {
+        return Err(bad_request(
+            "base URL must use HTTP(S) without credentials, query, or fragment",
+        ));
+    }
+    parsed.set_query(None);
+    parsed.set_fragment(None);
+    let mut normalized = parsed.to_string();
+    while normalized.ends_with('/') && parsed.path() != "/" {
+        normalized.pop();
+    }
+    if parsed.path() == "/" {
+        normalized.pop();
+    }
+    Ok(normalized)
+}
+
+fn required_domains(
+    domains: Option<Vec<String>>,
+    legacy_domain: Option<String>,
+) -> Result<Vec<String>, Response> {
+    optional_domains(domains, legacy_domain)?
+        .filter(|domains| !domains.is_empty())
+        .ok_or_else(|| bad_request("at least one domain is required"))
+}
+
+fn optional_domains(
+    domains: Option<Vec<String>>,
+    legacy_domain: Option<String>,
+) -> Result<Option<Vec<String>>, Response> {
+    if domains.is_none() && legacy_domain.is_none() {
+        return Ok(None);
+    }
+    let mut values = domains.unwrap_or_default();
+    if let Some(domain) = legacy_domain {
+        values.insert(0, domain);
+    }
+    if values.len() > MAX_DOMAINS {
+        return Err(bad_request(format!(
+            "domains must contain at most {MAX_DOMAINS} entries"
+        )));
+    }
+    let mut normalized = Vec::with_capacity(values.len());
+    for value in values {
+        let domain = required_domain(value)?;
+        if !normalized.contains(&domain) {
+            normalized.push(domain);
+        }
+    }
+    if normalized.is_empty() {
+        return Err(bad_request("at least one domain is required"));
+    }
+    Ok(Some(normalized))
 }
 
 fn required_domain(value: String) -> Result<String, Response> {
     let value = required_visible_text(value, "domain", MAX_DOMAIN_LEN)?;
-    let host =
-        domain_host(&value).ok_or_else(|| bad_request("domain must be a hostname or URL host"))?;
-    if !is_valid_hostname(host) {
+    let candidate = if value.contains("://") {
+        value
+    } else {
+        format!("http://{value}")
+    };
+    let parsed =
+        Url::parse(&candidate).map_err(|_| bad_request("domain must be a hostname or URL host"))?;
+    if !matches!(parsed.scheme(), "http" | "https")
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+    {
         return Err(bad_request("domain must be a hostname or URL host"));
     }
-    Ok(host.to_ascii_lowercase())
+    let host = parsed
+        .host_str()
+        .filter(|host| is_valid_host(host))
+        .ok_or_else(|| bad_request("domain must be a hostname or URL host"))?;
+    let host = if host.contains(':') {
+        format!("[{host}]")
+    } else {
+        host.to_ascii_lowercase()
+    };
+    Ok(match parsed.port() {
+        Some(port) => format!("{host}:{port}"),
+        None => host,
+    })
 }
 
 fn optional_ip(value: Option<String>) -> Result<Option<String>, Response> {
-    value.map(required_ip).transpose()
+    value
+        .map(|value| {
+            let value = value.trim().to_owned();
+            if value.is_empty() {
+                Ok(value)
+            } else {
+                required_ip(value)
+            }
+        })
+        .transpose()
 }
 
 fn required_ip(value: String) -> Result<String, Response> {
@@ -304,32 +445,10 @@ fn required_remark(value: String) -> Result<String, Response> {
     Ok(value)
 }
 
-fn domain_host(value: &str) -> Option<&str> {
-    let without_scheme = if let Some((scheme, rest)) = value.split_once("://") {
-        if !scheme.eq_ignore_ascii_case("http") && !scheme.eq_ignore_ascii_case("https") {
-            return None;
-        }
-        rest
-    } else {
-        value
-    };
-    let host_port = without_scheme
-        .split(['/', '?', '#'])
-        .next()
-        .unwrap_or_default();
-    if host_port.is_empty() || host_port.contains('@') || host_port.starts_with('[') {
-        return None;
+fn is_valid_host(value: &str) -> bool {
+    if value.eq_ignore_ascii_case("localhost") || value.parse::<IpAddr>().is_ok() {
+        return true;
     }
-    let mut parts = host_port.split(':');
-    let host = parts.next().unwrap_or_default();
-    let port = parts.next();
-    if parts.next().is_some() || port.is_some_and(|port| port.parse::<u16>().is_err()) {
-        return None;
-    }
-    Some(host)
-}
-
-fn is_valid_hostname(value: &str) -> bool {
     if value.len() > MAX_DOMAIN_LEN || value.contains("..") || !value.contains('.') {
         return false;
     }

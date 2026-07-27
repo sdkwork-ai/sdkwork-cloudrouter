@@ -14,7 +14,7 @@ const { syncGeneratedOutput } = await import(pathToFileURL(path.join(sdkGenerato
 const { resolveSdkVersion } = await import(pathToFileURL(path.join(sdkGeneratorRoot, 'framework', 'versioning.js')).href);
 const { persistGenerateExecutionReport } = await import(pathToFileURL(path.join(sdkGeneratorRoot, 'execution-report.js')).href);
 
-const SDK_COMMON_VERSION = '^1.0.2';
+const SDK_COMMON_VERSION = 'workspace:*';
 const SDK_TYPES_NODE_VERSION = '20.19.39';
 const SDK_TYPESCRIPT_VERSION = '5.8.3';
 const SDK_ROLLUP_VERSION = '4.60.1';

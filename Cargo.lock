@@ -3325,6 +3325,8 @@ version = "0.1.0"
 dependencies = [
  "reqwest",
  "sdkwork-contract-service",
+ "sdkwork-database-sqlx",
+ "sdkwork-membership-repository-sqlx",
  "sdkwork-order-service",
  "sdkwork-utils-rust",
  "serde",
@@ -3446,6 +3448,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "tokio",
  "uuid",
 ]
 
@@ -3562,6 +3565,7 @@ dependencies = [
  "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
  "sdkwork-content-documents-sdk-reference",
+ "sdkwork-database-config",
  "sdkwork-database-lifecycle",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
@@ -3586,6 +3590,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
+ "tower",
  "tracing",
 ]
 
@@ -3823,6 +3828,7 @@ dependencies = [
  "sdkwork-order-repository-sqlx",
  "sdkwork-order-service",
  "sdkwork-order-service-host",
+ "sdkwork-payment-providers",
  "sdkwork-payment-repository-sqlx",
  "sdkwork-payment-service",
  "sdkwork-utils-rust",

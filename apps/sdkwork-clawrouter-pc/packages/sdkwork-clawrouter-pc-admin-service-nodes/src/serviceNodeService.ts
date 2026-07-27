@@ -5,6 +5,7 @@ import {
   readRequiredApiItems,
   readRequiredString,
   readString,
+  readStringArray,
   requiredSafePathSegment,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
@@ -16,10 +17,14 @@ import type {
 
 export type ServiceNodeStatus = 'enabled' | 'disabled';
 export type ServiceNodeHealthStatus = 'online' | 'warning' | 'offline' | 'unknown';
+export type ServiceNodeDeploymentProfile = 'standalone' | 'cloud';
 
 export interface ServiceNode {
   id: string;
   name: string;
+  deploymentProfile: ServiceNodeDeploymentProfile;
+  baseUrl: string;
+  domains: string[];
   domain: string;
   ip: string;
   remark: string;
@@ -30,6 +35,9 @@ export interface ServiceNode {
 
 export interface ServiceNodeInput {
   name?: string;
+  deploymentProfile?: ServiceNodeDeploymentProfile;
+  baseUrl?: string;
+  domains?: string[];
   domain?: string;
   ip?: string;
   remark?: string;
@@ -92,10 +100,14 @@ function toListParams(params: ServiceNodeListParams): ServiceNodeListSdkParams {
 }
 
 function toCreateRequest(input: ServiceNodeInput): AdminServiceNodeCreateRequest {
+  const domains = requiredDomains(input.domains ?? (input.domain ? [input.domain] : undefined));
   return pruneUndefined({
     name: requiredText(input.name, 'name'),
-    domain: requiredDomain(input.domain),
-    ip: requiredIp(input.ip),
+    deploymentProfile: normalizeDeploymentProfile(input.deploymentProfile ?? 'standalone'),
+    baseUrl: requiredBaseUrl(input.baseUrl),
+    domains,
+    domain: domains[0],
+    ip: normalizeOptionalIp(input.ip),
     remark: normalizeCreateRemark(input.remark),
     status: input.status === undefined ? undefined : normalizeServiceNodeStatus(input.status),
   });
@@ -107,8 +119,12 @@ function toUpdateRequest(input: ServiceNodeInput): AdminServiceNodeUpdateRequest
   }
   const request = pruneUndefined({
     name: input.name === undefined ? undefined : requiredText(input.name, 'name'),
-    domain: input.domain === undefined ? undefined : requiredDomain(input.domain),
-    ip: input.ip === undefined ? undefined : requiredIp(input.ip),
+    deploymentProfile: input.deploymentProfile === undefined
+      ? undefined
+      : normalizeDeploymentProfile(input.deploymentProfile),
+    baseUrl: input.baseUrl === undefined ? undefined : requiredBaseUrl(input.baseUrl),
+    domains: input.domains === undefined ? undefined : requiredDomains(input.domains),
+    ip: input.ip === undefined ? undefined : normalizeOptionalIp(input.ip) ?? '',
     remark: input.remark === undefined ? undefined : normalizeUpdateRemark(input.remark),
   });
   if (Object.keys(request).length === 0) {
@@ -143,8 +159,11 @@ function normalizeVisibleText(value: string | undefined, fieldName: string, maxL
   return normalized;
 }
 
-function requiredIp(value: string | undefined): string {
-  const normalized = requiredText(value, 'ip');
+function normalizeOptionalIp(value: string | undefined): string | undefined {
+  const normalized = value?.trim() ?? '';
+  if (!normalized) {
+    return undefined;
+  }
   if (!isValidIpAddress(normalized)) {
     throw new Error('ip must be a valid IPv4 or IPv6 address');
   }
@@ -170,24 +189,78 @@ function normalizeUpdateRemark(value: string): string {
   return normalized;
 }
 
-function requiredDomain(value: string | undefined): string {
-  const normalized = requiredText(value, 'domain');
-  const hostname = extractHostname(normalized);
-  if (!hostname || !isValidHostname(hostname)) {
-    throw new Error('domain must be a hostname or URL host');
+function requiredBaseUrl(value: string | undefined): string {
+  const normalized = value?.trim() ?? '';
+  if (!normalized) {
+    throw new Error('base URL is required');
   }
-  return hostname;
+  if (normalized.length > 2048 || !isVisibleText(normalized)) {
+    throw new Error('base URL must be visible text and at most 2048 characters');
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new Error('base URL must be a valid URL');
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)
+    || parsed.username
+    || parsed.password
+    || parsed.search
+    || parsed.hash) {
+    throw new Error('base URL must use HTTP(S) without credentials, query, or fragment');
+  }
+  return parsed.toString().replace(/\/$/u, '');
 }
 
-function extractHostname(value: string): string {
-  if (/^[a-z][a-z0-9+.-]*:\/\//iu.test(value)) {
-    try {
-      return new URL(value).hostname;
-    } catch {
-      return '';
+function requiredDomains(values: string[] | undefined): string[] {
+  if (!values || values.length === 0) {
+    throw new Error('at least one domain is required');
+  }
+  if (values.length > 20) {
+    throw new Error('domains must contain at most 20 entries');
+  }
+  const domains: string[] = [];
+  for (const value of values) {
+    const domain = normalizeDomain(value);
+    if (!domains.includes(domain)) {
+      domains.push(domain);
     }
   }
-  return value;
+  if (domains.length === 0) {
+    throw new Error('at least one domain is required');
+  }
+  return domains;
+}
+
+function normalizeDomain(value: string): string {
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 255) {
+    throw new Error('domain must be a hostname or URL host');
+  }
+  const candidate = /^[a-z][a-z0-9+.-]*:\/\//iu.test(normalized) ? normalized : `http://${normalized}`;
+  try {
+    const parsed = new URL(candidate);
+    if (!['http:', 'https:'].includes(parsed.protocol)
+      || parsed.username
+      || parsed.password
+      || parsed.search
+      || parsed.hash
+      || !isValidHost(parsed.hostname)) {
+      throw new Error('invalid domain');
+    }
+    return parsed.host.toLowerCase();
+  } catch {
+    throw new Error('domain must be a hostname or URL host');
+  }
+}
+
+function isValidHost(value: string): boolean {
+  const hostname = value.replace(/^\[|\]$/gu, '');
+  if (hostname === 'localhost' || isValidIpAddress(hostname)) {
+    return true;
+  }
+  return isValidHostname(hostname);
 }
 
 function isValidHostname(value: string): boolean {
@@ -197,6 +270,13 @@ function isValidHostname(value: string): boolean {
   return value
     .split('.')
     .every((label) => /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/u.test(label));
+}
+
+function normalizeDeploymentProfile(value: string): ServiceNodeDeploymentProfile {
+  if (value === 'standalone' || value === 'cloud') {
+    return value;
+  }
+  throw new Error('deployment profile must be standalone or cloud');
 }
 
 function isVisibleText(value: string): boolean {
@@ -235,13 +315,24 @@ function normalizeServiceNode(value: unknown): ServiceNode {
   return {
     id: readRequiredString(item, 'id', 'Service node id is required'),
     name: readRequiredString(item, 'name', 'Service node name is required'),
+    deploymentProfile: normalizeDeploymentProfile(readString(item, 'deploymentProfile')),
+    baseUrl: readRequiredString(item, 'baseUrl', 'Service node base URL is required'),
+    domains: readRequiredDomains(item),
     domain: readRequiredString(item, 'domain', 'Service node domain is required'),
-    ip: readRequiredString(item, 'ip', 'Service node ip is required'),
+    ip: readString(item, 'ip'),
     remark: readString(item, 'remark'),
     status: readServiceNodeStatus(item),
     healthStatus: readServiceNodeHealthStatus(item),
     updatedAt: readRequiredString(item, 'updatedAt', 'Service node updated time is required'),
   };
+}
+
+function readRequiredDomains(item: ApiRecord): string[] {
+  const domains = readStringArray(item, 'domains');
+  if (domains.length === 0) {
+    throw new Error('Service node domains are required');
+  }
+  return domains;
 }
 
 function readRequiredRecord(value: unknown, message: string): ApiRecord {

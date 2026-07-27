@@ -44,7 +44,7 @@
 | `console-user` | 用户资料 | existing `plus_user` |
 | `console-commerce` | 钱包、套餐、支付 | sdkwork-appbase commerce/account tables |
 | `console-settlements` | 账单、报表、发票 | commerce/ai usage settlement |
-| `console-account` | 账户、积分、VIP、流水 | existing `plus_account`、`plus_vip_*` |
+| `console-account` | 账户、算力元、VIP、流水 | Token Bank account、existing `plus_vip_*` |
 | `console-recharge` | 充值包、充值方式 | existing `plus_vip_recharge*` |
 | `console-settings` | 偏好配置 | iam/studio settings |
 | `console-messages` | 通知中心 | content/comms/ops notifications |
@@ -154,4 +154,3 @@ P2 再扩展：
 - 营销、优惠券、VIP 权益、充值包完整闭环。
 - K8S、HPA、Prometheus/Grafana。
 - 前端 mock 全量替换。
-

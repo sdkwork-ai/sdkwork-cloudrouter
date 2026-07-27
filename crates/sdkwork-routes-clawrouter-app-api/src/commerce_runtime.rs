@@ -135,6 +135,27 @@ fn build_account_wallet_router_from_payment_pool(pool: &DatabasePool) -> Result<
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use axum::body::{to_bytes, Body};
+    use axum::http::{header, Method, Request, StatusCode};
+    use axum::Router;
+    use sdkwork_claw_http::{attach_trusted_request_subject, TrustedRequestSubject};
+    use sdkwork_database_config::{DatabaseConfig, DatabaseEngine};
+    use sdkwork_database_sqlx::create_pool_from_config;
+    use sdkwork_web_core::{
+        ServerRequestId, WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode,
+        WebEnvironment, WebLoginScope, WebRequestContext, WebRequestPrincipal, WebTransportFacts,
+    };
+    use serde_json::{json, Value};
+    use tower::ServiceExt;
+
+    use super::{bootstrap_federated_databases, build_membership_router_from_pool};
+
+    static DATABASE_COUNTER: AtomicU64 = AtomicU64::new(0);
+
     #[test]
     fn federated_commerce_consumes_complete_order_gateway_assembly() {
         let source = include_str!("commerce_runtime.rs");
@@ -162,5 +183,179 @@ mod tests {
         assert!(source.contains("sdkwork_api_order_assembly::ApiAssembly::from_database_pool("));
         let forbidden_direct_route_crate = ["sdkwork_routes_order", "_app_api::"].concat();
         assert!(!source.contains(&forbidden_direct_route_crate));
+    }
+
+    #[tokio::test]
+    async fn federated_membership_catalog_and_purchase_intent_are_bootstrapped_together() {
+        let database_path = unique_database_path();
+        let database_url = format!(
+            "sqlite://{}",
+            database_path.to_string_lossy().replace('\\', "/")
+        );
+        let pool = create_pool_from_config(DatabaseConfig {
+            engine: DatabaseEngine::Sqlite,
+            url: database_url,
+            max_connections: 1,
+            ..Default::default()
+        })
+        .await
+        .expect("commerce sqlite pool");
+
+        bootstrap_federated_databases(&pool)
+            .await
+            .expect("federated commerce database lifecycle");
+        let order_assembly =
+            sdkwork_api_order_assembly::ApiAssembly::from_database_pool(pool.clone())
+                .await
+                .expect("order API assembly");
+        let router = order_assembly
+            .router
+            .merge(build_membership_router_from_pool(&pool));
+
+        let packages = request_json(
+            router.clone(),
+            Method::GET,
+            "/app/v3/api/memberships/packages?page=1&page_size=200",
+            None,
+            None,
+        )
+        .await;
+        assert_eq!(StatusCode::OK, packages.0, "{}", packages.1);
+        let package_id = packages.1["data"]["items"]
+            .as_array()
+            .and_then(|items| items.first())
+            .and_then(|item| item["id"].as_i64())
+            .unwrap_or_else(|| panic!("membership catalog was not seeded: {}", packages.1));
+        let body = json!({
+            "action": "purchase",
+            "packageId": package_id.to_string(),
+            "paymentMethod": "wechat_pay",
+            "paymentProduct": "mobile_cashier_h5",
+            "source": "clawrouter-commerce-regression",
+        });
+
+        let created = request_json(
+            router.clone(),
+            Method::POST,
+            "/app/v3/api/memberships/orders",
+            Some(body.clone()),
+            Some("membership-purchase-first"),
+        )
+        .await;
+        assert_eq!(StatusCode::CREATED, created.0, "{}", created.1);
+        assert_eq!(false, created.1["data"]["item"]["reused"]);
+
+        let reused = request_json(
+            router,
+            Method::POST,
+            "/app/v3/api/memberships/orders",
+            Some(body),
+            Some("membership-purchase-second"),
+        )
+        .await;
+        assert_eq!(StatusCode::CREATED, reused.0, "{}", reused.1);
+        assert_eq!(true, reused.1["data"]["item"]["reused"]);
+        assert_eq!(
+            created.1["data"]["item"]["orderId"],
+            reused.1["data"]["item"]["orderId"]
+        );
+
+        pool.close().await;
+        remove_database_files(&database_path);
+    }
+
+    async fn request_json(
+        router: Router,
+        method: Method,
+        uri: &str,
+        body: Option<Value>,
+        idempotency_key: Option<&str>,
+    ) -> (StatusCode, Value) {
+        let method_name = method.as_str().to_owned();
+        let mut builder = Request::builder().method(method).uri(uri);
+        if body.is_some() {
+            builder = builder.header(header::CONTENT_TYPE, "application/json");
+        }
+        if let Some(idempotency_key) = idempotency_key {
+            builder = builder.header("Idempotency-Key", idempotency_key);
+        }
+        let mut request = builder
+            .body(body.map_or_else(Body::empty, |value| Body::from(value.to_string())))
+            .expect("commerce request");
+        request.extensions_mut().insert(WebRequestContext {
+            request_id: ServerRequestId(
+                idempotency_key
+                    .unwrap_or("membership-catalog-request")
+                    .to_owned(),
+            ),
+            api_surface: WebApiSurface::AppApi,
+            auth_mode: WebAuthMode::DualToken,
+            transport: WebTransportFacts {
+                path: uri.to_owned(),
+                method: method_name,
+                auth_token_present: true,
+                access_token_present: true,
+                api_key_present: false,
+                ingress_token_present: false,
+                oauth_bearer_present: false,
+                agent_token_present: false,
+            },
+            principal: Some(
+                WebRequestPrincipal::builder()
+                    .tenant_id("100001")
+                    .organization_id(Some("0".to_owned()))
+                    .user_id("30")
+                    .login_scope(WebLoginScope::Tenant)
+                    .session_id(Some("commerce-regression-session".to_owned()))
+                    .app_id("sdkwork-clawrouter")
+                    .environment(WebEnvironment::Test)
+                    .deployment_mode(WebDeploymentMode::Local)
+                    .auth_level(WebAuthLevel::Password)
+                    .build(),
+            ),
+            locale: None,
+            client_kind: None,
+            operation: None,
+            trace_id: None,
+            idempotency_key: idempotency_key.map(str::to_owned),
+        });
+        attach_trusted_request_subject(
+            &mut request,
+            TrustedRequestSubject {
+                tenant_id: 100_001,
+                organization_id: 0,
+                user_id: 30,
+                operator_id: 30,
+                operator_type: 1,
+            },
+        );
+        let response = router.oneshot(request).await.expect("commerce response");
+        let status = response.status();
+        let bytes = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("commerce response body");
+        let json = serde_json::from_slice(&bytes).expect("commerce response json");
+        (status, json)
+    }
+
+    fn unique_database_path() -> std::path::PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock")
+            .as_nanos();
+        let counter = DATABASE_COUNTER.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!(
+            "sdkwork-clawrouter-commerce-{}-{nonce}-{counter}.sqlite",
+            std::process::id()
+        ))
+    }
+
+    fn remove_database_files(path: &std::path::Path) {
+        for suffix in ["", "-wal", "-shm", "-journal"] {
+            let candidate = std::path::PathBuf::from(format!("{}{suffix}", path.display()));
+            if candidate.exists() {
+                fs::remove_file(candidate).expect("remove commerce sqlite file");
+            }
+        }
     }
 }

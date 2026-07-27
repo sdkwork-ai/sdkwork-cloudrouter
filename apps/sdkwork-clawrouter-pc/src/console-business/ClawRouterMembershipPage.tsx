@@ -20,8 +20,14 @@ import {
   useSdkworkMembershipIntl,
   type SdkworkMembershipSummary,
 } from '@sdkwork/membership-pc-membership';
+import {
+  useSdkworkWalletController,
+  useSdkworkWalletControllerState,
+  useSdkworkWalletIntl,
+} from '@sdkwork/account-pc-wallet';
 
 import { ClawRouterTokenPlanSurface } from '../token-plan/ClawRouterTokenPlanSurface.tsx';
+import { ClawRouterTokenBankIntlProvider } from './ClawRouterTokenBankIntlProvider.tsx';
 import { resolveConsoleMembershipLocale } from './consoleCommerceLocale.ts';
 
 const TOKEN_PLAN_SECTION_ID = 'claw-router-membership-token-plan';
@@ -31,15 +37,19 @@ export function ClawRouterMembershipPage() {
   const locale = resolveConsoleMembershipLocale(i18n.resolvedLanguage ?? i18n.language);
 
   return (
-    <SdkworkMembershipIntlProvider locale={locale}>
-      <ClawRouterMembershipPageContent />
-    </SdkworkMembershipIntlProvider>
+    <ClawRouterTokenBankIntlProvider locale={locale}>
+      <SdkworkMembershipIntlProvider locale={locale}>
+        <ClawRouterMembershipPageContent />
+      </SdkworkMembershipIntlProvider>
+    </ClawRouterTokenBankIntlProvider>
   );
 }
 
 function ClawRouterMembershipPageContent() {
   const controller = useSdkworkMembershipController();
   const state = useSdkworkMembershipControllerState(controller);
+  const walletController = useSdkworkWalletController();
+  const walletState = useSdkworkWalletControllerState(walletController);
   const { copy } = useSdkworkMembershipIntl();
 
   useEffect(() => {
@@ -47,6 +57,12 @@ function ClawRouterMembershipPageContent() {
       void controller.bootstrap().catch(() => undefined);
     }
   }, [controller, state.isBootstrapped, state.isLoading, state.lastError]);
+
+  useEffect(() => {
+    if (!walletState.isBootstrapped && !walletState.isLoading && !walletState.lastError) {
+      void walletController.bootstrap().catch(() => undefined);
+    }
+  }, [walletController, walletState.isBootstrapped, walletState.isLoading, walletState.lastError]);
 
   function scrollToTokenPlans() {
     document.getElementById(TOKEN_PLAN_SECTION_ID)?.scrollIntoView({
@@ -63,6 +79,7 @@ function ClawRouterMembershipPageContent() {
           onRefresh={() => void controller.refresh().catch(() => undefined)}
           onViewPlans={scrollToTokenPlans}
           summary={state.dashboard.summary}
+          tokenBankBalance={walletState.overview.account.tokenBankAvailable}
         />
 
         {state.isLoading && !state.isBootstrapped ? (
@@ -109,6 +126,7 @@ interface MembershipOverviewProps {
   onRefresh: () => void;
   onViewPlans: () => void;
   summary: SdkworkMembershipSummary;
+  tokenBankBalance: number;
 }
 
 function MembershipOverview({
@@ -116,13 +134,15 @@ function MembershipOverview({
   onRefresh,
   onViewPlans,
   summary,
+  tokenBankBalance,
 }: MembershipOverviewProps) {
+  const { t } = useTranslation();
   const {
     copy,
     formatDuration,
-    formatIncludedPoints,
     formatStatus,
   } = useSdkworkMembershipIntl();
+  const { formatTokenBank } = useSdkworkWalletIntl();
 
   const stats: ReadonlyArray<{
     icon: typeof Crown;
@@ -136,10 +156,8 @@ function MembershipOverview({
     },
     {
       icon: WalletCards,
-      label: copy.hero.points,
-      value: summary.pointBalance === null
-        ? copy.common.noValue
-        : formatIncludedPoints(summary.pointBalance),
+      label: t('console.tokenBank.balance.available'),
+      value: formatTokenBank(tokenBankBalance),
     },
     {
       icon: Clock3,

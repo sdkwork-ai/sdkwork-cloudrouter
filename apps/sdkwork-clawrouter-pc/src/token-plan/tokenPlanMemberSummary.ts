@@ -4,6 +4,10 @@ import {
   useSdkworkMembershipControllerState,
   type SdkworkMembershipSummary,
 } from "@sdkwork/membership-pc-membership";
+import {
+  useSdkworkWalletController,
+  useSdkworkWalletControllerState,
+} from "@sdkwork/account-pc-wallet";
 
 import { usePortalIamSession } from "../auth/usePortalIamSession.ts";
 
@@ -22,6 +26,8 @@ export function resolveMembershipTierKeyFromSummary(summary: SdkworkMembershipSu
 export function useTokenPlanMemberSummary() {
   const controller = useSdkworkMembershipController();
   const state = useSdkworkMembershipControllerState(controller);
+  const walletController = useSdkworkWalletController();
+  const walletState = useSdkworkWalletControllerState(walletController);
   const [tierOverride, setTierOverride] = useState<string | null>(null);
   const isAuthenticated = usePortalIamSession();
 
@@ -34,6 +40,16 @@ export function useTokenPlanMemberSummary() {
       void controller.bootstrap().catch(() => undefined);
     }
   }, [controller, isAuthenticated, state.isBootstrapped, state.isLoading, state.lastError]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    if (!walletState.isBootstrapped && !walletState.isLoading && !walletState.lastError) {
+      void walletController.bootstrap().catch(() => undefined);
+    }
+  }, [isAuthenticated, walletController, walletState.isBootstrapped, walletState.isLoading, walletState.lastError]);
 
   useEffect(() => {
     function handleWindowFocus() {
@@ -56,13 +72,16 @@ export function useTokenPlanMemberSummary() {
     const membershipTierKey = tierOverride ?? resolveMembershipTierKeyFromSummary(state.dashboard.summary);
     return {
       membershipTierKey,
-      pointBalance: state.dashboard.summary.pointBalance,
+      // The subscription host retains this compatibility field name, but Claw Router supplies Token Bank balance.
+      pointBalance: walletState.overview.account.tokenBankAvailable,
     };
-  }, [isAuthenticated, state.dashboard.summary, tierOverride]);
+  }, [isAuthenticated, state.dashboard.summary, tierOverride, walletState.overview.account.tokenBankAvailable]);
 
   return {
     memberSummary,
     setMembershipTierKey: setTierOverride,
-    refreshMembership: () => controller.refresh(),
+    refreshMembership: async () => {
+      await Promise.all([controller.refresh(), walletController.refresh()]);
+    },
   };
 }

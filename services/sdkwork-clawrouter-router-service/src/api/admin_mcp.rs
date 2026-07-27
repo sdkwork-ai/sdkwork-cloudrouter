@@ -14,12 +14,11 @@ use crate::api::response::{
 };
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminMcpListPage, AdminMcpStore, CreateAdminMcpBindingCommand,
-    CreateAdminMcpServerCommand, CreateAdminMcpServerRevisionCommand, DiscoverAdminMcpToolsCommand,
-    GetAdminMcpServerQuery, ListAdminMcpBindingsQuery, ListAdminMcpServerRevisionsQuery,
-    ListAdminMcpServersQuery, ListAdminMcpToolsQuery, PublishAdminMcpServerRevisionCommand,
-    TestAdminMcpServerHealthCommand, UpdateAdminMcpBindingCommand, UpdateAdminMcpServerCommand,
-    UpdateAdminMcpToolCommand,
+    AdminMcpListPage, AdminMcpStore, CreateAdminMcpBindingCommand, CreateAdminMcpServerCommand,
+    CreateAdminMcpServerRevisionCommand, DiscoverAdminMcpToolsCommand, GetAdminMcpServerQuery,
+    ListAdminMcpBindingsQuery, ListAdminMcpServerRevisionsQuery, ListAdminMcpServersQuery,
+    ListAdminMcpToolsQuery, PublishAdminMcpServerRevisionCommand, TestAdminMcpServerHealthCommand,
+    UpdateAdminMcpBindingCommand, UpdateAdminMcpServerCommand, UpdateAdminMcpToolCommand,
 };
 
 const MAX_KEY_LEN: usize = 128;

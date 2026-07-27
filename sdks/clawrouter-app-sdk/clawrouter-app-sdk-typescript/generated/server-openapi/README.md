@@ -81,8 +81,8 @@ const result = await client.chat.conversations.list();
 ### iam
 
 ```typescript
-// List keys
-const result = await client.iam.apiKeys.list();
+// List settings
+const result = await client.iam.users.settings.retrieve();
 ```
 
 ### memory

@@ -166,7 +166,8 @@ python -B -m tools.schema_quality_gate
 
 复用原则：
 
-- 用户、VIP、account、优惠券、积分充值、订单、支付、退款、发票由 T1 能力仓库（`sdkwork-shop`、`sdkwork-order`、`sdkwork-payment` 等）和 `sdkwork-iam` 等组合模块提供；Claw Router 通过生成 SDK 消费，不在本地重复定义资金事实表。
+- 用户、VIP、account、优惠券、算力元充值（Token Bank）、订单、支付、退款、发票由 T1 能力仓库（`sdkwork-account`、`sdkwork-order`、`sdkwork-payment` 等）和 `sdkwork-iam` 等组合模块提供；Claw Router 通过生成 SDK 消费，不在本地重复定义资金事实表。
+- Token Plan 组合运行时在共享连接池上注册 Payment、Order、Membership 数据库模块，并在挂载业务路由前统一执行模块生命周期。套餐目录由 Membership 标准种子提供；Claw Router 不硬编码套餐 ID、复制领域 DDL 或维护本地兜底目录。重复点击由 Order 的购买意图键收敛为一个有效订单，支付尝试再按不可变场景和付款元数据快照复用。
 - AppCenter、SkillsHub、模型目录等通过 `sdkwork-agent`、`sdkwork-models` 等组合模块接入。
 - 新建 AI gateway、routing、pricing、provider、usage、ops 表使用 `ai_`、`integration_`、`iam_`、`commerce_`、`studio_`、`content_`、`ops_` 等业务前缀。
 

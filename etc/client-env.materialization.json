@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.client-env-materialization",
+  "application": "sdkwork-clawrouter",
+  "command": "pnpm workflow:materialize-client-env",
+  "sourceIdentity": {
+    "deploymentProfileKeys": ["SDKWORK_DEPLOYMENT_PROFILE", "SDKWORK_CLAW_ROUTER_DEPLOYMENT_PROFILE"],
+    "environmentKeys": ["SDKWORK_ENVIRONMENT", "SDKWORK_CLAW_ROUTER_ENVIRONMENT"],
+    "profileIdKeys": ["SDKWORK_PROFILE_ID", "SDKWORK_CLAW_ROUTER_PROFILE_ID"]
+  },
+  "surfaces": [
+    {
+      "id": "sdkwork-clawrouter-pc",
+      "root": "apps/sdkwork-clawrouter-pc",
+      "format": "vite",
+      "runtimeTarget": "browser",
+      "identityPrefixes": ["VITE_SDKWORK_CLAW_ROUTER"],
+      "bindings": {
+        "VITE_SDKWORK_CLAW_ROUTER_APPLICATION_PUBLIC_HTTP_URL": ["VITE_SDKWORK_CLAW_ROUTER_APPLICATION_PUBLIC_HTTP_URL", "SDKWORK_CLAW_ROUTER_APPLICATION_PUBLIC_HTTP_URL"],
+        "VITE_SDKWORK_CLAW_ROUTER_APPLICATION_BACKEND_HTTP_URL": ["VITE_SDKWORK_CLAW_ROUTER_APPLICATION_BACKEND_HTTP_URL", "SDKWORK_CLAW_ROUTER_APPLICATION_BACKEND_HTTP_URL"],
+        "VITE_SDKWORK_CLAW_ROUTER_APPLICATION_OPEN_HTTP_URL": ["VITE_SDKWORK_CLAW_ROUTER_APPLICATION_OPEN_HTTP_URL", "SDKWORK_CLAW_ROUTER_APPLICATION_OPEN_HTTP_URL"],
+        "VITE_SDKWORK_CLAW_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL": ["VITE_SDKWORK_CLAW_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL", "SDKWORK_CLAW_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"]
+      }
+    }
+  ]
+}

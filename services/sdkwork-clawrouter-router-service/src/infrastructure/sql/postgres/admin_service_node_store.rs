@@ -5,6 +5,9 @@ use sqlx::{PgPool, Row};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
+use crate::infrastructure::sql::service_node_metadata::{
+    apply_metadata_fields, new_metadata, parse_metadata, serialize_metadata, ServiceNodeMetadata,
+};
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminServiceNodeCommandFuture, AdminServiceNodeDeleteOutcome, AdminServiceNodeItem,
@@ -71,9 +74,8 @@ async fn list_service_nodes(
         SELECT
             COALESCE(NULLIF(instance_code, ''), id::text) AS service_node_id,
             COALESCE(NULLIF(node_name, ''), NULLIF(host_name, ''), NULLIF(instance_code, ''), uuid) AS service_node_name,
-            COALESCE(metadata->>'domain', '') AS domain,
+            COALESCE(metadata::text, '{}') AS metadata,
             COALESCE(ip_address_masked, '') AS ip,
-            COALESCE(metadata->>'remark', '') AS remark,
             status,
             health_status,
             COALESCE(updated_at::text, created_at::text, '') AS updated_at,
@@ -125,7 +127,14 @@ async fn create_service_node(
 ) -> DomainResult<AdminServiceNodeItem> {
     let status = optional_status_int(command.status.as_deref())?.unwrap_or(1);
     let code = generated_instance_code(&command.name, command.subject.tenant_id);
-    let metadata = metadata_json(&command.domain, &command.remark)?;
+    let id = next_claw_runtime_id("ops_gateway_instance")?;
+    let uuid = format!("service-node-{id}");
+    let metadata = serialize_metadata(new_metadata(
+        &command.deployment_profile,
+        &command.base_url,
+        &command.domains,
+        &command.remark,
+    ))?;
     sqlx::query(
         r#"
         INSERT INTO ops_gateway_instance (
@@ -139,8 +148,8 @@ async fn create_service_node(
         )
         "#,
     )
-    .bind(next_claw_runtime_id("ops_gateway_instance")?)
-    .bind(&code)
+    .bind(id)
+    .bind(uuid)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(status)
@@ -172,17 +181,14 @@ async fn update_service_node(
         &command.node_id,
     )
     .await?;
-    if let Some(domain) = &command.domain {
-        metadata.insert("domain".to_owned(), Value::String(domain.clone()));
-    }
-    if let Some(remark) = &command.remark {
-        metadata.insert("remark".to_owned(), Value::String(remark.clone()));
-    }
-    let metadata = serde_json::to_string(&Value::Object(metadata)).map_err(|error| {
-        DomainError::new(format!(
-            "failed to serialize service node metadata: {error}"
-        ))
-    })?;
+    apply_metadata_fields(
+        &mut metadata,
+        command.deployment_profile.as_deref(),
+        command.base_url.as_deref(),
+        command.domains.as_deref(),
+        command.remark.as_deref(),
+    );
+    let metadata = serialize_metadata(metadata)?;
 
     let result = sqlx::query(
         r#"
@@ -295,9 +301,8 @@ async fn load_service_node(
         SELECT
             COALESCE(NULLIF(instance_code, ''), id::text) AS service_node_id,
             COALESCE(NULLIF(node_name, ''), NULLIF(host_name, ''), NULLIF(instance_code, ''), uuid) AS service_node_name,
-            COALESCE(metadata->>'domain', '') AS domain,
+            COALESCE(metadata::text, '{}') AS metadata,
             COALESCE(ip_address_masked, '') AS ip,
-            COALESCE(metadata->>'remark', '') AS remark,
             status,
             health_status,
             COALESCE(updated_at::text, created_at::text, '') AS updated_at
@@ -347,37 +352,27 @@ async fn load_metadata(
     .try_get::<String, _>("metadata")
     .map_err(row_error)?;
 
-    parse_metadata(&metadata)
+    Ok(parse_metadata(&metadata))
 }
 
 fn item_from_row(row: sqlx::postgres::PgRow) -> DomainResult<AdminServiceNodeItem> {
+    let metadata = row
+        .try_get::<String, _>("metadata")
+        .map_err(row_error)
+        .map(|value| parse_metadata(&value))?;
+    let configuration = ServiceNodeMetadata::from_map(&metadata);
     Ok(AdminServiceNodeItem {
         id: row.try_get("service_node_id").map_err(row_error)?,
         name: row.try_get("service_node_name").map_err(row_error)?,
-        domain: row.try_get("domain").map_err(row_error)?,
+        deployment_profile: configuration.deployment_profile,
+        base_url: configuration.base_url,
+        domains: configuration.domains,
+        domain: configuration.domain,
         ip: row.try_get("ip").map_err(row_error)?,
-        remark: row.try_get("remark").map_err(row_error)?,
+        remark: configuration.remark,
         status: status_label(required_integer_cell(&row, "status")?)?,
         health_status: health_status_label(optional_integer_cell(&row, "health_status"))?,
         updated_at: row.try_get("updated_at").map_err(row_error)?,
-    })
-}
-
-fn parse_metadata(value: &str) -> DomainResult<Map<String, Value>> {
-    match serde_json::from_str::<Value>(value).unwrap_or(Value::Object(Map::new())) {
-        Value::Object(map) => Ok(map),
-        _ => Ok(Map::new()),
-    }
-}
-
-fn metadata_json(domain: &str, remark: &str) -> DomainResult<String> {
-    let mut metadata = Map::new();
-    metadata.insert("domain".to_owned(), Value::String(domain.to_owned()));
-    metadata.insert("remark".to_owned(), Value::String(remark.to_owned()));
-    serde_json::to_string(&Value::Object(metadata)).map_err(|error| {
-        DomainError::new(format!(
-            "failed to serialize service node metadata: {error}"
-        ))
     })
 }
 

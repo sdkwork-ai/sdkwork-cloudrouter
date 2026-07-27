@@ -211,7 +211,7 @@ export function AnalyticsAdmin() {
                         {t('admin.analytics.trend.title', 'Usage trend')}
                       </h3>
                       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {t('admin.analytics.trend.subtitle', 'Requests, tokens, points, and active users')}
+                        {t('admin.analytics.trend.subtitle', 'Requests, tokens, Compute Credits, and active users')}
                       </p>
                     </div>
                   </div>
@@ -397,7 +397,7 @@ function UserRankingTable({
           <tr>
             <th className="px-4 py-3">{t('admin.analytics.table.rank', 'Rank')}</th>
             <th className="px-4 py-3">{t('admin.analytics.table.user', 'User')}</th>
-            <th className="px-4 py-3 text-right">{t('admin.analytics.table.points', 'Points')}</th>
+            <th className="px-4 py-3 text-right">{t('admin.analytics.table.points', 'Compute Credits')}</th>
             <th className="px-4 py-3 text-right">{t('admin.analytics.table.tokens', 'Tokens')}</th>
             <th className="px-4 py-3 text-right">{t('admin.analytics.table.requests', 'Requests')}</th>
             <th className="px-4 py-3">{t('admin.analytics.table.models', 'Models')}</th>
@@ -462,7 +462,7 @@ function ModelRankingTable({
             <th className="px-4 py-3">{t('admin.analytics.table.model', 'Model')}</th>
             <th className="px-4 py-3">{t('admin.analytics.table.vendor', 'Vendor')}</th>
             <th className="px-4 py-3">{t('admin.analytics.table.modality', 'Modality')}</th>
-            <th className="px-4 py-3 text-right">{t('admin.analytics.table.points', 'Points')}</th>
+            <th className="px-4 py-3 text-right">{t('admin.analytics.table.points', 'Compute Credits')}</th>
             <th className="px-4 py-3 text-right">{t('admin.analytics.table.tokens', 'Tokens')}</th>
             <th className="px-4 py-3 text-right">{t('admin.analytics.table.requests', 'Requests')}</th>
             <th className="px-4 py-3 text-right">{t('admin.analytics.table.users', 'Users')}</th>
@@ -719,7 +719,7 @@ function buildMetricCards(
     },
     {
       key: 'points',
-      label: t('admin.analytics.metrics.points', 'Points'),
+      label: t('admin.analytics.metrics.points', 'Compute Credits'),
       value: formatDecimal(summary.totalPoints, locale),
       detail: t('admin.analytics.metrics.averagePoints', '{{value}} per request', { value: formatDecimal(summary.averagePointsPerRequest, locale) }),
       tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300',

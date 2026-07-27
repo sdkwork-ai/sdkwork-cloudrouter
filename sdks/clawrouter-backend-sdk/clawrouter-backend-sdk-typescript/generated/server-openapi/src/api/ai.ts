@@ -1,5 +1,5 @@
 import { backendApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 import type { AdminChannelBindingPage, AdminChannelBindingReplaceRequest, AdminChannelGroupCreateRequest, AdminChannelGroupItem, AdminChannelGroupPage, AdminChannelGroupUpdateRequest } from '../types';
 export class AiRouteExplainApi {
   private client: HttpClient;
@@ -10,8 +10,8 @@ export class AiRouteExplainApi {
 
 
 /** List runtime route explain */
-  async explain(): Promise<Record<string, never>> {
-    return this.client.post<Record<string, never>>(backendApiPath(`/ai/route_explain`));
+  async explain(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/ai/route_explain`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 
@@ -24,8 +24,8 @@ export class AiModelMappingOptionsApi {
 
 
 /** List model options catalog */
-  async list(): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/ai/model_mapping_options`));
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/ai/model_mapping_options`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -38,8 +38,8 @@ export class AiChannelGroupsRouteExplainApi {
 
 
 /** List group route explain */
-  async list(channelGroupId: string): Promise<Record<string, never>> {
-    return this.client.get<Record<string, never>>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/route_explain`));
+  async list(channelGroupId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/route_explain`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -52,13 +52,13 @@ export class AiChannelGroupsChannelBindingsApi {
 
 
 /** List group channel bindings */
-  async list(channelGroupId: string): Promise<AdminChannelBindingPage> {
-    return this.client.get<AdminChannelBindingPage>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/channel_bindings`));
+  async list(channelGroupId: string, requestOptions?: ApiRequestOptions): Promise<AdminChannelBindingPage> {
+    return this.client.request<AdminChannelBindingPage>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/channel_bindings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Replace group channel bindings */
-  async update(channelGroupId: string, body: AdminChannelBindingReplaceRequest): Promise<AdminChannelBindingPage> {
-    return this.client.put<AdminChannelBindingPage>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/channel_bindings`), body, undefined, undefined, 'application/json');
+  async update(channelGroupId: string, body: AdminChannelBindingReplaceRequest, requestOptions?: ApiRequestOptions): Promise<AdminChannelBindingPage> {
+    return this.client.request<AdminChannelBindingPage>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}/channel_bindings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -75,34 +75,34 @@ export class AiChannelGroupsApi {
 
 
 /** List groups */
-  async list(): Promise<AdminChannelGroupPage> {
-    return this.client.get<AdminChannelGroupPage>(backendApiPath(`/ai/channel_groups`));
+  async list(requestOptions?: ApiRequestOptions): Promise<AdminChannelGroupPage> {
+    return this.client.request<AdminChannelGroupPage>(backendApiPath(`/ai/channel_groups`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create group */
-  async create(body: AdminChannelGroupCreateRequest): Promise<AdminChannelGroupItem> {
-    return this.client.post<AdminChannelGroupItem>(backendApiPath(`/ai/channel_groups`), body, undefined, undefined, 'application/json');
+  async create(body: AdminChannelGroupCreateRequest, requestOptions?: ApiRequestOptions): Promise<AdminChannelGroupItem> {
+    return this.client.request<AdminChannelGroupItem>(backendApiPath(`/ai/channel_groups`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete group */
-  async delete(channelGroupId: string): Promise<void> {
-    return this.client.delete<void>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`));
+  async delete(channelGroupId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Update group */
-  async update(channelGroupId: string, body: AdminChannelGroupUpdateRequest): Promise<AdminChannelGroupItem> {
-    return this.client.patch<AdminChannelGroupItem>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(channelGroupId: string, body: AdminChannelGroupUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminChannelGroupItem> {
+    return this.client.request<AdminChannelGroupItem>(backendApiPath(`/ai/channel_groups/${serializePathParameter(channelGroupId, { name: 'channelGroupId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json' });
   }
 }
 
 export class AiApi {
-
+  private client: HttpClient;
   public readonly channelGroups: AiChannelGroupsApi;
   public readonly modelMappingOptions: AiModelMappingOptionsApi;
   public readonly routeExplain: AiRouteExplainApi;
 
   constructor(client: HttpClient) {
-
+    this.client = client;
     this.channelGroups = new AiChannelGroupsApi(client);
     this.modelMappingOptions = new AiModelMappingOptionsApi(client);
     this.routeExplain = new AiRouteExplainApi(client);
@@ -114,7 +114,13 @@ export function createAiApi(client: HttpClient): AiApi {
   return new AiApi(client);
 }
 
-
+function appendQueryString(path: string, rawQueryString: string): string {
+  const query = rawQueryString.replace(/^\?+/, '');
+  if (!query) {
+    return path;
+  }
+  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
+}
 
 interface PathParameterSpec {
   name: string;

@@ -4,16 +4,26 @@ import type { AuthTokenManager } from '@sdkwork/sdk-common';
 
 import { AiApi, createAiApi } from './api/ai';
 import { IntegrationApi, createIntegrationApi } from './api/integration';
-import { SitesApi, createSitesApi } from './api/sites';
 import { SystemApi, createSystemApi } from './api/system';
+import { MembershipsApi, createMembershipsApi } from './api/memberships';
+import { PaymentsApi, createPaymentsApi } from './api/payments';
+import { PromotionsApi, createPromotionsApi } from './api/promotions';
+import { RechargesApi, createRechargesApi } from './api/recharges';
+import { SitesApi, createSitesApi } from './api/sites';
+import { StorageApi, createStorageApi } from './api/storage';
 
 export class SdkworkBackendClient {
   private httpClient: HttpClient;
 
   public readonly ai: AiApi;
   public readonly integration: IntegrationApi;
-  public readonly sites: SitesApi;
   public readonly system: SystemApi;
+  public readonly memberships: MembershipsApi;
+  public readonly payments: PaymentsApi;
+  public readonly promotions: PromotionsApi;
+  public readonly recharges: RechargesApi;
+  public readonly sites: SitesApi;
+  public readonly storage: StorageApi;
 
   constructor(config: SdkworkBackendConfig) {
     this.httpClient = createHttpClient(config);
@@ -21,9 +31,19 @@ export class SdkworkBackendClient {
 
     this.integration = createIntegrationApi(this.httpClient);
 
+    this.system = createSystemApi(this.httpClient);
+
+    this.memberships = createMembershipsApi(this.httpClient);
+
+    this.payments = createPaymentsApi(this.httpClient);
+
+    this.promotions = createPromotionsApi(this.httpClient);
+
+    this.recharges = createRechargesApi(this.httpClient);
+
     this.sites = createSitesApi(this.httpClient);
 
-    this.system = createSystemApi(this.httpClient);
+    this.storage = createStorageApi(this.httpClient);
   }
   setAuthToken(token: string): this {
     this.httpClient.setAuthToken(token);

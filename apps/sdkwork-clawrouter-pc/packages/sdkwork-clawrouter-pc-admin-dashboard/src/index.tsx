@@ -160,7 +160,7 @@ export function DashboardAdmin() {
       return t("admin.dashboard.index.text.1rty913", "Token 消耗");
     }
     if (name === 'points' || name === 'chartPoints') {
-      return t('admin.dashboard.trend.points', '积分消耗');
+      return t('admin.dashboard.trend.points', 'Compute Credits consumed');
     }
     if (name === 'requests' || name === 'chartRequests') {
       return t("admin.dashboard.index.text.1j8nxcs", "API 请求");
@@ -373,7 +373,7 @@ export function DashboardAdmin() {
                 onClick={() => setTrendMetric('points')}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${trendMetric === 'points' ? 'bg-white dark:bg-[#222] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
               >
-                {t('admin.dashboard.trend.points', '积分消耗')}</button>
+                {t('admin.dashboard.trend.points', 'Compute Credits consumed')}</button>
               <button
                 aria-pressed={trendMetric === 'requests'}
                 onClick={() => setTrendMetric('requests')}

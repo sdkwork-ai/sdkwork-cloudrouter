@@ -86,3 +86,15 @@ test("console pages inherit shell height instead of duplicating the navbar offse
     assert.doesNotMatch(source, /calc\(100(?:d)?vh-64px\)/, consolePagePath);
   }
 });
+
+test("console dashboard renders a truthful default modality distribution", () => {
+  const dashboardSource = readPortalFile(
+    "./packages/sdkwork-clawrouter-pc-console-dashboard/src/DashboardView.tsx",
+  );
+
+  assert.match(dashboardSource, /chartValue:\s*totalRequests > 0 \? percentage : 1/);
+  assert.match(dashboardSource, /dataKey="chartValue"/);
+  assert.match(dashboardSource, /opacity=\{hasModalityData \? 1 : 0\.35\}/);
+  assert.match(dashboardSource, /hasModalityData \? '100%' : '0%'/);
+  assert.doesNotMatch(dashboardSource, /pieData\.length === 0/);
+});

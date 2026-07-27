@@ -5,7 +5,7 @@
  * |------------------------|--------------------|---------------------------------|----------------------|
  * | Account summary        | sdkwork-account    | @sdkwork/account-pc-wallet      | /console/account     |
  * | Wallet & withdraw      | sdkwork-account    | @sdkwork/account-pc-wallet      | /console/wallet      |
- * | Points recharge        | sdkwork-order      | @sdkwork/order-pc-recharge      | /console/wallet      |
+ * | Compute Credits recharge (compat package) | sdkwork-order | @sdkwork/order-pc-recharge | /console/wallet |
  * | Coupons & promo codes  | sdkwork-promotion  | @sdkwork/promotion-pc-coupon    | /console/coupons     |
  * | Membership             | sdkwork-membership | @sdkwork/membership-pc-membership | /console/memberships |
  * | Subscription checkout  | sdkwork-membership | @sdkwork/membership-pc-subscription | /console/checkout |

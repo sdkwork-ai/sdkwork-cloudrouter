@@ -107,6 +107,9 @@ importers:
       '@sdkwork/iam-application-bootstrap':
         specifier: workspace:*
         version: link:../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-application-bootstrap
+      '@sdkwork/sdk-common':
+        specifier: link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+        version: link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
 
   ../sdkwork-account/apps/sdkwork-account-common/packages/sdkwork-account-contracts: {}
 
@@ -226,9 +229,6 @@ importers:
       '@sdkwork/agents-pc-membership':
         specifier: workspace:*
         version: link:packages/sdkwork-agents-pc-membership
-      '@sdkwork/agents-pc-presentation':
-        specifier: workspace:*
-        version: link:packages/sdkwork-agents-pc-presentation
       '@sdkwork/auth-pc-react':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react
@@ -238,6 +238,9 @@ importers:
       '@sdkwork/core-pc-react':
         specifier: workspace:*
         version: link:../../../sdkwork-core/sdkwork-core-pc-react
+      '@sdkwork/i18n-pc-react':
+        specifier: workspace:*
+        version: link:../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
       '@sdkwork/iam-contracts':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts
@@ -256,9 +259,6 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.1.14
         version: 4.2.2(vite@6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
-      '@types/reveal.js':
-        specifier: ^5.2.2
-        version: 5.2.2
       '@vitejs/plugin-react':
         specifier: ^5.0.4
         version: 5.2.0(vite@6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
@@ -304,9 +304,6 @@ importers:
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
-      reveal.js:
-        specifier: ^6.0.1
-        version: 6.0.1
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -440,6 +437,9 @@ importers:
       '@sdkwork/agents-pc-core':
         specifier: workspace:*
         version: link:../sdkwork-agents-pc-core
+      '@sdkwork/i18n-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
@@ -1718,15 +1718,9 @@ importers:
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.14)
       react:
         specifier: 'catalog:'
         version: 19.2.4
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.4(react@19.2.4)
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
@@ -1779,8 +1773,6 @@ importers:
 
   ../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-contracts: {}
 
-  ../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-sdk-ports: {}
-
   ../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service:
     dependencies:
       '@sdkwork/order-app-sdk':
@@ -1789,9 +1781,6 @@ importers:
       '@sdkwork/order-backend-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-order-backend-sdk/sdkwork-order-backend-sdk-typescript
-      '@sdkwork/order-sdk-ports':
-        specifier: workspace:*
-        version: link:../sdkwork-order-sdk-ports
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
@@ -2529,6 +2518,10 @@ importers:
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
 
   ../sdkwork-ui/sdkwork-ui-pc-react:
     dependencies:
@@ -2829,9 +2822,18 @@ importers:
       '@sdkwork/clawrouter-pc-admin-group':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-group
+      '@sdkwork/clawrouter-pc-admin-marketing':
+        specifier: workspace:*
+        version: link:packages/sdkwork-clawrouter-pc-admin-marketing
+      '@sdkwork/clawrouter-pc-admin-memberships':
+        specifier: workspace:*
+        version: link:packages/sdkwork-clawrouter-pc-admin-memberships
       '@sdkwork/clawrouter-pc-admin-monitor':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-monitor
+      '@sdkwork/clawrouter-pc-admin-payments':
+        specifier: workspace:*
+        version: link:packages/sdkwork-clawrouter-pc-admin-payments
       '@sdkwork/clawrouter-pc-admin-ratelimit':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-ratelimit
@@ -2853,6 +2855,9 @@ importers:
       '@sdkwork/clawrouter-pc-admin-site':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-site
+      '@sdkwork/clawrouter-pc-admin-storage':
+        specifier: workspace:*
+        version: link:packages/sdkwork-clawrouter-pc-admin-storage
       '@sdkwork/clawrouter-pc-console-api-keys':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-console-api-keys
@@ -3019,8 +3024,8 @@ importers:
         specifier: workspace:*
         version: link:../../../sdkwork-appbase/packages/common/foundation/sdkwork-runtime-bootstrap
       '@sdkwork/sdk-common':
-        specifier: ^1.0.2
-        version: 1.0.3
+        specifier: workspace:*
+        version: link:../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
         version: link:../../../sdkwork-ui/sdkwork-ui-pc-react
@@ -3292,11 +3297,29 @@ importers:
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
 
+  apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing:
+    dependencies:
+      '@sdkwork/clawroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-clawroutes-pc-commons
+
+  apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-memberships:
+    dependencies:
+      '@sdkwork/clawroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-clawroutes-pc-commons
+
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor:
     dependencies:
       '@sdkwork/clawrouter-pc-admin-core':
         specifier: workspace:*
         version: link:../sdkwork-clawrouter-pc-admin-core
+      '@sdkwork/clawroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-clawroutes-pc-commons
+
+  apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-payments:
+    dependencies:
       '@sdkwork/clawroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
@@ -3393,6 +3416,12 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
+
+  apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage:
+    dependencies:
+      '@sdkwork/clawroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-clawroutes-pc-commons
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys:
     dependencies:
@@ -3691,9 +3720,6 @@ importers:
       '@sdkwork/notification-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/notification/sdkwork-notification-pc-react
-      '@sdkwork/order-sdk-ports':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-sdk-ports
       '@sdkwork/order-service':
         specifier: workspace:*
         version: link:../../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
@@ -3716,8 +3742,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../../sdkwork-prompts/sdks/sdkwork-prompts-backend-sdk/sdkwork-prompts-backend-sdk-typescript
       '@sdkwork/sdk-common':
-        specifier: ^1.0.2
-        version: 1.0.3
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
@@ -3753,8 +3779,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-promotion/sdks/sdkwork-promotion-app-sdk/sdkwork-promotion-app-sdk-typescript
       '@sdkwork/sdk-common':
-        specifier: ^1.0.2
-        version: 1.0.3
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
     devDependencies:
       '@types/node':
         specifier: 20.19.39
@@ -3769,8 +3795,8 @@ importers:
   sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript:
     dependencies:
       '@sdkwork/sdk-common':
-        specifier: ^1.0.2
-        version: 1.0.3
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
     devDependencies:
       '@types/node':
         specifier: 20.19.39
@@ -5938,9 +5964,6 @@ packages:
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
 
-  '@types/reveal.js@5.2.2':
-    resolution: {integrity: sha512-U6wdIeFZPR77zjaZCrFNPzKjjfdFr4Dj0WUAZ+UYgXGjwqYCnjpCngeS0hb+28FLL0QzE9jXBikvB7xxAQi5sg==}
-
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
@@ -7856,9 +7879,6 @@ packages:
     resolution: {integrity: sha512-TyeJ1zif53BPfHootBGwPRYT1RUt6oGWsaQr8UyZW/eAm9bKoijtvruSDEmZHm92CwS9nj7/fWttqPCgzep8CA==}
     engines: {node: '>= 0.4'}
     hasBin: true
-
-  reveal.js@6.0.1:
-    resolution: {integrity: sha512-9eacArNIgqO2HGWOK+93gJNn+gvdGDVbSq+i2u3Ja9kjiHps0XNLpgYTZTYjKRH91uXy3clGimeGiw4umHG/tg==}
 
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
@@ -10426,8 +10446,6 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@types/reveal.js@5.2.2': {}
-
   '@types/trusted-types@2.0.7':
     optional: true
 
@@ -12828,8 +12846,6 @@ snapshots:
       is-core-module: 2.16.2
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
-
-  reveal.js@6.0.1: {}
 
   rfdc@1.4.1: {}
 

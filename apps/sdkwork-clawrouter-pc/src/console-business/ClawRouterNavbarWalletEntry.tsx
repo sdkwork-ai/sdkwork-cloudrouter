@@ -3,7 +3,6 @@ import { Coins, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   normalizeSdkworkWalletLocale,
-  SdkworkWalletIntlProvider,
   useSdkworkWalletController,
   useSdkworkWalletControllerState,
   useSdkworkWalletIntl,
@@ -11,6 +10,7 @@ import {
 
 import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
 import { ClawRouterNavbarWalletQuickPanel } from './ClawRouterNavbarWalletQuickPanel.tsx';
+import { ClawRouterTokenBankIntlProvider } from './ClawRouterTokenBankIntlProvider.tsx';
 import type { ClawRouterConsoleBusinessHostConfig } from './consoleBusinessConfig.ts';
 import { useConsoleBusinessNavigation } from './consoleBusinessNavigation.ts';
 
@@ -27,13 +27,13 @@ export function ClawRouterNavbarWalletEntry({
 
   return (
     <div className="claw-router-navbar-wallet-entry flex items-center gap-2">
-      <SdkworkWalletIntlProvider locale={walletLocale}>
+      <ClawRouterTokenBankIntlProvider locale={walletLocale}>
         <ClawRouterNavbarWalletEntryContent
           accountLabel={t('console.navbar.account', 'Account')}
           onOpenAccount={() => onNavigate(accountPath)}
           onOpenWallet={() => onNavigate(walletPath)}
         />
-      </SdkworkWalletIntlProvider>
+      </ClawRouterTokenBankIntlProvider>
     </div>
   );
 }
@@ -52,7 +52,7 @@ function ClawRouterNavbarWalletEntryContent({
   const isAuthenticated = usePortalIamSession();
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const entryRef = useRef<HTMLDivElement>(null);
-  const { copy, formatPoints } = useSdkworkWalletIntl();
+  const { copy, formatTokenBank } = useSdkworkWalletIntl();
 
   useEffect(() => {
     if (!state.isBootstrapped && !state.isLoading && !state.lastError) {
@@ -109,7 +109,7 @@ function ClawRouterNavbarWalletEntryContent({
         type="button"
       >
         <Coins className="h-4 w-4" aria-hidden="true" />
-        {formatPoints(state.overview.account.availablePoints)} {copy.headerEntry.pointsSuffix}
+        {formatTokenBank(state.overview.account.tokenBankAvailable)} {copy.headerEntry.pointsSuffix}
       </button>
       {isPanelOpen ? (
         <div

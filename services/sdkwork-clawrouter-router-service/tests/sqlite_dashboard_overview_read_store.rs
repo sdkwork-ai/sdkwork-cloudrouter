@@ -56,14 +56,18 @@ async fn sqlite_dashboard_overview_reads_configuration_nodes_from_gateway_instan
         .await
         .unwrap();
 
-    assert_eq!(1, snapshot.configuration_domains.len());
+    assert_eq!(2, snapshot.configuration_domains.len());
     let node = &snapshot.configuration_domains[0];
-    assert_eq!("claw-node-shanghai", node.id);
+    assert_eq!("claw-node-shanghai:base", node.id);
     assert_eq!("Shanghai Gateway", node.name);
-    assert_eq!("https://sh-gateway.example.com", node.domain);
+    assert_eq!("https://sh-gateway.example.com/v1", node.domain);
     assert_eq!("10.10.0.11", node.ip);
     assert_eq!("online", node.status);
     assert_eq!("East China relay", node.remark);
+    assert_eq!(
+        "https://sh-gateway-backup.example.com/v1",
+        snapshot.configuration_domains[1].domain
+    );
 }
 
 #[tokio::test]
@@ -294,7 +298,7 @@ async fn seed_gateway_instance(pool: &sqlx::SqlitePool) {
         INSERT INTO ops_gateway_instance
             (id, uuid, tenant_id, organization_id, status, deleted_at, metadata, instance_code, region, cell, host_name, ip_address_masked, node_name, last_heartbeat_at, health_status, updated_at)
         VALUES
-            (101, 'node-101', 100001, 0, 1, NULL, '{"domain":"https://sh-gateway.example.com","remark":"East China relay"}', 'claw-node-shanghai', 'cn-east', 'sh-a', 'gateway-host-a', '10.10.0.11', 'Shanghai Gateway', '2026-05-26 08:00:00', 1, '2026-05-26 08:00:00'),
+            (101, 'node-101', 100001, 0, 1, NULL, '{"schemaVersion":1,"deploymentProfile":"cloud","baseUrl":"https://sh-gateway.example.com/v1","domains":["sh-gateway.example.com","sh-gateway-backup.example.com"],"domain":"sh-gateway.example.com","remark":"East China relay"}', 'claw-node-shanghai', 'cn-east', 'sh-a', 'gateway-host-a', '10.10.0.11', 'Shanghai Gateway', '2026-05-26 08:00:00', 1, '2026-05-26 08:00:00'),
             (102, 'node-102', 100001, 0, 0, NULL, '{"domain":"https://disabled.example.com","remark":"Disabled relay"}', 'claw-node-disabled', 'cn-east', 'sh-b', 'disabled-host', '10.10.0.12', 'Disabled Gateway', '2026-05-26 07:00:00', 0, '2026-05-26 07:00:00'),
             (103, 'node-103', 99, 99, 1, NULL, '{"domain":"https://other-tenant.example.com","remark":"Other tenant"}', 'claw-node-other', 'cn-north', 'bj-a', 'other-host', '10.10.0.13', 'Other Gateway', '2026-05-26 06:00:00', 1, '2026-05-26 06:00:00')
         "#,

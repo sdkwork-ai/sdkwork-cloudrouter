@@ -109,11 +109,12 @@ Gateway 面保持行业兼容：
 
 ### 4.3 账户和商业化
 
-1. 用户、VIP、账户、优惠券、积分充值、订单、支付、退款、发票由 `sdkwork-商���`、`sdkwork-iam` 等组合模块提供表结构与 API；Claw Router 只消费生成 SDK 与组合契约，不在本地重复定义资金事实表。
-2. 网关用量先沉淀为 AI usage/meter fact，再按规则结转到账户、积分、VIP 权益或订单支付体系。
+1. 用户、VIP、账户、优惠券、算力元充值（Token Bank）、订单、支付、退款、发票由 `sdkwork-account`、`sdkwork-order`、`sdkwork-payment`、`sdkwork-iam` 等组合模块提供表结构与 API；Claw Router 只消费生成 SDK 与组合契约，不在本地重复定义资金事实表。
+2. 网关用量先沉淀为 AI usage/meter fact，再按规则结转到 Token Bank 算力元账户、VIP 权益或订单支付体系。
 3. 余额变更必须同时写账户流水，不能只改余额。
 4. 支付回调、充值、退款、兑换码必须有幂等键和外部事件唯一约束。
 5. 账单和结算允许构建读模型，但读模型不能成为资金事实来源。
+6. Token Plan 必须通过同一套 Membership 目录、Order 购买意图和 Payment 执行模块组合；不同应用只配置 SDK 与运行时装配，不复制套餐、订单或支付逻辑。相同用户对同一有效套餐意图的重复点击复用订单，过期意图才创建新订单。
 
 ### 4.4 多部署形态
 
@@ -151,7 +152,7 @@ Gateway 面保持行业兼容：
 2. Admin API 与 App API 均可由标准 OpenAPI 生成 `@sdkwork/clawrouter-*` SDK，前端不再依赖手写 mock service。
 3. `/v1/*` 兼容请求可以通过标准 API Key 调用，并完成路由、计费、审计闭环。
 4. 新建表全部通过 `DATABASE_SPEC.md` 的 L2/L3 评审。
-5. 用户、VIP、账户、优惠券、积分充值、订单支付等通过组合 Commerce/IAM 模块接入，Claw Router 不维护平行资金表。
+5. 用户、VIP、账户、优惠券、算力元充值（Token Bank）、订单支付等通过领域 SDK 与 IAM 组合模块接入，Claw Router 不维护平行资金表。
 6. 四种部署形态能用相同配置模型启动，差异只体现在 profile、数据库、缓存、实例拓扑和 SDK base URL。
 7. 同一套前端构建产物可以在本地桌面、私有化 Server、Docker、K8S 与统一 Rust app-api/backend-api 之间自由切换，不修改 API 路径和 DTO。
 8. 前端实现接入真实 API/SDK 后，视觉表现与 `apps/sdkwork-clawrouter-pc` 当前用户设计保持一致；如需调整视觉、布局、导航、色彩、字体、间距或组件形态，必须先获得用户明确确认。

@@ -74,7 +74,7 @@ export function computeGrantAmount(
   settings: Partial<RechargeSettingsSnapshot> | null | undefined,
 ): number {
   if (!Number.isInteger(bonusPoints) || bonusPoints < 0) {
-    throw new Error('bonusPoints must be a non-negative integer');
+    throw new Error('Compute Credits bonus must be a non-negative integer');
   }
   const normalizedSettings = normalizeRechargeSettings(settings);
   const amountScaled = decimalToScaledBigInt(amount, 2);

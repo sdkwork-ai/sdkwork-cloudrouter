@@ -6,19 +6,33 @@ frontend_operations:
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: fetchGroups
-  operation_id: ai.channel.groups.get
+  operation_id: channelGroups.list
   kind: read
   api_surface: app
   api_method: GET
   api_path: /app/v3/api/ai/channel_groups
-  sdk_domain: ai
   read_sources:
   - ai_channel_group
   - ai_channel_group_metric_snapshot
   - ai_pricing_plan
   response_schema:
-    name: NoData
-    properties: {}
+    name: AppChannelGroupListResponse
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AppChannelGroup
+          type: object
+          additionalProperties: false
+          required: [id, code, name, rate]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            code: { type: string, minLength: 1, maxLength: 128 }
+            name: { type: string, minLength: 1, maxLength: 128 }
+            rate: { type: string, nullable: true, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters: []
 - route: /console/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
@@ -912,83 +926,273 @@ frontend_operations:
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: fetchKeys
-  operation_id: iam.api.keys.get
+  operation_id: apiKeys.list
   kind: read
   api_surface: app
   api_method: GET
   api_path: /app/v3/api/iam/api_keys
-  sdk_domain: iam
   read_sources:
   - iam_gateway_api_key
   - ai_channel_group
   - ai_channel_group_metric_snapshot
   - iam_gateway_access_policy
   - ai_quota_policy
+  - ai_model_pricing
   - ai_pricing_plan
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AppApiKeyListResponse
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AppApiKeyItem
+          type: object
+          additionalProperties: false
+          required: [id, name, maskedKey, channelGroup, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            name: { type: string, minLength: 1, maxLength: 128 }
+            maskedKey: { type: string, minLength: 1, maxLength: 256 }
+            copyableKey:
+              type: string
+              minLength: 1
+              maxLength: 256
+              description: Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.
+            channelGroup: { type: string, minLength: 1, maxLength: 128 }
+            channelGroupName:
+              type: string
+              minLength: 1
+              maxLength: 128
+              description: Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.
+            rate: { type: string, nullable: true, maxLength: 64 }
+            quota: { type: string, minLength: 1, maxLength: 64 }
+            usedQuota: { type: string, minLength: 1, maxLength: 64 }
+            modalities:
+              type: array
+              items: { type: string, enum: [text, image, video, audio, music] }
+            ipLimit: { type: string, maxLength: 1024 }
+            created: { type: string, maxLength: 64 }
+            expires: { type: string, maxLength: 64 }
+            status: { type: string, enum: [enabled, disabled] }
+            defaultForRuntime:
+              type: boolean
+              description: Whether this key is the current console default for backend runtime API key selection.
+          description: API key metadata with masked key material and authenticated owner copyable key material.
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: createKey
-  operation_id: iam.api.keys.post
   kind: create
   api_surface: app
   api_method: POST
   api_path: /app/v3/api/iam/api_keys
-  sdk_domain: iam
+  idempotency_required: true
   read_sources:
   - ai_channel_group
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
   write_tables:
   - ai_channel_group
   - iam_gateway_api_key
   - iam_gateway_access_policy
   - ai_quota_policy
   - ops_audit_log
-- route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
-  operation: deleteKey
-  operation_id: iam.api.keys.byId.delete
-  kind: delete
-  api_surface: app
-  api_method: DELETE
-  api_path: /app/v3/api/iam/api_keys/{apiKeyId}
-  sdk_domain: iam
-  read_sources:
-  - iam_gateway_api_key
+  request_schema:
+    name: CreateApiKeyRequest
+    required: [name, channelGroup, quota, isUnlimitedQuota, modalities, ipLimit, expires]
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: API key display name.
+      channelGroup:
+        type: string
+        minLength: 1
+        maxLength: 64
+        description: API key channel group code.
+      quota:
+        type: string
+        format: decimal
+        description: Quota limit as a canonical decimal string.
+      isUnlimitedQuota:
+        type: boolean
+        description: Whether the quota is unlimited.
+      modalities:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: { type: string, enum: [text, image, video, audio, music] }
+      ipLimit:
+        type: string
+        maxLength: 1024
+        description: Comma-separated IP or CIDR allowlist, or unrestricted.
+      expires:
+        type: string
+        maxLength: 32
+        description: Expiration timestamp in YYYY-MM-DDTHH:mm format, or never.
+      defaultForRuntime:
+        type: boolean
+        description: Create this key as the default backend runtime API key.
   response_schema:
-    name: NoData
-    properties: {}
-  write_tables:
-  - iam_gateway_api_key
-  - ops_audit_log
+    name: CreateApiKeyResponse
+    required: [item, rawKey]
+    properties:
+      item:
+        name: AppApiKeyItem
+        type: object
+        additionalProperties: false
+        required: [id, name, maskedKey, channelGroup, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+        properties:
+          id: { type: string, minLength: 1, maxLength: 128 }
+          name: { type: string, minLength: 1, maxLength: 128 }
+          maskedKey: { type: string, minLength: 1, maxLength: 256 }
+          copyableKey:
+            type: string
+            minLength: 1
+            maxLength: 256
+            description: Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.
+          channelGroup: { type: string, minLength: 1, maxLength: 128 }
+          channelGroupName:
+            type: string
+            minLength: 1
+            maxLength: 128
+            description: Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.
+          rate: { type: string, nullable: true, maxLength: 64 }
+          quota: { type: string, minLength: 1, maxLength: 64 }
+          usedQuota: { type: string, minLength: 1, maxLength: 64 }
+          modalities:
+            type: array
+            items: { type: string, enum: [text, image, video, audio, music] }
+          ipLimit: { type: string, maxLength: 1024 }
+          created: { type: string, maxLength: 64 }
+          expires: { type: string, maxLength: 64 }
+          status: { type: string, enum: [enabled, disabled] }
+          defaultForRuntime:
+            type: boolean
+            description: Whether this key is the current console default for backend runtime API key selection.
+        description: Created API key metadata. Authenticated owner management responses include copyableKey matching rawKey.
+      rawKey:
+        type: string
+        minLength: 1
+        description: Full raw API key secret returned by create responses. Authenticated owner management list and update responses also expose this value as item.copyableKey for console copy actions.
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: updateKey
-  operation_id: iam.api.keys.byId.patch
+  operation_id: apiKeys.update
   kind: update
   api_surface: app
   api_method: PATCH
   api_path: /app/v3/api/iam/api_keys/{apiKeyId}
-  sdk_domain: iam
   read_sources:
   - iam_gateway_api_key
   - ai_channel_group
   - iam_gateway_access_policy
   - ai_quota_policy
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
   write_tables:
   - iam_gateway_api_key
   - iam_gateway_access_policy
   - ai_quota_policy
+  - ops_audit_log
+  request_schema:
+    name: UpdateApiKeyRequest
+    type: object
+    additionalProperties: false
+    required: []
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 128
+        description: API key display name.
+      channelGroup:
+        type: string
+        minLength: 1
+        maxLength: 64
+        description: API key channel group code to bind to this key.
+      quota:
+        type: string
+        format: decimal
+        description: Optional quota limit as a canonical decimal string.
+      isUnlimitedQuota:
+        type: boolean
+        description: Whether the quota is unlimited.
+      modalities:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: { type: string, enum: [text, image, video, audio, music] }
+      ipLimit:
+        type: string
+        maxLength: 1024
+        description: Comma-separated IP or CIDR allowlist, or unrestricted.
+      expires:
+        type: string
+        maxLength: 32
+        description: Expiration timestamp in YYYY-MM-DDTHH:mm format, or never.
+      defaultForRuntime:
+        type: boolean
+        description: Marks this API key as the default backend runtime API key for Playground and app runtime calls.
+  response_schema:
+    name: UpdateApiKeyResponse
+    required: [item]
+    properties:
+      item:
+        name: AppApiKeyItem
+        type: object
+        additionalProperties: false
+        required: [id, name, maskedKey, channelGroup, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+        properties:
+          id: { type: string, minLength: 1, maxLength: 128 }
+          name: { type: string, minLength: 1, maxLength: 128 }
+          maskedKey: { type: string, minLength: 1, maxLength: 256 }
+          copyableKey:
+            type: string
+            minLength: 1
+            maxLength: 256
+            description: Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.
+          channelGroup: { type: string, minLength: 1, maxLength: 128 }
+          channelGroupName:
+            type: string
+            minLength: 1
+            maxLength: 128
+            description: Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.
+          rate: { type: string, nullable: true, maxLength: 64 }
+          quota: { type: string, minLength: 1, maxLength: 64 }
+          usedQuota: { type: string, minLength: 1, maxLength: 64 }
+          modalities:
+            type: array
+            items: { type: string, enum: [text, image, video, audio, music] }
+          ipLimit: { type: string, maxLength: 1024 }
+          created: { type: string, maxLength: 64 }
+          expires: { type: string, maxLength: 64 }
+          status: { type: string, enum: [enabled, disabled] }
+          defaultForRuntime:
+            type: boolean
+            description: Whether this key is the current console default for backend runtime API key selection.
+        description: Updated API key metadata. Authenticated owner management responses include copyableKey for console copy actions.
+- route: /console/api-keys
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  operation: deleteKey
+  operation_id: apiKeys.delete
+  kind: delete
+  api_surface: app
+  api_method: DELETE
+  api_path: /app/v3/api/iam/api_keys/{apiKeyId}
+  read_sources:
+  - iam_gateway_api_key
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - iam_gateway_api_key
   - ops_audit_log
 - route: /console/user
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/iamDirectoryApiOperations.ts
@@ -3546,7 +3750,15 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: []
+  query_parameters:
+  - name: q
+    schema: { type: string, maxLength: 256 }
+  - name: status
+    schema: { type: string, enum: [enabled, disabled] }
+  - name: page
+    schema: { type: integer, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
 - route: /admin/service-nodes
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   operation: createNode
@@ -3647,6 +3859,1784 @@ frontend_operations:
   write_tables:
   - ops_config_snapshot
   - ops_audit_log
+- route: /admin/memberships/entitlements
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: memberships.entitlements.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/memberships/entitlements
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - { name: membership_id, type: string, required: false, maxLength: 128 }
+  - { name: plan_id, type: string, required: false, maxLength: 128 }
+  - { name: status, type: string, required: false, maxLength: 32 }
+- route: /admin/memberships/members
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: memberships.members.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/memberships/members
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - { name: user_id, type: string, required: false, maxLength: 128 }
+  - { name: plan_id, type: string, required: false, maxLength: 128 }
+  - { name: status, type: string, required: false, maxLength: 32 }
+- route: /admin/memberships/members/{membershipId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: memberships.members.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/memberships/members/{membershipId}
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema:
+    name: MembershipStatusUpdateRequest
+    type: object
+    additionalProperties: false
+    required: [status]
+    properties:
+      status: { type: string, enum: [active, inactive, expired, suspended, cancelled] }
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/memberships/package_groups
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: memberships.packageGroups.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/memberships/package_groups
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - { name: status, type: string, required: false, maxLength: 32 }
+- route: /admin/memberships/package_groups
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: memberships.packageGroups.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/memberships/package_groups
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: &membership_package_group_mutation
+    name: MembershipPackageGroupMutationRequest
+    type: object
+    additionalProperties: false
+    required: [code, name, billingCycle, durationDays, status]
+    properties:
+      code: { type: string, minLength: 1, maxLength: 64 }
+      name: { type: string, minLength: 1, maxLength: 128 }
+      description: { type: string, maxLength: 512 }
+      billingCycle: { type: string, minLength: 1, maxLength: 32 }
+      durationDays: { type: string, pattern: '^[0-9]+$' }
+      sortWeight: { type: string, pattern: '^[0-9]+$' }
+      status: { type: string, enum: [active, inactive, disabled] }
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/memberships/package_groups/{packageGroupId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: delete
+  operation_id: memberships.packageGroups.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/memberships/package_groups/{packageGroupId}
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ops_audit_log
+- route: /admin/memberships/package_groups/{packageGroupId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: memberships.packageGroups.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/memberships/package_groups/{packageGroupId}
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: *membership_package_group_mutation
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/memberships/packages
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: memberships.packages.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/memberships/packages
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - { name: plan_id, type: string, required: false, maxLength: 128 }
+  - { name: status, type: string, required: false, maxLength: 32 }
+- route: /admin/memberships/packages
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: memberships.packages.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/memberships/packages
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: &membership_package_mutation
+    name: MembershipPackageMutationRequest
+    type: object
+    additionalProperties: false
+    required: [code, packageGroupId, planId, name, priceAmount, currencyCode, durationDays, status]
+    properties:
+      code: { type: string, minLength: 1, maxLength: 64 }
+      packageGroupId: { type: string, minLength: 1, maxLength: 128 }
+      planId: { type: string, minLength: 1, maxLength: 128 }
+      name: { type: string, minLength: 1, maxLength: 128 }
+      priceAmount: { type: string, pattern: '^[0-9]+(\\.[0-9]{1,8})?$' }
+      currencyCode: { type: string, minLength: 3, maxLength: 16 }
+      durationDays: { type: string, pattern: '^[0-9]+$' }
+      status: { type: string, enum: [active, inactive, disabled] }
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/memberships/packages/{packageId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: delete
+  operation_id: memberships.packages.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/memberships/packages/{packageId}
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ops_audit_log
+- route: /admin/memberships/packages/{packageId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: memberships.packages.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/memberships/packages/{packageId}
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: *membership_package_mutation
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/memberships/plans
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: memberships.plans.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/memberships/plans
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - { name: status, type: string, required: false, maxLength: 32 }
+- route: /admin/memberships/plans
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: memberships.plans.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/memberships/plans
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: &membership_plan_mutation
+    name: MembershipPlanMutationRequest
+    type: object
+    additionalProperties: false
+    required: [code, name, status]
+    properties:
+      code: { type: string, minLength: 1, maxLength: 64 }
+      name: { type: string, minLength: 1, maxLength: 128 }
+      rank: { type: string, pattern: '^[0-9]+$' }
+      status: { type: string, enum: [active, inactive, disabled] }
+      benefits:
+        type: array
+        items:
+          type: object
+          additionalProperties: true
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/memberships/plans/{planId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: memberships.plans.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/memberships/plans/{planId}
+  read_sources:
+  - memberships
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: *membership_plan_mutation
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/attempts
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.attempts.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/attempts
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: &payment_admin_list_query
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - { name: status, type: string, required: false, maxLength: 32 }
+  - { name: provider_code, type: string, required: false, maxLength: 64 }
+  - { name: provider_account_id, type: string, required: false, maxLength: 128 }
+  - { name: method_code, type: string, required: false, maxLength: 64 }
+  - { name: country_code, type: string, required: false, maxLength: 16 }
+  - { name: currency_code, type: string, required: false, maxLength: 16 }
+  - { name: order_id, type: string, required: false, maxLength: 128 }
+  - { name: intent_id, type: string, required: false, maxLength: 128 }
+  - { name: business_date, type: string, required: false, maxLength: 32 }
+- route: /admin/payments/channels
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.channels.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/channels
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/channels
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: payments.channels.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/payments/channels
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/channels/{channelId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: payments.channels.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/payments/channels/{channelId}
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/disputes
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.disputes.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/disputes
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/intents
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.intents.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/intents
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/intents/{paymentIntentId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: retrieve
+  operation_id: payments.intents.management.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/intents/{paymentIntentId}
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: []
+- route: /admin/payments/methods
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.methods.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/methods
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/methods
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: payments.methods.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/payments/methods
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/methods/{methodId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: payments.methods.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/payments/methods/{methodId}
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/provider_accounts
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.providerAccounts.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/provider_accounts
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/provider_accounts
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: payments.providerAccounts.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/payments/provider_accounts
+  read_sources:
+  - payments
+  idempotency_required: true
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: &payment_provider_account_mutation
+    name: PaymentProviderAccountMutationRequest
+    type: object
+    additionalProperties: false
+    required: [providerCode, merchantId, environment, countryCode, settlementCurrency, secretRef, status]
+    properties:
+      providerCode: { type: string, minLength: 1, maxLength: 64 }
+      accountRole: { type: string, enum: [merchant, service_provider] }
+      merchantId: { type: string, minLength: 1, maxLength: 128 }
+      environment: { type: string, enum: [sandbox, production] }
+      countryCode: { type: string, minLength: 2, maxLength: 16 }
+      settlementCurrency: { type: string, minLength: 3, maxLength: 16 }
+      secretRef: { type: string, minLength: 1, maxLength: 256 }
+      webhookSecretRef: { type: string, maxLength: 256 }
+      certificateRef: { type: string, maxLength: 256 }
+      rotatedAt: { type: string, maxLength: 64 }
+      clientRequestNo: { type: string, maxLength: 128 }
+      note: { type: string, maxLength: 512 }
+      status: { type: string, enum: [active, inactive, disabled] }
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/provider_accounts/{providerAccountId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: delete
+  operation_id: payments.providerAccounts.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/payments/provider_accounts/{providerAccountId}
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/provider_accounts/{providerAccountId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: payments.providerAccounts.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/payments/provider_accounts/{providerAccountId}
+  read_sources:
+  - payments
+  idempotency_required: true
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: *payment_provider_account_mutation
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/provider_accounts/{providerAccountId}/status
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: payments.providerAccounts.status.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/payments/provider_accounts/{providerAccountId}/status
+  read_sources:
+  - payments
+  idempotency_required: true
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema:
+    name: PaymentProviderAccountStatusUpdateRequest
+    type: object
+    additionalProperties: false
+    required: [status]
+    properties:
+      status: { type: string, enum: [active, inactive, disabled] }
+      clientRequestNo: { type: string, maxLength: 128 }
+      note: { type: string, maxLength: 512 }
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/providers
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.providers.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/providers
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/providers/{providerCode}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: payments.providers.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/payments/providers/{providerCode}
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/reconciliation_runs
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.reconciliationRuns.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/reconciliation_runs
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/reconciliation_runs
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: payments.reconciliationRuns.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/payments/reconciliation_runs
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/route_rules
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.routeRules.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/route_rules
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/route_rules
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: payments.routeRules.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/payments/route_rules
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/route_rules/{routeRuleId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: payments.routeRules.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/payments/route_rules/{routeRuleId}
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/payments/runtime/snapshot
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: retrieve
+  operation_id: payments.runtime.snapshot.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/runtime/snapshot
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: []
+- route: /admin/payments/webhook_events
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: payments.webhookEvents.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/payments/webhook_events
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *payment_admin_list_query
+- route: /admin/payments/webhook_events/{eventId}/replays
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: payments.webhookEvents.replays.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/payments/webhook_events/{eventId}/replays
+  read_sources:
+  - payments
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/promotions/budget_ledger_entries
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.budgetLedgerEntries.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/budget_ledger_entries
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: &promotion_admin_list_query
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+- route: /admin/promotions/codes
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.codes.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/codes
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/codes
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: promotions.codes.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/promotions/codes
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/promotions/codes/redemptions
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.codes.redemptions.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/codes/redemptions
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/coupon_ledger_entries
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.couponLedgerEntries.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/coupon_ledger_entries
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/coupon_stocks
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.couponStocks.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/coupon_stocks
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/coupon_stocks
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: promotions.couponStocks.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/promotions/coupon_stocks
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/promotions/discount_allocations
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.discountAllocations.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/discount_allocations
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/discount_applications
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.discountApplications.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/discount_applications
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/events
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.events.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/events
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/external_bindings
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.externalBindings.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/external_bindings
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/offers
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.offers.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/offers
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/promotions/offers
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: promotions.offers.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/promotions/offers
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/promotions/offers/{offerId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: promotions.offers.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/promotions/offers/{offerId}
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/promotions/user_coupons
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: promotions.userCoupons.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/promotions/user_coupons
+  read_sources:
+  - promotions
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: *promotion_admin_list_query
+- route: /admin/recharges/orders
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: recharges.orders.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/recharges/orders
+  read_sources:
+  - recharges
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: []
+- route: /admin/recharges/orders/{orderId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: retrieve
+  operation_id: recharges.orders.management.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/recharges/orders/{orderId}
+  read_sources:
+  - recharges
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: []
+- route: /admin/recharges/packages
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: list
+  operation_id: recharges.packages.management.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/recharges/packages
+  read_sources:
+  - recharges
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - { name: status, type: string, required: false, maxLength: 32 }
+- route: /admin/recharges/packages
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: recharges.packages.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/recharges/packages
+  read_sources:
+  - recharges
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: &recharge_package_mutation
+    name: RechargePackageMutationRequest
+    type: object
+    additionalProperties: false
+    required: [priceAmount, currencyCode, bonusPoints, status]
+    properties:
+      priceAmount: { type: string, pattern: '^[0-9]+(\\.[0-9]{1,8})?$' }
+      currencyCode: { type: string, minLength: 3, maxLength: 16 }
+      bonusPoints: { type: string, pattern: '^[0-9]+$' }
+      status: { type: string, enum: [active, inactive] }
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/recharges/packages/{packageId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: delete
+  operation_id: recharges.packages.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/recharges/packages/{packageId}
+  read_sources:
+  - recharges
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ops_audit_log
+- route: /admin/recharges/packages/{packageId}
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: recharges.packages.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/recharges/packages/{packageId}
+  read_sources:
+  - recharges
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema: *recharge_package_mutation
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/recharges/settings
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: retrieve
+  operation_id: recharges.settings.management.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/recharges/settings
+  read_sources:
+  - recharges
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: []
+- route: /admin/recharges/settings
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: update
+  operation_id: recharges.settings.update
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/recharges/settings
+  read_sources:
+  - recharges
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema:
+    name: RechargeSettingsUpdateRequest
+    type: object
+    additionalProperties: false
+    required: [baseCurrencyCode, basePointsPerCny, currencyToCnyRates]
+    properties:
+      baseCurrencyCode: { type: string, minLength: 3, maxLength: 16 }
+      basePointsPerCny: { type: string, pattern: '^[0-9]+(\\.[0-9]{1,8})?$' }
+      currencyToCnyRates:
+        type: object
+        additionalProperties: { type: string, pattern: '^[0-9]+(\\.[0-9]{1,8})?$' }
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+- route: /admin/storage/buckets
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: list
+  operation_id: oss.buckets.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/storage/buckets
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: cursor
+    type: string
+    required: false
+    maxLength: 256
+  - name: page_size
+    required: false
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    type: string
+    required: false
+    maxLength: 64
+  - name: logical_scope
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_type
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_id
+    type: string
+    required: false
+    maxLength: 128
+  - name: run_type
+    type: string
+    required: false
+    maxLength: 64
+- route: /admin/storage/buckets
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: create
+  operation_id: oss.buckets.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/storage/buckets
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+  request_schema:
+    name: AdminStorageBucketCreateRequest
+    required:
+    - bucketName
+    - providerId
+    - logicalScope
+    properties:
+      bucketName:
+        type: string
+        minLength: 1
+        maxLength: 128
+      providerId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      logicalScope:
+        type: string
+        enum:
+        - migration_import
+        - system_archive
+        - system_quarantine
+        - system_temp
+        - system_variant
+        - tenant_private
+        - tenant_public_asset
+      bucketRegion:
+        type: string
+        nullable: true
+        maxLength: 64
+      dataResidencyRegion:
+        type: string
+        nullable: true
+        maxLength: 64
+      objectKeyPrefix:
+        type: string
+        nullable: true
+        maxLength: 512
+      defaultStorageClass:
+        type: string
+        nullable: true
+        enum:
+        - STANDARD
+        - INTELLIGENT_TIERING
+        - STANDARD_IA
+        - ONEZONE_IA
+        - GLACIER_IR
+        - GLACIER
+        - DEEP_ARCHIVE
+      defaultEncryptionMode:
+        type: string
+        nullable: true
+        enum:
+        - none
+        - sse_kms
+        - sse_s3
+      kmsKeyRef:
+        type: string
+        nullable: true
+        maxLength: 256
+      versioningEnabled:
+        type: boolean
+        nullable: true
+      objectLockEnabled:
+        type: boolean
+        nullable: true
+      lifecycleEnabled:
+        type: boolean
+        nullable: true
+      publicAccessBlocked:
+        type: boolean
+        nullable: true
+  idempotency_required: true
+- route: /admin/storage/buckets/{bucketId}
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: update
+  operation_id: oss.buckets.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/storage/buckets/{bucketId}
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+  request_schema:
+    name: AdminStorageStatusUpdateRequest
+    required:
+    - status
+    - reason
+    properties:
+      status:
+        type: string
+        enum:
+        - active
+        - archived
+        - disabled
+      reason:
+        type: string
+        minLength: 1
+        maxLength: 512
+- route: /admin/storage/default_buckets
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: list
+  operation_id: defaultBuckets.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/storage/default_buckets
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: cursor
+    type: string
+    required: false
+    maxLength: 256
+  - name: page_size
+    required: false
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    type: string
+    required: false
+    maxLength: 64
+  - name: logical_scope
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_type
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_id
+    type: string
+    required: false
+    maxLength: 128
+  - name: run_type
+    type: string
+    required: false
+    maxLength: 64
+- route: /admin/storage/default_buckets/{logicalScope}
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: update
+  operation_id: defaultBuckets.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/storage/default_buckets/{logicalScope}
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+  request_schema:
+    name: AdminStorageDefaultBucketUpdateRequest
+    required:
+    - bucketId
+    - reason
+    properties:
+      bucketId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      reason:
+        type: string
+        minLength: 1
+        maxLength: 512
+- route: /admin/storage/gc_jobs
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: list
+  operation_id: gcJobs.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/storage/gc_jobs
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: cursor
+    type: string
+    required: false
+    maxLength: 256
+  - name: page_size
+    required: false
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    type: string
+    required: false
+    maxLength: 64
+  - name: logical_scope
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_type
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_id
+    type: string
+    required: false
+    maxLength: 128
+  - name: run_type
+    type: string
+    required: false
+    maxLength: 64
+- route: /admin/storage/gc_jobs
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: create
+  operation_id: gcJobs.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/storage/gc_jobs
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+  request_schema:
+    name: AdminStorageGarbageCollectionCreateRequest
+    properties:
+      jobType:
+        type: string
+        nullable: true
+        maxLength: 64
+      target:
+        type: string
+        nullable: true
+        maxLength: 64
+      dryRun:
+        type: boolean
+        nullable: true
+      retentionWindow:
+        type: string
+        nullable: true
+        maxLength: 64
+      dryRunSample:
+        type: string
+        nullable: true
+        maxLength: 64
+      criteria:
+        type: object
+        nullable: true
+        additionalProperties: true
+  idempotency_required: true
+- route: /admin/storage/providers
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: list
+  operation_id: oss.providers.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/storage/providers
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: cursor
+    type: string
+    required: false
+    maxLength: 256
+  - name: page_size
+    required: false
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    type: string
+    required: false
+    maxLength: 64
+  - name: logical_scope
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_type
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_id
+    type: string
+    required: false
+    maxLength: 128
+  - name: run_type
+    type: string
+    required: false
+    maxLength: 64
+- route: /admin/storage/providers
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: create
+  operation_id: oss.providers.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/storage/providers
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+  request_schema:
+    name: AdminStorageProviderCreateRequest
+    required:
+    - providerCode
+    - providerType
+    - credentialRef
+    properties:
+      providerCode:
+        type: string
+        minLength: 1
+        maxLength: 96
+      providerType:
+        type: string
+        enum:
+        - aws_s3
+        - cloudflare_r2
+        - cos_s3
+        - local_dev_s3
+        - minio
+        - oss_s3
+        - s3_compatible
+      endpointUrl:
+        type: string
+        nullable: true
+        maxLength: 512
+      region:
+        type: string
+        nullable: true
+        maxLength: 64
+      credentialRef:
+        type: string
+        minLength: 1
+        maxLength: 256
+      pathStyleEnabled:
+        type: boolean
+        nullable: true
+      supportsMultipart:
+        type: boolean
+        nullable: true
+      supportsLifecycle:
+        type: boolean
+        nullable: true
+      supportsObjectLock:
+        type: boolean
+        nullable: true
+  idempotency_required: true
+- route: /admin/storage/providers/{providerId}
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: update
+  operation_id: oss.providers.update
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/storage/providers/{providerId}
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+  request_schema:
+    name: AdminStorageStatusUpdateRequest
+    required:
+    - status
+    - reason
+    properties:
+      status:
+        type: string
+        enum:
+        - active
+        - archived
+        - disabled
+      reason:
+        type: string
+        minLength: 1
+        maxLength: 512
+- route: /admin/storage/providers/{providerId}/health_check
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
+  operation: create
+  operation_id: providers.healthCheck.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/storage/providers/{providerId}/health_check
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+- route: /admin/storage/quotas
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: list
+  operation_id: oss.quotas.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/storage/quotas
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: cursor
+    type: string
+    required: false
+    maxLength: 256
+  - name: page_size
+    required: false
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    type: string
+    required: false
+    maxLength: 64
+  - name: logical_scope
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_type
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_id
+    type: string
+    required: false
+    maxLength: 128
+  - name: run_type
+    type: string
+    required: false
+    maxLength: 64
+- route: /admin/storage/quotas
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: create
+  operation_id: oss.quotas.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/storage/quotas
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: true
+  write_tables:
+  - ops_audit_log
+  request_schema:
+    name: AdminStorageQuotaCreateRequest
+    required:
+    - scopeType
+    - scopeId
+    - quotaLimitBytes
+    properties:
+      scopeType:
+        type: string
+        enum:
+        - app
+        - organization
+        - space
+        - tenant
+        - user
+      scopeId:
+        type: string
+        minLength: 1
+        maxLength: 128
+      quotaLimitBytes:
+        type: integer
+        format: int64
+        minimum: 0
+      singleFileLimitBytes:
+        type: integer
+        format: int64
+        minimum: 0
+        nullable: true
+      enforcement:
+        type: string
+        nullable: true
+        maxLength: 64
+  idempotency_required: true
+- route: /admin/storage/reconciliation_runs
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: list
+  operation_id: oss.storageReconciliationRuns.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/storage/reconciliation_runs
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: cursor
+    type: string
+    required: false
+    maxLength: 256
+  - name: page_size
+    required: false
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    type: string
+    required: false
+    maxLength: 64
+  - name: logical_scope
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_type
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_id
+    type: string
+    required: false
+    maxLength: 128
+  - name: run_type
+    type: string
+    required: false
+    maxLength: 64
+- route: /admin/storage/reconciliation_runs
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: create
+  operation_id: oss.storageReconciliationRuns.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/storage/reconciliation_runs
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  request_body_required: false
+  write_tables:
+  - ops_audit_log
+  request_schema:
+    name: AdminStorageReconciliationCreateRequest
+    properties:
+      providerId:
+        type: string
+        nullable: true
+        maxLength: 128
+      bucketId:
+        type: string
+        nullable: true
+        maxLength: 128
+      runType:
+        type: string
+        nullable: true
+        maxLength: 64
+      dryRun:
+        type: boolean
+        nullable: true
+      reason:
+        type: string
+        nullable: true
+        maxLength: 512
+  idempotency_required: true
+- route: /admin/storage/usage
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: list
+  operation_id: oss.usage.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/storage/usage
+  read_sources:
+  - storage
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: cursor
+    type: string
+    required: false
+    maxLength: 256
+  - name: page_size
+    required: false
+    schema: { type: integer, minimum: 1, maximum: 200 }
+  - name: status
+    type: string
+    required: false
+    maxLength: 64
+  - name: logical_scope
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_type
+    type: string
+    required: false
+    maxLength: 64
+  - name: scope_id
+    type: string
+    required: false
+    maxLength: 128
+  - name: run_type
+    type: string
+    required: false
+    maxLength: 64
+- route: /admin/marketing/referrals
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
+  operation: list
+  operation_id: system.marketing.referralStats.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/marketing/referral_stats
+  read_sources:
+  - growth_referral_stats
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200 }
 frontend_models:
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -5554,6 +7544,9 @@ frontend_models:
   fields:
   - id
   - name
+  - deploymentProfile
+  - baseUrl
+  - domains
   - domain
   - ip
   - remark
@@ -5564,16 +7557,12 @@ frontend_models:
   - ops_gateway_instance
 - route: /admin/service-nodes
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
-  interface: ServiceNodeDeleteOutcome
-  fields:
-  - deleted
-  data_sources:
-  - ops_gateway_instance
-- route: /admin/service-nodes
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   interface: ServiceNodeInput
   fields:
   - name
+  - deploymentProfile
+  - baseUrl
+  - domains
   - domain
   - ip
   - remark
@@ -6449,3 +8438,173 @@ routes:
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-documents-app-sdk
+- route: /admin/marketing
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/budget-ledger
+  required_tables:
+  - commerce_usage_settlement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/discount-allocations
+  required_tables:
+  - commerce_usage_settlement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/discount-applications
+  required_tables:
+  - commerce_usage_settlement
+  - commerce_usage_statement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/events
+  required_tables:
+  - commerce_usage_settlement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/external-bindings
+  required_tables:
+  - commerce_usage_settlement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/offers
+  required_tables:
+  - commerce_usage_settlement
+  - commerce_usage_statement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/promotion-code-redemptions
+  required_tables:
+  - commerce_usage_settlement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/promotion-codes
+  required_tables:
+  - commerce_usage_settlement
+  - commerce_usage_statement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/promotion-coupon-ledger
+  required_tables:
+  - commerce_usage_settlement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/promotion-coupon-stocks
+  required_tables:
+  - commerce_usage_settlement
+  - commerce_usage_statement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/referrals
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/marketing/user-coupons
+  required_tables:
+  - commerce_usage_settlement
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/attempts
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/channels
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/intents
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/methods
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/provider-accounts
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/providers
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/reconciliation-runs
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/route-rules
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/payments/webhook-events
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/storage
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/storage/buckets
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/storage/default-buckets
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/storage/garbage-collection
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/storage/providers
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/storage/quotas
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/storage/reconciliation
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
+- route: /admin/storage/usage
+  required_tables:
+  - ops_audit_log
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-clawrouter-backend-sdk

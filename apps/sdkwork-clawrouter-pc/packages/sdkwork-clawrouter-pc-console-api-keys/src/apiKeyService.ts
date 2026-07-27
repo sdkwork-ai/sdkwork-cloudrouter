@@ -8,7 +8,6 @@ import {
   optionalText as optionalQueryText,
   pruneUndefinedQueryParams,
   readBoolean,
-  readRequiredApiItem,
   readApiRecord,
   readNullableString,
   readRequiredApiItems,
@@ -117,14 +116,11 @@ export class ApiKeyService {
       );
 
       const data = readApiRecord(result);
-      const rawKey = readString(data, 'rawKey');
+      const rawKey = readString(data, 'copyableKey');
       if (!rawKey) {
         throw new Error('API key creation response is missing key material');
       }
-      const key = normalizeCreatedApiKey(
-        readRequiredApiItem(result, 'API key creation response is missing key data', ['item']),
-        rawKey,
-      );
+      const key = normalizeCreatedApiKey(data, rawKey);
       return { key, rawKey };
     } catch (error) {
       throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.createFallback'));
@@ -137,7 +133,7 @@ export class ApiKeyService {
         requiredText(keyId, 'apiKeyId'),
         toUpdateApiKeyRequest(input),
       );
-      return normalizeApiKey(readRequiredApiItem(result, 'API key update response is missing key data', ['item']));
+      return normalizeApiKey(result);
     } catch (error) {
       throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.updateFallback'));
     }

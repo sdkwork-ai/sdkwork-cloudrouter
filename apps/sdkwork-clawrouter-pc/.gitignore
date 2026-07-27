@@ -6,6 +6,8 @@ coverage/
 *.log
 .env*
 !.env*.example
+!.env.standalone.*
+!.env.cloud.*
 
 # Host profile env files (.env.development, …) are ignored via .env*
 config/*.local.toml

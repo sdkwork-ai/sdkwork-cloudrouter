@@ -5,9 +5,7 @@ use axum::http::request::Parts;
 use axum::http::{Extensions, HeaderMap};
 use axum::response::Response;
 
-use crate::api::app_sql_subject::{
-    resolve_optional_app_sql_subject, SqlScopedSubject,
-};
+use crate::api::app_sql_subject::{resolve_optional_app_sql_subject, SqlScopedSubject};
 use crate::api::subject::unauthorized_subject_response;
 
 /// Operator scope for Claw SQL admin stores that persist BIGINT subject columns.

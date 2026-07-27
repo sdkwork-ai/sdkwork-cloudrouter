@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/clawrouter-app-sdk"
   },
-  "changeFingerprint": "9099f0a3b47eb8970c7fdfbc15121ed3f332246643bb5fe6ca59ad013743cdef",
+  "changeFingerprint": "23f96e6888f5f1e566c77d7c9661c0bf4729a8ed0480b97148df03b44cf8df2d",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -37,7 +37,13 @@
       "src/http/index.ts",
       "src/index.ts",
       "src/sdk.ts",
+      "src/types/app-api-key-item.ts",
+      "src/types/app-api-key-list-response.ts",
+      "src/types/app-channel-group-list-response.ts",
+      "src/types/app-channel-group.ts",
       "src/types/common.ts",
+      "src/types/create-api-key-request.ts",
+      "src/types/create-api-key-response.ts",
       "src/types/dashboard-announcement.ts",
       "src/types/dashboard-chart-point.ts",
       "src/types/dashboard-configuration-domain.ts",
@@ -60,6 +66,8 @@
       "src/types/sdk-work-platform-error-code.ts",
       "src/types/sdk-work-resource-data.ts",
       "src/types/sdk-work-resource-response.ts",
+      "src/types/update-api-key-request.ts",
+      "src/types/update-api-key-response.ts",
       "tsconfig.json"
     ],
     "updatedGeneratedFiles": [],
@@ -105,7 +113,13 @@
       {
         "area": "models",
         "paths": [
+          "src/types/app-api-key-item.ts",
+          "src/types/app-api-key-list-response.ts",
+          "src/types/app-channel-group-list-response.ts",
+          "src/types/app-channel-group.ts",
           "src/types/common.ts",
+          "src/types/create-api-key-request.ts",
+          "src/types/create-api-key-response.ts",
           "src/types/dashboard-announcement.ts",
           "src/types/dashboard-chart-point.ts",
           "src/types/dashboard-configuration-domain.ts",
@@ -127,7 +141,9 @@
           "src/types/sdk-work-page-data.ts",
           "src/types/sdk-work-platform-error-code.ts",
           "src/types/sdk-work-resource-data.ts",
-          "src/types/sdk-work-resource-response.ts"
+          "src/types/sdk-work-resource-response.ts",
+          "src/types/update-api-key-request.ts",
+          "src/types/update-api-key-response.ts"
         ]
       },
       {
