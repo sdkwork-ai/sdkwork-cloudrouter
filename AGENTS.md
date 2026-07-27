@@ -112,7 +112,7 @@ Use canonical root package scripts from `PNPM_SCRIPT_SPEC.md`:
 
 - `pnpm dev`: default PostgreSQL, `standalone` browser dev workflow.
 - `pnpm dev:browser` and `pnpm dev:desktop`: same PostgreSQL standalone defaults for development orchestration.
-- `pnpm dev:browser:sqlite` or `pnpm dev:desktop:sqlite`: explicit SQLite development variants.
+- `pnpm dev:desktop:sqlite`: explicit client-local SQLite development variant.
 - `pnpm build`, `pnpm test`, `pnpm check`, `pnpm verify`, `pnpm clean`: standard root lifecycle commands.
 - `pnpm check:pnpm-script-standard`: validate package script standardization.
 - `pnpm check:agent-workflow-standard`: validate AGENTS and GitHub packaging workflow standardization.

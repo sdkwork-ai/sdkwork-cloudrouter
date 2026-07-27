@@ -219,10 +219,8 @@ test('root package exposes pnpm application entrypoints', () => {
   );
 
   const canonicalBrowser = 'node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --database postgres --dev-env-file .env.postgres';
-  const canonicalBrowserSqlite = 'node scripts/claw-router-dev.mjs --target browser --deployment-profile standalone --database sqlite';
   const canonicalDesktop = 'node scripts/claw-router-dev.mjs --target desktop --deployment-profile standalone --database postgres --dev-env-file .env.postgres';
   const canonicalDesktopSqlite = 'node scripts/claw-router-dev.mjs --target desktop --deployment-profile standalone --database sqlite';
-  const canonicalPlanSqlite = 'node scripts/claw-router-dev.mjs --target plan --deployment-profile standalone --database sqlite';
   const canonicalPlanPostgres = 'node scripts/claw-router-dev.mjs --target plan --deployment-profile standalone --database postgres --dev-env-file .env.postgres';
 
   assert.equal(rootPackage.private, true);
@@ -230,7 +228,7 @@ test('root package exposes pnpm application entrypoints', () => {
   assert.equal(rootPackage.scripts.dev, 'pnpm install:deps:ensure && pnpm dev:browser');
   assert.equal(rootPackage.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
   assert.equal(rootPackage.scripts['dev:browser:postgres'], 'pnpm dev:browser:postgres:standalone');
-  assert.equal(rootPackage.scripts['dev:browser:sqlite'], canonicalBrowserSqlite);
+  assert.equal(rootPackage.scripts['dev:browser:sqlite'], undefined);
   assert.equal(rootPackage.scripts['dev:browser:postgres:standalone'], canonicalBrowser);
   assert.equal(
     rootPackage.scripts.test,
@@ -317,9 +315,9 @@ test('root package exposes pnpm application entrypoints', () => {
   assert.equal(rootPackage.scripts['dev:service:sqlite'], undefined);
   assert.equal(rootPackage.scripts['dev:portal'], undefined);
   assert.equal(rootPackage.scripts['dev:server'], 'pnpm dev:browser:postgres:standalone');
-  assert.equal(rootPackage.scripts['dev:server:sqlite'], canonicalBrowserSqlite);
+  assert.equal(rootPackage.scripts['dev:server:sqlite'], undefined);
   assert.equal(rootPackage.scripts['dev:server:postgres'], 'pnpm dev:browser:postgres:standalone');
-  assert.equal(rootPackage.scripts['topology:plan:server:sqlite'], canonicalPlanSqlite);
+  assert.equal(rootPackage.scripts['topology:plan:server:sqlite'], undefined);
   assert.equal(rootPackage.scripts['topology:plan:server:postgres'], canonicalPlanPostgres);
   assert.equal(
     rootPackage.scripts['smoke:dev'],
@@ -461,7 +459,7 @@ test('pnpm dev delegates to canonical browser topology command', () => {
   assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /--target browser/u);
   assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /--deployment-profile standalone/u);
   assert.doesNotMatch(rootPackage.scripts['dev:browser:postgres:standalone'], /client/u);
-  assert.doesNotMatch(rootPackage.scripts['dev:browser:sqlite'], /client/u);
+  assert.equal(rootPackage.scripts['dev:browser:sqlite'], undefined);
 });
 
 test('application metadata does not own a platform gateway host or catalog', () => {
@@ -1762,7 +1760,7 @@ test('claw router application launcher help distinguishes workspace PostgreSQL f
   assert.ok(stdout.includes('pnpm dev:browser starts the topology-aware integrated product server workspace'));
   assert.ok(stdout.includes('pnpm dev:desktop starts the desktop dev workspace with PostgreSQL and standalone topology by default'));
   assert.ok(stdout.includes('Desktop packages and first-run local user data use SQLite under ~/.sdkwork/router/data.'));
-  assert.ok(stdout.includes('Use pnpm dev:browser:sqlite or pnpm dev:desktop:sqlite to validate explicit SQLite behavior.'));
+  assert.ok(stdout.includes('Use pnpm dev:desktop:sqlite to validate client-local SQLite behavior.'));
 });
 
 test('claw router application launcher parses dev env file before forwarded workspace arguments', async () => {

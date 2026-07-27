@@ -29,7 +29,7 @@ before completion*.
 ```powershell
 pnpm install --no-frozen-lockfile
 pnpm dev                 # default PostgreSQL standalone
-pnpm dev:server:sqlite   # SQLite variant for fast local iteration
+pnpm dev:desktop:sqlite  # Client-local SQLite variant
 ```
 
 Required tooling:

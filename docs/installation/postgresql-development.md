@@ -11,8 +11,7 @@ server database profile.
 Workspace desktop commands are gateway-backed client commands. They start the
 desktop shell plus `sdkwork-api-cloud-gateway`, not a product backend service. Use
 `pnpm dev:server` for PostgreSQL-backed product server debugging and
-`pnpm dev:server:sqlite` when validating the explicit product server SQLite
-profile. This is not the packaged desktop local-data policy.
+`pnpm dev:desktop:sqlite` for the client-local SQLite profile.
 Use `pnpm dev:server` for PostgreSQL-backed product server debugging.
 Desktop packages and desktop user data still use SQLite by default.
 
@@ -121,14 +120,13 @@ pnpm dev:server:postgres
 pnpm topology:plan:server:postgres
 ```
 
-Use SQLite only through the explicit product server SQLite entrypoints:
+Use SQLite only through the client-local desktop entrypoint:
 
 ```powershell
-pnpm dev:server:sqlite
-pnpm topology:plan:server:sqlite
+pnpm dev:desktop:sqlite
 ```
 
-Use those SQLite entrypoints, or a desktop package, when validating local data
+Use that SQLite entrypoint, or a desktop package, when validating local data
 behavior. The PostgreSQL dev profile is not the desktop persistence default.
 
 ## 4. Configuration Precedence
@@ -138,7 +136,7 @@ Development startup resolves the database in this order:
 1. `SDKWORK_CLAW_DATABASE_URL`
 2. `SDKWORK_CLAW_DATABASE_ENGINE/HOST/PORT/NAME/USERNAME/PASSWORD/SSL_MODE`
 3. Default local PostgreSQL dev database
-4. Explicit product server SQLite entrypoints, which pass `--database-url sqlite://target/dev/clawrouter.sqlite`
+4. The client-local desktop SQLite profile
 
 Normal local PostgreSQL development should use the default profile or split fields. Set `SDKWORK_CLAW_DATABASE_URL` only for a temporary explicit override.
 
@@ -146,9 +144,8 @@ Unsupported engines fail startup. A PostgreSQL split-field profile must define `
 
 ## 5. Troubleshooting
 
-If product server startup shows SQLite in the dry-run output, check whether you
-used `pnpm dev:server:sqlite`, `pnpm topology:plan:server:sqlite`, or passed
-`--database-url sqlite://target/dev/clawrouter.sqlite`.
+If product server startup shows SQLite in the dry-run output, remove the
+SQLite database override; product server development is PostgreSQL-only.
 
 If startup fails with a missing password error, add `SDKWORK_CLAW_DATABASE_PASSWORD` to `.env.postgres`. Empty passwords are not accepted for the split-field PostgreSQL profile.
 

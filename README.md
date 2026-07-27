@@ -402,11 +402,10 @@ or adjust the execution policy instead of changing committed scripts.
 Client development commands use `sdkwork-api-cloud-gateway` for API integration.
 Gateway-backed client commands (`pnpm dev:desktop`) use
 that gateway workspace. Explicit product server development commands use PostgreSQL for integration
-testing unless an explicit SQLite server profile is selected. Desktop packages and first-run local user data use SQLite under `~/.sdkwork/router/data`.
+testing. Desktop packages and first-run local user data use SQLite under `~/.sdkwork/router/data`.
 On Windows, the equivalent path is `%USERPROFILE%/.sdkwork/router/data`.
-Use `pnpm dev:server:sqlite` when validating explicit product server SQLite
-behavior from the workspace. `pnpm dev:desktop:sqlite` is a client-mode entrypoint
-and does not start a product backend service.
+Use `pnpm dev:desktop:sqlite` when validating client-local SQLite behavior; it
+does not select SQLite for a product backend service.
 
 Gateway-backed client startup (`pnpm dev:desktop`) prints
 the browser and API access matrix before launching processes. With default

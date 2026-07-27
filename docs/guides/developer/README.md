@@ -11,7 +11,7 @@ Specs: `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../sdkwork-spe
 - Node.js 22+ (LTS)
 - pnpm 10.33.0 (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
 - Rust stable toolchain with `rustfmt` and `clippy`
-- PostgreSQL 16 (for the default `unified-process` standalone development profile) or SQLite (for the lightweight `dev:browser:sqlite` variant)
+- PostgreSQL 16 for the standalone product server; SQLite is reserved for the client-local `dev:desktop:sqlite` variant
 
 ### Install and Start
 
@@ -25,7 +25,7 @@ pnpm.cmd dev
 For SQLite development (no PostgreSQL required):
 
 ```powershell
-pnpm.cmd dev:browser:sqlite
+pnpm.cmd dev:desktop:sqlite
 ```
 
 ### Database

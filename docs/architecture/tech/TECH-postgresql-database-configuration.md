@@ -12,9 +12,8 @@ SDKWork Claw Router supports two PostgreSQL configuration paths:
 - Integrated and explicit product server development: `pnpm dev`
   (aliases `pnpm dev`, `pnpm dev:server`) and `pnpm dev:server:postgres` use the
   local PostgreSQL profile from `.env.postgres` when present, otherwise
-  `.env.postgres.example` for the Claw Router backend service runtime. Use
-  `pnpm dev:server:sqlite` or `pnpm dev:browser:sqlite` only when explicit
-  product server SQLite behavior is intended. Gateway-backed client commands
+  `.env.postgres.example` for the Claw Router backend service runtime. SQLite
+  is not a product server profile. Gateway-backed client commands
   (`pnpm dev:desktop`, `pnpm dev:desktop`, and `pnpm dev:desktop`) do
   not start the product backend service.
 - Production environment: do not use `.env.postgres`. Use the protected runtime TOML file, process override file, and secret files from the OS-specific release layout.
@@ -26,9 +25,8 @@ assembles the split fields into the runtime-standard
 `SDKWORK_CLAW_DATABASE_URL` and passes that to the Rust services. This does not
 change the desktop package default: the desktop local data profile stores
 SQLite under `~/.sdkwork/router/data/clawrouter.sqlite` or
-`%USERPROFILE%/.sdkwork/router/data/clawrouter.sqlite` on Windows. SQLite also
-remains available through explicit product server development entrypoints such
-as `pnpm dev:server:sqlite`.
+`%USERPROFILE%/.sdkwork/router/data/clawrouter.sqlite` on Windows. The explicit
+SQLite entrypoint is `pnpm dev:desktop:sqlite` and remains client-local.
 
 Workspace desktop development commands are gateway-backed client commands; they
 do not start a product backend service. Packaged desktop runtime and
@@ -64,4 +62,3 @@ Configuration precedence in development:
 4. Explicit SQLite entrypoints, which pass `--database-url sqlite://target/dev/clawrouter.sqlite`
 
 Use the default local PostgreSQL profile for normal development, and use split fields for customized `.env.postgres` files. Use `SDKWORK_CLAW_DATABASE_URL` only as an explicit temporary override.
-

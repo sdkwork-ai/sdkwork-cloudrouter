@@ -53,7 +53,7 @@ test('clawrouter console surface no longer depends on retired commerce PC packag
   assert.match(tailwindSource, /sdkwork-promotion-pc-coupon\/src/);
 });
 
-test('clawrouter admin is relay-focused and no longer mounts commerce or platform control-plane packages', () => {
+test('clawrouter admin mounts standalone business control centers without legacy commerce facades', () => {
   const packageJson = JSON.parse(readPortalFile('./package.json')) as { dependencies: Record<string, string> };
   const appSource = readPortalFile('./src/App.tsx');
   const registrySource = readPortalFile('./packages/sdkwork-clawrouter-pc-admin-shell/src/adminModuleRegistry.ts');
@@ -66,9 +66,6 @@ test('clawrouter admin is relay-focused and no longer mounts commerce or platfor
     '@sdkwork/file-platform-pc-react',
     '@sdkwork/clawrouter-pc-admin-catalog',
     '@sdkwork/clawrouter-pc-admin-orders',
-    '@sdkwork/clawrouter-pc-admin-payments',
-    '@sdkwork/clawrouter-pc-admin-memberships',
-    '@sdkwork/clawrouter-pc-admin-marketing',
     '@sdkwork/clawrouter-pc-admin-finance',
     '@sdkwork/clawrouter-pc-admin-wallet',
     '@sdkwork/clawrouter-pc-admin-messaging',
@@ -87,16 +84,40 @@ test('clawrouter admin is relay-focused and no longer mounts commerce or platfor
     assert.equal(packageJson.dependencies[pkg], undefined, `package.json must not depend on ${pkg}`);
   }
 
-  assert.doesNotMatch(appSource, /InventoryAdmin|FilePlatformAdmin|DriveAdmin|CatalogAdmin|OrdersAdmin|PaymentsAdmin|MembershipsAdmin|MarketingAdmin|FinanceAdmin|WalletAdmin|MessagingAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|OauthAdmin|ServiceProviderAdmin/);
-  assert.doesNotMatch(registrySource, /storageCenter|driveCenter|productCenter|transactionCenter|memberCenter|marketingCenter|financeCenter|serviceProviderCenter|messagingCenter|appCenter/);
-  assert.doesNotMatch(permissionSource, /\/admin\/inventory|\/admin\/storage|\/admin\/drive|\/admin\/catalog|\/admin\/orders|\/admin\/payments|\/admin\/memberships|\/admin\/marketing|\/admin\/finance|\/admin\/wallet|\/admin\/oauth|\/admin\/service-providers|commerce\./);
+  for (const pkg of [
+    '@sdkwork/clawrouter-pc-admin-marketing',
+    '@sdkwork/clawrouter-pc-admin-memberships',
+    '@sdkwork/clawrouter-pc-admin-payments',
+    '@sdkwork/clawrouter-pc-admin-storage',
+  ]) {
+    assert.equal(packageJson.dependencies[pkg], 'workspace:*', `package.json must compose ${pkg}`);
+  }
+
+  assert.doesNotMatch(appSource, /InventoryAdmin|FilePlatformAdmin|DriveAdmin|CatalogAdmin|OrdersAdmin|FinanceAdmin|WalletAdmin|MessagingAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|OauthAdmin|ServiceProviderAdmin/);
+  assert.match(registrySource, /id:\s*'membershipCenter'/);
+  assert.match(registrySource, /id:\s*'marketingCenter'/);
+  assert.match(registrySource, /id:\s*'paymentCenter'/);
+  assert.match(registrySource, /id:\s*'storageCenter'/);
+  assert.doesNotMatch(registrySource, /driveCenter|productCenter|transactionCenter|financeCenter|serviceProviderCenter|messagingCenter|appCenter|\/admin\/inventory/);
+  assert.doesNotMatch(permissionSource, /\/admin\/inventory|\/admin\/drive|\/admin\/catalog|\/admin\/orders|\/admin\/finance|\/admin\/wallet|\/admin\/oauth|\/admin\/service-providers|commerce\./);
   assert.match(registrySource, /id:\s*'home'/);
   assert.match(registrySource, /id:\s*'operations'/);
   assert.doesNotMatch(sdkInventorySource, /commerce-backend-sdk|commerce-app-sdk/);
   assert.match(sdkInventorySource, /clawrouter-backend-sdk/);
+
+  for (const servicePath of [
+    './packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts',
+    './packages/sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts',
+    './packages/sdkwork-clawrouter-pc-admin-payments/src/paymentsService.ts',
+    './packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts',
+  ]) {
+    const serviceSource = readPortalFile(servicePath);
+    assert.match(serviceSource, /getClawRouterBackendSdkClient\(\)/, `${servicePath} must use the backend SDK boundary`);
+    assert.doesNotMatch(serviceSource, /\bfetch\s*\(|axios|XMLHttpRequest/, `${servicePath} must not bypass the generated SDK`);
+  }
 });
 
-test('clawrouter admin no longer mounts inventory or file-platform control-plane packages', () => {
+test('clawrouter admin owns storage governance without mounting inventory or Drive control planes', () => {
   const packageJson = JSON.parse(readPortalFile('./package.json')) as { dependencies: Record<string, string> };
   const appSource = readPortalFile('./src/App.tsx');
   const registrySource = readPortalFile('./packages/sdkwork-clawrouter-pc-admin-shell/src/adminModuleRegistry.ts');
@@ -105,9 +126,12 @@ test('clawrouter admin no longer mounts inventory or file-platform control-plane
   assert.equal(packageJson.dependencies['@sdkwork/clawrouter-pc-admin-inventory'], undefined);
   assert.equal(packageJson.dependencies['@sdkwork/clawrouter-pc-admin-file-platform'], undefined);
   assert.equal(packageJson.dependencies['@sdkwork/file-platform-pc-react'], undefined);
+  assert.equal(packageJson.dependencies['@sdkwork/clawrouter-pc-admin-storage'], 'workspace:*');
   assert.doesNotMatch(appSource, /InventoryAdmin|FilePlatformAdmin|DriveAdmin/);
-  assert.doesNotMatch(registrySource, /storageCenter|driveCenter|\/admin\/inventory/);
-  assert.doesNotMatch(permissionSource, /\/admin\/inventory|\/admin\/storage|\/admin\/drive/);
+  assert.match(registrySource, /storageCenter/);
+  assert.match(registrySource, /\/admin\/storage\/providers/);
+  assert.doesNotMatch(registrySource, /driveCenter|\/admin\/inventory/);
+  assert.doesNotMatch(permissionSource, /\/admin\/inventory|\/admin\/drive/);
 });
 
 test('clawrouter portal no longer declares legacy commerce facade packages', () => {
@@ -207,21 +231,17 @@ test('legacy commerce common packages directory is removed', () => {
   assert.equal(existsSync(legacyCommerceRoot), false);
 });
 
-test('frontend field contract excludes retired relay-external admin operation routes', () => {
+test('frontend field contract exposes standalone business centers and excludes retired external routes', () => {
   const contractSource = readPortalFile('../../docs/schema-registry/frontend-field-contracts.yaml');
 
   for (const retiredPrefix of [
     '/admin/catalog',
     '/admin/orders',
-    '/admin/payments',
-    '/admin/memberships',
-    '/admin/promotions',
     '/admin/wallet',
     '/admin/inventory',
     '/admin/messaging',
     '/admin/mcp',
     '/admin/service_providers',
-    '/admin/storage',
     '/admin/reports',
     '/admin/iam',
     '/admin/system/after_sales',
@@ -237,6 +257,10 @@ test('frontend field contract excludes retired relay-external admin operation ro
 
   assert.match(contractSource, /^- route: \/admin\/channel$/m);
   assert.match(contractSource, /^- route: \/admin\/cache$/m);
+  assert.match(contractSource, /^- route: \/admin\/memberships\//m);
+  assert.match(contractSource, /^- route: \/admin\/marketing\//m);
+  assert.match(contractSource, /^- route: \/admin\/payments\//m);
+  assert.match(contractSource, /^- route: \/admin\/storage\//m);
 });
 
 test('backend SDK exposes system settings resources for admin control-plane pages', () => {
