@@ -3450,7 +3450,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -3458,7 +3459,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -4828,11 +4831,11 @@
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": true,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/buckets",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageBucketCreate@/admin/storage/buckets",
       "kind": "create",
       "module": "pc-admin-storage",
       "openapi_exposed": true,
-      "operation": "create",
+      "operation": "backendStorageBucketCreate",
       "operation_id": "oss.buckets.create",
       "path_params": [],
       "query_parameters": [],
@@ -4959,16 +4962,279 @@
       ]
     },
     {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/buckets",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageBucketsList@/admin/storage/buckets",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "backendStorageBucketsList",
+      "operation_id": "oss.buckets.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/buckets",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/storage/default_buckets/{logicalScope}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageDefaultBucketUpdate@/admin/storage/defaultBuckets",
+      "kind": "update",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "backendStorageDefaultBucketUpdate",
+      "operation_id": "defaultBuckets.update",
+      "path_params": [
+        "logicalScope"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageDefaultBucketUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageDefaultBucketUpdateRequest",
+          "properties": {
+            "bucketId": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "reason": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "bucketId",
+            "reason"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/defaultBuckets",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/default_buckets",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageDefaultBucketsList@/admin/storage/defaultBuckets",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "backendStorageDefaultBucketsList",
+      "operation_id": "defaultBuckets.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/defaultBuckets",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
       "api_method": "POST",
       "api_path": "/backend/v3/api/storage/gc_jobs",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": true,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/gc_jobs",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageGarbageCollectionJobCreate@/admin/storage/garbageCollection",
       "kind": "create",
       "module": "pc-admin-storage",
       "openapi_exposed": true,
-      "operation": "create",
+      "operation": "backendStorageGarbageCollectionJobCreate",
       "operation_id": "gcJobs.create",
       "path_params": [],
       "query_parameters": [],
@@ -5026,7 +5292,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/storage/gc_jobs",
+      "route": "/admin/storage/garbageCollection",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -5039,16 +5305,114 @@
       ]
     },
     {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/gc_jobs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageGarbageCollectionJobsList@/admin/storage/garbageCollection",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "backendStorageGarbageCollectionJobsList",
+      "operation_id": "gcJobs.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/garbageCollection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
       "api_method": "POST",
       "api_path": "/backend/v3/api/storage/providers",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": true,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/providers",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageProviderCreate@/admin/storage/providers",
       "kind": "create",
       "module": "pc-admin-storage",
       "openapi_exposed": true,
-      "operation": "create",
+      "operation": "backendStorageProviderCreate",
       "operation_id": "oss.providers.create",
       "path_params": [],
       "query_parameters": [],
@@ -5144,15 +5508,156 @@
     },
     {
       "api_method": "POST",
+      "api_path": "/backend/v3/api/storage/providers/{providerId}/health_check",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageProviderHealthCheck@/admin/storage/providers",
+      "kind": "create",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "backendStorageProviderHealthCheck",
+      "operation_id": "providers.healthCheck",
+      "path_params": [
+        "providerId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/providers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/storage/providers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageProvidersList@/admin/storage/providers",
+      "kind": "read",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "backendStorageProvidersList",
+      "operation_id": "oss.providers.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "logical_scope",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "scope_id",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "run_type",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/providers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
       "api_path": "/backend/v3/api/storage/quotas",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": true,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/quotas",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageQuotaCreate@/admin/storage/quotas",
       "kind": "create",
       "module": "pc-admin-storage",
       "openapi_exposed": true,
-      "operation": "create",
+      "operation": "backendStorageQuotaCreate",
       "operation_id": "oss.quotas.create",
       "path_params": [],
       "query_parameters": [],
@@ -5234,475 +5739,16 @@
       ]
     },
     {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/reconciliation_runs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": true,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#create@/admin/storage/reconciliation_runs",
-      "kind": "create",
-      "module": "pc-admin-storage",
-      "openapi_exposed": true,
-      "operation": "create",
-      "operation_id": "oss.storageReconciliationRuns.create",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "AdminStorageReconciliationCreateRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "AdminStorageReconciliationCreateRequest",
-          "properties": {
-            "bucketId": {
-              "maxLength": 128,
-              "nullable": true,
-              "type": "string"
-            },
-            "dryRun": {
-              "nullable": true,
-              "type": "boolean"
-            },
-            "providerId": {
-              "maxLength": 128,
-              "nullable": true,
-              "type": "string"
-            },
-            "reason": {
-              "maxLength": 512,
-              "nullable": true,
-              "type": "string"
-            },
-            "runType": {
-              "maxLength": 64,
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/reconciliation_runs",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-      "tag": "storage",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/buckets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/buckets",
-      "kind": "read",
-      "module": "pc-admin-storage",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "oss.buckets.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "cursor",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "status",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "logical_scope",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "scope_type",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "scope_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "run_type",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/buckets",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-      "tag": "storage",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/default_buckets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/default_buckets",
-      "kind": "read",
-      "module": "pc-admin-storage",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "defaultBuckets.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "cursor",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "status",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "logical_scope",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "scope_type",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "scope_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "run_type",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/default_buckets",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-      "tag": "storage",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/gc_jobs",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/gc_jobs",
-      "kind": "read",
-      "module": "pc-admin-storage",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "gcJobs.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "cursor",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "status",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "logical_scope",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "scope_type",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "scope_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "run_type",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/gc_jobs",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-      "tag": "storage",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/providers",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/providers",
-      "kind": "read",
-      "module": "pc-admin-storage",
-      "openapi_exposed": true,
-      "operation": "list",
-      "operation_id": "oss.providers.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "cursor",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "status",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "logical_scope",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "scope_type",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "scope_id",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "run_type",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/providers",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-      "tag": "storage",
-      "write_tables": []
-    },
-    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/storage/quotas",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/quotas",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageQuotasList@/admin/storage/quotas",
       "kind": "read",
       "module": "pc-admin-storage",
       "openapi_exposed": true,
-      "operation": "list",
+      "operation": "backendStorageQuotasList",
       "operation_id": "oss.quotas.list",
       "path_params": [],
       "query_parameters": [
@@ -5719,7 +5765,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -5789,16 +5837,91 @@
       "write_tables": []
     },
     {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/storage/reconciliation_runs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageReconciliationRunCreate@/admin/storage/reconciliation",
+      "kind": "create",
+      "module": "pc-admin-storage",
+      "openapi_exposed": true,
+      "operation": "backendStorageReconciliationRunCreate",
+      "operation_id": "oss.storageReconciliationRuns.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageReconciliationCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageReconciliationCreateRequest",
+          "properties": {
+            "bucketId": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            },
+            "dryRun": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "providerId": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            },
+            "reason": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "runType": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/reconciliation",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/storage/reconciliation_runs",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/reconciliation_runs",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageReconciliationRunsList@/admin/storage/reconciliation",
       "kind": "read",
       "module": "pc-admin-storage",
       "openapi_exposed": true,
-      "operation": "list",
+      "operation": "backendStorageReconciliationRunsList",
       "operation_id": "oss.storageReconciliationRuns.list",
       "path_params": [],
       "query_parameters": [
@@ -5815,7 +5938,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -5874,7 +5999,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/storage/reconciliation_runs",
+      "route": "/admin/storage/reconciliation",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -5890,11 +6015,11 @@
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#list@/admin/storage/usage",
+      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#backendStorageUsageList@/admin/storage/usage",
       "kind": "read",
       "module": "pc-admin-storage",
       "openapi_exposed": true,
-      "operation": "list",
+      "operation": "backendStorageUsageList",
       "operation_id": "oss.usage.list",
       "path_params": [],
       "query_parameters": [
@@ -5911,7 +6036,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -5979,213 +6106,6 @@
       "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
       "tag": "storage",
       "write_tables": []
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/storage/buckets/{bucketId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#update@/admin/storage/buckets/{bucketId}",
-      "kind": "update",
-      "module": "pc-admin-storage",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "oss.buckets.update",
-      "path_params": [
-        "bucketId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "AdminStorageStatusUpdateRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "AdminStorageStatusUpdateRequest",
-          "properties": {
-            "reason": {
-              "maxLength": 512,
-              "minLength": 1,
-              "type": "string"
-            },
-            "status": {
-              "enum": [
-                "active",
-                "archived",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          },
-          "required": [
-            "status",
-            "reason"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/buckets/{bucketId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-      "tag": "storage",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/storage/default_buckets/{logicalScope}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#update@/admin/storage/default_buckets/{logicalScope}",
-      "kind": "update",
-      "module": "pc-admin-storage",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "defaultBuckets.update",
-      "path_params": [
-        "logicalScope"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "AdminStorageDefaultBucketUpdateRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "AdminStorageDefaultBucketUpdateRequest",
-          "properties": {
-            "bucketId": {
-              "maxLength": 128,
-              "minLength": 1,
-              "type": "string"
-            },
-            "reason": {
-              "maxLength": 512,
-              "minLength": 1,
-              "type": "string"
-            }
-          },
-          "required": [
-            "bucketId",
-            "reason"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/default_buckets/{logicalScope}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-      "tag": "storage",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "PATCH",
-      "api_path": "/backend/v3/api/storage/providers/{providerId}",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts#update@/admin/storage/providers/{providerId}",
-      "kind": "update",
-      "module": "pc-admin-storage",
-      "openapi_exposed": true,
-      "operation": "update",
-      "operation_id": "oss.providers.update",
-      "path_params": [
-        "providerId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": true,
-      "request_id_header": false,
-      "request_schema": {
-        "name": "AdminStorageStatusUpdateRequest",
-        "schema": {
-          "additionalProperties": false,
-          "name": "AdminStorageStatusUpdateRequest",
-          "properties": {
-            "reason": {
-              "maxLength": 512,
-              "minLength": 1,
-              "type": "string"
-            },
-            "status": {
-              "enum": [
-                "active",
-                "archived",
-                "disabled"
-              ],
-              "type": "string"
-            }
-          },
-          "required": [
-            "status",
-            "reason"
-          ],
-          "type": "object"
-        }
-      },
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/providers/{providerId}",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-      "tag": "storage",
-      "write_tables": [
-        "ops_audit_log"
-      ]
     },
     {
       "api_method": "POST",
@@ -12016,49 +11936,6 @@
       ]
     },
     {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/providers/{providerId}/health_check",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#create@/admin/storage/providers/{providerId}/health_check",
-      "kind": "create",
-      "module": "health_check",
-      "openapi_exposed": true,
-      "operation": "create",
-      "operation_id": "providers.healthCheck",
-      "path_params": [
-        "providerId"
-      ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
-      "read_sources": [
-        "storage"
-      ],
-      "request_body_required": false,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/storage/providers/{providerId}/health_check",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "storage",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "storage",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
       "api_method": "DELETE",
       "api_path": "/backend/v3/api/memberships/package_groups/{packageGroupId}",
       "api_surface": "backend",
@@ -12249,7 +12126,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12257,7 +12135,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12329,7 +12209,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12337,7 +12218,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12409,7 +12292,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12417,7 +12301,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12473,7 +12359,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12481,7 +12368,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12545,7 +12434,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12553,7 +12443,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12609,7 +12501,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12617,7 +12510,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12737,7 +12632,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12745,7 +12641,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12865,7 +12763,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12873,7 +12772,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -12993,7 +12894,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13001,7 +12903,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13121,7 +13025,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13129,7 +13034,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13249,7 +13156,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13257,7 +13165,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13377,7 +13287,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13385,7 +13296,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13505,7 +13418,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13513,7 +13427,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13633,7 +13549,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13641,7 +13558,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13761,7 +13680,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13769,7 +13689,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13889,7 +13811,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13897,7 +13820,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -13945,7 +13870,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -13953,7 +13879,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14001,7 +13929,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14009,7 +13938,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14057,7 +13988,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14065,7 +13997,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14113,7 +14047,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14121,7 +14056,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14169,7 +14106,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14177,7 +14115,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14225,7 +14165,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14233,7 +14174,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14281,7 +14224,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14289,7 +14233,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14337,7 +14283,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14345,7 +14292,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14393,7 +14342,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14401,7 +14351,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14449,7 +14401,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14457,7 +14410,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -14544,7 +14499,8 @@
           "name": "page",
           "required": false,
           "schema": {
-            "type": "string"
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -14552,7 +14508,9 @@
           "name": "page_size",
           "required": false,
           "schema": {
-            "type": "string"
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -15664,6 +15622,146 @@
       "sdk_family": "clawrouter-backend-sdk",
       "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
       "tag": "recharges",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/storage/buckets/{bucketId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/storage/buckets/{bucketId}",
+      "kind": "update",
+      "module": "{bucketId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "oss.buckets.update",
+      "path_params": [
+        "bucketId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageStatusUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageStatusUpdateRequest",
+          "properties": {
+            "reason": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "archived",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/buckets/{bucketId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "storage",
+      "write_tables": [
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/storage/providers/{providerId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#update@/admin/storage/providers/{providerId}",
+      "kind": "update",
+      "module": "{providerId}",
+      "openapi_exposed": true,
+      "operation": "update",
+      "operation_id": "oss.providers.update",
+      "path_params": [
+        "providerId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "storage"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminStorageStatusUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminStorageStatusUpdateRequest",
+          "properties": {
+            "reason": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "archived",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/storage/providers/{providerId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "storage",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+      "tag": "storage",
       "write_tables": [
         "ops_audit_log"
       ]

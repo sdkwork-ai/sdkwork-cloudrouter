@@ -11,7 +11,7 @@ export type StorageReconciliationCreateInput = NonNullable<Parameters<BackendSto
 export type StorageGarbageCollectionCreateInput = NonNullable<Parameters<BackendStorageService['gcJobs']['create']>[1]>;
 
 export async function backendStorageProvidersList(pageSize = 100) {
-  return getClawRouterBackendSdkClient().storage.oss.providers.list({ pageSize: String(pageSize) });
+  return getClawRouterBackendSdkClient().storage.oss.providers.list({ pageSize });
 }
 
 export async function backendStorageProviderCreate(body: StorageProviderCreateInput) {
@@ -25,7 +25,7 @@ export async function backendStorageProviderHealthCheck(providerId: string) {
 }
 
 export async function backendStorageBucketsList(pageSize = 100) {
-  return getClawRouterBackendSdkClient().storage.oss.buckets.list({ pageSize: String(pageSize) });
+  return getClawRouterBackendSdkClient().storage.oss.buckets.list({ pageSize });
 }
 
 export async function backendStorageBucketCreate(body: StorageBucketCreateInput) {
@@ -35,7 +35,7 @@ export async function backendStorageBucketCreate(body: StorageBucketCreateInput)
 }
 
 export async function backendStorageDefaultBucketsList(pageSize = 100) {
-  return getClawRouterBackendSdkClient().storage.defaultBuckets.list({ pageSize: String(pageSize) });
+  return getClawRouterBackendSdkClient().storage.defaultBuckets.list({ pageSize });
 }
 
 export async function backendStorageDefaultBucketUpdate(
@@ -46,7 +46,7 @@ export async function backendStorageDefaultBucketUpdate(
 }
 
 export async function backendStorageQuotasList(pageSize = 100) {
-  return getClawRouterBackendSdkClient().storage.oss.quotas.list({ pageSize: String(pageSize) });
+  return getClawRouterBackendSdkClient().storage.oss.quotas.list({ pageSize });
 }
 
 export async function backendStorageQuotaCreate(body: StorageQuotaCreateInput) {
@@ -56,11 +56,11 @@ export async function backendStorageQuotaCreate(body: StorageQuotaCreateInput) {
 }
 
 export async function backendStorageUsageList(pageSize = 100) {
-  return getClawRouterBackendSdkClient().storage.oss.usage.list({ pageSize: String(pageSize) });
+  return getClawRouterBackendSdkClient().storage.oss.usage.list({ pageSize });
 }
 
 export async function backendStorageReconciliationRunsList(pageSize = 100) {
-  return getClawRouterBackendSdkClient().storage.oss.storageReconciliationRuns.list({ pageSize: String(pageSize) });
+  return getClawRouterBackendSdkClient().storage.oss.storageReconciliationRuns.list({ pageSize });
 }
 
 export async function backendStorageReconciliationRunCreate(body: StorageReconciliationCreateInput) {
@@ -71,7 +71,7 @@ export async function backendStorageReconciliationRunCreate(body: StorageReconci
 }
 
 export async function backendStorageGarbageCollectionJobsList(pageSize = 100) {
-  return getClawRouterBackendSdkClient().storage.gcJobs.list({ pageSize: String(pageSize) });
+  return getClawRouterBackendSdkClient().storage.gcJobs.list({ pageSize });
 }
 
 export async function backendStorageGarbageCollectionJobCreate(body: StorageGarbageCollectionCreateInput) {

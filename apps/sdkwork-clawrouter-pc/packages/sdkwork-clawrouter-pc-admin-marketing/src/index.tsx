@@ -48,7 +48,7 @@ type MarketingAdminProps = {
   sectionId?: string;
 };
 
-const DEFAULT_PAGE_PARAMS = { page: '1', pageSize: '100' };
+const DEFAULT_PAGE_PARAMS = { page: 1, pageSize: 100 };
 const DEFAULT_MARKETING_SECTION_ID: MarketingAdminTab = 'promotionOffers';
 
 function resolveMarketingSectionId(sectionId: string | undefined): MarketingAdminTab {

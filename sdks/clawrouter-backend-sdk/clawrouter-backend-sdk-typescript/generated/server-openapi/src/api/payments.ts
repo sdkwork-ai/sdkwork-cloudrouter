@@ -16,8 +16,8 @@ export class PaymentsWebhookEventsReplaysApi {
 }
 
 export interface PaymentsWebhookEventsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -84,8 +84,8 @@ export class PaymentsRuntimeApi {
 }
 
 export interface PaymentsRouteRulesListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -135,8 +135,8 @@ export class PaymentsRouteRulesApi {
 }
 
 export interface PaymentsReconciliationRunsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -181,8 +181,8 @@ export class PaymentsReconciliationRunsApi {
 }
 
 export interface PaymentsProvidersListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -251,8 +251,8 @@ export class PaymentsProviderAccountsStatusApi {
 }
 
 export interface PaymentsProviderAccountsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -329,8 +329,8 @@ export class PaymentsProviderAccountsApi {
 }
 
 export interface PaymentsMethodsManagementListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -405,8 +405,8 @@ export class PaymentsIntentsManagementApi {
 }
 
 export interface PaymentsIntentsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -448,8 +448,8 @@ export class PaymentsIntentsApi {
 }
 
 export interface PaymentsDisputesListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -489,8 +489,8 @@ export class PaymentsDisputesApi {
 }
 
 export interface PaymentsChannelsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;
@@ -540,8 +540,8 @@ export class PaymentsChannelsApi {
 }
 
 export interface PaymentsAttemptsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
   providerCode?: string;
   providerAccountId?: string;

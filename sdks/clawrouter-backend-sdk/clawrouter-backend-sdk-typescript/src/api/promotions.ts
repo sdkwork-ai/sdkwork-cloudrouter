@@ -2,8 +2,8 @@ import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 export interface PromotionsUserCouponsManagementListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsUserCouponsManagementApi {
@@ -36,8 +36,8 @@ export class PromotionsUserCouponsApi {
 }
 
 export interface PromotionsOffersManagementListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsOffersManagementApi {
@@ -80,8 +80,8 @@ export class PromotionsOffersApi {
 }
 
 export interface PromotionsExternalBindingsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsExternalBindingsApi {
@@ -103,8 +103,8 @@ export class PromotionsExternalBindingsApi {
 }
 
 export interface PromotionsEventsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsEventsApi {
@@ -126,8 +126,8 @@ export class PromotionsEventsApi {
 }
 
 export interface PromotionsDiscountApplicationsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsDiscountApplicationsApi {
@@ -149,8 +149,8 @@ export class PromotionsDiscountApplicationsApi {
 }
 
 export interface PromotionsDiscountAllocationsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsDiscountAllocationsApi {
@@ -172,8 +172,8 @@ export class PromotionsDiscountAllocationsApi {
 }
 
 export interface PromotionsCouponStocksListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsCouponStocksApi {
@@ -200,8 +200,8 @@ export class PromotionsCouponStocksApi {
 }
 
 export interface PromotionsCouponLedgerEntriesListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsCouponLedgerEntriesApi {
@@ -223,8 +223,8 @@ export class PromotionsCouponLedgerEntriesApi {
 }
 
 export interface PromotionsCodesRedemptionsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsCodesRedemptionsApi {
@@ -246,8 +246,8 @@ export class PromotionsCodesRedemptionsApi {
 }
 
 export interface PromotionsCodesListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsCodesApi {
@@ -276,8 +276,8 @@ export class PromotionsCodesApi {
 }
 
 export interface PromotionsBudgetLedgerEntriesListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class PromotionsBudgetLedgerEntriesApi {

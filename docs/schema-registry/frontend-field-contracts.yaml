@@ -4943,7 +4943,7 @@ frontend_operations:
   - ops_audit_log
 - route: /admin/storage/buckets
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: list
+  operation: backendStorageBucketsList
   operation_id: oss.buckets.list
   kind: read
   api_surface: backend
@@ -4984,7 +4984,7 @@ frontend_operations:
     maxLength: 64
 - route: /admin/storage/buckets
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: create
+  operation: backendStorageBucketCreate
   operation_id: oss.buckets.create
   kind: create
   api_surface: backend
@@ -5071,7 +5071,7 @@ frontend_operations:
         nullable: true
   idempotency_required: true
 - route: /admin/storage/buckets/{bucketId}
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: update
   operation_id: oss.buckets.update
   kind: update
@@ -5102,9 +5102,9 @@ frontend_operations:
         type: string
         minLength: 1
         maxLength: 512
-- route: /admin/storage/default_buckets
+- route: /admin/storage/defaultBuckets
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: list
+  operation: backendStorageDefaultBucketsList
   operation_id: defaultBuckets.list
   kind: read
   api_surface: backend
@@ -5143,9 +5143,9 @@ frontend_operations:
     type: string
     required: false
     maxLength: 64
-- route: /admin/storage/default_buckets/{logicalScope}
+- route: /admin/storage/defaultBuckets
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: update
+  operation: backendStorageDefaultBucketUpdate
   operation_id: defaultBuckets.update
   kind: update
   api_surface: backend
@@ -5173,9 +5173,9 @@ frontend_operations:
         type: string
         minLength: 1
         maxLength: 512
-- route: /admin/storage/gc_jobs
+- route: /admin/storage/garbageCollection
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: list
+  operation: backendStorageGarbageCollectionJobsList
   operation_id: gcJobs.list
   kind: read
   api_surface: backend
@@ -5214,9 +5214,9 @@ frontend_operations:
     type: string
     required: false
     maxLength: 64
-- route: /admin/storage/gc_jobs
+- route: /admin/storage/garbageCollection
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: create
+  operation: backendStorageGarbageCollectionJobCreate
   operation_id: gcJobs.create
   kind: create
   api_surface: backend
@@ -5259,7 +5259,7 @@ frontend_operations:
   idempotency_required: true
 - route: /admin/storage/providers
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: list
+  operation: backendStorageProvidersList
   operation_id: oss.providers.list
   kind: read
   api_surface: backend
@@ -5300,7 +5300,7 @@ frontend_operations:
     maxLength: 64
 - route: /admin/storage/providers
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: create
+  operation: backendStorageProviderCreate
   operation_id: oss.providers.create
   kind: create
   api_surface: backend
@@ -5361,7 +5361,7 @@ frontend_operations:
         nullable: true
   idempotency_required: true
 - route: /admin/storage/providers/{providerId}
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: update
   operation_id: oss.providers.update
   kind: update
@@ -5392,10 +5392,10 @@ frontend_operations:
         type: string
         minLength: 1
         maxLength: 512
-- route: /admin/storage/providers/{providerId}/health_check
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: create
-  operation_id: providers.healthCheck.create
+- route: /admin/storage/providers
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
+  operation: backendStorageProviderHealthCheck
+  operation_id: providers.healthCheck
   kind: create
   api_surface: backend
   api_method: POST
@@ -5410,7 +5410,7 @@ frontend_operations:
   - ops_audit_log
 - route: /admin/storage/quotas
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: list
+  operation: backendStorageQuotasList
   operation_id: oss.quotas.list
   kind: read
   api_surface: backend
@@ -5451,7 +5451,7 @@ frontend_operations:
     maxLength: 64
 - route: /admin/storage/quotas
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: create
+  operation: backendStorageQuotaCreate
   operation_id: oss.quotas.create
   kind: create
   api_surface: backend
@@ -5498,9 +5498,9 @@ frontend_operations:
         nullable: true
         maxLength: 64
   idempotency_required: true
-- route: /admin/storage/reconciliation_runs
+- route: /admin/storage/reconciliation
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: list
+  operation: backendStorageReconciliationRunsList
   operation_id: oss.storageReconciliationRuns.list
   kind: read
   api_surface: backend
@@ -5539,9 +5539,9 @@ frontend_operations:
     type: string
     required: false
     maxLength: 64
-- route: /admin/storage/reconciliation_runs
+- route: /admin/storage/reconciliation
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: create
+  operation: backendStorageReconciliationRunCreate
   operation_id: oss.storageReconciliationRuns.create
   kind: create
   api_surface: backend
@@ -5580,7 +5580,7 @@ frontend_operations:
   idempotency_required: true
 - route: /admin/storage/usage
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts
-  operation: list
+  operation: backendStorageUsageList
   operation_id: oss.usage.list
   kind: read
   api_surface: backend
@@ -8570,41 +8570,49 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/storage
   required_tables:
+  - storage
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/storage/buckets
   required_tables:
+  - storage
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/default-buckets
+- route: /admin/storage/defaultBuckets
   required_tables:
+  - storage
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/storage/garbage-collection
+- route: /admin/storage/garbageCollection
   required_tables:
+  - storage
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/storage/providers
   required_tables:
+  - storage
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/storage/quotas
   required_tables:
+  - storage
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/storage/reconciliation
   required_tables:
+  - storage
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/storage/usage
   required_tables:
+  - storage
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk

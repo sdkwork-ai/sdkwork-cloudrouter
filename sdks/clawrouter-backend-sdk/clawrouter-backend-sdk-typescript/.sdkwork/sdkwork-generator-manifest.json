@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "440dc9c743572362b68e4f8978fd658846456390c9e245c69f58556463f51bf3"
+      "sha256": "f0cb9ca90a12840df5a6a274a5dd21f5b7d0e7aba3a80eaeaebb328efad55eec"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -68,7 +68,7 @@
     },
     {
       "path": "src/api/memberships.ts",
-      "sha256": "857bf08e2e7caf84a5d0fa73494a1d86fd09235567da9e7fe539ecc24a8a5f0b"
+      "sha256": "8dd4f5c9e8883ee31c5bbdec60197e68f495f96199e4512a7f2ee6f2c3bde38e"
     },
     {
       "path": "src/api/paths.ts",
@@ -76,15 +76,15 @@
     },
     {
       "path": "src/api/payments.ts",
-      "sha256": "18b32f540013c0d14820a94f3fd72eb57c8832ab553cfb43c5d785ae8d9ee9e3"
+      "sha256": "b47ba4c7d15b3d99336b72eac50387265996529bb039b94559475acc7d602df8"
     },
     {
       "path": "src/api/promotions.ts",
-      "sha256": "567f5a4b2b0fd243cab378f0655002d06cf6b3b01bd64cc3fe22c9f0fe03ef80"
+      "sha256": "c1e1a38172f7ef10cab745f2c69a0fb5bc04b63ba1e5b6bbdcff46d0b92e0d22"
     },
     {
       "path": "src/api/recharges.ts",
-      "sha256": "8ff28a4f7c9831db80e61b03892b29bc54a532dc830c72d6f2577123bd9794cb"
+      "sha256": "c98d56ea64bd6893c85ea0efe8ea28a82de6554d4fd9d084c783deb08e919cc9"
     },
     {
       "path": "src/api/sites.ts",
@@ -92,11 +92,11 @@
     },
     {
       "path": "src/api/storage.ts",
-      "sha256": "80271fbb5ad6bed9664d42f69b96602fbc1e26ecc4228493cc3ae144533defb7"
+      "sha256": "687c1ced987f06f713c7f418a5b1812afb0fb66c07340179d3aafa747ad9e835"
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "40c6acaac2e14b282ccef2598a2f7cfa291db09a6b3726e98c3b60ee810e1dac"
+      "sha256": "876284da5080f42461d8b4152077f44fe65508050778d5e8dbe62e4bd6e16d94"
     },
     {
       "path": "src/auth/index.ts",

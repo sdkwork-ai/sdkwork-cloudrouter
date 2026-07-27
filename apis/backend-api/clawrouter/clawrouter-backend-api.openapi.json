@@ -9073,7 +9073,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -9082,7 +9083,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -9172,7 +9175,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -9181,7 +9185,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -9298,7 +9304,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -9307,7 +9314,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -9527,7 +9536,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -9536,7 +9546,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -9912,7 +9924,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -9921,7 +9934,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -10306,7 +10321,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -10315,7 +10331,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -10608,7 +10626,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -10617,7 +10636,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -10788,7 +10809,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -10797,7 +10819,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -11140,7 +11164,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -11149,7 +11174,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -11320,7 +11347,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -11329,7 +11357,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -11590,7 +11620,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -11599,7 +11630,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -11942,7 +11975,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -11951,7 +11985,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -12536,7 +12572,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -12545,7 +12582,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -12808,7 +12847,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -12817,7 +12857,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -13068,7 +13110,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -13077,7 +13120,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -13500,7 +13545,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -13509,7 +13555,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -13772,7 +13820,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -13781,7 +13830,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -13871,7 +13922,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -13880,7 +13932,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -14050,7 +14104,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -14059,7 +14114,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -14149,7 +14206,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -14158,7 +14216,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -14248,7 +14308,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -14257,7 +14318,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -14427,7 +14490,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -14436,7 +14500,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -14526,7 +14592,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -14535,7 +14602,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -14625,7 +14694,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -14634,7 +14704,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -14724,7 +14796,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -14733,7 +14806,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -14823,7 +14898,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -14832,7 +14908,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -15094,7 +15172,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -15103,7 +15182,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -15363,7 +15444,8 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -15372,7 +15454,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -16555,7 +16639,7 @@
     },
     "/backend/v3/api/storage/buckets": {
       "get": {
-        "description": "List. Reads storage. Writes none. File targets none.",
+        "description": "Backend storage buckets list. Reads storage. Writes none. File targets none.",
         "operationId": "oss.buckets.list",
         "parameters": [
           {
@@ -16573,7 +16657,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -16680,7 +16766,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "Backend storage buckets list",
         "tags": [
           "storage"
         ],
@@ -16697,7 +16783,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads storage. Writes ops_audit_log. File targets none.",
+        "description": "Backend storage bucket create. Reads storage. Writes ops_audit_log. File targets none.",
         "operationId": "oss.buckets.create",
         "parameters": [
           {
@@ -16719,7 +16805,7 @@
               }
             }
           },
-          "description": "Typed request payload for create.",
+          "description": "Typed request payload for backend storage bucket create.",
           "required": true
         },
         "responses": {
@@ -16780,7 +16866,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Backend storage bucket create",
         "tags": [
           "storage"
         ],
@@ -16897,7 +16983,7 @@
         "x-sdk-domain": "storage",
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "oss.buckets",
-        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
         ]
@@ -16905,7 +16991,7 @@
     },
     "/backend/v3/api/storage/default_buckets": {
       "get": {
-        "description": "List. Reads storage. Writes none. File targets none.",
+        "description": "Backend storage default buckets list. Reads storage. Writes none. File targets none.",
         "operationId": "defaultBuckets.list",
         "parameters": [
           {
@@ -16923,7 +17009,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -17030,7 +17118,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "Backend storage default buckets list",
         "tags": [
           "storage"
         ],
@@ -17049,7 +17137,7 @@
     },
     "/backend/v3/api/storage/default_buckets/{logicalScope}": {
       "patch": {
-        "description": "Update. Reads storage. Writes ops_audit_log. File targets none.",
+        "description": "Backend storage default bucket update. Reads storage. Writes ops_audit_log. File targets none.",
         "operationId": "defaultBuckets.update",
         "parameters": [
           {
@@ -17070,7 +17158,7 @@
               }
             }
           },
-          "description": "Typed request payload for update.",
+          "description": "Typed request payload for backend storage default bucket update.",
           "required": true
         },
         "responses": {
@@ -17131,7 +17219,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "Update",
+        "summary": "Backend storage default bucket update",
         "tags": [
           "storage"
         ],
@@ -17152,7 +17240,7 @@
     },
     "/backend/v3/api/storage/gc_jobs": {
       "get": {
-        "description": "List. Reads storage. Writes none. File targets none.",
+        "description": "Backend storage garbage collection jobs list. Reads storage. Writes none. File targets none.",
         "operationId": "gcJobs.list",
         "parameters": [
           {
@@ -17170,7 +17258,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -17277,7 +17367,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "Backend storage garbage collection jobs list",
         "tags": [
           "storage"
         ],
@@ -17294,7 +17384,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads storage. Writes ops_audit_log. File targets none.",
+        "description": "Backend storage garbage collection job create. Reads storage. Writes ops_audit_log. File targets none.",
         "operationId": "gcJobs.create",
         "parameters": [
           {
@@ -17316,7 +17406,7 @@
               }
             }
           },
-          "description": "Typed request payload for create.",
+          "description": "Typed request payload for backend storage garbage collection job create.",
           "required": false
         },
         "responses": {
@@ -17377,7 +17467,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Backend storage garbage collection job create",
         "tags": [
           "storage"
         ],
@@ -17399,7 +17489,7 @@
     },
     "/backend/v3/api/storage/providers": {
       "get": {
-        "description": "List. Reads storage. Writes none. File targets none.",
+        "description": "Backend storage providers list. Reads storage. Writes none. File targets none.",
         "operationId": "oss.providers.list",
         "parameters": [
           {
@@ -17417,7 +17507,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -17524,7 +17616,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "Backend storage providers list",
         "tags": [
           "storage"
         ],
@@ -17541,7 +17633,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads storage. Writes ops_audit_log. File targets none.",
+        "description": "Backend storage provider create. Reads storage. Writes ops_audit_log. File targets none.",
         "operationId": "oss.providers.create",
         "parameters": [
           {
@@ -17563,7 +17655,7 @@
               }
             }
           },
-          "description": "Typed request payload for create.",
+          "description": "Typed request payload for backend storage provider create.",
           "required": true
         },
         "responses": {
@@ -17624,7 +17716,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Backend storage provider create",
         "tags": [
           "storage"
         ],
@@ -17741,7 +17833,7 @@
         "x-sdk-domain": "storage",
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "oss.providers",
-        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
+        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
         ]
@@ -17749,7 +17841,7 @@
     },
     "/backend/v3/api/storage/providers/{providerId}/health_check": {
       "post": {
-        "description": "Create. Reads storage. Writes ops_audit_log. File targets none.",
+        "description": "Backend storage provider health check. Reads storage. Writes ops_audit_log. File targets none.",
         "operationId": "providers.healthCheck",
         "parameters": [
           {
@@ -17820,7 +17912,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Backend storage provider health check",
         "tags": [
           "storage"
         ],
@@ -17833,7 +17925,7 @@
         "x-sdk-domain": "storage",
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "providers",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
         ]
@@ -17841,7 +17933,7 @@
     },
     "/backend/v3/api/storage/quotas": {
       "get": {
-        "description": "List. Reads storage. Writes none. File targets none.",
+        "description": "Backend storage quotas list. Reads storage. Writes none. File targets none.",
         "operationId": "oss.quotas.list",
         "parameters": [
           {
@@ -17859,7 +17951,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -17966,7 +18060,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "Backend storage quotas list",
         "tags": [
           "storage"
         ],
@@ -17983,7 +18077,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads storage. Writes ops_audit_log. File targets none.",
+        "description": "Backend storage quota create. Reads storage. Writes ops_audit_log. File targets none.",
         "operationId": "oss.quotas.create",
         "parameters": [
           {
@@ -18005,7 +18099,7 @@
               }
             }
           },
-          "description": "Typed request payload for create.",
+          "description": "Typed request payload for backend storage quota create.",
           "required": true
         },
         "responses": {
@@ -18066,7 +18160,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Backend storage quota create",
         "tags": [
           "storage"
         ],
@@ -18088,7 +18182,7 @@
     },
     "/backend/v3/api/storage/reconciliation_runs": {
       "get": {
-        "description": "List. Reads storage. Writes none. File targets none.",
+        "description": "Backend storage reconciliation runs list. Reads storage. Writes none. File targets none.",
         "operationId": "oss.storageReconciliationRuns.list",
         "parameters": [
           {
@@ -18106,7 +18200,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -18213,7 +18309,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "Backend storage reconciliation runs list",
         "tags": [
           "storage"
         ],
@@ -18230,7 +18326,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create. Reads storage. Writes ops_audit_log. File targets none.",
+        "description": "Backend storage reconciliation run create. Reads storage. Writes ops_audit_log. File targets none.",
         "operationId": "oss.storageReconciliationRuns.create",
         "parameters": [
           {
@@ -18252,7 +18348,7 @@
               }
             }
           },
-          "description": "Typed request payload for create.",
+          "description": "Typed request payload for backend storage reconciliation run create.",
           "required": false
         },
         "responses": {
@@ -18313,7 +18409,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "Create",
+        "summary": "Backend storage reconciliation run create",
         "tags": [
           "storage"
         ],
@@ -18335,7 +18431,7 @@
     },
     "/backend/v3/api/storage/usage": {
       "get": {
-        "description": "List. Reads storage. Writes none. File targets none.",
+        "description": "Backend storage usage list. Reads storage. Writes none. File targets none.",
         "operationId": "oss.usage.list",
         "parameters": [
           {
@@ -18353,7 +18449,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "type": "string"
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           {
@@ -18460,7 +18558,7 @@
             "AuthToken": []
           }
         ],
-        "summary": "List",
+        "summary": "Backend storage usage list",
         "tags": [
           "storage"
         ],

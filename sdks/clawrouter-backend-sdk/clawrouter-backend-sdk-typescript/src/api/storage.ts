@@ -9,7 +9,7 @@ export class StorageProvidersApi {
   }
 
 
-/** Create */
+/** Backend storage provider health check */
   async healthCheck(providerId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     return this.client.request<Record<string, never>>(backendApiPath(`/storage/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}/health_check`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
@@ -17,7 +17,7 @@ export class StorageProvidersApi {
 
 export interface StorageGcJobsListParams {
   cursor?: string;
-  pageSize?: string;
+  pageSize?: number;
   status?: string;
   logicalScope?: string;
   scopeType?: string;
@@ -37,7 +37,7 @@ export class StorageGcJobsApi {
   }
 
 
-/** List */
+/** Backend storage garbage collection jobs list */
   async list(params?: StorageGcJobsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
@@ -51,7 +51,7 @@ export class StorageGcJobsApi {
     return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/storage/gc_jobs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
-/** Create */
+/** Backend storage garbage collection job create */
   async create(params: StorageGcJobsCreateParams, body?: AdminStorageGarbageCollectionCreateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const requestHeaders = buildRequestHeaders(
       {
@@ -65,7 +65,7 @@ export class StorageGcJobsApi {
 
 export interface StorageDefaultBucketsListParams {
   cursor?: string;
-  pageSize?: string;
+  pageSize?: number;
   status?: string;
   logicalScope?: string;
   scopeType?: string;
@@ -81,7 +81,7 @@ export class StorageDefaultBucketsApi {
   }
 
 
-/** List */
+/** Backend storage default buckets list */
   async list(params?: StorageDefaultBucketsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
@@ -95,7 +95,7 @@ export class StorageDefaultBucketsApi {
     return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/storage/default_buckets`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
-/** Update */
+/** Backend storage default bucket update */
   async update(logicalScope: string, body: AdminStorageDefaultBucketUpdateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     return this.client.request<Record<string, never>>(backendApiPath(`/storage/default_buckets/${serializePathParameter(logicalScope, { name: 'logicalScope', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json' });
   }
@@ -103,7 +103,7 @@ export class StorageDefaultBucketsApi {
 
 export interface StorageOssUsageListParams {
   cursor?: string;
-  pageSize?: string;
+  pageSize?: number;
   status?: string;
   logicalScope?: string;
   scopeType?: string;
@@ -119,7 +119,7 @@ export class StorageOssUsageApi {
   }
 
 
-/** List */
+/** Backend storage usage list */
   async list(params?: StorageOssUsageListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
@@ -136,7 +136,7 @@ export class StorageOssUsageApi {
 
 export interface StorageOssStorageReconciliationRunsListParams {
   cursor?: string;
-  pageSize?: string;
+  pageSize?: number;
   status?: string;
   logicalScope?: string;
   scopeType?: string;
@@ -156,7 +156,7 @@ export class StorageOssStorageReconciliationRunsApi {
   }
 
 
-/** List */
+/** Backend storage reconciliation runs list */
   async list(params?: StorageOssStorageReconciliationRunsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
@@ -170,7 +170,7 @@ export class StorageOssStorageReconciliationRunsApi {
     return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/storage/reconciliation_runs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
-/** Create */
+/** Backend storage reconciliation run create */
   async create(params: StorageOssStorageReconciliationRunsCreateParams, body?: AdminStorageReconciliationCreateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const requestHeaders = buildRequestHeaders(
       {
@@ -184,7 +184,7 @@ export class StorageOssStorageReconciliationRunsApi {
 
 export interface StorageOssQuotasListParams {
   cursor?: string;
-  pageSize?: string;
+  pageSize?: number;
   status?: string;
   logicalScope?: string;
   scopeType?: string;
@@ -204,7 +204,7 @@ export class StorageOssQuotasApi {
   }
 
 
-/** List */
+/** Backend storage quotas list */
   async list(params?: StorageOssQuotasListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
@@ -218,7 +218,7 @@ export class StorageOssQuotasApi {
     return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/storage/quotas`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
-/** Create */
+/** Backend storage quota create */
   async create(body: AdminStorageQuotaCreateRequest, params: StorageOssQuotasCreateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const requestHeaders = buildRequestHeaders(
       {
@@ -232,7 +232,7 @@ export class StorageOssQuotasApi {
 
 export interface StorageOssProvidersListParams {
   cursor?: string;
-  pageSize?: string;
+  pageSize?: number;
   status?: string;
   logicalScope?: string;
   scopeType?: string;
@@ -252,7 +252,7 @@ export class StorageOssProvidersApi {
   }
 
 
-/** List */
+/** Backend storage providers list */
   async list(params?: StorageOssProvidersListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
@@ -266,7 +266,7 @@ export class StorageOssProvidersApi {
     return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/storage/providers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
-/** Create */
+/** Backend storage provider create */
   async create(body: AdminStorageProviderCreateRequest, params: StorageOssProvidersCreateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const requestHeaders = buildRequestHeaders(
       {
@@ -285,7 +285,7 @@ export class StorageOssProvidersApi {
 
 export interface StorageOssBucketsListParams {
   cursor?: string;
-  pageSize?: string;
+  pageSize?: number;
   status?: string;
   logicalScope?: string;
   scopeType?: string;
@@ -305,7 +305,7 @@ export class StorageOssBucketsApi {
   }
 
 
-/** List */
+/** Backend storage buckets list */
   async list(params?: StorageOssBucketsListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
@@ -319,7 +319,7 @@ export class StorageOssBucketsApi {
     return this.client.request<Record<string, never>>(appendQueryString(backendApiPath(`/storage/buckets`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
-/** Create */
+/** Backend storage bucket create */
   async create(body: AdminStorageBucketCreateRequest, params: StorageOssBucketsCreateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const requestHeaders = buildRequestHeaders(
       {

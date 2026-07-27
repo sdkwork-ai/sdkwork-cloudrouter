@@ -518,8 +518,8 @@ export class SystemAnalyticsApi {
 }
 
 export interface SystemMarketingReferralStatsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class SystemMarketingReferralStatsApi {

@@ -92,8 +92,8 @@ const result = await client.system.analytics.admin.overview.list();
 ```typescript
 // List
 const params = {
-  page: 'page',
-  page_size: 'page_size',
+  page: 1,
+  page_size: 2,
   status: 'status',
 };
 const result = await client.memberships.packageGroups.management.list(params);
@@ -111,8 +111,8 @@ const result = await client.payments.runtime.snapshot.retrieve();
 ```typescript
 // List
 const params = {
-  page: 'page',
-  page_size: 'page_size',
+  page: 1,
+  page_size: 2,
 };
 const result = await client.promotions.budgetLedgerEntries.list(params);
 ```
@@ -134,10 +134,10 @@ const result = await client.sites.list();
 ### storage
 
 ```typescript
-// List
+// Backend storage buckets list
 const params = {
   cursor: 'cursor',
-  page_size: 'page_size',
+  page_size: 2,
   status: 'status',
   logical_scope: 'logical_scope',
   scope_type: 'scope_type',

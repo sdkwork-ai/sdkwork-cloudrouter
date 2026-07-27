@@ -2,8 +2,8 @@ import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 import type { MembershipPackageGroupMutationRequest, MembershipPackageMutationRequest, MembershipPlanMutationRequest, MembershipStatusUpdateRequest } from '../types';
 export interface MembershipsPlansManagementListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
 }
 
@@ -48,8 +48,8 @@ export class MembershipsPlansApi {
 }
 
 export interface MembershipsPackagesManagementListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   planId?: string;
   status?: string;
 }
@@ -101,8 +101,8 @@ export class MembershipsPackagesApi {
 }
 
 export interface MembershipsPackageGroupsManagementListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
 }
 
@@ -152,8 +152,8 @@ export class MembershipsPackageGroupsApi {
 }
 
 export interface MembershipsMembersListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   userId?: string;
   planId?: string;
   status?: string;
@@ -186,8 +186,8 @@ export class MembershipsMembersApi {
 }
 
 export interface MembershipsEntitlementsListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   membershipId?: string;
   planId?: string;
   status?: string;

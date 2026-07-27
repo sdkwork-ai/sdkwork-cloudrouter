@@ -113,7 +113,7 @@ type PaymentProviderCredentialFileUploadProps = {
   uploadLabel?: string;
 };
 
-const DEFAULT_PAGE_PARAMS = { page: '1', pageSize: '100' };
+const DEFAULT_PAGE_PARAMS = { page: 1, pageSize: 100 };
 const DEFAULT_PAYMENTS_SECTION_ID: PaymentsAdminTab = 'providerAccounts';
 const DEFAULT_COUNTRY_CODE = 'US';
 const DEFAULT_CURRENCY_CODE = 'USD';

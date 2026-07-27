@@ -477,8 +477,8 @@ export async function fetchMembershipAdminMembers(
   params: MembershipsAdminMembersListParams = {},
 ): Promise<MembershipsAdminRecord[]> {
   const result = await backendMembershipsMembersList({
-    page: '1',
-    pageSize: '100',
+    page: 1,
+    pageSize: 100,
     userId: params.userId,
     planId: params.planId,
     status: params.status,
@@ -501,8 +501,8 @@ export async function fetchMembershipAdminEntitlements(
   params: MembershipsAdminEntitlementsListParams = {},
 ): Promise<MembershipsAdminRecord[]> {
   const result = await backendMembershipsEntitlementsList({
-    page: '1',
-    pageSize: '100',
+    page: 1,
+    pageSize: 100,
     membershipId: params.membershipId,
     planId: params.planId,
     status: params.status,

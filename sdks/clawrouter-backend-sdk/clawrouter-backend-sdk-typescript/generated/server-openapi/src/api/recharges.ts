@@ -32,8 +32,8 @@ export class RechargesSettingsApi {
 }
 
 export interface RechargesPackagesManagementListParams {
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   status?: string;
 }
 
