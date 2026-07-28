@@ -148,8 +148,8 @@ async fn upsert_trace(
         r#"
         INSERT INTO ai_request_trace
             (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, attempt_no,
-             api_key_id, api_key_name_snapshot, channel_group_id, channel_group_snapshot,
-             owner_type, owner_id, channel_id, channel_name_snapshot, requested_model,
+             api_key_id, api_key_name_snapshot, account_group_id, upstream_account_group_snapshot,
+             owner_type, owner_id, account_id, channel_name_snapshot, requested_model,
              requested_model_catalog_key, provider_model, provider_native_model,
              gateway_instance_id, gateway_instance_code_snapshot, gateway_region_code_snapshot,
              gateway_node_name_snapshot,
@@ -166,11 +166,11 @@ async fn upsert_trace(
             trace_id = excluded.trace_id,
             api_key_id = excluded.api_key_id,
             api_key_name_snapshot = excluded.api_key_name_snapshot,
-            channel_group_id = excluded.channel_group_id,
-            channel_group_snapshot = excluded.channel_group_snapshot,
+            account_group_id = excluded.account_group_id,
+            upstream_account_group_snapshot = excluded.upstream_account_group_snapshot,
             owner_type = excluded.owner_type,
             owner_id = excluded.owner_id,
-            channel_id = excluded.channel_id,
+            account_id = excluded.account_id,
             channel_name_snapshot = excluded.channel_name_snapshot,
             requested_model = excluded.requested_model,
             requested_model_catalog_key = excluded.requested_model_catalog_key,
@@ -217,12 +217,12 @@ async fn upsert_trace(
     .bind(command.trace_id.as_deref())
     .bind(command.api_key_id)
     .bind(&command.api_key_name_snapshot)
-    .bind(command.channel_group_id)
-    .bind(&command.channel_group_snapshot)
+    .bind(command.account_group_id)
+    .bind(&command.upstream_account_group_snapshot)
     .bind(OWNER_TYPE_USER)
     .bind(command.user_id)
-    .bind(command.channel_id)
-    .bind(&command.provider_code)
+    .bind(command.account_id)
+    .bind(&command.supplier_code)
     .bind(&command.requested_model)
     .bind(&command.requested_model_catalog_key)
     .bind(&command.provider_model)
@@ -265,9 +265,9 @@ async fn upsert_usage_fact(
         r#"
         INSERT INTO ai_usage
             (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status,
-             api_key_id, api_key_name_snapshot, channel_group_id, channel_group_snapshot,
+             api_key_id, api_key_name_snapshot, account_group_id, upstream_account_group_snapshot,
              owner_type, owner_id, catalog_key, requested_model_catalog_key, model,
-             provider_native_model, region_code, channel_id, modality, usage_type, billing_meter_code,
+             provider_native_model, region_code, account_id, modality, usage_type, billing_meter_code,
              billable_quantity, prompt_tokens, cached_tokens, completion_tokens, total_tokens,
              request_count, result_count, item_count, character_count, image_count,
              audio_seconds, video_seconds, base_input_unit_price,
@@ -288,8 +288,8 @@ async fn upsert_usage_fact(
             trace_id = excluded.trace_id,
             api_key_id = excluded.api_key_id,
             api_key_name_snapshot = excluded.api_key_name_snapshot,
-            channel_group_id = excluded.channel_group_id,
-            channel_group_snapshot = excluded.channel_group_snapshot,
+            account_group_id = excluded.account_group_id,
+            upstream_account_group_snapshot = excluded.upstream_account_group_snapshot,
             owner_type = excluded.owner_type,
             owner_id = excluded.owner_id,
             catalog_key = excluded.catalog_key,
@@ -297,7 +297,7 @@ async fn upsert_usage_fact(
             model = excluded.model,
             provider_native_model = excluded.provider_native_model,
             region_code = excluded.region_code,
-            channel_id = excluded.channel_id,
+            account_id = excluded.account_id,
             modality = excluded.modality,
             billing_meter_code = excluded.billing_meter_code,
             billable_quantity = excluded.billable_quantity,
@@ -338,8 +338,8 @@ async fn upsert_usage_fact(
     .bind(command.trace_id.as_deref())
     .bind(command.api_key_id)
     .bind(&command.api_key_name_snapshot)
-    .bind(command.channel_group_id)
-    .bind(&command.channel_group_snapshot)
+    .bind(command.account_group_id)
+    .bind(&command.upstream_account_group_snapshot)
     .bind(OWNER_TYPE_USER)
     .bind(command.user_id)
     .bind(&command.catalog_key)
@@ -347,7 +347,7 @@ async fn upsert_usage_fact(
     .bind(&command.requested_model)
     .bind(&command.provider_native_model)
     .bind(&command.region_code)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.modality)
     .bind(command.usage_type)
     .bind(&command.billing_meter_code)

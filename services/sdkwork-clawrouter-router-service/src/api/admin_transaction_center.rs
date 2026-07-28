@@ -67,7 +67,7 @@ struct TransactionCenterListQueryRequest {
     page: Option<i64>,
     page_size: Option<i64>,
     status: Option<String>,
-    provider_code: Option<String>,
+    supplier_code: Option<String>,
     provider_account_id: Option<String>,
     method_code: Option<String>,
     country_code: Option<String>,
@@ -80,7 +80,7 @@ struct TransactionCenterListQueryRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct PaymentProviderAccountMutationRequest {
-    provider_code: String,
+    supplier_code: String,
     account_role: Option<String>,
     merchant_id: String,
     environment: String,
@@ -104,7 +104,7 @@ struct PaymentProviderAccountStatusUpdateRequest {
 }
 
 struct NormalizedPaymentProviderAccountMutation {
-    provider_code: String,
+    supplier_code: String,
     account_role: Option<String>,
     merchant_id: String,
     environment: String,
@@ -638,8 +638,8 @@ fn validated_list_query(
         offset: pagination.offset,
         status: normalize_optional_text(query.status, "status", MAX_QUERY_STATUS_LEN)?
             .map(|value| value.to_ascii_lowercase()),
-        provider_code: normalize_optional_enum(
-            query.provider_code,
+        supplier_code: normalize_optional_enum(
+            query.supplier_code,
             "providerCode",
             MAX_CODE_LEN,
             PAYMENT_PROVIDER_CODES,
@@ -698,7 +698,7 @@ fn build_create_payment_provider_account_command(
     Ok(CreateAdminPaymentProviderAccountCommand {
         subject,
         account_no,
-        provider_code: normalized.provider_code,
+        supplier_code: normalized.supplier_code,
         account_role: normalized.account_role,
         merchant_id: normalized.merchant_id,
         environment: normalized.environment,
@@ -731,7 +731,7 @@ fn build_update_payment_provider_account_command(
     Ok(UpdateAdminPaymentProviderAccountCommand {
         subject,
         provider_account_id,
-        provider_code: normalized.provider_code,
+        supplier_code: normalized.supplier_code,
         account_role: normalized.account_role,
         merchant_id: normalized.merchant_id,
         environment: normalized.environment,
@@ -802,8 +802,8 @@ fn build_delete_payment_provider_account_command(
 fn normalize_payment_provider_account_mutation(
     request: PaymentProviderAccountMutationRequest,
 ) -> Result<NormalizedPaymentProviderAccountMutation, Response> {
-    let provider_code = normalize_enum(
-        request.provider_code,
+    let supplier_code = normalize_enum(
+        request.supplier_code,
         "providerCode",
         MAX_CODE_LEN,
         PAYMENT_PROVIDER_CODES,
@@ -838,14 +838,14 @@ fn normalize_payment_provider_account_mutation(
         AsciiCase::Lower,
     )?;
     let secret_ref = normalize_required_text(request.secret_ref, "secretRef", MAX_SECRET_REF_LEN)?;
-    validate_secret_ref(&provider_code, &secret_ref)?;
+    validate_secret_ref(&supplier_code, &secret_ref)?;
     let webhook_secret_ref = normalize_optional_text(
         request.webhook_secret_ref,
         "webhookSecretRef",
         MAX_SECRET_REF_LEN,
     )?;
     if let Some(secret_ref) = webhook_secret_ref.as_deref() {
-        validate_secret_ref(&provider_code, secret_ref)?;
+        validate_secret_ref(&supplier_code, secret_ref)?;
     }
     let certificate_ref = normalize_optional_text(
         request.certificate_ref,
@@ -853,10 +853,10 @@ fn normalize_payment_provider_account_mutation(
         MAX_SECRET_REF_LEN,
     )?;
     if let Some(secret_ref) = certificate_ref.as_deref() {
-        validate_secret_ref(&provider_code, secret_ref)?;
+        validate_secret_ref(&supplier_code, secret_ref)?;
     }
     Ok(NormalizedPaymentProviderAccountMutation {
-        provider_code,
+        supplier_code,
         account_role,
         merchant_id: normalize_required_text(
             request.merchant_id,
@@ -906,8 +906,8 @@ fn is_ascii_identifier(value: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
 }
 
-fn validate_secret_ref(provider_code: &str, value: &str) -> Result<(), Response> {
-    validate_payment_secret_ref(provider_code, value).map_err(|error| match error {
+fn validate_secret_ref(supplier_code: &str, value: &str) -> Result<(), Response> {
+    validate_payment_secret_ref(supplier_code, value).map_err(|error| match error {
         PaymentProviderRegistryError::InvalidProviderRequest { message, .. } => {
             bad_request(message)
         }

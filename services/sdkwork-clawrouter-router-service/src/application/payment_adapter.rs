@@ -27,7 +27,7 @@ pub enum PaymentAdapterOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaymentProviderCapabilities {
-    pub provider_code: &'static str,
+    pub supplier_code: &'static str,
     pub operations: &'static [PaymentAdapterOperation],
     pub sandbox_only: bool,
 }
@@ -185,7 +185,7 @@ pub struct PaymentNativeOperationRequest {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PaymentProviderOperationOutcome {
-    pub provider_code: String,
+    pub supplier_code: String,
     pub native_id: Option<String>,
     pub raw_status: Option<String>,
     pub payload: Value,
@@ -199,7 +199,7 @@ pub struct PaymentWebhookVerificationOutcome {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PaymentNormalizedWebhookEvent {
-    pub provider_code: String,
+    pub supplier_code: String,
     pub event_type: Option<String>,
     pub provider_event_id: Option<String>,
     pub payload: Value,
@@ -251,10 +251,10 @@ impl SandboxPaymentProviderAdapter {
     }
 
     fn unsupported<T>(&self, operation: PaymentAdapterOperation) -> PaymentAdapterFuture<'_, T> {
-        let provider_code = self.capabilities.provider_code.to_owned();
+        let supplier_code = self.capabilities.supplier_code.to_owned();
         Box::pin(async move {
             Err(PaymentProviderRegistryError::UnsupportedCapability {
-                provider_code,
+                supplier_code,
                 operation,
             })
         })

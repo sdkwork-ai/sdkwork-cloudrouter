@@ -17,8 +17,8 @@ use crate::infrastructure::sql::sqlite::queries;
 use crate::infrastructure::sql::sqlite::row_mapping;
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
-    ApiKeyManagementReadFuture, AppChannelGroupListPage, GatewayApiKeyListPage,
-    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListAppChannelGroupsQuery,
+    ApiKeyManagementReadFuture, AppUpstreamAccountGroupListPage, GatewayApiKeyListPage,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListAppUpstreamAccountGroupsQuery,
     ListGatewayApiKeysQuery,
 };
 
@@ -90,7 +90,7 @@ impl SqlitePricingCatalogLoader {
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_PROVIDER_ROUTES", source))?,
-            provider_channel_routes: row_mapping::load_provider_channel_routes(
+            upstream_account_routes: row_mapping::load_upstream_account_routes(
                 &mut *tx,
                 queries::LOAD_PROVIDER_CHANNEL_ROUTES,
                 self.circuit_breaker_recovery_window_seconds,
@@ -115,7 +115,7 @@ impl SqlitePricingCatalogLoader {
             pricing_plans: row_mapping::load_pricing_plans(&mut *tx, queries::LOAD_PRICING_PLANS)
                 .await
                 .map_err(|source| sqlite_query_error("LOAD_PRICING_PLANS", source))?,
-            channel_groups: row_mapping::load_channel_groups(
+            upstream_account_groups: row_mapping::load_upstream_account_groups(
                 &mut *tx,
                 queries::LOAD_API_KEY_GROUPS,
             )
@@ -140,7 +140,7 @@ impl SqlitePricingCatalogLoader {
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_GATEWAY_RISK_RULES", source))?,
-            channel_group_metric_snapshots: row_mapping::load_channel_group_metric_snapshots(
+            upstream_account_group_metric_snapshots: row_mapping::load_upstream_account_group_metric_snapshots(
                 &mut *tx,
                 queries::LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS,
             )
@@ -153,7 +153,7 @@ impl SqlitePricingCatalogLoader {
             .map_err(|source| sqlite_query_error("COMMIT_TX", source))?;
         let managed_provider_secrets = managed_provider_secrets_from_rows(
             &rows.provider_routes,
-            &rows.provider_channel_routes,
+            &rows.upstream_account_routes,
             self.api_key_secret_codec.as_deref(),
         )?;
         Ok(
@@ -221,8 +221,8 @@ fn default_circuit_breaker_recovery_window_seconds() -> i64 {
 }
 
 fn managed_provider_secrets_from_rows(
-    provider_routes: &[crate::infrastructure::sql::rows::ModelProviderRouteRow],
-    provider_channel_routes: &[crate::infrastructure::sql::rows::ProviderChannelRouteRow],
+    provider_routes: &[crate::infrastructure::sql::rows::ModelUpstreamRouteRow],
+    upstream_account_routes: &[crate::infrastructure::sql::rows::UpstreamAccountRouteRow],
     api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
 ) -> DomainResult<BTreeMap<String, String>> {
     let mut secrets = BTreeMap::new();
@@ -233,7 +233,7 @@ fn managed_provider_secrets_from_rows(
                 .as_deref()
                 .zip(row.auth_config_json.as_deref())
         })
-        .chain(provider_channel_routes.iter().filter_map(|row| {
+        .chain(upstream_account_routes.iter().filter_map(|row| {
             row.secret_ref
                 .as_deref()
                 .zip(row.auth_config_json.as_deref())
@@ -349,16 +349,16 @@ impl GatewayApiKeyManagementReadStore for SqlitePricingCatalogLoader {
         })
     }
 
-    fn list_app_channel_groups<'a>(
+    fn list_app_upstream_account_groups<'a>(
         &'a self,
-        query: ListAppChannelGroupsQuery,
-    ) -> ApiKeyManagementReadFuture<'a, AppChannelGroupListPage> {
+        query: ListAppUpstreamAccountGroupsQuery,
+    ) -> ApiKeyManagementReadFuture<'a, AppUpstreamAccountGroupListPage> {
         Box::pin(async move {
             let search = query
                 .q
                 .as_ref()
                 .map(|value| format!("%{}%", value.to_lowercase()));
-            let rows = row_mapping::load_paginated_channel_groups(
+            let rows = row_mapping::load_paginated_upstream_account_groups(
                 &self.pool,
                 query.tenant_id,
                 query.organization_id,
@@ -374,9 +374,9 @@ impl GatewayApiKeyManagementReadStore for SqlitePricingCatalogLoader {
                 .unwrap_or(0);
             let items = rows
                 .into_iter()
-                .map(|row| row_mapping::channel_group_from_row(&row))
+                .map(|row| row_mapping::upstream_account_group_from_row(&row))
                 .collect::<DomainResult<Vec<_>>>()?;
-            Ok(AppChannelGroupListPage {
+            Ok(AppUpstreamAccountGroupListPage {
                 items,
                 total,
                 page_no: query.page_no,

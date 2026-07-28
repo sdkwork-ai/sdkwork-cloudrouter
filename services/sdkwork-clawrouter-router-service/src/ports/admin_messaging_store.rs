@@ -28,7 +28,7 @@ pub struct ListAdminMessagingRecordsQuery {
     pub q: Option<String>,
     pub status: Option<String>,
     pub channel: Option<String>,
-    pub provider_code: Option<String>,
+    pub supplier_code: Option<String>,
     pub scene_code: Option<String>,
     pub target_hash: Option<String>,
     pub reason_code: Option<String>,
@@ -47,7 +47,7 @@ pub struct AdminMessagingCollection {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreateMessagingProviderAccountCommand {
     pub subject: AdminMessagingSubject,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub account_code: String,
     pub account_name: String,
     pub channel: String,
@@ -231,7 +231,7 @@ pub struct AdminMessagingRouteSimulationItem {
 pub struct AdminMessagingTestSendItem {
     pub request_id: String,
     pub delivery_status: String,
-    pub provider_code: Option<String>,
+    pub supplier_code: Option<String>,
 }
 
 pub trait AdminMessagingStore {

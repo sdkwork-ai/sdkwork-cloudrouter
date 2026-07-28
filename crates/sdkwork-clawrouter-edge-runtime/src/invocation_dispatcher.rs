@@ -136,7 +136,7 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                     "provider_url_missing",
                     format!(
                         "invocation route {}:{} is missing provider URL",
-                        account.provider_code, account.channel_id
+                        account.supplier_code, account.account_id
                     ),
                     None,
                     false,
@@ -256,8 +256,8 @@ where
             format!(
                 "{operation} timed out after {} ms for invocation route {}:{}",
                 timeout.as_millis(),
-                account.provider_code,
-                account.channel_id
+                account.supplier_code,
+                account.account_id
             ),
             None,
             true,
@@ -488,8 +488,8 @@ mod tests {
 
     fn account() -> InvocationAccount {
         InvocationAccount {
-            provider_code: "test-provider".to_owned(),
-            channel_id: 1,
+            supplier_code: "test-provider".to_owned(),
+            account_id: 1,
             region_code: "global".to_owned(),
             credential_id: None,
             credential_rotation: None,

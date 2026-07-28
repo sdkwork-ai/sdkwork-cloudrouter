@@ -210,8 +210,8 @@ fn build_payment_callback_command(
     body: &[u8],
 ) -> Result<PaymentCallbackCommand, String> {
     let provider_raw = provider.unwrap_or_default();
-    let provider_code = resolve_payment_provider_code(&provider_raw)?;
-    let parsed = validate_payment_callback(&provider_code, body, state.body_max_bytes)?;
+    let supplier_code = resolve_payment_supplier_code(&provider_raw)?;
+    let parsed = validate_payment_callback(&supplier_code, body, state.body_max_bytes)?;
     let payload_digest = sha256_hex(body);
     let payment_webhook_config = state.payment_webhook_config.as_ref().ok_or_else(|| {
         format!(
@@ -244,14 +244,14 @@ fn build_payment_callback_command(
     let event_id =
         callback_header(headers, &["x-sdkwork-event-id", "x-event-id"]).unwrap_or_else(|| {
             sha256_text(&format!(
-                "{provider_code}|{nonce}|{}|{payload_digest}",
+                "{supplier_code}|{nonce}|{}|{payload_digest}",
                 request_timestamp.unwrap_or_default()
             ))
         });
     let received_at = format_unix_timestamp(current_unix_timestamp());
 
     Ok(PaymentCallbackCommand {
-        provider_code,
+        supplier_code,
         event_uuid: generate_entity_uuid(&state)?,
         delivery_uuid: generate_entity_uuid(&state)?,
         account_uuid: generate_entity_uuid(&state)?,
@@ -277,7 +277,7 @@ fn generate_entity_uuid(state: &AppPaymentCallbackState) -> Result<String, Strin
 }
 
 fn validate_payment_callback(
-    provider_code: &str,
+    supplier_code: &str,
     body: &[u8],
     max_body_bytes: usize,
 ) -> Result<ParsedPaymentCallback, String> {
@@ -291,7 +291,7 @@ fn validate_payment_callback(
     }
     let raw = std::str::from_utf8(body)
         .map_err(|_| "payment callback payload must be valid UTF-8".to_owned())?;
-    let parsed = parse_payment_callback_payload(provider_code, raw)?;
+    let parsed = parse_payment_callback_payload(supplier_code, raw)?;
     if parsed.out_trade_no.is_empty() {
         return Err("payment callback outTradeNo must not be empty".to_owned());
     }
@@ -335,7 +335,7 @@ struct ParsedPaymentCallback {
 }
 
 fn parse_payment_callback_payload(
-    provider_code: &str,
+    supplier_code: &str,
     raw: &str,
 ) -> Result<ParsedPaymentCallback, String> {
     let trimmed = raw.trim();
@@ -345,7 +345,7 @@ fn parse_payment_callback_payload(
         return parse_json_payment_callback(&value);
     }
     if trimmed.starts_with('<') {
-        return parse_xml_payment_callback(provider_code, trimmed);
+        return parse_xml_payment_callback(supplier_code, trimmed);
     }
     parse_form_payment_callback(trimmed)
 }
@@ -432,7 +432,7 @@ fn parse_form_payment_callback(raw: &str) -> Result<ParsedPaymentCallback, Strin
 }
 
 fn parse_xml_payment_callback(
-    provider_code: &str,
+    supplier_code: &str,
     raw: &str,
 ) -> Result<ParsedPaymentCallback, String> {
     let out_trade_no = xml_value(raw, "out_trade_no")
@@ -447,7 +447,7 @@ fn parse_xml_payment_callback(
         .or_else(|| xml_value(raw, "result_code"))
         .or_else(|| xml_value(raw, "return_code"))
         .unwrap_or_else(|| {
-            if provider_code == "wechat_pay" {
+            if supplier_code == "wechat_pay" {
                 "SUCCESS".to_owned()
             } else {
                 "success".to_owned()
@@ -465,12 +465,12 @@ fn parse_xml_payment_callback(
     })
 }
 
-fn resolve_payment_provider_code(raw_provider: &str) -> Result<String, String> {
+fn resolve_payment_supplier_code(raw_provider: &str) -> Result<String, String> {
     let registry = default_payment_provider_registry();
     let adapter = registry
         .resolve(raw_provider)
         .map_err(|_| format!("unsupported payment provider: {raw_provider}"))?;
-    Ok(adapter.capabilities().provider_code.to_owned())
+    Ok(adapter.capabilities().supplier_code.to_owned())
 }
 
 fn normalize_callback_status(raw: &str) -> Result<PaymentCallbackStatus, String> {

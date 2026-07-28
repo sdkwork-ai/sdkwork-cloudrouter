@@ -24,9 +24,9 @@ pub struct ResolvedOpenAiProviderRoute {
     pub group_id: i64,
     pub group_code: String,
     pub pricing_plan_code: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub region_code: String,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub provider_model: String,
     pub provider_base_url: Option<String>,
     pub provider_secret_ref: Option<String>,
@@ -260,7 +260,7 @@ where
             billing_meter,
         })
         .map_err(provider_route_selection_error)?;
-    let channel_routes = catalog.list_provider_channel_routes();
+    let channel_routes = catalog.list_upstream_account_routes();
     let routes = model_plan
         .routes
         .into_iter()
@@ -313,19 +313,19 @@ fn resolve_model_route(
     vendor_code: &str,
     catalog_key: &str,
     selection: SelectedProviderRoute,
-    channel_routes: &[crate::domain::ProviderChannelRoute],
+    channel_routes: &[crate::domain::UpstreamAccountRoute],
 ) -> Result<ResolvedOpenAiProviderRoute, OpenAiRouteError> {
     let model_route = selection.route;
     let channel_metadata = find_selected_channel_route_metadata(&model_route, channel_routes);
     if channel_metadata
         .as_ref()
-        .map(|route| route.provider_code.as_str())
-        .is_some_and(|provider_code| provider_code != model_route.provider_code)
+        .map(|route| route.supplier_code.as_str())
+        .is_some_and(|supplier_code| supplier_code != model_route.supplier_code)
     {
         return Err(provider_route_selection_error(
             ProviderRouteSelectionError::provider_route_unavailable(format!(
                 "provider route is not available for configured channel route: selected channel {} provider mismatch for model {}",
-                model_route.channel_id, catalog_key
+                model_route.account_id, catalog_key
             )),
         ));
     }
@@ -333,7 +333,7 @@ fn resolve_model_route(
         return Err(provider_route_selection_error(
             ProviderRouteSelectionError::provider_route_unavailable(format!(
                 "provider route is not available for configured channel route: selected channel {} is missing callable base URL or credential for model {}",
-                model_route.channel_id, catalog_key
+                model_route.account_id, catalog_key
             )),
         ));
     }
@@ -342,41 +342,41 @@ fn resolve_model_route(
         requested_model,
         &ResolveModelMappingContext::new()
             .with_vendor_code(vendor_code)
-            .with_channel_id(model_route.channel_id)
-            .with_channel_code(
+            .with_account_id(model_route.account_id)
+            .with_account_code(
                 channel_metadata
                     .as_ref()
-                    .and_then(|route| route.channel_code.as_deref())
+                    .and_then(|route| route.account_code.as_deref())
                     .unwrap_or_default(),
             )
-            .with_channel_group_id(selection.group_id)
-            .with_channel_group_code(selection.group_code.as_str())
+            .with_account_group_id(selection.group_id)
+            .with_account_group_code(selection.group_code.as_str())
             .with_site(
-                channel_metadata.as_ref().and_then(|route| route.site_id),
+                channel_metadata.as_ref().and_then(|route| route.supplier_id),
                 channel_metadata
                     .as_ref()
-                    .and_then(|route| route.site_code.as_deref()),
+                    .and_then(|route| route.supplier_code.as_deref()),
             )
             .with_site_service(
                 channel_metadata
                     .as_ref()
-                    .and_then(|route| route.site_service_id),
+                    .and_then(|route| route.endpoint_id),
                 channel_metadata
                     .as_ref()
-                    .and_then(|route| route.site_service_code.as_deref()),
+                    .and_then(|route| route.endpoint_code.as_deref()),
             ),
     );
     let model_route = match channel_mapping.as_ref() {
         Some(rule) if rule.effective_catalog_key() != model_route.catalog_key => catalog
-            .list_provider_routes(rule.effective_catalog_key())
+            .list_model_upstream_routes(rule.effective_catalog_key())
             .into_iter()
-            .find(|candidate| candidate.channel_id == model_route.channel_id)
+            .find(|candidate| candidate.account_id == model_route.account_id)
             .map(|candidate| apply_selected_route_account(candidate, &model_route))
             .ok_or_else(|| {
                 provider_route_selection_error(ProviderRouteSelectionError::provider_route_unavailable(
                     format!(
                         "provider route is not available for configured channel route: channel {} has no mapped route for model {}",
-                        model_route.channel_id,
+                        model_route.account_id,
                         rule.effective_catalog_key()
                     ),
                 ))
@@ -385,13 +385,13 @@ fn resolve_model_route(
     };
     if channel_metadata
         .as_ref()
-        .map(|route| route.provider_code.as_str())
-        .is_some_and(|provider_code| provider_code != model_route.provider_code)
+        .map(|route| route.supplier_code.as_str())
+        .is_some_and(|supplier_code| supplier_code != model_route.supplier_code)
     {
         return Err(provider_route_selection_error(
             ProviderRouteSelectionError::provider_route_unavailable(format!(
                 "provider route is not available for configured channel route: selected channel {} provider mismatch for model {}",
-                model_route.channel_id, model_route.catalog_key
+                model_route.account_id, model_route.catalog_key
             )),
         ));
     }
@@ -416,9 +416,9 @@ fn resolve_model_route(
         group_id: selection.group_id,
         group_code: selection.group_code,
         pricing_plan_code: selection.pricing_plan_code,
-        provider_code: model_route.provider_code,
+        supplier_code: model_route.supplier_code,
         region_code,
-        channel_id: model_route.channel_id,
+        account_id: model_route.account_id,
         provider_model,
         provider_base_url: model_route.base_url,
         provider_secret_ref: model_route.secret_ref,
@@ -429,15 +429,15 @@ fn resolve_model_route(
 }
 
 fn find_selected_channel_route_metadata(
-    model_route: &crate::domain::ModelProviderRoute,
-    channel_routes: &[crate::domain::ProviderChannelRoute],
-) -> Option<crate::domain::ProviderChannelRoute> {
+    model_route: &crate::domain::ModelUpstreamRoute,
+    channel_routes: &[crate::domain::UpstreamAccountRoute],
+) -> Option<crate::domain::UpstreamAccountRoute> {
     let mut candidates = channel_routes
         .iter()
         .filter(|route| {
-            route.channel_id == model_route.channel_id
+            route.account_id == model_route.account_id
                 && route.credential_id == model_route.credential_id
-                && route.provider_code == model_route.provider_code
+                && route.supplier_code == model_route.supplier_code
                 && same_region(&route.region_code, &model_route.region_code)
         })
         .cloned()
@@ -448,7 +448,7 @@ fn find_selected_channel_route_metadata(
             std::cmp::Reverse(route.credential_weight),
             route.credential_id.unwrap_or(i64::MAX),
             route.region_code.clone(),
-            route.provider_code.clone(),
+            route.supplier_code.clone(),
         )
     });
 
@@ -468,9 +468,9 @@ fn find_selected_channel_route_metadata(
 }
 
 fn apply_selected_route_account(
-    mut model_route: crate::domain::ModelProviderRoute,
-    selected_route: &crate::domain::ModelProviderRoute,
-) -> crate::domain::ModelProviderRoute {
+    mut model_route: crate::domain::ModelUpstreamRoute,
+    selected_route: &crate::domain::ModelUpstreamRoute,
+) -> crate::domain::ModelUpstreamRoute {
     model_route.region_code = selected_route.region_code.clone();
     model_route.credential_id = selected_route.credential_id;
     model_route.credential_rotation = selected_route.credential_rotation.clone();
@@ -507,7 +507,7 @@ fn normalize_region_code(value: &str) -> String {
 
 fn resolved_deployment_region_code(
     model_route_region: &str,
-    channel_metadata: Option<&crate::domain::ProviderChannelRoute>,
+    channel_metadata: Option<&crate::domain::UpstreamAccountRoute>,
 ) -> String {
     let model_route_region = model_route_region.trim();
     if !model_route_region.is_empty() {

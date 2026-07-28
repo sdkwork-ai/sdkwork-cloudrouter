@@ -23,7 +23,7 @@ async fn sqlite_admin_messaging_store_writes_delivery_building_blocks_and_replay
     let provider = store
         .create_provider_account(CreateMessagingProviderAccountCommand {
             subject: subject(),
-            provider_code: "aliyun_sms".to_owned(),
+            supplier_code: "aliyun_sms".to_owned(),
             account_code: "aliyun-primary".to_owned(),
             account_name: "Aliyun Primary SMS".to_owned(),
             channel: "sms".to_owned(),
@@ -49,7 +49,7 @@ async fn sqlite_admin_messaging_store_writes_delivery_building_blocks_and_replay
             idempotency_key: "idem-provider-create".to_owned(),
             request_id: "req-provider-create".to_owned(),
             subject: subject(),
-            provider_code: "aliyun_sms".to_owned(),
+            supplier_code: "aliyun_sms".to_owned(),
             account_code: "aliyun-primary".to_owned(),
             account_name: "Aliyun Primary SMS".to_owned(),
             channel: "sms".to_owned(),
@@ -228,7 +228,7 @@ async fn sqlite_admin_messaging_store_writes_delivery_building_blocks_and_replay
         .await
         .expect("test send dry-run should create request and diagnostic event");
     assert_eq!("dry_run", test_send.delivery_status);
-    assert_eq!(Some("aliyun_sms".to_owned()), test_send.provider_code);
+    assert_eq!(Some("aliyun_sms".to_owned()), test_send.supplier_code);
 
     let dry_run_attempt_count: i64 = sqlx::query_scalar(
         r#"
@@ -283,11 +283,11 @@ async fn sqlite_admin_messaging_store_writes_delivery_building_blocks_and_replay
         .expect("test send retry should return the same observable result");
     assert_eq!(test_send.request_id, test_send_retry.request_id);
     assert_eq!(test_send.delivery_status, test_send_retry.delivery_status);
-    assert_eq!(test_send.provider_code, test_send_retry.provider_code);
+    assert_eq!(test_send.supplier_code, test_send_retry.supplier_code);
 
     let delivery_event = sqlx::query(
         r#"
-        SELECT e.event_type, e.provider_code, e.provider_event_id, e.payload_redacted
+        SELECT e.event_type, e.supplier_code, e.provider_event_id, e.payload_redacted
         FROM messaging_delivery_event e
         JOIN messaging_send_request r ON r.id = e.send_request_id
         WHERE r.request_id = ?1
@@ -300,7 +300,7 @@ async fn sqlite_admin_messaging_store_writes_delivery_building_blocks_and_replay
     assert_eq!("dry_run", delivery_event.get::<String, _>("event_type"));
     assert_eq!(
         "aliyun_sms",
-        delivery_event.get::<String, _>("provider_code")
+        delivery_event.get::<String, _>("supplier_code")
     );
     assert!(delivery_event
         .get::<String, _>("provider_event_id")
@@ -362,7 +362,7 @@ async fn sqlite_admin_messaging_store_writes_delivery_building_blocks_and_replay
         .await
         .expect("verification send at hourly policy limit should be recorded as rate limited");
     assert_eq!("rate_limited", rate_limited.delivery_status);
-    assert_eq!(Some("aliyun_sms".to_owned()), rate_limited.provider_code);
+    assert_eq!(Some("aliyun_sms".to_owned()), rate_limited.supplier_code);
 
     let rate_limited_attempt_count: i64 = sqlx::query_scalar(
         r#"
@@ -438,7 +438,7 @@ async fn sqlite_admin_messaging_store_rejects_route_target_sender_identity_from_
     let primary_provider = store
         .create_provider_account(CreateMessagingProviderAccountCommand {
             subject: subject(),
-            provider_code: "aliyun_sms".to_owned(),
+            supplier_code: "aliyun_sms".to_owned(),
             account_code: "aliyun-primary".to_owned(),
             account_name: "Aliyun Primary SMS".to_owned(),
             channel: "sms".to_owned(),
@@ -507,7 +507,7 @@ async fn sqlite_admin_messaging_store_rejects_route_target_sender_identity_from_
     let backup_provider = store
         .create_provider_account(CreateMessagingProviderAccountCommand {
             subject: subject(),
-            provider_code: "aliyun_sms".to_owned(),
+            supplier_code: "aliyun_sms".to_owned(),
             account_code: "aliyun-backup".to_owned(),
             account_name: "Aliyun Backup SMS".to_owned(),
             channel: "sms".to_owned(),
@@ -581,7 +581,7 @@ async fn sqlite_admin_messaging_store_adds_delivery_capabilities_to_existing_pro
     let transactional_account = store
         .create_provider_account(CreateMessagingProviderAccountCommand {
             subject: subject(),
-            provider_code: "sendgrid".to_owned(),
+            supplier_code: "sendgrid".to_owned(),
             account_code: "sendgrid-primary".to_owned(),
             account_name: "SendGrid Primary".to_owned(),
             channel: "email".to_owned(),
@@ -599,7 +599,7 @@ async fn sqlite_admin_messaging_store_adds_delivery_capabilities_to_existing_pro
     let marketing_capability = store
         .create_provider_account(CreateMessagingProviderAccountCommand {
             subject: subject(),
-            provider_code: "sendgrid".to_owned(),
+            supplier_code: "sendgrid".to_owned(),
             account_code: "sendgrid-primary".to_owned(),
             account_name: "SendGrid Primary".to_owned(),
             channel: "email".to_owned(),
@@ -637,7 +637,7 @@ async fn sqlite_admin_messaging_store_adds_delivery_capabilities_to_existing_pro
 
     let provider_rows = store
         .list_provider_accounts(ListAdminMessagingRecordsQuery {
-            provider_code: Some("sendgrid".to_owned()),
+            supplier_code: Some("sendgrid".to_owned()),
             ..list_query()
         })
         .await
@@ -717,7 +717,7 @@ async fn sqlite_admin_messaging_store_sends_marketing_email_template_with_same_r
     let provider = store
         .create_provider_account(CreateMessagingProviderAccountCommand {
             subject: subject(),
-            provider_code: "sendgrid".to_owned(),
+            supplier_code: "sendgrid".to_owned(),
             account_code: "sendgrid-marketing".to_owned(),
             account_name: "SendGrid Marketing".to_owned(),
             channel: "email".to_owned(),
@@ -875,7 +875,7 @@ async fn sqlite_admin_messaging_store_sends_marketing_email_template_with_same_r
         .expect("marketing email template send should create request and attempt");
 
     assert_eq!("queued", send.delivery_status);
-    assert_eq!(Some("sendgrid".to_owned()), send.provider_code);
+    assert_eq!(Some("sendgrid".to_owned()), send.supplier_code);
 
     let persisted = sqlx::query(
         r#"
@@ -975,7 +975,7 @@ async fn sqlite_admin_messaging_store_sends_marketing_email_template_with_same_r
         .expect("suppressed marketing email should be recorded without provider attempt");
 
     assert_eq!("suppressed", suppressed.delivery_status);
-    assert_eq!(Some("sendgrid".to_owned()), suppressed.provider_code);
+    assert_eq!(Some("sendgrid".to_owned()), suppressed.supplier_code);
 
     let suppressed_request = sqlx::query(
         r#"
@@ -1017,7 +1017,7 @@ async fn sqlite_admin_messaging_store_sends_marketing_email_template_with_same_r
 
     let suppressed_event = sqlx::query(
         r#"
-        SELECT e.event_type, e.provider_code, e.payload_redacted
+        SELECT e.event_type, e.supplier_code, e.payload_redacted
         FROM messaging_delivery_event e
         JOIN messaging_send_request r ON r.id = e.send_request_id
         WHERE r.request_id = ?1
@@ -1033,7 +1033,7 @@ async fn sqlite_admin_messaging_store_sends_marketing_email_template_with_same_r
     );
     assert_eq!(
         "sendgrid",
-        suppressed_event.get::<String, _>("provider_code")
+        suppressed_event.get::<String, _>("supplier_code")
     );
     assert!(suppressed_event
         .get::<String, _>("payload_redacted")
@@ -1117,7 +1117,7 @@ async fn sqlite_admin_messaging_store_sends_marketing_email_template_with_same_r
         .await
         .expect("template send without a route should be recorded as unmatched");
     assert_eq!("route_unmatched", route_unmatched.delivery_status);
-    assert_eq!(None, route_unmatched.provider_code);
+    assert_eq!(None, route_unmatched.supplier_code);
 
     let unmatched_attempt_count: i64 = sqlx::query_scalar(
         r#"
@@ -1158,7 +1158,7 @@ async fn sqlite_admin_messaging_store_sends_marketing_sms_template_with_same_rou
     let provider = store
         .create_provider_account(CreateMessagingProviderAccountCommand {
             subject: subject(),
-            provider_code: "aliyun_sms".to_owned(),
+            supplier_code: "aliyun_sms".to_owned(),
             account_code: "aliyun-marketing-sms".to_owned(),
             account_name: "Aliyun Marketing SMS".to_owned(),
             channel: "sms".to_owned(),
@@ -1286,7 +1286,7 @@ async fn sqlite_admin_messaging_store_sends_marketing_sms_template_with_same_rou
         .expect("marketing sms template send should create request and attempt");
 
     assert_eq!("queued", send.delivery_status);
-    assert_eq!(Some("aliyun_sms".to_owned()), send.provider_code);
+    assert_eq!(Some("aliyun_sms".to_owned()), send.supplier_code);
 
     let persisted = sqlx::query(
         r#"
@@ -1517,7 +1517,7 @@ fn list_query() -> ListAdminMessagingRecordsQuery {
         q: None,
         status: None,
         channel: None,
-        provider_code: None,
+        supplier_code: None,
         scene_code: None,
         target_hash: None,
         reason_code: None,
@@ -1532,7 +1532,7 @@ async fn create_messaging_tables(pool: &sqlx::SqlitePool) {
         CREATE TABLE integration_provider (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             deleted_at TEXT
         )
         "#,
@@ -1547,7 +1547,7 @@ async fn create_messaging_tables(pool: &sqlx::SqlitePool) {
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             deleted_at TEXT,
             provider_id INTEGER,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             account_code TEXT NOT NULL,
             account_name TEXT NOT NULL,
             auth_type INTEGER,
@@ -1566,7 +1566,7 @@ async fn create_messaging_tables(pool: &sqlx::SqlitePool) {
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             deleted_at TEXT,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_account_id INTEGER NOT NULL,
             channel TEXT NOT NULL,
             delivery_purpose TEXT NOT NULL,
@@ -1591,7 +1591,7 @@ async fn create_messaging_tables(pool: &sqlx::SqlitePool) {
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             deleted_at TEXT,
             provider_account_id INTEGER NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             channel TEXT NOT NULL,
             identity_code TEXT NOT NULL,
             display_name TEXT,
@@ -1696,7 +1696,7 @@ async fn create_messaging_tables(pool: &sqlx::SqlitePool) {
             deleted_at TEXT,
             route_rule_id INTEGER NOT NULL,
             provider_account_id INTEGER NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             sender_identity_id INTEGER,
             template_binding_id INTEGER,
             target_order INTEGER NOT NULL DEFAULT 1,
@@ -1742,7 +1742,7 @@ async fn create_messaging_tables(pool: &sqlx::SqlitePool) {
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             send_request_id INTEGER NOT NULL,
             attempt_no INTEGER NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_account_id INTEGER NOT NULL,
             provider_status TEXT,
             attempted_at TEXT NOT NULL
@@ -1760,7 +1760,7 @@ async fn create_messaging_tables(pool: &sqlx::SqlitePool) {
             payload_hash TEXT NOT NULL,
             send_request_id INTEGER NOT NULL,
             send_attempt_id INTEGER,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_event_id TEXT NOT NULL,
             provider_message_id TEXT,
             event_type TEXT NOT NULL,
@@ -1860,7 +1860,7 @@ async fn create_messaging_tables(pool: &sqlx::SqlitePool) {
 async fn seed_messaging_reference_data(pool: &sqlx::SqlitePool) {
     sqlx::query(
         r#"
-        INSERT INTO integration_provider (id, uuid, provider_code)
+        INSERT INTO integration_provider (id, uuid, supplier_code)
         VALUES
             (1, 'provider-aliyun-sms', 'aliyun_sms'),
             (2, 'provider-sendgrid', 'sendgrid')

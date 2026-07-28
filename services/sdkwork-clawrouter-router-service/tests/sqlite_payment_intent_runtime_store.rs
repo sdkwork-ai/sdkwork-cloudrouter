@@ -58,7 +58,7 @@ async fn sqlite_payment_intent_runtime_persists_intent_attempt_and_route_decisio
         .await
     );
     let route_provider_sql = format!(
-        "SELECT provider_code FROM commerce_payment_route_decision WHERE payment_intent_id = '{}'",
+        "SELECT supplier_code FROM commerce_payment_route_decision WHERE payment_intent_id = '{}'",
         intent.id
     );
     assert_eq!(
@@ -220,7 +220,7 @@ fn create_command(
         amount: "88.50".to_owned(),
         currency_code: "CNY".to_owned(),
         subject: "standard checkout".to_owned(),
-        provider_code: "stripe".to_owned(),
+        supplier_code: "stripe".to_owned(),
         payment_method: Some("card".to_owned()),
         scene: Some("web".to_owned()),
         idempotency_key: idempotency_key.to_owned(),
@@ -249,7 +249,7 @@ async fn create_schema(pool: &SqlitePool) {
             merchant_order_no TEXT NOT NULL,
             subject TEXT NOT NULL,
             provider TEXT NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             payment_method TEXT NOT NULL,
             scene_code TEXT NOT NULL,
             amount TEXT NOT NULL,
@@ -290,8 +290,8 @@ async fn create_schema(pool: &SqlitePool) {
             payment_intent_id TEXT NOT NULL,
             payment_attempt_id TEXT NOT NULL,
             route_rule_id TEXT,
-            channel_id TEXT NOT NULL,
-            provider_code TEXT NOT NULL,
+            account_id TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_account_id TEXT,
             method_code TEXT NOT NULL,
             scene_code TEXT NOT NULL,
@@ -300,7 +300,7 @@ async fn create_schema(pool: &SqlitePool) {
             amount TEXT NOT NULL,
             risk_level TEXT,
             decision_reason TEXT,
-            fallback_from_channel_id TEXT,
+            fallback_from_account_id TEXT,
             created_at TEXT NOT NULL,
             UNIQUE (tenant_id, payment_attempt_id)
         )"#,
@@ -309,9 +309,9 @@ async fn create_schema(pool: &SqlitePool) {
             tenant_id TEXT NOT NULL,
             organization_id TEXT,
             operation_no TEXT NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_account_id TEXT,
-            channel_id TEXT,
+            account_id TEXT,
             operation_code TEXT NOT NULL,
             sdkwork_resource_type TEXT NOT NULL,
             sdkwork_resource_id TEXT NOT NULL,
@@ -329,7 +329,7 @@ async fn create_schema(pool: &SqlitePool) {
             started_at TEXT NOT NULL,
             completed_at TEXT,
             created_at TEXT NOT NULL,
-            UNIQUE (tenant_id, provider_code, operation_code, idempotency_key)
+            UNIQUE (tenant_id, supplier_code, operation_code, idempotency_key)
         )"#,
         r#"CREATE TABLE commerce_refund (
             id TEXT PRIMARY KEY,
@@ -340,7 +340,7 @@ async fn create_schema(pool: &SqlitePool) {
             refund_no TEXT NOT NULL,
             amount TEXT NOT NULL,
             currency_code TEXT,
-            provider_code TEXT,
+            supplier_code TEXT,
             reason TEXT,
             status TEXT NOT NULL,
             request_no TEXT NOT NULL,
@@ -355,7 +355,7 @@ async fn create_schema(pool: &SqlitePool) {
             organization_id TEXT,
             refund_attempt_no TEXT NOT NULL,
             refund_id TEXT NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_account_id TEXT,
             out_refund_no TEXT NOT NULL,
             provider_refund_id TEXT,
@@ -369,7 +369,7 @@ async fn create_schema(pool: &SqlitePool) {
             failed_at TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            UNIQUE (tenant_id, provider_code, out_refund_no)
+            UNIQUE (tenant_id, supplier_code, out_refund_no)
         )"#,
         r#"CREATE TABLE commerce_refund_item (
             id TEXT PRIMARY KEY,

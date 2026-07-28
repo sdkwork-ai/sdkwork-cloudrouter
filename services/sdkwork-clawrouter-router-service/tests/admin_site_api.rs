@@ -49,7 +49,7 @@ async fn admin_site_lists_include_complete_offset_page_info() {
 }
 
 #[tokio::test]
-async fn admin_site_create_generates_site_code_when_portal_omits_it() {
+async fn admin_site_create_generates_supplier_code_when_portal_omits_it() {
     let store = Arc::new(TestSiteStore::default());
     let router = sdkwork_clawrouter_router_service::api::admin_site_router_with_store(
         store.clone(),
@@ -85,7 +85,7 @@ async fn admin_site_create_generates_site_code_when_portal_omits_it() {
     assert_eq!(1, commands.len());
     assert_eq!(
         "site_00000000000040008000000000000001",
-        commands[0].site_code
+        commands[0].supplier_code
     );
     assert_eq!(10, commands[0].subject.tenant_id);
     assert_eq!(20, commands[0].subject.organization_id);
@@ -130,7 +130,7 @@ impl AdminSiteStore for TestSiteStore {
             self.create_commands.lock().unwrap().push(command.clone());
             Ok(AdminSiteItem {
                 id: 1,
-                site_code: command.site_code,
+                supplier_code: command.supplier_code,
                 site_name: command.site_name,
                 display_name: command.display_name,
                 description: command.description,
@@ -186,7 +186,7 @@ impl AdminSiteStore for TestSiteStore {
     ) -> AdminSiteFuture<'a, AdminSiteConnectionCheckItem> {
         Box::pin(async move {
             Ok(AdminSiteConnectionCheckItem {
-                site_id: command.site_id,
+                supplier_id: command.supplier_id,
                 status: "ok".to_owned(),
                 health_status: "healthy".to_owned(),
                 latency_ms: Some(1),

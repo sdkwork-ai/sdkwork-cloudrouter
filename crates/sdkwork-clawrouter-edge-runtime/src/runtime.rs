@@ -3092,7 +3092,7 @@ gateway_invocation_body_max_bytes = 37
                             providers: vec![ProviderAdapterProviderManifest {
                                 package: "tencent-cloud".to_owned(),
                                 provider_family: "tencent-cloud".to_owned(),
-                                provider_codes: vec!["tencent-cloud".to_owned()],
+                                supplier_codes: vec!["tencent-cloud".to_owned()],
                                 endpoints: vec![ProviderAdapterEndpointManifest {
                                     endpoint_key: "video.start_end2video".to_owned(),
                                     capability: Some("video_generation".to_owned()),
@@ -3141,7 +3141,7 @@ gateway_token = "adapter-token"
         assert_eq!("adapter-token", adapter_config.gateway_token());
         assert_eq!(1, adapter_config.routes().len());
         let route = &adapter_config.routes()[0];
-        assert_eq!("tencent-cloud", route.provider_code);
+        assert_eq!("tencent-cloud", route.supplier_code);
         assert_eq!(base_url, route.adapter_base_url);
         assert_eq!(Some("video.start_end2video"), route.endpoint_key.as_deref());
         assert_eq!(

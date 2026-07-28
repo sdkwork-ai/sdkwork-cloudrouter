@@ -40,8 +40,8 @@ async fn trace_records_success_attempt_latency() {
         .routing
         .attempted_routes
         .push(InvocationRouteAttempt {
-            provider_code: "openrouter".to_owned(),
-            channel_id: 3001,
+            supplier_code: "openrouter".to_owned(),
+            account_id: 3001,
             candidate_index: 0,
             status_code: Some(200),
             success: true,

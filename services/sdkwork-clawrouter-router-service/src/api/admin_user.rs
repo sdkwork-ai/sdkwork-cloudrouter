@@ -22,7 +22,7 @@ use crate::ports::{
     AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserItem, AdminUserStore,
     AdminUserSubject, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
     CreateGatewayApiKeyCommand, DeleteAdminUserApiKeyCommand,
-    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultChannelGroupCommand,
+    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
     GatewayApiKeyCommandStore, ListAdminUserApiKeysQuery, ListAdminUsersQuery,
     UpdateAdminUserCommand,
 };
@@ -559,7 +559,7 @@ async fn create_backend_api_key(
     };
     let group = match state
         .command_store
-        .ensure_default_channel_group(EnsureDefaultChannelGroupCommand {
+        .ensure_default_upstream_account_group(EnsureDefaultUpstreamAccountGroupCommand {
             group_uuid,
             tenant_id: subject.tenant_id,
             organization_id: subject.organization_id,

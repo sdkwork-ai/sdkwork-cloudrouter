@@ -1311,8 +1311,8 @@ async fn send_chat_completion_stream_with_runtime(
         upstream_model_request_body(request.request_body, &request.provider_model, "chat stream")?;
     let upstream_uri = endpoint.chat_completions_uri()?;
     tracing::debug!(
-        provider_code = %request.provider_code,
-        provider_channel_id = request.provider_channel_id,
+        supplier_code = %request.supplier_code,
+        provider_account_id = request.provider_account_id,
         upstream_host = %redact_url(&endpoint.base_url),
         upstream_path = %upstream_uri.path(),
         model = body.get("model").and_then(|value| value.as_str()).unwrap_or(""),
@@ -1339,8 +1339,8 @@ async fn send_chat_completion_stream_with_runtime(
         .and_then(|value| value.to_str().ok())
         .map(str::to_owned);
     tracing::info!(
-        provider_code = %request.provider_code,
-        provider_channel_id = request.provider_channel_id,
+        supplier_code = %request.supplier_code,
+        provider_account_id = request.provider_account_id,
         status_code,
         content_type = content_type.as_deref().unwrap_or(""),
         "upstream OpenAI-compatible chat stream response received"

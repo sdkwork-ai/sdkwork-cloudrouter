@@ -2,7 +2,7 @@ use sdkwork_clawrouter_router_service::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    ChannelGroup, DecimalValue, DomainResult, GatewayApiKey, Money, PriceSide, PricingPlan,
+    UpstreamAccountGroup, DecimalValue, DomainResult, GatewayApiKey, Money, PriceSide, PricingPlan,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 
@@ -17,7 +17,7 @@ impl ApiKeySecretHasher for TestHasher {
 #[test]
 fn authenticates_api_key_by_hash_without_exposing_secret() {
     let mut catalog = InMemoryPricingCatalog::default();
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",

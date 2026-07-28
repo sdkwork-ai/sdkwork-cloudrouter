@@ -300,9 +300,9 @@ impl ProviderAdapterManifestDiscoveryConfig {
 fn normalize_route(
     mut route: ProviderAdapterRouteConfig,
 ) -> Result<ProviderAdapterRouteConfig, String> {
-    route.provider_code = required_text(
+    route.supplier_code = required_text(
         "provider adapter route providerCode",
-        route.provider_code.as_str(),
+        route.supplier_code.as_str(),
     )?;
     route.adapter_base_url = required_text(
         "provider adapter route adapterBaseUrl",

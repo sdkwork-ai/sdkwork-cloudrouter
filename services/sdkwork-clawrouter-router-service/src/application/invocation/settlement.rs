@@ -162,10 +162,10 @@ fn command_for_line(
             .api_key_name_snapshot
             .clone()
             .unwrap_or_default(),
-        channel_group_id: invocation.subject.channel_group_id.unwrap_or_default(),
-        channel_group_snapshot: invocation
+        account_group_id: invocation.subject.account_group_id.unwrap_or_default(),
+        upstream_account_group_snapshot: invocation
             .subject
-            .channel_group_code
+            .account_group_code
             .clone()
             .unwrap_or_else(|| quote.group_code.clone()),
         catalog_key: quote.catalog_key.clone(),
@@ -175,8 +175,8 @@ fn command_for_line(
             .clone()
             .or_else(|| invocation.resource.requested_model_catalog_key.clone())
             .unwrap_or_else(|| quote.catalog_key.clone()),
-        provider_code: account.provider_code.clone(),
-        channel_id: account.channel_id,
+        supplier_code: account.supplier_code.clone(),
+        account_id: account.account_id,
         provider_model: account
             .provider_model
             .as_deref()
@@ -471,8 +471,8 @@ fn pricing_snapshot(
             "providerNativeModel": invocation.resource.provider_native_model.as_deref()
         },
         "provider": {
-            "code": quote.provider_code.as_deref(),
-            "channelId": quote.channel_id,
+            "code": quote.supplier_code.as_deref(),
+            "channelId": quote.account_id,
             "regionCode": quote.region_code.as_str()
         },
         "pricing": {
@@ -521,8 +521,8 @@ fn adapter_usage_pricing_snapshot(
             "providerNativeModel": provider_native_model.as_str()
         },
         "provider": {
-            "code": quote.provider_code.as_deref(),
-            "channelId": quote.channel_id,
+            "code": quote.supplier_code.as_deref(),
+            "channelId": quote.account_id,
             "regionCode": quote.region_code.as_str()
         },
         "pricingPlan": {

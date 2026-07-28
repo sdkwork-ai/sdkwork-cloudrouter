@@ -33,8 +33,8 @@ impl OpenAiInvocationPlugin for PostgresOpenAiInvocationTelemetryPlugin {
             if let Err(error) = record_fault(&self.pool, context, route, fault).await {
                 tracing::warn!(
                     error = %error,
-                    provider_code = route.provider_code,
-                    channel_id = route.channel_id,
+                    supplier_code = route.supplier_code,
+                    account_id = route.account_id,
                     "failed to record postgres OpenAI invocation fault telemetry"
                 );
             }
@@ -52,8 +52,8 @@ impl OpenAiInvocationPlugin for PostgresOpenAiInvocationTelemetryPlugin {
             if let Err(error) = record_success(&self.pool, context, route, outcome).await {
                 tracing::warn!(
                     error = %error,
-                    provider_code = route.provider_code,
-                    channel_id = route.channel_id,
+                    supplier_code = route.supplier_code,
+                    account_id = route.account_id,
                     status_code = outcome.status_code,
                     "failed to record postgres OpenAI invocation success telemetry"
                 );
@@ -115,7 +115,7 @@ async fn record_channel_fault(
     })?)
     .bind(UNHEALTHY)
     .bind(HEALTHY)
-    .bind(route.channel_id)
+    .bind(route.account_id)
     .bind(context.api_key_context.tenant_id)
     .bind(context.api_key_context.organization_id)
     .execute(pool)
@@ -154,7 +154,7 @@ async fn record_channel_success(
     )
     .bind(HEALTHY)
     .bind(latency_ms)
-    .bind(route.channel_id)
+    .bind(route.account_id)
     .bind(context.api_key_context.tenant_id)
     .bind(context.api_key_context.organization_id)
     .execute(pool)
@@ -189,7 +189,7 @@ async fn load_channel_fault_state(
         LIMIT 1
         "#,
     )
-    .bind(route.channel_id)
+    .bind(route.account_id)
     .bind(context.api_key_context.tenant_id)
     .bind(context.api_key_context.organization_id)
     .fetch_optional(pool)
@@ -206,11 +206,11 @@ async fn load_channel_fault_state(
             .ok()
             .flatten();
     let failure_threshold =
-        parse_channel_failure_threshold(circuit_breaker_policy_json.as_deref(), route.channel_id);
+        parse_channel_failure_threshold(circuit_breaker_policy_json.as_deref(), route.account_id);
     Ok(ChannelFaultState { failure_threshold })
 }
 
-fn parse_channel_failure_threshold(value: Option<&str>, channel_id: i64) -> usize {
+fn parse_channel_failure_threshold(value: Option<&str>, account_id: i64) -> usize {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
         return ProviderCircuitBreakerPolicy::default().failure_threshold;
     };
@@ -219,7 +219,7 @@ fn parse_channel_failure_threshold(value: Option<&str>, channel_id: i64) -> usiz
         Err(error) => {
             tracing::warn!(
                 error = %error,
-                channel_id,
+                account_id,
                 "invalid postgres OpenAI invocation circuit breaker policy; using default failure threshold"
             );
             ProviderCircuitBreakerPolicy::default().failure_threshold

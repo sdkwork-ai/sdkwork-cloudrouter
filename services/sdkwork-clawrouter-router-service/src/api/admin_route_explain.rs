@@ -11,10 +11,10 @@ use crate::api::admin_sql_subject::{RequiredAdminSqlScopedSubject, SqlScopedAdmi
 use crate::api::response::{not_found_problem, problem_from_wire_code, success_envelope};
 use crate::application::{
     AuthenticatedApiKeyContext, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
-    SelectProviderChannelRouteQuery, SelectProviderRouteQuery, SelectedProviderChannelRoute,
+    SelectUpstreamAccountRouteQuery, SelectProviderRouteQuery, SelectedUpstreamAccountRoute,
     SelectedProviderRoute,
 };
-use crate::domain::{BillingMeter, ChannelGroup, GatewayApiKey, RoutingCapability};
+use crate::domain::{BillingMeter, UpstreamAccountGroup, GatewayApiKey, RoutingCapability};
 use crate::ports::PricingCatalog;
 
 struct AdminRouteExplainState<C> {
@@ -33,7 +33,7 @@ impl<C> Clone for AdminRouteExplainState<C> {
 #[serde(rename_all = "camelCase")]
 struct AdminRouteExplainRequest {
     api_key_id: Option<String>,
-    channel_group_id: Option<String>,
+    account_group_id: Option<String>,
     resource_code: Option<String>,
     catalog_key: Option<String>,
     model: Option<String>,
@@ -55,7 +55,7 @@ struct AdminRouteExplainResponse {
     capability: String,
     billing_meter: String,
     api_key_id: String,
-    channel_group_id: String,
+    account_group_id: String,
     group_code: String,
     pricing_plan_code: String,
     candidate_count: usize,
@@ -71,10 +71,10 @@ struct AdminRouteExplainResponse {
 #[serde(rename_all = "camelCase")]
 struct AdminRouteExplainCandidateResponse {
     kind: &'static str,
-    provider_code: String,
-    channel_id: String,
-    channel_group_id: String,
-    channel_group_code: String,
+    supplier_code: String,
+    account_id: String,
+    account_group_id: String,
+    account_group_code: String,
     pricing_plan_code: String,
     policy_id: Option<String>,
     rule_id: Option<String>,
@@ -145,7 +145,7 @@ where
             })
     } else {
         selector
-            .select_channel_route(SelectProviderChannelRouteQuery {
+            .select_channel_route(SelectUpstreamAccountRouteQuery {
                 context: normalized.context.clone(),
                 route_key: normalized.route_key.clone(),
                 api_code: normalized.api_code.clone(),
@@ -187,7 +187,7 @@ where
         capability: capability_code(normalized.capability).to_owned(),
         billing_meter: normalized.billing_meter.code().to_owned(),
         api_key_id: normalized.context.api_key_id.to_string(),
-        channel_group_id: normalized.context.group_id.to_string(),
+        account_group_id: normalized.context.group_id.to_string(),
         group_code: normalized.context.group_code,
         pricing_plan_code: normalized.context.pricing_plan_code,
         candidate_count: selected_candidates.len(),
@@ -233,15 +233,15 @@ where
         .find_api_key(api_key_id)
         .filter(|api_key| object_scope_matches(subject, api_key.tenant_id, api_key.organization_id))
         .ok_or(RouteExplainRequestError::NotFound)?;
-    let channel_group_id = request
-        .channel_group_id
+    let account_group_id = request
+        .account_group_id
         .as_deref()
         .map(|value| parse_positive_i64(Some(value), "channelGroupId"))
         .transpose()
         .map_err(RouteExplainRequestError::BadRequest)?
         .unwrap_or(api_key.group_id);
     let group = catalog
-        .find_channel_group(channel_group_id)
+        .find_upstream_account_group(account_group_id)
         .filter(|group| object_scope_matches(subject, group.tenant_id, group.organization_id))
         .ok_or(RouteExplainRequestError::NotFound)?;
     ensure_same_scope(&api_key, &group).map_err(|_| RouteExplainRequestError::NotFound)?;
@@ -299,7 +299,7 @@ fn object_scope_matches(
     subject.tenant_id == tenant_id && subject.organization_id == organization_id
 }
 
-fn ensure_same_scope(api_key: &GatewayApiKey, group: &ChannelGroup) -> Result<(), String> {
+fn ensure_same_scope(api_key: &GatewayApiKey, group: &UpstreamAccountGroup) -> Result<(), String> {
     if api_key.tenant_id == group.tenant_id && api_key.organization_id == group.organization_id {
         return Ok(());
     }
@@ -312,10 +312,10 @@ fn to_model_candidate_response(
     let route = selection.route;
     AdminRouteExplainCandidateResponse {
         kind: "model",
-        provider_code: route.provider_code,
-        channel_id: route.channel_id.to_string(),
-        channel_group_id: selection.group_id.to_string(),
-        channel_group_code: selection.group_code,
+        supplier_code: route.supplier_code,
+        account_id: route.account_id.to_string(),
+        account_group_id: selection.group_id.to_string(),
+        account_group_code: selection.group_code,
         pricing_plan_code: selection.pricing_plan_code,
         policy_id: selection.policy_id.map(|value| value.to_string()),
         rule_id: selection.rule_id.map(|value| value.to_string()),
@@ -329,16 +329,16 @@ fn to_model_candidate_response(
 }
 
 fn to_channel_candidate_response(
-    selection: SelectedProviderChannelRoute,
+    selection: SelectedUpstreamAccountRoute,
     api_code: &str,
 ) -> AdminRouteExplainCandidateResponse {
     let route = selection.route;
     AdminRouteExplainCandidateResponse {
         kind: "channel",
-        provider_code: route.provider_code,
-        channel_id: route.channel_id.to_string(),
-        channel_group_id: selection.group_id.to_string(),
-        channel_group_code: selection.group_code,
+        supplier_code: route.supplier_code,
+        account_id: route.account_id.to_string(),
+        account_group_id: selection.group_id.to_string(),
+        account_group_code: selection.group_code,
         pricing_plan_code: selection.pricing_plan_code,
         policy_id: selection.policy_id.map(|value| value.to_string()),
         rule_id: selection.rule_id.map(|value| value.to_string()),

@@ -5,26 +5,26 @@ use std::sync::{Arc, Mutex};
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::{
-    default_desktop_cache_manager, AiRoutingCacheInvalidatingAdminChannelGroupStore,
+    default_desktop_cache_manager, AiRoutingCacheInvalidatingAdminUpstreamAccountGroupStore,
     EntityUuidGenerator, ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
     ROUTING_DISABLED_CHANNEL_CACHE_NAMESPACE, ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE,
     ROUTING_SNAPSHOT_CACHE_NAMESPACE,
 };
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminChannelGroupChannelBindingItem, AdminChannelGroupCommandFuture, AdminChannelGroupItem,
-    AdminChannelGroupListPage, AdminChannelGroupStore, CreateAdminChannelGroupCommand,
-    DeleteAdminChannelGroupCommand, ListAdminChannelGroupChannelBindingsQuery,
-    ListAdminChannelGroupsQuery, ReplaceAdminChannelGroupChannelBindingsCommand,
-    UpdateAdminChannelGroupCommand,
+    AdminUpstreamAccountGroupChannelBindingItem, AdminUpstreamAccountGroupCommandFuture, AdminUpstreamAccountGroupItem,
+    AdminUpstreamAccountGroupListPage, AdminUpstreamAccountGroupStore, CreateAdminUpstreamAccountGroupCommand,
+    DeleteAdminUpstreamAccountGroupCommand, ListAdminUpstreamAccountGroupChannelBindingsQuery,
+    ListAdminUpstreamAccountGroupsQuery, ReplaceAdminUpstreamAccountGroupChannelBindingsCommand,
+    UpdateAdminUpstreamAccountGroupCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
 
 #[tokio::test]
-async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups() {
-    let store = Arc::new(TestChannelGroupStore::default());
-    let router = sdkwork_clawrouter_router_service::api::admin_channel_group_router_with_store(
+async fn admin_upstream_account_group_route_creates_lists_updates_and_soft_deletes_groups() {
+    let store = Arc::new(TestUpstreamAccountGroupStore::default());
+    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
         store.clone(),
         Arc::new(TestUuidGenerator),
     );
@@ -35,7 +35,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/ai/channel_groups")
+                .uri("/backend/v3/api/ai/upstream_account_groups")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -83,7 +83,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         .oneshot(
             Request::builder()
                 .method("PATCH")
-                .uri("/backend/v3/api/ai/channel_groups/1")
+                .uri("/backend/v3/api/ai/upstream_account_groups/1")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -125,7 +125,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/ai/channel_groups")
+                .uri("/backend/v3/api/ai/upstream_account_groups")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -151,7 +151,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         .oneshot(
             Request::builder()
                 .method("DELETE")
-                .uri("/backend/v3/api/ai/channel_groups/1")
+                .uri("/backend/v3/api/ai/upstream_account_groups/1")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -165,7 +165,7 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/ai/channel_groups")
+                .uri("/backend/v3/api/ai/upstream_account_groups")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -180,8 +180,8 @@ async fn admin_channel_group_route_creates_lists_updates_and_soft_deletes_groups
 }
 
 #[tokio::test]
-async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
-    let store = Arc::new(TestChannelGroupStore::with_bindings(vec![
+async fn admin_upstream_account_group_route_lists_and_replaces_channel_bindings() {
+    let store = Arc::new(TestUpstreamAccountGroupStore::with_bindings(vec![
         channel_binding_item(1, 10, 3001, "OpenAI primary", "openai", 10, 80, "active"),
         channel_binding_item(
             2,
@@ -195,7 +195,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
         ),
         channel_binding_item(3, 11, 3001, "OpenAI primary", "openai", 10, 50, "active"),
     ]));
-    let router = sdkwork_clawrouter_router_service::api::admin_channel_group_router_with_store(
+    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
         store.clone(),
         Arc::new(TestUuidGenerator),
     );
@@ -205,7 +205,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/ai/channel_groups/10/channel_bindings")
+                .uri("/backend/v3/api/ai/upstream_account_groups/10/channel_bindings")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -233,7 +233,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
         .oneshot(
             Request::builder()
                 .method("PUT")
-                .uri("/backend/v3/api/ai/channel_groups/10/channel_bindings")
+                .uri("/backend/v3/api/ai/upstream_account_groups/10/channel_bindings")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -275,7 +275,7 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/ai/channel_groups/11/channel_bindings")
+                .uri("/backend/v3/api/ai/upstream_account_groups/11/channel_bindings")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -293,9 +293,9 @@ async fn admin_channel_group_route_lists_and_replaces_channel_bindings() {
 }
 
 #[tokio::test]
-async fn admin_channel_group_route_explain_reports_backend_config_readiness() {
-    let store = Arc::new(TestChannelGroupStore::with_items_and_bindings(
-        vec![channel_group_item(
+async fn admin_upstream_account_group_route_explain_reports_backend_config_readiness() {
+    let store = Arc::new(TestUpstreamAccountGroupStore::with_items_and_bindings(
+        vec![upstream_account_group_item(
             10,
             "standard",
             "Standard",
@@ -318,7 +318,7 @@ async fn admin_channel_group_route_explain_reports_backend_config_readiness() {
             ),
         ],
     ));
-    let router = sdkwork_clawrouter_router_service::api::admin_channel_group_router_with_store(
+    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
         store,
         Arc::new(TestUuidGenerator),
     );
@@ -327,7 +327,7 @@ async fn admin_channel_group_route_explain_reports_backend_config_readiness() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/ai/channel_groups/10/route_explain")
+                .uri("/backend/v3/api/ai/upstream_account_groups/10/route_explain")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -366,9 +366,9 @@ async fn admin_channel_group_route_explain_reports_backend_config_readiness() {
 }
 
 #[tokio::test]
-async fn admin_channel_group_route_explain_reports_blocking_backend_config_issues() {
-    let store = Arc::new(TestChannelGroupStore::with_items_and_bindings(
-        vec![channel_group_item(
+async fn admin_upstream_account_group_route_explain_reports_blocking_backend_config_issues() {
+    let store = Arc::new(TestUpstreamAccountGroupStore::with_items_and_bindings(
+        vec![upstream_account_group_item(
             11,
             "blocked",
             "Blocked",
@@ -379,7 +379,7 @@ async fn admin_channel_group_route_explain_reports_blocking_backend_config_issue
         )],
         Vec::new(),
     ));
-    let router = sdkwork_clawrouter_router_service::api::admin_channel_group_router_with_store(
+    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
         store,
         Arc::new(TestUuidGenerator),
     );
@@ -388,7 +388,7 @@ async fn admin_channel_group_route_explain_reports_blocking_backend_config_issue
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/ai/channel_groups/11/route_explain")
+                .uri("/backend/v3/api/ai/upstream_account_groups/11/route_explain")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -415,8 +415,8 @@ async fn admin_channel_group_route_explain_reports_blocking_backend_config_issue
 }
 
 #[tokio::test]
-async fn admin_channel_group_route_invalidates_routing_cache_after_successful_binding_mutation() {
-    let store = Arc::new(TestChannelGroupStore::with_bindings(vec![
+async fn admin_upstream_account_group_route_invalidates_routing_cache_after_successful_binding_mutation() {
+    let store = Arc::new(TestUpstreamAccountGroupStore::with_bindings(vec![
         channel_binding_item(1, 10, 3001, "OpenAI primary", "openai", 10, 80, "active"),
     ]));
     let manager = default_desktop_cache_manager();
@@ -452,8 +452,8 @@ async fn admin_channel_group_route_invalidates_routing_cache_after_successful_bi
         )
         .await
         .unwrap();
-    let router = sdkwork_clawrouter_router_service::api::admin_channel_group_router_with_store(
-        Arc::new(AiRoutingCacheInvalidatingAdminChannelGroupStore::new(
+    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+        Arc::new(AiRoutingCacheInvalidatingAdminUpstreamAccountGroupStore::new(
             store,
             manager.clone(),
         )),
@@ -464,7 +464,7 @@ async fn admin_channel_group_route_invalidates_routing_cache_after_successful_bi
         .oneshot(
             Request::builder()
                 .method("PUT")
-                .uri("/backend/v3/api/ai/channel_groups/10/channel_bindings")
+                .uri("/backend/v3/api/ai/upstream_account_groups/10/channel_bindings")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -505,9 +505,9 @@ async fn admin_channel_group_route_invalidates_routing_cache_after_successful_bi
 }
 
 #[tokio::test]
-async fn admin_channel_group_route_rejects_missing_trusted_subject() {
-    let router = sdkwork_clawrouter_router_service::api::admin_channel_group_router_with_store(
-        Arc::new(TestChannelGroupStore::default()),
+async fn admin_upstream_account_group_route_rejects_missing_trusted_subject() {
+    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+        Arc::new(TestUpstreamAccountGroupStore::default()),
         Arc::new(TestUuidGenerator),
     );
 
@@ -515,7 +515,7 @@ async fn admin_channel_group_route_rejects_missing_trusted_subject() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/ai/channel_groups")
+                .uri("/backend/v3/api/ai/upstream_account_groups")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -528,9 +528,9 @@ async fn admin_channel_group_route_rejects_missing_trusted_subject() {
 }
 
 #[tokio::test]
-async fn admin_channel_group_route_rejects_invalid_multiplier_without_calling_store() {
-    let store = Arc::new(TestChannelGroupStore::default());
-    let router = sdkwork_clawrouter_router_service::api::admin_channel_group_router_with_store(
+async fn admin_upstream_account_group_route_rejects_invalid_multiplier_without_calling_store() {
+    let store = Arc::new(TestUpstreamAccountGroupStore::default());
+    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
         store.clone(),
         Arc::new(TestUuidGenerator),
     );
@@ -539,7 +539,7 @@ async fn admin_channel_group_route_rejects_invalid_multiplier_without_calling_st
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/ai/channel_groups")
+                .uri("/backend/v3/api/ai/upstream_account_groups")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -561,9 +561,9 @@ async fn admin_channel_group_route_rejects_invalid_multiplier_without_calling_st
 }
 
 #[tokio::test]
-async fn admin_channel_group_route_does_not_expose_legacy_public_paths() {
-    let router = sdkwork_clawrouter_router_service::api::admin_channel_group_router_with_store(
-        Arc::new(TestChannelGroupStore::default()),
+async fn admin_upstream_account_group_route_does_not_expose_legacy_public_paths() {
+    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+        Arc::new(TestUpstreamAccountGroupStore::default()),
         Arc::new(TestUuidGenerator),
     );
     let legacy_group_segment = format!("{}{}", "access_", "groups");
@@ -602,14 +602,14 @@ async fn json_payload(response: axum::response::Response) -> Value {
 }
 
 #[derive(Default)]
-struct TestChannelGroupStore {
-    items: Mutex<Vec<AdminChannelGroupItem>>,
-    bindings: Mutex<Vec<AdminChannelGroupChannelBindingItem>>,
+struct TestUpstreamAccountGroupStore {
+    items: Mutex<Vec<AdminUpstreamAccountGroupItem>>,
+    bindings: Mutex<Vec<AdminUpstreamAccountGroupChannelBindingItem>>,
     commands: Mutex<Vec<&'static str>>,
 }
 
-impl TestChannelGroupStore {
-    fn with_bindings(bindings: Vec<AdminChannelGroupChannelBindingItem>) -> Self {
+impl TestUpstreamAccountGroupStore {
+    fn with_bindings(bindings: Vec<AdminUpstreamAccountGroupChannelBindingItem>) -> Self {
         Self {
             bindings: Mutex::new(bindings),
             ..Self::default()
@@ -617,8 +617,8 @@ impl TestChannelGroupStore {
     }
 
     fn with_items_and_bindings(
-        items: Vec<AdminChannelGroupItem>,
-        bindings: Vec<AdminChannelGroupChannelBindingItem>,
+        items: Vec<AdminUpstreamAccountGroupItem>,
+        bindings: Vec<AdminUpstreamAccountGroupChannelBindingItem>,
     ) -> Self {
         Self {
             items: Mutex::new(items),
@@ -628,11 +628,11 @@ impl TestChannelGroupStore {
     }
 }
 
-impl AdminChannelGroupStore for TestChannelGroupStore {
-    fn list_channel_groups<'a>(
+impl AdminUpstreamAccountGroupStore for TestUpstreamAccountGroupStore {
+    fn list_upstream_account_groups<'a>(
         &'a self,
-        query: ListAdminChannelGroupsQuery,
-    ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupListPage> {
+        query: ListAdminUpstreamAccountGroupsQuery,
+    ) -> AdminUpstreamAccountGroupCommandFuture<'a, AdminUpstreamAccountGroupListPage> {
         Box::pin(async move {
             let mut items: Vec<_> = self
                 .items
@@ -662,7 +662,7 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
             } else {
                 items = items.into_iter().skip(offset).take(page_size).collect();
             }
-            Ok(AdminChannelGroupListPage {
+            Ok(AdminUpstreamAccountGroupListPage {
                 items,
                 total,
                 page_no: query.page_no,
@@ -671,20 +671,20 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
         })
     }
 
-    fn create_channel_group<'a>(
+    fn create_upstream_account_group<'a>(
         &'a self,
-        command: CreateAdminChannelGroupCommand,
-    ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupItem> {
+        command: CreateAdminUpstreamAccountGroupCommand,
+    ) -> AdminUpstreamAccountGroupCommandFuture<'a, AdminUpstreamAccountGroupItem> {
         Box::pin(async move {
             self.commands.lock().unwrap().push("create");
-            let item = AdminChannelGroupItem {
+            let item = AdminUpstreamAccountGroupItem {
                 id: 1,
                 uuid: command.group_uuid,
                 tenant_id: command.subject.tenant_id,
                 organization_id: command.subject.organization_id,
                 group_code: command.group_code,
                 group_name: command.group_name,
-                provider_code: command.provider_code,
+                supplier_code: command.supplier_code,
                 price_reference_mode: command.price_reference_mode,
                 rate_multiplier: command.rate_multiplier,
                 official_price_multiplier: command.official_price_multiplier,
@@ -705,10 +705,10 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
         })
     }
 
-    fn update_channel_group<'a>(
+    fn update_upstream_account_group<'a>(
         &'a self,
-        command: UpdateAdminChannelGroupCommand,
-    ) -> AdminChannelGroupCommandFuture<'a, Option<AdminChannelGroupItem>> {
+        command: UpdateAdminUpstreamAccountGroupCommand,
+    ) -> AdminUpstreamAccountGroupCommandFuture<'a, Option<AdminUpstreamAccountGroupItem>> {
         Box::pin(async move {
             self.commands.lock().unwrap().push("update");
             let mut items = self.items.lock().unwrap();
@@ -726,8 +726,8 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
             if let Some(group_name) = command.group_name {
                 item.group_name = group_name;
             }
-            if let Some(provider_code) = command.provider_code {
-                item.provider_code = provider_code;
+            if let Some(supplier_code) = command.supplier_code {
+                item.supplier_code = supplier_code;
             }
             if let Some(price_reference_mode) = command.price_reference_mode {
                 item.price_reference_mode = price_reference_mode;
@@ -757,10 +757,10 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
         })
     }
 
-    fn delete_channel_group<'a>(
+    fn delete_upstream_account_group<'a>(
         &'a self,
-        command: DeleteAdminChannelGroupCommand,
-    ) -> AdminChannelGroupCommandFuture<'a, bool> {
+        command: DeleteAdminUpstreamAccountGroupCommand,
+    ) -> AdminUpstreamAccountGroupCommandFuture<'a, bool> {
         Box::pin(async move {
             self.commands.lock().unwrap().push("delete");
             let mut items = self.items.lock().unwrap();
@@ -780,8 +780,8 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
 
     fn list_channel_bindings<'a>(
         &'a self,
-        query: ListAdminChannelGroupChannelBindingsQuery,
-    ) -> AdminChannelGroupCommandFuture<'a, Vec<AdminChannelGroupChannelBindingItem>> {
+        query: ListAdminUpstreamAccountGroupChannelBindingsQuery,
+    ) -> AdminUpstreamAccountGroupCommandFuture<'a, Vec<AdminUpstreamAccountGroupChannelBindingItem>> {
         Box::pin(async move {
             Ok(self
                 .bindings
@@ -801,8 +801,8 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
 
     fn replace_channel_bindings<'a>(
         &'a self,
-        command: ReplaceAdminChannelGroupChannelBindingsCommand,
-    ) -> AdminChannelGroupCommandFuture<'a, Vec<AdminChannelGroupChannelBindingItem>> {
+        command: ReplaceAdminUpstreamAccountGroupChannelBindingsCommand,
+    ) -> AdminUpstreamAccountGroupCommandFuture<'a, Vec<AdminUpstreamAccountGroupChannelBindingItem>> {
         Box::pin(async move {
             self.commands
                 .lock()
@@ -821,13 +821,13 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
                 let mut item = channel_binding_item(
                     100 + index as i64,
                     command.group_id,
-                    input.channel_id,
-                    match input.channel_id {
+                    input.account_id,
+                    match input.account_id {
                         3001 => "OpenAI primary",
                         3003 => "Gemini fallback",
                         _ => "Provider channel",
                     },
-                    match input.channel_id {
+                    match input.account_id {
                         3001 => "openai",
                         3003 => "google",
                         _ => "custom",
@@ -858,24 +858,24 @@ impl AdminChannelGroupStore for TestChannelGroupStore {
 fn channel_binding_item(
     id: i64,
     group_id: i64,
-    channel_id: i64,
+    account_id: i64,
     channel_name: &str,
-    provider_code: &str,
+    supplier_code: &str,
     priority: i64,
     weight: i64,
     status: &str,
-) -> AdminChannelGroupChannelBindingItem {
-    AdminChannelGroupChannelBindingItem {
+) -> AdminUpstreamAccountGroupChannelBindingItem {
+    AdminUpstreamAccountGroupChannelBindingItem {
         id,
         uuid: format!("binding-{id}"),
         tenant_id: 100001,
         organization_id: 0,
         group_id,
-        channel_id,
+        account_id,
         channel_name: channel_name.to_owned(),
-        provider_code: provider_code.to_owned(),
-        provider_name: provider_code.to_owned(),
-        channel_code: format!("{provider_code}-{channel_id}"),
+        supplier_code: supplier_code.to_owned(),
+        provider_name: supplier_code.to_owned(),
+        account_code: format!("{supplier_code}-{account_id}"),
         resource_codes: vec!["api.openai.chat_completions".to_owned()],
         api_scope: vec!["openai.chat_completions".to_owned()],
         capabilities: vec!["llm".to_owned()],
@@ -887,7 +887,7 @@ fn channel_binding_item(
     }
 }
 
-fn channel_group_item(
+fn upstream_account_group_item(
     id: i64,
     group_code: &str,
     group_name: &str,
@@ -895,15 +895,15 @@ fn channel_group_item(
     account_available: i64,
     resource_group_codes: Vec<String>,
     resource_codes: Vec<String>,
-) -> AdminChannelGroupItem {
-    AdminChannelGroupItem {
+) -> AdminUpstreamAccountGroupItem {
+    AdminUpstreamAccountGroupItem {
         id,
         uuid: format!("group-{id}"),
         tenant_id: 100001,
         organization_id: 0,
         group_code: group_code.to_owned(),
         group_name: group_name.to_owned(),
-        provider_code: "openai".to_owned(),
+        supplier_code: "openai".to_owned(),
         price_reference_mode: "multiplier".to_owned(),
         rate_multiplier: 1.0,
         official_price_multiplier: 1.0,

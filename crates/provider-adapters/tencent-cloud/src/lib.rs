@@ -21,7 +21,7 @@ impl ProviderAdapter for TencentCloudProviderAdapter {
         "tencent-cloud"
     }
 
-    fn provider_codes(&self) -> &'static [&'static str] {
+    fn supplier_codes(&self) -> &'static [&'static str] {
         &["tencent-cloud", "tencent-hunyuan"]
     }
 

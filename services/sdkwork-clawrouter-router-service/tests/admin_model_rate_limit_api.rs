@@ -215,7 +215,7 @@ impl AdminModelRateLimitStore for TestModelRateLimitStore {
                         && item.deleted_at.is_none()
                         && q.as_ref().map_or(true, |q| {
                             item.model.to_ascii_lowercase().contains(q)
-                                || item.channel_group.to_ascii_lowercase().contains(q)
+                                || item.upstream_account_group.to_ascii_lowercase().contains(q)
                         })
                 })
                 .cloned()
@@ -247,9 +247,9 @@ impl AdminModelRateLimitStore for TestModelRateLimitStore {
                 tenant_id: command.subject.tenant_id,
                 organization_id: command.subject.organization_id,
                 model: command.model,
-                channel_group: command.channel_group,
-                channel_group_id: 10,
-                channel_group_name: "Standard group".to_owned(),
+                upstream_account_group: command.upstream_account_group,
+                account_group_id: 10,
+                upstream_account_group_name: "Standard group".to_owned(),
                 rpm: command.rpm,
                 tpm: command.tpm,
                 status: "active".to_owned(),

@@ -114,7 +114,7 @@ impl AppRoutingChannelCommandStore for TestAppRoutingChannelCommandStore {
             assert_eq!(TEST_USER_ID, command.subject.user_id);
             assert_eq!("OpenAI primary", command.name);
             assert_eq!("OpenAI", command.vendor);
-            assert_eq!("openai", command.provider_code);
+            assert_eq!("openai", command.supplier_code);
             assert_eq!("OpenAI", command.protocol);
             assert_eq!("Standard API Key", command.access_type);
             assert_eq!(
@@ -154,7 +154,7 @@ impl AppRoutingChannelCommandStore for TestAppRoutingChannelCommandStore {
             assert_eq!(TEST_TENANT_ID, command.subject.tenant_id);
             assert_eq!(TEST_ORGANIZATION_ID, command.subject.organization_id);
             assert_eq!(TEST_USER_ID, command.subject.user_id);
-            assert_eq!(42, command.channel_id);
+            assert_eq!(42, command.account_id);
             Ok(AppRoutingChannelDeleteOutcome { deleted: true })
         })
     }
@@ -173,7 +173,7 @@ fn routing_channel_item(id: &str, name: &str, status: &str) -> AppRoutingChannel
         name: name.to_owned(),
         vendor: "OpenAI".to_owned(),
         provider: "OpenAI".to_owned(),
-        provider_code: "openai".to_owned(),
+        supplier_code: "openai".to_owned(),
         protocol: "OpenAI".to_owned(),
         access_type: "Standard API Key".to_owned(),
         base_url: "https://api.openai.com/v1".to_owned(),

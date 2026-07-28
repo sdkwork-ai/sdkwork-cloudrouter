@@ -16,8 +16,8 @@ use crate::infrastructure::sql::routing_config_change::AI_ROUTING_CONFIG_SCOPE;
 use crate::infrastructure::sql::rows::GatewayApiKeyRow;
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
-    ApiKeyManagementReadFuture, AppChannelGroupListPage, GatewayApiKeyListPage,
-    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListAppChannelGroupsQuery,
+    ApiKeyManagementReadFuture, AppUpstreamAccountGroupListPage, GatewayApiKeyListPage,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListAppUpstreamAccountGroupsQuery,
     ListGatewayApiKeysQuery,
 };
 
@@ -84,9 +84,9 @@ impl PostgresPricingCatalogLoader {
                 self.circuit_breaker_recovery_window_seconds,
             )
             .await?,
-            provider_channel_routes: row_mapping::load_provider_channel_routes(
+            upstream_account_routes: row_mapping::load_upstream_account_routes(
                 &mut *tx,
-                PricingCatalogSql::load_provider_channel_routes(),
+                PricingCatalogSql::load_upstream_account_routes(),
                 self.circuit_breaker_recovery_window_seconds,
             )
             .await?,
@@ -110,9 +110,9 @@ impl PostgresPricingCatalogLoader {
                 PricingCatalogSql::load_pricing_plans(),
             )
             .await?,
-            channel_groups: row_mapping::load_channel_groups(
+            upstream_account_groups: row_mapping::load_upstream_account_groups(
                 &mut *tx,
-                PricingCatalogSql::load_channel_groups(),
+                PricingCatalogSql::load_upstream_account_groups(),
             )
             .await?,
             api_keys,
@@ -131,9 +131,9 @@ impl PostgresPricingCatalogLoader {
                 PricingCatalogSql::load_gateway_risk_rules(),
             )
             .await?,
-            channel_group_metric_snapshots: row_mapping::load_channel_group_metric_snapshots(
+            upstream_account_group_metric_snapshots: row_mapping::load_upstream_account_group_metric_snapshots(
                 &mut *tx,
-                PricingCatalogSql::load_channel_group_metric_snapshots(),
+                PricingCatalogSql::load_upstream_account_group_metric_snapshots(),
             )
             .await?,
             prices: database_rows.prices,
@@ -141,7 +141,7 @@ impl PostgresPricingCatalogLoader {
         tx.commit().await.map_err(PostgresCatalogLoadError::from)?;
         let managed_provider_secrets = managed_provider_secrets_from_rows(
             &rows.provider_routes,
-            &rows.provider_channel_routes,
+            &rows.upstream_account_routes,
             self.api_key_secret_codec.as_deref(),
         )?;
         Ok(
@@ -205,8 +205,8 @@ fn default_circuit_breaker_recovery_window_seconds() -> i64 {
 }
 
 fn managed_provider_secrets_from_rows(
-    provider_routes: &[crate::infrastructure::sql::rows::ModelProviderRouteRow],
-    provider_channel_routes: &[crate::infrastructure::sql::rows::ProviderChannelRouteRow],
+    provider_routes: &[crate::infrastructure::sql::rows::ModelUpstreamRouteRow],
+    upstream_account_routes: &[crate::infrastructure::sql::rows::UpstreamAccountRouteRow],
     api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
 ) -> DomainResult<BTreeMap<String, String>> {
     let mut secrets = BTreeMap::new();
@@ -217,7 +217,7 @@ fn managed_provider_secrets_from_rows(
                 .as_deref()
                 .zip(row.auth_config_json.as_deref())
         })
-        .chain(provider_channel_routes.iter().filter_map(|row| {
+        .chain(upstream_account_routes.iter().filter_map(|row| {
             row.secret_ref
                 .as_deref()
                 .zip(row.auth_config_json.as_deref())
@@ -333,16 +333,16 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
         })
     }
 
-    fn list_app_channel_groups<'a>(
+    fn list_app_upstream_account_groups<'a>(
         &'a self,
-        query: ListAppChannelGroupsQuery,
-    ) -> ApiKeyManagementReadFuture<'a, AppChannelGroupListPage> {
+        query: ListAppUpstreamAccountGroupsQuery,
+    ) -> ApiKeyManagementReadFuture<'a, AppUpstreamAccountGroupListPage> {
         Box::pin(async move {
             let search = query
                 .q
                 .as_ref()
                 .map(|value| format!("%{}%", value.to_lowercase()));
-            let rows = row_mapping::load_paginated_channel_groups(
+            let rows = row_mapping::load_paginated_upstream_account_groups(
                 &self.pool,
                 query.tenant_id,
                 query.organization_id,
@@ -358,9 +358,9 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
                 .unwrap_or(0);
             let items = rows
                 .into_iter()
-                .map(|row| row_mapping::channel_group_from_row(&row))
+                .map(|row| row_mapping::upstream_account_group_from_row(&row))
                 .collect::<DomainResult<Vec<_>>>()?;
-            Ok(AppChannelGroupListPage {
+            Ok(AppUpstreamAccountGroupListPage {
                 items,
                 total,
                 page_no: query.page_no,

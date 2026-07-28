@@ -209,14 +209,14 @@ fn classify_request(
             .map(|classification| (classification, path.to_owned()));
     }
 
-    let Some((provider_code, standard_path)) = provider_native_parts(path) else {
+    let Some((supplier_code, standard_path)) = provider_native_parts(path) else {
         return Err(InvocationError::new(
             InvocationErrorKind::ResourceClassification,
             format!("unsupported invocation route: {} {}", method, path),
         ));
     };
     request.path = standard_path;
-    request.provider_code = Some(provider_code);
+    request.supplier_code = Some(supplier_code);
     let invocation_path = request.path.clone();
     ProviderNativeResourceClassifier::default()
         .classify(&request)

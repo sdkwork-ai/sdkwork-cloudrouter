@@ -433,7 +433,7 @@ fn parses_provider_adapter_registry_json_without_leaking_gateway_token() {
                     "endpointKey": "video.start_end2video",
                     "method": "POST",
                     "standardPathPattern": "/vidu/ent/v2/start-end2video",
-                    "adapterPathTemplate": "/providers/{provider_code}{standard_path}",
+                    "adapterPathTemplate": "/providers/{supplier_code}{standard_path}",
                     "status": "enabled",
                     "priority": 10
                 }
@@ -446,11 +446,11 @@ fn parses_provider_adapter_registry_json_without_leaking_gateway_token() {
     assert_eq!("adapter-service-token", config.gateway_token());
     assert_eq!(1, config.routes().len());
     let route = &config.routes()[0];
-    assert_eq!("tencent-cloud", route.provider_code);
+    assert_eq!("tencent-cloud", route.supplier_code);
     assert_eq!(AdapterKind::InternalHttp, route.adapter_kind);
     assert_eq!(AdapterRouteStatus::Enabled, route.status);
     assert_eq!(
-        "/providers/{provider_code}{standard_path}",
+        "/providers/{supplier_code}{standard_path}",
         route.adapter_path_template
     );
     assert!(!format!("{config:?}").contains("adapter-service-token"));
@@ -462,7 +462,7 @@ fn parses_provider_adapter_manifest_json_into_registry_routes() {
         providers: vec![ProviderAdapterProviderManifest {
             package: "tencent-cloud".to_owned(),
             provider_family: "tencent-cloud".to_owned(),
-            provider_codes: vec!["tencent-cloud".to_owned(), "tencent-hunyuan".to_owned()],
+            supplier_codes: vec!["tencent-cloud".to_owned(), "tencent-hunyuan".to_owned()],
             endpoints: vec![ProviderAdapterEndpointManifest {
                 endpoint_key: "video.start_end2video".to_owned(),
                 capability: Some("video_generation".to_owned()),
@@ -494,7 +494,7 @@ fn parses_provider_adapter_manifest_json_into_registry_routes() {
     let official_route = config
         .routes()
         .iter()
-        .find(|route| route.provider_code == "tencent-cloud")
+        .find(|route| route.supplier_code == "tencent-cloud")
         .unwrap();
     assert_eq!("http://127.0.0.1:39110", official_route.adapter_base_url);
     assert_eq!(
@@ -507,7 +507,7 @@ fn parses_provider_adapter_manifest_json_into_registry_routes() {
     );
     assert_eq!("POST", official_route.method);
     assert_eq!(
-        "/providers/{provider_code}{standard_path}",
+        "/providers/{supplier_code}{standard_path}",
         official_route.adapter_path_template
     );
 }
@@ -538,7 +538,7 @@ fn rejects_provider_adapter_registry_json_without_gateway_token() {
                     "adapterBaseUrl": "http://127.0.0.1:39110",
                     "method": "POST",
                     "standardPathPattern": "/vidu/ent/v2/start-end2video",
-                    "adapterPathTemplate": "/providers/{provider_code}{standard_path}",
+                    "adapterPathTemplate": "/providers/{supplier_code}{standard_path}",
                     "status": "enabled",
                     "priority": 10
                 }
@@ -572,7 +572,7 @@ json = '''
       "endpointKey": "openai.chat_completions",
       "method": "POST",
       "standardPathPattern": "/v1/chat/completions",
-      "adapterPathTemplate": "/providers/{{provider_code}}{{standard_path}}",
+      "adapterPathTemplate": "/providers/{{supplier_code}}{{standard_path}}",
       "status": "enabled",
       "priority": 10
     }}
@@ -589,7 +589,7 @@ json = '''
         .unwrap();
 
     assert_eq!("adapter-service-token", adapter.gateway_token());
-    assert_eq!("openrouter", adapter.routes()[0].provider_code);
+    assert_eq!("openrouter", adapter.routes()[0].supplier_code);
 
     let _ = std::fs::remove_file(adapter_token_path);
 }
@@ -646,7 +646,7 @@ json_file = "{}"
 
     assert_eq!("adapter-service-token", adapter.gateway_token());
     assert_eq!(1, adapter.routes().len());
-    assert_eq!("tencent-cloud", adapter.routes()[0].provider_code);
+    assert_eq!("tencent-cloud", adapter.routes()[0].supplier_code);
     assert_eq!(
         Some("video.start_end2video"),
         adapter.routes()[0].endpoint_key.as_deref()
@@ -707,12 +707,12 @@ manifest_file = "{}"
     assert_eq!("adapter-service-token", adapter.gateway_token());
     assert_eq!(1, adapter.routes().len());
     let route = &adapter.routes()[0];
-    assert_eq!("tencent-cloud", route.provider_code);
+    assert_eq!("tencent-cloud", route.supplier_code);
     assert_eq!("http://127.0.0.1:39110", route.adapter_base_url);
     assert_eq!(Some("video_generation"), route.capability.as_deref());
     assert_eq!(Some("video.start_end2video"), route.endpoint_key.as_deref());
     assert_eq!(
-        "/providers/{provider_code}{standard_path}",
+        "/providers/{supplier_code}{standard_path}",
         route.adapter_path_template
     );
 
@@ -792,7 +792,7 @@ json = '''
       "endpointKey": "openai.chat_completions",
       "method": "post",
       "standardPathPattern": "v1/chat/completions",
-      "adapterPathTemplate": "providers/{{provider_code}}{{standard_path}}",
+      "adapterPathTemplate": "providers/{{supplier_code}}{{standard_path}}",
       "status": "enabled",
       "priority": 10
     }}
@@ -814,12 +814,12 @@ json = '''
 
     assert_eq!(1, adapter.routes().len());
     let route = &adapter.routes()[0];
-    assert_eq!("manual-provider", route.provider_code);
+    assert_eq!("manual-provider", route.supplier_code);
     assert_eq!("http://127.0.0.1:39220", route.adapter_base_url);
     assert_eq!("POST", route.method);
     assert_eq!("/v1/chat/completions", route.standard_path_pattern);
     assert_eq!(
-        "/providers/{provider_code}{standard_path}",
+        "/providers/{supplier_code}{standard_path}",
         route.adapter_path_template
     );
 
@@ -865,7 +865,7 @@ fn provider_adapter_manifest_parts_can_be_read_from_env() {
 
     assert_eq!("adapter-service-token", adapter.gateway_token());
     assert_eq!(1, adapter.routes().len());
-    assert_eq!("vidu-env", adapter.routes()[0].provider_code);
+    assert_eq!("vidu-env", adapter.routes()[0].supplier_code);
     assert_eq!(
         "http://127.0.0.1:39110",
         adapter.routes()[0].adapter_base_url

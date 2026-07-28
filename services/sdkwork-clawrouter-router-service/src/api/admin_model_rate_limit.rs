@@ -44,7 +44,7 @@ struct AdminModelRateLimitListQueryRequest {
 #[serde(rename_all = "camelCase")]
 struct AdminModelRateLimitCreateRequest {
     model: Option<String>,
-    channel_group: Option<String>,
+    upstream_account_group: Option<String>,
     rpm: Option<i64>,
     tpm: Option<i64>,
 }
@@ -52,7 +52,7 @@ struct AdminModelRateLimitCreateRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NormalizedCreateRequest {
     model: String,
-    channel_group: String,
+    upstream_account_group: String,
     rpm: i64,
     tpm: i64,
 }
@@ -73,9 +73,9 @@ struct AdminModelRateLimitItemEnvelope {
 struct AdminModelRateLimitItemResponse {
     id: String,
     model: String,
-    channel_group: String,
-    channel_group_id: String,
-    channel_group_name: String,
+    upstream_account_group: String,
+    account_group_id: String,
+    upstream_account_group_name: String,
     rpm: i64,
     tpm: i64,
     status: String,
@@ -188,7 +188,7 @@ fn normalize_create_request(
 ) -> Result<NormalizedCreateRequest, String> {
     Ok(NormalizedCreateRequest {
         model: normalize_model(request.model.as_deref())?,
-        channel_group: normalize_group(request.channel_group.as_deref())?,
+        upstream_account_group: normalize_group(request.upstream_account_group.as_deref())?,
         rpm: normalize_limit_value(request.rpm, "rpm")?,
         tpm: normalize_limit_value(request.tpm, "tpm")?,
     })
@@ -254,7 +254,7 @@ fn build_create_command(
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         policy_code,
         model: request.model,
-        channel_group: request.channel_group,
+        upstream_account_group: request.upstream_account_group,
         rpm: request.rpm,
         tpm: request.tpm,
         request_id: generate_server_request_id().map_err(request_id_error)?,
@@ -284,9 +284,9 @@ fn to_item_response(item: AdminModelRateLimitItem) -> AdminModelRateLimitItemRes
     AdminModelRateLimitItemResponse {
         id: item.id.to_string(),
         model: item.model,
-        channel_group: item.channel_group,
-        channel_group_id: item.channel_group_id.to_string(),
-        channel_group_name: item.channel_group_name,
+        upstream_account_group: item.upstream_account_group,
+        account_group_id: item.account_group_id.to_string(),
+        upstream_account_group_name: item.upstream_account_group_name,
         rpm: item.rpm,
         tpm: item.tpm,
         status: item.status,

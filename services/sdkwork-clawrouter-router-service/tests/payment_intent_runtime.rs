@@ -40,13 +40,13 @@ async fn create_payment_intent_records_route_decision_and_is_idempotent() {
 
     assert_eq!(first.id, second.id);
     assert_eq!(PaymentIntentStatus::RequiresConfirmation, first.status);
-    assert_eq!("stripe", first.provider_code);
+    assert_eq!("stripe", first.supplier_code);
     assert_eq!("order-1001", first.merchant_order_no);
 
     let route_decisions = store.route_decisions();
     assert_eq!(1, route_decisions.len());
     assert_eq!(first.id, route_decisions[0].payment_intent_id);
-    assert_eq!("stripe", route_decisions[0].provider_code);
+    assert_eq!("stripe", route_decisions[0].supplier_code);
     assert_eq!("card", route_decisions[0].method_code);
     assert_eq!("web", route_decisions[0].scene_code);
     assert_eq!("CNY", route_decisions[0].currency_code);
@@ -105,7 +105,7 @@ async fn confirm_payment_intent_records_provider_operation_attempt() {
     let attempts = store.operation_attempts();
     assert_eq!(1, attempts.len());
     assert_eq!(intent.id, attempts[0].sdkwork_resource_id);
-    assert_eq!("stripe", attempts[0].provider_code);
+    assert_eq!("stripe", attempts[0].supplier_code);
     assert_eq!(
         PaymentAdapterOperation::ConfirmPaymentIntent,
         attempts[0].operation
@@ -171,7 +171,7 @@ async fn capture_and_cancel_payment_intent_record_provider_operation_attempts() 
 fn create_command(
     idempotency_key: &str,
     merchant_order_no: &str,
-    provider_code: &str,
+    supplier_code: &str,
 ) -> RuntimeCreatePaymentIntentCommand {
     RuntimeCreatePaymentIntentCommand {
         tenant_id: "100001".to_owned(),
@@ -181,7 +181,7 @@ fn create_command(
         amount: "88.50".to_owned(),
         currency_code: "CNY".to_owned(),
         subject: "standard checkout".to_owned(),
-        provider_code: provider_code.to_owned(),
+        supplier_code: supplier_code.to_owned(),
         payment_method: Some("card".to_owned()),
         scene: Some("web".to_owned()),
         idempotency_key: idempotency_key.to_owned(),

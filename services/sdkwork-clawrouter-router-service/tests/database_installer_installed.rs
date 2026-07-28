@@ -95,7 +95,7 @@ async fn seed_snapshot(pool: &SqlitePool) -> SeedSnapshot {
         channel_rows: sqlx::query_scalar(
             r#"SELECT COUNT(*) FROM ai_channel
                WHERE tenant_id = 100001 AND organization_id = 0
-                 AND channel_code = 'openai-default' AND deleted_at IS NULL"#,
+                 AND account_code = 'openai-default' AND deleted_at IS NULL"#,
         )
         .fetch_one(pool)
         .await
@@ -103,7 +103,7 @@ async fn seed_snapshot(pool: &SqlitePool) -> SeedSnapshot {
         credential_rows: sqlx::query_scalar(
             r#"SELECT COUNT(*) FROM ai_channel_credential
                WHERE tenant_id = 100001 AND organization_id = 0
-                 AND channel_code = 'openai-default' AND deleted_at IS NULL"#,
+                 AND account_code = 'openai-default' AND deleted_at IS NULL"#,
         )
         .fetch_one(pool)
         .await
@@ -218,8 +218,8 @@ async fn installed_sqlite_seed_contains_models_pricing_ranking_and_routing_defau
     let default_channel_count: i64 = sqlx::query_scalar(
         r#"SELECT COUNT(*) FROM ai_channel
            WHERE tenant_id = 100001 AND organization_id = 0
-             AND channel_code = 'openai-default'
-             AND provider_code = 'openai'
+             AND account_code = 'openai-default'
+             AND supplier_code = 'openai'
              AND status = 0 AND deleted_at IS NULL
              AND json_extract(metadata, '$.catalogCode') = 'sdkwork-ai-routing'"#,
     )
@@ -231,15 +231,15 @@ async fn installed_sqlite_seed_contains_models_pricing_ranking_and_routing_defau
     let default_credential_count: i64 = sqlx::query_scalar(
         r#"SELECT COUNT(*) FROM ai_channel_credential cc
            JOIN ai_channel c
-             ON c.id = cc.channel_id
+             ON c.id = cc.account_id
             AND c.tenant_id = cc.tenant_id
             AND c.organization_id = cc.organization_id
            WHERE cc.tenant_id = 100001 AND cc.organization_id = 0
-             AND cc.channel_code = 'openai-default'
+             AND cc.account_code = 'openai-default'
              AND cc.status = 1 AND cc.deleted_at IS NULL
              AND NULLIF(cc.base_url, '') IS NOT NULL
              AND NULLIF(cc.credential_ref, '') IS NOT NULL
-             AND c.channel_code = 'openai-default'
+             AND c.account_code = 'openai-default'
              AND c.deleted_at IS NULL
              AND json_extract(cc.metadata, '$.catalogCode') = 'sdkwork-ai-routing'"#,
     )
@@ -283,12 +283,12 @@ async fn repeated_catalog_refresh_is_idempotent_and_has_no_duplicate_routing_key
 
     let duplicate_channel_keys: i64 = sqlx::query_scalar(
         r#"SELECT COUNT(*) FROM (
-             SELECT tenant_id, organization_id, channel_code, COUNT(*) AS channel_count
+             SELECT tenant_id, organization_id, account_code, COUNT(*) AS channel_count
              FROM ai_channel
              WHERE tenant_id = 100001 AND organization_id = 0
                AND json_extract(metadata, '$.catalogCode') = 'sdkwork-ai-routing'
                AND deleted_at IS NULL
-             GROUP BY tenant_id, organization_id, channel_code
+             GROUP BY tenant_id, organization_id, account_code
              HAVING channel_count > 1
            )"#,
     )
@@ -314,7 +314,7 @@ async fn missing_default_credential_is_restored_by_explicit_bootstrap_without_du
                consecutive_error_count = 9,
                deleted_at = CURRENT_TIMESTAMP
            WHERE tenant_id = 100001 AND organization_id = 0
-             AND channel_code = 'openai-default'"#,
+             AND account_code = 'openai-default'"#,
     )
     .execute(&pool)
     .await
@@ -340,7 +340,7 @@ async fn missing_default_credential_is_restored_by_explicit_bootstrap_without_du
                   consecutive_error_count, deleted_at
            FROM ai_channel_credential
            WHERE tenant_id = 100001 AND organization_id = 0
-             AND channel_code = 'openai-default'
+             AND account_code = 'openai-default'
              AND status = 1 AND deleted_at IS NULL"#,
     )
     .fetch_one(&pool)

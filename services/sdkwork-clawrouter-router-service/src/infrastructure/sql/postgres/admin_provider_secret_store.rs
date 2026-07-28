@@ -55,7 +55,7 @@ impl AdminProviderSecretStore for PostgresAdminProviderSecretStore {
                 serde_json::json!({
                     "action": "create_provider_secret",
                     "providerSecretId": id,
-                    "providerCode": &command.provider_code,
+                    "providerCode": &command.supplier_code,
                     "secretStoredAsRef": true,
                     "status": &command.status
                 }),
@@ -75,7 +75,7 @@ impl AdminProviderSecretStore for PostgresAdminProviderSecretStore {
                 serde_json::json!({
                     "action": "create_provider_secret",
                     "providerSecretId": id,
-                    "providerCode": &command.provider_code,
+                    "providerCode": &command.supplier_code,
                     "secretStoredAsRef": true,
                     "status": &command.status
                 }),
@@ -93,7 +93,7 @@ impl AdminProviderSecretStore for PostgresAdminProviderSecretStore {
                     id,
                     serde_json::json!({
                         "providerSecretId": id,
-                        "providerCode": &command.provider_code,
+                        "providerCode": &command.supplier_code,
                         "secretStoredAsRef": true,
                         "status": &command.status
                     }),
@@ -142,7 +142,7 @@ impl AdminProviderSecretStore for PostgresAdminProviderSecretStore {
                 serde_json::json!({
                     "action": "update_provider_secret",
                     "providerSecretId": command.secret_id,
-                    "providerChanged": command.provider_code.is_some(),
+                    "providerChanged": command.supplier_code.is_some(),
                     "nameChanged": command.name.is_some(),
                     "authTypeChanged": command.auth_type.is_some(),
                     "secretRefChanged": command.secret_ref.is_some(),
@@ -164,7 +164,7 @@ impl AdminProviderSecretStore for PostgresAdminProviderSecretStore {
                 serde_json::json!({
                     "action": "update_provider_secret",
                     "providerSecretId": command.secret_id,
-                    "providerChanged": command.provider_code.is_some(),
+                    "providerChanged": command.supplier_code.is_some(),
                     "nameChanged": command.name.is_some(),
                     "authTypeChanged": command.auth_type.is_some(),
                     "secretRefChanged": command.secret_ref.is_some(),
@@ -184,7 +184,7 @@ impl AdminProviderSecretStore for PostgresAdminProviderSecretStore {
                     command.secret_id,
                     serde_json::json!({
                         "providerSecretId": command.secret_id,
-                        "providerChanged": command.provider_code.is_some(),
+                        "providerChanged": command.supplier_code.is_some(),
                         "nameChanged": command.name.is_some(),
                         "authTypeChanged": command.auth_type.is_some(),
                         "secretRefChanged": command.secret_ref.is_some(),
@@ -291,7 +291,7 @@ async fn list_provider_secrets(
             uuid,
             tenant_id,
             organization_id,
-            COALESCE(provider_code, '') AS provider_code,
+            COALESCE(supplier_code, '') AS supplier_code,
             COALESCE(account_code, '') AS account_code,
             COALESCE(account_name, '') AS account_name,
             auth_type,
@@ -306,12 +306,12 @@ async fn list_provider_secrets(
         WHERE tenant_id = $1
           AND organization_id = $2
           AND deleted_at IS NULL
-          AND ($3 IS NULL OR provider_code = $4)
+          AND ($3 IS NULL OR supplier_code = $4)
           AND ($5 IS NULL OR status = $6)
           AND (
               $7 IS NULL
               OR LOWER(COALESCE(account_name, '')) LIKE $7
-              OR LOWER(COALESCE(provider_code, '')) LIKE $7
+              OR LOWER(COALESCE(supplier_code, '')) LIKE $7
           )
         ORDER BY updated_at DESC NULLS LAST, id DESC
         LIMIT $8 OFFSET $9
@@ -319,8 +319,8 @@ async fn list_provider_secrets(
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
-    .bind(query.provider_code.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(status)
     .bind(status)
     .bind(search.as_deref())
@@ -359,7 +359,7 @@ async fn insert_provider_secret(
     sqlx::query_scalar(
         r#"
         INSERT INTO integration_provider_account
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_code, account_code, account_name, auth_type, credential_profile, auth_config, secret_ref, secret_hash, masked_label, consecutive_error_count, risk_level, id)
+            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, supplier_code, account_code, account_name, auth_type, credential_profile, auth_config, secret_ref, secret_hash, masked_label, consecutive_error_count, risk_level, id)
         VALUES
             ($1, $2, $3, 1, $4, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9, $10, 1, $11::jsonb, $12, $13, $14, 0, 1, $15)
         RETURNING id
@@ -371,7 +371,7 @@ async fn insert_provider_secret(
     .bind(status_code(&command.status))
     .bind(&command.requested_at)
     .bind(&command.requested_at)
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.account_code)
     .bind(&command.name)
     .bind(auth_type_code(&command.auth_type))
@@ -408,7 +408,7 @@ async fn update_provider_secret(
     let result = sqlx::query(
         r#"
         UPDATE integration_provider_account
-        SET provider_code = COALESCE($1, provider_code),
+        SET supplier_code = COALESCE($1, supplier_code),
             account_name = COALESCE($2, account_name),
             auth_type = COALESCE($3, auth_type),
             auth_config = COALESCE($4::jsonb, auth_config),
@@ -424,7 +424,7 @@ async fn update_provider_secret(
           AND deleted_at IS NULL
         "#,
     )
-    .bind(command.provider_code.as_deref())
+    .bind(command.supplier_code.as_deref())
     .bind(command.name.as_deref())
     .bind(
         command
@@ -490,7 +490,7 @@ async fn load_provider_secret_by_id(
             uuid,
             tenant_id,
             organization_id,
-            COALESCE(provider_code, '') AS provider_code,
+            COALESCE(supplier_code, '') AS supplier_code,
             COALESCE(account_code, '') AS account_code,
             COALESCE(account_name, '') AS account_name,
             auth_type,
@@ -626,7 +626,7 @@ fn item_from_row(row: sqlx::postgres::PgRow) -> DomainResult<AdminProviderSecret
         uuid: row.try_get("uuid").map_err(row_error)?,
         tenant_id: row.try_get("tenant_id").map_err(row_error)?,
         organization_id: row.try_get("organization_id").map_err(row_error)?,
-        provider_code: row.try_get("provider_code").map_err(row_error)?,
+        supplier_code: row.try_get("supplier_code").map_err(row_error)?,
         account_code: row.try_get("account_code").map_err(row_error)?,
         name: row.try_get("account_name").map_err(row_error)?,
         auth_type: auth_type_label(required_integer_cell(&row, "auth_type", "auth_type")?)?,

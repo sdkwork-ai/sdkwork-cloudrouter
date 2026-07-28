@@ -90,7 +90,7 @@ async fn paypal_create_order_maps_standard_payment_intent_to_order_request() {
         .await
         .unwrap();
 
-    assert_eq!("paypal", outcome.provider_code);
+    assert_eq!("paypal", outcome.supplier_code);
     assert_eq!(Some("ORDER-123".to_owned()), outcome.native_id);
     assert_eq!(Some("CREATED".to_owned()), outcome.raw_status);
 
@@ -278,7 +278,7 @@ async fn paypal_normalize_webhook_extracts_standard_event_fields() {
         .await
         .unwrap();
 
-    assert_eq!("paypal", event.provider_code);
+    assert_eq!("paypal", event.supplier_code);
     assert_eq!(
         Some("PAYMENT.CAPTURE.COMPLETED".to_owned()),
         event.event_type

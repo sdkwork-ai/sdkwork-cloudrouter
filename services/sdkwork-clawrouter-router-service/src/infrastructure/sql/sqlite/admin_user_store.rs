@@ -253,7 +253,7 @@ impl AdminUserStore for SqliteAdminUserStore {
                 return Err(DomainError::not_found("user was not found"));
             }
             ensure_api_key_idempotency_available(&mut tx, &command).await?;
-            let group_id = ensure_default_channel_group(
+            let group_id = ensure_default_upstream_account_group(
                 &mut tx,
                 command.subject.tenant_id,
                 command.subject.organization_id,
@@ -886,7 +886,7 @@ async fn ensure_api_key_idempotency_available(
     }
 }
 
-async fn find_default_channel_group(
+async fn find_default_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
     tenant_id: i64,
     organization_id: i64,
@@ -894,7 +894,7 @@ async fn find_default_channel_group(
     sqlx::query_scalar(
         r#"
         SELECT id
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE (tenant_id IS NULL OR tenant_id = ?)
           AND (organization_id IS NULL OR organization_id = ?)
           AND group_code = ?
@@ -913,23 +913,23 @@ async fn find_default_channel_group(
     .map_err(|error| store_error("failed to load default channel group", error))
 }
 
-async fn ensure_default_channel_group(
+async fn ensure_default_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
     tenant_id: i64,
     organization_id: i64,
     _source_uuid: &str,
     requested_at: &str,
 ) -> DomainResult<i64> {
-    if let Some(group_id) = find_default_channel_group(tx, tenant_id, organization_id).await? {
+    if let Some(group_id) = find_default_upstream_account_group(tx, tenant_id, organization_id).await? {
         return Ok(group_id);
     }
 
     let group_uuid = format!("default-channel-group-{tenant_id}-{organization_id}");
     let pricing_plan_id = find_default_pricing_plan_id(tx, tenant_id, organization_id).await?;
-    let id = next_claw_runtime_id("ai_channel_group")?;
+    let id = next_claw_runtime_id("ai_upstream_account_group")?;
     let insert_result = sqlx::query(
         r#"
-        INSERT INTO ai_channel_group
+        INSERT INTO ai_upstream_account_group
             (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata, id)
         VALUES
             (?, ?, ?, 1, 1, ?, ?, 0, ?, ?, '', 'default', 1, ?, ?, '1.000000', '1.000000', 1, 0, '{}', '{}', ?)
@@ -952,7 +952,7 @@ async fn ensure_default_channel_group(
         if !is_unique_violation(&error) {
             return Err(store_error("failed to create default channel group", error));
         }
-        reactivate_default_channel_group(
+        reactivate_default_upstream_account_group(
             tx,
             tenant_id,
             organization_id,
@@ -962,12 +962,12 @@ async fn ensure_default_channel_group(
         .await?;
     }
 
-    find_default_channel_group(tx, tenant_id, organization_id)
+    find_default_upstream_account_group(tx, tenant_id, organization_id)
         .await?
         .ok_or_else(|| DomainError::new("default channel group could not be reloaded"))
 }
 
-async fn reactivate_default_channel_group(
+async fn reactivate_default_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
     tenant_id: i64,
     organization_id: i64,
@@ -976,7 +976,7 @@ async fn reactivate_default_channel_group(
 ) -> DomainResult<()> {
     sqlx::query(
         r#"
-        UPDATE ai_channel_group
+        UPDATE ai_upstream_account_group
         SET status = 1,
             deleted_at = NULL,
             group_name = COALESCE(NULLIF(group_name, ''), ?),
@@ -1047,7 +1047,7 @@ async fn insert_api_key(
     sqlx::query(
         r#"
         INSERT INTO iam_gateway_api_key
-            (id, uuid, tenant_id, organization_id, user_id, channel_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, status, created_at, updated_at, last_revealed_at)
+            (id, uuid, tenant_id, organization_id, user_id, account_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, status, created_at, updated_at, last_revealed_at)
         VALUES
             (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, CURRENT_TIMESTAMP)
         "#,

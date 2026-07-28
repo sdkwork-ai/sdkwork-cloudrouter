@@ -338,17 +338,17 @@ fn request_allows_replay(invocation: &Invocation) -> bool {
 fn account_from_candidate(
     candidate: &InvocationRouteCandidate,
 ) -> Result<InvocationAccount, InvocationError> {
-    if candidate.provider_code.trim().is_empty() {
+    if candidate.supplier_code.trim().is_empty() {
         return Err(dispatch_error(
             "dispatch candidate is missing provider code",
         ));
     }
-    if candidate.channel_id <= 0 {
+    if candidate.account_id <= 0 {
         return Err(dispatch_error("dispatch candidate is missing channel id"));
     }
     Ok(InvocationAccount {
-        provider_code: candidate.provider_code.clone(),
-        channel_id: candidate.channel_id,
+        supplier_code: candidate.supplier_code.clone(),
+        account_id: candidate.account_id,
         region_code: candidate.region_code.clone(),
         credential_id: candidate.credential_id,
         credential_rotation: candidate.credential_rotation.clone(),
@@ -420,8 +420,8 @@ fn success_attempt(
     started: Instant,
 ) -> InvocationRouteAttempt {
     InvocationRouteAttempt {
-        provider_code: candidate.provider_code.clone(),
-        channel_id: candidate.channel_id,
+        supplier_code: candidate.supplier_code.clone(),
+        account_id: candidate.account_id,
         candidate_index: index,
         status_code: Some(status_code),
         success: true,
@@ -442,8 +442,8 @@ fn failed_attempt(
     started: Instant,
 ) -> InvocationRouteAttempt {
     InvocationRouteAttempt {
-        provider_code: candidate.provider_code.clone(),
-        channel_id: candidate.channel_id,
+        supplier_code: candidate.supplier_code.clone(),
+        account_id: candidate.account_id,
         candidate_index: index,
         status_code,
         success: false,

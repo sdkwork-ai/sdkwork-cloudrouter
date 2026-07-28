@@ -137,9 +137,9 @@ struct EndpointSeedDefinition<'a> {
 
 #[derive(Debug, Clone, Copy)]
 struct DefaultAdminChannelSeed {
-    channel_code: &'static str,
+    account_code: &'static str,
     channel_name: &'static str,
-    provider_code: &'static str,
+    supplier_code: &'static str,
     channel_type: &'static str,
     protocol_code: &'static str,
     base_url: &'static str,
@@ -148,21 +148,21 @@ struct DefaultAdminChannelSeed {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct DefaultAdminChannelGroupSeed {
+struct DefaultAdminUpstreamAccountGroupSeed {
     group_code: &'static str,
     group_name: &'static str,
-    provider_code: &'static str,
+    supplier_code: &'static str,
     group_type: &'static str,
-    channel_code: &'static str,
+    account_code: &'static str,
     resource_group_code: &'static str,
     priority: i32,
     weight: i32,
 }
 
 static DEFAULT_ADMIN_CHANNELS: [DefaultAdminChannelSeed; 1] = [DefaultAdminChannelSeed {
-    channel_code: "openai-default",
+    account_code: "openai-default",
     channel_name: "OpenAI Default",
-    provider_code: "openai",
+    supplier_code: "openai",
     channel_type: "official",
     protocol_code: "openai_compatible",
     base_url: DEFAULT_OPENAI_BASE_URL,
@@ -170,13 +170,13 @@ static DEFAULT_ADMIN_CHANNELS: [DefaultAdminChannelSeed; 1] = [DefaultAdminChann
     weight: 100,
 }];
 
-static DEFAULT_ADMIN_CHANNEL_GROUPS: [DefaultAdminChannelGroupSeed; 1] =
-    [DefaultAdminChannelGroupSeed {
+static DEFAULT_ADMIN_CHANNEL_GROUPS: [DefaultAdminUpstreamAccountGroupSeed; 1] =
+    [DefaultAdminUpstreamAccountGroupSeed {
         group_code: "standard-group",
         group_name: "Standard Group",
-        provider_code: "openai",
+        supplier_code: "openai",
         group_type: "official",
-        channel_code: "openai-default",
+        account_code: "openai-default",
         resource_group_code: "official.openai.full",
         priority: 100,
         weight: 100,
@@ -232,21 +232,21 @@ impl DefaultAdminChannelSeed {
     fn credential_ref(&self) -> String {
         format!(
             "secret://ai-channel-credentials/{}/default",
-            self.provider_code
+            self.supplier_code
         )
     }
 
     fn credential_hash(&self) -> String {
         stable_hash(&[
-            self.channel_code,
-            self.provider_code,
+            self.account_code,
+            self.supplier_code,
             self.base_url,
             self.credential_ref().as_str(),
         ])
     }
 
     fn credential_masked_label(&self) -> String {
-        format!("{} default credential", self.provider_code)
+        format!("{} default credential", self.supplier_code)
     }
 }
 
@@ -278,7 +278,7 @@ impl AiRoutingSeedCatalog {
             "resourceCount": self.resources.len(),
             "resourceGroupCount": self.resource_groups.len(),
             "defaultAdminChannelCount": default_admin_channels().len(),
-            "defaultAdminChannelGroupCount": default_admin_channel_groups().len(),
+            "defaultAdminUpstreamAccountGroupCount": default_admin_upstream_account_groups().len(),
             "sourceHash": source_hash(),
         })
         .to_string()
@@ -299,8 +299,8 @@ pub(crate) async fn import_sqlite_ai_routing_seed(pool: &SqlitePool) -> Result<(
     import_sqlite_resource_group_items(&mut tx, &catalog).await?;
     import_sqlite_default_admin_channels(&mut tx, &catalog).await?;
     import_sqlite_default_admin_channel_credentials(&mut tx, &catalog).await?;
-    import_sqlite_default_admin_channel_groups(&mut tx, &catalog).await?;
-    import_sqlite_default_admin_channel_group_bindings(&mut tx, &catalog).await?;
+    import_sqlite_default_admin_upstream_account_groups(&mut tx, &catalog).await?;
+    import_sqlite_default_admin_upstream_account_account_group_bindings(&mut tx, &catalog).await?;
     tx.commit().await?;
     Ok(())
 }
@@ -315,8 +315,8 @@ pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(),
     import_postgres_resource_group_items(&mut tx, &catalog).await?;
     import_postgres_default_admin_channels(&mut tx, &catalog).await?;
     import_postgres_default_admin_channel_credentials(&mut tx, &catalog).await?;
-    import_postgres_default_admin_channel_groups(&mut tx, &catalog).await?;
-    import_postgres_default_admin_channel_group_bindings(&mut tx, &catalog).await?;
+    import_postgres_default_admin_upstream_account_groups(&mut tx, &catalog).await?;
+    import_postgres_default_admin_upstream_account_account_group_bindings(&mut tx, &catalog).await?;
     tx.commit().await?;
     Ok(())
 }
@@ -340,21 +340,21 @@ pub(crate) async fn sqlite_ai_routing_seed_complete(
         "SELECT endpoint_code FROM ai_api_endpoint WHERE tenant_id = 0 AND organization_id = 0 AND status = 1 AND deleted_at IS NULL",
     )
     .await?;
-    let default_channel_codes = sqlite_default_admin_channel_codes(pool).await?;
+    let default_account_codes = sqlite_default_admin_account_codes(pool).await?;
     let default_channel_credential_codes =
         sqlite_default_admin_channel_credential_codes(pool).await?;
-    let default_channel_group_codes = sqlite_default_admin_channel_group_codes(pool).await?;
-    let default_channel_group_binding_codes =
-        sqlite_default_admin_channel_group_binding_codes(pool).await?;
+    let default_account_group_codes = sqlite_default_admin_account_group_codes(pool).await?;
+    let default_upstream_account_group_binding_codes =
+        sqlite_default_admin_upstream_account_group_binding_codes(pool).await?;
 
     Ok(expected_resource_codes(&catalog).is_subset(&resource_codes)
         && expected_group_codes(&catalog).is_subset(&group_codes)
         && expected_endpoint_codes(&catalog).is_subset(&endpoint_codes)
-        && expected_default_admin_channel_codes().is_subset(&default_channel_codes)
-        && expected_default_admin_channel_codes().is_subset(&default_channel_credential_codes)
-        && expected_default_admin_channel_group_codes().is_subset(&default_channel_group_codes)
-        && expected_default_admin_channel_group_codes()
-            .is_subset(&default_channel_group_binding_codes)
+        && expected_default_admin_account_codes().is_subset(&default_account_codes)
+        && expected_default_admin_account_codes().is_subset(&default_channel_credential_codes)
+        && expected_default_admin_account_group_codes().is_subset(&default_account_group_codes)
+        && expected_default_admin_account_group_codes()
+            .is_subset(&default_upstream_account_group_binding_codes)
         && sqlite_resource_group_item_count(pool, &catalog).await?
             >= expected_resource_group_item_count(&catalog))
 }
@@ -376,21 +376,21 @@ pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<b
         "SELECT endpoint_code FROM ai_api_endpoint WHERE tenant_id = 0 AND organization_id = 0 AND status = 1 AND deleted_at IS NULL",
     )
     .await?;
-    let default_channel_codes = postgres_default_admin_channel_codes(pool).await?;
+    let default_account_codes = postgres_default_admin_account_codes(pool).await?;
     let default_channel_credential_codes =
         postgres_default_admin_channel_credential_codes(pool).await?;
-    let default_channel_group_codes = postgres_default_admin_channel_group_codes(pool).await?;
-    let default_channel_group_binding_codes =
-        postgres_default_admin_channel_group_binding_codes(pool).await?;
+    let default_account_group_codes = postgres_default_admin_account_group_codes(pool).await?;
+    let default_upstream_account_group_binding_codes =
+        postgres_default_admin_upstream_account_group_binding_codes(pool).await?;
 
     Ok(expected_resource_codes(&catalog).is_subset(&resource_codes)
         && expected_group_codes(&catalog).is_subset(&group_codes)
         && expected_endpoint_codes(&catalog).is_subset(&endpoint_codes)
-        && expected_default_admin_channel_codes().is_subset(&default_channel_codes)
-        && expected_default_admin_channel_codes().is_subset(&default_channel_credential_codes)
-        && expected_default_admin_channel_group_codes().is_subset(&default_channel_group_codes)
-        && expected_default_admin_channel_group_codes()
-            .is_subset(&default_channel_group_binding_codes)
+        && expected_default_admin_account_codes().is_subset(&default_account_codes)
+        && expected_default_admin_account_codes().is_subset(&default_channel_credential_codes)
+        && expected_default_admin_account_group_codes().is_subset(&default_account_group_codes)
+        && expected_default_admin_account_group_codes()
+            .is_subset(&default_upstream_account_group_binding_codes)
         && postgres_resource_group_item_count(pool, &catalog).await?
             >= expected_resource_group_item_count(&catalog))
 }
@@ -944,13 +944,13 @@ async fn import_sqlite_default_admin_channels(
             r#"
             INSERT INTO ai_channel
                 (uuid, tenant_id, organization_id, data_scope, status, metadata,
-                 provider_code, channel_code, channel_name, channel_type, protocol_code,
+                 supplier_code, account_code, channel_name, channel_type, protocol_code,
                  auth_type, base_url, credential_rotation_strategy, environment, priority, weight, health_status,
                  consecutive_error_count, id)
             VALUES
                 (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'default', 1, ?, ?, ?, 0, ?)
-            ON CONFLICT(tenant_id, organization_id, channel_code) DO UPDATE SET
-                provider_code = excluded.provider_code,
+            ON CONFLICT(tenant_id, organization_id, account_code) DO UPDATE SET
+                supplier_code = excluded.supplier_code,
                 channel_type = excluded.channel_type,
                 protocol_code = excluded.protocol_code,
                 credential_rotation_strategy = excluded.credential_rotation_strategy,
@@ -964,7 +964,7 @@ async fn import_sqlite_default_admin_channels(
             &[
                 &DEFAULT_IAM_TENANT_ID.to_string(),
                 &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                channel.channel_code,
+                channel.account_code,
             ],
         ))
         .bind(DEFAULT_IAM_TENANT_ID)
@@ -972,8 +972,8 @@ async fn import_sqlite_default_admin_channels(
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
         .bind(DISABLED_STATUS)
         .bind(default_admin_channel_metadata(catalog, *channel))
-        .bind(channel.provider_code)
-        .bind(channel.channel_code)
+        .bind(channel.supplier_code)
+        .bind(channel.account_code)
         .bind(channel.channel_name)
         .bind(channel.channel_type)
         .bind(channel.protocol_code)
@@ -981,7 +981,7 @@ async fn import_sqlite_default_admin_channels(
         .bind(channel.priority)
         .bind(channel.weight)
         .bind(HEALTHY_STATUS)
-        .bind(stable_default_admin_channel_id(channel))
+        .bind(stable_default_admin_account_id(channel))
         .execute(&mut **tx)
         .await?;
     }
@@ -997,13 +997,13 @@ async fn import_postgres_default_admin_channels(
             r#"
             INSERT INTO ai_channel
                 (uuid, tenant_id, organization_id, data_scope, status, metadata,
-                 provider_code, channel_code, channel_name, channel_type, protocol_code,
+                 supplier_code, account_code, channel_name, channel_type, protocol_code,
                  auth_type, base_url, credential_rotation_strategy, environment, priority, weight, health_status,
                  consecutive_error_count, id)
             VALUES
                 ($1, $2::bigint, $3::bigint, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, 1, $12, 'default', 1, $13, $14, $15, 0, $16)
-            ON CONFLICT(tenant_id, organization_id, channel_code) DO UPDATE SET
-                provider_code = excluded.provider_code,
+            ON CONFLICT(tenant_id, organization_id, account_code) DO UPDATE SET
+                supplier_code = excluded.supplier_code,
                 channel_type = excluded.channel_type,
                 protocol_code = excluded.protocol_code,
                 credential_rotation_strategy = excluded.credential_rotation_strategy,
@@ -1017,7 +1017,7 @@ async fn import_postgres_default_admin_channels(
             &[
                 &DEFAULT_IAM_TENANT_ID.to_string(),
                 &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                channel.channel_code,
+                channel.account_code,
             ],
         ))
         .bind(DEFAULT_IAM_TENANT_ID)
@@ -1025,8 +1025,8 @@ async fn import_postgres_default_admin_channels(
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
         .bind(DISABLED_STATUS)
         .bind(default_admin_channel_metadata(catalog, *channel))
-        .bind(channel.provider_code)
-        .bind(channel.channel_code)
+        .bind(channel.supplier_code)
+        .bind(channel.account_code)
         .bind(channel.channel_name)
         .bind(channel.channel_type)
         .bind(channel.protocol_code)
@@ -1034,7 +1034,7 @@ async fn import_postgres_default_admin_channels(
         .bind(channel.priority)
         .bind(channel.weight)
         .bind(HEALTHY_STATUS)
-        .bind(stable_default_admin_channel_id(channel))
+        .bind(stable_default_admin_account_id(channel))
         .execute(&mut **tx)
         .await?;
     }
@@ -1050,24 +1050,24 @@ async fn import_sqlite_default_admin_channel_credentials(
             r#"
             INSERT INTO ai_channel_credential
                 (uuid, tenant_id, organization_id, data_scope, status, metadata,
-                 channel_id, provider_code, channel_code, credential_name, base_url,
+                 account_id, supplier_code, account_code, credential_name, base_url,
                  auth_config, credential_ref, credential_hash, masked_label, priority, weight,
                  health_status, consecutive_error_count, id)
             SELECT
                 ?, c.tenant_id, c.organization_id, ?, ?, ?,
-                c.id, c.provider_code, c.channel_code, ?, ?,
+                c.id, c.supplier_code, c.account_code, ?, ?,
                 '{}', ?, ?, ?, ?, ?, ?, 0, ?
             FROM ai_channel c
             WHERE c.tenant_id = ?
               AND c.organization_id = ?
-              AND c.channel_code = ?
+              AND c.account_code = ?
               AND c.deleted_at IS NULL
             ON CONFLICT(uuid) DO UPDATE SET
                 data_scope = excluded.data_scope,
                 status = excluded.status,
-                channel_id = excluded.channel_id,
-                provider_code = excluded.provider_code,
-                channel_code = excluded.channel_code,
+                account_id = excluded.account_id,
+                supplier_code = excluded.supplier_code,
+                account_code = excluded.account_code,
                 credential_name = excluded.credential_name,
                 base_url = excluded.base_url,
                 auth_config = excluded.auth_config,
@@ -1088,8 +1088,8 @@ async fn import_sqlite_default_admin_channel_credentials(
             &[
                 &DEFAULT_IAM_TENANT_ID.to_string(),
                 &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                channel.channel_code,
-                channel.provider_code,
+                channel.account_code,
+                channel.supplier_code,
             ],
         ))
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
@@ -1106,7 +1106,7 @@ async fn import_sqlite_default_admin_channel_credentials(
         .bind(stable_default_admin_channel_credential_id(channel))
         .bind(DEFAULT_IAM_TENANT_ID)
         .bind(DEFAULT_IAM_ORGANIZATION_ID)
-        .bind(channel.channel_code)
+        .bind(channel.account_code)
         .execute(&mut **tx)
         .await?;
         if result.rows_affected() == 0 {
@@ -1125,24 +1125,24 @@ async fn import_postgres_default_admin_channel_credentials(
             r#"
             INSERT INTO ai_channel_credential
                 (uuid, tenant_id, organization_id, data_scope, status, metadata,
-                 channel_id, provider_code, channel_code, credential_name, base_url,
+                 account_id, supplier_code, account_code, credential_name, base_url,
                  auth_config, credential_ref, credential_hash, masked_label, priority, weight,
                  health_status, consecutive_error_count, id)
             SELECT
                 $1, c.tenant_id, c.organization_id, $2, $3, $4::jsonb,
-                c.id, c.provider_code, c.channel_code, $5, $6,
+                c.id, c.supplier_code, c.account_code, $5, $6,
                 '{}'::jsonb, $7, $8, $9, $10, $11, $12, 0, $13
             FROM ai_channel c
             WHERE c.tenant_id = $14::bigint
               AND c.organization_id = $15::bigint
-              AND c.channel_code = $16
+              AND c.account_code = $16
               AND c.deleted_at IS NULL
             ON CONFLICT(uuid) DO UPDATE SET
                 data_scope = excluded.data_scope,
                 status = excluded.status,
-                channel_id = excluded.channel_id,
-                provider_code = excluded.provider_code,
-                channel_code = excluded.channel_code,
+                account_id = excluded.account_id,
+                supplier_code = excluded.supplier_code,
+                account_code = excluded.account_code,
                 credential_name = excluded.credential_name,
                 base_url = excluded.base_url,
                 auth_config = excluded.auth_config,
@@ -1163,8 +1163,8 @@ async fn import_postgres_default_admin_channel_credentials(
             &[
                 &DEFAULT_IAM_TENANT_ID.to_string(),
                 &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                channel.channel_code,
-                channel.provider_code,
+                channel.account_code,
+                channel.supplier_code,
             ],
         ))
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
@@ -1181,7 +1181,7 @@ async fn import_postgres_default_admin_channel_credentials(
         .bind(stable_default_admin_channel_credential_id(channel))
         .bind(DEFAULT_IAM_TENANT_ID)
         .bind(DEFAULT_IAM_ORGANIZATION_ID)
-        .bind(channel.channel_code)
+        .bind(channel.account_code)
         .execute(&mut **tx)
         .await?;
         if result.rows_affected() == 0 {
@@ -1191,16 +1191,16 @@ async fn import_postgres_default_admin_channel_credentials(
     Ok(())
 }
 
-async fn import_sqlite_default_admin_channel_groups(
+async fn import_sqlite_default_admin_upstream_account_groups(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     catalog: &AiRoutingSeedCatalog,
 ) -> Result<(), sqlx::Error> {
-    for group in default_admin_channel_groups() {
+    for group in default_admin_upstream_account_groups() {
         sqlx::query(
             r#"
-            INSERT INTO ai_channel_group
+            INSERT INTO ai_upstream_account_group
                 (uuid, tenant_id, organization_id, data_scope, status, metadata,
-                 group_code, group_name, description, provider_code, group_type, environment,
+                 group_code, group_name, description, supplier_code, group_type, environment,
                  pricing_plan_code, rate_multiplier, price_reference_mode,
                  official_price_multiplier, billing_type, allowed_origin, id)
             VALUES
@@ -1211,7 +1211,7 @@ async fn import_sqlite_default_admin_channel_groups(
                 status = excluded.status,
                 group_name = excluded.group_name,
                 description = excluded.description,
-                provider_code = excluded.provider_code,
+                supplier_code = excluded.supplier_code,
                 group_type = excluded.group_type,
                 environment = excluded.environment,
                 pricing_plan_code = excluded.pricing_plan_code,
@@ -1225,37 +1225,37 @@ async fn import_sqlite_default_admin_channel_groups(
                 deleted_by = NULL
             "#,
         )
-        .bind(stable_default_admin_channel_group_uuid(group))
+        .bind(stable_default_admin_upstream_account_group_uuid(group))
         .bind(DEFAULT_IAM_TENANT_ID)
         .bind(DEFAULT_IAM_ORGANIZATION_ID)
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
         .bind(ACTIVE_STATUS)
-        .bind(default_admin_channel_group_metadata(catalog, *group))
+        .bind(default_admin_upstream_account_group_metadata(catalog, *group))
         .bind(group.group_code)
         .bind(group.group_name)
         .bind(format!(
             "Default {} routing group backed by {}",
-            group.provider_code, group.resource_group_code
+            group.supplier_code, group.resource_group_code
         ))
-        .bind(group.provider_code)
+        .bind(group.supplier_code)
         .bind(group.group_type)
-        .bind(stable_default_admin_channel_group_id(group))
+        .bind(stable_default_admin_account_group_id(group))
         .execute(&mut **tx)
         .await?;
     }
     Ok(())
 }
 
-async fn import_postgres_default_admin_channel_groups(
+async fn import_postgres_default_admin_upstream_account_groups(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     catalog: &AiRoutingSeedCatalog,
 ) -> Result<(), sqlx::Error> {
-    for group in default_admin_channel_groups() {
+    for group in default_admin_upstream_account_groups() {
         sqlx::query(
             r#"
-            INSERT INTO ai_channel_group
+            INSERT INTO ai_upstream_account_group
                 (uuid, tenant_id, organization_id, data_scope, status, metadata,
-                 group_code, group_name, description, provider_code, group_type, environment,
+                 group_code, group_name, description, supplier_code, group_type, environment,
                  pricing_plan_code, rate_multiplier, price_reference_mode,
                  official_price_multiplier, billing_type, allowed_origin, id)
             VALUES
@@ -1267,7 +1267,7 @@ async fn import_postgres_default_admin_channel_groups(
                 status = excluded.status,
                 group_name = excluded.group_name,
                 description = excluded.description,
-                provider_code = excluded.provider_code,
+                supplier_code = excluded.supplier_code,
                 group_type = excluded.group_type,
                 environment = excluded.environment,
                 pricing_plan_code = excluded.pricing_plan_code,
@@ -1281,57 +1281,57 @@ async fn import_postgres_default_admin_channel_groups(
                 deleted_by = NULL
             "#,
         )
-        .bind(stable_default_admin_channel_group_uuid(group))
+        .bind(stable_default_admin_upstream_account_group_uuid(group))
         .bind(DEFAULT_IAM_TENANT_ID)
         .bind(DEFAULT_IAM_ORGANIZATION_ID)
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
         .bind(ACTIVE_STATUS)
-        .bind(default_admin_channel_group_metadata(catalog, *group))
+        .bind(default_admin_upstream_account_group_metadata(catalog, *group))
         .bind(group.group_code)
         .bind(group.group_name)
         .bind(format!(
             "Default {} routing group backed by {}",
-            group.provider_code, group.resource_group_code
+            group.supplier_code, group.resource_group_code
         ))
-        .bind(group.provider_code)
+        .bind(group.supplier_code)
         .bind(group.group_type)
-        .bind(stable_default_admin_channel_group_id(group))
+        .bind(stable_default_admin_account_group_id(group))
         .execute(&mut **tx)
         .await?;
     }
     Ok(())
 }
 
-async fn import_sqlite_default_admin_channel_group_bindings(
+async fn import_sqlite_default_admin_upstream_account_account_group_bindings(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     catalog: &AiRoutingSeedCatalog,
 ) -> Result<(), sqlx::Error> {
-    for group in default_admin_channel_groups() {
-        let channel_id = sqlite_seed_channel_id(tx, group.channel_code).await?;
-        let channel_group_id = sqlite_seed_channel_group_id(tx, group.group_code).await?;
+    for group in default_admin_upstream_account_groups() {
+        let account_id = sqlite_seed_account_id(tx, group.account_code).await?;
+        let account_group_id = sqlite_seed_account_group_id(tx, group.group_code).await?;
         let resource_group_id =
             sqlite_seed_resource_group_id(tx, group.resource_group_code).await?;
-        import_sqlite_default_admin_channel_group_member(
+        import_sqlite_default_admin_upstream_account_group_member(
             tx,
             catalog,
             *group,
-            channel_group_id,
-            channel_id,
+            account_group_id,
+            account_id,
         )
         .await?;
         import_sqlite_default_admin_channel_resource(
             tx,
             catalog,
             *group,
-            channel_id,
+            account_id,
             resource_group_id,
         )
         .await?;
-        import_sqlite_default_admin_channel_group_resource(
+        import_sqlite_default_admin_upstream_account_group_resource(
             tx,
             catalog,
             *group,
-            channel_group_id,
+            account_group_id,
             resource_group_id,
         )
         .await?;
@@ -1339,36 +1339,36 @@ async fn import_sqlite_default_admin_channel_group_bindings(
     Ok(())
 }
 
-async fn import_postgres_default_admin_channel_group_bindings(
+async fn import_postgres_default_admin_upstream_account_account_group_bindings(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     catalog: &AiRoutingSeedCatalog,
 ) -> Result<(), sqlx::Error> {
-    for group in default_admin_channel_groups() {
-        let channel_id = postgres_seed_channel_id(tx, group.channel_code).await?;
-        let channel_group_id = postgres_seed_channel_group_id(tx, group.group_code).await?;
+    for group in default_admin_upstream_account_groups() {
+        let account_id = postgres_seed_account_id(tx, group.account_code).await?;
+        let account_group_id = postgres_seed_account_group_id(tx, group.group_code).await?;
         let resource_group_id =
             postgres_seed_resource_group_id(tx, group.resource_group_code).await?;
-        import_postgres_default_admin_channel_group_member(
+        import_postgres_default_admin_upstream_account_group_member(
             tx,
             catalog,
             *group,
-            channel_group_id,
-            channel_id,
+            account_group_id,
+            account_id,
         )
         .await?;
         import_postgres_default_admin_channel_resource(
             tx,
             catalog,
             *group,
-            channel_id,
+            account_id,
             resource_group_id,
         )
         .await?;
-        import_postgres_default_admin_channel_group_resource(
+        import_postgres_default_admin_upstream_account_group_resource(
             tx,
             catalog,
             *group,
-            channel_group_id,
+            account_group_id,
             resource_group_id,
         )
         .await?;
@@ -1376,21 +1376,21 @@ async fn import_postgres_default_admin_channel_group_bindings(
     Ok(())
 }
 
-async fn import_sqlite_default_admin_channel_group_member(
+async fn import_sqlite_default_admin_upstream_account_group_member(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
-    channel_group_id: i64,
-    channel_id: i64,
+    group: DefaultAdminUpstreamAccountGroupSeed,
+    account_group_id: i64,
+    account_id: i64,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_member
+        INSERT INTO ai_upstream_account_group_member
             (uuid, tenant_id, organization_id, data_scope, status, metadata,
-             channel_group_id, channel_id, priority, weight, enabled, id)
+             account_group_id, account_id, priority, weight, enabled, id)
         VALUES
             (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-        ON CONFLICT(tenant_id, organization_id, channel_group_id, channel_id) DO UPDATE SET
+        ON CONFLICT(tenant_id, organization_id, account_group_id, account_id) DO UPDATE SET
             data_scope = excluded.data_scope,
             status = excluded.status,
             priority = excluded.priority,
@@ -1401,37 +1401,37 @@ async fn import_sqlite_default_admin_channel_group_member(
             deleted_by = NULL
         "#,
     )
-    .bind(stable_default_admin_channel_group_member_uuid(&group))
+    .bind(stable_default_admin_upstream_account_group_member_uuid(&group))
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
     .bind(DEFAULT_ADMIN_DATA_SCOPE)
     .bind(ACTIVE_STATUS)
-    .bind(default_admin_channel_group_member_metadata(catalog, group))
-    .bind(channel_group_id)
-    .bind(channel_id)
+    .bind(default_admin_upstream_account_group_member_metadata(catalog, group))
+    .bind(account_group_id)
+    .bind(account_id)
     .bind(group.priority)
     .bind(group.weight)
-    .bind(stable_default_admin_channel_group_member_id(&group))
+    .bind(stable_default_admin_upstream_account_group_member_id(&group))
     .execute(&mut **tx)
     .await?;
     Ok(())
 }
 
-async fn import_postgres_default_admin_channel_group_member(
+async fn import_postgres_default_admin_upstream_account_group_member(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
-    channel_group_id: i64,
-    channel_id: i64,
+    group: DefaultAdminUpstreamAccountGroupSeed,
+    account_group_id: i64,
+    account_id: i64,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_member
+        INSERT INTO ai_upstream_account_group_member
             (uuid, tenant_id, organization_id, data_scope, status, metadata,
-             channel_group_id, channel_id, priority, weight, enabled, id)
+             account_group_id, account_id, priority, weight, enabled, id)
         VALUES
             ($1, $2::bigint, $3::bigint, $4, $5, $6::jsonb, $7, $8, $9, $10, TRUE, $11)
-        ON CONFLICT(tenant_id, organization_id, channel_group_id, channel_id) DO UPDATE SET
+        ON CONFLICT(tenant_id, organization_id, account_group_id, account_id) DO UPDATE SET
             data_scope = excluded.data_scope,
             status = excluded.status,
             priority = excluded.priority,
@@ -1442,17 +1442,17 @@ async fn import_postgres_default_admin_channel_group_member(
             deleted_by = NULL
         "#,
     )
-    .bind(stable_default_admin_channel_group_member_uuid(&group))
+    .bind(stable_default_admin_upstream_account_group_member_uuid(&group))
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
     .bind(DEFAULT_ADMIN_DATA_SCOPE)
     .bind(ACTIVE_STATUS)
-    .bind(default_admin_channel_group_member_metadata(catalog, group))
-    .bind(channel_group_id)
-    .bind(channel_id)
+    .bind(default_admin_upstream_account_group_member_metadata(catalog, group))
+    .bind(account_group_id)
+    .bind(account_id)
     .bind(group.priority)
     .bind(group.weight)
-    .bind(stable_default_admin_channel_group_member_id(&group))
+    .bind(stable_default_admin_upstream_account_group_member_id(&group))
     .execute(&mut **tx)
     .await?;
     Ok(())
@@ -1461,24 +1461,24 @@ async fn import_postgres_default_admin_channel_group_member(
 async fn import_sqlite_default_admin_channel_resource(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
-    channel_id: i64,
+    group: DefaultAdminUpstreamAccountGroupSeed,
+    account_id: i64,
     resource_group_id: i64,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
             (uuid, tenant_id, organization_id, data_scope, status, metadata,
-             channel_id, provider_code, channel_code, resource_id, resource_code,
+             account_id, supplier_code, account_code, resource_id, resource_code,
              resource_group_id, resource_group_code, grant_type, priority, weight, id)
         VALUES
             (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, '', ?, ?, 'allow', ?, ?, ?)
-        ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code)
+        ON CONFLICT(tenant_id, organization_id, account_id, resource_code, resource_group_code)
         DO UPDATE SET
             data_scope = excluded.data_scope,
             status = excluded.status,
-            provider_code = excluded.provider_code,
-            channel_code = excluded.channel_code,
+            supplier_code = excluded.supplier_code,
+            account_code = excluded.account_code,
             resource_id = excluded.resource_id,
             resource_group_id = excluded.resource_group_id,
             grant_type = excluded.grant_type,
@@ -1495,9 +1495,9 @@ async fn import_sqlite_default_admin_channel_resource(
     .bind(DEFAULT_ADMIN_DATA_SCOPE)
     .bind(ACTIVE_STATUS)
     .bind(default_admin_channel_resource_metadata(catalog, group))
-    .bind(channel_id)
-    .bind(group.provider_code)
-    .bind(group.channel_code)
+    .bind(account_id)
+    .bind(group.supplier_code)
+    .bind(group.account_code)
     .bind(resource_group_id)
     .bind(group.resource_group_code)
     .bind(group.priority)
@@ -1511,25 +1511,25 @@ async fn import_sqlite_default_admin_channel_resource(
 async fn import_postgres_default_admin_channel_resource(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
-    channel_id: i64,
+    group: DefaultAdminUpstreamAccountGroupSeed,
+    account_id: i64,
     resource_group_id: i64,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
             (uuid, tenant_id, organization_id, data_scope, status, metadata,
-             channel_id, provider_code, channel_code, resource_id, resource_code,
+             account_id, supplier_code, account_code, resource_id, resource_code,
              resource_group_id, resource_group_code, grant_type, priority, weight, id)
         VALUES
             ($1, $2::bigint, $3::bigint, $4, $5, $6::jsonb, $7, $8, $9, NULL, '', $10,
              $11, 'allow', $12, $13, $14)
-        ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code)
+        ON CONFLICT(tenant_id, organization_id, account_id, resource_code, resource_group_code)
         DO UPDATE SET
             data_scope = excluded.data_scope,
             status = excluded.status,
-            provider_code = excluded.provider_code,
-            channel_code = excluded.channel_code,
+            supplier_code = excluded.supplier_code,
+            account_code = excluded.account_code,
             resource_id = excluded.resource_id,
             resource_group_id = excluded.resource_group_id,
             grant_type = excluded.grant_type,
@@ -1546,9 +1546,9 @@ async fn import_postgres_default_admin_channel_resource(
     .bind(DEFAULT_ADMIN_DATA_SCOPE)
     .bind(ACTIVE_STATUS)
     .bind(default_admin_channel_resource_metadata(catalog, group))
-    .bind(channel_id)
-    .bind(group.provider_code)
-    .bind(group.channel_code)
+    .bind(account_id)
+    .bind(group.supplier_code)
+    .bind(group.account_code)
     .bind(resource_group_id)
     .bind(group.resource_group_code)
     .bind(group.priority)
@@ -1559,22 +1559,22 @@ async fn import_postgres_default_admin_channel_resource(
     Ok(())
 }
 
-async fn import_sqlite_default_admin_channel_group_resource(
+async fn import_sqlite_default_admin_upstream_account_group_resource(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
-    channel_group_id: i64,
+    group: DefaultAdminUpstreamAccountGroupSeed,
+    account_group_id: i64,
     resource_group_id: i64,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
+        INSERT INTO ai_upstream_account_group_resource
             (uuid, tenant_id, organization_id, data_scope, status, metadata,
-             channel_group_id, resource_id, resource_code, resource_group_id,
+             account_group_id, resource_id, resource_code, resource_group_id,
              resource_group_code, grant_type, priority, id)
         VALUES
             (?, ?, ?, ?, ?, ?, ?, NULL, '', ?, ?, 'allow', ?, ?)
-        ON CONFLICT(tenant_id, organization_id, channel_group_id, resource_code, resource_group_code)
+        ON CONFLICT(tenant_id, organization_id, account_group_id, resource_code, resource_group_code)
         DO UPDATE SET
             data_scope = excluded.data_scope,
             status = excluded.status,
@@ -1587,39 +1587,39 @@ async fn import_sqlite_default_admin_channel_group_resource(
             deleted_by = NULL
         "#,
     )
-    .bind(stable_default_admin_channel_group_resource_uuid(&group))
+    .bind(stable_default_admin_upstream_account_group_resource_uuid(&group))
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
     .bind(DEFAULT_ADMIN_DATA_SCOPE)
     .bind(ACTIVE_STATUS)
-    .bind(default_admin_channel_group_resource_metadata(catalog, group))
-    .bind(channel_group_id)
+    .bind(default_admin_upstream_account_group_resource_metadata(catalog, group))
+    .bind(account_group_id)
     .bind(resource_group_id)
     .bind(group.resource_group_code)
     .bind(group.priority)
-    .bind(stable_default_admin_channel_group_resource_id(&group))
+    .bind(stable_default_admin_upstream_account_group_resource_id(&group))
     .execute(&mut **tx)
     .await?;
     Ok(())
 }
 
-async fn import_postgres_default_admin_channel_group_resource(
+async fn import_postgres_default_admin_upstream_account_group_resource(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
-    channel_group_id: i64,
+    group: DefaultAdminUpstreamAccountGroupSeed,
+    account_group_id: i64,
     resource_group_id: i64,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
+        INSERT INTO ai_upstream_account_group_resource
             (uuid, tenant_id, organization_id, data_scope, status, metadata,
-             channel_group_id, resource_id, resource_code, resource_group_id,
+             account_group_id, resource_id, resource_code, resource_group_id,
              resource_group_code, grant_type, priority, id)
         VALUES
             ($1, $2::bigint, $3::bigint, $4, $5, $6::jsonb, $7, NULL, '', $8, $9,
              'allow', $10, $11)
-        ON CONFLICT(tenant_id, organization_id, channel_group_id, resource_code, resource_group_code)
+        ON CONFLICT(tenant_id, organization_id, account_group_id, resource_code, resource_group_code)
         DO UPDATE SET
             data_scope = excluded.data_scope,
             status = excluded.status,
@@ -1632,56 +1632,56 @@ async fn import_postgres_default_admin_channel_group_resource(
             deleted_by = NULL
         "#,
     )
-    .bind(stable_default_admin_channel_group_resource_uuid(&group))
+    .bind(stable_default_admin_upstream_account_group_resource_uuid(&group))
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
     .bind(DEFAULT_ADMIN_DATA_SCOPE)
     .bind(ACTIVE_STATUS)
-    .bind(default_admin_channel_group_resource_metadata(catalog, group))
-    .bind(channel_group_id)
+    .bind(default_admin_upstream_account_group_resource_metadata(catalog, group))
+    .bind(account_group_id)
     .bind(resource_group_id)
     .bind(group.resource_group_code)
     .bind(group.priority)
-    .bind(stable_default_admin_channel_group_resource_id(&group))
+    .bind(stable_default_admin_upstream_account_group_resource_id(&group))
     .execute(&mut **tx)
     .await?;
     Ok(())
 }
 
-async fn sqlite_seed_channel_id(
+async fn sqlite_seed_account_id(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
-    channel_code: &str,
+    account_code: &str,
 ) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
-        "SELECT id FROM ai_channel WHERE tenant_id = ? AND organization_id = ? AND channel_code = ? AND deleted_at IS NULL LIMIT 1",
+        "SELECT id FROM ai_channel WHERE tenant_id = ? AND organization_id = ? AND account_code = ? AND deleted_at IS NULL LIMIT 1",
     )
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
-    .bind(channel_code)
+    .bind(account_code)
     .fetch_one(&mut **tx)
     .await
 }
 
-async fn postgres_seed_channel_id(
+async fn postgres_seed_account_id(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    channel_code: &str,
+    account_code: &str,
 ) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
-        "SELECT id FROM ai_channel WHERE tenant_id = $1::bigint AND organization_id = $2::bigint AND channel_code = $3 AND deleted_at IS NULL LIMIT 1",
+        "SELECT id FROM ai_channel WHERE tenant_id = $1::bigint AND organization_id = $2::bigint AND account_code = $3 AND deleted_at IS NULL LIMIT 1",
     )
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
-    .bind(channel_code)
+    .bind(account_code)
     .fetch_one(&mut **tx)
     .await
 }
 
-async fn sqlite_seed_channel_group_id(
+async fn sqlite_seed_account_group_id(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     group_code: &str,
 ) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
-        "SELECT id FROM ai_channel_group WHERE tenant_id = ? AND organization_id = ? AND group_code = ? AND deleted_at IS NULL LIMIT 1",
+        "SELECT id FROM ai_upstream_account_group WHERE tenant_id = ? AND organization_id = ? AND group_code = ? AND deleted_at IS NULL LIMIT 1",
     )
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
@@ -1690,12 +1690,12 @@ async fn sqlite_seed_channel_group_id(
     .await
 }
 
-async fn postgres_seed_channel_group_id(
+async fn postgres_seed_account_group_id(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     group_code: &str,
 ) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
-        "SELECT id FROM ai_channel_group WHERE tenant_id = $1::bigint AND organization_id = $2::bigint AND group_code = $3 AND deleted_at IS NULL LIMIT 1",
+        "SELECT id FROM ai_upstream_account_group WHERE tenant_id = $1::bigint AND organization_id = $2::bigint AND group_code = $3 AND deleted_at IS NULL LIMIT 1",
     )
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
@@ -1911,7 +1911,7 @@ fn default_admin_channels() -> &'static [DefaultAdminChannelSeed] {
     &DEFAULT_ADMIN_CHANNELS
 }
 
-fn default_admin_channel_groups() -> &'static [DefaultAdminChannelGroupSeed] {
+fn default_admin_upstream_account_groups() -> &'static [DefaultAdminUpstreamAccountGroupSeed] {
     &DEFAULT_ADMIN_CHANNEL_GROUPS
 }
 
@@ -2052,15 +2052,15 @@ fn expected_endpoint_codes(catalog: &AiRoutingSeedCatalog) -> BTreeSet<String> {
         .collect()
 }
 
-fn expected_default_admin_channel_codes() -> BTreeSet<String> {
+fn expected_default_admin_account_codes() -> BTreeSet<String> {
     default_admin_channels()
         .iter()
-        .map(|channel| channel.channel_code.to_owned())
+        .map(|channel| channel.account_code.to_owned())
         .collect()
 }
 
-fn expected_default_admin_channel_group_codes() -> BTreeSet<String> {
-    default_admin_channel_groups()
+fn expected_default_admin_account_group_codes() -> BTreeSet<String> {
+    default_admin_upstream_account_groups()
         .iter()
         .map(|group| group.group_code.to_owned())
         .collect()
@@ -2140,12 +2140,12 @@ async fn postgres_string_set(pool: &PgPool, query: &str) -> Result<BTreeSet<Stri
         .collect())
 }
 
-async fn sqlite_default_admin_channel_codes(
+async fn sqlite_default_admin_account_codes(
     pool: &SqlitePool,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(
         r#"
-        SELECT channel_code
+        SELECT account_code
         FROM ai_channel
         WHERE tenant_id = ?
           AND organization_id = ?
@@ -2167,10 +2167,10 @@ async fn sqlite_default_admin_channel_credential_codes(
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(
         r#"
-        SELECT c.channel_code
+        SELECT c.account_code
         FROM ai_channel c
         JOIN ai_channel_credential cc
-          ON cc.channel_id = c.id
+          ON cc.account_id = c.id
          AND cc.tenant_id = c.tenant_id
          AND cc.organization_id = c.organization_id
         WHERE c.tenant_id = ?
@@ -2192,13 +2192,13 @@ async fn sqlite_default_admin_channel_credential_codes(
         .collect())
 }
 
-async fn sqlite_default_admin_channel_group_codes(
+async fn sqlite_default_admin_account_group_codes(
     pool: &SqlitePool,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(
         r#"
         SELECT group_code
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE tenant_id = ?
           AND organization_id = ?
           AND deleted_at IS NULL
@@ -2214,34 +2214,34 @@ async fn sqlite_default_admin_channel_group_codes(
         .collect())
 }
 
-async fn sqlite_default_admin_channel_group_binding_codes(
+async fn sqlite_default_admin_upstream_account_group_binding_codes(
     pool: &SqlitePool,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(
         r#"
         SELECT DISTINCT g.group_code
-        FROM ai_channel_group g
-        JOIN ai_channel_group_member m
+        FROM ai_upstream_account_group g
+        JOIN ai_upstream_account_group_member m
           ON m.tenant_id = g.tenant_id
          AND m.organization_id = g.organization_id
-         AND m.channel_group_id = g.id
+         AND m.account_group_id = g.id
          AND m.deleted_at IS NULL
         JOIN ai_channel c
           ON c.tenant_id = m.tenant_id
          AND c.organization_id = m.organization_id
-         AND c.id = m.channel_id
-         AND c.channel_code = 'openai-default'
+         AND c.id = m.account_id
+         AND c.account_code = 'openai-default'
          AND c.deleted_at IS NULL
         JOIN ai_channel_resource cr
           ON cr.tenant_id = c.tenant_id
          AND cr.organization_id = c.organization_id
-         AND cr.channel_id = c.id
+         AND cr.account_id = c.id
          AND cr.resource_group_code = 'official.openai.full'
          AND cr.deleted_at IS NULL
-        JOIN ai_channel_group_resource gr
+        JOIN ai_upstream_account_group_resource gr
           ON gr.tenant_id = g.tenant_id
          AND gr.organization_id = g.organization_id
-         AND gr.channel_group_id = g.id
+         AND gr.account_group_id = g.id
          AND gr.resource_group_code = 'official.openai.full'
          AND gr.deleted_at IS NULL
         WHERE g.tenant_id = ?
@@ -2259,12 +2259,12 @@ async fn sqlite_default_admin_channel_group_binding_codes(
         .collect())
 }
 
-async fn postgres_default_admin_channel_codes(
+async fn postgres_default_admin_account_codes(
     pool: &PgPool,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(
         r#"
-        SELECT channel_code
+        SELECT account_code
         FROM ai_channel
         WHERE tenant_id = $1::bigint
           AND organization_id = $2::bigint
@@ -2286,10 +2286,10 @@ async fn postgres_default_admin_channel_credential_codes(
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(
         r#"
-        SELECT c.channel_code
+        SELECT c.account_code
         FROM ai_channel c
         JOIN ai_channel_credential cc
-          ON cc.channel_id = c.id
+          ON cc.account_id = c.id
          AND cc.tenant_id = c.tenant_id
          AND cc.organization_id = c.organization_id
         WHERE c.tenant_id = $1::bigint
@@ -2311,13 +2311,13 @@ async fn postgres_default_admin_channel_credential_codes(
         .collect())
 }
 
-async fn postgres_default_admin_channel_group_codes(
+async fn postgres_default_admin_account_group_codes(
     pool: &PgPool,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(
         r#"
         SELECT group_code
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE tenant_id = $1::bigint
           AND organization_id = $2::bigint
           AND deleted_at IS NULL
@@ -2333,34 +2333,34 @@ async fn postgres_default_admin_channel_group_codes(
         .collect())
 }
 
-async fn postgres_default_admin_channel_group_binding_codes(
+async fn postgres_default_admin_upstream_account_group_binding_codes(
     pool: &PgPool,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
     let rows = sqlx::query(
         r#"
         SELECT DISTINCT g.group_code
-        FROM ai_channel_group g
-        JOIN ai_channel_group_member m
+        FROM ai_upstream_account_group g
+        JOIN ai_upstream_account_group_member m
           ON m.tenant_id = g.tenant_id
          AND m.organization_id = g.organization_id
-         AND m.channel_group_id = g.id
+         AND m.account_group_id = g.id
          AND m.deleted_at IS NULL
         JOIN ai_channel c
           ON c.tenant_id = m.tenant_id
          AND c.organization_id = m.organization_id
-         AND c.id = m.channel_id
-         AND c.channel_code = 'openai-default'
+         AND c.id = m.account_id
+         AND c.account_code = 'openai-default'
          AND c.deleted_at IS NULL
         JOIN ai_channel_resource cr
           ON cr.tenant_id = c.tenant_id
          AND cr.organization_id = c.organization_id
-         AND cr.channel_id = c.id
+         AND cr.account_id = c.id
          AND cr.resource_group_code = 'official.openai.full'
          AND cr.deleted_at IS NULL
-        JOIN ai_channel_group_resource gr
+        JOIN ai_upstream_account_group_resource gr
           ON gr.tenant_id = g.tenant_id
          AND gr.organization_id = g.organization_id
-         AND gr.channel_group_id = g.id
+         AND gr.account_group_id = g.id
          AND gr.resource_group_code = 'official.openai.full'
          AND gr.deleted_at IS NULL
         WHERE g.tenant_id = $1::bigint
@@ -2475,11 +2475,11 @@ fn default_admin_channel_metadata(
     seed_metadata(
         catalog,
         "default_admin_channel",
-        channel.channel_code,
+        channel.account_code,
         serde_json::json!({
             "tenantId": DEFAULT_IAM_TENANT_ID,
             "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
-            "providerCode": channel.provider_code,
+            "providerCode": channel.supplier_code,
             "channelType": channel.channel_type,
             "protocolCode": channel.protocol_code,
             "baseUrl": channel.base_url,
@@ -2495,12 +2495,12 @@ fn default_admin_channel_credential_metadata(
     seed_metadata(
         catalog,
         "default_admin_channel_credential",
-        channel.channel_code,
+        channel.account_code,
         serde_json::json!({
             "tenantId": DEFAULT_IAM_TENANT_ID,
             "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
-            "channelCode": channel.channel_code,
-            "providerCode": channel.provider_code,
+            "channelCode": channel.account_code,
+            "providerCode": channel.supplier_code,
             "baseUrl": channel.base_url,
             "secretRef": channel.credential_ref(),
             "initialStatus": "active",
@@ -2508,39 +2508,39 @@ fn default_admin_channel_credential_metadata(
     )
 }
 
-fn default_admin_channel_group_metadata(
+fn default_admin_upstream_account_group_metadata(
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
+    group: DefaultAdminUpstreamAccountGroupSeed,
 ) -> String {
     seed_metadata(
         catalog,
-        "default_admin_channel_group",
+        "default_admin_upstream_account_group",
         group.group_code,
         serde_json::json!({
             "tenantId": DEFAULT_IAM_TENANT_ID,
             "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
             "groupCode": group.group_code,
-            "providerCode": group.provider_code,
-            "channelCode": group.channel_code,
+            "providerCode": group.supplier_code,
+            "channelCode": group.account_code,
             "resourceGroupCode": group.resource_group_code,
             "initialStatus": "active",
         }),
     )
 }
 
-fn default_admin_channel_group_member_metadata(
+fn default_admin_upstream_account_group_member_metadata(
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
+    group: DefaultAdminUpstreamAccountGroupSeed,
 ) -> String {
     seed_metadata(
         catalog,
-        "default_admin_channel_group_member",
+        "default_admin_upstream_account_group_member",
         group.group_code,
         serde_json::json!({
             "tenantId": DEFAULT_IAM_TENANT_ID,
             "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
             "groupCode": group.group_code,
-            "channelCode": group.channel_code,
+            "channelCode": group.account_code,
             "initialStatus": "active",
         }),
     )
@@ -2548,29 +2548,29 @@ fn default_admin_channel_group_member_metadata(
 
 fn default_admin_channel_resource_metadata(
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
+    group: DefaultAdminUpstreamAccountGroupSeed,
 ) -> String {
     seed_metadata(
         catalog,
         "default_admin_channel_resource",
-        group.channel_code,
+        group.account_code,
         serde_json::json!({
             "tenantId": DEFAULT_IAM_TENANT_ID,
             "organizationId": DEFAULT_IAM_ORGANIZATION_ID,
-            "channelCode": group.channel_code,
+            "channelCode": group.account_code,
             "resourceGroupCode": group.resource_group_code,
             "initialStatus": "active",
         }),
     )
 }
 
-fn default_admin_channel_group_resource_metadata(
+fn default_admin_upstream_account_group_resource_metadata(
     catalog: &AiRoutingSeedCatalog,
-    group: DefaultAdminChannelGroupSeed,
+    group: DefaultAdminUpstreamAccountGroupSeed,
 ) -> String {
     seed_metadata(
         catalog,
-        "default_admin_channel_group_resource",
+        "default_admin_upstream_account_group_resource",
         group.group_code,
         serde_json::json!({
             "tenantId": DEFAULT_IAM_TENANT_ID,
@@ -2649,13 +2649,13 @@ fn stable_group_item_id(group: &ResourceGroupSeed, item: &ResourceGroupItemSeed)
     )
 }
 
-fn stable_default_admin_channel_id(channel: &DefaultAdminChannelSeed) -> i64 {
+fn stable_default_admin_account_id(channel: &DefaultAdminChannelSeed) -> i64 {
     stable_seed_id(
         "sdk-ai-channel-id",
         &[
             &DEFAULT_IAM_TENANT_ID.to_string(),
             &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-            channel.channel_code,
+            channel.account_code,
         ],
     )
 }
@@ -2666,13 +2666,13 @@ fn stable_default_admin_channel_credential_id(channel: &DefaultAdminChannelSeed)
         &[
             &DEFAULT_IAM_TENANT_ID.to_string(),
             &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-            channel.channel_code,
-            channel.provider_code,
+            channel.account_code,
+            channel.supplier_code,
         ],
     )
 }
 
-fn stable_default_admin_channel_group_uuid(group: &DefaultAdminChannelGroupSeed) -> String {
+fn stable_default_admin_upstream_account_group_uuid(group: &DefaultAdminUpstreamAccountGroupSeed) -> String {
     stable_seed_uuid(
         "sdk-ai-channel-group",
         &[
@@ -2683,7 +2683,7 @@ fn stable_default_admin_channel_group_uuid(group: &DefaultAdminChannelGroupSeed)
     )
 }
 
-fn stable_default_admin_channel_group_id(group: &DefaultAdminChannelGroupSeed) -> i64 {
+fn stable_default_admin_account_group_id(group: &DefaultAdminUpstreamAccountGroupSeed) -> i64 {
     stable_seed_id(
         "sdk-ai-channel-group-id",
         &[
@@ -2694,56 +2694,56 @@ fn stable_default_admin_channel_group_id(group: &DefaultAdminChannelGroupSeed) -
     )
 }
 
-fn stable_default_admin_channel_group_member_uuid(group: &DefaultAdminChannelGroupSeed) -> String {
+fn stable_default_admin_upstream_account_group_member_uuid(group: &DefaultAdminUpstreamAccountGroupSeed) -> String {
     stable_seed_uuid(
         "sdk-ai-channel-group-member",
         &[
             &DEFAULT_IAM_TENANT_ID.to_string(),
             &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
             group.group_code,
-            group.channel_code,
+            group.account_code,
         ],
     )
 }
 
-fn stable_default_admin_channel_group_member_id(group: &DefaultAdminChannelGroupSeed) -> i64 {
+fn stable_default_admin_upstream_account_group_member_id(group: &DefaultAdminUpstreamAccountGroupSeed) -> i64 {
     stable_seed_id(
         "sdk-ai-channel-group-member-id",
         &[
             &DEFAULT_IAM_TENANT_ID.to_string(),
             &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
             group.group_code,
-            group.channel_code,
+            group.account_code,
         ],
     )
 }
 
-fn stable_default_admin_channel_resource_uuid(group: &DefaultAdminChannelGroupSeed) -> String {
+fn stable_default_admin_channel_resource_uuid(group: &DefaultAdminUpstreamAccountGroupSeed) -> String {
     stable_seed_uuid(
         "sdk-ai-channel-resource",
         &[
             &DEFAULT_IAM_TENANT_ID.to_string(),
             &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-            group.channel_code,
+            group.account_code,
             group.resource_group_code,
         ],
     )
 }
 
-fn stable_default_admin_channel_resource_id(group: &DefaultAdminChannelGroupSeed) -> i64 {
+fn stable_default_admin_channel_resource_id(group: &DefaultAdminUpstreamAccountGroupSeed) -> i64 {
     stable_seed_id(
         "sdk-ai-channel-resource-id",
         &[
             &DEFAULT_IAM_TENANT_ID.to_string(),
             &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-            group.channel_code,
+            group.account_code,
             group.resource_group_code,
         ],
     )
 }
 
-fn stable_default_admin_channel_group_resource_uuid(
-    group: &DefaultAdminChannelGroupSeed,
+fn stable_default_admin_upstream_account_group_resource_uuid(
+    group: &DefaultAdminUpstreamAccountGroupSeed,
 ) -> String {
     stable_seed_uuid(
         "sdk-ai-channel-group-resource",
@@ -2756,7 +2756,7 @@ fn stable_default_admin_channel_group_resource_uuid(
     )
 }
 
-fn stable_default_admin_channel_group_resource_id(group: &DefaultAdminChannelGroupSeed) -> i64 {
+fn stable_default_admin_upstream_account_group_resource_id(group: &DefaultAdminUpstreamAccountGroupSeed) -> i64 {
     stable_seed_id(
         "sdk-ai-channel-group-resource-id",
         &[

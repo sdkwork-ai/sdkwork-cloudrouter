@@ -103,9 +103,9 @@ fn sticky_binding(object_type: &str, object_id: &str) -> StickyObjectRouteBindin
         object_id: object_id.to_owned(),
         parent_object_type: None,
         parent_object_id: None,
-        provider_code: "openai".to_owned(),
-        channel_id: 300,
-        channel_group_id: Some(200),
+        supplier_code: "openai".to_owned(),
+        account_id: 300,
+        account_group_id: Some(200),
         vendor_code: Some("openai".to_owned()),
         api_code: Some("openai.files".to_owned()),
         catalog_key: Some("openai/gpt-4o-mini".to_owned()),
@@ -117,8 +117,8 @@ fn sticky_binding(object_type: &str, object_id: &str) -> StickyObjectRouteBindin
 
 fn routed_account() -> InvocationAccount {
     InvocationAccount {
-        provider_code: "openai".to_owned(),
-        channel_id: 300,
+        supplier_code: "openai".to_owned(),
+        account_id: 300,
         region_code: "us-east-1".to_owned(),
         credential_id: Some(400),
         credential_rotation: Some("primary".to_owned()),
@@ -162,9 +162,9 @@ async fn lookup_sticky_hit_binds_route_constraint() {
         .expect("sticky resolution");
 
     let sticky_route = invocation.routing.sticky_route.expect("sticky route");
-    assert_eq!("openai", sticky_route.provider_code);
-    assert_eq!(300, sticky_route.channel_id);
-    assert_eq!(Some(200), sticky_route.channel_group_id);
+    assert_eq!("openai", sticky_route.supplier_code);
+    assert_eq!(300, sticky_route.account_id);
+    assert_eq!(Some(200), sticky_route.account_group_id);
     assert_eq!(
         Some("openai/gpt-4o-mini"),
         sticky_route.catalog_key.as_deref()
@@ -230,7 +230,7 @@ async fn parent_sticky_hit_uses_parent_object_id() {
         invocation
             .routing
             .sticky_route
-            .map(|route| route.channel_id)
+            .map(|route| route.account_id)
     );
 }
 
@@ -261,8 +261,8 @@ async fn commit_records_only_successful_sticky_response() {
         .expect("upsert");
     assert_eq!("file", upsert.object_type);
     assert_eq!("file_123", upsert.object_id);
-    assert_eq!("openai", upsert.provider_code);
-    assert_eq!(300, upsert.channel_id);
+    assert_eq!("openai", upsert.supplier_code);
+    assert_eq!(300, upsert.account_id);
     assert_eq!(
         Some("openai/management/files"),
         upsert.catalog_key.as_deref()
@@ -319,7 +319,7 @@ async fn commit_reads_internal_adapter_wrapper_body_for_sticky_response() {
         .cloned()
         .expect("upsert");
     assert_eq!("file_adapter_123", upsert.object_id);
-    assert_eq!("openai", upsert.provider_code);
+    assert_eq!("openai", upsert.supplier_code);
 }
 
 #[tokio::test]

@@ -1,10 +1,10 @@
 use crate::domain::{
     ensure_canonical_model_catalog_key, provider_native_model_id, AiModel, AiModelPublicMetadata,
-    BillingMeter, ChannelGroup, ChannelGroupMetricSnapshot, DecimalValue, DomainError,
-    DomainResult, GatewayAccessPolicy, GatewayApiKey, GatewayApiKeyChannelGroupBinding,
-    GatewayRiskRule, ModelMappingBindingType, ModelMappingRule, ModelPrice, ModelProviderRoute,
+    BillingMeter, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, DecimalValue, DomainError,
+    DomainResult, GatewayAccessPolicy, GatewayApiKey, GatewayApiKeyAccountGroupBinding,
+    GatewayRiskRule, ModelMappingBindingType, ModelMappingRule, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderAuthProfile,
-    ProviderChannelGroupBinding, ProviderChannelRoute, ProviderRetryPolicy, QuotaPolicy,
+    UpstreamAccountGroupBinding, UpstreamAccountRoute, ProviderRetryPolicy, QuotaPolicy,
     RouteCandidate, RoutingCapability, RoutingFallbackMode, RoutingPolicy, RoutingPolicyScope,
     RoutingRule,
 };
@@ -113,13 +113,13 @@ impl AiModelRow {
     }
 }
 
-pub struct ModelProviderRouteRow {
+pub struct ModelUpstreamRouteRow {
     pub catalog_key: String,
     pub model: String,
     pub api_code: Option<String>,
     pub region_code: String,
-    pub provider_code: String,
-    pub channel_id: i64,
+    pub supplier_code: String,
+    pub account_id: i64,
     pub credential_id: Option<i64>,
     pub credential_rotation: String,
     pub credential_priority: i32,
@@ -133,26 +133,26 @@ pub struct ModelProviderRouteRow {
     pub retry_policy_json: Option<String>,
 }
 
-pub struct ProviderChannelRouteRow {
-    pub provider_code: String,
-    pub channel_id: i64,
+pub struct UpstreamAccountRouteRow {
+    pub supplier_code: String,
+    pub account_id: i64,
     pub credential_id: Option<i64>,
     pub credential_rotation: String,
     pub credential_priority: i32,
     pub credential_weight: i32,
-    pub channel_code: Option<String>,
+    pub account_code: Option<String>,
     pub region_code: String,
-    pub site_id: Option<i64>,
-    pub site_code: Option<String>,
-    pub site_service_id: Option<i64>,
-    pub site_service_code: Option<String>,
+    pub supplier_id: Option<i64>,
+    pub supplier_code: Option<String>,
+    pub endpoint_id: Option<i64>,
+    pub endpoint_code: Option<String>,
     pub base_url: Option<String>,
     pub secret_ref: Option<String>,
     pub auth_type: Option<String>,
     pub auth_config_json: Option<String>,
     pub timeout_ms: Option<i64>,
     pub retry_policy_json: Option<String>,
-    pub group_bindings_json: String,
+    pub account_group_bindings_json: String,
     pub channel_health_status: i32,
     pub credential_health_status: i32,
 }
@@ -216,45 +216,45 @@ impl ModelMappingRuleRow {
     }
 }
 
-impl ProviderChannelRouteRow {
-    pub fn try_into_domain(self) -> DomainResult<ProviderChannelRoute> {
+impl UpstreamAccountRouteRow {
+    pub fn try_into_domain(self) -> DomainResult<UpstreamAccountRoute> {
         let timeout_ms = parse_timeout_ms(self.timeout_ms)?;
         let retry_policy = parse_retry_policy(self.retry_policy_json)?;
         let auth_profile = ProviderAuthProfile::from_account_config(
-            &self.provider_code,
+            &self.supplier_code,
             self.auth_type.as_deref(),
             self.auth_config_json.as_deref(),
         )?;
 
-        Ok(ProviderChannelRoute {
-            provider_code: self.provider_code,
-            channel_id: self.channel_id,
+        Ok(UpstreamAccountRoute {
+            supplier_code: self.supplier_code,
+            account_id: self.account_id,
             credential_id: self.credential_id.filter(|value| *value > 0),
             credential_rotation: normalized_credential_rotation(self.credential_rotation),
             credential_priority: self.credential_priority,
             credential_weight: self.credential_weight.max(0),
-            channel_code: self.channel_code.filter(|value| !value.trim().is_empty()),
+            account_code: self.account_code.filter(|value| !value.trim().is_empty()),
             region_code: normalized_region_code(self.region_code),
-            site_id: self.site_id,
-            site_code: self.site_code.filter(|value| !value.trim().is_empty()),
-            site_service_id: self.site_service_id,
-            site_service_code: self
-                .site_service_code
+            supplier_id: self.supplier_id,
+            supplier_code: self.supplier_code.filter(|value| !value.trim().is_empty()),
+            endpoint_id: self.endpoint_id,
+            endpoint_code: self
+                .endpoint_code
                 .filter(|value| !value.trim().is_empty()),
             base_url: self.base_url,
             secret_ref: self.secret_ref,
             auth_profile,
             timeout_ms,
             retry_policy,
-            group_bindings: parse_provider_channel_group_bindings(&self.group_bindings_json)?,
+            account_group_bindings: parse_provider_upstream_account_account_group_bindings(&self.account_group_bindings_json)?,
             channel_health_status: self.channel_health_status,
             credential_health_status: self.credential_health_status,
         })
     }
 }
 
-impl ModelProviderRouteRow {
-    pub fn try_into_domain(self) -> DomainResult<ModelProviderRoute> {
+impl ModelUpstreamRouteRow {
+    pub fn try_into_domain(self) -> DomainResult<ModelUpstreamRoute> {
         ensure_base_catalog_key(
             &self.catalog_key,
             "provider route catalog_key must use vendor/model identity",
@@ -262,20 +262,20 @@ impl ModelProviderRouteRow {
         let timeout_ms = parse_timeout_ms(self.timeout_ms)?;
         let retry_policy = parse_retry_policy(self.retry_policy_json)?;
         let auth_profile = ProviderAuthProfile::from_account_config(
-            &self.provider_code,
+            &self.supplier_code,
             self.auth_type.as_deref(),
             self.auth_config_json.as_deref(),
         )?;
         let provider_model =
             normalized_provider_model(&self.catalog_key, &self.model, &self.provider_model);
 
-        Ok(ModelProviderRoute {
+        Ok(ModelUpstreamRoute {
             catalog_key: self.catalog_key,
             model: self.model,
             api_code: normalized_optional_api_code(self.api_code),
             region_code: normalized_region_code(self.region_code),
-            provider_code: self.provider_code,
-            channel_id: self.channel_id,
+            supplier_code: self.supplier_code,
+            account_id: self.account_id,
             credential_id: self.credential_id.filter(|value| *value > 0),
             credential_rotation: normalized_credential_rotation(self.credential_rotation),
             credential_priority: self.credential_priority,
@@ -398,7 +398,7 @@ pub struct RoutingRuleRow {
     pub priority: i32,
     pub match_expression_json: String,
     pub target_model: Option<String>,
-    pub candidate_channels_json: String,
+    pub candidate_account_groups_json: String,
     pub fallback_chain_json: String,
     pub constraints_json: String,
 }
@@ -419,9 +419,9 @@ impl RoutingRuleRow {
             target_model: self
                 .target_model
                 .filter(|target_model| !target_model.trim().is_empty()),
-            candidate_channels: parse_route_candidates(
-                &self.candidate_channels_json,
-                "ai_routing_rule.candidate_channels",
+            candidate_account_groups: parse_route_candidates(
+                &self.candidate_account_groups_json,
+                "ai_routing_rule.candidate_account_groups",
             )?,
             fallback_chain: parse_route_candidates(
                 &self.fallback_chain_json,
@@ -438,7 +438,7 @@ pub struct GatewayApiKeyRow {
     pub organization_id: i64,
     pub user_id: i64,
     pub group_id: i64,
-    pub group_bindings_json: String,
+    pub account_group_bindings_json: String,
     pub name: String,
     pub key_prefix: String,
     pub key_display_masked: String,
@@ -476,8 +476,8 @@ impl GatewayApiKeyRow {
             expire_at: self.expire_at,
             status_code: self.status_code,
             default_for_runtime: self.default_for_runtime,
-            group_bindings: parse_gateway_api_key_channel_group_bindings(
-                &self.group_bindings_json,
+            account_group_bindings: parse_gateway_api_key_upstream_account_account_group_bindings(
+                &self.account_group_bindings_json,
             )?,
         })
     }
@@ -488,9 +488,9 @@ impl GatewayApiKeyRow {
     }
 }
 
-fn parse_gateway_api_key_channel_group_bindings(
+fn parse_gateway_api_key_upstream_account_account_group_bindings(
     value: &str,
-) -> DomainResult<Vec<GatewayApiKeyChannelGroupBinding>> {
+) -> DomainResult<Vec<GatewayApiKeyAccountGroupBinding>> {
     let value = parse_json_value(value, "gateway api key channel group bindings")?;
     let serde_json::Value::Array(items) = value else {
         return Err(DomainError::new(
@@ -501,7 +501,7 @@ fn parse_gateway_api_key_channel_group_bindings(
     let mut bindings = items
         .into_iter()
         .enumerate()
-        .map(|(index, value)| parse_gateway_api_key_channel_group_binding(value, index))
+        .map(|(index, value)| parse_gateway_api_key_upstream_account_group_binding(value, index))
         .collect::<DomainResult<Vec<_>>>()?;
     bindings.sort_by_key(|binding| {
         (
@@ -514,10 +514,10 @@ fn parse_gateway_api_key_channel_group_bindings(
     Ok(bindings)
 }
 
-fn parse_gateway_api_key_channel_group_binding(
+fn parse_gateway_api_key_upstream_account_group_binding(
     value: serde_json::Value,
     index: usize,
-) -> DomainResult<GatewayApiKeyChannelGroupBinding> {
+) -> DomainResult<GatewayApiKeyAccountGroupBinding> {
     let serde_json::Value::Object(object) = value else {
         return Err(DomainError::new(format!(
             "gateway api key channel group bindings[{index}] must be a json object"
@@ -549,7 +549,7 @@ fn parse_gateway_api_key_channel_group_binding(
             .unwrap_or_else(|| "auto".to_owned());
     let priority = parse_optional_i32(&object, "priority", index)?.unwrap_or(100);
     let weight = parse_optional_i32(&object, "weight", index)?.unwrap_or(100);
-    Ok(GatewayApiKeyChannelGroupBinding::new(
+    Ok(GatewayApiKeyAccountGroupBinding::new(
         group_id,
         &group_code,
         &pricing_plan_code,
@@ -591,7 +591,7 @@ fn parse_optional_i32(
         })
 }
 
-pub struct ChannelGroupRow {
+pub struct UpstreamAccountGroupRow {
     pub id: i64,
     pub tenant_id: i64,
     pub organization_id: i64,
@@ -685,7 +685,7 @@ impl GatewayRiskRuleRow {
     }
 }
 
-pub struct ChannelGroupMetricSnapshotRow {
+pub struct UpstreamAccountGroupMetricSnapshotRow {
     pub group_id: i64,
     pub capacity_used: Option<String>,
     pub capacity_limit: Option<String>,
@@ -693,9 +693,9 @@ pub struct ChannelGroupMetricSnapshotRow {
     pub snapshot_at: Option<String>,
 }
 
-impl ChannelGroupMetricSnapshotRow {
-    pub fn try_into_domain(self) -> DomainResult<ChannelGroupMetricSnapshot> {
-        Ok(ChannelGroupMetricSnapshot {
+impl UpstreamAccountGroupMetricSnapshotRow {
+    pub fn try_into_domain(self) -> DomainResult<UpstreamAccountGroupMetricSnapshot> {
+        Ok(UpstreamAccountGroupMetricSnapshot {
             group_id: self.group_id,
             capacity_used: parse_optional_decimal(self.capacity_used)?,
             capacity_limit: parse_optional_decimal(self.capacity_limit)?,
@@ -705,9 +705,9 @@ impl ChannelGroupMetricSnapshotRow {
     }
 }
 
-impl ChannelGroupRow {
-    pub fn try_into_domain(self) -> DomainResult<ChannelGroup> {
-        Ok(ChannelGroup {
+impl UpstreamAccountGroupRow {
+    pub fn try_into_domain(self) -> DomainResult<UpstreamAccountGroup> {
+        Ok(UpstreamAccountGroup {
             id: self.id,
             tenant_id: self.tenant_id,
             organization_id: self.organization_id,
@@ -755,8 +755,8 @@ pub struct ModelPriceRow {
     pub billing_meter_code: String,
     pub unit_price: String,
     pub currency: String,
-    pub provider_code: Option<String>,
-    pub channel_id: Option<i64>,
+    pub supplier_code: Option<String>,
+    pub account_id: Option<i64>,
     pub pricing_plan_code: Option<String>,
 }
 
@@ -773,8 +773,8 @@ impl ModelPriceRow {
             price_side: parse_price_side(&self.price_side_code)?,
             billing_meter: BillingMeter::from_code(&self.billing_meter_code),
             unit_price: money_from_decimal(self.currency, self.unit_price)?,
-            provider_code: self.provider_code,
-            channel_id: self.channel_id,
+            supplier_code: self.supplier_code,
+            account_id: self.account_id,
             pricing_plan_code: self.pricing_plan_code,
         })
     }
@@ -820,9 +820,9 @@ fn parse_route_candidates(value: &str, field_name: &str) -> DomainResult<Vec<Rou
         .collect()
 }
 
-fn parse_provider_channel_group_bindings(
+fn parse_provider_upstream_account_account_group_bindings(
     value: &str,
-) -> DomainResult<Vec<ProviderChannelGroupBinding>> {
+) -> DomainResult<Vec<UpstreamAccountGroupBinding>> {
     let value = parse_json_value(value, "route candidate group bindings")?;
     let serde_json::Value::Array(items) = value else {
         return Err(DomainError::new(
@@ -833,14 +833,14 @@ fn parse_provider_channel_group_bindings(
     items
         .into_iter()
         .enumerate()
-        .map(|(index, value)| parse_provider_channel_route_group_binding(value, index))
+        .map(|(index, value)| parse_upstream_account_route_group_binding(value, index))
         .collect()
 }
 
-fn parse_provider_channel_route_group_binding(
+fn parse_upstream_account_route_group_binding(
     value: serde_json::Value,
     index: usize,
-) -> DomainResult<ProviderChannelGroupBinding> {
+) -> DomainResult<UpstreamAccountGroupBinding> {
     let serde_json::Value::Object(object) = value else {
         return Err(DomainError::new(format!(
             "route candidate group bindings[{index}] must be a json object"
@@ -884,7 +884,7 @@ fn parse_provider_channel_route_group_binding(
         .unwrap_or(100);
     let api_scope = parse_binding_string_array(&object, "apiScope", "api_scope", index)?;
     let capabilities = parse_binding_string_array(&object, "capabilities", "capabilities", index)?;
-    Ok(ProviderChannelGroupBinding::new_resource_scoped(
+    Ok(UpstreamAccountGroupBinding::new_resource_scoped(
         group_id,
         priority,
         weight,
@@ -940,18 +940,18 @@ fn parse_route_candidate(
         )));
     };
 
-    let channel_id = object
-        .get("channel_id")
+    let account_id = object
+        .get("account_id")
         .or_else(|| object.get("channelId"))
         .and_then(serde_json::Value::as_i64)
         .ok_or_else(|| {
             DomainError::new(format!(
-                "{field_name}[{index}] must contain integer channel_id"
+                "{field_name}[{index}] must contain integer account_id"
             ))
         })?;
-    if channel_id <= 0 {
+    if account_id <= 0 {
         return Err(DomainError::new(format!(
-            "{field_name}[{index}].channel_id must be positive"
+            "{field_name}[{index}].account_id must be positive"
         )));
     }
 
@@ -974,7 +974,7 @@ fn parse_route_candidate(
         .map(str::to_owned);
 
     Ok(RouteCandidate {
-        channel_id,
+        account_id,
         weight,
         region_code,
     })

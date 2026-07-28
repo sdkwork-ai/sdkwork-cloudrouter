@@ -127,12 +127,12 @@ async fn begin_webhook_delivery(
         SELECT event_id
         FROM commerce_payment_webhook_delivery
         WHERE tenant_id = '0'
-          AND provider_code = ?
+          AND supplier_code = ?
           AND nonce = ?
         LIMIT 1
         "#,
     )
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.nonce)
     .fetch_optional(&mut **tx)
     .await
@@ -156,12 +156,12 @@ async fn begin_webhook_delivery(
         SELECT id
         FROM commerce_payment_webhook_delivery
         WHERE tenant_id = '0'
-          AND provider_code = ?
+          AND supplier_code = ?
           AND event_id = ?
         LIMIT 1
         "#,
     )
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.event_id)
     .fetch_optional(&mut **tx)
     .await
@@ -175,14 +175,14 @@ async fn begin_webhook_delivery(
     sqlx::query(
         r#"
         INSERT INTO commerce_payment_webhook_delivery
-            (id, tenant_id, organization_id, delivery_no, provider_code, provider_account_id, event_id, nonce, request_timestamp, signature, signature_algorithm, headers_json, payload_digest, payload_ref, source_ip, user_agent, verification_status, delivery_status, failure_code, failure_message, received_at, verified_at, normalized_event_id, processed_at, created_at, updated_at)
+            (id, tenant_id, organization_id, delivery_no, supplier_code, provider_account_id, event_id, nonce, request_timestamp, signature, signature_algorithm, headers_json, payload_digest, payload_ref, source_ip, user_agent, verification_status, delivery_status, failure_code, failure_message, received_at, verified_at, normalized_event_id, processed_at, created_at, updated_at)
         VALUES
             (?, '0', NULL, ?, ?, NULL, ?, ?, ?, ?, 'HMAC_SHA256', NULL, ?, NULL, NULL, NULL, 'VERIFIED', 'RECEIVED', NULL, 'received webhook delivery', ?, CURRENT_TIMESTAMP, NULL, NULL, ?, ?)
         "#,
     )
     .bind(&command.delivery_uuid)
     .bind(&command.event_id)
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.event_id)
     .bind(&command.nonce)
     .bind(command.request_timestamp)
@@ -244,7 +244,7 @@ async fn begin_webhook_event(
         LIMIT 1
         "#,
     )
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.nonce)
     .fetch_optional(&mut **tx)
     .await
@@ -268,7 +268,7 @@ async fn begin_webhook_event(
         LIMIT 1
         "#,
     )
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.event_id)
     .fetch_optional(&mut **tx)
     .await
@@ -316,7 +316,7 @@ async fn begin_webhook_event(
         "#,
     )
     .bind(&command.event_uuid)
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.event_id)
     .bind(&command.nonce)
     .bind(command.signature.as_deref())
@@ -480,7 +480,7 @@ async fn load_payment_for_callback(
         LIMIT 1
         "#,
     )
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.out_trade_no)
     .fetch_optional(&mut **tx)
     .await
@@ -488,7 +488,7 @@ async fn load_payment_for_callback(
     .ok_or_else(|| DomainError::conflict("payment callback payment was not found"))?;
 
     let provider = string_cell(&row, "provider");
-    if provider != command.provider_code {
+    if provider != command.supplier_code {
         return Err(DomainError::conflict(
             "payment callback provider does not match payment provider",
         ));

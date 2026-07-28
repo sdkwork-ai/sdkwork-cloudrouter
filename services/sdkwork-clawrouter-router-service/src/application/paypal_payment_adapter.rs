@@ -33,7 +33,7 @@ const PAYPAL_PROVIDER_CODE: &str = "paypal";
 const PAYPAL_API_BASE_URL: &str = "https://api-m.paypal.com";
 
 static PAYPAL_REAL_CAPABILITIES: PaymentProviderCapabilities = PaymentProviderCapabilities {
-    provider_code: PAYPAL_PROVIDER_CODE,
+    supplier_code: PAYPAL_PROVIDER_CODE,
     operations: STANDARD_PAYMENT_ADAPTER_OPERATIONS,
     sandbox_only: false,
 };
@@ -332,7 +332,7 @@ impl PaymentProviderAdapter for PayPalPaymentProviderAdapter {
             let payload =
                 parse_body_json(&request.body, PaymentAdapterOperation::NormalizeWebhook)?;
             Ok(PaymentNormalizedWebhookEvent {
-                provider_code: PAYPAL_PROVIDER_CODE.to_owned(),
+                supplier_code: PAYPAL_PROVIDER_CODE.to_owned(),
                 event_type: payload
                     .get("event_type")
                     .and_then(Value::as_str)
@@ -382,7 +382,7 @@ impl PaymentProviderAdapter for PayPalPaymentProviderAdapter {
                 statement_id: Some(format!("paypal_transaction_search_{statement_date}")),
                 content,
                 metadata: json!({
-                    "provider_code": PAYPAL_PROVIDER_CODE,
+                    "supplier_code": PAYPAL_PROVIDER_CODE,
                     "source_type": "paypal_transaction_search",
                     "statement_date": statement_date,
                     "start_date": start_date,
@@ -448,7 +448,7 @@ impl PaymentProviderAdapter for PayPalPaymentProviderAdapter {
                 statement_id: request.statement_id,
                 item_count: items.len(),
                 metadata: json!({
-                    "provider_code": PAYPAL_PROVIDER_CODE,
+                    "supplier_code": PAYPAL_PROVIDER_CODE,
                     "source_type": "paypal_transaction_search",
                     "gross_amount_minor": gross_amount_minor,
                     "fee_amount_minor": fee_amount_minor,
@@ -676,7 +676,7 @@ fn paypal_operation_outcome(
         .map(str::to_owned)
         .ok_or_else(|| invalid_response(operation, "PayPal response is missing id"))?;
     Ok(PaymentProviderOperationOutcome {
-        provider_code: PAYPAL_PROVIDER_CODE.to_owned(),
+        supplier_code: PAYPAL_PROVIDER_CODE.to_owned(),
         native_id: Some(native_id),
         raw_status: response
             .get("status")
@@ -976,7 +976,7 @@ fn normalized_optional(value: Option<String>) -> Option<String> {
 fn unsupported<T>(operation: PaymentAdapterOperation) -> PaymentAdapterFuture<'static, T> {
     Box::pin(async move {
         Err(PaymentProviderRegistryError::UnsupportedCapability {
-            provider_code: PAYPAL_PROVIDER_CODE.to_owned(),
+            supplier_code: PAYPAL_PROVIDER_CODE.to_owned(),
             operation,
         })
     })
@@ -987,7 +987,7 @@ fn invalid_request(
     message: impl Into<String>,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::InvalidProviderRequest {
-        provider_code: PAYPAL_PROVIDER_CODE.to_owned(),
+        supplier_code: PAYPAL_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
     }
@@ -999,7 +999,7 @@ fn provider_failed(
     retryable: bool,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::ProviderRequestFailed {
-        provider_code: PAYPAL_PROVIDER_CODE.to_owned(),
+        supplier_code: PAYPAL_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
         retryable,
@@ -1011,7 +1011,7 @@ fn invalid_response(
     message: impl Into<String>,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::InvalidProviderResponse {
-        provider_code: PAYPAL_PROVIDER_CODE.to_owned(),
+        supplier_code: PAYPAL_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
     }

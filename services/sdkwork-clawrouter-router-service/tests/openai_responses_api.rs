@@ -10,9 +10,9 @@ use sdkwork_clawrouter_router_service::api::{
 };
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderAuthProfile, ProviderChannelRoute, ProviderRetryPolicy, RouteCandidate,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    ProviderAuthProfile, UpstreamAccountRoute, ProviderRetryPolicy, RouteCandidate,
     RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -40,23 +40,23 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         .with_catalog_key("openai/gpt-4.1-mini"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4.1-mini",
             "gpt-4.1-mini",
             "openrouter",
             3001,
             "gpt-4.1-mini",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/responses"),
         )
         .with_timeout_ms(30_000)
         .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/responses"),
             )
@@ -69,7 +69,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -134,7 +134,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             10,
             20,
             "standard-group-responses-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -151,7 +151,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/gpt-4.1-mini"}"#,
             "openai/gpt-4.1-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog
 }
@@ -165,23 +165,23 @@ fn catalog_with_hashed_api_key_missing_billing_subject(key_hash: String) -> InMe
 fn catalog_with_responses_fallback_route(key_hash: String) -> InMemoryPricingCatalog {
     let mut catalog = catalog_with_hashed_api_key(key_hash);
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4.1-mini",
             "gpt-4.1-mini",
             "openrouter-fallback",
             3002,
             "gpt-4.1-mini-fallback",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/responses-fallback"),
         )
         .with_timeout_ms(20_000)
         .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-fallback", 3002)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-fallback", 3002)
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter-fallback"),
                 Some("vault://providers/openrouter/account/responses-fallback"),
             )
@@ -209,7 +209,7 @@ fn catalog_with_responses_fallback_route(key_hash: String) -> InMemoryPricingCat
             r#"{"catalogKey":"openai/gpt-4.1-mini"}"#,
             "openai/gpt-4.1-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)])
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)])
         .with_fallback_chain(vec![RouteCandidate::new(3002, 50)]),
     );
     catalog
@@ -381,17 +381,17 @@ impl ResponsesRelay for RecordingResponsesRelay {
 #[derive(Debug)]
 struct RetryableStatusPrimaryResponsesRelay {
     captured: Arc<Mutex<Vec<ResponsesRelayRequest>>>,
-    failing_provider_code: &'static str,
+    failing_supplier_code: &'static str,
 }
 
 impl RetryableStatusPrimaryResponsesRelay {
     fn new(
         captured: Arc<Mutex<Vec<ResponsesRelayRequest>>>,
-        failing_provider_code: &'static str,
+        failing_supplier_code: &'static str,
     ) -> Self {
         Self {
             captured,
-            failing_provider_code,
+            failing_supplier_code,
         }
     }
 }
@@ -403,10 +403,10 @@ impl ResponsesRelay for RetryableStatusPrimaryResponsesRelay {
     ) -> std::pin::Pin<
         Box<dyn std::future::Future<Output = DomainResult<ResponsesRelayResponse>> + Send + 'a>,
     > {
-        let provider_code = request.provider_code.clone();
+        let supplier_code = request.supplier_code.clone();
         self.captured.lock().unwrap().push(request);
         Box::pin(async move {
-            if provider_code == self.failing_provider_code {
+            if supplier_code == self.failing_supplier_code {
                 return Ok(ResponsesRelayResponse::json(
                     503,
                     serde_json::json!({
@@ -519,7 +519,7 @@ impl OpenAiInvocationPlugin for RecordingResponsesInvocationPlugin {
     ) -> OpenAiInvocationPluginFuture<'a> {
         self.events.lock().unwrap().push(format!(
             "after_route_selection:{}:{}",
-            route.provider_code, route.channel_id
+            route.supplier_code, route.account_id
         ));
         Box::pin(async { Ok(()) })
     }
@@ -655,7 +655,7 @@ async fn openai_responses_relays_non_stream_request_after_auth_model_and_price_v
     assert_eq!("standard-group", captured[0].group_code);
     assert_eq!("standard", captured[0].pricing_plan_code);
     assert_eq!("gpt-4.1-mini", captured[0].model);
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert_eq!("gpt-4.1-mini", captured[0].provider_model);
     assert_eq!(
         Some("http://provider-proxy.internal/openrouter"),
@@ -710,8 +710,8 @@ async fn openai_responses_create_fails_closed_after_retryable_provider_status() 
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
-    assert_eq!(3001, captured[0].provider_channel_id);
+    assert_eq!("openrouter", captured[0].supplier_code);
+    assert_eq!(3001, captured[0].provider_account_id);
     assert_eq!(
         Some(ProviderRetryPolicy::new(1, Vec::new(), 0).unwrap()),
         captured[0].provider_retry_policy
@@ -759,8 +759,8 @@ async fn openai_responses_records_usage_after_provider_success() {
     assert_eq!("openai/gpt-4.1-mini", command.catalog_key);
     assert_eq!("gpt-4.1-mini", command.requested_model);
     assert_eq!("openai/gpt-4.1-mini", command.requested_model_catalog_key);
-    assert_eq!("openrouter", command.provider_code);
-    assert_eq!(3001, command.channel_id);
+    assert_eq!("openrouter", command.supplier_code);
+    assert_eq!(3001, command.account_id);
     assert_eq!("gpt-4.1-mini", command.provider_model);
     assert_eq!("gpt-4.1-mini", command.provider_native_model);
     assert_eq!("/v1/responses", command.request_path);
@@ -834,7 +834,7 @@ async fn openai_responses_rejects_chat_only_model_before_fake_success() {
         "openai",
         vec!["chat"],
     ));
-    catalog.add_provider_route(ModelProviderRoute::new_for_catalog_key(
+    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",

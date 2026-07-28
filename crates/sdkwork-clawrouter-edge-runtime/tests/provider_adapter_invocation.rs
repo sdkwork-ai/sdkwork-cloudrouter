@@ -53,7 +53,7 @@ async fn gateway_adapter_transport_posts_stable_envelope_to_internal_adapter() {
         "video.start_end2video",
         calls[0].body.invocation.endpoint_key
     );
-    assert_eq!("tencent-cloud", calls[0].body.provider.provider_code);
+    assert_eq!("tencent-cloud", calls[0].body.provider.supplier_code);
 }
 
 #[tokio::test]
@@ -77,7 +77,7 @@ async fn gateway_adapter_transport_maps_adapter_error_to_gateway_error() {
 
 fn adapter_route(base_url: &str) -> ProviderAdapterRouteConfig {
     ProviderAdapterRouteConfig {
-        provider_code: "tencent-cloud".to_owned(),
+        supplier_code: "tencent-cloud".to_owned(),
         adapter_kind: AdapterKind::InternalHttp,
         adapter_base_url: base_url.to_owned(),
         capability: Some("video_generation".to_owned()),
@@ -91,7 +91,7 @@ fn adapter_route(base_url: &str) -> ProviderAdapterRouteConfig {
         method: "POST".to_owned(),
         invocation_shape: AdapterInvocationShape::AsyncTaskStart,
         standard_path_pattern: "/vidu/ent/v2/start-end2video".to_owned(),
-        adapter_path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+        adapter_path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
         status: AdapterRouteStatus::Enabled,
         priority: 10,
     }
@@ -119,8 +119,8 @@ fn adapter_request() -> AdapterInvocationRequest {
             pricing_plan_code: "standard".to_owned(),
         },
         provider: AdapterProviderContext {
-            provider_code: "tencent-cloud".to_owned(),
-            channel_id: 3001,
+            supplier_code: "tencent-cloud".to_owned(),
+            account_id: 3001,
             region_code: "global".to_owned(),
             provider_model: "vidu-q1".to_owned(),
             base_url: Some("https://api.vidu.example".to_owned()),

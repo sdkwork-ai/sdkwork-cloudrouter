@@ -12,9 +12,9 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     PricingCatalogRows, RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshot,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::rows::{
-    AiModelRow, ChannelGroupMetricSnapshotRow, ChannelGroupRow, GatewayAccessPolicyRow,
-    GatewayApiKeyRow, ModelMappingRuleRow, ModelPriceRow, ModelProviderRouteRow, ModelVendorRow,
-    PricingPlanRow, ProviderChannelRouteRow, QuotaPolicyRow, RoutingPolicyRow, RoutingRuleRow,
+    AiModelRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, GatewayAccessPolicyRow,
+    GatewayApiKeyRow, ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow,
+    PricingPlanRow, UpstreamAccountRouteRow, QuotaPolicyRow, RoutingPolicyRow, RoutingRuleRow,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sdkwork_clawrouter_router_service::ports::PricingCatalog;
@@ -63,8 +63,8 @@ fn sql_queries_use_schema_registry_tables_and_never_forbidden_synonyms() {
         "ai_model_pricing",
         "ai_pricing_plan",
         "iam_gateway_api_key",
-        "ai_channel_group",
-        "ai_channel_group_metric_snapshot",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_metric_snapshot",
         "ai_provider",
         "ai_channel",
         "ai_channel_credential",
@@ -205,13 +205,13 @@ fn row_mappers_reject_empty_catalog_key_segments_with_shared_identity_standard()
         "{error}"
     );
 
-    let route_error = ModelProviderRouteRow {
+    let route_error = ModelUpstreamRouteRow {
         catalog_key: "openai//gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         api_code: Some("openai.chat_completions".to_owned()),
         region_code: "global".to_owned(),
-        provider_code: "openai".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openai".to_owned(),
+        account_id: 3001,
         credential_id: Some(300101),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
@@ -337,12 +337,12 @@ fn provider_route_queries_use_explicit_region_context_not_catalog_key_segments()
     assert!(postgres_sql.contains("AS region_code"));
     assert!(postgres_sql.contains("COALESCE(NULLIF(c.region_code, ''), 'global') AS region_code"));
     assert!(
-        !PricingCatalogSql::load_provider_channel_routes()
+        !PricingCatalogSql::load_upstream_account_routes()
             .contains("endpoint.region_code IN"),
         "channel route SQL must not filter endpoint deployments by channel region; endpoint region is the deployment dimension"
     );
     assert!(
-        !PricingCatalogSql::load_provider_channel_routes().contains("LIMIT 1"),
+        !PricingCatalogSql::load_upstream_account_routes().contains("LIMIT 1"),
         "channel route SQL must not collapse region deployments to one endpoint; each endpoint region is a deployment row"
     );
     for forbidden in [
@@ -404,8 +404,8 @@ fn model_mapping_snapshot_queries_use_normalized_rule_binding_item_tables() {
     for forbidden in [
         "scope_type",
         "NULLIF(vendor_code, '')",
-        "\n    channel_id,",
-        "NULLIF(channel_code, '')",
+        "\n    account_id,",
+        "NULLIF(account_code, '')",
         "\n    source_model,",
         "\n    target_model,",
         "\n    priority",
@@ -418,7 +418,7 @@ fn model_mapping_snapshot_queries_use_normalized_rule_binding_item_tables() {
     assert!(
         postgres_sql.contains("WHEN 'provider_account' THEN 0")
             && postgres_sql.contains("WHEN 'channel' THEN 1")
-            && postgres_sql.contains("WHEN 'channel_group' THEN 2")
+            && postgres_sql.contains("WHEN 'upstream_account_group' THEN 2")
             && postgres_sql.contains("WHEN 'vendor' THEN 3")
             && postgres_sql.contains("WHEN 'global' THEN 4"),
         "runtime mapping SQL must preserve the standard binding priority order"
@@ -440,8 +440,8 @@ fn model_mapping_snapshot_queries_use_normalized_rule_binding_item_tables() {
     for forbidden in [
         "scope_type",
         "NULLIF(vendor_code, '')",
-        "\n    channel_id,",
-        "NULLIF(channel_code, '')",
+        "\n    account_id,",
+        "NULLIF(account_code, '')",
         "\n    source_model,",
         "\n    target_model,",
         "\n    priority",
@@ -465,8 +465,8 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
         "ai_model_pricing",
         "ai_pricing_plan",
         "iam_gateway_api_key",
-        "ai_channel_group",
-        "ai_channel_group_metric_snapshot",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_metric_snapshot",
         "iam_gateway_access_policy",
         "ai_quota_policy",
         "iam_gateway_risk_rule",
@@ -503,26 +503,26 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
         "API key snapshot query must load iam_gateway_api_key.key_hash for credential authentication"
     );
     assert!(
-        PricingCatalogSql::load_api_keys().contains("channel_group_id"),
-        "API key snapshot query must keep iam_gateway_api_key.channel_group_id as the default route group"
+        PricingCatalogSql::load_api_keys().contains("account_group_id"),
+        "API key snapshot query must keep iam_gateway_api_key.account_group_id as the default route group"
     );
     assert!(
-        PricingCatalogSql::load_api_keys().contains("iam_gateway_api_key_channel_group")
-            && PricingCatalogSql::load_api_keys().contains("group_bindings_json"),
-        "API key snapshot query must load explicit multi-group route bindings from iam_gateway_api_key_channel_group"
+        PricingCatalogSql::load_api_keys().contains("iam_gateway_api_key_upstream_account_group")
+            && PricingCatalogSql::load_api_keys().contains("account_group_bindings_json"),
+        "API key snapshot query must load explicit multi-group route bindings from iam_gateway_api_key_upstream_account_group"
     );
     assert!(
-        PricingCatalogSql::load_channel_groups().contains("ai_channel_group"),
+        PricingCatalogSql::load_upstream_account_groups().contains("ai_upstream_account_group"),
         "channel group snapshot query must load reusable AI channel groups"
     );
     assert!(
-        PricingCatalogSql::load_channel_group_metric_snapshots()
-            .contains("ai_channel_group_metric_snapshot"),
+        PricingCatalogSql::load_upstream_account_group_metric_snapshots()
+            .contains("ai_upstream_account_group_metric_snapshot"),
         "channel group metric snapshot query must load AI channel group metric projections"
     );
     assert!(
-        PricingCatalogSql::load_channel_groups().contains("NULLIF(BTRIM(pricing_plan_code), '')")
-            && PricingCatalogSql::load_channel_groups().contains("'standard'"),
+        PricingCatalogSql::load_upstream_account_groups().contains("NULLIF(BTRIM(pricing_plan_code), '')")
+            && PricingCatalogSql::load_upstream_account_groups().contains("'standard'"),
         "channel group snapshot query must default empty pricing_plan_code before runtime billing subject validation"
     );
     assert!(
@@ -546,8 +546,8 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
         "provider route snapshot query must not depend on channel endpoints"
     );
     for sql in [
-        PricingCatalogSql::list_provider_routes(),
-        PricingCatalogSql::find_provider_route(),
+        PricingCatalogSql::list_model_upstream_routes(),
+        PricingCatalogSql::find_model_upstream_route(),
     ] {
         assert!(
             !sql.contains("ai_channel_model"),
@@ -660,147 +660,147 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
         "provider route snapshot query must filter circuit-broken channels until the recovery probe window opens"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("base_url"),
+        PricingCatalogSql::load_upstream_account_routes().contains("base_url"),
         "channel group snapshot query must project resolved provider base_url for model-less route-scoped forwarding"
     );
     assert!(
-        !PricingCatalogSql::load_provider_channel_routes().contains("ai_channel_endpoint"),
+        !PricingCatalogSql::load_upstream_account_routes().contains("ai_channel_endpoint"),
         "channel group snapshot query must not depend on channel endpoints for forwarding"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes()
             .contains("COALESCE(NULLIF(cc.base_url, ''), NULLIF(c.base_url, ''), p.base_url)"),
         "channel group snapshot query must resolve base_url from credential/channel/provider"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("JOIN ai_channel_credential cc"),
+        PricingCatalogSql::load_upstream_account_routes().contains("JOIN ai_channel_credential cc"),
         "channel group snapshot query must expand one callable route per active channel credential"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("cc.id AS credential_id")
-            && PricingCatalogSql::load_provider_channel_routes().contains(
+        PricingCatalogSql::load_upstream_account_routes().contains("cc.id AS credential_id")
+            && PricingCatalogSql::load_upstream_account_routes().contains(
                 "COALESCE(NULLIF(c.credential_rotation_strategy, ''), 'default') AS credential_rotation"
             ),
         "channel group snapshot query must project credential identity and channel rotation strategy"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes()
             .contains("COALESCE(NULLIF(c.region_code, ''), 'global') AS region_code"),
         "channel group snapshot query must project explicit route region context for pricing and usage"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes()
             .contains("LEFT JOIN ai_provider p"),
         "channel group snapshot query must allow channel-owned base_url routes when provider registry metadata is absent"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("FROM ai_channel c"),
+        PricingCatalogSql::load_upstream_account_routes().contains("FROM ai_channel c"),
         "channel group snapshot query must read active AI channels for callable forwarding"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("ai_channel_group_member"),
-        "channel group snapshot query must derive group membership from ai_channel_group_member"
+        PricingCatalogSql::load_upstream_account_routes().contains("ai_upstream_account_group_member"),
+        "channel group snapshot query must derive group membership from ai_upstream_account_group_member"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("ai_channel_group_resource"),
-        "channel group snapshot query must derive group resource scope from ai_channel_group_resource"
+        PricingCatalogSql::load_upstream_account_routes().contains("ai_upstream_account_group_resource"),
+        "channel group snapshot query must derive group resource scope from ai_upstream_account_group_resource"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("ai_channel_resource"),
+        PricingCatalogSql::load_upstream_account_routes().contains("ai_channel_resource"),
         "channel group snapshot query must derive channel resource scope from ai_channel_resource"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("ai_resource_group_item"),
+        PricingCatalogSql::load_upstream_account_routes().contains("ai_resource_group_item"),
         "channel group snapshot query must expand resource group members when building routing scopes"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("apiScope"),
+        PricingCatalogSql::load_upstream_account_routes().contains("apiScope"),
         "channel group snapshot query must include API scope separately from modality capability scope"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("matched_resource_scope"),
+        PricingCatalogSql::load_upstream_account_routes().contains("matched_resource_scope"),
         "channel group snapshot query must route from the intersection of channel and group resource scopes"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("resource_group_tree")
-            && PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes().contains("resource_group_tree")
+            && PricingCatalogSql::load_upstream_account_routes()
                 .contains("routing_resource_reference")
-            && PricingCatalogSql::load_provider_channel_routes()
+            && PricingCatalogSql::load_upstream_account_routes()
                 .contains("child_resource_group_code"),
         "channel group snapshot query must recursively expand reusable resource groups"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("r.vendor_code")
-            && PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes().contains("r.vendor_code")
+            && PricingCatalogSql::load_upstream_account_routes()
                 .contains("gr.vendor_code = cr.vendor_code")
-            && PricingCatalogSql::load_provider_channel_routes()
+            && PricingCatalogSql::load_upstream_account_routes()
                 .contains("gr.resource_type = 'vendor' OR cr.resource_type = 'vendor'"),
         "channel group snapshot query must allow vendor resources to intersect with more specific vendor-owned resources"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes()
             .contains("gr.resource_type = 'api_endpoint' OR cr.resource_type = 'api_endpoint'")
-            && PricingCatalogSql::load_provider_channel_routes()
+            && PricingCatalogSql::load_upstream_account_routes()
                 .contains("gr.resource_type = 'modality' OR cr.resource_type = 'modality'"),
         "channel group snapshot query must not match distinct model resources only by shared API or modality"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("'__deny__'"),
+        PricingCatalogSql::load_upstream_account_routes().contains("'__deny__'"),
         "channel group snapshot query must deny routes when channel/group resources do not overlap"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("COALESCE(b.enabled, true)")
-            && PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes().contains("COALESCE(b.enabled, true)")
+            && PricingCatalogSql::load_upstream_account_routes()
                 .contains("COALESCE(member.enabled, true)"),
         "channel group snapshot query must exclude disabled group-channel bindings"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("c.timeout_ms AS timeout_ms")
-            && PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes().contains("c.timeout_ms AS timeout_ms")
+            && PricingCatalogSql::load_upstream_account_routes()
                 .contains("c.retry_policy::text AS retry_policy_json"),
         "channel group snapshot query must project account timeout and retry policy"
     );
     assert!(
-        !PricingCatalogSql::load_provider_channel_routes().contains("FROM ai_route_candidate b"),
+        !PricingCatalogSql::load_upstream_account_routes().contains("FROM ai_route_candidate b"),
         "channel group snapshot query must not derive resource authorization from route candidate projections"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("secret_ref"),
+        PricingCatalogSql::load_upstream_account_routes().contains("secret_ref"),
         "channel group snapshot query must project credential credential_ref as secret_ref"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("auth_type"),
+        PricingCatalogSql::load_upstream_account_routes().contains("auth_type"),
         "channel group snapshot query must project channel auth_type"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("auth_config"),
+        PricingCatalogSql::load_upstream_account_routes().contains("auth_config"),
         "channel group snapshot query must project credential auth_config"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("NULLIF(cc.credential_ref, '')"),
+        PricingCatalogSql::load_upstream_account_routes().contains("NULLIF(cc.credential_ref, '')"),
         "channel group snapshot query must filter channels without credential credential_ref"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains("p.id IS NULL OR p.status = 1"),
+        PricingCatalogSql::load_upstream_account_routes().contains("p.id IS NULL OR p.status = 1"),
         "channel route snapshot query must still exclude disabled provider metadata when it exists"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes().contains(
+        PricingCatalogSql::load_upstream_account_routes().contains(
             "NULLIF(COALESCE(NULLIF(cc.base_url, ''), NULLIF(c.base_url, ''), p.base_url), '')"
         ),
         "channel route snapshot query must filter channels without resolved base_url"
     );
     assert!(
-        PricingCatalogSql::load_provider_channel_routes()
+        PricingCatalogSql::load_upstream_account_routes()
             .contains("COALESCE(c.health_status, 1) = 1")
-            && PricingCatalogSql::load_provider_channel_routes()
+            && PricingCatalogSql::load_upstream_account_routes()
                 .contains("$1 * INTERVAL '1 second'"),
         "channel route snapshot query must filter circuit-broken channels until the recovery probe window opens"
     );
     assert!(
-        !PricingCatalogSql::load_provider_channel_routes().contains("modelScope")
-            && PricingCatalogSql::load_provider_channel_routes().contains("apiScope")
-            && PricingCatalogSql::load_provider_channel_routes().contains("capabilities"),
+        !PricingCatalogSql::load_upstream_account_routes().contains("modelScope")
+            && PricingCatalogSql::load_upstream_account_routes().contains("apiScope")
+            && PricingCatalogSql::load_upstream_account_routes().contains("capabilities"),
         "channel route snapshot query must scope account-pool bindings by API and capability, not direct model bindings"
     );
     assert!(
@@ -808,7 +808,7 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
         "routing policy snapshot query must project the default active profile"
     );
     assert!(
-        PricingCatalogSql::load_routing_rules().contains("candidate_channels"),
+        PricingCatalogSql::load_routing_rules().contains("candidate_account_groups"),
         "routing rule snapshot query must project candidate account-pool channels"
     );
     assert!(
@@ -828,7 +828,7 @@ fn provider_route_queries_inherit_only_resource_definitions_by_scope_specificity
             .expect("sqlite routing query must be present")
     };
     let sqlite_provider_routes = sqlite_query("pub const LOAD_PROVIDER_ROUTES: &str = r#\"");
-    let sqlite_provider_channel_routes =
+    let sqlite_upstream_account_routes =
         sqlite_query("pub const LOAD_PROVIDER_CHANNEL_ROUTES: &str = r#\"");
 
     for (query_name, sql) in [
@@ -838,20 +838,20 @@ fn provider_route_queries_inherit_only_resource_definitions_by_scope_specificity
         ),
         (
             "postgres provider channel route snapshot",
-            PricingCatalogSql::load_provider_channel_routes(),
+            PricingCatalogSql::load_upstream_account_routes(),
         ),
         (
             "postgres provider route list",
-            PricingCatalogSql::list_provider_routes(),
+            PricingCatalogSql::list_model_upstream_routes(),
         ),
         (
             "postgres provider route lookup",
-            PricingCatalogSql::find_provider_route(),
+            PricingCatalogSql::find_model_upstream_route(),
         ),
         ("sqlite provider route snapshot", sqlite_provider_routes),
         (
             "sqlite provider channel route snapshot",
-            sqlite_provider_channel_routes,
+            sqlite_upstream_account_routes,
         ),
     ] {
         for required_cte in [
@@ -934,18 +934,18 @@ fn provider_route_queries_inherit_only_resource_definitions_by_scope_specificity
         ),
         (
             "postgres provider channel route snapshot",
-            PricingCatalogSql::load_provider_channel_routes(),
+            PricingCatalogSql::load_upstream_account_routes(),
         ),
         ("sqlite provider route snapshot", sqlite_provider_routes),
         (
             "sqlite provider channel route snapshot",
-            sqlite_provider_channel_routes,
+            sqlite_upstream_account_routes,
         ),
     ] {
         assert!(
             sql.contains("cc.tenant_id = c.tenant_id")
                 && sql.contains("cc.organization_id = c.organization_id")
-                && sql.contains("cc.channel_id = c.id"),
+                && sql.contains("cc.account_id = c.id"),
             "{query_name} must keep credentials exact to the channel owner"
         );
         assert!(
@@ -962,7 +962,7 @@ fn provider_route_snapshot_derives_model_routes_from_normalized_channel_facts() 
 
     assert!(
         !sql.contains("ai_route_candidate"),
-        "provider route snapshot must not depend on the precomputed route candidate projection; it would grow as channel_group x api x model data"
+        "provider route snapshot must not depend on the precomputed route candidate projection; it would grow as upstream_account_group x api x model data"
     );
     for required_table in [
         "ai_channel_resource",
@@ -1008,13 +1008,13 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     assert_eq!(Some("openai_responses"), model.api_format.as_deref());
     assert_eq!(Some(128000), model.context_tokens);
 
-    let route = ModelProviderRouteRow {
+    let route = ModelUpstreamRouteRow {
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         api_code: Some("openai.chat_completions".to_owned()),
         region_code: "global".to_owned(),
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         credential_id: Some(300101),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
@@ -1032,7 +1032,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     }
     .try_into_domain()
     .unwrap();
-    assert_eq!("openrouter", route.provider_code);
+    assert_eq!("openrouter", route.supplier_code);
     assert_eq!(
         Some("http://provider-proxy.internal/openrouter"),
         route.base_url.as_deref()
@@ -1049,19 +1049,19 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     assert_eq!(ProviderAuthType::Bearer, route.auth_profile.auth_type);
     assert_eq!(None, route.auth_profile.name);
 
-    let channel_route = ProviderChannelRouteRow {
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+    let channel_route = UpstreamAccountRouteRow {
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         credential_id: Some(300101),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
         credential_weight: 100,
-        channel_code: Some("openrouter-main".to_owned()),
+        account_code: Some("openrouter-main".to_owned()),
         region_code: "cn".to_owned(),
-        site_id: Some(4001),
-        site_code: Some("cn-site".to_owned()),
-        site_service_id: Some(4101),
-        site_service_code: Some("cn-chat".to_owned()),
+        supplier_id: Some(4001),
+        supplier_code: Some("cn-site".to_owned()),
+        endpoint_id: Some(4101),
+        endpoint_code: Some("cn-chat".to_owned()),
         base_url: Some("http://provider-proxy.internal/openrouter".to_owned()),
         secret_ref: Some("vault://providers/openrouter/account/main".to_owned()),
         auth_type: Some("header".to_owned()),
@@ -1071,23 +1071,23 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
             r#"{"max_attempts":3,"retryable_status_codes":[429,500,503],"backoff_ms":25}"#
                 .to_owned(),
         ),
-        group_bindings_json: r#"[{"groupId":10,"priority":7,"weight":80,"apiScope":["openai.chat_completions"],"capabilities":["llm"]}]"#.to_owned(),
+        account_group_bindings_json: r#"[{"groupId":10,"priority":7,"weight":80,"apiScope":["openai.chat_completions"],"capabilities":["llm"]}]"#.to_owned(),
         channel_health_status: 1,
         credential_health_status: 1,
     }
     .try_into_domain()
     .unwrap();
-    assert_eq!("openrouter", channel_route.provider_code);
-    assert_eq!(3001, channel_route.channel_id);
+    assert_eq!("openrouter", channel_route.supplier_code);
+    assert_eq!(3001, channel_route.account_id);
     assert_eq!(
         Some("openrouter-main"),
-        channel_route.channel_code.as_deref()
+        channel_route.account_code.as_deref()
     );
     assert_eq!("cn", channel_route.region_code);
-    assert_eq!(Some(4001), channel_route.site_id);
-    assert_eq!(Some("cn-site"), channel_route.site_code.as_deref());
-    assert_eq!(Some(4101), channel_route.site_service_id);
-    assert_eq!(Some("cn-chat"), channel_route.site_service_code.as_deref());
+    assert_eq!(Some(4001), channel_route.supplier_id);
+    assert_eq!(Some("cn-site"), channel_route.supplier_code.as_deref());
+    assert_eq!(Some(4101), channel_route.endpoint_id);
+    assert_eq!(Some("cn-chat"), channel_route.endpoint_code.as_deref());
     assert_eq!(
         Some("http://provider-proxy.internal/openrouter"),
         channel_route.base_url.as_deref()
@@ -1109,17 +1109,17 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
         Some("x-api-key"),
         channel_route.auth_profile.name.as_deref()
     );
-    assert_eq!(1, channel_route.group_bindings.len());
-    assert_eq!(10, channel_route.group_bindings[0].group_id);
-    assert_eq!(7, channel_route.group_bindings[0].priority);
-    assert_eq!(80, channel_route.group_bindings[0].weight);
+    assert_eq!(1, channel_route.account_group_bindings.len());
+    assert_eq!(10, channel_route.account_group_bindings[0].group_id);
+    assert_eq!(7, channel_route.account_group_bindings[0].priority);
+    assert_eq!(80, channel_route.account_group_bindings[0].weight);
     assert_eq!(
         vec!["openai.chat_completions".to_owned()],
-        channel_route.group_bindings[0].api_scope
+        channel_route.account_group_bindings[0].api_scope
     );
     assert_eq!(
         vec!["llm".to_owned()],
-        channel_route.group_bindings[0].capabilities
+        channel_route.account_group_bindings[0].capabilities
     );
 
     let api_key = GatewayApiKeyRow {
@@ -1128,7 +1128,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
         organization_id: 0,
         user_id: 30,
         group_id: 10,
-        group_bindings_json: r#"[{"groupId":20,"groupCode":"premium-group","bindingRole":"route","routingStrategy":"auto","priority":1,"weight":100},{"groupId":10,"groupCode":"standard-group","bindingRole":"route","routingStrategy":"auto","priority":50,"weight":10}]"#.to_owned(),
+        account_group_bindings_json: r#"[{"groupId":20,"groupCode":"premium-group","bindingRole":"route","routingStrategy":"auto","priority":1,"weight":100},{"groupId":10,"groupCode":"standard-group","bindingRole":"route","routingStrategy":"auto","priority":50,"weight":10}]"#.to_owned(),
         name: "Production Key".to_owned(),
         key_prefix: "sk-test".to_owned(),
         key_display_masked: "sk-test********ABCD".to_owned(),
@@ -1143,13 +1143,13 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     }
     .into_domain();
     assert_eq!(10, api_key.group_id);
-    assert_eq!(2, api_key.group_bindings.len());
-    assert_eq!(20, api_key.group_bindings[0].group_id);
-    assert_eq!("premium-group", api_key.group_bindings[0].group_code);
-    assert_eq!("route", api_key.group_bindings[0].binding_role);
-    assert_eq!("auto", api_key.group_bindings[0].routing_strategy);
-    assert_eq!(1, api_key.group_bindings[0].priority);
-    assert_eq!(100, api_key.group_bindings[0].weight);
+    assert_eq!(2, api_key.account_group_bindings.len());
+    assert_eq!(20, api_key.account_group_bindings[0].group_id);
+    assert_eq!("premium-group", api_key.account_group_bindings[0].group_code);
+    assert_eq!("route", api_key.account_group_bindings[0].binding_role);
+    assert_eq!("auto", api_key.account_group_bindings[0].routing_strategy);
+    assert_eq!(1, api_key.account_group_bindings[0].priority);
+    assert_eq!(100, api_key.account_group_bindings[0].weight);
     assert_eq!("hash:sk-test", api_key.key_hash);
     assert_eq!("Production Key", api_key.name);
     assert_eq!("sk-test********ABCD", api_key.key_display_masked);
@@ -1177,7 +1177,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
         quota_policy.quota_limit.unwrap().to_fixed_string(6)
     );
 
-    let metric_snapshot = ChannelGroupMetricSnapshotRow {
+    let metric_snapshot = UpstreamAccountGroupMetricSnapshotRow {
         group_id: 10,
         capacity_used: Some("37.500000".to_owned()),
         capacity_limit: Some("1000.000000".to_owned()),
@@ -1194,7 +1194,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
             .to_fixed_string(6)
     );
 
-    let group = ChannelGroupRow {
+    let group = UpstreamAccountGroupRow {
         id: 10,
         tenant_id: 100001,
         organization_id: 0,
@@ -1234,8 +1234,8 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
         billing_meter_code: "llm_input_token".to_owned(),
         unit_price: "0.110000".to_owned(),
         currency: "USD".to_owned(),
-        provider_code: Some("openrouter".to_owned()),
-        channel_id: Some(3001),
+        supplier_code: Some("openrouter".to_owned()),
+        account_id: Some(3001),
         pricing_plan_code: None,
     }
     .try_into_domain()
@@ -1259,7 +1259,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     .try_into_domain()
     .unwrap();
     assert_eq!(
-        RoutingPolicyScope::ChannelGroup,
+        RoutingPolicyScope::UpstreamAccountGroup,
         routing_policy.policy_scope
     );
     assert_eq!(Some(RoutingCapability::Chat), routing_policy.capability);
@@ -1279,7 +1279,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
         priority: 10,
         match_expression_json: r#"{"catalogKey":"openai/gpt-4o-mini"}"#.to_owned(),
         target_model: Some("openai/gpt-4o-mini".to_owned()),
-        candidate_channels_json: r#"[{"channel_id":3001,"weight":100}]"#.to_owned(),
+        candidate_account_groups_json: r#"[{"account_id":3001,"weight":100}]"#.to_owned(),
         fallback_chain_json: r#"[{"channelId":3002,"weight":50}]"#.to_owned(),
         constraints_json: r#"{"max_latency_ms":30000}"#.to_owned(),
     }
@@ -1288,7 +1288,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     assert!(routing_rule.matches_catalog_key("openai/gpt-4o-mini", "gpt-4o-mini"));
     assert_eq!(
         vec![RouteCandidate::new(3001, 100)],
-        routing_rule.candidate_channels
+        routing_rule.candidate_account_groups
     );
     assert_eq!(
         vec![RouteCandidate::new(3002, 50)],
@@ -1298,7 +1298,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
 
 #[test]
 fn row_mappers_reject_invalid_decimal_and_unknown_price_side() {
-    let invalid_group = ChannelGroupRow {
+    let invalid_group = UpstreamAccountGroupRow {
         id: 10,
         tenant_id: 100001,
         organization_id: 0,
@@ -1320,19 +1320,19 @@ fn row_mappers_reject_invalid_decimal_and_unknown_price_side() {
         billing_meter_code: "llm_input_token".to_owned(),
         unit_price: "0.110000".to_owned(),
         currency: "USD".to_owned(),
-        provider_code: None,
-        channel_id: None,
+        supplier_code: None,
+        account_id: None,
         pricing_plan_code: None,
     };
     assert!(invalid_price.try_into_domain().is_err());
 
-    let invalid_timeout = ModelProviderRouteRow {
+    let invalid_timeout = ModelUpstreamRouteRow {
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         api_code: Some("openai.chat_completions".to_owned()),
         region_code: "global".to_owned(),
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         credential_id: Some(300101),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
@@ -1348,13 +1348,13 @@ fn row_mappers_reject_invalid_decimal_and_unknown_price_side() {
     let error = invalid_timeout.try_into_domain().unwrap_err();
     assert!(error.to_string().contains("timeout_ms must be positive"));
 
-    let invalid_retry_policy = ModelProviderRouteRow {
+    let invalid_retry_policy = ModelUpstreamRouteRow {
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         api_code: Some("openai.chat_completions".to_owned()),
         region_code: "global".to_owned(),
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         credential_id: Some(300101),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
@@ -1373,13 +1373,13 @@ fn row_mappers_reject_invalid_decimal_and_unknown_price_side() {
 
 #[test]
 fn model_provider_route_row_normalizes_catalog_key_provider_model_to_native_model() {
-    let route = ModelProviderRouteRow {
+    let route = ModelUpstreamRouteRow {
         catalog_key: "openai/gpt-5.5".to_owned(),
         model: "gpt-5.5".to_owned(),
         api_code: Some("openai.chat_completions".to_owned()),
         region_code: "global".to_owned(),
-        provider_code: "openai".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openai".to_owned(),
+        account_id: 3001,
         credential_id: Some(300101),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
@@ -1403,13 +1403,13 @@ fn model_provider_route_row_normalizes_catalog_key_provider_model_to_native_mode
 
 #[test]
 fn model_provider_route_row_normalizes_slash_catalog_provider_model_to_native_model() {
-    let route = ModelProviderRouteRow {
+    let route = ModelUpstreamRouteRow {
         catalog_key: "openrouter/anthropic/claude-3-opus".to_owned(),
         model: "anthropic/claude-3-opus".to_owned(),
         api_code: Some("openai.chat_completions".to_owned()),
         region_code: "global".to_owned(),
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         credential_id: Some(300101),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
@@ -1457,7 +1457,7 @@ fn sql_catalog_snapshot_implements_pricing_catalog_from_database_rows() {
     assert_eq!(1, page.items.len());
     let item = &page.items[0];
     assert_eq!("gpt-4o-mini", item.model);
-    assert_eq!(vec!["azure_openai", "openrouter"], item.provider_codes);
+    assert_eq!(vec!["azure_openai", "openrouter"], item.supplier_codes);
     assert_eq!(
         "0.110000",
         item.lowest_upstream_cost_unit_price.as_deref().unwrap()
@@ -1478,11 +1478,11 @@ fn sql_catalog_snapshot_implements_pricing_catalog_from_database_rows() {
     let resolved = PricingResolver::new(&snapshot)
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("openrouter".to_owned()),
-            channel_id: Some(3001),
+            supplier_code: Some("openrouter".to_owned()),
+            account_id: Some(3001),
             region_code: None,
         })
         .expect("tenant-scoped provider/channel upstream price must resolve");
@@ -1523,19 +1523,19 @@ fn sql_catalog_snapshot_implements_pricing_catalog_from_database_rows() {
 
     let policies = snapshot.list_routing_policies();
     assert_eq!(1, policies.len());
-    assert_eq!(RoutingPolicyScope::ChannelGroup, policies[0].policy_scope);
+    assert_eq!(RoutingPolicyScope::UpstreamAccountGroup, policies[0].policy_scope);
     assert_eq!(Some(10), policies[0].subject_id);
 
     let rules = snapshot.list_routing_rules(9101);
     assert_eq!(1, rules.len());
     assert_eq!(
         vec![RouteCandidate::new(3001, 100)],
-        rules[0].candidate_channels
+        rules[0].candidate_account_groups
     );
 
-    let channel_routes = snapshot.list_provider_channel_routes();
+    let channel_routes = snapshot.list_upstream_account_routes();
     assert_eq!(2, channel_routes.len());
-    assert_eq!(3001, channel_routes[0].channel_id);
+    assert_eq!(3001, channel_routes[0].account_id);
     assert_eq!(
         Some("vault://providers/openrouter/account/main"),
         channel_routes[0].secret_ref.as_deref()
@@ -1644,13 +1644,13 @@ fn sql_catalog_snapshot_isolates_pricing_scope_and_prefers_specific_rows() {
 #[test]
 fn sql_catalog_snapshot_rejects_legacy_regional_route_identity() {
     let mut rows = priced_catalog_rows();
-    rows.provider_routes.push(ModelProviderRouteRow {
+    rows.provider_routes.push(ModelUpstreamRouteRow {
         catalog_key: "openai/global/gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         api_code: Some("openai.chat_completions".to_owned()),
         region_code: "global".to_owned(),
-        provider_code: "legacy-region-route".to_owned(),
-        channel_id: 4001,
+        supplier_code: "legacy-region-route".to_owned(),
+        account_id: 4001,
         credential_id: Some(400101),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
@@ -1679,13 +1679,13 @@ fn sql_catalog_snapshot_rejects_legacy_regional_route_identity() {
 #[test]
 fn sql_catalog_snapshot_rejects_cloud_region_route_identity() {
     let mut rows = priced_catalog_rows();
-    rows.provider_routes.push(ModelProviderRouteRow {
+    rows.provider_routes.push(ModelUpstreamRouteRow {
         catalog_key: "openai/cn-north-1/gpt-4o-mini".to_owned(),
         model: "gpt-4o-mini".to_owned(),
         api_code: Some("openai.chat_completions".to_owned()),
         region_code: "cn-north-1".to_owned(),
-        provider_code: "cn-region-route".to_owned(),
-        channel_id: 4002,
+        supplier_code: "cn-region-route".to_owned(),
+        account_id: 4002,
         credential_id: Some(400201),
         credential_rotation: "priority".to_owned(),
         credential_priority: 10,
@@ -1717,7 +1717,7 @@ fn sql_catalog_snapshot_uses_base_model_identity_and_region_scoped_prices() {
 
     assert!(snapshot.find_model("openai/global/gpt-4o-mini").is_none());
     assert!(snapshot
-        .list_provider_routes("openai/global/gpt-4o-mini")
+        .list_model_upstream_routes("openai/global/gpt-4o-mini")
         .is_empty());
     let price = snapshot
         .find_model_price(
@@ -1768,7 +1768,7 @@ fn sql_catalog_snapshot_resolves_normalized_model_mapping_bindings() {
         },
         ModelMappingRuleRow {
             id: 5002,
-            binding_type: "channel_group".to_owned(),
+            binding_type: "upstream_account_group".to_owned(),
             binding_id: Some(10),
             binding_code: Some("standard-group".to_owned()),
             source_model: "fast-chat".to_owned(),
@@ -1789,12 +1789,12 @@ fn sql_catalog_snapshot_resolves_normalized_model_mapping_bindings() {
             "openai/fast-chat",
             &ResolveModelMappingContext::new()
                 .with_vendor_code("openai")
-                .with_channel_group_id(10)
-                .with_channel_group_code("standard-group"),
+                .with_account_group_id(10)
+                .with_account_group_code("standard-group"),
         )
         .expect("channel-group mapping must resolve from normalized binding rows");
 
-    assert_eq!(ModelMappingBindingType::ChannelGroup, resolved.binding_type);
+    assert_eq!(ModelMappingBindingType::UpstreamAccountGroup, resolved.binding_type);
     assert_eq!("openai/gpt-4o-mini", resolved.effective_catalog_key());
     assert_eq!(
         Some("openrouter/group-fast"),
@@ -1846,8 +1846,8 @@ fn sql_catalog_snapshot_rejects_invalid_rows_before_serving_catalog() {
         billing_meter_code: "llm_input_token".to_owned(),
         unit_price: "invalid-decimal".to_owned(),
         currency: "USD".to_owned(),
-        provider_code: None,
-        channel_id: None,
+        supplier_code: None,
+        account_id: None,
         pricing_plan_code: Some("standard".to_owned()),
     });
 
@@ -1861,29 +1861,29 @@ fn refreshable_sql_catalog_serves_replaced_snapshot_without_rebuilding_runtime_r
     let initial_snapshot = SqlPricingCatalogSnapshot::from_rows(priced_catalog_rows()).unwrap();
     let catalog = RefreshableSqlPricingCatalog::new(initial_snapshot);
 
-    let initial_routes = catalog.list_provider_routes("openai/gpt-4o-mini");
+    let initial_routes = catalog.list_model_upstream_routes("openai/gpt-4o-mini");
     assert_eq!(2, initial_routes.len());
     assert!(initial_routes
         .iter()
-        .any(|route| route.provider_code == "openrouter"));
+        .any(|route| route.supplier_code == "openrouter"));
 
     let mut refreshed_rows = priced_catalog_rows();
     refreshed_rows
         .provider_routes
-        .retain(|route| route.provider_code != "openrouter");
+        .retain(|route| route.supplier_code != "openrouter");
     refreshed_rows
-        .provider_channel_routes
-        .retain(|route| route.provider_code != "openrouter");
+        .upstream_account_routes
+        .retain(|route| route.supplier_code != "openrouter");
     let refreshed_snapshot = SqlPricingCatalogSnapshot::from_rows(refreshed_rows).unwrap();
 
     catalog.replace_snapshot(refreshed_snapshot);
 
-    let refreshed_routes = catalog.list_provider_routes("openai/gpt-4o-mini");
+    let refreshed_routes = catalog.list_model_upstream_routes("openai/gpt-4o-mini");
     assert_eq!(1, refreshed_routes.len());
-    assert_eq!("azure_openai", refreshed_routes[0].provider_code);
-    let channel_routes = catalog.list_provider_channel_routes();
+    assert_eq!("azure_openai", refreshed_routes[0].supplier_code);
+    let channel_routes = catalog.list_upstream_account_routes();
     assert_eq!(1, channel_routes.len());
-    assert_eq!("azure_openai", channel_routes[0].provider_code);
+    assert_eq!("azure_openai", channel_routes[0].supplier_code);
 }
 
 #[test]
@@ -1918,7 +1918,7 @@ fn sql_catalog_snapshot_rejects_invalid_provider_retry_policy_before_serving_cat
 #[test]
 fn sql_catalog_snapshot_rejects_invalid_routing_rule_json_before_serving_catalog() {
     let mut rows = priced_catalog_rows();
-    rows.routing_rules[0].candidate_channels_json = "not-json".to_owned();
+    rows.routing_rules[0].candidate_account_groups_json = "not-json".to_owned();
 
     let result = SqlPricingCatalogSnapshot::from_rows(rows);
 
@@ -1926,7 +1926,7 @@ fn sql_catalog_snapshot_rejects_invalid_routing_rule_json_before_serving_catalog
         Ok(_) => panic!("catalog snapshot must reject invalid routing candidate channels"),
         Err(error) => error,
     };
-    assert!(error.to_string().contains("candidate_channels"));
+    assert!(error.to_string().contains("candidate_account_groups"));
 }
 
 #[test]
@@ -1970,13 +1970,13 @@ fn priced_catalog_rows() -> PricingCatalogRows {
             r#"["chat","tools","json_schema"]"#,
         )],
         provider_routes: vec![
-            ModelProviderRouteRow {
+            ModelUpstreamRouteRow {
                 catalog_key: "openai/gpt-4o-mini".to_owned(),
                 model: "gpt-4o-mini".to_owned(),
                 api_code: Some("openai.chat_completions".to_owned()),
                 region_code: "global".to_owned(),
-                provider_code: "openrouter".to_owned(),
-                channel_id: 3001,
+                supplier_code: "openrouter".to_owned(),
+                account_id: 3001,
                 credential_id: Some(300101),
                 credential_rotation: "priority".to_owned(),
                 credential_priority: 10,
@@ -1992,13 +1992,13 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                         .to_owned(),
                 ),
             },
-            ModelProviderRouteRow {
+            ModelUpstreamRouteRow {
                 catalog_key: "openai/gpt-4o-mini".to_owned(),
                 model: "gpt-4o-mini".to_owned(),
                 api_code: Some("openai.chat_completions".to_owned()),
                 region_code: "global".to_owned(),
-                provider_code: "azure_openai".to_owned(),
-                channel_id: 2001,
+                supplier_code: "azure_openai".to_owned(),
+                account_id: 2001,
                 credential_id: Some(200101),
                 credential_rotation: "priority".to_owned(),
                 credential_priority: 10,
@@ -2012,20 +2012,20 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 retry_policy_json: None,
             },
         ],
-        provider_channel_routes: vec![
-            ProviderChannelRouteRow {
-                provider_code: "openrouter".to_owned(),
-                channel_id: 3001,
+        upstream_account_routes: vec![
+            UpstreamAccountRouteRow {
+                supplier_code: "openrouter".to_owned(),
+                account_id: 3001,
                 credential_id: Some(300101),
                 credential_rotation: "priority".to_owned(),
                 credential_priority: 10,
                 credential_weight: 100,
-                channel_code: Some("openrouter-main".to_owned()),
+                account_code: Some("openrouter-main".to_owned()),
                 region_code: "global".to_owned(),
-                site_id: None,
-                site_code: None,
-                site_service_id: None,
-                site_service_code: None,
+                supplier_id: None,
+                supplier_code: None,
+                endpoint_id: None,
+                endpoint_code: None,
                 base_url: Some("http://provider-proxy.internal/openrouter".to_owned()),
                 secret_ref: Some("vault://providers/openrouter/account/main".to_owned()),
                 auth_type: Some("bearer".to_owned()),
@@ -2035,30 +2035,30 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                     r#"{"max_attempts":3,"retryable_status_codes":[429,500,503],"backoff_ms":25}"#
                         .to_owned(),
                 ),
-                group_bindings_json: "[]".to_owned(),
+                account_group_bindings_json: "[]".to_owned(),
                 channel_health_status: 1,
                 credential_health_status: 1,
             },
-            ProviderChannelRouteRow {
-                provider_code: "azure_openai".to_owned(),
-                channel_id: 2001,
+            UpstreamAccountRouteRow {
+                supplier_code: "azure_openai".to_owned(),
+                account_id: 2001,
                 credential_id: Some(200101),
                 credential_rotation: "priority".to_owned(),
                 credential_priority: 10,
                 credential_weight: 100,
-                channel_code: Some("azure-main".to_owned()),
+                account_code: Some("azure-main".to_owned()),
                 region_code: "global".to_owned(),
-                site_id: None,
-                site_code: None,
-                site_service_id: None,
-                site_service_code: None,
+                supplier_id: None,
+                supplier_code: None,
+                endpoint_id: None,
+                endpoint_code: None,
                 base_url: Some("http://provider-proxy.internal/azure".to_owned()),
                 secret_ref: Some("vault://providers/azure/account/main".to_owned()),
                 auth_type: Some("azure_openai".to_owned()),
                 auth_config_json: Some("{}".to_owned()),
                 timeout_ms: None,
                 retry_policy_json: None,
-                group_bindings_json: "[]".to_owned(),
+                account_group_bindings_json: "[]".to_owned(),
                 channel_health_status: 1,
                 credential_health_status: 1,
             },
@@ -2083,7 +2083,7 @@ fn priced_catalog_rows() -> PricingCatalogRows {
             priority: 10,
             match_expression_json: r#"{"catalogKey":"openai/gpt-4o-mini"}"#.to_owned(),
             target_model: Some("openai/gpt-4o-mini".to_owned()),
-            candidate_channels_json: r#"[{"channel_id":3001,"weight":100}]"#.to_owned(),
+            candidate_account_groups_json: r#"[{"account_id":3001,"weight":100}]"#.to_owned(),
             fallback_chain_json: "[]".to_owned(),
             constraints_json: "{}".to_owned(),
         }],
@@ -2097,7 +2097,7 @@ fn priced_catalog_rows() -> PricingCatalogRows {
             default_markup_amount: "0.000000".to_owned(),
             currency: "USD".to_owned(),
         }],
-        channel_groups: vec![ChannelGroupRow {
+        upstream_account_groups: vec![UpstreamAccountGroupRow {
             id: 10,
             tenant_id: 100001,
             organization_id: 0,
@@ -2113,7 +2113,7 @@ fn priced_catalog_rows() -> PricingCatalogRows {
             organization_id: 0,
             user_id: 30,
             group_id: 10,
-            group_bindings_json: "[]".to_owned(),
+            account_group_bindings_json: "[]".to_owned(),
             name: "Production Key".to_owned(),
             key_prefix: "sk-test".to_owned(),
             key_display_masked: "sk-test********ABCD".to_owned(),
@@ -2139,7 +2139,7 @@ fn priced_catalog_rows() -> PricingCatalogRows {
             burst_limit: None,
         }],
         gateway_risk_rules: vec![],
-        channel_group_metric_snapshots: vec![ChannelGroupMetricSnapshotRow {
+        upstream_account_group_metric_snapshots: vec![UpstreamAccountGroupMetricSnapshotRow {
             group_id: 10,
             capacity_used: Some("37.500000".to_owned()),
             capacity_limit: Some("1000.000000".to_owned()),
@@ -2157,8 +2157,8 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 billing_meter_code: "llm_input_token".to_owned(),
                 unit_price: "0.150000".to_owned(),
                 currency: "USD".to_owned(),
-                provider_code: None,
-                channel_id: None,
+                supplier_code: None,
+                account_id: None,
                 pricing_plan_code: None,
             },
             ModelPriceRow {
@@ -2171,8 +2171,8 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 billing_meter_code: "llm_input_token".to_owned(),
                 unit_price: "0.110000".to_owned(),
                 currency: "USD".to_owned(),
-                provider_code: Some("openrouter".to_owned()),
-                channel_id: Some(3001),
+                supplier_code: Some("openrouter".to_owned()),
+                account_id: Some(3001),
                 pricing_plan_code: None,
             },
             ModelPriceRow {
@@ -2185,8 +2185,8 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 billing_meter_code: "llm_input_token".to_owned(),
                 unit_price: "0.120000".to_owned(),
                 currency: "USD".to_owned(),
-                provider_code: Some("azure_openai".to_owned()),
-                channel_id: Some(2001),
+                supplier_code: Some("azure_openai".to_owned()),
+                account_id: Some(2001),
                 pricing_plan_code: None,
             },
         ],
@@ -2215,8 +2215,8 @@ fn scoped_model_price_row(
     organization_id: i64,
     price_side_code: &str,
     unit_price: &str,
-    provider_code: Option<&str>,
-    channel_id: Option<i64>,
+    supplier_code: Option<&str>,
+    account_id: Option<i64>,
 ) -> ModelPriceRow {
     ModelPriceRow {
         tenant_id,
@@ -2228,8 +2228,8 @@ fn scoped_model_price_row(
         billing_meter_code: "llm_input_token".to_owned(),
         unit_price: unit_price.to_owned(),
         currency: "USD".to_owned(),
-        provider_code: provider_code.map(str::to_owned),
-        channel_id,
+        supplier_code: supplier_code.map(str::to_owned),
+        account_id,
         pricing_plan_code: None,
     }
 }

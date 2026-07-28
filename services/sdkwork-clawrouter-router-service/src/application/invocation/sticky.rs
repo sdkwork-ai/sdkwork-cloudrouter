@@ -146,14 +146,14 @@ impl InvocationInterceptor for StickyCommitInterceptor {
                 tenant_id: invocation.subject.tenant_id,
                 organization_id: invocation.subject.organization_id,
                 api_key_id: invocation.subject.api_key_id,
-                channel_group_id: invocation.subject.channel_group_id,
+                account_group_id: invocation.subject.account_group_id,
                 object_type: sticky.object_type.clone(),
                 object_id,
                 parent_object_type: sticky.parent_object_type.clone(),
                 parent_object_id: sticky.parent_object_id.clone(),
-                provider_code: account.provider_code.clone(),
-                channel_id: account.channel_id,
-                vendor_code: Some(account.provider_code.clone()),
+                supplier_code: account.supplier_code.clone(),
+                account_id: account.account_id,
+                vendor_code: Some(account.supplier_code.clone()),
                 api_code: invocation.resource.api_code.clone(),
                 catalog_key: invocation
                     .resource
@@ -205,9 +205,9 @@ fn apply_sticky_binding(invocation: &mut Invocation, binding: StickyObjectRouteB
         invocation.resource.provider_native_model = Some(provider_model.clone());
     }
     invocation.routing.sticky_route = Some(StickyRouteConstraint {
-        provider_code: binding.provider_code,
-        channel_id: binding.channel_id,
-        channel_group_id: binding.channel_group_id,
+        supplier_code: binding.supplier_code,
+        account_id: binding.account_id,
+        account_group_id: binding.account_group_id,
         vendor_code: binding.vendor_code,
         api_code: binding.api_code,
         catalog_key: binding.catalog_key,

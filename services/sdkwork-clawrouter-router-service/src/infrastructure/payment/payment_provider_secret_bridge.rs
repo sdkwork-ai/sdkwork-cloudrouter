@@ -26,7 +26,7 @@ impl PaymentProviderSecretResolver for ProviderSecretPaymentBridge {
         Box::pin(async move {
             let value = resolver.resolve_secret_value(secret_ref).map_err(|error| {
                 PaymentProviderRegistryError::InvalidProviderRequest {
-                    provider_code: "secret_resolver".to_owned(),
+                    supplier_code: "secret_resolver".to_owned(),
                     operation: PaymentAdapterOperation::Capabilities,
                     message: error.to_string(),
                 }

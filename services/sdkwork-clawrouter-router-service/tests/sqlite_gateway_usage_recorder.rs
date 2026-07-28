@@ -47,7 +47,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     recorder.record_gateway_usage(command).await.unwrap();
 
     let trace = sqlx::query(
-        "SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id, channel_group_snapshot, requested_model, requested_model_catalog_key, provider_model, provider_native_model, gateway_instance_id, gateway_instance_code_snapshot, gateway_region_code_snapshot, gateway_node_name_snapshot, region_code, http_status, streaming, prompt_tokens, completion_tokens, total_tokens, metadata, user_agent_hash FROM ai_request_trace",
+        "SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id, upstream_account_group_snapshot, requested_model, requested_model_catalog_key, provider_model, provider_native_model, gateway_instance_id, gateway_instance_code_snapshot, gateway_region_code_snapshot, gateway_node_name_snapshot, region_code, http_status, streaming, prompt_tokens, completion_tokens, total_tokens, metadata, user_agent_hash FROM ai_request_trace",
     )
     .fetch_one(&pool)
     .await
@@ -66,7 +66,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     assert_eq!(101_i64, trace.get::<i64, _>("api_key_id"));
     assert_eq!(
         "standard-group",
-        trace.get::<String, _>("channel_group_snapshot")
+        trace.get::<String, _>("upstream_account_group_snapshot")
     );
     assert_eq!("gpt-4o-mini", trace.get::<String, _>("requested_model"));
     assert_eq!(
@@ -105,7 +105,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
     assert!(user_agent_hash.chars().all(|ch| ch.is_ascii_hexdigit()));
 
     let usage = sqlx::query(
-        "SELECT request_id, api_key_id, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, channel_id, usage_type, billing_meter_code, billable_quantity, prompt_tokens, completion_tokens, cached_tokens, total_tokens, base_input_unit_price, base_output_unit_price, cache_read_unit_price, rate_multiplier, reference_multiplier, official_reference_amount, upstream_cost_amount, customer_charge_amount, currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status, idempotency_key FROM ai_usage",
+        "SELECT request_id, api_key_id, catalog_key, requested_model_catalog_key, model, provider_native_model, region_code, account_id, usage_type, billing_meter_code, billable_quantity, prompt_tokens, completion_tokens, cached_tokens, total_tokens, base_input_unit_price, base_output_unit_price, cache_read_unit_price, rate_multiplier, reference_multiplier, official_reference_amount, upstream_cost_amount, customer_charge_amount, currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status, idempotency_key FROM ai_usage",
     )
     .fetch_one(&pool)
     .await
@@ -126,7 +126,7 @@ async fn sqlite_gateway_usage_recorder_upserts_trace_and_usage_fact_without_dupl
         usage.get::<String, _>("provider_native_model")
     );
     assert_eq!("global", usage.get::<String, _>("region_code"));
-    assert_eq!(3001_i64, usage.get::<i64, _>("channel_id"));
+    assert_eq!(3001_i64, usage.get::<i64, _>("account_id"));
     assert_eq!(1_i64, usage.get::<i64, _>("usage_type"));
     assert_eq!(
         "llm_input_token",
@@ -260,7 +260,7 @@ async fn sqlite_gateway_usage_recorder_records_failed_trace_without_usage_fact()
     let trace = sqlx::query(
         r#"
         SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id,
-               channel_group_snapshot, requested_model, requested_model_catalog_key,
+               upstream_account_group_snapshot, requested_model, requested_model_catalog_key,
                provider_model, provider_native_model, http_status,
                provider_error_code, error_type, error_message_masked, latency_ms,
                streaming, prompt_tokens, completion_tokens, total_tokens
@@ -285,7 +285,7 @@ async fn sqlite_gateway_usage_recorder_records_failed_trace_without_usage_fact()
     assert_eq!(101_i64, trace.get::<i64, _>("api_key_id"));
     assert_eq!(
         "standard-group",
-        trace.get::<String, _>("channel_group_snapshot")
+        trace.get::<String, _>("upstream_account_group_snapshot")
     );
     assert_eq!("gpt-4o-mini", trace.get::<String, _>("requested_model"));
     assert_eq!(
@@ -825,12 +825,12 @@ fn gateway_usage_command_rejects_invalid_persistence_values() {
     invalid_commands.push(("api_key_name_snapshot", command));
 
     let mut command = valid.clone();
-    command.channel_group_snapshot = "x".repeat(129);
-    invalid_commands.push(("channel_group_snapshot", command));
+    command.upstream_account_group_snapshot = "x".repeat(129);
+    invalid_commands.push(("upstream_account_group_snapshot", command));
 
     let mut command = valid.clone();
-    command.provider_code = "x".repeat(129);
-    invalid_commands.push(("provider_code", command));
+    command.supplier_code = "x".repeat(129);
+    invalid_commands.push(("supplier_code", command));
 
     let mut command = valid.clone();
     command.requested_model = "x".repeat(257);
@@ -902,13 +902,13 @@ fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordComman
         user_id: 30,
         api_key_id: 101,
         api_key_name_snapshot: "Owner Usage Key".to_owned(),
-        channel_group_id: 10,
-        channel_group_snapshot: "standard-group".to_owned(),
+        account_group_id: 10,
+        upstream_account_group_snapshot: "standard-group".to_owned(),
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         requested_model: "gpt-4o-mini".to_owned(),
         requested_model_catalog_key: "openai/gpt-4o-mini".to_owned(),
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         provider_model: "gpt-4o-mini".to_owned(),
         provider_native_model: "gpt-4o-mini".to_owned(),
         region_code: "global".to_owned(),
@@ -962,13 +962,13 @@ fn failed_trace_command(request_id: &str) -> GatewayRequestTraceCommand {
         user_id: 30,
         api_key_id: 101,
         api_key_name_snapshot: "Owner Usage Key".to_owned(),
-        channel_group_id: 10,
-        channel_group_snapshot: "standard-group".to_owned(),
+        account_group_id: 10,
+        upstream_account_group_snapshot: "standard-group".to_owned(),
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         requested_model: "gpt-4o-mini".to_owned(),
         requested_model_catalog_key: "openai/gpt-4o-mini".to_owned(),
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         provider_model: "gpt-4o-mini".to_owned(),
         provider_native_model: "gpt-4o-mini".to_owned(),
         region_code: "global".to_owned(),

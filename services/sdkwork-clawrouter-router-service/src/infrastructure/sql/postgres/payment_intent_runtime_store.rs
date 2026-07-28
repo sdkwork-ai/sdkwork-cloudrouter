@@ -158,7 +158,7 @@ async fn load_intent_by_idempotency(
     let row = sqlx::query(
         r#"
         SELECT id, tenant_id, organization_id, owner_user_id, merchant_order_no, subject,
-               provider_code, payment_method, scene_code, amount, currency_code, status,
+               supplier_code, payment_method, scene_code, amount, currency_code, status,
                idempotency_key, created_at::text AS created_at,
                updated_at::text AS updated_at
         FROM commerce_payment_intent
@@ -183,7 +183,7 @@ async fn load_intent_by_id(
     let row = sqlx::query(
         r#"
         SELECT id, tenant_id, organization_id, owner_user_id, merchant_order_no, subject,
-               provider_code, payment_method, scene_code, amount, currency_code, status,
+               supplier_code, payment_method, scene_code, amount, currency_code, status,
                idempotency_key, created_at::text AS created_at,
                updated_at::text AS updated_at
         FROM commerce_payment_intent
@@ -212,7 +212,7 @@ async fn insert_payment_intent(
     sqlx::query(
         r#"
         INSERT INTO commerce_payment_intent
-            (id, tenant_id, organization_id, owner_user_id, order_id, merchant_order_no, subject, provider, provider_code, payment_method, scene_code, amount, currency_code, status, request_no, idempotency_key, metadata_json, provider_native_json, next_action_json, captured_amount, refunded_amount, created_at, updated_at)
+            (id, tenant_id, organization_id, owner_user_id, order_id, merchant_order_no, subject, provider, supplier_code, payment_method, scene_code, amount, currency_code, status, request_no, idempotency_key, metadata_json, provider_native_json, next_action_json, captured_amount, refunded_amount, created_at, updated_at)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NULL, NULL, $18, $19, $20, $21)
         "#,
@@ -224,8 +224,8 @@ async fn insert_payment_intent(
     .bind(&intent.merchant_order_no)
     .bind(&intent.merchant_order_no)
     .bind(&intent.subject)
-    .bind(&intent.provider_code)
-    .bind(&intent.provider_code)
+    .bind(&intent.supplier_code)
+    .bind(&intent.supplier_code)
     .bind(&intent.payment_method)
     .bind(&intent.scene)
     .bind(&intent.amount)
@@ -255,7 +255,7 @@ async fn insert_payment_intent(
     .bind(&intent.owner_user_id)
     .bind(&intent.id)
     .bind(&intent.merchant_order_no)
-    .bind(&intent.provider_code)
+    .bind(&intent.supplier_code)
     .bind(&intent.merchant_order_no)
     .bind(&intent.amount)
     .bind(&intent.currency_code)
@@ -268,7 +268,7 @@ async fn insert_payment_intent(
     sqlx::query(
         r#"
         INSERT INTO commerce_payment_route_decision
-            (id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, route_rule_id, channel_id, provider_code, provider_account_id, method_code, scene_code, country_code, currency_code, amount, risk_level, decision_reason, fallback_from_channel_id, created_at)
+            (id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, route_rule_id, account_id, supplier_code, provider_account_id, method_code, scene_code, country_code, currency_code, amount, risk_level, decision_reason, fallback_from_account_id, created_at)
         VALUES
             ($1, $2, $3, $4, $5, NULL, $6, $7, $8, $9, $10, NULL, $11, $12, NULL, $13, NULL, $14)
         "#,
@@ -278,8 +278,8 @@ async fn insert_payment_intent(
     .bind(route_decision.organization_id.as_deref())
     .bind(&route_decision.payment_intent_id)
     .bind(&route_decision.payment_attempt_id)
-    .bind(&route_decision.channel_id)
-    .bind(&route_decision.provider_code)
+    .bind(&route_decision.account_id)
+    .bind(&route_decision.supplier_code)
     .bind(route_decision.provider_account_id.as_deref())
     .bind(&route_decision.method_code)
     .bind(&route_decision.scene_code)
@@ -303,7 +303,7 @@ async fn insert_operation_attempt(
     sqlx::query(
         r#"
         INSERT INTO commerce_payment_operation_attempt
-            (id, tenant_id, organization_id, operation_no, provider_code, provider_account_id, channel_id, operation_code, sdkwork_resource_type, sdkwork_resource_id, idempotency_key, request_digest, response_digest, native_request_id, native_trade_id, native_refund_id, http_status, provider_error_code, provider_error_message, retryable, status, started_at, completed_at, created_at)
+            (id, tenant_id, organization_id, operation_no, supplier_code, provider_account_id, account_id, operation_code, sdkwork_resource_type, sdkwork_resource_id, idempotency_key, request_digest, response_digest, native_request_id, native_trade_id, native_refund_id, http_status, provider_error_code, provider_error_message, retryable, status, started_at, completed_at, created_at)
         VALUES
             ($1, $2, $3, $4, $5, NULL, NULL, $6, $7, $8, $9, $10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $11, $12, NULL, $13)
         "#,
@@ -312,7 +312,7 @@ async fn insert_operation_attempt(
     .bind(&attempt.tenant_id)
     .bind(attempt.organization_id.as_deref())
     .bind(&attempt.operation_no)
-    .bind(&attempt.provider_code)
+    .bind(&attempt.supplier_code)
     .bind(attempt.operation.as_code())
     .bind(&attempt.sdkwork_resource_type)
     .bind(&attempt.sdkwork_resource_id)
@@ -358,7 +358,7 @@ async fn finish_operation_attempt(
     .map_err(|error| store_error("failed to finish payment operation attempt", error))?;
     let row = sqlx::query(
         r#"
-        SELECT id, tenant_id, organization_id, operation_no, provider_code, operation_code,
+        SELECT id, tenant_id, organization_id, operation_no, supplier_code, operation_code,
                sdkwork_resource_type, sdkwork_resource_id, idempotency_key, request_digest,
                response_digest, provider_error_code, provider_error_message, status,
                started_at::text AS started_at, completed_at::text AS completed_at
@@ -381,7 +381,7 @@ async fn load_refund_by_idempotency(
     let row = sqlx::query(
         r#"
         SELECT id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no,
-               amount, currency_code, provider_code, reason, status, idempotency_key,
+               amount, currency_code, supplier_code, reason, status, idempotency_key,
                created_at::text AS created_at, updated_at::text AS updated_at
         FROM commerce_refund
         WHERE tenant_id = $1
@@ -411,7 +411,7 @@ async fn load_refund_by_id(
     let row = sqlx::query(
         r#"
         SELECT id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no,
-               amount, currency_code, provider_code, reason, status, idempotency_key,
+               amount, currency_code, supplier_code, reason, status, idempotency_key,
                created_at::text AS created_at, updated_at::text AS updated_at
         FROM commerce_refund
         WHERE tenant_id = $1
@@ -446,7 +446,7 @@ async fn insert_refund(
     sqlx::query(
         r#"
         INSERT INTO commerce_refund
-            (id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no, amount, currency_code, provider_code, reason, status, request_no, idempotency_key, created_at, updated_at)
+            (id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no, amount, currency_code, supplier_code, reason, status, request_no, idempotency_key, created_at, updated_at)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         "#,
@@ -459,7 +459,7 @@ async fn insert_refund(
     .bind(&refund.merchant_refund_no)
     .bind(&refund.amount)
     .bind(&refund.currency_code)
-    .bind(&refund.provider_code)
+    .bind(&refund.supplier_code)
     .bind(&refund.reason)
     .bind(refund.status.as_str())
     .bind(&refund.merchant_refund_no)
@@ -472,7 +472,7 @@ async fn insert_refund(
     sqlx::query(
         r#"
         INSERT INTO commerce_refund_attempt
-            (id, tenant_id, organization_id, refund_attempt_no, refund_id, provider_code, provider_account_id, out_refund_no, provider_refund_id, amount, currency_code, status, failure_code, failure_message, submitted_at, succeeded_at, failed_at, created_at, updated_at)
+            (id, tenant_id, organization_id, refund_attempt_no, refund_id, supplier_code, provider_account_id, out_refund_no, provider_refund_id, amount, currency_code, status, failure_code, failure_message, submitted_at, succeeded_at, failed_at, created_at, updated_at)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
         "#,
@@ -482,7 +482,7 @@ async fn insert_refund(
     .bind(attempt.organization_id.as_deref())
     .bind(&attempt.refund_attempt_no)
     .bind(&attempt.refund_id)
-    .bind(&attempt.provider_code)
+    .bind(&attempt.supplier_code)
     .bind(attempt.provider_account_id.as_deref())
     .bind(&attempt.out_refund_no)
     .bind(attempt.provider_refund_id.as_deref())
@@ -586,7 +586,7 @@ async fn finish_refund_attempt(
     .map_err(|error| store_error("failed to finish payment refund attempt", error))?;
     let row = sqlx::query(
         r#"
-        SELECT id, tenant_id, organization_id, refund_attempt_no, refund_id, provider_code,
+        SELECT id, tenant_id, organization_id, refund_attempt_no, refund_id, supplier_code,
                provider_account_id, out_refund_no, provider_refund_id, amount, currency_code,
                status, failure_code, failure_message, submitted_at::text AS submitted_at,
                succeeded_at::text AS succeeded_at, failed_at::text AS failed_at,
@@ -652,7 +652,7 @@ async fn finish_refund(
     let row = sqlx::query(
         r#"
         SELECT id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no,
-               amount, currency_code, provider_code, reason, status, idempotency_key,
+               amount, currency_code, supplier_code, reason, status, idempotency_key,
                created_at::text AS created_at, updated_at::text AS updated_at
         FROM commerce_refund
         WHERE id = $1
@@ -692,7 +692,7 @@ fn intent_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentIntentRun
         amount: string_cell(row, "amount"),
         currency_code: string_cell(row, "currency_code"),
         subject: string_cell(row, "subject"),
-        provider_code: string_cell(row, "provider_code"),
+        supplier_code: string_cell(row, "supplier_code"),
         payment_method: string_cell(row, "payment_method"),
         scene: string_cell(row, "scene_code"),
         status,
@@ -724,7 +724,7 @@ fn refund_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentRefundRun
         merchant_refund_no: string_cell(row, "refund_no"),
         amount: string_cell(row, "amount"),
         currency_code: string_cell(row, "currency_code"),
-        provider_code: string_cell(row, "provider_code"),
+        supplier_code: string_cell(row, "supplier_code"),
         reason: string_cell(row, "reason"),
         status,
         idempotency_key: string_cell(row, "idempotency_key"),
@@ -760,7 +760,7 @@ fn refund_attempt_from_row(
         organization_id: optional_string_cell(row, "organization_id"),
         refund_attempt_no: string_cell(row, "refund_attempt_no"),
         refund_id: string_cell(row, "refund_id"),
-        provider_code: string_cell(row, "provider_code"),
+        supplier_code: string_cell(row, "supplier_code"),
         provider_account_id: optional_string_cell(row, "provider_account_id"),
         out_refund_no: string_cell(row, "out_refund_no"),
         provider_refund_id: optional_string_cell(row, "provider_refund_id"),
@@ -785,7 +785,7 @@ fn operation_attempt_from_row(
         tenant_id: string_cell(row, "tenant_id"),
         organization_id: optional_string_cell(row, "organization_id"),
         operation_no: string_cell(row, "operation_no"),
-        provider_code: string_cell(row, "provider_code"),
+        supplier_code: string_cell(row, "supplier_code"),
         operation: operation_from_code(&string_cell(row, "operation_code"))?,
         sdkwork_resource_type: string_cell(row, "sdkwork_resource_type"),
         sdkwork_resource_id: string_cell(row, "sdkwork_resource_id"),

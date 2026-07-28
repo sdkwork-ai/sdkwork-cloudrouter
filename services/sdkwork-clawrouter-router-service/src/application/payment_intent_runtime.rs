@@ -43,7 +43,7 @@ pub struct RuntimeCreatePaymentIntentCommand {
     pub amount: String,
     pub currency_code: String,
     pub subject: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub payment_method: Option<String>,
     pub scene: Option<String>,
     pub idempotency_key: String,
@@ -87,7 +87,7 @@ pub struct PaymentIntentRuntimeRecord {
     pub amount: String,
     pub currency_code: String,
     pub subject: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub payment_method: String,
     pub scene: String,
     pub status: PaymentIntentStatus,
@@ -103,8 +103,8 @@ pub struct PaymentRouteDecisionRecord {
     pub organization_id: Option<String>,
     pub payment_intent_id: String,
     pub payment_attempt_id: String,
-    pub channel_id: String,
-    pub provider_code: String,
+    pub account_id: String,
+    pub supplier_code: String,
     pub provider_account_id: Option<String>,
     pub method_code: String,
     pub scene_code: String,
@@ -120,7 +120,7 @@ pub struct PaymentOperationAttemptRecord {
     pub tenant_id: String,
     pub organization_id: Option<String>,
     pub operation_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub operation: PaymentAdapterOperation,
     pub sdkwork_resource_type: String,
     pub sdkwork_resource_id: String,
@@ -204,9 +204,9 @@ where
         validate_create_command(&command)?;
         let adapter = self
             .provider_registry
-            .resolve(&command.provider_code)
+            .resolve(&command.supplier_code)
             .map_err(registry_error)?;
-        let provider_code = adapter.capabilities().provider_code.to_owned();
+        let supplier_code = adapter.capabilities().supplier_code.to_owned();
 
         if let Some(existing) = self
             .store
@@ -222,7 +222,7 @@ where
         let payment_method = command
             .payment_method
             .clone()
-            .unwrap_or_else(|| default_payment_method(&provider_code).to_owned());
+            .unwrap_or_else(|| default_payment_method(&supplier_code).to_owned());
         let scene = command.scene.clone().unwrap_or_else(|| "web".to_owned());
         let intent = PaymentIntentRuntimeRecord {
             id: intent_id.clone(),
@@ -233,7 +233,7 @@ where
             amount: command.amount.clone(),
             currency_code: command.currency_code.clone(),
             subject: command.subject.clone(),
-            provider_code: provider_code.clone(),
+            supplier_code: supplier_code.clone(),
             payment_method: payment_method.clone(),
             scene: scene.clone(),
             status: PaymentIntentStatus::RequiresConfirmation,
@@ -247,8 +247,8 @@ where
             organization_id: command.organization_id,
             payment_intent_id: intent_id,
             payment_attempt_id,
-            channel_id: format!("{provider_code}:{payment_method}:{scene}"),
-            provider_code,
+            account_id: format!("{supplier_code}:{payment_method}:{scene}"),
+            supplier_code,
             provider_account_id: None,
             method_code: payment_method,
             scene_code: scene,
@@ -274,7 +274,7 @@ where
             .ok_or_else(|| DomainError::not_found("payment intent was not found"))?;
         let adapter = self
             .provider_registry
-            .resolve(&intent.provider_code)
+            .resolve(&intent.supplier_code)
             .map_err(registry_error)?;
         let attempt = self
             .store
@@ -336,7 +336,7 @@ where
             .ok_or_else(|| DomainError::not_found("payment intent was not found"))?;
         let adapter = self
             .provider_registry
-            .resolve(&intent.provider_code)
+            .resolve(&intent.supplier_code)
             .map_err(registry_error)?;
         let attempt = self
             .store
@@ -399,7 +399,7 @@ where
             .ok_or_else(|| DomainError::not_found("payment intent was not found"))?;
         let adapter = self
             .provider_registry
-            .resolve(&intent.provider_code)
+            .resolve(&intent.supplier_code)
             .map_err(registry_error)?;
         let attempt = self
             .store
@@ -463,14 +463,14 @@ where
             id,
             tenant_id: intent.tenant_id.clone(),
             organization_id: intent.organization_id.clone(),
-            provider_code: intent.provider_code.clone(),
+            supplier_code: intent.supplier_code.clone(),
             operation,
             sdkwork_resource_type: "payment_intent".to_owned(),
             sdkwork_resource_id: intent.id.clone(),
             idempotency_key: idempotency_key.to_owned(),
             request_digest: format!(
                 "{}:{}:{}",
-                intent.provider_code,
+                intent.supplier_code,
                 operation.as_code(),
                 idempotency_key
             ),
@@ -758,7 +758,7 @@ fn validate_create_command(command: &RuntimeCreatePaymentIntentCommand) -> Domai
     require_non_empty("amount", &command.amount)?;
     require_non_empty("currency_code", &command.currency_code)?;
     require_non_empty("subject", &command.subject)?;
-    require_non_empty("provider_code", &command.provider_code)?;
+    require_non_empty("supplier_code", &command.supplier_code)?;
     require_non_empty("idempotency_key", &command.idempotency_key)?;
     require_non_empty("requested_at", &command.requested_at)?;
     if command.currency_code.len() != 3
@@ -803,8 +803,8 @@ fn require_non_empty(field: &str, value: &str) -> DomainResult<()> {
     }
 }
 
-fn default_payment_method(provider_code: &str) -> &'static str {
-    match provider_code {
+fn default_payment_method(supplier_code: &str) -> &'static str {
+    match supplier_code {
         "wechat_pay" => "wechat_jsapi",
         "alipay" => "alipay_page",
         "paypal" => "paypal_checkout",

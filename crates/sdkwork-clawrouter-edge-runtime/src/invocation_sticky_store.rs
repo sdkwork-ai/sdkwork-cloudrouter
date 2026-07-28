@@ -47,8 +47,8 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                 Self::Sqlite(pool) => sqlx::query(
                     r#"
                     SELECT tenant_id, organization_id, object_type, object_id,
-                           parent_object_type, parent_object_id, provider_code, channel_id,
-                           channel_group_id, vendor_code, api_code, catalog_key,
+                           parent_object_type, parent_object_id, supplier_code, account_id,
+                           account_group_id, vendor_code, api_code, catalog_key,
                            provider_model, region_code, sticky_scope
                     FROM ai_provider_object_route
                     WHERE tenant_id = ?
@@ -73,8 +73,8 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                 Self::Postgres(pool) => sqlx::query(
                     r#"
                     SELECT tenant_id, organization_id, object_type, object_id,
-                           parent_object_type, parent_object_id, provider_code, channel_id,
-                           channel_group_id, vendor_code, api_code, catalog_key,
+                           parent_object_type, parent_object_id, supplier_code, account_id,
+                           account_group_id, vendor_code, api_code, catalog_key,
                            provider_model, region_code, sticky_scope
                     FROM ai_provider_object_route
                     WHERE tenant_id = $1
@@ -117,9 +117,9 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                     sqlx::query(
                         r#"
                         INSERT INTO ai_provider_object_route
-                            (uuid, tenant_id, organization_id, status, api_key_id, channel_group_id,
+                            (uuid, tenant_id, organization_id, status, api_key_id, account_group_id,
                              object_type, object_id, object_key_hash, parent_object_type,
-                             parent_object_id, provider_code, channel_id, vendor_code, api_code,
+                             parent_object_id, supplier_code, account_id, vendor_code, api_code,
                              catalog_key, provider_model, region_code, sticky_scope, last_seen_at)
                         VALUES
                             (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -128,12 +128,12 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                         DO UPDATE SET
                             status = 1,
                             api_key_id = excluded.api_key_id,
-                            channel_group_id = excluded.channel_group_id,
+                            account_group_id = excluded.account_group_id,
                             object_key_hash = excluded.object_key_hash,
                             parent_object_type = excluded.parent_object_type,
                             parent_object_id = excluded.parent_object_id,
-                            provider_code = excluded.provider_code,
-                            channel_id = excluded.channel_id,
+                            supplier_code = excluded.supplier_code,
+                            account_id = excluded.account_id,
                             vendor_code = excluded.vendor_code,
                             api_code = excluded.api_code,
                             catalog_key = excluded.catalog_key,
@@ -149,14 +149,14 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                     .bind(command.tenant_id)
                     .bind(command.organization_id)
                     .bind(command.api_key_id)
-                    .bind(command.channel_group_id)
+                    .bind(command.account_group_id)
                     .bind(&command.object_type)
                     .bind(&command.object_id)
                     .bind(&object_key_hash)
                     .bind(&command.parent_object_type)
                     .bind(&command.parent_object_id)
-                    .bind(&command.provider_code)
-                    .bind(command.channel_id)
+                    .bind(&command.supplier_code)
+                    .bind(command.account_id)
                     .bind(&command.vendor_code)
                     .bind(&command.api_code)
                     .bind(&command.catalog_key)
@@ -171,9 +171,9 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                     sqlx::query(
                         r#"
                         INSERT INTO ai_provider_object_route
-                            (uuid, tenant_id, organization_id, status, api_key_id, channel_group_id,
+                            (uuid, tenant_id, organization_id, status, api_key_id, account_group_id,
                              object_type, object_id, object_key_hash, parent_object_type,
-                             parent_object_id, provider_code, channel_id, vendor_code, api_code,
+                             parent_object_id, supplier_code, account_id, vendor_code, api_code,
                              catalog_key, provider_model, region_code, sticky_scope, last_seen_at)
                         VALUES
                             ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10,
@@ -183,12 +183,12 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                         DO UPDATE SET
                             status = 1,
                             api_key_id = EXCLUDED.api_key_id,
-                            channel_group_id = EXCLUDED.channel_group_id,
+                            account_group_id = EXCLUDED.account_group_id,
                             object_key_hash = EXCLUDED.object_key_hash,
                             parent_object_type = EXCLUDED.parent_object_type,
                             parent_object_id = EXCLUDED.parent_object_id,
-                            provider_code = EXCLUDED.provider_code,
-                            channel_id = EXCLUDED.channel_id,
+                            supplier_code = EXCLUDED.supplier_code,
+                            account_id = EXCLUDED.account_id,
                             vendor_code = EXCLUDED.vendor_code,
                             api_code = EXCLUDED.api_code,
                             catalog_key = EXCLUDED.catalog_key,
@@ -204,14 +204,14 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                     .bind(command.tenant_id)
                     .bind(command.organization_id)
                     .bind(command.api_key_id)
-                    .bind(command.channel_group_id)
+                    .bind(command.account_group_id)
                     .bind(&command.object_type)
                     .bind(&command.object_id)
                     .bind(&object_key_hash)
                     .bind(&command.parent_object_type)
                     .bind(&command.parent_object_id)
-                    .bind(&command.provider_code)
-                    .bind(command.channel_id)
+                    .bind(&command.supplier_code)
+                    .bind(command.account_id)
                     .bind(&command.vendor_code)
                     .bind(&command.api_code)
                     .bind(&command.catalog_key)
@@ -236,9 +236,9 @@ fn sticky_binding_from_sqlite_row(row: sqlx::sqlite::SqliteRow) -> StickyObjectR
         object_id: row.get("object_id"),
         parent_object_type: row.get("parent_object_type"),
         parent_object_id: row.get("parent_object_id"),
-        provider_code: row.get("provider_code"),
-        channel_id: row.get("channel_id"),
-        channel_group_id: row.get("channel_group_id"),
+        supplier_code: row.get("supplier_code"),
+        account_id: row.get("account_id"),
+        account_group_id: row.get("account_group_id"),
         vendor_code: row.get("vendor_code"),
         api_code: row.get("api_code"),
         catalog_key: row.get("catalog_key"),
@@ -256,9 +256,9 @@ fn sticky_binding_from_postgres_row(row: sqlx::postgres::PgRow) -> StickyObjectR
         object_id: row.get("object_id"),
         parent_object_type: row.get("parent_object_type"),
         parent_object_id: row.get("parent_object_id"),
-        provider_code: row.get("provider_code"),
-        channel_id: row.get("channel_id"),
-        channel_group_id: row.get("channel_group_id"),
+        supplier_code: row.get("supplier_code"),
+        account_id: row.get("account_id"),
+        account_group_id: row.get("account_group_id"),
         vendor_code: row.get("vendor_code"),
         api_code: row.get("api_code"),
         catalog_key: row.get("catalog_key"),

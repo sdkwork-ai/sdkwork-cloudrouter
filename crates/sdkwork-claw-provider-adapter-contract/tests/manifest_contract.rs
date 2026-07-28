@@ -9,7 +9,7 @@ fn provider_adapter_manifest_serializes_endpoint_capability() {
         providers: vec![ProviderAdapterProviderManifest {
             package: "tencent-cloud".to_owned(),
             provider_family: "tencent-cloud".to_owned(),
-            provider_codes: vec!["tencent-cloud".to_owned(), "tencent-hunyuan".to_owned()],
+            supplier_codes: vec!["tencent-cloud".to_owned(), "tencent-hunyuan".to_owned()],
             endpoints: vec![ProviderAdapterEndpointManifest {
                 endpoint_key: "video.start_end2video".to_owned(),
                 capability: Some("video_generation".to_owned()),
@@ -50,7 +50,7 @@ fn provider_adapter_manifest_serializes_s3_plugin_contract_metadata() {
         providers: vec![ProviderAdapterProviderManifest {
             package: "sdkwork-cloud-storage".to_owned(),
             provider_family: "s3-compatible-object-storage".to_owned(),
-            provider_codes: vec!["aws_s3".to_owned(), "minio".to_owned()],
+            supplier_codes: vec!["aws_s3".to_owned(), "minio".to_owned()],
             endpoints: vec![ProviderAdapterEndpointManifest {
                 endpoint_key: "storage.objects.put".to_owned(),
                 capability: Some("s3_object_put".to_owned()),
@@ -92,7 +92,7 @@ fn provider_adapter_manifest_serializes_iaas_plugin_contract_metadata() {
         providers: vec![ProviderAdapterProviderManifest {
             package: "sdkwork-cloud-iaas".to_owned(),
             provider_family: "multi-cloud-iaas-compute".to_owned(),
-            provider_codes: vec!["aws_ec2".to_owned(), "alicloud_ecs".to_owned()],
+            supplier_codes: vec!["aws_ec2".to_owned(), "alicloud_ecs".to_owned()],
             endpoints: vec![ProviderAdapterEndpointManifest {
                 endpoint_key: "iaas.compute.instances.create".to_owned(),
                 capability: Some("compute_instance_create".to_owned()),

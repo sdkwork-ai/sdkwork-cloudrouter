@@ -39,11 +39,11 @@ fn classified_invocation(method: Method, path: &str, body: InvocationBody) -> In
     invocation
 }
 
-fn provider_native_invocation(provider_code: &str, path: &str, body: InvocationBody) -> Invocation {
+fn provider_native_invocation(supplier_code: &str, path: &str, body: InvocationBody) -> Invocation {
     let classification = ProviderNativeResourceClassifier::default()
         .classify(
             &InvocationClassificationRequest::new(Method::POST, path)
-                .with_provider_code(provider_code)
+                .with_supplier_code(supplier_code)
                 .with_capability(RoutingCapability::Video),
         )
         .expect("provider native classification");

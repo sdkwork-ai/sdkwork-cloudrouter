@@ -25,7 +25,7 @@ async fn sqlite_app_routing_channel_command_store_create_binds_vendor_and_resour
             config_snapshot_uuid: "snapshot-app-routing-resource-create".to_owned(),
             name: "OpenAI Resource Account".to_owned(),
             vendor: "OpenAI".to_owned(),
-            provider_code: "openai".to_owned(),
+            supplier_code: "openai".to_owned(),
             protocol: "OpenAI".to_owned(),
             access_type: "Standard API Key".to_owned(),
             base_url: Some("https://api.openai.com/v1".to_owned()),
@@ -43,7 +43,7 @@ async fn sqlite_app_routing_channel_command_store_create_binds_vendor_and_resour
         .await
         .unwrap();
 
-    let channel_id = outcome.item.id.parse::<i64>().unwrap();
+    let account_id = outcome.item.id.parse::<i64>().unwrap();
     assert!(
         outcome.item.models.is_empty(),
         "app routing accounts must not expose model allowlists"
@@ -64,7 +64,7 @@ async fn sqlite_app_routing_channel_command_store_create_binds_vendor_and_resour
         r#"
         SELECT COUNT(1)
         FROM ai_channel_resource
-        WHERE channel_id = ?
+        WHERE account_id = ?
           AND COALESCE(NULLIF(resource_code, ''), resource_group_code) IN (
               'vendor.openai',
               'modality.llm'
@@ -72,7 +72,7 @@ async fn sqlite_app_routing_channel_command_store_create_binds_vendor_and_resour
           AND deleted_at IS NULL
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .fetch_one(&pool)
     .await
     .unwrap();
@@ -146,7 +146,7 @@ async fn sqlite_app_routing_channel_command_store_update_keeps_primary_credentia
             config_snapshot_uuid: "snapshot-app-routing-credential-update-create".to_owned(),
             name: "OpenAI Credential Update Account".to_owned(),
             vendor: "OpenAI".to_owned(),
-            provider_code: "openai".to_owned(),
+            supplier_code: "openai".to_owned(),
             protocol: "OpenAI".to_owned(),
             access_type: "Standard API Key".to_owned(),
             base_url: Some("https://api.openai.com/v1".to_owned()),
@@ -163,7 +163,7 @@ async fn sqlite_app_routing_channel_command_store_update_keeps_primary_credentia
         })
         .await
         .unwrap();
-    let channel_id = created.item.id.parse::<i64>().unwrap();
+    let account_id = created.item.id.parse::<i64>().unwrap();
 
     store
         .update_channel(UpdateAppRoutingChannelCommand {
@@ -172,13 +172,13 @@ async fn sqlite_app_routing_channel_command_store_update_keeps_primary_credentia
                 organization_id: 0,
                 user_id: 30,
             },
-            channel_id,
+            account_id,
             provider_uuid: "app-routing-provider-credential-update-v2".to_owned(),
             audit_log_uuid: "audit-app-routing-credential-update-update".to_owned(),
             config_snapshot_uuid: "snapshot-app-routing-credential-update-update".to_owned(),
             name: None,
             vendor: None,
-            provider_code: None,
+            supplier_code: None,
             protocol: None,
             access_type: None,
             base_url: Some(Some("https://proxy.openai.local/v1".to_owned())),
@@ -200,7 +200,7 @@ async fn sqlite_app_routing_channel_command_store_update_keeps_primary_credentia
         r#"
         SELECT base_url, credential_ref
         FROM ai_channel_credential
-        WHERE channel_id = ?
+        WHERE account_id = ?
           AND tenant_id = 100001
           AND organization_id = 0
           AND status = 1
@@ -209,7 +209,7 @@ async fn sqlite_app_routing_channel_command_store_update_keeps_primary_credentia
         LIMIT 1
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .fetch_one(&pool)
     .await
     .unwrap();
@@ -233,7 +233,7 @@ async fn sqlite_app_routing_channel_command_store_delete_cascades_channel_relati
                 organization_id: 0,
                 user_id: 30,
             },
-            channel_id: 41001,
+            account_id: 41001,
             audit_log_uuid: "audit-app-routing-delete-channel".to_owned(),
             config_snapshot_uuid: "snapshot-app-routing-delete-channel".to_owned(),
             request_id: "req-app-routing-delete-channel".to_owned(),
@@ -251,7 +251,7 @@ async fn sqlite_app_routing_channel_command_store_delete_cascades_channel_relati
             FROM ai_channel_resource
             WHERE tenant_id = 100001
               AND organization_id = 0
-              AND channel_id = 41001
+              AND account_id = 41001
               AND deleted_at IS NULL
         )
         "#,
@@ -269,19 +269,19 @@ async fn seed_app_routing_channel_with_relationships(pool: &sqlx::SqlitePool) {
     for statement in [
         r#"
         INSERT INTO ai_channel
-            (id, uuid, tenant_id, organization_id, status, provider_code, channel_code, channel_name, channel_type, base_url, credential_ref, masked_label)
+            (id, uuid, tenant_id, organization_id, status, supplier_code, account_code, channel_name, channel_type, base_url, credential_ref, masked_label)
         VALUES
             (41001, 'app-routing-channel-delete-cascade', 100001, 0, 1, 'openai', 'app-routing-openai', 'App Routing OpenAI', 'official', 'https://api.openai.com/v1', 'secret://app-routing/openai', 'sk-***openai')
         "#,
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, status, channel_id, provider_code, channel_code, resource_code, grant_type)
+            (id, uuid, tenant_id, organization_id, status, account_id, supplier_code, account_code, resource_code, grant_type)
         VALUES
             (41021, 'app-routing-channel-resource-delete-cascade', 100001, 0, 1, 41001, 'openai', 'app-routing-openai', 'model.openai.gpt-4o-mini.chat', 'allow')
         "#,
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, status, channel_id, provider_code, channel_code, resource_code, grant_type)
+            (id, uuid, tenant_id, organization_id, status, account_id, supplier_code, account_code, resource_code, grant_type)
         VALUES
             (41031, 'app-routing-channel-vendor-delete-cascade', 100001, 0, 1, 41001, 'openai', 'app-routing-openai', 'vendor.openai', 'allow')
         "#,

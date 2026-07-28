@@ -47,13 +47,13 @@ pub struct AdminChannelCredentialInput {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminChannelItem {
     pub id: i64,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub uuid: String,
     pub tenant_id: i64,
     pub organization_id: i64,
     pub name: String,
     pub vendor: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub channel_type: String,
     pub protocol: String,
     pub access_type: String,
@@ -99,7 +99,7 @@ pub struct CreateAdminChannelCommand {
     pub config_snapshot_uuid: String,
     pub name: String,
     pub vendor: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub channel_type: String,
     pub protocol: String,
     pub access_type: String,
@@ -121,12 +121,12 @@ pub struct CreateAdminChannelCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UpdateAdminChannelCommand {
     pub subject: AdminChannelSubject,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub audit_log_uuid: String,
     pub config_snapshot_uuid: String,
     pub name: Option<String>,
     pub vendor: Option<String>,
-    pub provider_code: Option<String>,
+    pub supplier_code: Option<String>,
     pub channel_type: Option<String>,
     pub protocol: Option<String>,
     pub access_type: Option<String>,
@@ -147,7 +147,7 @@ pub struct UpdateAdminChannelCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeleteAdminChannelCommand {
     pub subject: AdminChannelSubject,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub audit_log_uuid: String,
     pub config_snapshot_uuid: String,
     pub request_id: String,
@@ -157,7 +157,7 @@ pub struct DeleteAdminChannelCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TestAdminChannelCommand {
     pub subject: AdminChannelSubject,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub audit_log_uuid: String,
     pub config_snapshot_uuid: String,
     pub request_id: String,
@@ -166,7 +166,7 @@ pub struct TestAdminChannelCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminChannelTestOutcome {
-    pub channel_id: String,
+    pub account_id: String,
     pub success: bool,
     pub status: String,
     pub latency: String,

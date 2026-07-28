@@ -393,7 +393,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/app/v3/api/ai/channel_groups",
+        "/app/v3/api/ai/upstream_account_groups",
         "ai",
         "channelGroups.list",
     ),

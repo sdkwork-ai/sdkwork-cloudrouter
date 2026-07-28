@@ -22,7 +22,7 @@ impl ProviderAdapter for AliCloudProviderAdapter {
         "alicloud"
     }
 
-    fn provider_codes(&self) -> &'static [&'static str] {
+    fn supplier_codes(&self) -> &'static [&'static str] {
         &["alicloud", "aliyun"]
     }
 

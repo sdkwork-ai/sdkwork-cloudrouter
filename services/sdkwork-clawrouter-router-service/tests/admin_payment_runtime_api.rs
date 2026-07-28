@@ -142,16 +142,16 @@ fn assembly_report() -> PaymentProviderRuntimeAssemblyReport {
     PaymentProviderRuntimeAssemblyReport::from_parts(
         vec![PaymentProviderRuntimeAssemblySuccess {
             account_no: "stripe-main".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
         }],
         vec![PaymentProviderRuntimeAssemblyFailure {
             account_no: "paypal-bad-secret".to_owned(),
-            provider_code: "paypal".to_owned(),
+            supplier_code: "paypal".to_owned(),
             message: "secret://payments/paypal sk_live_123 leaked".to_owned(),
         }],
         vec![PaymentProviderRuntimeAssemblySkipped {
             account_no: "wechat-disabled".to_owned(),
-            provider_code: "wechat_pay".to_owned(),
+            supplier_code: "wechat_pay".to_owned(),
             reason: "disabled".to_owned(),
         }],
     )

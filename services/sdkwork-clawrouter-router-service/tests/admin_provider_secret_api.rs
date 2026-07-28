@@ -407,9 +407,9 @@ impl AdminProviderSecretStore for TestProviderSecretStore {
                 })
                 .filter(|item| {
                     query
-                        .provider_code
+                        .supplier_code
                         .as_ref()
-                        .map(|provider_code| item.provider_code == *provider_code)
+                        .map(|supplier_code| item.supplier_code == *supplier_code)
                         .unwrap_or(true)
                 })
                 .filter(|item| {
@@ -421,7 +421,7 @@ impl AdminProviderSecretStore for TestProviderSecretStore {
                 })
                 .filter(|item| {
                     query.q.as_ref().is_none_or(|q| {
-                        item.provider_code.contains(q)
+                        item.supplier_code.contains(q)
                             || item.account_code.contains(q)
                             || item.name.contains(q)
                     })
@@ -454,7 +454,7 @@ impl AdminProviderSecretStore for TestProviderSecretStore {
                 uuid: command.account_uuid,
                 tenant_id: command.subject.tenant_id,
                 organization_id: command.subject.organization_id,
-                provider_code: command.provider_code,
+                supplier_code: command.supplier_code,
                 account_code: command.account_code,
                 name: command.name,
                 auth_type: command.auth_type,
@@ -485,8 +485,8 @@ impl AdminProviderSecretStore for TestProviderSecretStore {
             }) else {
                 return Ok(None);
             };
-            if let Some(provider_code) = command.provider_code {
-                item.provider_code = provider_code;
+            if let Some(supplier_code) = command.supplier_code {
+                item.supplier_code = supplier_code;
             }
             if let Some(name) = command.name {
                 item.name = name;

@@ -499,7 +499,7 @@ fn idempotency_storage_key(invocation: &Invocation, raw_key: &str) -> String {
         &mut material,
         &invocation
             .subject
-            .channel_group_id
+            .account_group_id
             .unwrap_or_default()
             .to_string(),
     );
@@ -1144,8 +1144,8 @@ mod tests {
                 tenant_id,
                 organization_id,
                 user_id,
-                channel_group_id: Some(10),
-                channel_group_code: Some("standard".to_owned()),
+                account_group_id: Some(10),
+                account_group_code: Some("standard".to_owned()),
                 pricing_plan_code: Some("standard".to_owned()),
                 roles: Vec::new(),
                 scopes: Vec::new(),

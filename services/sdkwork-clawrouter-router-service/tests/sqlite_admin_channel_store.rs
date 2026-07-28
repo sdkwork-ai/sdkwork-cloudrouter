@@ -30,7 +30,7 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
             config_snapshot_uuid: "snapshot-api-key-credential".to_owned(),
             name: "OpenAI primary".to_owned(),
             vendor: "OpenAI".to_owned(),
-            provider_code: "openai".to_owned(),
+            supplier_code: "openai".to_owned(),
             channel_type: "official".to_owned(),
             protocol: "OpenAI".to_owned(),
             access_type: "Standard API Key".to_owned(),
@@ -147,15 +147,15 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
         Some("official"),
         listed.items.first().map(|item| item.channel_type.as_str())
     );
-    let channel_id: i64 = sqlx::query_scalar("SELECT id FROM ai_channel WHERE id = ?")
+    let account_id: i64 = sqlx::query_scalar("SELECT id FROM ai_channel WHERE id = ?")
         .bind(item.id)
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(channel_id, item.channel_id);
+    assert_eq!(account_id, item.account_id);
     assert_eq!(
-        Some(channel_id),
-        listed.items.first().map(|item| item.channel_id)
+        Some(account_id),
+        listed.items.first().map(|item| item.account_id)
     );
     assert_eq!(
         vec![
@@ -171,7 +171,7 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
     );
     let channel_type: String =
         sqlx::query_scalar(
-            "SELECT c.channel_type FROM ai_channel c JOIN ai_channel_credential cc ON cc.channel_id = c.id WHERE cc.credential_ref = ?",
+            "SELECT c.channel_type FROM ai_channel c JOIN ai_channel_credential cc ON cc.account_id = c.id WHERE cc.credential_ref = ?",
         )
             .bind("secret://ai-channel-credentials/openai/testhash")
             .fetch_one(&pool)
@@ -179,7 +179,7 @@ async fn sqlite_admin_channel_store_encrypts_channel_api_key_material() {
             .unwrap();
     assert_eq!("official", channel_type);
     let channel_resource_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(1) FROM ai_channel_resource WHERE channel_id = ? AND status = 1 AND grant_type = 'allow' AND deleted_at IS NULL",
+        "SELECT COUNT(1) FROM ai_channel_resource WHERE account_id = ? AND status = 1 AND grant_type = 'allow' AND deleted_at IS NULL",
     )
     .bind(item.id)
     .fetch_one(&pool)
@@ -248,7 +248,7 @@ async fn sqlite_admin_channel_store_resolves_visible_resources_without_cross_ten
         FROM ai_channel_resource
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_id = ?
+          AND account_id = ?
           AND status = 1
           AND deleted_at IS NULL
         ORDER BY resource_code ASC
@@ -346,7 +346,7 @@ async fn sqlite_admin_channel_store_prefers_resource_group_for_group_backed_reso
         r#"
         SELECT resource_id, resource_code, resource_group_id, resource_group_code
         FROM ai_channel_resource
-        WHERE channel_id = ?
+        WHERE account_id = ?
           AND resource_group_code = 'bundle.test.standard'
           AND status = 1
           AND deleted_at IS NULL
@@ -383,7 +383,7 @@ async fn sqlite_admin_channel_store_updates_modality_resources_without_clearing_
             config_snapshot_uuid: "snapshot-modality-resource-update-create".to_owned(),
             name: "OpenAI modality resource".to_owned(),
             vendor: "OpenAI".to_owned(),
-            provider_code: "openai".to_owned(),
+            supplier_code: "openai".to_owned(),
             channel_type: "official".to_owned(),
             protocol: "OpenAI".to_owned(),
             access_type: "Standard API Key".to_owned(),
@@ -426,12 +426,12 @@ async fn sqlite_admin_channel_store_updates_modality_resources_without_clearing_
                 operator_id: 30,
                 operator_type: 1,
             },
-            channel_id: created.id,
+            account_id: created.id,
             audit_log_uuid: "audit-modality-resource-update".to_owned(),
             config_snapshot_uuid: "snapshot-modality-resource-update".to_owned(),
             name: None,
             vendor: None,
-            provider_code: None,
+            supplier_code: None,
             channel_type: None,
             protocol: None,
             access_type: None,
@@ -534,7 +534,7 @@ async fn sqlite_admin_channel_store_soft_delete_cascades_channel_relationships()
                 operator_id: 30,
                 operator_type: 1,
             },
-            channel_id: created.id,
+            account_id: created.id,
             audit_log_uuid: "audit-delete-channel-cascade".to_owned(),
             config_snapshot_uuid: "snapshot-delete-channel-cascade".to_owned(),
             request_id: "req-delete-channel-cascade".to_owned(),
@@ -551,14 +551,14 @@ async fn sqlite_admin_channel_store_soft_delete_cascades_channel_relationships()
             FROM ai_channel_credential
             WHERE tenant_id = 100001
               AND organization_id = 0
-              AND channel_id = ?
+              AND account_id = ?
               AND deleted_at IS NULL
         ) + (
             SELECT COUNT(1)
             FROM ai_channel_resource
             WHERE tenant_id = 100001
               AND organization_id = 0
-              AND channel_id = ?
+              AND account_id = ?
               AND deleted_at IS NULL
         )
         "#,
@@ -587,7 +587,7 @@ fn duplicate_secret_channel_command(suffix: &str, requested_at: &str) -> CreateA
         config_snapshot_uuid: format!("snapshot-duplicate-secret-{suffix}"),
         name: format!("OpenAI {suffix}"),
         vendor: "OpenAI".to_owned(),
-        provider_code: "openai".to_owned(),
+        supplier_code: "openai".to_owned(),
         channel_type: "official".to_owned(),
         protocol: "OpenAI".to_owned(),
         access_type: "Standard API Key".to_owned(),

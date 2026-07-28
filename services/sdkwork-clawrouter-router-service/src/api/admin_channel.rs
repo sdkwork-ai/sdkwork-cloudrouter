@@ -63,7 +63,7 @@ struct AdminChannelState {
 struct NormalizedCreateRequest {
     name: String,
     vendor: String,
-    provider_code: String,
+    supplier_code: String,
     channel_type: String,
     protocol: String,
     access_type: String,
@@ -82,10 +82,10 @@ struct NormalizedCreateRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NormalizedUpdateRequest {
-    channel_id: i64,
+    account_id: i64,
     name: Option<String>,
     vendor: Option<String>,
-    provider_code: Option<String>,
+    supplier_code: Option<String>,
     channel_type: Option<String>,
     protocol: Option<String>,
     access_type: Option<String>,
@@ -127,7 +127,7 @@ struct AdminChannelDeleteResponse {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AdminChannelTestResponse {
-    channel_id: String,
+    account_id: String,
     success: bool,
     status: String,
     latency: String,
@@ -138,7 +138,7 @@ struct AdminChannelTestResponse {
 #[serde(rename_all = "camelCase")]
 struct AdminChannelSafeItemResponse {
     id: String,
-    channel_id: String,
+    account_id: String,
     name: String,
     vendor: String,
     channel_type: String,
@@ -203,11 +203,11 @@ pub fn admin_channel_router_with_store(
         )
         .route("/backend/v3/api/channel/list", post(fetch_channels))
         .route(
-            "/backend/v3/api/channel/{channel_id}",
+            "/backend/v3/api/channel/{account_id}",
             delete(delete_channel),
         )
         .route(
-            "/backend/v3/api/channel/{channel_id}/test",
+            "/backend/v3/api/channel/{account_id}/test",
             post(test_channel),
         )
         .route(
@@ -215,11 +215,11 @@ pub fn admin_channel_router_with_store(
             get(fetch_channels).post(create_channel).put(update_channel),
         )
         .route(
-            "/backend/v3/api/integration/channels/{channel_id}",
+            "/backend/v3/api/integration/channels/{account_id}",
             delete(delete_channel),
         )
         .route(
-            "/backend/v3/api/integration/channels/{channel_id}/verify",
+            "/backend/v3/api/integration/channels/{account_id}/verify",
             post(test_channel),
         )
         .with_state(AdminChannelState {
@@ -331,14 +331,14 @@ async fn delete_channel(
     State(state): State<AdminChannelState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
-    Path(channel_id): Path<String>,
+    Path(account_id): Path<String>,
 ) -> Response {
     let subject = scoped.into();
-    let channel_id = match parse_positive_id(&channel_id, "channel id") {
-        Ok(channel_id) => channel_id,
+    let account_id = match parse_positive_id(&account_id, "channel id") {
+        Ok(account_id) => account_id,
         Err(message) => return bad_request(message),
     };
-    let command = match build_delete_command(state.clone(), &headers, subject, channel_id) {
+    let command = match build_delete_command(state.clone(), &headers, subject, account_id) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
     };
@@ -355,21 +355,21 @@ async fn test_channel(
     State(state): State<AdminChannelState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
-    Path(channel_id): Path<String>,
+    Path(account_id): Path<String>,
 ) -> Response {
     let subject = scoped.into();
-    let channel_id = match parse_positive_id(&channel_id, "channel id") {
-        Ok(channel_id) => channel_id,
+    let account_id = match parse_positive_id(&account_id, "channel id") {
+        Ok(account_id) => account_id,
         Err(message) => return bad_request(message),
     };
-    let command = match build_test_command(state.clone(), &headers, subject, channel_id) {
+    let command = match build_test_command(state.clone(), &headers, subject, account_id) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
     };
 
     match state.store.test_channel(command).await {
         Ok(Some(outcome)) => Json(success_envelope(AdminChannelTestResponse {
-            channel_id: outcome.channel_id,
+            account_id: outcome.account_id,
             success: outcome.success,
             status: outcome.status,
             latency: outcome.latency,
@@ -407,7 +407,7 @@ fn normalize_create_request(
     reject_unsupported_plaintext_auth_key(&request)?;
     let name = required_text(&request, "name", "channel name", MAX_NAME_LEN)?;
     let vendor = required_text(&request, "vendor", "channel vendor", MAX_VENDOR_LEN)?;
-    let provider_code = normalize_provider_code(&vendor)?;
+    let supplier_code = normalize_supplier_code(&vendor)?;
     let channel_type = optional_text(&request, "channelType", "channelType", 32)?
         .map(|value| normalize_channel_type(&value))
         .transpose()?
@@ -428,7 +428,7 @@ fn normalize_create_request(
             .map(|value| normalize_credential_rotation(&value))
             .transpose()?
             .unwrap_or_else(|| "default".to_owned());
-    let credentials = normalize_create_credentials(&request, &provider_code)?;
+    let credentials = normalize_create_credentials(&request, &supplier_code)?;
     let capabilities = optional_string_array(
         &request,
         "capabilities",
@@ -467,7 +467,7 @@ fn normalize_create_request(
     Ok(NormalizedCreateRequest {
         name,
         vendor: display_vendor(&vendor),
-        provider_code,
+        supplier_code,
         channel_type,
         protocol,
         access_type,
@@ -489,15 +489,15 @@ fn normalize_update_request(
     request: Map<String, Value>,
 ) -> Result<NormalizedUpdateRequest, String> {
     reject_unsupported_plaintext_auth_key(&request)?;
-    let channel_id = parse_positive_id(
+    let account_id = parse_positive_id(
         &required_text(&request, "id", "channel id", 64)?,
         "channel id",
     )?;
     let name = optional_text(&request, "name", "channel name", MAX_NAME_LEN)?;
     let vendor = optional_text(&request, "vendor", "channel vendor", MAX_VENDOR_LEN)?;
-    let provider_code = vendor
+    let supplier_code = vendor
         .as_ref()
-        .map(|vendor| normalize_provider_code(vendor))
+        .map(|vendor| normalize_supplier_code(vendor))
         .transpose()?;
     let vendor = vendor.map(|vendor| display_vendor(&vendor));
     let channel_type = optional_text(&request, "channelType", "channelType", 32)?
@@ -516,7 +516,7 @@ fn normalize_update_request(
         optional_text(&request, "credentialRotation", "credentialRotation", 64)?
             .map(|value| normalize_credential_rotation(&value))
             .transpose()?;
-    let credentials = normalize_update_credentials(&request, provider_code.as_deref())?;
+    let credentials = normalize_update_credentials(&request, supplier_code.as_deref())?;
     let capabilities = optional_string_array(
         &request,
         "capabilities",
@@ -572,10 +572,10 @@ fn normalize_update_request(
     }
 
     Ok(NormalizedUpdateRequest {
-        channel_id,
+        account_id,
         name,
         vendor,
-        provider_code,
+        supplier_code,
         channel_type,
         protocol,
         access_type,
@@ -607,27 +607,27 @@ struct NormalizedCredentialInput {
 
 fn normalize_create_credentials(
     request: &Map<String, Value>,
-    provider_code: &str,
+    supplier_code: &str,
 ) -> Result<Vec<NormalizedCredentialInput>, String> {
     let Some(value) = request.get("credentials") else {
         return Err("credentials must include at least one upstream credential".to_owned());
     };
-    normalize_credentials_value(value, provider_code, true)
+    normalize_credentials_value(value, supplier_code, true)
 }
 
 fn normalize_update_credentials(
     request: &Map<String, Value>,
-    provider_code: Option<&str>,
+    supplier_code: Option<&str>,
 ) -> Result<Option<Vec<NormalizedCredentialInput>>, String> {
     let Some(value) = request.get("credentials") else {
         return Ok(None);
     };
-    normalize_credentials_value(value, provider_code.unwrap_or("custom"), true).map(Some)
+    normalize_credentials_value(value, supplier_code.unwrap_or("custom"), true).map(Some)
 }
 
 fn normalize_credentials_value(
     value: &Value,
-    provider_code: &str,
+    supplier_code: &str,
     require_non_empty: bool,
 ) -> Result<Vec<NormalizedCredentialInput>, String> {
     let Value::Array(items) = value else {
@@ -644,14 +644,14 @@ fn normalize_credentials_value(
     items
         .iter()
         .enumerate()
-        .map(|(index, value)| normalize_credential_item(index, value, provider_code))
+        .map(|(index, value)| normalize_credential_item(index, value, supplier_code))
         .collect()
 }
 
 fn normalize_credential_item(
     index: usize,
     value: &Value,
-    provider_code: &str,
+    supplier_code: &str,
 ) -> Result<NormalizedCredentialInput, String> {
     let Value::Object(object) = value else {
         return Err(format!("credentials[{index}] must be an object"));
@@ -666,7 +666,7 @@ fn normalize_credential_item(
         (Some(_), Some(_)) => {
             Err("channel credential must provide either apiKey or secretRef, not both".to_owned())
         }
-        (Some(api_key), None) => credential_from_api_key(provider_code, &api_key),
+        (Some(api_key), None) => credential_from_api_key(supplier_code, &api_key),
         (None, Some(secret_ref)) => {
             validate_secret_ref(&secret_ref)?;
             Ok(NormalizedCredentialInput {
@@ -703,17 +703,17 @@ fn normalize_credential_item(
 }
 
 fn credential_from_api_key(
-    provider_code: &str,
+    supplier_code: &str,
     api_key: &str,
 ) -> Result<NormalizedCredentialInput, String> {
     validate_api_key(api_key)?;
     let secret_hash = digest_hex(api_key);
     let suffix = secret_hash.chars().take(16).collect::<String>();
-    let provider_code = normalize_secret_provider_code(provider_code);
+    let supplier_code = normalize_secret_supplier_code(supplier_code);
     Ok(NormalizedCredentialInput {
         name: String::new(),
         base_url: String::new(),
-        secret_ref: format!("secret://ai-channel-credentials/{provider_code}/{suffix}"),
+        secret_ref: format!("secret://ai-channel-credentials/{supplier_code}/{suffix}"),
         secret_hash,
         masked_label: mask_api_key(api_key),
         credential_material: Some(api_key.to_owned()),
@@ -1086,7 +1086,7 @@ fn optional_non_null_circuit_breaker_policy_json(
     }
 }
 
-fn normalize_provider_code(vendor: &str) -> Result<String, String> {
+fn normalize_supplier_code(vendor: &str) -> Result<String, String> {
     let normalized = vendor.trim().to_ascii_lowercase();
     let code = match normalized.as_str() {
         "openai" => "openai",
@@ -1115,7 +1115,7 @@ fn normalize_provider_code(vendor: &str) -> Result<String, String> {
 }
 
 fn display_vendor(vendor: &str) -> String {
-    match normalize_provider_code(vendor).as_deref() {
+    match normalize_supplier_code(vendor).as_deref() {
         Ok("openai") => "OpenAI",
         Ok("anthropic") => "Anthropic",
         Ok("google") => "Gemini",
@@ -1298,7 +1298,7 @@ fn validate_secret_ref(value: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn normalize_secret_provider_code(value: &str) -> String {
+fn normalize_secret_supplier_code(value: &str) -> String {
     let normalized = value
         .trim()
         .to_ascii_lowercase()
@@ -1402,7 +1402,7 @@ fn build_create_command(
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         name: request.name,
         vendor: request.vendor,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         channel_type: request.channel_type,
         protocol: request.protocol,
         access_type: request.access_type,
@@ -1434,12 +1434,12 @@ fn build_update_command(
         .transpose()?;
     Ok(UpdateAdminChannelCommand {
         subject,
-        channel_id: request.channel_id,
+        account_id: request.account_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         name: request.name,
         vendor: request.vendor,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         channel_type: request.channel_type,
         protocol: request.protocol,
         access_type: request.access_type,
@@ -1485,11 +1485,11 @@ fn build_delete_command(
     state: AdminChannelState,
     _headers: &HeaderMap,
     subject: AdminChannelSubject,
-    channel_id: i64,
+    account_id: i64,
 ) -> Result<DeleteAdminChannelCommand, ChannelCommandBuildError> {
     Ok(DeleteAdminChannelCommand {
         subject,
-        channel_id,
+        account_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         request_id: generate_server_request_id().map_err(request_id_error)?,
@@ -1501,11 +1501,11 @@ fn build_test_command(
     state: AdminChannelState,
     _headers: &HeaderMap,
     subject: AdminChannelSubject,
-    channel_id: i64,
+    account_id: i64,
 ) -> Result<TestAdminChannelCommand, ChannelCommandBuildError> {
     Ok(TestAdminChannelCommand {
         subject,
-        channel_id,
+        account_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         request_id: generate_server_request_id().map_err(request_id_error)?,
@@ -1532,7 +1532,7 @@ fn request_id_error(error: RequestIdError) -> ChannelCommandBuildError {
 fn to_safe_item_response(item: AdminChannelItem) -> AdminChannelSafeItemResponse {
     AdminChannelSafeItemResponse {
         id: item.id.to_string(),
-        channel_id: item.channel_id.to_string(),
+        account_id: item.account_id.to_string(),
         name: item.name,
         vendor: item.vendor,
         channel_type: item.channel_type,

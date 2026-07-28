@@ -44,7 +44,7 @@ impl PaymentProviderSecretResolver for StaticSecretResolver {
                 .push(secret_ref.to_owned());
             let Some(value) = self.secrets.get(secret_ref) else {
                 return Err(PaymentProviderRegistryError::ProviderRequestFailed {
-                    provider_code: "secret_resolver".to_owned(),
+                    supplier_code: "secret_resolver".to_owned(),
                     operation:
                         sdkwork_clawrouter_router_service::application::PaymentAdapterOperation::Capabilities,
                     message: format!("secret not found: {secret_ref}"),
@@ -63,7 +63,7 @@ async fn resolver_rejects_plaintext_secret_refs_before_lookup() {
 
     let error = resolver
         .resolve(PaymentProviderAccountCredentialRefs {
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             merchant_id: "acct_1".to_owned(),
             environment: "sandbox".to_owned(),
             secret_ref: "sk_live_plaintext".to_owned(),
@@ -99,7 +99,7 @@ fn credential_refs_parse_from_provider_account_projection() {
 
     let refs = PaymentProviderAccountCredentialRefs::from_projection(record).unwrap();
 
-    assert_eq!("Stripe", refs.provider_code);
+    assert_eq!("Stripe", refs.supplier_code);
     assert_eq!("acct_1", refs.merchant_id);
     assert_eq!("sandbox", refs.environment);
     assert_eq!("secret://payments/stripe/secret-key", refs.secret_ref);
@@ -121,7 +121,7 @@ async fn resolver_builds_stripe_credentials_from_secret_refs() {
 
     let credentials = resolver
         .resolve(PaymentProviderAccountCredentialRefs {
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             merchant_id: "acct_1".to_owned(),
             environment: "sandbox".to_owned(),
             secret_ref: "secret://payments/stripe/secret-key".to_owned(),
@@ -154,7 +154,7 @@ async fn resolver_builds_paypal_credentials_from_secret_refs() {
 
     let credentials = resolver
         .resolve(PaymentProviderAccountCredentialRefs {
-            provider_code: "paypal".to_owned(),
+            supplier_code: "paypal".to_owned(),
             merchant_id: "paypal-client-id".to_owned(),
             environment: "live".to_owned(),
             secret_ref: "secret://payments/paypal/client-secret".to_owned(),
@@ -190,7 +190,7 @@ async fn resolver_builds_alipay_credentials_from_private_and_public_key_refs() {
 
     let credentials = resolver
         .resolve(PaymentProviderAccountCredentialRefs {
-            provider_code: "alipay".to_owned(),
+            supplier_code: "alipay".to_owned(),
             merchant_id: "alipay-app-id".to_owned(),
             environment: "live".to_owned(),
             secret_ref: "secret://payments/alipay/private-key".to_owned(),
@@ -234,7 +234,7 @@ async fn resolver_builds_wechat_pay_credentials_from_key_and_certificate_refs() 
 
     let credentials = resolver
         .resolve(PaymentProviderAccountCredentialRefs {
-            provider_code: "wechat_pay".to_owned(),
+            supplier_code: "wechat_pay".to_owned(),
             merchant_id: "1900000109".to_owned(),
             environment: "live".to_owned(),
             secret_ref: "secret://payments/wechat/private-key".to_owned(),
@@ -278,7 +278,7 @@ async fn resolver_rejects_provider_without_real_payment_adapter_baseline() {
 
     let error = resolver
         .resolve(PaymentProviderAccountCredentialRefs {
-            provider_code: "apple_pay".to_owned(),
+            supplier_code: "apple_pay".to_owned(),
             merchant_id: "merchant.example".to_owned(),
             environment: "live".to_owned(),
             secret_ref: "secret://payments/apple/key".to_owned(),
@@ -291,7 +291,7 @@ async fn resolver_rejects_provider_without_real_payment_adapter_baseline() {
 
     assert_eq!(
         PaymentProviderRegistryError::UnsupportedProvider {
-            provider_code: "apple_pay".to_owned()
+            supplier_code: "apple_pay".to_owned()
         },
         error
     );

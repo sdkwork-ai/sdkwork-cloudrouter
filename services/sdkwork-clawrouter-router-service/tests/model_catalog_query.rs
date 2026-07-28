@@ -2,9 +2,9 @@ use sdkwork_clawrouter_router_service::application::{
     ListModelCatalogQuery, ModelCatalogQueryService, PriceAvailability,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderChannelRoute,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 
@@ -32,14 +32,14 @@ fn catalog_for_model_list() -> InMemoryPricingCatalog {
         "anthropic",
         vec!["chat"],
     ));
-    catalog.add_provider_route(ModelProviderRoute::new_for_catalog_key(
+    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",
         3001,
         "gpt-4o-mini",
     ));
-    catalog.add_provider_route(ModelProviderRoute::new_for_catalog_key(
+    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "azure_openai",
@@ -52,15 +52,15 @@ fn catalog_for_model_list() -> InMemoryPricingCatalog {
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
         DecimalValue::parse("1.000000").unwrap(),
         DecimalValue::parse("1.100000").unwrap(),
     ));
-    catalog.add_channel_group(
-        ChannelGroup::new(
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new(
             11,
             "premium-lab",
             "standard",
@@ -159,7 +159,7 @@ fn lists_models_with_customer_price_provider_count_and_vendor_filter() {
     assert_eq!("openai", item.vendor_code);
     assert_eq!(ModelVendor::OpenAi, item.vendor);
     assert_eq!(vec!["chat", "tools", "json_schema"], item.capabilities);
-    assert_eq!(vec!["azure_openai", "openrouter"], item.provider_codes);
+    assert_eq!(vec!["azure_openai", "openrouter"], item.supplier_codes);
     assert_eq!(
         "0.110000",
         item.lowest_upstream_cost_unit_price.as_deref().unwrap()
@@ -238,12 +238,12 @@ fn list_keeps_unpriced_models_explicitly_unavailable_instead_of_fake_success() {
 }
 
 #[test]
-fn list_models_reads_backend_group_bindings_and_applies_catalog_filters() {
+fn list_models_reads_backend_account_group_bindings_and_applies_catalog_filters() {
     let mut catalog = catalog_for_model_list();
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_resource_scoped_group_binding(10, 10, 100, Vec::<String>::new(), vec!["llm"])
-            .with_resource_scoped_group_binding(11, 20, 100, Vec::<String>::new(), vec!["tools"]),
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_resource_scoped_account_group_binding(10, 10, 100, Vec::<String>::new(), vec!["llm"])
+            .with_resource_scoped_account_group_binding(11, 20, 100, Vec::<String>::new(), vec!["tools"]),
     );
     let service = ModelCatalogQueryService::new(&catalog);
 
@@ -273,8 +273,8 @@ fn list_models_reads_backend_group_bindings_and_applies_catalog_filters() {
 #[test]
 fn list_models_matches_resource_scoped_group_binding_against_capabilities() {
     let mut catalog = catalog_for_model_list();
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001).with_resource_scoped_group_binding(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001).with_resource_scoped_account_group_binding(
             10,
             10,
             100,
@@ -308,8 +308,8 @@ fn list_models_matches_resource_scoped_group_binding_against_capabilities() {
 #[test]
 fn list_models_returns_complete_admin_group_catalog_independent_of_item_filters() {
     let mut catalog = catalog_for_model_list();
-    catalog.add_channel_group(
-        ChannelGroup::new(
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new(
             12,
             "empty-admin-group",
             "standard",
@@ -318,10 +318,10 @@ fn list_models_returns_complete_admin_group_catalog_independent_of_item_filters(
         )
         .with_name("Empty Admin Group"),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_resource_scoped_group_binding(10, 10, 100, Vec::<String>::new(), vec!["llm"])
-            .with_resource_scoped_group_binding(11, 20, 100, Vec::<String>::new(), vec!["tools"]),
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_resource_scoped_account_group_binding(10, 10, 100, Vec::<String>::new(), vec!["llm"])
+            .with_resource_scoped_account_group_binding(11, 20, 100, Vec::<String>::new(), vec!["tools"]),
     );
     let service = ModelCatalogQueryService::new(&catalog);
 

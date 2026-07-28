@@ -70,7 +70,7 @@ pub struct PaymentRefundRuntimeRecord {
     pub merchant_refund_no: String,
     pub amount: String,
     pub currency_code: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub reason: String,
     pub status: PaymentRefundStatus,
     pub idempotency_key: String,
@@ -100,7 +100,7 @@ pub struct PaymentRefundAttemptRecord {
     pub organization_id: Option<String>,
     pub refund_attempt_no: String,
     pub refund_id: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub provider_account_id: Option<String>,
     pub out_refund_no: String,
     pub provider_refund_id: Option<String>,
@@ -227,7 +227,7 @@ where
         validate_refund_against_intent(&command, &intent)?;
         let adapter = self
             .provider_registry
-            .resolve(&intent.provider_code)
+            .resolve(&intent.supplier_code)
             .map_err(registry_error)?;
 
         let refund_id = self.entity_uuid_generator.generate_entity_uuid()?;
@@ -242,7 +242,7 @@ where
             merchant_refund_no: command.merchant_refund_no.clone(),
             amount: command.amount.clone(),
             currency_code: command.currency_code.clone(),
-            provider_code: intent.provider_code.clone(),
+            supplier_code: intent.supplier_code.clone(),
             reason: command.reason.clone(),
             status: PaymentRefundStatus::Pending,
             idempotency_key: command.idempotency_key.clone(),
@@ -256,7 +256,7 @@ where
             organization_id: intent.organization_id.clone(),
             refund_attempt_no: command.merchant_refund_no.clone(),
             refund_id: refund_id.clone(),
-            provider_code: intent.provider_code.clone(),
+            supplier_code: intent.supplier_code.clone(),
             provider_account_id: None,
             out_refund_no: command.merchant_refund_no.clone(),
             provider_refund_id: None,
@@ -396,7 +396,7 @@ where
         }
         let adapter = self
             .provider_registry
-            .resolve(&refund.provider_code)
+            .resolve(&refund.supplier_code)
             .map_err(registry_error)?;
         let operation_attempt = self
             .store
@@ -485,14 +485,14 @@ where
             id,
             tenant_id: refund.tenant_id.clone(),
             organization_id: refund.organization_id.clone(),
-            provider_code: refund.provider_code.clone(),
+            supplier_code: refund.supplier_code.clone(),
             operation: PaymentAdapterOperation::CreateRefund,
             sdkwork_resource_type: "refund".to_owned(),
             sdkwork_resource_id: refund.id.clone(),
             idempotency_key: command.idempotency_key.clone(),
             request_digest: format!(
                 "{}:{}:{}",
-                refund.provider_code,
+                refund.supplier_code,
                 PaymentAdapterOperation::CreateRefund.as_code(),
                 command.idempotency_key
             ),
@@ -542,14 +542,14 @@ where
             id,
             tenant_id: refund.tenant_id.clone(),
             organization_id: refund.organization_id.clone(),
-            provider_code: refund.provider_code.clone(),
+            supplier_code: refund.supplier_code.clone(),
             operation: PaymentAdapterOperation::CancelRefund,
             sdkwork_resource_type: "refund".to_owned(),
             sdkwork_resource_id: refund.id.clone(),
             idempotency_key: command.idempotency_key.clone(),
             request_digest: format!(
                 "{}:{}:{}",
-                refund.provider_code,
+                refund.supplier_code,
                 PaymentAdapterOperation::CancelRefund.as_code(),
                 command.idempotency_key
             ),

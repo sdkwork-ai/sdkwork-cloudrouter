@@ -3985,35 +3985,35 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         vec![model]
     }
 
-    fn list_provider_routes(
+    fn list_model_upstream_routes(
         &self,
         model: &str,
-    ) -> Vec<sdkwork_clawrouter_router_service::domain::ModelProviderRoute> {
+    ) -> Vec<sdkwork_clawrouter_router_service::domain::ModelUpstreamRoute> {
         if !self.include_model_route || model != self.catalog_key {
             return Vec::new();
         }
         vec![
-            sdkwork_clawrouter_router_service::domain::ModelProviderRoute::new_for_catalog_key(
+            sdkwork_clawrouter_router_service::domain::ModelUpstreamRoute::new_for_catalog_key(
                 &self.catalog_key,
                 &self.model,
                 "openai",
                 3001,
                 &format!("provider-{}", self.model),
             )
-            .with_provider_endpoint(Some("https://provider.example/v1"), Some("secret-ref")),
+            .with_upstream_endpoint(Some("https://provider.example/v1"), Some("secret-ref")),
         ]
     }
 
-    fn list_provider_channel_routes(
+    fn list_upstream_account_routes(
         &self,
-    ) -> Vec<sdkwork_clawrouter_router_service::domain::ProviderChannelRoute> {
+    ) -> Vec<sdkwork_clawrouter_router_service::domain::UpstreamAccountRoute> {
         if !self.include_channel_route {
             return Vec::new();
         }
         vec![
-            sdkwork_clawrouter_router_service::domain::ProviderChannelRoute::new("openai", 3001)
-                .with_provider_endpoint(Some("https://provider.example/v1"), Some("secret-ref"))
-                .with_resource_scoped_group_binding(
+            sdkwork_clawrouter_router_service::domain::UpstreamAccountRoute::new("openai", 3001)
+                .with_upstream_endpoint(Some("https://provider.example/v1"), Some("secret-ref"))
+                .with_resource_scoped_account_group_binding(
                     10,
                     1,
                     100,
@@ -4035,7 +4035,7 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
                 10,
                 20,
                 "standard-chat",
-                sdkwork_clawrouter_router_service::domain::RoutingPolicyScope::ChannelGroup,
+                sdkwork_clawrouter_router_service::domain::RoutingPolicyScope::UpstreamAccountGroup,
                 Some(10),
                 Some(9101),
             )
@@ -4060,7 +4060,7 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
             &format!(r#"{{"catalogKey":"{}"}}"#, self.catalog_key),
             &self.catalog_key,
         )
-        .with_candidate_channels(vec![
+        .with_candidate_account_groups(vec![
             sdkwork_clawrouter_router_service::domain::RouteCandidate::new(3001, 100),
         ])]
     }
@@ -4121,16 +4121,16 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         api_keys
     }
 
-    fn list_channel_groups(&self) -> Vec<sdkwork_clawrouter_router_service::domain::ChannelGroup> {
+    fn list_upstream_account_groups(&self) -> Vec<sdkwork_clawrouter_router_service::domain::UpstreamAccountGroup> {
         vec![
-            sdkwork_clawrouter_router_service::domain::ChannelGroup::new(
+            sdkwork_clawrouter_router_service::domain::UpstreamAccountGroup::new(
                 10,
                 "standard",
                 "standard",
                 sdkwork_clawrouter_router_service::domain::DecimalValue::parse("1.000000").unwrap(),
                 sdkwork_clawrouter_router_service::domain::DecimalValue::parse("1.000000").unwrap(),
             ),
-            sdkwork_clawrouter_router_service::domain::ChannelGroup::new(
+            sdkwork_clawrouter_router_service::domain::UpstreamAccountGroup::new(
                 20,
                 "unroutable",
                 "standard",
@@ -4192,11 +4192,11 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         None
     }
 
-    fn find_channel_group(
+    fn find_upstream_account_group(
         &self,
         group_id: i64,
-    ) -> Option<sdkwork_clawrouter_router_service::domain::ChannelGroup> {
-        self.list_channel_groups()
+    ) -> Option<sdkwork_clawrouter_router_service::domain::UpstreamAccountGroup> {
+        self.list_upstream_account_groups()
             .into_iter()
             .find(|group| group.id == group_id)
     }
@@ -4221,10 +4221,10 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         Vec::new()
     }
 
-    fn find_latest_channel_group_metric_snapshot(
+    fn find_latest_upstream_account_group_metric_snapshot(
         &self,
         _group_id: i64,
-    ) -> Option<sdkwork_clawrouter_router_service::domain::ChannelGroupMetricSnapshot> {
+    ) -> Option<sdkwork_clawrouter_router_service::domain::UpstreamAccountGroupMetricSnapshot> {
         None
     }
 
@@ -4269,14 +4269,14 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         })
     }
 
-    fn find_provider_route(
+    fn find_model_upstream_route(
         &self,
         model: &str,
-        provider_code: &str,
-    ) -> Option<sdkwork_clawrouter_router_service::domain::ModelProviderRoute> {
-        self.list_provider_routes(model)
+        supplier_code: &str,
+    ) -> Option<sdkwork_clawrouter_router_service::domain::ModelUpstreamRoute> {
+        self.list_model_upstream_routes(model)
             .into_iter()
-            .find(|route| route.provider_code == provider_code)
+            .find(|route| route.supplier_code == supplier_code)
     }
 
     fn find_model_price(
@@ -4284,14 +4284,14 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         model: &str,
         price_side: sdkwork_clawrouter_router_service::domain::PriceSide,
         billing_meter: sdkwork_clawrouter_router_service::domain::BillingMeter,
-        provider_code: Option<&str>,
+        supplier_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<sdkwork_clawrouter_router_service::domain::ModelPrice> {
         if model != self.catalog_key
             || price_side != sdkwork_clawrouter_router_service::domain::PriceSide::OfficialReference
             || billing_meter
                 != sdkwork_clawrouter_router_service::domain::BillingMeter::LlmInputToken
-            || provider_code.is_some()
+            || supplier_code.is_some()
             || pricing_plan_code.is_some()
         {
             return None;
@@ -4554,7 +4554,7 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                 )
             } else if response_kind == GatewayResponseKind::ConfiguredRouteMismatch {
                 Body::from(
-                    "{\"error\":{\"message\":\"provider route is not available for model: openai/gpt-5.5; route diagnostics: requested_model=openai/gpt-5.5; api_key_id=1; tenant_id=100001; organization_id=0; user_id=2; channel_group_id=1; channel_group_code=grp; capability=Chat; model_routes_loaded=1; channel_routes_loaded=1; any_group_bindings=true; matching_group_bound_channels=0; scoped_model_routes=0; scoped_channel_routes=0\",\"type\":\"server_error\",\"code\":\"provider_route_not_available\"}}",
+                    "{\"error\":{\"message\":\"provider route is not available for model: openai/gpt-5.5; route diagnostics: requested_model=openai/gpt-5.5; api_key_id=1; tenant_id=100001; organization_id=0; user_id=2; account_group_id=1; account_group_code=grp; capability=Chat; model_routes_loaded=1; channel_routes_loaded=1; any_account_group_bindings=true; matching_group_bound_channels=0; scoped_model_routes=0; scoped_channel_routes=0\",\"type\":\"server_error\",\"code\":\"provider_route_not_available\"}}",
                 )
             } else if request.path == "/v1/images/generations" || request.path == "/v1/images/edits"
             {

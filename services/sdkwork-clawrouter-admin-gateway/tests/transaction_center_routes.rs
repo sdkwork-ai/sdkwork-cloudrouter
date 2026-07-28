@@ -538,7 +538,7 @@ async fn transaction_center_provider_account_active_status_is_exclusive_per_chan
         router.clone(),
         signed_request(
             "GET",
-            "/backend/v3/api/payments/provider_accounts?provider_code=stripe",
+            "/backend/v3/api/payments/provider_accounts?supplier_code=stripe",
             Body::empty(),
         ),
     )
@@ -576,7 +576,7 @@ async fn transaction_center_provider_account_active_status_is_exclusive_per_chan
         router.clone(),
         signed_request(
             "GET",
-            "/backend/v3/api/payments/provider_accounts?provider_code=stripe",
+            "/backend/v3/api/payments/provider_accounts?supplier_code=stripe",
             Body::empty(),
         ),
     )
@@ -626,7 +626,7 @@ async fn transaction_center_provider_account_active_status_is_exclusive_per_chan
         router,
         signed_request(
             "GET",
-            "/backend/v3/api/payments/provider_accounts?provider_code=stripe",
+            "/backend/v3/api/payments/provider_accounts?supplier_code=stripe",
             Body::empty(),
         ),
     )
@@ -786,7 +786,7 @@ async fn transaction_center_list_filters_reject_invalid_standard_codes() {
 
     for (path, expected_message) in [
         (
-            "/backend/v3/api/payments/provider_accounts?provider_code=venmo",
+            "/backend/v3/api/payments/provider_accounts?supplier_code=venmo",
             "providerCode must be one of",
         ),
         (
@@ -872,7 +872,7 @@ async fn transaction_center_payment_runtime_projection_standardizes_appbase_meth
         router.clone(),
         signed_request(
             "GET",
-            "/backend/v3/api/payments/intents?provider_code=stripe",
+            "/backend/v3/api/payments/intents?supplier_code=stripe",
             Body::empty(),
         ),
     )
@@ -892,7 +892,7 @@ async fn transaction_center_payment_runtime_projection_standardizes_appbase_meth
         router,
         signed_request(
             "GET",
-            "/backend/v3/api/payments/attempts?provider_code=stripe",
+            "/backend/v3/api/payments/attempts?supplier_code=stripe",
             Body::empty(),
         ),
     )
@@ -1095,7 +1095,7 @@ async fn create_transaction_center_schema(pool: &SqlitePool) {
             status TEXT NOT NULL,
             warehouse_id TEXT,
             address_snapshot_id TEXT,
-            provider_code TEXT,
+            supplier_code TEXT,
             created_at TEXT NOT NULL,
             completed_at TEXT,
             updated_at TEXT NOT NULL
@@ -1130,7 +1130,7 @@ async fn create_transaction_center_schema(pool: &SqlitePool) {
             id TEXT PRIMARY KEY,
             tenant_id TEXT NOT NULL,
             organization_id TEXT,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             display_name TEXT NOT NULL,
             provider_type TEXT NOT NULL,
             supported_countries TEXT,
@@ -1140,14 +1140,14 @@ async fn create_transaction_center_schema(pool: &SqlitePool) {
             sort_order INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            UNIQUE (tenant_id, organization_id, provider_code)
+            UNIQUE (tenant_id, organization_id, supplier_code)
         )"#,
         r#"CREATE TABLE commerce_payment_provider_account (
             id TEXT PRIMARY KEY,
             tenant_id TEXT NOT NULL,
             organization_id TEXT,
             account_no TEXT NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             merchant_id TEXT NOT NULL,
             environment TEXT NOT NULL,
             country_code TEXT NOT NULL,
@@ -1232,7 +1232,7 @@ async fn create_transaction_center_schema(pool: &SqlitePool) {
             amount_max TEXT,
             user_segment TEXT,
             risk_level TEXT,
-            channel_id TEXT NOT NULL,
+            account_id TEXT NOT NULL,
             status TEXT NOT NULL,
             starts_at TEXT,
             ends_at TEXT,
@@ -1297,7 +1297,7 @@ async fn create_transaction_center_schema(pool: &SqlitePool) {
             tenant_id TEXT NOT NULL,
             organization_id TEXT,
             run_no TEXT NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_account_id TEXT,
             settlement_currency TEXT NOT NULL,
             period_start TEXT NOT NULL,
@@ -1335,10 +1335,10 @@ async fn seed_transaction_center_data(pool: &SqlitePool) {
             (id, tenant_id, organization_id, event_no, order_id, event_type, from_status, to_status, actor_type, actor_id, reason_code, message, payload_json, request_id, idempotency_key, created_at)
             VALUES ('order-event-1', '100001', '0', 'order-event-1', 'order-900', 'paid', 'pending', 'paid', 'system', '30', NULL, 'Order paid', '{}', 'order-900', 'order-event-1', '2026-04-29 09:10:00')"#,
         r#"INSERT INTO commerce_payment_provider
-            (id, tenant_id, organization_id, provider_code, display_name, provider_type, supported_countries, supported_currencies, supported_methods, status, sort_order, created_at, updated_at)
+            (id, tenant_id, organization_id, supplier_code, display_name, provider_type, supported_countries, supported_currencies, supported_methods, status, sort_order, created_at, updated_at)
             VALUES ('provider-stripe', '100001', '0', 'stripe', 'Stripe', 'card_processor', '["US"]', '["USD"]', '["card"]', 'active', 1, '2026-04-29 09:00:00', '2026-04-29 09:00:00')"#,
         r#"INSERT INTO commerce_payment_provider_account
-            (id, tenant_id, organization_id, account_no, provider_code, merchant_id, environment, country_code, settlement_currency, secret_ref, webhook_secret_ref, certificate_ref, status, rotated_at, created_at, updated_at)
+            (id, tenant_id, organization_id, account_no, supplier_code, merchant_id, environment, country_code, settlement_currency, secret_ref, webhook_secret_ref, certificate_ref, status, rotated_at, created_at, updated_at)
             VALUES ('provider-account-stripe', '100001', '0', 'acct-stripe-main', 'stripe', 'merchant-stripe-1', 'sandbox', 'US', 'USD', 'vault://payments/stripe/main', 'vault://payments/stripe/webhook', NULL, 'active', NULL, '2026-04-29 09:00:00', '2026-04-29 09:00:00')"#,
         r#"INSERT INTO commerce_payment_method
             (id, tenant_id, organization_id, method_key, display_name, provider, status, sort_weight, request_no, idempotency_key, created_at, updated_at)
@@ -1347,7 +1347,7 @@ async fn seed_transaction_center_data(pool: &SqlitePool) {
             (id, tenant_id, organization_id, channel_no, provider_account_id, method_id, scene_code, currency_code, country_code, status, priority, created_at, updated_at)
             VALUES ('payment-channel-card', '100001', '0', 'channel-card-usd', 'provider-account-stripe', 'payment-method-card', 'points_recharge', 'USD', 'US', 'active', 1, '2026-04-29 09:00:00', '2026-04-29 09:00:00')"#,
         r#"INSERT INTO commerce_payment_route_rule
-            (id, tenant_id, organization_id, rule_no, priority, purchase_type, country_code, currency_code, client_platform, amount_min, amount_max, user_segment, risk_level, channel_id, status, starts_at, ends_at, created_at, updated_at)
+            (id, tenant_id, organization_id, rule_no, priority, purchase_type, country_code, currency_code, client_platform, amount_min, amount_max, user_segment, risk_level, account_id, status, starts_at, ends_at, created_at, updated_at)
             VALUES ('route-card-usd', '100001', '0', 'route-card-usd', 1, 'points_recharge', 'US', 'USD', 'web', '0', '1000', 'all', 'low', 'payment-channel-card', 'active', NULL, NULL, '2026-04-29 09:00:00', '2026-04-29 09:00:00')"#,
         r#"INSERT INTO commerce_payment_intent
             (id, tenant_id, organization_id, owner_user_id, order_id, provider, amount, currency_code, status, request_no, idempotency_key, created_at, updated_at)
@@ -1359,7 +1359,7 @@ async fn seed_transaction_center_data(pool: &SqlitePool) {
             (id, tenant_id, payment_attempt_id, refund_no, amount, status, request_no, idempotency_key, created_at, updated_at)
             VALUES ('refund-920', '10', 'payment-910', 'refund-920', '5.00', 'succeeded', 'refund-920', 'refund-920', '2026-04-29 09:30:00', '2026-04-29 09:40:00')"#,
         r#"INSERT INTO commerce_fulfillment_order
-            (id, tenant_id, organization_id, fulfillment_no, order_id, fulfillment_type, status, warehouse_id, address_snapshot_id, provider_code, created_at, completed_at, updated_at)
+            (id, tenant_id, organization_id, fulfillment_no, order_id, fulfillment_type, status, warehouse_id, address_snapshot_id, supplier_code, created_at, completed_at, updated_at)
             VALUES ('fulfillment-1', '100001', '0', 'fulfillment-1', 'order-900', 'virtual', 'completed', NULL, NULL, 'internal', '2026-04-29 09:11:00', '2026-04-29 09:12:00', '2026-04-29 09:12:00')"#,
         r#"INSERT INTO commerce_shipment
             (id, tenant_id, organization_id, shipment_no, fulfillment_id, carrier_code, tracking_no, status, shipped_at, delivered_at, created_at, updated_at)
@@ -1371,7 +1371,7 @@ async fn seed_transaction_center_data(pool: &SqlitePool) {
             (id, tenant_id, organization_id, provider, event_id, nonce, signature, request_timestamp, out_trade_no, transaction_id, payload_digest, status, message, request_no, idempotency_key, created_at, processed_at, updated_at)
             VALUES ('webhook-1', '100001', '0', 'stripe', 'evt-1', 'nonce-1', NULL, 1777444200, 'recharge-100', 'txn-1', 'digest-1', 'processed', 'payment succeeded', 'webhook-1', 'webhook-1', '2026-04-29 09:10:01', '2026-04-29 09:10:02', '2026-04-29 09:10:02')"#,
         r#"INSERT INTO commerce_payment_reconciliation_run
-            (id, tenant_id, organization_id, run_no, provider_code, provider_account_id, settlement_currency, period_start, period_end, status, total_provider_amount, total_internal_amount, difference_amount, matched_count, mismatched_count, missing_provider_count, missing_internal_count, report_file_ref, started_at, completed_at, request_no, idempotency_key, created_at, updated_at)
+            (id, tenant_id, organization_id, run_no, supplier_code, provider_account_id, settlement_currency, period_start, period_end, status, total_provider_amount, total_internal_amount, difference_amount, matched_count, mismatched_count, missing_provider_count, missing_internal_count, report_file_ref, started_at, completed_at, request_no, idempotency_key, created_at, updated_at)
             VALUES ('recon-1', '100001', '0', 'recon-1', 'stripe', 'provider-account-stripe', 'USD', '2026-04-29', '2026-04-29', 'succeeded', '25.50', '25.50', '0.00', 1, 0, 0, 0, NULL, '2026-04-30 01:00:00', '2026-04-30 01:01:00', 'recon-1', 'recon-1', '2026-04-30 01:00:00', '2026-04-30 01:01:00')"#,
     ] {
         sqlx::query(statement).execute(pool).await.unwrap();

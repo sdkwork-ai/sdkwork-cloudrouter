@@ -10,7 +10,7 @@ use sdkwork_claw_paas_plugin::{
 };
 
 #[test]
-fn standard_paas_catalog_groups_core_capabilities_and_provider_codes() {
+fn standard_paas_catalog_groups_core_capabilities_and_supplier_codes() {
     let groups = standard_paas_service_groups();
 
     assert_eq!("ocr", groups[0].code);
@@ -28,7 +28,7 @@ fn standard_paas_catalog_groups_core_capabilities_and_provider_codes() {
     );
     assert_eq!(
         vec!["baidu", "alibaba", "tencent"],
-        groups[0].provider_codes
+        groups[0].supplier_codes
     );
     assert!(groups
         .iter()
@@ -46,7 +46,7 @@ fn default_registry_loads_builtin_provider_plugins_by_routing_key() {
 
     let baidu_ocr = registry
         .resolve(&PaasProviderRoutingKey {
-            provider_code: "baidu",
+            supplier_code: "baidu",
             operation: PaasOperation::OcrGeneralText,
         })
         .expect("baidu OCR plugin should be registered");
@@ -55,7 +55,7 @@ fn default_registry_loads_builtin_provider_plugins_by_routing_key() {
 
     let tencent_face = registry
         .resolve(&PaasProviderRoutingKey {
-            provider_code: "tencent",
+            supplier_code: "tencent",
             operation: PaasOperation::FaceCompareOneToOne,
         })
         .expect("tencent face compare plugin should be registered");
@@ -63,7 +63,7 @@ fn default_registry_loads_builtin_provider_plugins_by_routing_key() {
 
     assert!(registry
         .resolve(&PaasProviderRoutingKey {
-            provider_code: "unknown-cloud",
+            supplier_code: "unknown-cloud",
             operation: PaasOperation::ObjectStorageSignedUrl,
         })
         .is_none());
@@ -74,7 +74,7 @@ fn builtin_provider_plugins_are_componentized_by_provider_family() {
     let baidu = BaiduPaasProviderPlugin.metadata();
     assert_eq!("sdkwork.paas.baidu", baidu.plugin_id);
     assert_eq!("baidu", baidu.provider_family);
-    assert_eq!(vec!["baidu", "baidu-cloud"], baidu.provider_codes);
+    assert_eq!(vec!["baidu", "baidu-cloud"], baidu.supplier_codes);
     assert_eq!(vec!["api_key", "ak_sk"], baidu.credential_kinds);
 
     let alibaba = AlibabaPaasProviderPlugin.metadata();
@@ -82,14 +82,14 @@ fn builtin_provider_plugins_are_componentized_by_provider_family() {
     assert_eq!("alibaba", alibaba.provider_family);
     assert_eq!(
         vec!["alibaba", "alicloud", "aliyun"],
-        alibaba.provider_codes
+        alibaba.supplier_codes
     );
     assert_eq!(vec!["access_key"], alibaba.credential_kinds);
 
     let tencent = TencentPaasProviderPlugin.metadata();
     assert_eq!("sdkwork.paas.tencent", tencent.plugin_id);
     assert_eq!("tencent", tencent.provider_family);
-    assert_eq!(vec!["tencent", "tencent-cloud"], tencent.provider_codes);
+    assert_eq!(vec!["tencent", "tencent-cloud"], tencent.supplier_codes);
     assert_eq!(vec!["secret_id_secret_key"], tencent.credential_kinds);
 }
 
@@ -99,12 +99,12 @@ fn custom_provider_plugin_can_be_registered_without_changing_registry_code() {
 
     let plugin = registry
         .resolve(&PaasProviderRoutingKey {
-            provider_code: "mock-cloud",
+            supplier_code: "mock-cloud",
             operation: PaasOperation::OcrInvoice,
         })
         .expect("custom plugin should resolve by declared provider and operation");
 
-    assert_eq!("mock-cloud", plugin.metadata().provider_codes[0]);
+    assert_eq!("mock-cloud", plugin.metadata().supplier_codes[0]);
     assert!(plugin.supports_operation(PaasOperation::OcrInvoice));
     assert!(!plugin.supports_operation(PaasOperation::FaceCompareOneToOne));
 }
@@ -130,7 +130,7 @@ fn standard_requests_and_responses_serialize_as_public_api_contracts() {
     assert_eq!(true, request_payload["options"]["detectDirection"]);
 
     let response = PaasOcrResponse {
-        provider_code: "baidu".to_owned(),
+        supplier_code: "baidu".to_owned(),
         provider_request_id: Some("request-1".to_owned()),
         pages: vec![PaasDocumentPage {
             page_index: 0,
@@ -168,7 +168,7 @@ fn provider_request_context_keeps_routing_auth_and_region_separate_from_standard
     let context = PaasProviderRequestContext {
         tenant_id: 100001,
         organization_id: 0,
-        provider_code: "alibaba".to_owned(),
+        supplier_code: "alibaba".to_owned(),
         region_code: Some("cn-hangzhou".to_owned()),
         credential_ref: Some("secret://paas/alibaba/main".to_owned()),
         timeout_ms: Some(30_000),
@@ -186,7 +186,7 @@ fn provider_request_context_keeps_routing_auth_and_region_separate_from_standard
         options: json!({"qualityControl": "normal"}),
     });
 
-    assert_eq!("alibaba", context.provider_code);
+    assert_eq!("alibaba", context.supplier_code);
     assert_eq!("face.compare.one_to_one", request.operation().as_str());
 }
 
@@ -195,7 +195,7 @@ async fn provider_plugin_invocation_uses_standard_request_and_response_types() {
     let registry = PaasProviderRegistry::new().with_plugin(Box::new(MockOcrPlugin));
     let plugin = registry
         .resolve(&PaasProviderRoutingKey {
-            provider_code: "mock-ocr",
+            supplier_code: "mock-ocr",
             operation: PaasOperation::OcrGeneralText,
         })
         .expect("mock OCR plugin should resolve");
@@ -205,7 +205,7 @@ async fn provider_plugin_invocation_uses_standard_request_and_response_types() {
             PaasProviderRequestContext {
                 tenant_id: 1,
                 organization_id: 2,
-                provider_code: "mock-ocr".to_owned(),
+                supplier_code: "mock-ocr".to_owned(),
                 region_code: Some("global".to_owned()),
                 credential_ref: Some("secret://mock-ocr/default".to_owned()),
                 timeout_ms: Some(1000),
@@ -224,7 +224,7 @@ async fn provider_plugin_invocation_uses_standard_request_and_response_types() {
 
     match response {
         PaasStandardResponse::Ocr(response) => {
-            assert_eq!("mock-ocr", response.provider_code);
+            assert_eq!("mock-ocr", response.supplier_code);
             assert_eq!("mock-request-1", response.provider_request_id.unwrap());
             assert_eq!("recognized text", response.pages[0].text);
         }
@@ -239,7 +239,7 @@ async fn metadata_only_provider_plugin_returns_explicit_not_configured_for_nativ
     let registry = default_paas_plugin_registry();
     let plugin = registry
         .resolve(&PaasProviderRoutingKey {
-            provider_code: "alibaba",
+            supplier_code: "alibaba",
             operation: PaasOperation::OcrGeneralText,
         })
         .expect("alibaba OCR plugin should resolve");
@@ -249,7 +249,7 @@ async fn metadata_only_provider_plugin_returns_explicit_not_configured_for_nativ
             PaasProviderRequestContext {
                 tenant_id: 1,
                 organization_id: 2,
-                provider_code: "alibaba".to_owned(),
+                supplier_code: "alibaba".to_owned(),
                 region_code: Some("cn-hangzhou".to_owned()),
                 credential_ref: None,
                 timeout_ms: Some(1000),
@@ -268,7 +268,7 @@ async fn metadata_only_provider_plugin_returns_explicit_not_configured_for_nativ
 
     assert_eq!(
         PaasProviderPluginError::ProviderNotConfigured {
-            provider_code: "alibaba".to_owned(),
+            supplier_code: "alibaba".to_owned(),
             operation: PaasOperation::OcrGeneralText
         },
         error
@@ -283,7 +283,7 @@ async fn baidu_paas_provider_plugin_invoke_returns_synthetic_ocr_response() {
     let registry = default_paas_plugin_registry();
     let plugin = registry
         .resolve(&PaasProviderRoutingKey {
-            provider_code: "baidu",
+            supplier_code: "baidu",
             operation: PaasOperation::OcrGeneralText,
         })
         .expect("baidu OCR plugin should resolve");
@@ -293,7 +293,7 @@ async fn baidu_paas_provider_plugin_invoke_returns_synthetic_ocr_response() {
             PaasProviderRequestContext {
                 tenant_id: 100042,
                 organization_id: 7,
-                provider_code: "baidu".to_owned(),
+                supplier_code: "baidu".to_owned(),
                 region_code: Some("cn".to_owned()),
                 credential_ref: Some("secret://paas/baidu/main".to_owned()),
                 timeout_ms: Some(15_000),
@@ -313,7 +313,7 @@ async fn baidu_paas_provider_plugin_invoke_returns_synthetic_ocr_response() {
 
     match response {
         PaasStandardResponse::Ocr(response) => {
-            assert_eq!("baidu", response.provider_code);
+            assert_eq!("baidu", response.supplier_code);
             let provider_request_id = response
                 .provider_request_id
                 .as_ref()
@@ -356,7 +356,7 @@ async fn baidu_paas_provider_plugin_invoke_returns_not_configured_for_non_ocr_op
     let registry = default_paas_plugin_registry();
     let plugin = registry
         .resolve(&PaasProviderRoutingKey {
-            provider_code: "baidu",
+            supplier_code: "baidu",
             operation: PaasOperation::FaceCompareOneToOne,
         })
         .expect("baidu face compare plugin should resolve (metadata-only)");
@@ -366,7 +366,7 @@ async fn baidu_paas_provider_plugin_invoke_returns_not_configured_for_non_ocr_op
             PaasProviderRequestContext {
                 tenant_id: 1,
                 organization_id: 2,
-                provider_code: "baidu".to_owned(),
+                supplier_code: "baidu".to_owned(),
                 region_code: Some("cn".to_owned()),
                 credential_ref: None,
                 timeout_ms: Some(1000),
@@ -387,7 +387,7 @@ async fn baidu_paas_provider_plugin_invoke_returns_not_configured_for_non_ocr_op
 
     assert_eq!(
         PaasProviderPluginError::ProviderNotConfigured {
-            provider_code: "baidu".to_owned(),
+            supplier_code: "baidu".to_owned(),
             operation: PaasOperation::FaceCompareOneToOne
         },
         error
@@ -401,7 +401,7 @@ impl PaasProviderPlugin for MockInvoicePlugin {
         PaasProviderPluginMetadata {
             plugin_id: "mock.invoice".to_owned(),
             provider_family: "mock-cloud".to_owned(),
-            provider_codes: vec!["mock-cloud".to_owned()],
+            supplier_codes: vec!["mock-cloud".to_owned()],
             capabilities: vec![PaasCapability::Ocr],
             operations: vec![PaasOperation::OcrInvoice],
             credential_kinds: vec!["api_key".to_owned()],
@@ -417,7 +417,7 @@ impl PaasProviderPlugin for MockOcrPlugin {
         PaasProviderPluginMetadata {
             plugin_id: "mock.ocr".to_owned(),
             provider_family: "mock-cloud".to_owned(),
-            provider_codes: vec!["mock-ocr".to_owned()],
+            supplier_codes: vec!["mock-ocr".to_owned()],
             capabilities: vec![PaasCapability::Ocr],
             operations: vec![PaasOperation::OcrGeneralText],
             credential_kinds: vec!["api_key".to_owned()],
@@ -431,10 +431,10 @@ impl PaasProviderPlugin for MockOcrPlugin {
         request: PaasStandardRequest,
     ) -> PaasProviderPluginFuture<'a> {
         Box::pin(async move {
-            assert_eq!("mock-ocr", context.provider_code);
+            assert_eq!("mock-ocr", context.supplier_code);
             assert_eq!("ocr.general_text", request.operation().as_str());
             Ok(PaasStandardResponse::Ocr(PaasOcrResponse {
-                provider_code: context.provider_code,
+                supplier_code: context.supplier_code,
                 provider_request_id: Some("mock-request-1".to_owned()),
                 pages: vec![PaasDocumentPage {
                     page_index: 0,

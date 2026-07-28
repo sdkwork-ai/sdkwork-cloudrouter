@@ -1,5 +1,5 @@
-pub(crate) fn provider_family_code(provider_code: &str, default_vendor_code: &str) -> String {
-    let provider = provider_code.trim().to_lowercase();
+pub(crate) fn provider_family_code(supplier_code: &str, default_vendor_code: &str) -> String {
+    let provider = supplier_code.trim().to_lowercase();
     let vendor = default_vendor_code.trim().to_lowercase();
 
     if provider_contains_any(&provider, &["openrouter", "opencode", "router"]) {

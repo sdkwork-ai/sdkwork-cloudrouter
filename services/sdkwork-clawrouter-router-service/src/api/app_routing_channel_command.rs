@@ -48,7 +48,7 @@ struct AppRoutingChannelCommandState {
 struct NormalizedCreateRoutingChannelRequest {
     name: String,
     vendor: String,
-    provider_code: String,
+    supplier_code: String,
     protocol: String,
     access_type: String,
     base_url: Option<String>,
@@ -64,10 +64,10 @@ struct NormalizedCreateRoutingChannelRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NormalizedUpdateRoutingChannelRequest {
-    channel_id: i64,
+    account_id: i64,
     name: Option<String>,
     vendor: Option<String>,
-    provider_code: Option<String>,
+    supplier_code: Option<String>,
     protocol: Option<String>,
     access_type: Option<String>,
     base_url: Option<Option<String>>,
@@ -167,15 +167,15 @@ pub fn app_routing_channel_command_router_with_store(
             post(create_routing_channel),
         )
         .route(
-            "/app/v3/api/ai/routing/channels/{channel_id}",
+            "/app/v3/api/ai/routing/channels/{account_id}",
             axum::routing::put(update_routing_channel).delete(delete_routing_channel),
         )
         .route(
-            "/app/v3/api/ai/routing/channels/{channel_id}/status",
+            "/app/v3/api/ai/routing/channels/{account_id}/status",
             axum::routing::put(set_routing_channel_status),
         )
         .route(
-            "/app/v3/api/ai/routing/channels/{channel_id}/verify",
+            "/app/v3/api/ai/routing/channels/{account_id}/verify",
             post(test_routing_channel),
         )
         .with_state(AppRoutingChannelCommandState {
@@ -218,19 +218,19 @@ async fn update_routing_channel(
     State(state): State<AppRoutingChannelCommandState>,
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
     headers: HeaderMap,
-    Path(channel_id): Path<String>,
+    Path(account_id): Path<String>,
     body: Bytes,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, AppRoutingSubject::from);
-    let channel_id = match parse_positive_id(&channel_id, "channel id") {
-        Ok(channel_id) => channel_id,
+    let account_id = match parse_positive_id(&account_id, "channel id") {
+        Ok(account_id) => account_id,
         Err(message) => return bad_request(message),
     };
     let request = match parse_json_object(&body, "routing channel update body is required", false) {
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
-    let request = match normalize_update_request(channel_id, request) {
+    let request = match normalize_update_request(account_id, request) {
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
@@ -253,19 +253,19 @@ async fn set_routing_channel_status(
     State(state): State<AppRoutingChannelCommandState>,
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
     headers: HeaderMap,
-    Path(channel_id): Path<String>,
+    Path(account_id): Path<String>,
     Json(request): Json<SetRoutingChannelStatusRequest>,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, AppRoutingSubject::from);
-    let channel_id = match parse_positive_id(&channel_id, "channel id") {
-        Ok(channel_id) => channel_id,
+    let account_id = match parse_positive_id(&account_id, "channel id") {
+        Ok(account_id) => account_id,
         Err(message) => return bad_request(message),
     };
     let status = match normalize_status(request.status.as_deref().unwrap_or_default().trim()) {
         Ok(status) => status,
         Err(message) => return bad_request(message),
     };
-    let command = match build_status_command(state.clone(), &headers, subject, channel_id, status) {
+    let command = match build_status_command(state.clone(), &headers, subject, account_id, status) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
     };
@@ -284,14 +284,14 @@ async fn delete_routing_channel(
     State(state): State<AppRoutingChannelCommandState>,
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
     headers: HeaderMap,
-    Path(channel_id): Path<String>,
+    Path(account_id): Path<String>,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, AppRoutingSubject::from);
-    let channel_id = match parse_positive_id(&channel_id, "channel id") {
-        Ok(channel_id) => channel_id,
+    let account_id = match parse_positive_id(&account_id, "channel id") {
+        Ok(account_id) => account_id,
         Err(message) => return bad_request(message),
     };
-    let command = match build_delete_command(state.clone(), &headers, subject, channel_id) {
+    let command = match build_delete_command(state.clone(), &headers, subject, account_id) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
     };
@@ -310,14 +310,14 @@ async fn test_routing_channel(
     State(state): State<AppRoutingChannelCommandState>,
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
     headers: HeaderMap,
-    Path(channel_id): Path<String>,
+    Path(account_id): Path<String>,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, AppRoutingSubject::from);
-    let channel_id = match parse_positive_id(&channel_id, "channel id") {
-        Ok(channel_id) => channel_id,
+    let account_id = match parse_positive_id(&account_id, "channel id") {
+        Ok(account_id) => account_id,
         Err(message) => return bad_request(message),
     };
-    let command = match build_test_command(state.clone(), &headers, subject, channel_id) {
+    let command = match build_test_command(state.clone(), &headers, subject, account_id) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
     };
@@ -357,7 +357,7 @@ fn normalize_create_request(
     reject_plaintext_auth_key(&request)?;
     let name = required_text(&request, "name", "channel name", MAX_NAME_LEN)?;
     let vendor = required_text(&request, "vendor", "channel vendor", MAX_VENDOR_LEN)?;
-    let provider_code = normalize_provider_code(&vendor)?;
+    let supplier_code = normalize_supplier_code(&vendor)?;
     let protocol = optional_text(&request, "protocol", "channel protocol", MAX_PROTOCOL_LEN)?
         .unwrap_or_else(|| "OpenAI".to_owned());
     let protocol = normalize_protocol(&protocol);
@@ -399,7 +399,7 @@ fn normalize_create_request(
     Ok(NormalizedCreateRoutingChannelRequest {
         name,
         vendor: display_vendor(&vendor),
-        provider_code,
+        supplier_code,
         protocol,
         access_type,
         base_url,
@@ -415,15 +415,15 @@ fn normalize_create_request(
 }
 
 fn normalize_update_request(
-    channel_id: i64,
+    account_id: i64,
     request: Map<String, Value>,
 ) -> Result<NormalizedUpdateRoutingChannelRequest, String> {
     reject_plaintext_auth_key(&request)?;
     let name = optional_text(&request, "name", "channel name", MAX_NAME_LEN)?;
     let vendor = optional_text(&request, "vendor", "channel vendor", MAX_VENDOR_LEN)?;
-    let provider_code = vendor
+    let supplier_code = vendor
         .as_ref()
-        .map(|vendor| normalize_provider_code(vendor))
+        .map(|vendor| normalize_supplier_code(vendor))
         .transpose()?;
     let vendor = vendor.map(|vendor| display_vendor(&vendor));
     let protocol = optional_text(&request, "protocol", "channel protocol", MAX_PROTOCOL_LEN)?
@@ -482,10 +482,10 @@ fn normalize_update_request(
     }
 
     Ok(NormalizedUpdateRoutingChannelRequest {
-        channel_id,
+        account_id,
         name,
         vendor,
-        provider_code,
+        supplier_code,
         protocol,
         access_type,
         base_url,
@@ -834,7 +834,7 @@ fn optional_non_null_circuit_breaker_policy_json(
     }
 }
 
-fn normalize_provider_code(vendor: &str) -> Result<String, String> {
+fn normalize_supplier_code(vendor: &str) -> Result<String, String> {
     let normalized = vendor.trim().to_ascii_lowercase();
     let code = match normalized.as_str() {
         "openai" => "openai",
@@ -863,7 +863,7 @@ fn normalize_provider_code(vendor: &str) -> Result<String, String> {
 }
 
 fn display_vendor(vendor: &str) -> String {
-    match normalize_provider_code(vendor).as_deref() {
+    match normalize_supplier_code(vendor).as_deref() {
         Ok("openai") => "OpenAI",
         Ok("anthropic") => "Anthropic",
         Ok("google") => "Gemini",
@@ -1045,7 +1045,7 @@ fn build_create_command(
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         name: request.name,
         vendor: request.vendor,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         protocol: request.protocol,
         access_type: request.access_type,
         base_url: request.base_url,
@@ -1070,13 +1070,13 @@ fn build_update_command(
 ) -> Result<UpdateAppRoutingChannelCommand, RoutingChannelCommandBuildError> {
     Ok(UpdateAppRoutingChannelCommand {
         subject,
-        channel_id: request.channel_id,
+        account_id: request.account_id,
         provider_uuid: generate_entity_uuid(&state)?,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         name: request.name,
         vendor: request.vendor,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         protocol: request.protocol,
         access_type: request.access_type,
         base_url: request.base_url,
@@ -1096,12 +1096,12 @@ fn build_status_command(
     state: AppRoutingChannelCommandState,
     _headers: &HeaderMap,
     subject: AppRoutingSubject,
-    channel_id: i64,
+    account_id: i64,
     status: String,
 ) -> Result<SetAppRoutingChannelStatusCommand, RoutingChannelCommandBuildError> {
     Ok(SetAppRoutingChannelStatusCommand {
         subject,
-        channel_id,
+        account_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         status,
@@ -1114,11 +1114,11 @@ fn build_delete_command(
     state: AppRoutingChannelCommandState,
     _headers: &HeaderMap,
     subject: AppRoutingSubject,
-    channel_id: i64,
+    account_id: i64,
 ) -> Result<DeleteAppRoutingChannelCommand, RoutingChannelCommandBuildError> {
     Ok(DeleteAppRoutingChannelCommand {
         subject,
-        channel_id,
+        account_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         request_id: generate_server_request_id().map_err(request_id_error)?,
@@ -1130,11 +1130,11 @@ fn build_test_command(
     state: AppRoutingChannelCommandState,
     _headers: &HeaderMap,
     subject: AppRoutingSubject,
-    channel_id: i64,
+    account_id: i64,
 ) -> Result<TestAppRoutingChannelCommand, RoutingChannelCommandBuildError> {
     Ok(TestAppRoutingChannelCommand {
         subject,
-        channel_id,
+        account_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         request_id: generate_server_request_id().map_err(request_id_error)?,

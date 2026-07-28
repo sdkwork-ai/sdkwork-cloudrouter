@@ -46,7 +46,7 @@ fn payment_callback_uses_appbase_order_payment_and_accounting_schema() {
 }
 
 #[test]
-fn payment_callback_uses_canonical_provider_code_without_legacy_provider_fields() {
+fn payment_callback_uses_canonical_supplier_code_without_legacy_provider_fields() {
     let port_source = include_str!("../src/ports/payment_callback_store.rs");
     let api_source = include_str!("../src/api/app_payment_callback.rs");
     for source in [
@@ -55,7 +55,7 @@ fn payment_callback_uses_canonical_provider_code_without_legacy_provider_fields(
         SQLITE_PAYMENT_CALLBACK_STORE,
         POSTGRES_PAYMENT_CALLBACK_STORE,
     ] {
-        assert!(source.contains("provider_code"));
+        assert!(source.contains("supplier_code"));
         assert!(!source.contains("provider_key"));
         assert!(!source.contains("legacy_provider_id"));
     }
@@ -516,7 +516,7 @@ async fn create_schema(pool: &SqlitePool) {
             tenant_id TEXT NOT NULL,
             organization_id TEXT,
             delivery_no TEXT NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_account_id TEXT,
             event_id TEXT NOT NULL,
             nonce TEXT NOT NULL,
@@ -538,8 +538,8 @@ async fn create_schema(pool: &SqlitePool) {
             processed_at TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            UNIQUE (tenant_id, provider_code, event_id),
-            UNIQUE (tenant_id, provider_code, nonce)
+            UNIQUE (tenant_id, supplier_code, event_id),
+            UNIQUE (tenant_id, supplier_code, nonce)
         )"#,
         r#"CREATE TABLE commerce_order (
             id TEXT PRIMARY KEY,
@@ -709,7 +709,7 @@ fn success_command(
     amount: Option<&str>,
 ) -> PaymentCallbackCommand {
     PaymentCallbackCommand {
-        provider_code: "stripe".to_owned(),
+        supplier_code: "stripe".to_owned(),
         event_uuid: format!("{event_id}-uuid"),
         delivery_uuid: format!("{event_id}-delivery"),
         account_uuid: format!("{event_id}-account"),

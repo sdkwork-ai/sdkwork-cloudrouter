@@ -60,15 +60,15 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 store_error("failed to begin routing channel transaction", error)
             })?;
             let provider_id = insert_or_load_provider(&mut tx, &command).await?;
-            let channel_id = insert_channel(&mut tx, &command, provider_id).await?;
-            replace_channel_credential(&mut tx, channel_id, &command).await?;
+            let account_id = insert_channel(&mut tx, &command, provider_id).await?;
+            replace_channel_credential(&mut tx, account_id, &command).await?;
             replace_channel_resource_bindings(
                 &mut tx,
-                channel_id,
+                account_id,
                 command.subject.tenant_id,
                 command.subject.organization_id,
                 command.subject.user_id,
-                &command.provider_code,
+                &command.supplier_code,
                 &command.capabilities,
                 &command.requested_at,
             )
@@ -81,8 +81,8 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 command.subject.organization_id,
                 command.subject.user_id,
                 "create_channel",
-                channel_id,
-                &channel_snapshot_payload(channel_id, &command.name, &command.provider_code),
+                account_id,
+                &channel_snapshot_payload(account_id, &command.name, &command.supplier_code),
                 &command.requested_at,
             )
             .await?;
@@ -94,12 +94,12 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 command.subject.organization_id,
                 command.subject.user_id,
                 "create_channel",
-                channel_id,
+                account_id,
                 serde_json::json!({
                     "action": "create_channel",
-                    "channelId": channel_id,
+                    "channelId": account_id,
                     "name": &command.name,
-                    "providerCode": &command.provider_code,
+                    "providerCode": &command.supplier_code,
                     "capabilities": &command.capabilities,
                     "timeoutMs": command.timeout_ms,
                     "retryPolicyConfigured": command.retry_policy_json.is_some(),
@@ -110,7 +110,7 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
             .await?;
             let item = load_channel_by_id(
                 &mut tx,
-                channel_id,
+                account_id,
                 command.subject.tenant_id,
                 command.subject.organization_id,
             )
@@ -131,15 +131,15 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
             let mut tx = self.pool.begin().await.map_err(|error| {
                 store_error("failed to begin routing channel transaction", error)
             })?;
-            let provider_id = match command.provider_code.as_deref() {
-                Some(provider_code) => Some(
+            let provider_id = match command.supplier_code.as_deref() {
+                Some(supplier_code) => Some(
                     insert_or_load_provider_for_code(
                         &mut tx,
                         command.subject.tenant_id,
                         command.subject.organization_id,
                         &command.provider_uuid,
-                        provider_code,
-                        command.vendor.as_deref().unwrap_or(provider_code),
+                        supplier_code,
+                        command.vendor.as_deref().unwrap_or(supplier_code),
                         command.base_url.as_ref().and_then(|value| value.as_deref()),
                         &command.requested_at,
                     )
@@ -156,15 +156,15 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
             }
             update_provider_account(&mut tx, &command, provider_id).await?;
             if command.capabilities.is_some()
-                || command.provider_code.is_some()
+                || command.supplier_code.is_some()
                 || command.vendor.is_some()
             {
-                let provider_code = if let Some(provider_code) = command.provider_code.clone() {
-                    provider_code
+                let supplier_code = if let Some(supplier_code) = command.supplier_code.clone() {
+                    supplier_code
                 } else {
-                    load_channel_provider_code(
+                    load_channel_supplier_code(
                         &mut tx,
-                        command.channel_id,
+                        command.account_id,
                         command.subject.tenant_id,
                         command.subject.organization_id,
                     )
@@ -177,11 +177,11 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                     .unwrap_or_else(|| vec!["llm".to_owned()]);
                 replace_channel_resource_bindings(
                     &mut tx,
-                    command.channel_id,
+                    command.account_id,
                     command.subject.tenant_id,
                     command.subject.organization_id,
                     command.subject.user_id,
-                    &provider_code,
+                    &supplier_code,
                     &capabilities,
                     &command.requested_at,
                 )
@@ -195,11 +195,11 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 command.subject.organization_id,
                 command.subject.user_id,
                 "update_channel",
-                command.channel_id,
+                command.account_id,
                 &serde_json::json!({
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "name": command.name,
-                    "providerCode": command.provider_code,
+                    "providerCode": command.supplier_code,
                     "timeoutChanged": command.timeout_ms.is_some(),
                     "retryPolicyChanged": command.retry_policy_json.is_some(),
                     "circuitBreakerPolicyChanged": command.circuit_breaker_policy_json.is_some(),
@@ -216,10 +216,10 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 command.subject.organization_id,
                 command.subject.user_id,
                 "update_channel",
-                command.channel_id,
+                command.account_id,
                 serde_json::json!({
                     "action": "update_channel",
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "timeoutChanged": command.timeout_ms.is_some(),
                     "retryPolicyChanged": command.retry_policy_json.is_some(),
                     "circuitBreakerPolicyChanged": command.circuit_breaker_policy_json.is_some(),
@@ -230,7 +230,7 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
             .await?;
             let item = load_channel_by_id(
                 &mut tx,
-                command.channel_id,
+                command.account_id,
                 command.subject.tenant_id,
                 command.subject.organization_id,
             )
@@ -266,9 +266,9 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 command.subject.organization_id,
                 command.subject.user_id,
                 "set_channel_status",
-                command.channel_id,
+                command.account_id,
                 &serde_json::json!({
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "status": &command.status
                 }),
                 &command.requested_at,
@@ -282,17 +282,17 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 command.subject.organization_id,
                 command.subject.user_id,
                 "set_channel_status",
-                command.channel_id,
+                command.account_id,
                 serde_json::json!({
                     "action": "set_channel_status",
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "status": &command.status
                 }),
             )
             .await?;
             let item = load_channel_by_id(
                 &mut tx,
-                command.channel_id,
+                command.account_id,
                 command.subject.tenant_id,
                 command.subject.organization_id,
             )
@@ -324,9 +324,9 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                     command.subject.organization_id,
                     command.subject.user_id,
                     "delete_channel",
-                    command.channel_id,
+                    command.account_id,
                     &serde_json::json!({
-                        "channelId": command.channel_id,
+                        "channelId": command.account_id,
                         "deleted": true
                     }),
                     &command.requested_at,
@@ -340,10 +340,10 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                     command.subject.organization_id,
                     command.subject.user_id,
                     "delete_channel",
-                    command.channel_id,
+                    command.account_id,
                     serde_json::json!({
                         "action": "delete_channel",
-                        "channelId": command.channel_id
+                        "channelId": command.account_id
                     }),
                 )
                 .await?;
@@ -406,9 +406,9 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 command.subject.organization_id,
                 command.subject.user_id,
                 "test_channel",
-                command.channel_id,
+                command.account_id,
                 &serde_json::json!({
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "success": probe_outcome.success,
                     "healthStatus": if probe_outcome.success { "healthy" } else { "error" },
                     "httpStatus": probe_outcome.http_status
@@ -424,10 +424,10 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
                 command.subject.organization_id,
                 command.subject.user_id,
                 "test_channel",
-                command.channel_id,
+                command.account_id,
                 serde_json::json!({
                     "action": "test_channel",
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "success": probe_outcome.success,
                     "healthStatus": if probe_outcome.success { "healthy" } else { "error" },
                     "httpStatus": probe_outcome.http_status
@@ -436,14 +436,14 @@ impl AppRoutingChannelCommandStore for SqliteAppRoutingChannelCommandStore {
             .await?;
             let item = load_channel_by_id(
                 &mut tx,
-                command.channel_id,
+                command.account_id,
                 command.subject.tenant_id,
                 command.subject.organization_id,
             )
             .await?
             .ok_or_else(|| DomainError::new("tested routing channel could not be reloaded"))?;
             let outcome = AppRoutingChannelTestOutcome {
-                channel_id: item.id.clone(),
+                account_id: item.id.clone(),
                 success: probe_outcome.success,
                 status: item.status.clone(),
                 latency: item.latency.clone(),
@@ -466,7 +466,7 @@ async fn insert_or_load_provider(
         command.subject.tenant_id,
         command.subject.organization_id,
         &command.provider_uuid,
-        &command.provider_code,
+        &command.supplier_code,
         &command.vendor,
         command.base_url.as_deref(),
         &command.requested_at,
@@ -479,7 +479,7 @@ async fn insert_or_load_provider_for_code(
     tenant_id: i64,
     organization_id: i64,
     provider_uuid: &str,
-    provider_code: &str,
+    supplier_code: &str,
     vendor: &str,
     base_url: Option<&str>,
     requested_at: &str,
@@ -488,7 +488,7 @@ async fn insert_or_load_provider_for_code(
         r#"
         SELECT id
         FROM ai_provider
-        WHERE provider_code = ?
+        WHERE supplier_code = ?
           AND (
               (tenant_id = ? AND organization_id = ?)
               OR (tenant_id = 0 AND organization_id = 0)
@@ -499,7 +499,7 @@ async fn insert_or_load_provider_for_code(
         LIMIT 1
         "#,
     )
-    .bind(provider_code)
+    .bind(supplier_code)
     .bind(tenant_id)
     .bind(organization_id)
     .bind(tenant_id)
@@ -515,7 +515,7 @@ async fn insert_or_load_provider_for_code(
     sqlx::query(
         r#"
         INSERT INTO ai_provider
-            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_code, default_vendor_code, display_name, base_url, sort_order)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, supplier_code, default_vendor_code, display_name, base_url, sort_order)
         VALUES
             (?, ?, ?, ?, 1, 1, ?, ?, 0, ?, ?, ?, ?, 100)
         "#,
@@ -526,8 +526,8 @@ async fn insert_or_load_provider_for_code(
     .bind(organization_id)
     .bind(requested_at)
     .bind(requested_at)
-    .bind(provider_code)
-    .bind(provider_code)
+    .bind(supplier_code)
+    .bind(supplier_code)
     .bind(vendor)
     .bind(base_url)
     .execute(&mut **tx)
@@ -547,16 +547,16 @@ async fn insert_channel(
         "protocol": &command.protocol
     })
     .to_string();
-    let channel_id = next_claw_runtime_id("routing channel creation")?;
+    let account_id = next_claw_runtime_id("routing channel creation")?;
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_id, provider_code, channel_code, channel_name, channel_type, protocol_code, auth_type, base_url, auth_config, credential_ref, credential_hash, masked_label, timeout_ms, retry_policy, circuit_breaker_policy, environment, priority, weight, health_status, last_latency_ms, rpm_limit, consecutive_error_count)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, provider_id, supplier_code, account_code, channel_name, channel_type, protocol_code, auth_type, base_url, auth_config, credential_ref, credential_hash, masked_label, timeout_ms, retry_policy, circuit_breaker_policy, environment, priority, weight, health_status, last_latency_ms, rpm_limit, consecutive_error_count)
         VALUES
             (?, ?, ?, ?, 1, ?, ?, ?, 0, ?, ?, ?, ?, 'official', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 100, ?, ?, 0, 0, 0)
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .bind(&command.channel_uuid)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -564,7 +564,7 @@ async fn insert_channel(
     .bind(&command.requested_at)
     .bind(&command.requested_at)
     .bind(provider_id)
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(entity_code("chn", &command.channel_uuid))
     .bind(&command.name)
     .bind(protocol_storage_code(&command.protocol))
@@ -583,7 +583,7 @@ async fn insert_channel(
     .await
     .map_err(|error| store_error("failed to create routing channel", error))?;
 
-    Ok(channel_id)
+    Ok(account_id)
 }
 
 async fn update_channel(
@@ -610,7 +610,7 @@ async fn update_channel(
         UPDATE ai_channel
         SET channel_name = COALESCE(?, channel_name),
             provider_id = COALESCE(?, provider_id),
-            provider_code = COALESCE(?, provider_code),
+            supplier_code = COALESCE(?, supplier_code),
             protocol_code = COALESCE(?, protocol_code),
             auth_type = COALESCE(?, auth_type),
             base_url = CASE WHEN ? THEN ? ELSE base_url END,
@@ -630,7 +630,7 @@ async fn update_channel(
     )
     .bind(command.name.as_deref())
     .bind(provider_id)
-    .bind(command.provider_code.as_deref())
+    .bind(command.supplier_code.as_deref())
     .bind(
         command
             .protocol
@@ -660,7 +660,7 @@ async fn update_channel(
             .map(|value| health_status_code(value)),
     )
     .bind(&command.requested_at)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -675,7 +675,7 @@ async fn update_provider_account(
     provider_id: Option<i64>,
 ) -> DomainResult<()> {
     if command.secret_ref.is_none()
-        && command.provider_code.is_none()
+        && command.supplier_code.is_none()
         && command.name.is_none()
         && command.base_url.is_none()
         && command.status.is_none()
@@ -695,7 +695,7 @@ async fn update_provider_account(
         r#"
         UPDATE ai_channel
         SET provider_id = COALESCE(?, provider_id),
-            provider_code = COALESCE(?, provider_code),
+            supplier_code = COALESCE(?, supplier_code),
             channel_name = COALESCE(?, channel_name),
             credential_ref = COALESCE(?, credential_ref),
             credential_hash = COALESCE(?, credential_hash),
@@ -709,13 +709,13 @@ async fn update_provider_account(
         "#,
     )
     .bind(provider_id)
-    .bind(command.provider_code.as_deref())
+    .bind(command.supplier_code.as_deref())
     .bind(command.name.as_deref())
     .bind(command.secret_ref.as_deref())
     .bind(secret_hash)
     .bind(masked_label)
     .bind(&command.requested_at)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -742,7 +742,7 @@ async fn update_primary_channel_credential(
     sqlx::query(
         r#"
         UPDATE ai_channel_credential
-        SET provider_code = COALESCE(?, provider_code),
+        SET supplier_code = COALESCE(?, supplier_code),
             base_url = CASE WHEN ? THEN COALESCE(?, '') ELSE base_url END,
             credential_ref = COALESCE(?, credential_ref),
             credential_hash = COALESCE(?, credential_hash),
@@ -750,14 +750,14 @@ async fn update_primary_channel_credential(
             health_status = COALESCE(?, health_status),
             updated_at = ?,
             version = COALESCE(version, 0) + 1
-        WHERE channel_id = ?
+        WHERE account_id = ?
           AND tenant_id = ?
           AND organization_id = ?
           AND credential_name = 'primary'
           AND deleted_at IS NULL
         "#,
     )
-    .bind(command.provider_code.as_deref())
+    .bind(command.supplier_code.as_deref())
     .bind(base_url_touched)
     .bind(base_url)
     .bind(command.secret_ref.as_deref())
@@ -770,7 +770,7 @@ async fn update_primary_channel_credential(
             .map(|value| health_status_code(value)),
     )
     .bind(&command.requested_at)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -801,7 +801,7 @@ async fn update_channel_status(
     .bind(health_status_code(&command.status))
     .bind(status_code(&command.status))
     .bind(&command.requested_at)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -812,7 +812,7 @@ async fn update_channel_status(
 
 async fn replace_channel_credential(
     tx: &mut Transaction<'_, Sqlite>,
-    channel_id: i64,
+    account_id: i64,
     command: &CreateAppRoutingChannelCommand,
 ) -> DomainResult<()> {
     let auth_config = serde_json::json!({
@@ -825,10 +825,10 @@ async fn replace_channel_credential(
     sqlx::query(
         r#"
         INSERT INTO ai_channel_credential
-            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, channel_id, provider_code, channel_code, credential_name, base_url, auth_config, credential_ref, credential_hash, masked_label, priority, weight, health_status, consecutive_error_count)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, account_id, supplier_code, account_code, credential_name, base_url, auth_config, credential_ref, credential_hash, masked_label, priority, weight, health_status, consecutive_error_count)
         VALUES
             (?, ?, ?, ?, 1, ?, ?, ?, 0, '{}', ?, ?, (
-                SELECT COALESCE(NULLIF(channel_code, ''), '')
+                SELECT COALESCE(NULLIF(account_code, ''), '')
                 FROM ai_channel
                 WHERE id = ?
             ), 'primary', ?, ?, ?, ?, ?, 1, 100, ?, 0)
@@ -841,9 +841,9 @@ async fn replace_channel_credential(
     .bind(status_code(&command.status))
     .bind(&command.requested_at)
     .bind(&command.requested_at)
-    .bind(channel_id)
-    .bind(&command.provider_code)
-    .bind(channel_id)
+    .bind(account_id)
+    .bind(&command.supplier_code)
+    .bind(account_id)
     .bind(command.base_url.as_deref().unwrap_or_default())
     .bind(auth_config)
     .bind(&command.secret_ref)
@@ -858,17 +858,17 @@ async fn replace_channel_credential(
 
 async fn replace_channel_resource_bindings(
     tx: &mut Transaction<'_, Sqlite>,
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
     user_id: i64,
-    provider_code: &str,
+    supplier_code: &str,
     capabilities: &[String],
     requested_at: &str,
 ) -> DomainResult<()> {
-    let channel_code = load_channel_code(tx, channel_id, tenant_id, organization_id).await?;
+    let account_code = load_account_code(tx, account_id, tenant_id, organization_id).await?;
     let mut resource_codes = Vec::<String>::new();
-    push_unique(&mut resource_codes, &format!("vendor.{provider_code}"));
+    push_unique(&mut resource_codes, &format!("vendor.{supplier_code}"));
     for capability in capabilities {
         if let Some(resource_code) = capability_resource_code(capability) {
             push_unique(&mut resource_codes, &resource_code);
@@ -876,7 +876,7 @@ async fn replace_channel_resource_bindings(
     }
     soft_delete_removed_channel_resources(
         tx,
-        channel_id,
+        account_id,
         tenant_id,
         organization_id,
         user_id,
@@ -886,7 +886,7 @@ async fn replace_channel_resource_bindings(
     .await?;
     for (index, resource_code) in resource_codes.iter().enumerate() {
         let resource = resolve_resource(tx, tenant_id, organization_id, resource_code).await?;
-        let uuid_suffix = digest_hex(&format!("{channel_id}:{resource_code}"))
+        let uuid_suffix = digest_hex(&format!("{account_id}:{resource_code}"))
             .chars()
             .take(32)
             .collect::<String>();
@@ -895,16 +895,16 @@ async fn replace_channel_resource_bindings(
         sqlx::query(
             r#"
             INSERT INTO ai_channel_resource
-                (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_id, provider_code, channel_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
+                (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, account_id, supplier_code, account_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
             VALUES
                 (?, ?, ?, ?, 1, 1, ?, ?, 0, ?, ?, ?, ?, ?, NULL, '', 'allow', ?, 100)
-            ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code) DO UPDATE SET
+            ON CONFLICT(tenant_id, organization_id, account_id, resource_code, resource_group_code) DO UPDATE SET
                 status = 1,
                 deleted_at = NULL,
                 deleted_by = NULL,
                 updated_at = excluded.updated_at,
-                provider_code = excluded.provider_code,
-                channel_code = excluded.channel_code,
+                supplier_code = excluded.supplier_code,
+                account_code = excluded.account_code,
                 resource_id = excluded.resource_id,
                 grant_type = excluded.grant_type,
                 priority = excluded.priority,
@@ -918,9 +918,9 @@ async fn replace_channel_resource_bindings(
         .bind(organization_id)
         .bind(requested_at)
         .bind(requested_at)
-        .bind(channel_id)
-        .bind(provider_code)
-        .bind(&channel_code)
+        .bind(account_id)
+        .bind(supplier_code)
+        .bind(&account_code)
         .bind(resource.id)
         .bind(resource.resource_code)
         .bind(priority)
@@ -963,15 +963,15 @@ struct ResolvedAiResource {
     resource_code: String,
 }
 
-async fn load_channel_code(
+async fn load_account_code(
     tx: &mut Transaction<'_, Sqlite>,
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
 ) -> DomainResult<String> {
     sqlx::query_scalar(
         r#"
-        SELECT COALESCE(NULLIF(channel_code, ''), '')
+        SELECT COALESCE(NULLIF(account_code, ''), '')
         FROM ai_channel
         WHERE id = ?
           AND tenant_id = ?
@@ -980,7 +980,7 @@ async fn load_channel_code(
         LIMIT 1
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .bind(tenant_id)
     .bind(organization_id)
     .fetch_one(&mut **tx)
@@ -1041,7 +1041,7 @@ async fn resolve_resource(
 
 async fn soft_delete_removed_channel_resources(
     tx: &mut Transaction<'_, Sqlite>,
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
     user_id: i64,
@@ -1066,7 +1066,7 @@ async fn soft_delete_removed_channel_resources(
             version = COALESCE(version, 0) + 1
         WHERE tenant_id = ?
           AND organization_id = ?
-          AND channel_id = ?
+          AND account_id = ?
           AND deleted_at IS NULL
           AND COALESCE(NULLIF(resource_code, ''), resource_group_code) NOT IN (SELECT value FROM json_each(?))
         "#,
@@ -1076,7 +1076,7 @@ async fn soft_delete_removed_channel_resources(
     .bind(requested_at)
     .bind(tenant_id)
     .bind(organization_id)
-    .bind(channel_id)
+    .bind(account_id)
     .bind(keep_json)
     .execute(&mut **tx)
     .await
@@ -1106,7 +1106,7 @@ async fn soft_delete_channel_relationships(
                 deleted_by = ?,
                 updated_at = ?,
                 version = COALESCE(version, 0) + 1
-            WHERE channel_id = ?
+            WHERE account_id = ?
               AND tenant_id = ?
               AND organization_id = ?
               AND deleted_at IS NULL
@@ -1116,7 +1116,7 @@ async fn soft_delete_channel_relationships(
             .bind(&command.requested_at)
             .bind(command.subject.user_id)
             .bind(&command.requested_at)
-            .bind(command.channel_id)
+            .bind(command.account_id)
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .execute(&mut **tx)
@@ -1147,7 +1147,7 @@ async fn soft_delete_channel(
     .bind(&command.requested_at)
     .bind(command.subject.user_id)
     .bind(&command.requested_at)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -1179,7 +1179,7 @@ async fn load_channel_probe_target(
             c.timeout_ms
         FROM ai_channel c
         JOIN ai_channel_credential cc
-          ON cc.channel_id = c.id
+          ON cc.account_id = c.id
          AND cc.tenant_id = c.tenant_id
          AND cc.organization_id = c.organization_id
          AND cc.status = 1
@@ -1188,7 +1188,7 @@ async fn load_channel_probe_target(
           ON (
               p.id = c.provider_id
               OR (
-                  p.provider_code = c.provider_code
+                  p.supplier_code = c.supplier_code
                   AND (c.provider_id IS NULL OR c.provider_id = 0)
               )
           )
@@ -1199,7 +1199,7 @@ async fn load_channel_probe_target(
              OR (p.tenant_id IS NULL AND p.organization_id IS NULL)
          )
         LEFT JOIN ai_channel_resource cr
-          ON cr.channel_id = c.id
+          ON cr.account_id = c.id
          AND cr.tenant_id = c.tenant_id
          AND cr.organization_id = c.organization_id
          AND cr.status = 1
@@ -1224,7 +1224,7 @@ async fn load_channel_probe_target(
         LIMIT 1
         "#,
     )
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .fetch_optional(&mut **tx)
@@ -1282,7 +1282,7 @@ async fn record_channel_health_test(
     .bind(health_status)
     .bind(outcome.latency_ms)
     .bind(health_status)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -1315,7 +1315,7 @@ async fn update_channel_credential_health(
             END,
             version = COALESCE(version, 0) + 1
         WHERE id = ?
-          AND channel_id = ?
+          AND account_id = ?
           AND tenant_id = ?
           AND organization_id = ?
           AND deleted_at IS NULL
@@ -1327,7 +1327,7 @@ async fn update_channel_credential_health(
     .bind(&command.requested_at)
     .bind(health_status)
     .bind(target.credential_id)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -1343,7 +1343,7 @@ async fn update_channel_credential_health(
 
 async fn load_channel_by_id(
     tx: &mut Transaction<'_, Sqlite>,
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
 ) -> DomainResult<Option<AppRoutingChannelItem>> {
@@ -1351,11 +1351,11 @@ async fn load_channel_by_id(
         r#"
         SELECT
             CAST(c.id AS TEXT) AS id,
-            COALESCE(NULLIF(c.channel_name, ''), NULLIF(c.channel_code, ''), NULLIF(c.provider_code, ''), '') AS name,
-            COALESCE(NULLIF(c.provider_code, ''), 'custom') AS vendor,
-            COALESCE(NULLIF(c.provider_code, ''), 'custom') AS provider,
-            COALESCE(NULLIF(c.provider_code, ''), 'custom') AS provider_code,
-            CASE lower(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.provider_code, ''), 'openai'))
+            COALESCE(NULLIF(c.channel_name, ''), NULLIF(c.account_code, ''), NULLIF(c.supplier_code, ''), '') AS name,
+            COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS vendor,
+            COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS provider,
+            COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS supplier_code,
+            CASE lower(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.supplier_code, ''), 'openai'))
                 WHEN 'openai' THEN 1
                 WHEN 'anthropic' THEN 2
                 WHEN 'gemini' THEN 3
@@ -1391,7 +1391,7 @@ async fn load_channel_by_id(
                      AND r.organization_id = cr.organization_id
                      AND r.status = 1
                      AND r.deleted_at IS NULL
-                    WHERE cr.channel_id = c.id
+                    WHERE cr.account_id = c.id
                       AND cr.tenant_id = c.tenant_id
                       AND cr.organization_id = c.organization_id
                       AND cr.status = 1
@@ -1424,7 +1424,7 @@ async fn load_channel_by_id(
         LIMIT 1
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .bind(tenant_id)
     .bind(organization_id)
     .fetch_optional(&mut **tx)
@@ -1450,7 +1450,7 @@ fn row_to_channel(row: sqlx::sqlite::SqliteRow) -> DomainResult<AppRoutingChanne
         name: string_cell(&row, "name"),
         vendor: display_vendor(&string_cell(&row, "vendor")),
         provider: display_vendor(&string_cell(&row, "provider")),
-        provider_code: string_cell(&row, "provider_code"),
+        supplier_code: string_cell(&row, "supplier_code"),
         protocol: protocol_label(required_integer_cell(&row, "protocol")?)?,
         access_type: access_type_label(required_integer_cell(&row, "access_type")?)?,
         base_url: string_cell(&row, "base_url"),
@@ -1485,15 +1485,15 @@ fn row_to_channel(row: sqlx::sqlite::SqliteRow) -> DomainResult<AppRoutingChanne
     })
 }
 
-async fn load_channel_provider_code(
+async fn load_channel_supplier_code(
     tx: &mut Transaction<'_, Sqlite>,
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
 ) -> DomainResult<String> {
     sqlx::query_scalar(
         r#"
-        SELECT COALESCE(provider_code, '')
+        SELECT COALESCE(supplier_code, '')
         FROM ai_channel
         WHERE id = ?
           AND tenant_id = ?
@@ -1502,7 +1502,7 @@ async fn load_channel_provider_code(
         LIMIT 1
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .bind(tenant_id)
     .bind(organization_id)
     .fetch_one(&mut **tx)
@@ -1588,11 +1588,11 @@ async fn insert_audit_log(
     Ok(())
 }
 
-fn channel_snapshot_payload(channel_id: i64, name: &str, provider_code: &str) -> serde_json::Value {
+fn channel_snapshot_payload(account_id: i64, name: &str, supplier_code: &str) -> serde_json::Value {
     serde_json::json!({
-        "channelId": channel_id,
+        "channelId": account_id,
         "name": name,
-        "providerCode": provider_code
+        "providerCode": supplier_code
     })
 }
 

@@ -34,7 +34,7 @@ pub(crate) async fn manifest(
 pub(crate) async fn invoke_provider(
     State(state): State<AdapterHttpState>,
     method: Method,
-    Path((provider_code, path)): Path<(String, String)>,
+    Path((supplier_code, path)): Path<(String, String)>,
     headers: HeaderMap,
     Json(request): Json<AdapterInvocationRequest>,
 ) -> Response {
@@ -47,9 +47,9 @@ pub(crate) async fn invoke_provider(
     }
     if !request
         .provider
-        .provider_code
+        .supplier_code
         .trim()
-        .eq_ignore_ascii_case(provider_code.as_str())
+        .eq_ignore_ascii_case(supplier_code.as_str())
     {
         return (
             StatusCode::BAD_REQUEST,
@@ -76,7 +76,7 @@ pub(crate) async fn invoke_provider(
         )
             .into_response();
     }
-    let Some(adapter) = find_adapter(&state.adapters, provider_code.as_str()) else {
+    let Some(adapter) = find_adapter(&state.adapters, supplier_code.as_str()) else {
         return (
             StatusCode::NOT_FOUND,
             Json(error_body("adapter_endpoint_not_supported")),
@@ -92,7 +92,7 @@ pub(crate) async fn invoke_provider(
     };
 
     let context = AdapterInvocationContext {
-        provider_code,
+        supplier_code,
         request_id: request.invocation.request_id.clone(),
         trace_id: request.invocation.trace_id.clone(),
     };
@@ -110,15 +110,15 @@ pub(crate) async fn invoke_provider(
 
 fn find_adapter(
     adapters: &[Arc<dyn ProviderAdapter>],
-    provider_code: &str,
+    supplier_code: &str,
 ) -> Option<Arc<dyn ProviderAdapter>> {
     adapters
         .iter()
         .find(|adapter| {
             adapter
-                .provider_codes()
+                .supplier_codes()
                 .iter()
-                .any(|code| code.eq_ignore_ascii_case(provider_code))
+                .any(|code| code.eq_ignore_ascii_case(supplier_code))
         })
         .cloned()
 }

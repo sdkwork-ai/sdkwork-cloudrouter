@@ -33,7 +33,7 @@ usage_by_request AS (
         request_id,
         MAX(owner_name_snapshot) AS owner_name_snapshot,
         MAX(api_key_name_snapshot) AS api_key_name_snapshot,
-        MAX(channel_group_snapshot) AS channel_group_snapshot,
+        MAX(upstream_account_group_snapshot) AS upstream_account_group_snapshot,
         MAX(catalog_key) AS catalog_key,
         MAX(requested_model_catalog_key) AS requested_model_catalog_key,
         MAX(model) AS model,
@@ -69,7 +69,7 @@ SELECT
     COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_id,
     CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS started_at,
     COALESCE(NULLIF(t.api_key_name_snapshot, ''), NULLIF(u.api_key_name_snapshot, ''), '-') AS api_key_name_snapshot,
-    COALESCE(NULLIF(t.channel_group_snapshot, ''), NULLIF(u.channel_group_snapshot, ''), '-') AS channel_group_snapshot,
+    COALESCE(NULLIF(t.upstream_account_group_snapshot, ''), NULLIF(u.upstream_account_group_snapshot, ''), '-') AS upstream_account_group_snapshot,
     u.modality AS modality,
     COALESCE(NULLIF(u.provider_native_model, ''), NULLIF(t.provider_native_model, ''), NULLIF(u.model, ''), NULLIF(t.provider_model, ''), '-') AS model,
     COALESCE(NULLIF(u.provider_native_model, ''), NULLIF(t.provider_native_model, ''), NULLIF(u.model, ''), NULLIF(t.provider_model, ''), '') AS provider_native_model,
@@ -143,9 +143,9 @@ AND (
     ?4 IS NULL
     OR lower(COALESCE(t.request_id, '')) LIKE ?4
     OR lower(COALESCE(t.api_key_name_snapshot, '')) LIKE ?4
-    OR lower(COALESCE(t.channel_group_snapshot, '')) LIKE ?4
+    OR lower(COALESCE(t.upstream_account_group_snapshot, '')) LIKE ?4
     OR lower(COALESCE(u.api_key_name_snapshot, '')) LIKE ?4
-    OR lower(COALESCE(u.channel_group_snapshot, '')) LIKE ?4
+    OR lower(COALESCE(u.upstream_account_group_snapshot, '')) LIKE ?4
 )
 AND (
     ?5 IS NULL
@@ -217,7 +217,7 @@ fn row_to_log(row: sqlx::sqlite::SqliteRow) -> Result<AdminRecordLogItem, Domain
         request_id: string_cell(&row, "request_id"),
         time: string_cell(&row, "started_at"),
         token_name: string_cell(&row, "api_key_name_snapshot"),
-        group: string_cell(&row, "channel_group_snapshot"),
+        group: string_cell(&row, "upstream_account_group_snapshot"),
         log_type: modality_label(optional_integer_cell(&row, "modality")),
         model: string_cell(&row, "model"),
         provider_native_model: string_cell(&row, "provider_native_model"),

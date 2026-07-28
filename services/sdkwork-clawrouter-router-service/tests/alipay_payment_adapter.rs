@@ -104,7 +104,7 @@ async fn alipay_page_pay_maps_standard_payment_intent_to_trade_page_pay() {
         .await
         .unwrap();
 
-    assert_eq!("alipay", outcome.provider_code);
+    assert_eq!("alipay", outcome.supplier_code);
     assert_eq!(Some("20260530220000000001".to_owned()), outcome.native_id);
     assert_eq!(Some("WAIT_BUYER_PAY".to_owned()), outcome.raw_status);
     assert_eq!(
@@ -247,7 +247,7 @@ async fn alipay_normalize_webhook_extracts_standard_event_fields() {
         .await
         .unwrap();
 
-    assert_eq!("alipay", event.provider_code);
+    assert_eq!("alipay", event.supplier_code);
     assert_eq!(Some("TRADE_SUCCESS".to_owned()), event.event_type);
     assert_eq!(Some("notify-1".to_owned()), event.provider_event_id);
     assert_eq!("order-1", event.payload["out_trade_no"]);

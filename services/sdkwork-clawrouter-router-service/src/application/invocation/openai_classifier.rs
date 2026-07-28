@@ -63,7 +63,7 @@ impl OpenAiRouteSpec {
         let resource = InvocationResource {
             surface: InvocationSurface::OpenAiCompatible,
             provider_family: None,
-            provider_code: None,
+            supplier_code: None,
             route_key: self.route_key.to_owned(),
             api_code: self.api_code.to_owned(),
             endpoint_key: None,
@@ -622,7 +622,7 @@ fn api(
         model_requirement: AiRouteModelRequirement::Ignored,
         meter: Some(BillingMeter::ApiRequest),
         billing_mode: ClassifiedBillingMode::ApiRequest,
-        strategy: AiRouteStrategy::PrimaryChannel,
+        strategy: AiRouteStrategy::PrimaryAccount,
         sticky_object_type: None,
         sticky_scope: ClassifiedStickyScope::None,
     }
@@ -765,7 +765,7 @@ fn free_endpoint(
         model_requirement: AiRouteModelRequirement::Ignored,
         meter: None,
         billing_mode: ClassifiedBillingMode::Free,
-        strategy: AiRouteStrategy::PrimaryChannel,
+        strategy: AiRouteStrategy::PrimaryAccount,
         sticky_object_type: None,
         sticky_scope: ClassifiedStickyScope::None,
     }

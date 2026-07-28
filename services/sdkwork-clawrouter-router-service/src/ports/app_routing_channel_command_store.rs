@@ -20,7 +20,7 @@ pub struct CreateAppRoutingChannelCommand {
     pub config_snapshot_uuid: String,
     pub name: String,
     pub vendor: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub protocol: String,
     pub access_type: String,
     pub base_url: Option<String>,
@@ -39,13 +39,13 @@ pub struct CreateAppRoutingChannelCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UpdateAppRoutingChannelCommand {
     pub subject: AppRoutingSubject,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub provider_uuid: String,
     pub audit_log_uuid: String,
     pub config_snapshot_uuid: String,
     pub name: Option<String>,
     pub vendor: Option<String>,
-    pub provider_code: Option<String>,
+    pub supplier_code: Option<String>,
     pub protocol: Option<String>,
     pub access_type: Option<String>,
     pub base_url: Option<Option<String>>,
@@ -63,7 +63,7 @@ pub struct UpdateAppRoutingChannelCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetAppRoutingChannelStatusCommand {
     pub subject: AppRoutingSubject,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub audit_log_uuid: String,
     pub config_snapshot_uuid: String,
     pub status: String,
@@ -74,7 +74,7 @@ pub struct SetAppRoutingChannelStatusCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeleteAppRoutingChannelCommand {
     pub subject: AppRoutingSubject,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub audit_log_uuid: String,
     pub config_snapshot_uuid: String,
     pub request_id: String,
@@ -84,7 +84,7 @@ pub struct DeleteAppRoutingChannelCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TestAppRoutingChannelCommand {
     pub subject: AppRoutingSubject,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub audit_log_uuid: String,
     pub config_snapshot_uuid: String,
     pub request_id: String,
@@ -106,7 +106,7 @@ pub struct AppRoutingChannelDeleteOutcome {
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppRoutingChannelTestOutcome {
-    pub channel_id: String,
+    pub account_id: String,
     pub success: bool,
     pub status: String,
     pub latency: String,

@@ -872,7 +872,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_intent (
     merchant_order_no TEXT,
     subject TEXT NOT NULL,
     provider TEXT,
-    provider_code TEXT,
+    supplier_code TEXT,
     payment_method TEXT,
     scene_code TEXT,
     amount TEXT NOT NULL,
@@ -899,8 +899,8 @@ CREATE TABLE IF NOT EXISTS commerce_payment_attempt (
     attempt_no TEXT,
     payment_method TEXT,
     provider TEXT,
-    provider_code TEXT,
-    channel_id TEXT,
+    supplier_code TEXT,
+    account_id TEXT,
     provider_transaction_id TEXT,
     out_trade_no TEXT,
     amount TEXT NOT NULL,
@@ -921,8 +921,8 @@ CREATE TABLE IF NOT EXISTS commerce_payment_route_decision (
     payment_intent_id TEXT NOT NULL,
     payment_attempt_id TEXT NOT NULL,
     route_rule_id TEXT,
-    channel_id TEXT,
-    provider_code TEXT,
+    account_id TEXT,
+    supplier_code TEXT,
     provider_account_id TEXT,
     method_code TEXT,
     scene_code TEXT,
@@ -931,7 +931,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_route_decision (
     amount TEXT,
     risk_level TEXT,
     decision_reason TEXT,
-    fallback_from_channel_id TEXT,
+    fallback_from_account_id TEXT,
     created_at TEXT NOT NULL
 );
 
@@ -940,9 +940,9 @@ CREATE TABLE IF NOT EXISTS commerce_payment_operation_attempt (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     operation_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
-    channel_id TEXT,
+    account_id TEXT,
     operation_code TEXT NOT NULL,
     sdkwork_resource_type TEXT NOT NULL,
     sdkwork_resource_id TEXT NOT NULL,
@@ -967,7 +967,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_webhook_event (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     provider TEXT NOT NULL,
-    provider_code TEXT,
+    supplier_code TEXT,
     event_id TEXT NOT NULL,
     event_type TEXT,
     nonce TEXT NOT NULL,
@@ -994,7 +994,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_webhook_delivery (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     delivery_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     event_id TEXT NOT NULL,
     nonce TEXT NOT NULL,
@@ -1023,7 +1023,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_statement (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     statement_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     statement_type TEXT NOT NULL,
     settlement_currency TEXT NOT NULL,
@@ -1051,7 +1051,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_statement_item (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     statement_id TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     row_no TEXT NOT NULL,
     native_trade_id TEXT,
@@ -1077,7 +1077,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_reconciliation_run (
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
     run_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     settlement_currency TEXT,
     period_start TEXT NOT NULL,
@@ -1109,7 +1109,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_reconciliation_item (
     payment_attempt_id TEXT,
     refund_id TEXT,
     refund_attempt_id TEXT,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     difference_type TEXT NOT NULL,
     match_status TEXT NOT NULL,
     internal_amount TEXT,
@@ -1136,7 +1136,7 @@ CREATE TABLE IF NOT EXISTS commerce_refund (
     refund_no TEXT NOT NULL,
     amount TEXT NOT NULL,
     currency_code TEXT NOT NULL,
-    provider_code TEXT,
+    supplier_code TEXT,
     reason TEXT,
     status TEXT NOT NULL,
     request_no TEXT,
@@ -1151,7 +1151,7 @@ CREATE TABLE IF NOT EXISTS commerce_refund_attempt (
     organization_id TEXT,
     refund_attempt_no TEXT NOT NULL,
     refund_id TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     out_refund_no TEXT NOT NULL,
     provider_refund_id TEXT,
@@ -1196,7 +1196,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_provider (
     id TEXT NOT NULL PRIMARY KEY,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     display_name TEXT NOT NULL,
     provider_type TEXT NOT NULL,
     supported_countries TEXT NOT NULL DEFAULT '[]',
@@ -1213,7 +1213,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_provider_account (
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
     account_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     merchant_id TEXT NOT NULL,
     environment TEXT NOT NULL,
     country_code TEXT NOT NULL,
@@ -1272,7 +1272,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_route_rule (
     amount_max TEXT,
     user_segment TEXT,
     risk_level TEXT,
-    channel_id TEXT,
+    account_id TEXT,
     status TEXT NOT NULL,
     starts_at TEXT,
     ends_at TEXT,
@@ -1328,7 +1328,7 @@ CREATE TABLE IF NOT EXISTS commerce_fulfillment_order (
     status TEXT NOT NULL,
     warehouse_id TEXT,
     address_snapshot_id TEXT,
-    provider_code TEXT,
+    supplier_code TEXT,
     created_at TEXT NOT NULL,
     completed_at TEXT,
     updated_at TEXT NOT NULL
@@ -1443,21 +1443,21 @@ CREATE INDEX IF NOT EXISTS idx_commerce_payment_attempt_provider_trade
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_route_decision_tenant_attempt
     ON commerce_payment_route_decision (tenant_id, payment_attempt_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_operation_attempt_tenant_idempotency
-    ON commerce_payment_operation_attempt (tenant_id, provider_code, operation_code, idempotency_key);
+    ON commerce_payment_operation_attempt (tenant_id, supplier_code, operation_code, idempotency_key);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_webhook_event_tenant_provider_event
     ON commerce_payment_webhook_event (tenant_id, provider, event_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_webhook_event_tenant_provider_nonce
     ON commerce_payment_webhook_event (tenant_id, provider, nonce);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_webhook_delivery_tenant_provider_event
-    ON commerce_payment_webhook_delivery (tenant_id, provider_code, event_id);
+    ON commerce_payment_webhook_delivery (tenant_id, supplier_code, event_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_webhook_delivery_tenant_provider_nonce
-    ON commerce_payment_webhook_delivery (tenant_id, provider_code, nonce);
+    ON commerce_payment_webhook_delivery (tenant_id, supplier_code, nonce);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_tenant_provider_period
-    ON commerce_payment_statement (tenant_id, provider_code, period_start, period_end, id);
+    ON commerce_payment_statement (tenant_id, supplier_code, period_start, period_end, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_item_statement
     ON commerce_payment_statement_item (tenant_id, statement_id, row_no, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_run_tenant_provider_period
-    ON commerce_payment_reconciliation_run (tenant_id, organization_id, provider_code, period_start, id);
+    ON commerce_payment_reconciliation_run (tenant_id, organization_id, supplier_code, period_start, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_item_run
     ON commerce_payment_reconciliation_item (tenant_id, reconciliation_run_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_refund_tenant_no
@@ -1465,17 +1465,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_refund_tenant_no
 CREATE INDEX IF NOT EXISTS idx_commerce_refund_tenant_attempt
     ON commerce_refund (tenant_id, payment_attempt_id, created_at, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_refund_attempt_tenant_provider_refund
-    ON commerce_refund_attempt (tenant_id, provider_code, out_refund_no);
+    ON commerce_refund_attempt (tenant_id, supplier_code, out_refund_no);
 CREATE INDEX IF NOT EXISTS idx_commerce_refund_item_tenant_refund
     ON commerce_refund_item (tenant_id, refund_id, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_refund_event_tenant_refund
     ON commerce_refund_event (tenant_id, refund_id, created_at, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_provider_tenant_code
-    ON commerce_payment_provider (tenant_id, provider_code);
+    ON commerce_payment_provider (tenant_id, supplier_code);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_provider_account_tenant_no
     ON commerce_payment_provider_account (tenant_id, organization_id, account_no);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_provider_account_tenant_provider_scope
-    ON commerce_payment_provider_account (tenant_id, organization_id, provider_code, environment, country_code, settlement_currency, status);
+    ON commerce_payment_provider_account (tenant_id, organization_id, supplier_code, environment, country_code, settlement_currency, status);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_method_tenant_method
     ON commerce_payment_method (tenant_id, organization_id, method_key);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_channel_tenant_account
@@ -1973,7 +1973,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_intent (
     merchant_order_no TEXT,
     subject TEXT NOT NULL,
     provider TEXT,
-    provider_code TEXT,
+    supplier_code TEXT,
     payment_method TEXT,
     scene_code TEXT,
     amount TEXT NOT NULL,
@@ -2000,8 +2000,8 @@ CREATE TABLE IF NOT EXISTS commerce_payment_attempt (
     attempt_no TEXT,
     payment_method TEXT,
     provider TEXT,
-    provider_code TEXT,
-    channel_id TEXT,
+    supplier_code TEXT,
+    account_id TEXT,
     provider_transaction_id TEXT,
     out_trade_no TEXT,
     amount TEXT NOT NULL,
@@ -2022,8 +2022,8 @@ CREATE TABLE IF NOT EXISTS commerce_payment_route_decision (
     payment_intent_id TEXT NOT NULL,
     payment_attempt_id TEXT NOT NULL,
     route_rule_id TEXT,
-    channel_id TEXT,
-    provider_code TEXT,
+    account_id TEXT,
+    supplier_code TEXT,
     provider_account_id TEXT,
     method_code TEXT,
     scene_code TEXT,
@@ -2032,7 +2032,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_route_decision (
     amount TEXT,
     risk_level TEXT,
     decision_reason TEXT,
-    fallback_from_channel_id TEXT,
+    fallback_from_account_id TEXT,
     created_at TEXT NOT NULL
 );
 
@@ -2041,9 +2041,9 @@ CREATE TABLE IF NOT EXISTS commerce_payment_operation_attempt (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     operation_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
-    channel_id TEXT,
+    account_id TEXT,
     operation_code TEXT NOT NULL,
     sdkwork_resource_type TEXT NOT NULL,
     sdkwork_resource_id TEXT NOT NULL,
@@ -2068,7 +2068,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_webhook_event (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     provider TEXT NOT NULL,
-    provider_code TEXT,
+    supplier_code TEXT,
     event_id TEXT NOT NULL,
     event_type TEXT,
     nonce TEXT NOT NULL,
@@ -2095,7 +2095,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_webhook_delivery (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     delivery_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     event_id TEXT NOT NULL,
     nonce TEXT NOT NULL,
@@ -2124,7 +2124,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_statement (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     statement_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     statement_type TEXT NOT NULL,
     settlement_currency TEXT NOT NULL,
@@ -2152,7 +2152,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_statement_item (
     tenant_id TEXT NOT NULL,
     organization_id TEXT,
     statement_id TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     row_no TEXT NOT NULL,
     native_trade_id TEXT,
@@ -2178,7 +2178,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_reconciliation_run (
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
     run_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     settlement_currency TEXT,
     period_start TEXT NOT NULL,
@@ -2210,7 +2210,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_reconciliation_item (
     payment_attempt_id TEXT,
     refund_id TEXT,
     refund_attempt_id TEXT,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     difference_type TEXT NOT NULL,
     match_status TEXT NOT NULL,
     internal_amount TEXT,
@@ -2237,7 +2237,7 @@ CREATE TABLE IF NOT EXISTS commerce_refund (
     refund_no TEXT NOT NULL,
     amount TEXT NOT NULL,
     currency_code TEXT NOT NULL,
-    provider_code TEXT,
+    supplier_code TEXT,
     reason TEXT,
     status TEXT NOT NULL,
     request_no TEXT,
@@ -2252,7 +2252,7 @@ CREATE TABLE IF NOT EXISTS commerce_refund_attempt (
     organization_id TEXT,
     refund_attempt_no TEXT NOT NULL,
     refund_id TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     provider_account_id TEXT,
     out_refund_no TEXT NOT NULL,
     provider_refund_id TEXT,
@@ -2297,7 +2297,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_provider (
     id TEXT NOT NULL PRIMARY KEY,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     display_name TEXT NOT NULL,
     provider_type TEXT NOT NULL,
     supported_countries TEXT NOT NULL DEFAULT '[]',
@@ -2314,7 +2314,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_provider_account (
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
     account_no TEXT NOT NULL,
-    provider_code TEXT NOT NULL,
+    supplier_code TEXT NOT NULL,
     merchant_id TEXT NOT NULL,
     environment TEXT NOT NULL,
     country_code TEXT NOT NULL,
@@ -2373,7 +2373,7 @@ CREATE TABLE IF NOT EXISTS commerce_payment_route_rule (
     amount_max TEXT,
     user_segment TEXT,
     risk_level TEXT,
-    channel_id TEXT,
+    account_id TEXT,
     status TEXT NOT NULL,
     starts_at TEXT,
     ends_at TEXT,
@@ -2429,7 +2429,7 @@ CREATE TABLE IF NOT EXISTS commerce_fulfillment_order (
     status TEXT NOT NULL,
     warehouse_id TEXT,
     address_snapshot_id TEXT,
-    provider_code TEXT,
+    supplier_code TEXT,
     created_at TEXT NOT NULL,
     completed_at TEXT,
     updated_at TEXT NOT NULL
@@ -2544,21 +2544,21 @@ CREATE INDEX IF NOT EXISTS idx_commerce_payment_attempt_provider_trade
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_route_decision_tenant_attempt
     ON commerce_payment_route_decision (tenant_id, payment_attempt_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_operation_attempt_tenant_idempotency
-    ON commerce_payment_operation_attempt (tenant_id, provider_code, operation_code, idempotency_key);
+    ON commerce_payment_operation_attempt (tenant_id, supplier_code, operation_code, idempotency_key);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_webhook_event_tenant_provider_event
     ON commerce_payment_webhook_event (tenant_id, provider, event_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_webhook_event_tenant_provider_nonce
     ON commerce_payment_webhook_event (tenant_id, provider, nonce);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_webhook_delivery_tenant_provider_event
-    ON commerce_payment_webhook_delivery (tenant_id, provider_code, event_id);
+    ON commerce_payment_webhook_delivery (tenant_id, supplier_code, event_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_webhook_delivery_tenant_provider_nonce
-    ON commerce_payment_webhook_delivery (tenant_id, provider_code, nonce);
+    ON commerce_payment_webhook_delivery (tenant_id, supplier_code, nonce);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_tenant_provider_period
-    ON commerce_payment_statement (tenant_id, provider_code, period_start, period_end, id);
+    ON commerce_payment_statement (tenant_id, supplier_code, period_start, period_end, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_item_statement
     ON commerce_payment_statement_item (tenant_id, statement_id, row_no, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_run_tenant_provider_period
-    ON commerce_payment_reconciliation_run (tenant_id, organization_id, provider_code, period_start, id);
+    ON commerce_payment_reconciliation_run (tenant_id, organization_id, supplier_code, period_start, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_item_run
     ON commerce_payment_reconciliation_item (tenant_id, reconciliation_run_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_refund_tenant_no
@@ -2566,17 +2566,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_refund_tenant_no
 CREATE INDEX IF NOT EXISTS idx_commerce_refund_tenant_attempt
     ON commerce_refund (tenant_id, payment_attempt_id, created_at, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_refund_attempt_tenant_provider_refund
-    ON commerce_refund_attempt (tenant_id, provider_code, out_refund_no);
+    ON commerce_refund_attempt (tenant_id, supplier_code, out_refund_no);
 CREATE INDEX IF NOT EXISTS idx_commerce_refund_item_tenant_refund
     ON commerce_refund_item (tenant_id, refund_id, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_refund_event_tenant_refund
     ON commerce_refund_event (tenant_id, refund_id, created_at, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_provider_tenant_code
-    ON commerce_payment_provider (tenant_id, provider_code);
+    ON commerce_payment_provider (tenant_id, supplier_code);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_provider_account_tenant_no
     ON commerce_payment_provider_account (tenant_id, organization_id, account_no);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_provider_account_tenant_provider_scope
-    ON commerce_payment_provider_account (tenant_id, organization_id, provider_code, environment, country_code, settlement_currency, status);
+    ON commerce_payment_provider_account (tenant_id, organization_id, supplier_code, environment, country_code, settlement_currency, status);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_commerce_payment_method_tenant_method
     ON commerce_payment_method (tenant_id, organization_id, method_key);
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_channel_tenant_account

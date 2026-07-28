@@ -868,7 +868,7 @@ async fn edge_server_proxies_app_router_console_routing_api_through_generated_sd
         "Edge Created OpenAI",
         create_channel.json["data"]["item"]["name"]
     );
-    let created_channel_id = create_channel.json["data"]["item"]["id"]
+    let created_account_id = create_channel.json["data"]["item"]["id"]
         .as_str()
         .unwrap()
         .to_owned();
@@ -876,7 +876,7 @@ async fn edge_server_proxies_app_router_console_routing_api_through_generated_sd
     let update_channel = json_request(
         edge_router.clone(),
         Method::PUT,
-        &format!("/app/v3/api/ai/routing/channels/{created_channel_id}"),
+        &format!("/app/v3/api/ai/routing/channels/{created_account_id}"),
         Body::from(
             json!({
                 "name": "Edge Updated OpenAI",
@@ -900,7 +900,7 @@ async fn edge_server_proxies_app_router_console_routing_api_through_generated_sd
     let status = json_request(
         edge_router.clone(),
         Method::PUT,
-        &format!("/app/v3/api/ai/routing/channels/{created_channel_id}/status"),
+        &format!("/app/v3/api/ai/routing/channels/{created_account_id}/status"),
         Body::from(r#"{"status":"disabled"}"#),
     )
     .with_app_session(app_session.clone())
@@ -913,7 +913,7 @@ async fn edge_server_proxies_app_router_console_routing_api_through_generated_sd
     let test_channel = json_request(
         edge_router.clone(),
         Method::POST,
-        &format!("/app/v3/api/ai/routing/channels/{created_channel_id}/verify"),
+        &format!("/app/v3/api/ai/routing/channels/{created_account_id}/verify"),
         Body::empty(),
     )
     .with_app_session(app_session.clone())
@@ -921,12 +921,12 @@ async fn edge_server_proxies_app_router_console_routing_api_through_generated_sd
     .await;
     assert_eq!(StatusCode::OK, test_channel.status);
     assert_eq!(true, test_channel.json["data"]["success"]);
-    assert_eq!(created_channel_id, test_channel.json["data"]["channelId"]);
+    assert_eq!(created_account_id, test_channel.json["data"]["channelId"]);
 
     let delete_channel = json_request(
         edge_router,
         Method::DELETE,
-        &format!("/app/v3/api/ai/routing/channels/{created_channel_id}"),
+        &format!("/app/v3/api/ai/routing/channels/{created_account_id}"),
         Body::empty(),
     )
     .with_app_session(app_session)
@@ -1423,7 +1423,7 @@ impl AppRoutingChannelCommandStore for InMemoryAppRoutingStore {
                 name: command.name,
                 vendor: command.vendor.clone(),
                 provider: command.vendor,
-                provider_code: command.provider_code,
+                supplier_code: command.supplier_code,
                 protocol: command.protocol,
                 access_type: command.access_type,
                 base_url: command.base_url.unwrap_or_default(),
@@ -1454,7 +1454,7 @@ impl AppRoutingChannelCommandStore for InMemoryAppRoutingStore {
             let mut channels = self.channels.lock().unwrap();
             let Some(item) = channels
                 .iter_mut()
-                .find(|item| item.id == command.channel_id.to_string())
+                .find(|item| item.id == command.account_id.to_string())
             else {
                 return Ok(None);
             };
@@ -1465,8 +1465,8 @@ impl AppRoutingChannelCommandStore for InMemoryAppRoutingStore {
                 item.vendor = vendor.clone();
                 item.provider = vendor;
             }
-            if let Some(provider_code) = command.provider_code {
-                item.provider_code = provider_code;
+            if let Some(supplier_code) = command.supplier_code {
+                item.supplier_code = supplier_code;
             }
             if let Some(protocol) = command.protocol {
                 item.protocol = protocol;
@@ -1500,7 +1500,7 @@ impl AppRoutingChannelCommandStore for InMemoryAppRoutingStore {
             let mut channels = self.channels.lock().unwrap();
             let Some(item) = channels
                 .iter_mut()
-                .find(|item| item.id == command.channel_id.to_string())
+                .find(|item| item.id == command.account_id.to_string())
             else {
                 return Ok(None);
             };
@@ -1518,7 +1518,7 @@ impl AppRoutingChannelCommandStore for InMemoryAppRoutingStore {
         Box::pin(async move {
             let mut channels = self.channels.lock().unwrap();
             let before = channels.len();
-            channels.retain(|item| item.id != command.channel_id.to_string());
+            channels.retain(|item| item.id != command.account_id.to_string());
             Ok(AppRoutingChannelDeleteOutcome {
                 deleted: before != channels.len(),
             })
@@ -1533,13 +1533,13 @@ impl AppRoutingChannelCommandStore for InMemoryAppRoutingStore {
             let channels = self.channels.lock().unwrap();
             let Some(item) = channels
                 .iter()
-                .find(|item| item.id == command.channel_id.to_string())
+                .find(|item| item.id == command.account_id.to_string())
                 .cloned()
             else {
                 return Ok(None);
             };
             Ok(Some(AppRoutingChannelTestOutcome {
-                channel_id: command.channel_id.to_string(),
+                account_id: command.account_id.to_string(),
                 success: true,
                 status: item.status.clone(),
                 latency: "12ms".to_owned(),
@@ -1567,7 +1567,7 @@ fn default_routing_channel(id: &str, name: &str) -> AppRoutingChannelItem {
         name: name.to_owned(),
         vendor: "OpenAI".to_owned(),
         provider: "OpenAI".to_owned(),
-        provider_code: "openai".to_owned(),
+        supplier_code: "openai".to_owned(),
         protocol: "OpenAI".to_owned(),
         access_type: "Standard API Key".to_owned(),
         base_url: "https://api.openai.example/v1".to_owned(),

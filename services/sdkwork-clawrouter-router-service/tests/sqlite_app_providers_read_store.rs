@@ -121,7 +121,7 @@ async fn create_provider_tables(pool: &SqlitePool) {
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             default_vendor_code TEXT,
             provider_type TEXT,
             auth_type INTEGER,
@@ -150,8 +150,8 @@ async fn create_provider_tables(pool: &SqlitePool) {
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
             provider_id INTEGER,
-            provider_code TEXT NOT NULL,
-            channel_code TEXT,
+            supplier_code TEXT NOT NULL,
+            account_code TEXT,
             proxy_id INTEGER,
             base_url TEXT,
             status INTEGER NOT NULL,
@@ -178,7 +178,7 @@ async fn create_provider_tables(pool: &SqlitePool) {
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
-            channel_id INTEGER NOT NULL,
+            account_id INTEGER NOT NULL,
             resource_id INTEGER,
             resource_code TEXT,
             grant_type TEXT NOT NULL DEFAULT 'allow',
@@ -229,7 +229,7 @@ async fn seed_provider_with_type(pool: &SqlitePool, integration_type: i64) {
     sqlx::query(
         r#"
         INSERT INTO ai_provider (
-            id, tenant_id, organization_id, provider_code, default_vendor_code, provider_type, auth_type,
+            id, tenant_id, organization_id, supplier_code, default_vendor_code, provider_type, auth_type,
             display_name, description, base_url, status, sort_order
         )
         VALUES (?, 100001, 0, ?, ?, ?, ?, ?, 'Provider integration', ?, 1, ?)
@@ -250,7 +250,7 @@ async fn seed_provider_with_type(pool: &SqlitePool, integration_type: i64) {
     sqlx::query(
         r#"
         INSERT INTO ai_channel (
-            id, tenant_id, organization_id, provider_id, provider_code, channel_code,
+            id, tenant_id, organization_id, provider_id, supplier_code, account_code,
             base_url, status, health_status, priority, weight
         )
         VALUES (?, 100001, 0, ?, ?, ?, ?, 1, 1, 10, 100)
@@ -282,7 +282,7 @@ async fn seed_provider_with_type(pool: &SqlitePool, integration_type: i64) {
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource (
-            id, tenant_id, organization_id, channel_id, resource_id, resource_code, grant_type, status
+            id, tenant_id, organization_id, account_id, resource_id, resource_code, grant_type, status
         )
         VALUES (?, 100001, 0, ?, ?, ?, 'allow', 1)
         "#,

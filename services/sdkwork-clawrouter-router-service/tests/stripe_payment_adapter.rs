@@ -107,7 +107,7 @@ async fn stripe_create_payment_intent_maps_standard_request_to_form_request() {
         .await
         .unwrap();
 
-    assert_eq!("stripe", outcome.provider_code);
+    assert_eq!("stripe", outcome.supplier_code);
     assert_eq!(Some("pi_123".to_owned()), outcome.native_id);
     assert_eq!(
         Some("requires_payment_method".to_owned()),
@@ -160,7 +160,7 @@ async fn stripe_create_refund_maps_standard_request_to_form_request() {
         .await
         .unwrap();
 
-    assert_eq!("stripe", outcome.provider_code);
+    assert_eq!("stripe", outcome.supplier_code);
     assert_eq!(Some("re_123".to_owned()), outcome.native_id);
     assert_eq!(Some("succeeded".to_owned()), outcome.raw_status);
 
@@ -391,7 +391,7 @@ async fn stripe_normalize_webhook_extracts_standard_event_fields() {
         .await
         .unwrap();
 
-    assert_eq!("stripe", event.provider_code);
+    assert_eq!("stripe", event.supplier_code);
     assert_eq!(
         Some("payment_intent.succeeded".to_owned()),
         event.event_type
@@ -421,7 +421,7 @@ async fn stripe_download_statement_maps_date_to_balance_transaction_query() {
         Some("stripe_balance_transactions_2026-05-30".to_owned()),
         statement.statement_id
     );
-    assert_eq!("stripe", statement.metadata["provider_code"]);
+    assert_eq!("stripe", statement.metadata["supplier_code"]);
     assert_eq!(
         "stripe_balance_transactions",
         statement.metadata["source_type"]

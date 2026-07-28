@@ -338,7 +338,7 @@ async fn seed_channel_with_optional_circuit_breaker_policy(
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, uuid, tenant_id, organization_id, channel_code, channel_name, channel_type, status, provider_id, provider_code, health_status, circuit_breaker_policy, consecutive_error_count)
+            (id, uuid, tenant_id, organization_id, account_code, channel_name, channel_type, status, provider_id, supplier_code, health_status, circuit_breaker_policy, consecutive_error_count)
         VALUES
             (3001, 'channel-3001', 100001, 0, 'openrouter-main', 'OpenRouter Main', 'relay', 1, 7001, 'openrouter', 1, ?, 0)
         "#,
@@ -394,8 +394,8 @@ fn provider_route() -> OpenAiProviderRoute {
         group_id: 10,
         group_code: "standard-group".to_owned(),
         pricing_plan_code: "standard".to_owned(),
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         region_code: "global".to_owned(),
         provider_model: "gpt-4o-mini".to_owned(),
         provider_base_url: Some("http://provider-proxy.internal/openrouter".to_owned()),

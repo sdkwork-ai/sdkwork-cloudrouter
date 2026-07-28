@@ -11,9 +11,9 @@ use sdkwork_clawrouter_router_service::api::{
 };
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, GatewayApiKey, ModelMappingBindingType,
-    ModelMappingRule, ModelPrice, ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money,
-    PriceSide, PricingPlan, ProviderAuthProfile, ProviderChannelRoute, ProviderRetryPolicy,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelMappingBindingType,
+    ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money,
+    PriceSide, PricingPlan, ProviderAuthProfile, UpstreamAccountRoute, ProviderRetryPolicy,
     RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -60,23 +60,23 @@ fn catalog_with_hashed_api_key_without_routing(key_hash: String) -> InMemoryPric
         vec!["chat", "tools"],
     ));
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter",
             3001,
             "openai/gpt-4o-mini",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/main"),
         )
         .with_timeout_ms(30_000)
         .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/main"),
             )
@@ -89,7 +89,7 @@ fn catalog_with_hashed_api_key_without_routing(key_hash: String) -> InMemoryPric
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -172,7 +172,7 @@ fn catalog_with_hashed_api_key_without_provider_route_snapshot(
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -212,7 +212,7 @@ fn add_group_routing_policy(
     rule_id: i64,
     rule_code: &str,
     catalog_key: &str,
-    channel_id: i64,
+    account_id: i64,
 ) {
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -220,7 +220,7 @@ fn add_group_routing_policy(
             10,
             20,
             &format!("{rule_code}-policy"),
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(group_id),
             Some(profile_id),
         )
@@ -237,7 +237,7 @@ fn add_group_routing_policy(
             &format!(r#"{{"catalogKey":"{catalog_key}"}}"#),
             catalog_key,
         )
-        .with_candidate_channels(vec![RouteCandidate::new(channel_id, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(account_id, 100)]),
     );
 }
 
@@ -246,7 +246,7 @@ fn catalog_with_group_channel_routes(
     premium_key_hash: String,
 ) -> InMemoryPricingCatalog {
     let mut catalog = catalog_with_hashed_api_key(standard_key_hash);
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         20,
         "premium-group",
         "standard",
@@ -257,22 +257,22 @@ fn catalog_with_group_channel_routes(
         GatewayApiKey::new(202, 20, "sk-premium", &premium_key_hash).with_owner(10, 20, 31),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter-premium",
             3002,
             "openai/gpt-4o-mini-premium",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-premium"),
             Some("vault://providers/openrouter/account/premium"),
         )
         .with_timeout_ms(20_000),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-premium", 3002)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-premium", 3002)
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter-premium"),
                 Some("vault://providers/openrouter/account/premium"),
             )
@@ -333,7 +333,7 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
         .with_catalog_key("minimax/MiniMax-M2.7"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "minimax/MiniMax-M2.7",
             "MiniMax-M2.7",
             "minimax_direct",
@@ -341,13 +341,13 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
             "MiniMax-M2.7",
         )
         .with_region_code("cn")
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/minimax"),
             Some("vault://providers/minimax/account/cn"),
         ),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "minimax/MiniMax-M2.7",
             "MiniMax-M2.7",
             "minimax_global_direct",
@@ -355,23 +355,23 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
             "MiniMax-M2.7",
         )
         .with_region_code("global")
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/minimax-global"),
             Some("vault://providers/minimax/account/global"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("minimax_direct", 4001)
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("minimax_direct", 4001)
             .with_region_code("cn")
-            .with_provider_endpoint(
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/minimax"),
                 Some("vault://providers/minimax/account/cn"),
             ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("minimax_global_direct", 4002)
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("minimax_global_direct", 4002)
             .with_region_code("global")
-            .with_provider_endpoint(
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/minimax-global"),
                 Some("vault://providers/minimax/account/global"),
             ),
@@ -382,7 +382,7 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
         DecimalValue::parse("1.000000").unwrap(),
         Money::cny("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -438,7 +438,7 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
             10,
             20,
             "standard-group-minimax-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9501),
         )
@@ -455,7 +455,7 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
             r#"{"catalogKey":"minimax/MiniMax-M2.7"}"#,
             "minimax/MiniMax-M2.7",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(4001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(4001, 100)]),
     );
     catalog
 }
@@ -662,7 +662,7 @@ async fn openai_chat_completions_accepts_base_catalog_key_for_region_scoped_pric
 }
 
 #[tokio::test]
-async fn openai_chat_completions_routes_each_channel_group_to_its_configured_channel_route() {
+async fn openai_chat_completions_routes_each_upstream_account_group_to_its_configured_channel_route() {
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let standard_key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
@@ -673,7 +673,7 @@ async fn openai_chat_completions_routes_each_channel_group_to_its_configured_cha
         10,
         20,
         "standard-group-policy",
-        RoutingPolicyScope::ChannelGroup,
+        RoutingPolicyScope::UpstreamAccountGroup,
         Some(10),
         Some(9101),
     ));
@@ -688,14 +688,14 @@ async fn openai_chat_completions_routes_each_channel_group_to_its_configured_cha
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog.add_routing_policy(RoutingPolicy::new(
         9002,
         10,
         20,
         "premium-group-policy",
-        RoutingPolicyScope::ChannelGroup,
+        RoutingPolicyScope::UpstreamAccountGroup,
         Some(20),
         Some(9201),
     ));
@@ -710,7 +710,7 @@ async fn openai_chat_completions_routes_each_channel_group_to_its_configured_cha
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3002, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3002, 100)]),
     );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -744,7 +744,7 @@ async fn openai_chat_completions_routes_each_channel_group_to_its_configured_cha
     assert_eq!(2, captured.len());
     assert_eq!(101, captured[0].api_key_id);
     assert_eq!(10, captured[0].group_id);
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert_eq!(
         Some("http://provider-proxy.internal/openrouter"),
         captured[0].provider_base_url.as_deref()
@@ -755,7 +755,7 @@ async fn openai_chat_completions_routes_each_channel_group_to_its_configured_cha
     );
     assert_eq!(202, captured[1].api_key_id);
     assert_eq!(20, captured[1].group_id);
-    assert_eq!("openrouter-premium", captured[1].provider_code);
+    assert_eq!("openrouter-premium", captured[1].supplier_code);
     assert_eq!(
         Some("http://provider-proxy.internal/openrouter-premium"),
         captured[1].provider_base_url.as_deref()
@@ -773,9 +773,9 @@ async fn openai_chat_completions_uses_group_channel_route_endpoint_for_selected_
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
                 Some("http://account-pool.internal/openrouter-standard"),
                 Some("vault://providers/openrouter/account/standard-pool"),
             )
@@ -820,7 +820,7 @@ async fn openai_chat_completions_uses_group_channel_route_endpoint_for_selected_
     assert_eq!(StatusCode::OK, response.status());
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert_eq!("gpt-4o-mini", captured[0].provider_model);
     assert_eq!(
         Some("http://account-pool.internal/openrouter-standard"),
@@ -910,14 +910,14 @@ async fn openai_chat_completions_channel_scoped_mapping_switches_target_route_on
             .with_catalog_key("openai/gpt-4o"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o",
             "gpt-4o",
             "openrouter",
             3001,
             "openrouter/gpt-4o-account",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/main"),
         ),
@@ -1005,13 +1005,13 @@ async fn openai_chat_completions_routes_catalog_model_through_channel_route_with
         )
         .for_provider("openrouter-gpt55", 3002),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-gpt55", 3002)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-gpt55", 3002)
+            .with_upstream_endpoint(
                 Some("http://account-pool.internal/openrouter-gpt55"),
                 Some("vault://providers/openrouter-gpt55/account/group-10"),
             )
-            .with_resource_scoped_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
     );
     add_group_routing_policy(
         &mut catalog,
@@ -1051,8 +1051,8 @@ async fn openai_chat_completions_routes_catalog_model_through_channel_route_with
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
     assert_eq!(10, captured[0].group_id);
-    assert_eq!(3002, captured[0].provider_channel_id);
-    assert_eq!("openrouter-gpt55", captured[0].provider_code);
+    assert_eq!(3002, captured[0].provider_account_id);
+    assert_eq!("openrouter-gpt55", captured[0].supplier_code);
     assert_eq!("gpt-5.5", captured[0].provider_model);
     assert_eq!(
         Some("http://account-pool.internal/openrouter-gpt55"),
@@ -1101,13 +1101,13 @@ async fn openai_chat_completions_accepts_slash_native_model_and_sends_native_mod
         )
         .for_provider("openrouter", 3003),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3003)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3003)
+            .with_upstream_endpoint(
                 Some("http://account-pool.internal/openrouter"),
                 Some("vault://providers/openrouter/account/group-10"),
             )
-            .with_resource_scoped_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
     );
     add_group_routing_policy(
         &mut catalog,
@@ -1146,7 +1146,7 @@ async fn openai_chat_completions_accepts_slash_native_model_and_sends_native_mod
     assert_eq!(StatusCode::OK, response.status());
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert_eq!("anthropic/claude-3-opus", captured[0].provider_model);
     assert_eq!(
         Some("http://account-pool.internal/openrouter"),
@@ -1192,13 +1192,13 @@ async fn openai_chat_completions_routes_alibaba_regional_model_through_region_sc
         )
         .for_provider("dashscope", 3101),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("dashscope", 3101)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("dashscope", 3101)
+            .with_upstream_endpoint(
                 Some("http://account-pool.internal/dashscope-cn"),
                 Some("vault://providers/dashscope/account/group-10"),
             )
-            .with_resource_scoped_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
     );
     add_group_routing_policy(
         &mut catalog,
@@ -1238,8 +1238,8 @@ async fn openai_chat_completions_routes_alibaba_regional_model_through_region_sc
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
     assert_eq!(10, captured[0].group_id);
-    assert_eq!(3101, captured[0].provider_channel_id);
-    assert_eq!("dashscope", captured[0].provider_code);
+    assert_eq!(3101, captured[0].provider_account_id);
+    assert_eq!("dashscope", captured[0].supplier_code);
     assert_eq!("qwen3.6-max-preview", captured[0].provider_model);
     assert_eq!(
         Some("http://account-pool.internal/dashscope-cn"),
@@ -1288,13 +1288,13 @@ async fn openai_chat_completions_routes_group_bound_channel_route_without_explic
         )
         .for_provider("dashscope", 3101),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("dashscope", 3101)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("dashscope", 3101)
+            .with_upstream_endpoint(
                 Some("http://account-pool.internal/dashscope-cn"),
                 Some("vault://providers/dashscope/account/group-10"),
             )
-            .with_resource_scoped_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
     );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -1324,8 +1324,8 @@ async fn openai_chat_completions_routes_group_bound_channel_route_without_explic
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
     assert_eq!(10, captured[0].group_id);
-    assert_eq!(3101, captured[0].provider_channel_id);
-    assert_eq!("dashscope", captured[0].provider_code);
+    assert_eq!(3101, captured[0].provider_account_id);
+    assert_eq!("dashscope", captured[0].supplier_code);
     assert_eq!("qwen3.6-max-preview", captured[0].provider_model);
     assert_eq!(
         Some("http://account-pool.internal/dashscope-cn"),
@@ -1352,44 +1352,44 @@ async fn openai_chat_completions_routes_model_candidates_through_bound_group_cha
     let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter-unbound",
             3001,
             "gpt-4o-mini-unbound",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-unbound"),
             Some("vault://providers/openrouter-unbound/account/main"),
         ),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter-bound",
             3002,
             "gpt-4o-mini-bound",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-bound"),
             Some("vault://providers/openrouter-bound/account/main"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-unbound", 3001).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-unbound", 3001).with_upstream_endpoint(
             Some("http://account-pool.internal/openrouter-unbound"),
             Some("vault://providers/openrouter-unbound/account/main"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-bound", 3002)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-bound", 3002)
+            .with_upstream_endpoint(
                 Some("http://account-pool.internal/openrouter-bound"),
                 Some("vault://providers/openrouter-bound/account/group-10"),
             )
-            .with_resource_scoped_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -1432,7 +1432,7 @@ async fn openai_chat_completions_routes_model_candidates_through_bound_group_cha
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![
+        .with_candidate_account_groups(vec![
             RouteCandidate::new(3001, 100),
             RouteCandidate::new(3002, 50),
         ]),
@@ -1465,8 +1465,8 @@ async fn openai_chat_completions_routes_model_candidates_through_bound_group_cha
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
     assert_eq!(10, captured[0].group_id);
-    assert_eq!(3002, captured[0].provider_channel_id);
-    assert_eq!("openrouter-bound", captured[0].provider_code);
+    assert_eq!(3002, captured[0].provider_account_id);
+    assert_eq!("openrouter-bound", captured[0].supplier_code);
     assert_eq!("gpt-4o-mini-bound", captured[0].provider_model);
     assert_eq!(
         Some("http://account-pool.internal/openrouter-bound"),
@@ -1526,7 +1526,7 @@ async fn openai_chat_completions_sanitizes_empty_route_snapshot_errors() {
     assert!(!message.contains("tenant_id"), "{message}");
     assert!(!message.contains("organization_id"), "{message}");
     assert!(!message.contains("user_id"), "{message}");
-    assert!(!message.contains("channel_group_code"), "{message}");
+    assert!(!message.contains("account_group_code"), "{message}");
 }
 
 #[tokio::test]
@@ -1541,7 +1541,7 @@ async fn openai_chat_completions_rejects_misconfigured_group_channel_route_witho
         10,
         20,
         "standard-group-policy",
-        RoutingPolicyScope::ChannelGroup,
+        RoutingPolicyScope::UpstreamAccountGroup,
         Some(10),
         Some(9101),
     ));
@@ -1556,7 +1556,7 @@ async fn openai_chat_completions_rejects_misconfigured_group_channel_route_witho
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(9999, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(9999, 100)]),
     );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -1617,14 +1617,14 @@ async fn openai_chat_completions_reports_pricing_unavailable_for_callable_route_
         vec!["chat", "tools"],
     ));
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter",
             3001,
             "openai/gpt-4o-mini",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/main"),
         ),
@@ -1635,7 +1635,7 @@ async fn openai_chat_completions_reports_pricing_unavailable_for_callable_route_
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -1702,20 +1702,20 @@ async fn openai_chat_completions_rejects_group_policy_missing_chat_capability_wi
     let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "global-openrouter",
             3003,
             "openai/gpt-4o-mini-global",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/global-openrouter"),
             Some("vault://providers/openrouter/account/global"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("global-openrouter", 3003).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("global-openrouter", 3003).with_upstream_endpoint(
             Some("http://provider-proxy.internal/global-openrouter"),
             Some("vault://providers/openrouter/account/global"),
         ),
@@ -1750,7 +1750,7 @@ async fn openai_chat_completions_rejects_group_policy_missing_chat_capability_wi
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3003, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3003, 100)]),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -1758,7 +1758,7 @@ async fn openai_chat_completions_rejects_group_policy_missing_chat_capability_wi
             10,
             20,
             "standard-group-embedding-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -1775,7 +1775,7 @@ async fn openai_chat_completions_rejects_group_policy_missing_chat_capability_wi
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -1829,7 +1829,7 @@ async fn openai_chat_completions_rejects_configured_group_policy_without_matchin
         10,
         20,
         "standard-group-policy",
-        RoutingPolicyScope::ChannelGroup,
+        RoutingPolicyScope::UpstreamAccountGroup,
         Some(10),
         Some(9101),
     ));
@@ -1844,7 +1844,7 @@ async fn openai_chat_completions_rejects_configured_group_policy_without_matchin
             r#"{"catalogKey":"openai/other-model"}"#,
             "openai/other-model",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -2005,17 +2005,17 @@ impl ChatCompletionRelay for FailingRelay {
 #[derive(Debug)]
 struct FailingPrimaryRelay {
     captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
-    failing_provider_code: &'static str,
+    failing_supplier_code: &'static str,
 }
 
 impl FailingPrimaryRelay {
     fn new(
         captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
-        failing_provider_code: &'static str,
+        failing_supplier_code: &'static str,
     ) -> Self {
         Self {
             captured,
-            failing_provider_code,
+            failing_supplier_code,
         }
     }
 }
@@ -2023,17 +2023,17 @@ impl FailingPrimaryRelay {
 #[derive(Debug)]
 struct RetryableStatusPrimaryRelay {
     captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
-    failing_provider_code: &'static str,
+    failing_supplier_code: &'static str,
 }
 
 impl RetryableStatusPrimaryRelay {
     fn new(
         captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
-        failing_provider_code: &'static str,
+        failing_supplier_code: &'static str,
     ) -> Self {
         Self {
             captured,
-            failing_provider_code,
+            failing_supplier_code,
         }
     }
 }
@@ -2052,10 +2052,10 @@ impl ChatCompletionRelay for RetryableStatusPrimaryRelay {
                 + 'a,
         >,
     > {
-        let provider_code = request.provider_code.clone();
+        let supplier_code = request.supplier_code.clone();
         self.captured.lock().unwrap().push(request);
         Box::pin(async move {
-            if provider_code == self.failing_provider_code {
+            if supplier_code == self.failing_supplier_code {
                 return Ok(ChatCompletionRelayResponse::json(
                     503,
                     serde_json::json!({
@@ -2101,10 +2101,10 @@ impl ChatCompletionRelay for FailingPrimaryRelay {
                 + 'a,
         >,
     > {
-        let provider_code = request.provider_code.clone();
+        let supplier_code = request.supplier_code.clone();
         self.captured.lock().unwrap().push(request);
         Box::pin(async move {
-            if provider_code == self.failing_provider_code {
+            if supplier_code == self.failing_supplier_code {
                 return Err(sdkwork_clawrouter_router_service::domain::DomainError::new(
                     "upstream connection failed",
                 ));
@@ -2179,17 +2179,17 @@ impl ChatCompletionStreamRelay for RecordingStreamRelay {
 #[derive(Debug)]
 struct FailingPrimaryStreamRelay {
     captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
-    failing_provider_code: &'static str,
+    failing_supplier_code: &'static str,
 }
 
 impl FailingPrimaryStreamRelay {
     fn new(
         captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
-        failing_provider_code: &'static str,
+        failing_supplier_code: &'static str,
     ) -> Self {
         Self {
             captured,
-            failing_provider_code,
+            failing_supplier_code,
         }
     }
 }
@@ -2208,10 +2208,10 @@ impl ChatCompletionStreamRelay for FailingPrimaryStreamRelay {
                 + 'a,
         >,
     > {
-        let provider_code = request.provider_code.clone();
+        let supplier_code = request.supplier_code.clone();
         self.captured.lock().unwrap().push(request);
         Box::pin(async move {
-            if provider_code == self.failing_provider_code {
+            if supplier_code == self.failing_supplier_code {
                 return Err(sdkwork_clawrouter_router_service::domain::DomainError::new(
                     "upstream stream connection failed",
                 ));
@@ -2348,7 +2348,7 @@ impl OpenAiInvocationPlugin for RecordingInvocationPlugin {
     ) -> OpenAiInvocationPluginFuture<'a> {
         self.events.lock().unwrap().push(format!(
             "after_route_selection:{}:{}",
-            route.provider_code, route.channel_id
+            route.supplier_code, route.account_id
         ));
         Box::pin(async { Ok(()) })
     }
@@ -2386,7 +2386,7 @@ impl OpenAiInvocationPlugin for RecordingInvocationPlugin {
     ) -> OpenAiInvocationPluginFuture<'a> {
         self.events.lock().unwrap().push(format!(
             "route_fault:{}:{}",
-            route.provider_code, fault.error_code
+            route.supplier_code, fault.error_code
         ));
         Box::pin(async { Ok(()) })
     }
@@ -2399,7 +2399,7 @@ impl OpenAiInvocationPlugin for RecordingInvocationPlugin {
     ) -> OpenAiInvocationPluginFuture<'a> {
         self.events.lock().unwrap().push(format!(
             "route_success:{}:{}",
-            route.provider_code, outcome.status_code
+            route.supplier_code, outcome.status_code
         ));
         Box::pin(async { Ok(()) })
     }
@@ -2425,7 +2425,7 @@ impl OpenAiInvocationPlugin for BlockingInvocationPlugin {
         self.events
             .lock()
             .unwrap()
-            .push(format!("blocked_before_relay:{}", route.provider_code));
+            .push(format!("blocked_before_relay:{}", route.supplier_code));
         Box::pin(async {
             Err(OpenAiInvocationPluginError::new(
                 StatusCode::TOO_MANY_REQUESTS,
@@ -2506,7 +2506,7 @@ impl OpenAiInvocationPlugin for RecordingErrorInvocationPlugin {
             error.status_code.as_u16(),
             error.code,
             route
-                .map(|route| route.provider_code.as_str())
+                .map(|route| route.supplier_code.as_str())
                 .unwrap_or("unrouted")
         ));
         Box::pin(async { Ok(()) })
@@ -2537,20 +2537,20 @@ async fn openai_chat_completions_fails_over_to_rule_fallback_after_primary_relay
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter-fallback",
             3002,
             "openai/gpt-4o-mini-fallback",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-fallback", 3002).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-fallback", 3002).with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
@@ -2581,7 +2581,7 @@ async fn openai_chat_completions_fails_over_to_rule_fallback_after_primary_relay
             10,
             20,
             "standard-group-failover-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -2598,7 +2598,7 @@ async fn openai_chat_completions_fails_over_to_rule_fallback_after_primary_relay
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)])
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)])
         .with_fallback_chain(vec![RouteCandidate::new(3002, 50)]),
     );
 
@@ -2632,14 +2632,14 @@ async fn openai_chat_completions_fails_over_to_rule_fallback_after_primary_relay
     assert_eq!(StatusCode::OK, response.status());
     let captured = captured.lock().unwrap();
     assert_eq!(2, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
-    assert_eq!("openrouter-fallback", captured[1].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
+    assert_eq!("openrouter-fallback", captured[1].supplier_code);
 
     let usage_records = usage_records.lock().unwrap();
     assert_eq!(1, usage_records.len());
     assert_server_generated_request_id(&usage_records[0].request_id, "req-failover");
-    assert_eq!("openrouter-fallback", usage_records[0].provider_code);
-    assert_eq!(3002, usage_records[0].channel_id);
+    assert_eq!("openrouter-fallback", usage_records[0].supplier_code);
+    assert_eq!(3002, usage_records[0].account_id);
     assert_eq!(2, usage_records[0].prompt_tokens);
     assert_eq!(3, usage_records[0].completion_tokens);
 
@@ -2656,20 +2656,20 @@ async fn openai_chat_completions_fails_over_after_retryable_provider_status() {
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter-fallback",
             3002,
             "openai/gpt-4o-mini-fallback",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-fallback", 3002).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-fallback", 3002).with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
@@ -2692,7 +2692,7 @@ async fn openai_chat_completions_fails_over_after_retryable_provider_status() {
             10,
             20,
             "standard-group-failover-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -2709,7 +2709,7 @@ async fn openai_chat_completions_fails_over_after_retryable_provider_status() {
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)])
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)])
         .with_fallback_chain(vec![RouteCandidate::new(3002, 50)]),
     );
 
@@ -2745,9 +2745,9 @@ async fn openai_chat_completions_fails_over_after_retryable_provider_status() {
     assert_eq!(StatusCode::OK, response.status());
     let captured = captured.lock().unwrap();
     assert_eq!(2, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
-    assert_eq!("openrouter-fallback", captured[1].provider_code);
-    assert_eq!(3002, usage_records.lock().unwrap()[0].channel_id);
+    assert_eq!("openrouter", captured[0].supplier_code);
+    assert_eq!("openrouter-fallback", captured[1].supplier_code);
+    assert_eq!(3002, usage_records.lock().unwrap()[0].account_id);
 }
 
 #[tokio::test]
@@ -2756,29 +2756,29 @@ async fn openai_chat_completions_uses_runtime_default_retry_policy_for_status_fa
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/main"),
             )
             .with_timeout_ms(30_000),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter-fallback",
             3002,
             "openai/gpt-4o-mini-fallback",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-fallback", 3002).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-fallback", 3002).with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
@@ -2801,7 +2801,7 @@ async fn openai_chat_completions_uses_runtime_default_retry_policy_for_status_fa
             10,
             20,
             "standard-group-failover-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -2818,7 +2818,7 @@ async fn openai_chat_completions_uses_runtime_default_retry_policy_for_status_fa
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)])
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)])
         .with_fallback_chain(vec![RouteCandidate::new(3002, 50)]),
     );
 
@@ -2858,7 +2858,7 @@ async fn openai_chat_completions_uses_runtime_default_retry_policy_for_status_fa
     assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert!(usage_records.lock().unwrap().is_empty());
 }
 
@@ -2869,20 +2869,20 @@ async fn openai_chat_completions_fail_closed_strategy_stops_after_retryable_prov
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter-fallback",
             3002,
             "openai/gpt-4o-mini-fallback",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-fallback", 3002).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-fallback", 3002).with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
@@ -2905,7 +2905,7 @@ async fn openai_chat_completions_fail_closed_strategy_stops_after_retryable_prov
             10,
             20,
             "standard-group-failover-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -2922,7 +2922,7 @@ async fn openai_chat_completions_fail_closed_strategy_stops_after_retryable_prov
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)])
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)])
         .with_fallback_chain(vec![RouteCandidate::new(3002, 50)]),
     );
 
@@ -2959,7 +2959,7 @@ async fn openai_chat_completions_fail_closed_strategy_stops_after_retryable_prov
     assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert!(usage_records.lock().unwrap().is_empty());
 }
 
@@ -2970,20 +2970,20 @@ async fn openai_chat_completions_stream_fails_over_to_rule_fallback_before_respo
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter-fallback",
             3002,
             "openai/gpt-4o-mini-fallback",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-fallback", 3002).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-fallback", 3002).with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter-fallback"),
             Some("vault://providers/openrouter/account/fallback"),
         ),
@@ -3014,7 +3014,7 @@ async fn openai_chat_completions_stream_fails_over_to_rule_fallback_before_respo
             10,
             20,
             "standard-group-stream-failover-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -3031,7 +3031,7 @@ async fn openai_chat_completions_stream_fails_over_to_rule_fallback_before_respo
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)])
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)])
         .with_fallback_chain(vec![RouteCandidate::new(3002, 50)]),
     );
 
@@ -3072,15 +3072,15 @@ async fn openai_chat_completions_stream_fails_over_to_rule_fallback_before_respo
 
     let captured = captured.lock().unwrap();
     assert_eq!(2, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
-    assert_eq!("openrouter-fallback", captured[1].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
+    assert_eq!("openrouter-fallback", captured[1].supplier_code);
 
     let usage_records = usage_records.lock().unwrap();
     assert_eq!(1, usage_records.len());
     assert_server_generated_request_id(&usage_records[0].request_id, "req-stream-failover");
     assert!(usage_records[0].streaming);
-    assert_eq!("openrouter-fallback", usage_records[0].provider_code);
-    assert_eq!(3002, usage_records[0].channel_id);
+    assert_eq!("openrouter-fallback", usage_records[0].supplier_code);
+    assert_eq!(3002, usage_records[0].account_id);
 
     let events = events.lock().unwrap();
     assert!(events.contains(&"route_fault:openrouter:provider_relay_failed".to_owned()));
@@ -3303,7 +3303,7 @@ async fn openai_chat_completions_relays_non_stream_request_after_auth_model_and_
     assert_eq!("standard-group", captured[0].group_code);
     assert_eq!("standard", captured[0].pricing_plan_code);
     assert_eq!("gpt-4o-mini", captured[0].model);
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert_eq!("gpt-4o-mini", captured[0].provider_model);
     assert_eq!(
         Some("http://provider-proxy.internal/openrouter"),
@@ -3353,7 +3353,7 @@ async fn openai_chat_completions_carries_channel_retry_policy_to_non_stream_rela
 
     let captured = captured.lock().unwrap();
     assert_eq!(1, captured.len());
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert_eq!(Some(30_000), captured[0].provider_timeout_ms);
     assert_eq!(
         Some(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
@@ -3406,14 +3406,14 @@ async fn openai_chat_completions_records_non_stream_usage_after_provider_success
     assert_eq!(20, command.organization_id);
     assert_eq!(30, command.user_id);
     assert_eq!(101, command.api_key_id);
-    assert_eq!(10, command.channel_group_id);
-    assert_eq!("standard-group", command.channel_group_snapshot);
+    assert_eq!(10, command.account_group_id);
+    assert_eq!("standard-group", command.upstream_account_group_snapshot);
     assert_eq!("sk-live", command.api_key_name_snapshot);
     assert_eq!("openai/gpt-4o-mini", command.catalog_key);
     assert_eq!("gpt-4o-mini", command.requested_model);
     assert_eq!("openai/gpt-4o-mini", command.requested_model_catalog_key);
-    assert_eq!("openrouter", command.provider_code);
-    assert_eq!(3001, command.channel_id);
+    assert_eq!("openrouter", command.supplier_code);
+    assert_eq!(3001, command.account_id);
     assert_eq!("gpt-4o-mini", command.provider_model);
     assert_eq!("gpt-4o-mini", command.provider_native_model);
     assert_eq!("/v1/chat/completions", command.request_path);
@@ -3636,7 +3636,7 @@ async fn openai_chat_completions_relays_stream_request_after_auth_model_and_pric
     assert_eq!(1, captured.len());
     assert_eq!(101, captured[0].api_key_id);
     assert_eq!("standard-group", captured[0].group_code);
-    assert_eq!("openrouter", captured[0].provider_code);
+    assert_eq!("openrouter", captured[0].supplier_code);
     assert_eq!("gpt-4o-mini", captured[0].provider_model);
     assert_eq!(Some(30_000), captured[0].provider_timeout_ms);
     assert_eq!(true, captured[0].request_body["stream"]);
@@ -3693,11 +3693,11 @@ async fn openai_chat_completions_records_failed_provider_status_trace_without_us
     assert_eq!(20, trace.organization_id);
     assert_eq!(30, trace.user_id);
     assert_eq!(101, trace.api_key_id);
-    assert_eq!("standard-group", trace.channel_group_snapshot);
+    assert_eq!("standard-group", trace.upstream_account_group_snapshot);
     assert_eq!("gpt-4o-mini", trace.requested_model);
     assert_eq!("openai/gpt-4o-mini", trace.requested_model_catalog_key);
-    assert_eq!("openrouter", trace.provider_code);
-    assert_eq!(3001, trace.channel_id);
+    assert_eq!("openrouter", trace.supplier_code);
+    assert_eq!(3001, trace.account_id);
     assert_eq!("gpt-4o-mini", trace.provider_model);
     assert_eq!("gpt-4o-mini", trace.provider_native_model);
     assert_eq!(Some(503), trace.http_status);

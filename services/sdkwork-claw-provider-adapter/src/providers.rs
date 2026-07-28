@@ -27,7 +27,7 @@ impl ProviderAdapter for CloudStorageDefinitionProviderAdapter {
         "s3-compatible-object-storage"
     }
 
-    fn provider_codes(&self) -> &'static [&'static str] {
+    fn supplier_codes(&self) -> &'static [&'static str] {
         &[
             "aws_s3",
             "minio",
@@ -67,7 +67,7 @@ impl ProviderAdapter for CloudIaasDefinitionProviderAdapter {
         "multi-cloud-iaas-compute"
     }
 
-    fn provider_codes(&self) -> &'static [&'static str] {
+    fn supplier_codes(&self) -> &'static [&'static str] {
         &[
             "aws_ec2",
             "azure_compute",

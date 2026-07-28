@@ -44,7 +44,7 @@ fn provider_native_invocation() -> Invocation {
         RoutingCapability::Video,
     );
     resource.surface = InvocationSurface::ProviderNative;
-    resource.provider_code = Some("kling".to_owned());
+    resource.supplier_code = Some("kling".to_owned());
     resource.endpoint_key = Some("kling.text_to_video".to_owned());
     resource.resource_type = ResourceType::ProviderNativeApi;
     resource.model_requirement = AiRouteModelRequirement::Optional;
@@ -75,10 +75,10 @@ fn openai_invocation() -> Invocation {
 #[tokio::test]
 async fn provider_native_invocation_uses_resolved_internal_adapter_target() {
     let target = InvocationAdapterTarget {
-        provider_code: "kling".to_owned(),
+        supplier_code: "kling".to_owned(),
         endpoint_key: "kling.text2video".to_owned(),
         base_url: "https://adapter.example".to_owned(),
-        path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+        path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
         standard_path: "/v1/videos/text2video".to_owned(),
         gateway_token: Some("adapter-token".to_owned()),
         shape: InvocationShape::Json,
@@ -118,10 +118,10 @@ async fn provider_native_invocation_stays_direct_when_no_adapter_route_matches()
 async fn openai_invocation_does_not_consult_provider_adapter_dispatch() {
     let interceptor = ProviderAdapterDispatchInterceptor::new(Arc::new(FixedAdapterResolver {
         target: Some(InvocationAdapterTarget {
-            provider_code: "openai".to_owned(),
+            supplier_code: "openai".to_owned(),
             endpoint_key: "should-not-apply".to_owned(),
             base_url: "https://adapter.example".to_owned(),
-            path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+            path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
             standard_path: "/v1/chat/completions".to_owned(),
             gateway_token: None,
             shape: InvocationShape::Json,

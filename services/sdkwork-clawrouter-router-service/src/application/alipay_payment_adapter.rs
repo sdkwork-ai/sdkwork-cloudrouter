@@ -32,7 +32,7 @@ const ALIPAY_PROVIDER_CODE: &str = "alipay";
 const ALIPAY_GATEWAY_URL: &str = "https://openapi.alipay.com/gateway.do";
 
 static ALIPAY_REAL_CAPABILITIES: PaymentProviderCapabilities = PaymentProviderCapabilities {
-    provider_code: ALIPAY_PROVIDER_CODE,
+    supplier_code: ALIPAY_PROVIDER_CODE,
     operations: STANDARD_PAYMENT_ADAPTER_OPERATIONS,
     sandbox_only: false,
 };
@@ -305,7 +305,7 @@ impl PaymentProviderAdapter for AlipayPaymentProviderAdapter {
             let fields = parse_form_body(&request.body, PaymentAdapterOperation::NormalizeWebhook)?;
             let payload = form_fields_to_json(&fields);
             Ok(PaymentNormalizedWebhookEvent {
-                provider_code: ALIPAY_PROVIDER_CODE.to_owned(),
+                supplier_code: ALIPAY_PROVIDER_CODE.to_owned(),
                 event_type: payload
                     .get("trade_status")
                     .and_then(Value::as_str)
@@ -360,7 +360,7 @@ impl PaymentProviderAdapter for AlipayPaymentProviderAdapter {
                 statement_id: Some(format!("alipay_{bill_type}_{bill_date}")),
                 content,
                 metadata: json!({
-                    "provider_code": ALIPAY_PROVIDER_CODE,
+                    "supplier_code": ALIPAY_PROVIDER_CODE,
                     "source_type": format!("alipay_{bill_type}_bill"),
                     "bill_type": bill_type,
                     "bill_date": bill_date,
@@ -386,7 +386,7 @@ impl PaymentProviderAdapter for AlipayPaymentProviderAdapter {
                 statement_id: request.statement_id,
                 item_count: parsed.item_count,
                 metadata: json!({
-                    "provider_code": ALIPAY_PROVIDER_CODE,
+                    "supplier_code": ALIPAY_PROVIDER_CODE,
                     "source_type": "alipay_trade_bill",
                     "gross_amount_minor": parsed.gross_amount_minor,
                     "fee_amount_minor": parsed.fee_amount_minor,
@@ -559,7 +559,7 @@ fn alipay_operation_outcome(
         .map(str::to_owned)
         .ok_or_else(|| invalid_response(operation, "Alipay response is missing trade id"))?;
     Ok(PaymentProviderOperationOutcome {
-        provider_code: ALIPAY_PROVIDER_CODE.to_owned(),
+        supplier_code: ALIPAY_PROVIDER_CODE.to_owned(),
         native_id: Some(native_id),
         raw_status: response
             .get("status")
@@ -919,7 +919,7 @@ fn normalized_optional(value: Option<String>) -> Option<String> {
 fn unsupported<T>(operation: PaymentAdapterOperation) -> PaymentAdapterFuture<'static, T> {
     Box::pin(async move {
         Err(PaymentProviderRegistryError::UnsupportedCapability {
-            provider_code: ALIPAY_PROVIDER_CODE.to_owned(),
+            supplier_code: ALIPAY_PROVIDER_CODE.to_owned(),
             operation,
         })
     })
@@ -930,7 +930,7 @@ fn invalid_request(
     message: impl Into<String>,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::InvalidProviderRequest {
-        provider_code: ALIPAY_PROVIDER_CODE.to_owned(),
+        supplier_code: ALIPAY_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
     }
@@ -942,7 +942,7 @@ fn provider_failed(
     retryable: bool,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::ProviderRequestFailed {
-        provider_code: ALIPAY_PROVIDER_CODE.to_owned(),
+        supplier_code: ALIPAY_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
         retryable,
@@ -954,7 +954,7 @@ fn invalid_response(
     message: impl Into<String>,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::InvalidProviderResponse {
-        provider_code: ALIPAY_PROVIDER_CODE.to_owned(),
+        supplier_code: ALIPAY_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
     }

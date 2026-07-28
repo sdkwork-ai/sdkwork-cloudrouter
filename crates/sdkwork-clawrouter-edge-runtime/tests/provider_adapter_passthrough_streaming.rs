@@ -54,7 +54,7 @@ async fn provider_adapter_streaming_passthrough_returns_headers_before_adapter_e
                     "endpointKey": "test.stream",
                     "method": "POST",
                     "standardPathPattern": "/v1/stream",
-                    "adapterPathTemplate": "/providers/{{provider_code}}{{standard_path}}",
+                    "adapterPathTemplate": "/providers/{{supplier_code}}{{standard_path}}",
                     "invocationShape": "sse_stream",
                     "status": "enabled",
                     "priority": 10

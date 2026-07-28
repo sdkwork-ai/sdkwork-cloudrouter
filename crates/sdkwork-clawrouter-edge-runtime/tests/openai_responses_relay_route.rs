@@ -5,9 +5,9 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderChannelRoute, ProviderRetryPolicy, RouteCandidate, RoutingCapability, RoutingPolicy,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    UpstreamAccountRoute, ProviderRetryPolicy, RouteCandidate, RoutingCapability, RoutingPolicy,
     RoutingPolicyScope, RoutingRule,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -34,23 +34,23 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         .with_catalog_key("openai/gpt-4.1-mini"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4.1-mini",
             "gpt-4.1-mini",
             "openrouter",
             3001,
             "openai/gpt-4.1-mini",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/responses"),
         )
         .with_timeout_ms(30_000)
         .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/responses"),
             )
@@ -63,7 +63,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -111,7 +111,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             10,
             20,
             "standard-group-responses-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -128,7 +128,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/gpt-4.1-mini"}"#,
             "openai/gpt-4.1-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog
 }
@@ -214,5 +214,5 @@ async fn gateway_can_mount_non_stream_responses_relay() {
 
     assert_eq!("resp-gateway", payload["id"]);
     assert_eq!("gateway-pong", payload["output"][0]["content"][0]["text"]);
-    assert_eq!("openrouter", captured.lock().unwrap()[0].provider_code);
+    assert_eq!("openrouter", captured.lock().unwrap()[0].supplier_code);
 }

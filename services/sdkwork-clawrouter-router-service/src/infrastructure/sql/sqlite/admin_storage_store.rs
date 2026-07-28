@@ -166,7 +166,7 @@ async fn list_providers(
         r#"
         SELECT
             CAST(p.id AS TEXT) AS id,
-            p.provider_code AS providerCode,
+            p.supplier_code AS providerCode,
             p.provider_type AS providerType,
             COALESCE(p.endpoint_url, '') AS endpointUrl,
             COALESCE(p.region, '') AS region,
@@ -221,7 +221,7 @@ async fn create_provider(
     sqlx::query(
         r#"
         INSERT INTO object_provider
-            (uuid, tenant_id, organization_id, provider_code, provider_type, endpoint_url, region,
+            (uuid, tenant_id, organization_id, supplier_code, provider_type, endpoint_url, region,
              credential_ref, path_style_enabled, supports_multipart, supports_lifecycle,
              supports_object_lock, health_status, idempotency_key, request_id, id)
         VALUES
@@ -233,13 +233,13 @@ async fn create_provider(
         &[
             &command.subject.tenant_id.to_string(),
             &command.subject.organization_id.to_string(),
-            &command.provider_code,
+            &command.supplier_code,
             &command.idempotency_key,
         ],
     ))
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.provider_type)
     .bind(command.endpoint_url.as_deref())
     .bind(command.region.as_deref())
@@ -388,7 +388,7 @@ async fn list_buckets(
             b.bucket_name AS bucketName,
             b.logical_scope AS logicalScope,
             CAST(b.provider_id AS TEXT) AS providerId,
-            p.provider_code AS providerCode,
+            p.supplier_code AS providerCode,
             p.provider_type AS providerType,
             COALESCE(b.bucket_region, p.region, '') AS region,
             COALESCE(b.bucket_region, '') AS bucketRegion,
@@ -573,7 +573,7 @@ async fn list_default_buckets(
             CAST(d.bucket_id AS TEXT) AS bucketId,
             b.bucket_name AS bucketName,
             CAST(b.provider_id AS TEXT) AS providerId,
-            p.provider_code AS providerCode,
+            p.supplier_code AS providerCode,
             p.provider_type AS providerType,
             COALESCE(b.bucket_region, p.region, '') AS region,
             {status_label} AS status,
@@ -928,11 +928,11 @@ async fn list_reconciliation_runs(
             CAST(r.id AS TEXT) AS id,
             CAST(r.id AS TEXT) AS runId,
             CAST(COALESCE(r.provider_id, 0) AS TEXT) AS providerId,
-            COALESCE(p.provider_code, '') AS providerCode,
+            COALESCE(p.supplier_code, '') AS providerCode,
             CAST(COALESCE(r.bucket_id, 0) AS TEXT) AS bucketId,
             COALESCE(b.bucket_name, '') AS bucketName,
             r.run_type AS runType,
-            COALESCE(p.provider_code, '') || '/' || COALESCE(b.bucket_name, '') AS scope,
+            COALESCE(p.supplier_code, '') || '/' || COALESCE(b.bucket_name, '') AS scope,
             CAST(COALESCE(r.missing_object_count, 0) + COALESCE(r.orphan_object_count, 0) + COALESCE(r.checksum_mismatch_count, 0) AS TEXT) AS issues,
             COALESCE(r.missing_object_count, 0) + COALESCE(r.orphan_object_count, 0) + COALESCE(r.checksum_mismatch_count, 0) AS issueCount,
             COALESCE(r.dry_run, 1) AS dryRun,

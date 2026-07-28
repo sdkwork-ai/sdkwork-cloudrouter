@@ -3,9 +3,9 @@ use sqlx::{Executor, Row};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::rows::{
-    AiModelRow, ChannelGroupMetricSnapshotRow, ChannelGroupRow, GatewayAccessPolicyRow,
+    AiModelRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, GatewayAccessPolicyRow,
     GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow, ModelPriceRow,
-    ModelProviderRouteRow, ModelVendorRow, PricingPlanRow, ProviderChannelRouteRow, QuotaPolicyRow,
+    ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow, UpstreamAccountRouteRow, QuotaPolicyRow,
     RoutingPolicyRow, RoutingRuleRow,
 };
 
@@ -63,15 +63,15 @@ pub async fn load_provider_routes(
     executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
     circuit_breaker_recovery_window_seconds: i64,
-) -> Result<Vec<ModelProviderRouteRow>, sqlx::Error> {
+) -> Result<Vec<ModelUpstreamRouteRow>, sqlx::Error> {
     let mapper = map_query(sql, |row| {
-        Ok(ModelProviderRouteRow {
+        Ok(ModelUpstreamRouteRow {
             catalog_key: row.try_get("catalog_key")?,
             model: row.try_get("model")?,
             api_code: row.try_get("api_code")?,
             region_code: row.try_get("region_code")?,
-            provider_code: row.try_get("provider_code")?,
-            channel_id: row.try_get("channel_id")?,
+            supplier_code: row.try_get("supplier_code")?,
+            account_id: row.try_get("account_id")?,
             credential_id: row.try_get("credential_id")?,
             credential_rotation: row.try_get("credential_rotation")?,
             credential_priority: row.try_get("credential_priority")?,
@@ -95,32 +95,32 @@ pub async fn load_provider_routes(
         .collect()
 }
 
-pub async fn load_provider_channel_routes(
+pub async fn load_upstream_account_routes(
     executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
     circuit_breaker_recovery_window_seconds: i64,
-) -> Result<Vec<ProviderChannelRouteRow>, sqlx::Error> {
+) -> Result<Vec<UpstreamAccountRouteRow>, sqlx::Error> {
     let mapper = map_query(sql, |row| {
-        Ok(ProviderChannelRouteRow {
-            provider_code: row.try_get("provider_code")?,
-            channel_id: row.try_get("channel_id")?,
+        Ok(UpstreamAccountRouteRow {
+            supplier_code: row.try_get("supplier_code")?,
+            account_id: row.try_get("account_id")?,
             credential_id: row.try_get("credential_id")?,
             credential_rotation: row.try_get("credential_rotation")?,
             credential_priority: row.try_get("credential_priority")?,
             credential_weight: row.try_get("credential_weight")?,
-            channel_code: row.try_get("channel_code")?,
+            account_code: row.try_get("account_code")?,
             region_code: row.try_get("region_code")?,
-            site_id: row.try_get("site_id")?,
-            site_code: row.try_get("site_code")?,
-            site_service_id: row.try_get("site_service_id")?,
-            site_service_code: row.try_get("site_service_code")?,
+            supplier_id: row.try_get("supplier_id")?,
+            supplier_code: row.try_get("supplier_code")?,
+            endpoint_id: row.try_get("endpoint_id")?,
+            endpoint_code: row.try_get("endpoint_code")?,
             base_url: row.try_get("base_url")?,
             secret_ref: row.try_get("secret_ref")?,
             auth_type: row.try_get("auth_type")?,
             auth_config_json: row.try_get("auth_config_json")?,
             timeout_ms: row.try_get("timeout_ms")?,
             retry_policy_json: row.try_get("retry_policy_json")?,
-            group_bindings_json: row.try_get("group_bindings_json")?,
+            account_group_bindings_json: row.try_get("account_group_bindings_json")?,
             channel_health_status: row.try_get("channel_health_status")?,
             credential_health_status: row.try_get("credential_health_status")?,
         })
@@ -174,7 +174,7 @@ pub async fn load_routing_rules(
             priority: row.try_get("priority")?,
             match_expression_json: row.try_get("match_expression_json")?,
             target_model: row.try_get("target_model")?,
-            candidate_channels_json: row.try_get("candidate_channels_json")?,
+            candidate_account_groups_json: row.try_get("candidate_account_groups_json")?,
             fallback_chain_json: row.try_get("fallback_chain_json")?,
             constraints_json: row.try_get("constraints_json")?,
         })
@@ -227,12 +227,12 @@ pub async fn load_pricing_plans(
     .await
 }
 
-pub async fn load_channel_groups(
+pub async fn load_upstream_account_groups(
     executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
-) -> Result<Vec<ChannelGroupRow>, sqlx::Error> {
+) -> Result<Vec<UpstreamAccountGroupRow>, sqlx::Error> {
     map_query(sql, |row| {
-        Ok(ChannelGroupRow {
+        Ok(UpstreamAccountGroupRow {
             id: row.try_get("id")?,
             tenant_id: row.try_get("tenant_id")?,
             organization_id: row.try_get("organization_id")?,
@@ -258,7 +258,7 @@ pub async fn load_api_keys(
             organization_id: row.try_get("organization_id")?,
             user_id: row.try_get("user_id")?,
             group_id: row.try_get("group_id")?,
-            group_bindings_json: row.try_get("group_bindings_json")?,
+            account_group_bindings_json: row.try_get("account_group_bindings_json")?,
             name: row.try_get("name")?,
             key_prefix: row.try_get("key_prefix")?,
             key_display_masked: row.try_get("key_display_masked")?,
@@ -337,12 +337,12 @@ pub async fn load_gateway_risk_rules(
     .await
 }
 
-pub async fn load_channel_group_metric_snapshots(
+pub async fn load_upstream_account_group_metric_snapshots(
     executor: impl sqlx::Executor<'_, Database = sqlx::Sqlite>,
     sql: &'static str,
-) -> Result<Vec<ChannelGroupMetricSnapshotRow>, sqlx::Error> {
+) -> Result<Vec<UpstreamAccountGroupMetricSnapshotRow>, sqlx::Error> {
     map_query(sql, |row| {
-        Ok(ChannelGroupMetricSnapshotRow {
+        Ok(UpstreamAccountGroupMetricSnapshotRow {
             group_id: row.try_get("group_id")?,
             capacity_used: row.try_get("capacity_used")?,
             capacity_limit: row.try_get("capacity_limit")?,
@@ -369,8 +369,8 @@ pub async fn load_prices(
             billing_meter_code: row.try_get("billing_meter_code")?,
             unit_price: row.try_get("unit_price")?,
             currency: row.try_get("currency")?,
-            provider_code: row.try_get("provider_code")?,
-            channel_id: row.try_get("channel_id")?,
+            supplier_code: row.try_get("supplier_code")?,
+            account_id: row.try_get("account_id")?,
             pricing_plan_code: row.try_get("pricing_plan_code")?,
         })
     })
@@ -422,7 +422,7 @@ fn api_key_from_row(row: SqliteRow) -> Result<GatewayApiKeyRow, sqlx::Error> {
         organization_id: row.try_get("organization_id")?,
         user_id: row.try_get("user_id")?,
         group_id: row.try_get("group_id")?,
-        group_bindings_json: row.try_get("group_bindings_json")?,
+        account_group_bindings_json: row.try_get("account_group_bindings_json")?,
         name: row.try_get("name")?,
         key_prefix: row.try_get("key_prefix")?,
         key_display_masked: row.try_get("key_display_masked")?,
@@ -512,7 +512,7 @@ pub async fn count_api_keys_paginated(
         .await
 }
 
-pub async fn load_paginated_channel_groups(
+pub async fn load_paginated_upstream_account_groups(
     pool: &sqlx::SqlitePool,
     tenant_id: i64,
     organization_id: i64,
@@ -532,7 +532,7 @@ pub async fn load_paginated_channel_groups(
             CAST(g.rate_multiplier AS TEXT) AS rate_multiplier,
             CAST(g.official_price_multiplier AS TEXT) AS official_price_multiplier,
             COUNT(*) OVER() AS total
-        FROM ai_channel_group g
+        FROM ai_upstream_account_group g
         WHERE g.deleted_at IS NULL
           AND g.status = 1
           AND (g.tenant_id = ? OR g.tenant_id = 0)
@@ -557,8 +557,8 @@ pub async fn load_paginated_channel_groups(
     .await
 }
 
-pub fn channel_group_from_row(row: &SqliteRow) -> DomainResult<crate::domain::ChannelGroup> {
-    ChannelGroupRow {
+pub fn upstream_account_group_from_row(row: &SqliteRow) -> DomainResult<crate::domain::UpstreamAccountGroup> {
+    UpstreamAccountGroupRow {
         id: row.try_get("id").map_err(row_error)?,
         tenant_id: row.try_get("tenant_id").map_err(row_error)?,
         organization_id: row.try_get("organization_id").map_err(row_error)?,

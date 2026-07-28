@@ -54,7 +54,7 @@ impl AdminModelRateLimitStore for SqliteAdminModelRateLimitStore {
             let mut tx = self.pool.begin().await.map_err(|error| {
                 store_error("failed to begin model rate limit transaction", error)
             })?;
-            let group = find_channel_group(&mut tx, &command).await?;
+            let group = find_upstream_account_group(&mut tx, &command).await?;
             let policy_id = upsert_quota_policy(&mut tx, &command, &group).await?;
             insert_config_snapshot(
                 &mut tx,
@@ -183,14 +183,14 @@ async fn list_model_rate_limits(
     })
 }
 
-async fn find_channel_group(
+async fn find_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
     command: &CreateAdminModelRateLimitCommand,
 ) -> DomainResult<GroupIdentity> {
     let row = sqlx::query(
         r#"
         SELECT id, COALESCE(group_code, '') AS code, COALESCE(group_name, '') AS name
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE (tenant_id = ? OR tenant_id = 0 OR tenant_id IS NULL)
           AND (organization_id = ? OR organization_id = 0 OR organization_id IS NULL)
           AND (group_code = ? OR group_name = ?)
@@ -211,12 +211,12 @@ async fn find_channel_group(
     )
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
-    .bind(&command.channel_group)
-    .bind(&command.channel_group)
+    .bind(&command.upstream_account_group)
+    .bind(&command.upstream_account_group)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(command.subject.tenant_id)
-    .bind(&command.channel_group)
+    .bind(&command.upstream_account_group)
     .fetch_optional(&mut **tx)
     .await
     .map_err(|error| store_error("failed to find channel group for model rate limit", error))?;
@@ -507,8 +507,8 @@ fn model_rate_limit_select_sql(predicate: &str) -> String {
             q.tenant_id,
             q.organization_id,
             COALESCE(q.model, '') AS model,
-            COALESCE(NULLIF(g.group_code, ''), NULLIF(g.group_name, ''), q.subject_ref_masked, '') AS channel_group,
-            COALESCE(g.group_name, '') AS channel_group_name,
+            COALESCE(NULLIF(g.group_code, ''), NULLIF(g.group_name, ''), q.subject_ref_masked, '') AS upstream_account_group,
+            COALESCE(g.group_name, '') AS upstream_account_group_name,
             q.group_id,
             q.requests_per_minute AS rpm,
             q.tokens_per_minute AS tpm,
@@ -517,7 +517,7 @@ fn model_rate_limit_select_sql(predicate: &str) -> String {
             CAST(q.deleted_at AS TEXT) AS deleted_at,
             COUNT(*) OVER() AS total
         FROM ai_quota_policy q
-        LEFT JOIN ai_channel_group g
+        LEFT JOIN ai_upstream_account_group g
           ON q.group_id = g.id
         {predicate}
         "#
@@ -531,9 +531,9 @@ fn item_from_row(row: sqlx::sqlite::SqliteRow) -> DomainResult<AdminModelRateLim
         tenant_id: row.try_get("tenant_id").map_err(row_error)?,
         organization_id: row.try_get("organization_id").map_err(row_error)?,
         model: row.try_get("model").map_err(row_error)?,
-        channel_group: row.try_get("channel_group").map_err(row_error)?,
-        channel_group_id: required_integer_cell(&row, "group_id")?,
-        channel_group_name: row.try_get("channel_group_name").map_err(row_error)?,
+        upstream_account_group: row.try_get("upstream_account_group").map_err(row_error)?,
+        account_group_id: required_integer_cell(&row, "group_id")?,
+        upstream_account_group_name: row.try_get("upstream_account_group_name").map_err(row_error)?,
         rpm: required_integer_cell(&row, "rpm")?,
         tpm: required_integer_cell(&row, "tpm")?,
         status: status_label(

@@ -1,7 +1,7 @@
 const SQLITE_ADMIN_ACCESS_GROUP_STORE: &str =
-    include_str!("../src/infrastructure/sql/sqlite/admin_channel_group_store.rs");
+    include_str!("../src/infrastructure/sql/sqlite/admin_upstream_account_group_store.rs");
 const POSTGRES_ADMIN_ACCESS_GROUP_STORE: &str =
-    include_str!("../src/infrastructure/sql/postgres/admin_channel_group_store.rs");
+    include_str!("../src/infrastructure/sql/postgres/admin_upstream_account_group_store.rs");
 const SQLITE_ADMIN_MODEL_RATE_LIMIT_STORE: &str =
     include_str!("../src/infrastructure/sql/sqlite/admin_model_rate_limit_store.rs");
 const POSTGRES_ADMIN_MODEL_RATE_LIMIT_STORE: &str =
@@ -55,7 +55,7 @@ fn assert_sql_not_contains(source: &str, forbidden: &str) {
 }
 
 #[test]
-fn admin_channel_group_default_pricing_plan_uses_public_zero_scope() {
+fn admin_upstream_account_group_default_pricing_plan_uses_public_zero_scope() {
     assert_sql_contains(
         SQLITE_ADMIN_ACCESS_GROUP_STORE,
         "AND (tenant_id = ? OR tenant_id = 0 OR tenant_id IS NULL)",

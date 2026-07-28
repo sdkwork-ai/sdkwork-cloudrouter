@@ -142,7 +142,7 @@ fn routing_from_resource(resource: &InvocationResource) -> InvocationRouting {
             )
         }
         ("openai/management/models", _, _) => {
-            InvocationRouting::new(AiRouteStrategy::PrimaryChannel, None)
+            InvocationRouting::new(AiRouteStrategy::PrimaryAccount, None)
         }
         _ => InvocationRouting::new(AiRouteStrategy::StatelessFailover, None),
     }

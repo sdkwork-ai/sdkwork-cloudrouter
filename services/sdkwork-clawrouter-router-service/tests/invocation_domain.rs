@@ -106,7 +106,7 @@ fn constructs_free_invocation_without_settlement() {
 
     assert!(!invocation.billing.pricing_required);
     assert!(!invocation.billing.settlement_required);
-    assert_eq!(AiRouteStrategy::PrimaryChannel, invocation.routing.strategy);
+    assert_eq!(AiRouteStrategy::PrimaryAccount, invocation.routing.strategy);
 }
 
 #[test]

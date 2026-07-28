@@ -173,7 +173,7 @@ async fn list_provider_accounts(
             a.account_code AS "accountCode",
             a.account_name AS name,
             a.account_name AS "accountName",
-            a.provider_code AS "providerCode",
+            a.supplier_code AS "providerCode",
             COALESCE(c.channel, '') AS channel,
             COALESCE(c.delivery_purpose, '') AS "deliveryPurpose",
             {status_label} AS status,
@@ -191,8 +191,8 @@ async fn list_provider_accounts(
           AND a.deleted_at IS NULL
           AND ($3::text IS NULL OR {status_label} = $3)
           AND ($4::text IS NULL OR c.channel = $4)
-          AND ($5::text IS NULL OR a.provider_code = $5)
-          AND ($6::text IS NULL OR lower(a.account_code) LIKE $6 OR lower(a.account_name) LIKE $6 OR lower(a.provider_code) LIKE $6)
+          AND ($5::text IS NULL OR a.supplier_code = $5)
+          AND ($6::text IS NULL OR lower(a.account_code) LIKE $6 OR lower(a.account_name) LIKE $6 OR lower(a.supplier_code) LIKE $6)
         ORDER BY a.updated_at DESC NULLS LAST, a.id DESC
         LIMIT $7 OFFSET $8
         "#,
@@ -202,7 +202,7 @@ async fn list_provider_accounts(
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
     .bind(query.channel.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(like_filter(query.q.as_deref()))
     .bind(query.page_size)
     .bind(query.offset)
@@ -226,7 +226,7 @@ async fn create_provider_account(
         pool,
         command.subject.tenant_id,
         command.subject.organization_id,
-        &command.provider_code,
+        &command.supplier_code,
         &command.account_code,
     )
     .await?
@@ -237,12 +237,12 @@ async fn create_provider_account(
             r#"
             SELECT id
             FROM integration_provider
-            WHERE provider_code = $1
+            WHERE supplier_code = $1
               AND deleted_at IS NULL
             LIMIT 1
             "#,
         )
-        .bind(&command.provider_code)
+        .bind(&command.supplier_code)
         .fetch_optional(pool)
         .await
         .map_err(store_error)?;
@@ -250,7 +250,7 @@ async fn create_provider_account(
         sqlx::query_scalar(
             r#"
             INSERT INTO integration_provider_account
-                (uuid, tenant_id, organization_id, status, provider_id, provider_code, account_code,
+                (uuid, tenant_id, organization_id, status, provider_id, supplier_code, account_code,
                  account_name, auth_type, base_url, auth_config, secret_ref, id)
             VALUES
                 ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12)
@@ -262,7 +262,7 @@ async fn create_provider_account(
             &[
                 &command.subject.tenant_id.to_string(),
                 &command.subject.organization_id.to_string(),
-                &command.provider_code,
+                &command.supplier_code,
                 &command.account_code,
                 &command.idempotency_key,
             ],
@@ -270,7 +270,7 @@ async fn create_provider_account(
         .bind(command.subject.tenant_id)
         .bind(command.subject.organization_id)
         .bind(provider_id)
-        .bind(&command.provider_code)
+        .bind(&command.supplier_code)
         .bind(&command.account_code)
         .bind(&command.account_name)
         .bind(auth_type_code(command.auth_type.as_deref()))
@@ -298,7 +298,7 @@ async fn create_provider_account(
         sqlx::query(
             r#"
             INSERT INTO messaging_provider_capability
-                (uuid, tenant_id, organization_id, status, provider_code, provider_account_id, channel,
+                (uuid, tenant_id, organization_id, status, supplier_code, provider_account_id, channel,
                  delivery_purpose, capability_schema, supports_template_sync, supports_delivery_receipt,
                  supports_test_send, supports_batch_send, supports_webhook, sandbox_supported, id)
             VALUES
@@ -317,7 +317,7 @@ async fn create_provider_account(
         ))
         .bind(command.subject.tenant_id)
         .bind(command.subject.organization_id)
-        .bind(&command.provider_code)
+        .bind(&command.supplier_code)
         .bind(account_id)
         .bind(&command.channel)
         .bind(&delivery_purpose)
@@ -364,7 +364,7 @@ async fn list_sender_identities(
             s.identity_code AS "identityCode",
             COALESCE(s.display_name, s.identity_code) AS name,
             COALESCE(s.display_name, s.identity_code) AS "displayName",
-            s.provider_code AS "providerCode",
+            s.supplier_code AS "providerCode",
             s.channel AS channel,
             s.approval_status AS "approvalStatus",
             {status_label} AS status,
@@ -376,7 +376,7 @@ async fn list_sender_identities(
           AND s.deleted_at IS NULL
           AND ($3::text IS NULL OR {status_label} = $3 OR s.approval_status = $3)
           AND ($4::text IS NULL OR s.channel = $4)
-          AND ($5::text IS NULL OR s.provider_code = $5)
+          AND ($5::text IS NULL OR s.supplier_code = $5)
           AND ($6::text IS NULL OR lower(s.identity_code) LIKE $6 OR lower(COALESCE(s.display_name, '')) LIKE $6)
         ORDER BY s.updated_at DESC NULLS LAST, s.id DESC
         LIMIT $7 OFFSET $8
@@ -387,7 +387,7 @@ async fn list_sender_identities(
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
     .bind(query.channel.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(like_filter(query.q.as_deref()))
     .bind(query.page_size)
     .bind(query.offset)
@@ -402,8 +402,8 @@ async fn create_sender_identity(
     command: CreateMessagingSenderIdentityCommand,
 ) -> DomainResult<AdminMessagingMutationItem> {
     let account_id = parse_required_id(&command.provider_account_id, "providerAccountId")?;
-    let provider_code =
-        load_provider_account_provider_code(pool, command.subject, account_id).await?;
+    let supplier_code =
+        load_provider_account_supplier_code(pool, command.subject, account_id).await?;
     ensure_provider_account_supports_channel(pool, command.subject, account_id, &command.channel)
         .await?;
     if let Some(id) =
@@ -416,7 +416,7 @@ async fn create_sender_identity(
     sqlx::query(
         r#"
         INSERT INTO messaging_sender_identity
-            (uuid, tenant_id, organization_id, status, provider_account_id, provider_code, channel,
+            (uuid, tenant_id, organization_id, status, provider_account_id, supplier_code, channel,
              identity_code, display_name, from_email, from_name, reply_to, domain_name, sign_name,
              sender_id, country_code, id)
         VALUES
@@ -436,7 +436,7 @@ async fn create_sender_identity(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(account_id)
-    .bind(&provider_code)
+    .bind(&supplier_code)
     .bind(&command.channel)
     .bind(&command.identity_code)
     .bind(command.display_name.as_deref())
@@ -785,7 +785,7 @@ async fn create_route_rule(
             r#"
             INSERT INTO messaging_route_rule_target
                 (uuid, tenant_id, organization_id, status, route_rule_id, provider_account_id,
-                 provider_code, sender_identity_id, template_binding_id, target_order, weight, id)
+                 supplier_code, sender_identity_id, template_binding_id, target_order, weight, id)
             VALUES
                 ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10, $11)
             "#,
@@ -802,7 +802,7 @@ async fn create_route_rule(
         .bind(command.subject.organization_id)
         .bind(rule_id)
         .bind(target.provider_account_id)
-        .bind(&target.provider_code)
+        .bind(&target.supplier_code)
         .bind(target.sender_identity_id)
         .bind(target.template_binding_id)
         .bind(target.target_order)
@@ -840,7 +840,7 @@ async fn list_send_requests(
             r.target_masked AS "targetMasked",
             r.delivery_status AS status,
             r.delivery_status AS "deliveryStatus",
-            COALESCE(a.provider_code, '') AS "providerCode",
+            COALESCE(a.supplier_code, '') AS "providerCode",
             CAST(r.created_at AS TEXT) AS "createdAt",
             CAST(r.created_at AS TEXT) AS "failedAt",
             CAST(r.created_at AS TEXT) AS "updatedAt",
@@ -856,7 +856,7 @@ async fn list_send_requests(
           AND ($3::text IS NULL OR r.delivery_status = $3)
           AND ($4::text IS NULL OR r.channel = $4)
           AND ($5::text IS NULL OR r.scene_code = $5)
-          AND ($6::text IS NULL OR a.provider_code = $6)
+          AND ($6::text IS NULL OR a.supplier_code = $6)
           AND ($7::text IS NULL OR r.target_hash = $7)
         ORDER BY r.created_at DESC, r.id DESC
         LIMIT $8 OFFSET $9
@@ -867,7 +867,7 @@ async fn list_send_requests(
     .bind(query.status.as_deref())
     .bind(query.channel.as_deref())
     .bind(query.scene_code.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.target_hash.as_deref())
     .bind(query.page_size)
     .bind(query.offset)
@@ -989,7 +989,7 @@ async fn send_template_like(
         r#"
         SELECT r.request_no,
                r.delivery_status,
-               COALESCE(a.provider_code, pa.provider_code, '') AS provider_code
+               COALESCE(a.supplier_code, pa.supplier_code, '') AS supplier_code
         FROM messaging_send_request r
         LEFT JOIN messaging_send_attempt a
           ON a.tenant_id = r.tenant_id
@@ -1017,7 +1017,7 @@ async fn send_template_like(
         return Ok(AdminMessagingTestSendItem {
             request_id: string_cell(&row, "request_no")?,
             delivery_status: string_cell(&row, "delivery_status")?,
-            provider_code: non_empty_string_cell(&row, "provider_code")?,
+            supplier_code: non_empty_string_cell(&row, "supplier_code")?,
         });
     }
 
@@ -1131,7 +1131,7 @@ async fn send_template_like(
     .execute(pool)
     .await
     .map_err(|error| write_error("failed to create messaging test send request", error))?;
-    let provider_code = target.as_ref().map(|target| target.provider_code.clone());
+    let supplier_code = target.as_ref().map(|target| target.supplier_code.clone());
     let mut send_attempt_id = None;
     if let (Some(target), "queued") = (target.as_ref(), delivery_status) {
         let attempt_id = next_claw_runtime_id("messaging_send_attempt")?;
@@ -1139,7 +1139,7 @@ async fn send_template_like(
             r#"
             INSERT INTO messaging_send_attempt
                 (uuid, tenant_id, organization_id, request_id, payload_hash, send_request_id, attempt_no,
-                 provider_code, provider_account_id, provider_status, attempted_at, id)
+                 supplier_code, provider_account_id, provider_status, attempted_at, id)
             VALUES
                 ($1, $2, $3, $4, $5, $6, 1, $7, $8, 'queued', CURRENT_TIMESTAMP, $9)
             "#,
@@ -1150,7 +1150,7 @@ async fn send_template_like(
         .bind(request_id)
         .bind(&payload_hash)
         .bind(send_request_id)
-        .bind(&target.provider_code)
+        .bind(&target.supplier_code)
         .bind(target.provider_account_id)
         .bind(attempt_id)
         .execute(pool)
@@ -1158,7 +1158,7 @@ async fn send_template_like(
         .map_err(|error| write_error("failed to create messaging test send attempt", error))?;
         send_attempt_id = Some(attempt_id);
     }
-    let event_provider_code = provider_code.as_deref().unwrap_or("unresolved");
+    let event_supplier_code = supplier_code.as_deref().unwrap_or("unresolved");
     insert_delivery_event(
         pool,
         subject,
@@ -1166,7 +1166,7 @@ async fn send_template_like(
         &payload_hash,
         send_request_id,
         send_attempt_id,
-        event_provider_code,
+        event_supplier_code,
         delivery_status,
         &serde_json::json!({
             "sceneCode": scene_code,
@@ -1216,7 +1216,7 @@ async fn send_template_like(
     Ok(AdminMessagingTestSendItem {
         request_id: request_no,
         delivery_status: delivery_status.to_owned(),
-        provider_code,
+        supplier_code,
     })
 }
 
@@ -1495,14 +1495,14 @@ struct RouteRuleRow {
 #[derive(Debug, Clone)]
 struct RouteTargetRow {
     provider_account_id: i64,
-    provider_code: String,
+    supplier_code: String,
     sender_identity_id: Option<i64>,
 }
 
 #[derive(Debug, Clone)]
 struct ValidatedRouteRuleTarget {
     provider_account_id: i64,
-    provider_code: String,
+    supplier_code: String,
     sender_identity_id: Option<i64>,
     template_binding_id: Option<i64>,
     target_order: i64,
@@ -1586,7 +1586,7 @@ async fn load_route_targets(
         SELECT
             CAST(id AS TEXT) AS id,
             CAST(provider_account_id AS TEXT) AS "providerAccountId",
-            provider_code AS "providerCode",
+            supplier_code AS "providerCode",
             CAST(sender_identity_id AS TEXT) AS "senderIdentityId",
             CAST(template_binding_id AS TEXT) AS "templateBindingId",
             target_order AS "targetOrder",
@@ -1619,7 +1619,7 @@ async fn load_first_route_target(
 ) -> DomainResult<Option<RouteTargetRow>> {
     sqlx::query(
         r#"
-        SELECT provider_account_id, provider_code, sender_identity_id
+        SELECT provider_account_id, supplier_code, sender_identity_id
         FROM messaging_route_rule_target
         WHERE tenant_id = $1
           AND organization_id = $2
@@ -1639,7 +1639,7 @@ async fn load_first_route_target(
     .map(|row| {
         Ok(RouteTargetRow {
             provider_account_id: integer_cell(&row, "provider_account_id")?,
-            provider_code: string_cell(&row, "provider_code")?,
+            supplier_code: string_cell(&row, "supplier_code")?,
             sender_identity_id: optional_integer_cell(&row, "sender_identity_id")?,
         })
     })
@@ -1884,7 +1884,7 @@ async fn insert_delivery_event(
     payload_hash: &str,
     send_request_id: i64,
     send_attempt_id: Option<i64>,
-    provider_code: &str,
+    supplier_code: &str,
     event_type: &str,
     payload_redacted: &serde_json::Value,
 ) -> DomainResult<()> {
@@ -1900,7 +1900,7 @@ async fn insert_delivery_event(
         r#"
         INSERT INTO messaging_delivery_event
             (uuid, tenant_id, organization_id, request_id, payload_hash, send_request_id,
-             send_attempt_id, provider_code, provider_event_id, provider_message_id,
+             send_attempt_id, supplier_code, provider_event_id, provider_message_id,
              event_type, event_at, payload_redacted, id)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, $10, CURRENT_TIMESTAMP, $11::jsonb, $12)
@@ -1916,7 +1916,7 @@ async fn insert_delivery_event(
     .bind(payload_hash)
     .bind(send_request_id)
     .bind(send_attempt_id)
-    .bind(provider_code)
+    .bind(supplier_code)
     .bind(provider_event_id)
     .bind(event_type)
     .bind(json_text(payload_redacted))
@@ -1931,7 +1931,7 @@ async fn existing_provider_account_id(
     pool: &PgPool,
     tenant_id: i64,
     organization_id: i64,
-    provider_code: &str,
+    supplier_code: &str,
     account_code: &str,
 ) -> DomainResult<Option<i64>> {
     sqlx::query_scalar(
@@ -1940,7 +1940,7 @@ async fn existing_provider_account_id(
         FROM integration_provider_account
         WHERE tenant_id = $1
           AND organization_id = $2
-          AND provider_code = $3
+          AND supplier_code = $3
           AND account_code = $4
           AND deleted_at IS NULL
         LIMIT 1
@@ -1948,7 +1948,7 @@ async fn existing_provider_account_id(
     )
     .bind(tenant_id)
     .bind(organization_id)
-    .bind(provider_code)
+    .bind(supplier_code)
     .bind(account_code)
     .fetch_optional(pool)
     .await
@@ -2040,8 +2040,8 @@ async fn validate_route_rule_targets(
             &command.channel,
         )
         .await?;
-        let provider_code =
-            load_provider_account_provider_code(pool, command.subject, provider_account_id).await?;
+        let supplier_code =
+            load_provider_account_supplier_code(pool, command.subject, provider_account_id).await?;
         let sender_identity_id = optional_parsed_id(
             target.sender_identity_id.as_deref(),
             "targets.senderIdentityId",
@@ -2060,7 +2060,7 @@ async fn validate_route_rule_targets(
         )?;
         targets.push(ValidatedRouteRuleTarget {
             provider_account_id,
-            provider_code,
+            supplier_code,
             sender_identity_id,
             template_binding_id,
             target_order: target.target_order,
@@ -2145,14 +2145,14 @@ async fn existing_route_rule_id(
     .map_err(store_error)
 }
 
-async fn load_provider_account_provider_code(
+async fn load_provider_account_supplier_code(
     pool: &PgPool,
     subject: crate::ports::AdminMessagingSubject,
     account_id: i64,
 ) -> DomainResult<String> {
     sqlx::query_scalar(
         r#"
-        SELECT provider_code
+        SELECT supplier_code
         FROM integration_provider_account
         WHERE tenant_id = $1
           AND organization_id = $2

@@ -29,7 +29,7 @@ async fn admin_messaging_route_exposes_delivery_management_center() {
 
     for (path, expected_id) in [
         (
-            "/backend/v3/api/messaging/provider_accounts?page=2&page_size=25&status=active&channel=sms&provider_code=aliyun&q=main",
+            "/backend/v3/api/messaging/provider_accounts?page=2&page_size=25&status=active&channel=sms&supplier_code=aliyun&q=main",
             "provider-account-1",
         ),
         (
@@ -513,7 +513,7 @@ impl AdminMessagingStore for TestAdminMessagingStore {
             assert_eq!(25, query.page_size);
             assert_eq!(Some("active"), query.status.as_deref());
             assert_eq!(Some("sms"), query.channel.as_deref());
-            assert_eq!(Some("aliyun"), query.provider_code.as_deref());
+            assert_eq!(Some("aliyun"), query.supplier_code.as_deref());
             assert_eq!(Some("main"), query.q.as_deref());
             Ok(collection("provider-account-1", query))
         })
@@ -524,7 +524,7 @@ impl AdminMessagingStore for TestAdminMessagingStore {
         command: CreateMessagingProviderAccountCommand,
     ) -> AdminMessagingCommandFuture<'a, AdminMessagingMutationItem> {
         Box::pin(async move {
-            assert_eq!("aliyun", command.provider_code);
+            assert_eq!("aliyun", command.supplier_code);
             assert_eq!("primary-sms", command.account_code);
             assert_eq!("Primary SMS", command.account_name);
             assert_eq!("sms", command.channel);
@@ -690,7 +690,7 @@ impl AdminMessagingStore for TestAdminMessagingStore {
             Ok(AdminMessagingTestSendItem {
                 request_id: "message-request-1".to_owned(),
                 delivery_status: "queued".to_owned(),
-                provider_code: Some("smtp".to_owned()),
+                supplier_code: Some("smtp".to_owned()),
             })
         })
     }
@@ -714,7 +714,7 @@ impl AdminMessagingStore for TestAdminMessagingStore {
             Ok(AdminMessagingTestSendItem {
                 request_id: "message-request-marketing".to_owned(),
                 delivery_status: "queued".to_owned(),
-                provider_code: Some("sendgrid".to_owned()),
+                supplier_code: Some("sendgrid".to_owned()),
             })
         })
     }

@@ -728,7 +728,7 @@ impl ProviderPassthroughRuntime {
         let standard_path = standard_path_from_passthrough_uri(request.uri())?;
         if let Some(adapter) = &self.adapter {
             let lookup = ProviderAdapterLookup {
-                provider_code: target.provider(),
+                supplier_code: target.provider(),
                 method: request.method().as_str(),
                 standard_path: standard_path.as_str(),
                 capability: None,
@@ -773,7 +773,7 @@ impl ProviderPassthroughRuntime {
         let standard_path = standard_path_from_passthrough_uri(request.uri())?;
         if let Some(adapter) = &self.adapter {
             let lookup = ProviderAdapterLookup {
-                provider_code: target.provider(),
+                supplier_code: target.provider(),
                 method: request.method().as_str(),
                 standard_path: standard_path.as_str(),
                 capability: None,
@@ -861,7 +861,7 @@ impl ProviderPassthroughRuntime {
         adapter: &ProviderNativeAdapterRuntime,
         route: ProviderAdapterRouteConfig,
         standard_path: String,
-        channel_id: i64,
+        account_id: i64,
         region_code: &str,
         timeout_ms: Option<u64>,
     ) -> Result<
@@ -884,7 +884,7 @@ impl ProviderPassthroughRuntime {
             standard_path,
             context,
             request_body,
-            channel_id,
+            account_id,
             region_code,
             timeout_ms,
         );
@@ -1004,11 +1004,11 @@ where
     let region_code = adapter_provider_region_code(invocation)?;
     let price = PricingResolver::new(catalog).resolve(ResolveModelPriceQuery {
         api_key_id: context.api_key_id,
-        channel_group_id: Some(context.group_id),
+        account_group_id: Some(context.group_id),
         model: catalog_key.clone(),
         billing_meter: billing_meter.clone(),
-        provider_code: Some(invocation.provider.provider_code.clone()),
-        channel_id: Some(invocation.provider.channel_id),
+        supplier_code: Some(invocation.provider.supplier_code.clone()),
+        account_id: Some(invocation.provider.account_id),
         region_code: Some(region_code.clone()),
     })?;
     let official_reference_amount = adapter_meter_amount(
@@ -1054,13 +1054,13 @@ where
         user_id: context.user_id,
         api_key_id: context.api_key_id,
         api_key_name_snapshot: context.api_key_name_snapshot.clone(),
-        channel_group_id: context.group_id,
-        channel_group_snapshot: context.group_code.clone(),
+        account_group_id: context.group_id,
+        upstream_account_group_snapshot: context.group_code.clone(),
         catalog_key,
         requested_model,
         requested_model_catalog_key,
-        provider_code: invocation.provider.provider_code.clone(),
-        channel_id: invocation.provider.channel_id,
+        supplier_code: invocation.provider.supplier_code.clone(),
+        account_id: invocation.provider.account_id,
         provider_model: provider_native_model.clone(),
         provider_native_model,
         region_code,
@@ -1119,7 +1119,7 @@ fn adapter_requested_model_catalog_key(
     }
     let provider_model = invocation.provider.provider_model.trim();
     let catalog_key = canonical_provider_native_catalog_key(
-        invocation.provider.provider_code.as_str(),
+        invocation.provider.supplier_code.as_str(),
         provider_model,
     );
     ensure_canonical_model_catalog_key(&catalog_key, "providerModel")?;
@@ -1374,8 +1374,8 @@ fn adapter_usage_pricing_snapshot(
             "providerNativeModel": provider_native_model
         },
         "provider": {
-            "code": invocation.provider.provider_code.as_str(),
-            "channelId": invocation.provider.channel_id,
+            "code": invocation.provider.supplier_code.as_str(),
+            "channelId": invocation.provider.account_id,
             "regionCode": invocation.provider.region_code.as_str()
         },
         "pricingPlan": {
@@ -1464,7 +1464,7 @@ fn build_provider_native_adapter_invocation(
     standard_path: String,
     context: Option<&AuthenticatedApiKeyContext>,
     request_body: Value,
-    channel_id: i64,
+    account_id: i64,
     region_code: &str,
     timeout_ms: Option<u64>,
 ) -> AdapterInvocationRequest {
@@ -1487,8 +1487,8 @@ fn build_provider_native_adapter_invocation(
         },
         subject: adapter_subject(context),
         provider: AdapterProviderContext {
-            provider_code: target.provider().to_owned(),
-            channel_id,
+            supplier_code: target.provider().to_owned(),
+            account_id,
             region_code: normalized_adapter_provider_region_code(region_code),
             provider_model,
             base_url: Some(target.base_url().to_owned()),
@@ -1617,7 +1617,7 @@ fn standard_api_code_for_provider_adapter_route(
         .and_then(provider_native_api_code_from_endpoint_key)
         .or_else(|| {
             provider_native_api_code_from_standard_path(
-                route.provider_code.as_str(),
+                route.supplier_code.as_str(),
                 route.standard_path_pattern.as_str(),
             )
         })
@@ -1696,19 +1696,19 @@ fn provider_native_model_from_standard_path(path: &str) -> Option<String> {
 }
 
 fn canonical_provider_native_catalog_key(
-    provider_code: &str,
+    supplier_code: &str,
     provider_native_model: &str,
 ) -> String {
-    let provider_code = provider_code.trim();
+    let supplier_code = supplier_code.trim();
     let provider_native_model = provider_native_model.trim();
     let provider_prefix = provider_native_model
         .split('/')
         .map(str::trim)
         .find(|part| !part.is_empty());
-    if provider_prefix == Some(provider_code) {
+    if provider_prefix == Some(supplier_code) {
         provider_native_model.to_owned()
     } else {
-        format!("{provider_code}/{provider_native_model}")
+        format!("{supplier_code}/{provider_native_model}")
     }
 }
 
@@ -1918,7 +1918,7 @@ mod tests {
     use super::*;
     use sdkwork_clawrouter_router_service::domain::ModelVendor;
     use sdkwork_clawrouter_router_service::domain::{
-        AiModel, ChannelGroup, GatewayApiKey, ModelPrice, ModelProviderRoute,
+        AiModel, UpstreamAccountGroup, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
         ModelVendorDefinition, Money, PriceSide, PricingPlan,
     };
     use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -2058,7 +2058,7 @@ mod tests {
     #[test]
     fn provider_adapter_standard_api_code_never_falls_back_to_private_endpoint_key() {
         let mut route = ProviderAdapterRouteConfig {
-            provider_code: "kling".to_owned(),
+            supplier_code: "kling".to_owned(),
             adapter_kind: sdkwork_claw_provider_adapter_contract::AdapterKind::InternalHttp,
             adapter_base_url: "http://127.0.0.1:39110".to_owned(),
             capability: Some("video_generation".to_owned()),
@@ -2081,7 +2081,7 @@ mod tests {
             standard_api_code_for_provider_adapter_route(&route)
         );
 
-        route.provider_code = "tencent-cloud".to_owned();
+        route.supplier_code = "tencent-cloud".to_owned();
         route.standard_path_pattern = "/vidu/ent/v2/start-end2video".to_owned();
         assert_eq!(
             Some("vidu.start_end_to_video".to_owned()),
@@ -2113,14 +2113,14 @@ mod tests {
             vec!["video"],
         ));
         catalog.add_provider_route(
-            ModelProviderRoute::new_for_catalog_key(
+            ModelUpstreamRoute::new_for_catalog_key(
                 "tencent-cloud/vidu2.0",
                 "vidu2.0",
                 "tencent-cloud",
                 9301,
                 "vidu2.0",
             )
-            .with_provider_endpoint(Some("https://example.invalid/vidu"), Some("vault://test")),
+            .with_upstream_endpoint(Some("https://example.invalid/vidu"), Some("vault://test")),
         );
         catalog.add_plan(PricingPlan::new(
             "standard",
@@ -2128,7 +2128,7 @@ mod tests {
             DecimalValue::parse("1.000000").unwrap(),
             Money::usd("0.000000").unwrap(),
         ));
-        catalog.add_channel_group(ChannelGroup::new(
+        catalog.add_upstream_account_group(UpstreamAccountGroup::new(
             10,
             "standard-group",
             "standard",
@@ -2213,7 +2213,7 @@ mod tests {
             vec!["video"],
         ));
         catalog.add_provider_route(
-            ModelProviderRoute::new_for_catalog_key(
+            ModelUpstreamRoute::new_for_catalog_key(
                 "tencent-cloud/vidu2.0",
                 "vidu2.0",
                 "tencent-cloud",
@@ -2223,7 +2223,7 @@ mod tests {
             .with_region_code("global"),
         );
         catalog.add_provider_route(
-            ModelProviderRoute::new_for_catalog_key(
+            ModelUpstreamRoute::new_for_catalog_key(
                 "tencent-cloud/vidu2.0",
                 "vidu2.0",
                 "tencent-cloud",
@@ -2238,7 +2238,7 @@ mod tests {
             DecimalValue::parse("1.000000").unwrap(),
             Money::cny("0.000000").unwrap(),
         ));
-        catalog.add_channel_group(ChannelGroup::new(
+        catalog.add_upstream_account_group(UpstreamAccountGroup::new(
             10,
             "standard-group",
             "standard",
@@ -2367,14 +2367,14 @@ mod tests {
             vec!["text"],
         ));
         catalog.add_provider_route(
-            ModelProviderRoute::new_for_catalog_key(
+            ModelUpstreamRoute::new_for_catalog_key(
                 "openrouter/anthropic/claude-3-opus",
                 "anthropic/claude-3-opus",
                 "openrouter",
                 9302,
                 "anthropic/claude-3-opus",
             )
-            .with_provider_endpoint(
+            .with_upstream_endpoint(
                 Some("https://openrouter.example/api/v1"),
                 Some("vault://openrouter/test"),
             ),
@@ -2385,7 +2385,7 @@ mod tests {
             DecimalValue::parse("1.000000").unwrap(),
             Money::usd("0.000000").unwrap(),
         ));
-        catalog.add_channel_group(ChannelGroup::new(
+        catalog.add_upstream_account_group(UpstreamAccountGroup::new(
             10,
             "standard-group",
             "standard",
@@ -2403,8 +2403,8 @@ mod tests {
         let context = test_api_key_context();
         let mut invocation =
             test_adapter_invocation("openrouter.chat", "/openrouter/v1/chat/completions");
-        invocation.provider.provider_code = "openrouter".to_owned();
-        invocation.provider.channel_id = 9302;
+        invocation.provider.supplier_code = "openrouter".to_owned();
+        invocation.provider.account_id = 9302;
         invocation.provider.provider_model = "anthropic/claude-3-opus".to_owned();
         let response = AdapterInvocationResponse::json_task(
             200,
@@ -2437,7 +2437,7 @@ mod tests {
         let context = test_api_key_context();
         let mut invocation =
             test_adapter_invocation("openrouter.chat", "/openrouter/v1/chat/completions");
-        invocation.provider.provider_code = "openrouter".to_owned();
+        invocation.provider.supplier_code = "openrouter".to_owned();
         invocation.provider.provider_model = "openrouter//anthropic/claude-3-opus".to_owned();
         let response = AdapterInvocationResponse::json_task(
             200,
@@ -2502,8 +2502,8 @@ mod tests {
                 pricing_plan_code: "standard".to_owned(),
             },
             provider: AdapterProviderContext {
-                provider_code: "tencent-cloud".to_owned(),
-                channel_id: 9301,
+                supplier_code: "tencent-cloud".to_owned(),
+                account_id: 9301,
                 region_code: "global".to_owned(),
                 provider_model: "vidu2.0".to_owned(),
                 base_url: None,

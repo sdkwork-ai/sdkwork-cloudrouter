@@ -333,19 +333,19 @@ async fn assert_canonical_schema(pool: &SqlitePool) {
 async fn assert_canonical_routing_seed(pool: &SqlitePool) {
     let channel = sqlx::query(
         r#"
-        SELECT id, provider_code, channel_type, protocol_code, base_url, status
+        SELECT id, supplier_code, channel_type, protocol_code, base_url, status
         FROM ai_channel
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_code = 'openai-default'
+          AND account_code = 'openai-default'
           AND deleted_at IS NULL
         "#,
     )
     .fetch_one(pool)
     .await
     .expect("default OpenAI channel seed");
-    let channel_id = channel.get::<i64, _>("id");
-    assert_eq!("openai", channel.get::<String, _>("provider_code"));
+    let account_id = channel.get::<i64, _>("id");
+    assert_eq!("openai", channel.get::<String, _>("supplier_code"));
     assert_eq!("official", channel.get::<String, _>("channel_type"));
     assert_eq!(
         "openai_compatible",
@@ -367,27 +367,27 @@ async fn assert_canonical_routing_seed(pool: &SqlitePool) {
         FROM ai_channel_credential
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_id = ?
-          AND channel_code = 'openai-default'
+          AND account_id = ?
+          AND account_code = 'openai-default'
           AND credential_ref = 'secret://ai-channel-credentials/openai/default'
           AND status = 1
           AND deleted_at IS NULL
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .fetch_one(pool)
     .await
     .expect("default OpenAI credential reference seed");
     assert_eq!(1, credential_count);
 
-    let channel_group_id: i64 = sqlx::query_scalar(
+    let account_group_id: i64 = sqlx::query_scalar(
         r#"
         SELECT id
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE tenant_id = 100001
           AND organization_id = 0
           AND group_code = 'standard-group'
-          AND provider_code = 'openai'
+          AND supplier_code = 'openai'
           AND status = 1
           AND deleted_at IS NULL
         "#,
@@ -399,18 +399,18 @@ async fn assert_canonical_routing_seed(pool: &SqlitePool) {
     let member_count: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(*)
-        FROM ai_channel_group_member
+        FROM ai_upstream_account_group_member
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_group_id = ?
-          AND channel_id = ?
+          AND account_group_id = ?
+          AND account_id = ?
           AND enabled = 1
           AND status = 1
           AND deleted_at IS NULL
         "#,
     )
-    .bind(channel_group_id)
-    .bind(channel_id)
+    .bind(account_group_id)
+    .bind(account_id)
     .fetch_one(pool)
     .await
     .expect("default channel group membership seed");
@@ -434,10 +434,10 @@ async fn assert_canonical_routing_seed(pool: &SqlitePool) {
     let resource_binding_count: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(*)
-        FROM ai_channel_group_resource
+        FROM ai_upstream_account_group_resource
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_group_id = ?
+          AND account_group_id = ?
           AND resource_group_id = ?
           AND resource_group_code = 'official.openai.full'
           AND grant_type = 'allow'
@@ -445,7 +445,7 @@ async fn assert_canonical_routing_seed(pool: &SqlitePool) {
           AND deleted_at IS NULL
         "#,
     )
-    .bind(channel_group_id)
+    .bind(account_group_id)
     .bind(official_openai_resource_group_id)
     .fetch_one(pool)
     .await

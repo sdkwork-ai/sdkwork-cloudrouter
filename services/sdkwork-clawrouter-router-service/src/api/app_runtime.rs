@@ -1883,7 +1883,7 @@ fn runtime_gateway_error_is_route_snapshot_miss(message: &str) -> bool {
         && message.contains("route diagnostics:")
         && runtime_gateway_route_diagnostic_usize(message, "model_routes_loaded") == Some(0)
         && runtime_gateway_route_diagnostic_usize(message, "channel_routes_loaded") == Some(0)
-        && runtime_gateway_route_diagnostic_bool(message, "any_group_bindings") == Some(false)
+        && runtime_gateway_route_diagnostic_bool(message, "any_account_group_bindings") == Some(false)
         && runtime_gateway_route_diagnostic_usize(message, "matching_group_bound_channels")
             == Some(0)
 }
@@ -3483,8 +3483,8 @@ where
             group_code: context.group_code.clone(),
             pricing_plan_code: context.pricing_plan_code.clone(),
             model: model.to_owned(),
-            provider_code: route.provider_code.clone(),
-            provider_channel_id: route.channel_id,
+            supplier_code: route.supplier_code.clone(),
+            provider_account_id: route.account_id,
             provider_region_code: route.region_code.clone(),
             provider_model: route.provider_model.clone(),
             provider_base_url: route.provider_base_url.clone(),
@@ -3584,7 +3584,7 @@ where
         return Err(DomainError::new("runtime route API key is disabled"));
     }
     let group = catalog
-        .find_channel_group(api_key.group_id)
+        .find_upstream_account_group(api_key.group_id)
         .ok_or_else(|| DomainError::new("runtime route channel group is not available"))?;
     let context = AuthenticatedApiKeyContext {
         api_key_id: api_key.id,
@@ -3880,7 +3880,7 @@ where
         );
         return Err(failure);
     }
-    let Some(group) = catalog.find_channel_group(api_key.group_id) else {
+    let Some(group) = catalog.find_upstream_account_group(api_key.group_id) else {
         let failure = runtime_gateway_route_probe_failure(
             api_key,
             None,
@@ -4052,8 +4052,8 @@ fn runtime_route_probe_has_empty_route_snapshot<C>(catalog: &C, catalog_key: &st
 where
     C: PricingCatalog,
 {
-    catalog.list_provider_channel_routes().is_empty()
-        && catalog.list_provider_routes(catalog_key).is_empty()
+    catalog.list_upstream_account_routes().is_empty()
+        && catalog.list_model_upstream_routes(catalog_key).is_empty()
 }
 
 fn runtime_execution_requested_model_key_label(

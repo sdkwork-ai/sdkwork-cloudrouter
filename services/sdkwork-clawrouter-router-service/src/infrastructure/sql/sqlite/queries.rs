@@ -60,8 +60,8 @@ SELECT
     billing_meter_code,
     CAST(unit_price AS TEXT) AS unit_price,
     currency,
-    provider_code,
-    channel_id,
+    supplier_code,
+    account_id,
     pricing_plan_code
 FROM ai_model_pricing
 WHERE deleted_at IS NULL
@@ -123,12 +123,12 @@ effective_resource_group AS (
     FROM resource_group_candidate
     WHERE candidate_rank = 1
 ),
-channel_group_binding AS (
+upstream_account_group_binding AS (
     SELECT
         cr.id AS binding_id,
         cr.tenant_id AS scope_tenant_id,
         cr.organization_id AS scope_organization_id,
-        cr.channel_id,
+        cr.account_id,
         cr.priority,
         cr.weight,
         resource_group.resource_group_id,
@@ -154,7 +154,7 @@ resource_group_tree AS (
         binding.binding_id,
         binding.scope_tenant_id,
         binding.scope_organization_id,
-        binding.channel_id,
+        binding.account_id,
         binding.priority,
         binding.weight,
         item.resource_id,
@@ -162,7 +162,7 @@ resource_group_tree AS (
         item.child_resource_group_id,
         item.child_resource_group_code,
         0 AS depth
-    FROM channel_group_binding binding
+    FROM upstream_account_group_binding binding
     JOIN ai_resource_group_item item
       ON item.tenant_id = binding.definition_tenant_id
      AND item.organization_id = binding.definition_organization_id
@@ -177,7 +177,7 @@ resource_group_tree AS (
         tree.binding_id,
         tree.scope_tenant_id,
         tree.scope_organization_id,
-        tree.channel_id,
+        tree.account_id,
         tree.priority,
         tree.weight,
         child.resource_id,
@@ -218,7 +218,7 @@ channel_resource_reference AS (
         cr.id AS binding_id,
         cr.tenant_id AS scope_tenant_id,
         cr.organization_id AS scope_organization_id,
-        cr.channel_id,
+        cr.account_id,
         cr.priority,
         cr.weight,
         cr.resource_id,
@@ -231,7 +231,7 @@ channel_resource_reference AS (
         binding_id,
         scope_tenant_id,
         scope_organization_id,
-        channel_id,
+        account_id,
         priority,
         weight,
         resource_id,
@@ -262,7 +262,7 @@ resource_candidate AS (
         reference.binding_id,
         reference.scope_tenant_id,
         reference.scope_organization_id,
-        reference.channel_id,
+        reference.account_id,
         reference.priority,
         reference.weight,
         resource.resource_code AS resolved_resource_code,
@@ -304,7 +304,7 @@ channel_resource_scope AS (
     SELECT DISTINCT
         scope_tenant_id AS tenant_id,
         scope_organization_id AS organization_id,
-        channel_id,
+        account_id,
         resolved_resource_code AS resource_code,
         resource_type,
         vendor_code,
@@ -333,8 +333,8 @@ SELECT
         ELSE 'openai.chat_completions'
     END), '') AS api_code,
     COALESCE(NULLIF(c.region_code, ''), 'global') AS region_code,
-    c.provider_code AS provider_code,
-    c.id AS channel_id,
+    c.supplier_code AS supplier_code,
+    c.id AS account_id,
     cc.id AS credential_id,
     COALESCE(NULLIF(c.credential_rotation_strategy, ''), 'default') AS credential_rotation,
     COALESCE(cc.priority, 100) AS credential_priority,
@@ -352,18 +352,18 @@ SELECT
     c.retry_policy AS retry_policy_json
 FROM channel_resource_scope scope
 JOIN ai_channel c
-  ON c.id = scope.channel_id
+  ON c.id = scope.account_id
  AND c.tenant_id = scope.tenant_id
  AND c.organization_id = scope.organization_id
  AND c.deleted_at IS NULL
 JOIN ai_channel_credential cc
-  ON cc.channel_id = c.id
+  ON cc.account_id = c.id
  AND cc.tenant_id = c.tenant_id
  AND cc.organization_id = c.organization_id
  AND cc.deleted_at IS NULL
  AND cc.status = 1
 LEFT JOIN ai_provider p
-  ON p.provider_code = c.provider_code
+  ON p.supplier_code = c.supplier_code
  AND p.tenant_id = c.tenant_id
  AND p.organization_id = c.organization_id
 WHERE (
@@ -408,12 +408,12 @@ active_routing_resource_binding AS (
         gr.id AS binding_id,
         gr.tenant_id AS scope_tenant_id,
         gr.organization_id AS scope_organization_id,
-        gr.channel_group_id AS subject_id,
+        gr.account_group_id AS subject_id,
         gr.resource_id,
         gr.resource_code,
         gr.resource_group_id,
         gr.resource_group_code
-    FROM ai_channel_group_resource gr
+    FROM ai_upstream_account_group_resource gr
     WHERE gr.deleted_at IS NULL
       AND gr.status = 1
       AND gr.grant_type = 'allow'
@@ -426,7 +426,7 @@ active_routing_resource_binding AS (
         cr.id AS binding_id,
         cr.tenant_id AS scope_tenant_id,
         cr.organization_id AS scope_organization_id,
-        cr.channel_id AS subject_id,
+        cr.account_id AS subject_id,
         cr.resource_id,
         cr.resource_code,
         cr.resource_group_id,
@@ -654,7 +654,7 @@ group_resource_scope AS (
     SELECT DISTINCT
         scope_tenant_id AS tenant_id,
         scope_organization_id AS organization_id,
-        subject_id AS channel_group_id,
+        subject_id AS account_group_id,
         resource_code,
         resource_type,
         vendor_code,
@@ -671,7 +671,7 @@ channel_resource_scope AS (
     SELECT DISTINCT
         scope_tenant_id AS tenant_id,
         scope_organization_id AS organization_id,
-        subject_id AS channel_id,
+        subject_id AS account_id,
         resource_code,
         resource_type,
         vendor_code,
@@ -688,8 +688,8 @@ matched_resource_scope AS (
     SELECT DISTINCT
         gr.tenant_id,
         gr.organization_id,
-        gr.channel_group_id,
-        cr.channel_id,
+        gr.account_group_id,
+        cr.account_id,
         COALESCE(NULLIF(gr.resource_code, ''), NULLIF(cr.resource_code, '')) AS resource_code,
         COALESCE(NULLIF(gr.resource_type, ''), NULLIF(cr.resource_type, '')) AS resource_type,
         COALESCE(NULLIF(gr.vendor_code, ''), NULLIF(cr.vendor_code, '')) AS vendor_code,
@@ -727,18 +727,18 @@ matched_resource_scope AS (
      )
 )
 SELECT
-    c.provider_code,
-    c.id AS channel_id,
+    c.supplier_code,
+    c.id AS account_id,
     cc.id AS credential_id,
     COALESCE(NULLIF(c.credential_rotation_strategy, ''), 'default') AS credential_rotation,
     COALESCE(cc.priority, 100) AS credential_priority,
     COALESCE(cc.weight, 100) AS credential_weight,
-    NULLIF(c.channel_code, '') AS channel_code,
+    NULLIF(c.account_code, '') AS account_code,
     COALESCE(NULLIF(c.region_code, ''), 'global') AS region_code,
-    c.site_id AS site_id,
-    NULLIF(c.site_code, '') AS site_code,
-    c.site_service_id AS site_service_id,
-    NULLIF(c.site_service_code, '') AS site_service_code,
+    c.supplier_id AS supplier_id,
+    NULLIF(c.supplier_code, '') AS supplier_code,
+    c.endpoint_id AS endpoint_id,
+    NULLIF(c.endpoint_code, '') AS endpoint_code,
     COALESCE(NULLIF(cc.base_url, ''), NULLIF(c.base_url, ''), p.base_url) AS base_url,
     cc.credential_ref AS secret_ref,
     CAST(c.auth_type AS TEXT) AS auth_type,
@@ -764,7 +764,7 @@ SELECT
     COALESCE((
         SELECT json_group_array(
             json_object(
-                'groupId', binding.channel_group_id,
+                'groupId', binding.account_group_id,
                 'priority', binding.priority,
                 'weight', binding.weight,
                 'apiScope', json(binding.api_scope),
@@ -773,7 +773,7 @@ SELECT
         )
         FROM (
             SELECT
-                b.channel_group_id AS channel_group_id,
+                b.account_group_id AS account_group_id,
                 COALESCE(b.priority, 100) AS priority,
                 COALESCE(b.weight, 100) AS weight,
                 CASE
@@ -781,8 +781,8 @@ SELECT
                         SELECT 1 FROM matched_resource_scope mrs
                         WHERE mrs.tenant_id = b.tenant_id
                           AND mrs.organization_id = b.organization_id
-                          AND mrs.channel_group_id = b.channel_group_id
-                          AND mrs.channel_id = c.id
+                          AND mrs.account_group_id = b.account_group_id
+                          AND mrs.account_id = c.id
                     ) THEN json_array('__deny__')
                     ELSE COALESCE((
                         SELECT json_group_array(scope.value)
@@ -791,8 +791,8 @@ SELECT
                             FROM matched_resource_scope mrs
                             WHERE mrs.tenant_id = b.tenant_id
                               AND mrs.organization_id = b.organization_id
-                              AND mrs.channel_group_id = b.channel_group_id
-                              AND mrs.channel_id = c.id
+                              AND mrs.account_group_id = b.account_group_id
+                              AND mrs.account_id = c.id
                               AND NULLIF(mrs.api_code, '') IS NOT NULL
                             ORDER BY value
                         ) scope
@@ -803,8 +803,8 @@ SELECT
                         SELECT 1 FROM matched_resource_scope mrs
                         WHERE mrs.tenant_id = b.tenant_id
                           AND mrs.organization_id = b.organization_id
-                          AND mrs.channel_group_id = b.channel_group_id
-                          AND mrs.channel_id = c.id
+                          AND mrs.account_group_id = b.account_group_id
+                          AND mrs.account_id = c.id
                     ) THEN json_array('__deny__')
                     ELSE COALESCE((
                         SELECT json_group_array(capability.value)
@@ -821,49 +821,49 @@ SELECT
                                 FROM matched_resource_scope mrs
                                 WHERE mrs.tenant_id = b.tenant_id
                                   AND mrs.organization_id = b.organization_id
-                                  AND mrs.channel_group_id = b.channel_group_id
-                                  AND mrs.channel_id = c.id
+                                  AND mrs.account_group_id = b.account_group_id
+                                  AND mrs.account_id = c.id
                                 UNION ALL
                                 SELECT NULLIF(mrs.modality_code, '') AS value, 2 AS sort_order
                                 FROM matched_resource_scope mrs
                                 WHERE mrs.tenant_id = b.tenant_id
                                   AND mrs.organization_id = b.organization_id
-                                  AND mrs.channel_group_id = b.channel_group_id
-                                  AND mrs.channel_id = c.id
+                                  AND mrs.account_group_id = b.account_group_id
+                                  AND mrs.account_id = c.id
                                 UNION ALL
                                 SELECT NULLIF(mrs.api_code, '') AS value, 3 AS sort_order
                                 FROM matched_resource_scope mrs
                                 WHERE mrs.tenant_id = b.tenant_id
                                   AND mrs.organization_id = b.organization_id
-                                  AND mrs.channel_group_id = b.channel_group_id
-                                  AND mrs.channel_id = c.id
+                                  AND mrs.account_group_id = b.account_group_id
+                                  AND mrs.account_id = c.id
                             ) capability_values
                             WHERE value IS NOT NULL AND value <> ''
                             ORDER BY sort_order, value
                         ) capability
                     ), '[]')
                 END AS capabilities
-            FROM ai_channel_group_member b
+            FROM ai_upstream_account_group_member b
             WHERE b.deleted_at IS NULL
               AND b.status = 1
               AND COALESCE(b.enabled, 1) = 1
               AND b.tenant_id = c.tenant_id
               AND b.organization_id = c.organization_id
-              AND b.channel_id = c.id
+              AND b.account_id = c.id
               AND (b.effective_from IS NULL OR datetime(b.effective_from) <= CURRENT_TIMESTAMP)
               AND (b.effective_to IS NULL OR datetime(b.effective_to) > CURRENT_TIMESTAMP)
-            ORDER BY COALESCE(b.priority, 100) ASC, COALESCE(b.weight, 100) DESC, b.channel_group_id ASC, b.id ASC
+            ORDER BY COALESCE(b.priority, 100) ASC, COALESCE(b.weight, 100) DESC, b.account_group_id ASC, b.id ASC
         ) binding
-    ), '[]') AS group_bindings_json
+    ), '[]') AS account_group_bindings_json
 FROM ai_channel c
 JOIN ai_channel_credential cc
-  ON cc.channel_id = c.id
+  ON cc.account_id = c.id
  AND cc.tenant_id = c.tenant_id
  AND cc.organization_id = c.organization_id
  AND cc.deleted_at IS NULL
  AND cc.status = 1
 LEFT JOIN ai_provider p
-  ON p.provider_code = c.provider_code
+  ON p.supplier_code = c.supplier_code
  AND p.tenant_id = c.tenant_id
  AND p.organization_id = c.organization_id
 WHERE c.deleted_at IS NULL
@@ -873,12 +873,12 @@ WHERE c.deleted_at IS NULL
   AND (p.id IS NULL OR p.status = 1)
   AND EXISTS (
       SELECT 1
-      FROM ai_channel_group_member member
+      FROM ai_upstream_account_group_member member
       WHERE member.status = 1
         AND member.deleted_at IS NULL
         AND member.tenant_id = c.tenant_id
         AND member.organization_id = c.organization_id
-        AND member.channel_id = c.id
+        AND member.account_id = c.id
         AND COALESCE(member.enabled, 1) = 1
         AND (member.effective_from IS NULL OR datetime(member.effective_from) <= CURRENT_TIMESTAMP)
         AND (member.effective_to IS NULL OR datetime(member.effective_to) > CURRENT_TIMESTAMP)
@@ -924,7 +924,7 @@ SELECT
     r.priority,
     COALESCE(r.match_expression, '{}') AS match_expression_json,
     r.target_model,
-    COALESCE(r.candidate_channels, '[]') AS candidate_channels_json,
+    COALESCE(r.candidate_account_groups, '[]') AS candidate_account_groups_json,
     COALESCE(r.fallback_chain, '[]') AS fallback_chain_json,
     COALESCE(r.constraints, '{}') AS constraints_json
 FROM ai_routing_rule r
@@ -977,7 +977,7 @@ ORDER BY
   CASE b.binding_type
       WHEN 'provider_account' THEN 0
       WHEN 'channel' THEN 1
-      WHEN 'channel_group' THEN 2
+      WHEN 'upstream_account_group' THEN 2
       WHEN 'vendor' THEN 3
       WHEN 'global' THEN 4
       WHEN 'site' THEN 5
@@ -1023,7 +1023,7 @@ SELECT
     COALESCE(NULLIF(TRIM(pricing_plan_code), ''), 'standard') AS pricing_plan_code,
     CAST(rate_multiplier AS TEXT) AS rate_multiplier,
     CAST(official_price_multiplier AS TEXT) AS official_price_multiplier
-FROM ai_channel_group
+FROM ai_upstream_account_group
 WHERE deleted_at IS NULL
   AND status = 1
 ORDER BY updated_at DESC, id DESC
@@ -1035,12 +1035,12 @@ SELECT
     COALESCE(tenant_id, 0) AS tenant_id,
     COALESCE(organization_id, 0) AS organization_id,
     COALESCE(user_id, 0) AS user_id,
-    COALESCE(channel_group_id, 0) AS group_id,
+    COALESCE(account_group_id, 0) AS group_id,
     COALESCE((
         SELECT json_group_array(
             json_object(
-                'groupId', binding.channel_group_id,
-                'groupCode', COALESCE(NULLIF(binding.channel_group_code, ''), g.group_code, ''),
+                'groupId', binding.account_group_id,
+                'groupCode', COALESCE(NULLIF(binding.account_group_code, ''), g.group_code, ''),
                 'pricingPlanCode', COALESCE(NULLIF(g.pricing_plan_code, ''), 'standard'),
                 'bindingRole', COALESCE(NULLIF(binding.binding_role, ''), 'route'),
                 'routingStrategy', COALESCE(NULLIF(binding.routing_strategy, ''), 'auto'),
@@ -1050,13 +1050,13 @@ SELECT
         )
         FROM (
             SELECT
-                kg.channel_group_id,
-                kg.channel_group_code,
+                kg.account_group_id,
+                kg.account_group_code,
                 kg.binding_role,
                 kg.routing_strategy,
                 COALESCE(kg.priority, 100) AS priority,
                 COALESCE(kg.weight, 100) AS weight
-            FROM iam_gateway_api_key_channel_group kg
+            FROM iam_gateway_api_key_upstream_account_group kg
             WHERE kg.deleted_at IS NULL
               AND kg.status = 1
               AND kg.tenant_id = iam_gateway_api_key.tenant_id
@@ -1066,16 +1066,16 @@ SELECT
               AND (kg.effective_to IS NULL OR datetime(kg.effective_to) > CURRENT_TIMESTAMP)
             UNION ALL
             SELECT
-                iam_gateway_api_key.channel_group_id,
-                NULL AS channel_group_code,
+                iam_gateway_api_key.account_group_id,
+                NULL AS account_group_code,
                 'route' AS binding_role,
                 'auto' AS routing_strategy,
                 100 AS priority,
                 100 AS weight
-            WHERE iam_gateway_api_key.channel_group_id IS NOT NULL
+            WHERE iam_gateway_api_key.account_group_id IS NOT NULL
               AND NOT EXISTS (
                   SELECT 1
-                  FROM iam_gateway_api_key_channel_group kg
+                  FROM iam_gateway_api_key_upstream_account_group kg
                   WHERE kg.deleted_at IS NULL
                     AND kg.status = 1
                     AND kg.tenant_id = iam_gateway_api_key.tenant_id
@@ -1086,15 +1086,15 @@ SELECT
               )
             ORDER BY priority ASC,
                      weight DESC,
-                     channel_group_id ASC
+                     account_group_id ASC
         ) binding
-        LEFT JOIN ai_channel_group g
+        LEFT JOIN ai_upstream_account_group g
           ON g.deleted_at IS NULL
          AND g.status = 1
          AND g.tenant_id = iam_gateway_api_key.tenant_id
          AND g.organization_id = iam_gateway_api_key.organization_id
-         AND g.id = binding.channel_group_id
-    ), '[]') AS group_bindings_json,
+         AND g.id = binding.account_group_id
+    ), '[]') AS account_group_bindings_json,
     COALESCE(name, '') AS name,
     COALESCE(key_prefix, '') AS key_prefix,
     COALESCE(NULLIF(key_display_masked, ''), COALESCE(key_prefix, '') || '********') AS key_display_masked,
@@ -1171,12 +1171,12 @@ ORDER BY priority ASC, id ASC
 
 pub const LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS: &str = r#"
 SELECT
-    COALESCE(channel_group_id, 0) AS group_id,
+    COALESCE(account_group_id, 0) AS group_id,
     CAST(capacity_used AS TEXT) AS capacity_used,
     CAST(capacity_limit AS TEXT) AS capacity_limit,
     CAST(usage_amount_total AS TEXT) AS usage_amount_total,
     CAST(snapshot_at AS TEXT) AS snapshot_at
-FROM ai_channel_group_metric_snapshot
+FROM ai_upstream_account_group_metric_snapshot
 WHERE status = 1
-ORDER BY channel_group_id ASC, snapshot_at DESC, id DESC
+ORDER BY account_group_id ASC, snapshot_at DESC, id DESC
 "#;

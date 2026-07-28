@@ -25,7 +25,7 @@ pub struct ListAdminTransactionRecordsQuery {
     pub page_size: i64,
     pub offset: i64,
     pub status: Option<String>,
-    pub provider_code: Option<String>,
+    pub supplier_code: Option<String>,
     pub provider_account_id: Option<String>,
     pub method_code: Option<String>,
     pub country_code: Option<String>,
@@ -63,7 +63,7 @@ pub struct AdminTransactionCollection {
 pub struct CreateAdminPaymentProviderAccountCommand {
     pub subject: AdminTransactionCenterSubject,
     pub account_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub account_role: Option<String>,
     pub merchant_id: String,
     pub environment: String,
@@ -85,7 +85,7 @@ pub struct CreateAdminPaymentProviderAccountCommand {
 pub struct UpdateAdminPaymentProviderAccountCommand {
     pub subject: AdminTransactionCenterSubject,
     pub provider_account_id: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub account_role: Option<String>,
     pub merchant_id: String,
     pub environment: String,

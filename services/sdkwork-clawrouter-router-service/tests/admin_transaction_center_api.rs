@@ -275,7 +275,7 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
                 "transaction-center-test-idempotency-key",
                 command.idempotency_key
             );
-            assert_eq!("stripe", command.provider_code);
+            assert_eq!("stripe", command.supplier_code);
             assert_eq!(Some("merchant".to_owned()), command.account_role);
             assert_eq!("merchant-1", command.merchant_id);
             assert_eq!("sandbox", command.environment);
@@ -285,7 +285,7 @@ impl AdminTransactionCenterStore for TestAdminTransactionCenterStore {
             Ok(record(json!({
                 "id": "provider-account-created",
                 "accountNo": command.account_no,
-                "providerCode": command.provider_code,
+                "providerCode": command.supplier_code,
                 "merchantId": command.merchant_id,
                 "environment": command.environment,
                 "status": command.status

@@ -139,7 +139,7 @@ fn transaction_center_api_enforces_generated_provider_account_contract() {
 }
 
 #[test]
-fn transaction_center_mainstream_payment_provider_codes_match_aggregate_contract() {
+fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract() {
     let spec: serde_json::Value =
         serde_json::from_str(PAYMENT_OPENAPI).expect("payment aggregate OpenAPI parses");
     let supported = spec
@@ -162,7 +162,7 @@ fn transaction_center_mainstream_payment_provider_codes_match_aggregate_contract
         "payment aggregate OpenAPI must expose only the initial mainstream provider set"
     );
 
-    let provider_codes = API
+    let supplier_codes = API
         .split("const PAYMENT_PROVIDER_CODES")
         .nth(1)
         .expect("transaction center provider code allowlist")
@@ -171,7 +171,7 @@ fn transaction_center_mainstream_payment_provider_codes_match_aggregate_contract
         .expect("transaction center provider code block");
     for provider in &expected {
         assert!(
-            provider_codes.contains(&format!("\"{provider}\"")),
+            supplier_codes.contains(&format!("\"{provider}\"")),
             "transaction center provider account mutations must allow mainstream provider {provider}"
         );
     }
@@ -196,12 +196,12 @@ fn transaction_center_mainstream_payment_provider_codes_match_aggregate_contract
         "psbc_pay",
     ] {
         assert!(
-            !provider_codes.contains(&format!("\"{extension}\"")),
+            !supplier_codes.contains(&format!("\"{extension}\"")),
             "extension provider {extension} must not be accepted by active transaction center mutations yet"
         );
     }
     assert!(
-        provider_codes.find("\"stripe\"") < provider_codes.find("\"paypal\""),
+        supplier_codes.find("\"stripe\"") < supplier_codes.find("\"paypal\""),
         "transaction center provider allowlist order must match payment aggregate supported provider order"
     );
 }

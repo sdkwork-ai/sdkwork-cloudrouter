@@ -61,7 +61,7 @@ struct OpenApiSchemaServiceGroup {
     code: &'static str,
     name: &'static str,
     description: &'static str,
-    provider_codes: Vec<&'static str>,
+    supplier_codes: Vec<&'static str>,
     operations: Vec<&'static str>,
 }
 
@@ -219,7 +219,7 @@ fn llm_open_api_schema_tab() -> OpenApiSchemaTab {
             code: "llm",
             name: "LLM Routing",
             description: "OpenAI-compatible LLM routing for chat completions, responses, embeddings, model catalog, and provider-compatible text generation.",
-            provider_codes: vec!["openai", "anthropic", "google", "azure_openai"],
+            supplier_codes: vec!["openai", "anthropic", "google", "azure_openai"],
             operations: vec![
                 "chat_completions",
                 "responses",
@@ -248,7 +248,7 @@ fn image_open_api_schema_tab() -> OpenApiSchemaTab {
             code: "image_generation",
             name: "Image Generation",
             description: "Image generation and editing across OpenAI-compatible and provider-native image APIs.",
-            provider_codes: vec!["openai", "midjourney", "vidu", "volcengine"],
+            supplier_codes: vec!["openai", "midjourney", "vidu", "volcengine"],
             operations: vec!["image_generation", "image_edit", "image_variation"],
         }],
     }
@@ -271,7 +271,7 @@ fn video_open_api_schema_tab() -> OpenApiSchemaTab {
             code: "video_generation",
             name: "Video Generation",
             description: "Provider-compatible video generation and task management APIs.",
-            provider_codes: vec!["kling", "vidu", "volcengine"],
+            supplier_codes: vec!["kling", "vidu", "volcengine"],
             operations: vec!["video_generation", "video_task_retrieve", "video_task_cancel"],
         }],
     }
@@ -294,7 +294,7 @@ fn audio_open_api_schema_tab() -> OpenApiSchemaTab {
             code: "audio_generation",
             name: "Audio Generation",
             description: "Speech, transcription, translation, and music generation APIs.",
-            provider_codes: vec!["openai", "suno"],
+            supplier_codes: vec!["openai", "suno"],
             operations: vec!["speech", "transcription", "translation", "music_generation"],
         }],
     }
@@ -318,7 +318,7 @@ fn drive_open_api_schema_tab() -> OpenApiSchemaTab {
             name: "Drive",
             description:
                 "File, file content, and upload lifecycle APIs across OpenAI-compatible and provider-native routes.",
-            provider_codes: vec!["openai", "anthropic", "google"],
+            supplier_codes: vec!["openai", "anthropic", "google"],
             operations: vec!["file_upload", "file_retrieve", "file_content", "upload_parts"],
         }],
     }
@@ -342,7 +342,7 @@ fn knowledgebase_open_api_schema_tab() -> OpenApiSchemaTab {
             name: "Knowledgebase",
             description:
                 "Vector store, knowledge file attachment, and retrieval search APIs for knowledgebase workloads.",
-            provider_codes: vec!["openai"],
+            supplier_codes: vec!["openai"],
             operations: vec![
                 "vector_store_create",
                 "vector_store_file_attach",
@@ -370,7 +370,7 @@ fn memory_open_api_schema_tab() -> OpenApiSchemaTab {
             name: "Memory",
             description:
                 "Conversation and conversation-item APIs that preserve model interaction memory.",
-            provider_codes: vec!["openai"],
+            supplier_codes: vec!["openai"],
             operations: vec!["conversations", "conversation_items"],
         }],
     }
@@ -393,7 +393,7 @@ fn agent_open_api_schema_tab() -> OpenApiSchemaTab {
             code: "agent",
             name: "Agent",
             description: "Assistant, thread, run, and run-step APIs for agent execution.",
-            provider_codes: vec!["openai"],
+            supplier_codes: vec!["openai"],
             operations: vec!["assistants", "threads", "assistant_runs", "run_steps"],
         }],
     }
@@ -416,7 +416,7 @@ fn payment_open_api_schema_tab() -> OpenApiSchemaTab {
             code: "payment_aggregation",
             name: "Payment Aggregation",
             description: "Unified payment intent, refund, reconciliation, webhook, and provider account APIs.",
-            provider_codes: vec!["stripe", "paypal", "wechat_pay", "alipay", "apple_pay"],
+            supplier_codes: vec!["stripe", "paypal", "wechat_pay", "alipay", "apple_pay"],
             operations: vec![
                 "payment_intent_create",
                 "payment_intent_confirm",
@@ -446,7 +446,7 @@ fn iaas_open_api_schema_tab() -> OpenApiSchemaTab {
                 code: "object_storage",
                 name: "S3 Compatible Object Storage",
                 description: "S3-compatible object storage covering buckets, objects, multipart uploads, presigned URLs, and browser SDK configuration.",
-                provider_codes: vec![
+                supplier_codes: vec![
                     "aws_s3",
                     "minio",
                     "cloudflare_r2",
@@ -484,7 +484,7 @@ fn iaas_open_api_schema_tab() -> OpenApiSchemaTab {
                 code: "cloud_compute",
                 name: "Cloud Compute",
                 description: "Unified IaaS compute lifecycle APIs for VM inventory, provisioning, resizing, lifecycle actions, images, flavors, SSH keys, security groups, and volumes.",
-                provider_codes: vec![
+                supplier_codes: vec![
                     "aws_ec2",
                     "azure_compute",
                     "gcp_compute",
@@ -509,7 +509,7 @@ fn iaas_open_api_schema_tab() -> OpenApiSchemaTab {
                 code: "container_runtime",
                 name: "Container Runtime",
                 description: "Definition-only container runtime APIs for provider-backed container creation and lifecycle actions.",
-                provider_codes: vec![
+                supplier_codes: vec![
                     "aws_ec2",
                     "azure_compute",
                     "gcp_compute",
@@ -524,7 +524,7 @@ fn iaas_open_api_schema_tab() -> OpenApiSchemaTab {
                 code: "deployment_orchestration",
                 name: "Deployment Orchestration",
                 description: "Definition-only deployment application, release, and rollout action APIs for cloud provider orchestration.",
-                provider_codes: vec![
+                supplier_codes: vec![
                     "aws_ec2",
                     "azure_compute",
                     "gcp_compute",
@@ -562,7 +562,7 @@ fn paas_open_api_schema_tab() -> OpenApiSchemaTab {
                 code: group.code,
                 name: group.name,
                 description: group.description,
-                provider_codes: group.provider_codes,
+                supplier_codes: group.supplier_codes,
                 operations: group.operations,
             })
             .collect(),

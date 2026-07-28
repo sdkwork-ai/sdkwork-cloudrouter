@@ -22,7 +22,7 @@ async fn set_openrouter_test_base_url(pool: &SqlitePool, base_url: &str) {
         .execute(pool)
         .await
         .unwrap();
-    sqlx::query("UPDATE ai_channel_credential SET base_url = ? WHERE channel_id = 3001")
+    sqlx::query("UPDATE ai_channel_credential SET base_url = ? WHERE account_id = 3001")
         .bind(base_url)
         .execute(pool)
         .await
@@ -269,7 +269,7 @@ async fn database_config_router_records_non_stream_chat_usage_when_provider_succ
     let trace = sqlx::query(
         r#"
         SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id,
-               channel_group_snapshot, requested_model, provider_model, http_status,
+               upstream_account_group_snapshot, requested_model, provider_model, http_status,
                streaming, prompt_tokens, completion_tokens, total_tokens
         FROM ai_request_trace
         WHERE trace_id = ?
@@ -293,7 +293,7 @@ async fn database_config_router_records_non_stream_chat_usage_when_provider_succ
     assert_eq!(100_i64, trace.get::<i64, _>("api_key_id"));
     assert_eq!(
         "standard-group",
-        trace.get::<String, _>("channel_group_snapshot")
+        trace.get::<String, _>("upstream_account_group_snapshot")
     );
     assert_eq!("gpt-4o-mini", trace.get::<String, _>("requested_model"));
     assert_eq!("gpt-4o-mini", trace.get::<String, _>("provider_model"));
@@ -305,7 +305,7 @@ async fn database_config_router_records_non_stream_chat_usage_when_provider_succ
 
     let usage = sqlx::query(
         r#"
-        SELECT request_id, api_key_id, model, channel_id, usage_type, billing_meter_code,
+        SELECT request_id, api_key_id, model, account_id, usage_type, billing_meter_code,
                billable_quantity, prompt_tokens, completion_tokens, total_tokens,
                customer_charge_amount, currency, pricing_plan_code, settlement_status
         FROM ai_usage
@@ -324,7 +324,7 @@ async fn database_config_router_records_non_stream_chat_usage_when_provider_succ
     assert_eq!(request_id, usage.get::<String, _>("request_id"));
     assert_eq!(100_i64, usage.get::<i64, _>("api_key_id"));
     assert_eq!("gpt-4o-mini", usage.get::<String, _>("model"));
-    assert_eq!(3001_i64, usage.get::<i64, _>("channel_id"));
+    assert_eq!(3001_i64, usage.get::<i64, _>("account_id"));
     assert_eq!(1_i64, usage.get::<i64, _>("usage_type"));
     assert_eq!(
         "llm_input_token",
@@ -434,7 +434,7 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
     let read_pool = catalog.open_pool().await.unwrap();
     let trace = sqlx::query(
         r#"
-        SELECT request_id, trace_id, channel_id, requested_model, provider_model, http_status,
+        SELECT request_id, trace_id, account_id, requested_model, provider_model, http_status,
                streaming, prompt_tokens, completion_tokens, total_tokens
         FROM ai_request_trace
         WHERE trace_id = ?
@@ -450,7 +450,7 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
         "trace-gateway-db-retry-1",
         trace.get::<String, _>("trace_id")
     );
-    assert_eq!(3001_i64, trace.get::<i64, _>("channel_id"));
+    assert_eq!(3001_i64, trace.get::<i64, _>("account_id"));
     assert_eq!("gpt-4o-mini", trace.get::<String, _>("requested_model"));
     assert_eq!("gpt-4o-mini", trace.get::<String, _>("provider_model"));
     assert_eq!(200_i64, trace.get::<i64, _>("http_status"));
@@ -461,7 +461,7 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
 
     let usage = sqlx::query(
         r#"
-        SELECT request_id, channel_id, billing_meter_code, billable_quantity, prompt_tokens,
+        SELECT request_id, account_id, billing_meter_code, billable_quantity, prompt_tokens,
                completion_tokens, total_tokens, customer_charge_amount,
                settlement_status
         FROM ai_usage
@@ -473,7 +473,7 @@ async fn database_config_router_applies_database_retry_policy_without_duplicate_
     .await
     .unwrap();
     assert_eq!(request_id, usage.get::<String, _>("request_id"));
-    assert_eq!(3001_i64, usage.get::<i64, _>("channel_id"));
+    assert_eq!(3001_i64, usage.get::<i64, _>("account_id"));
     assert_eq!(
         "llm_input_token",
         usage.get::<String, _>("billing_meter_code")
@@ -1161,9 +1161,9 @@ async fn database_config_router_keeps_channel_route_after_streaming_chat_success
             .unwrap();
         assert!(
             snapshot
-                .list_provider_channel_routes()
+                .list_upstream_account_routes()
                 .iter()
-                .any(|route| route.channel_id == 3001),
+                .any(|route| route.account_id == 3001),
             "catalog reload after request {request_no} must keep the account-pool route callable"
         );
         read_pool.close().await;

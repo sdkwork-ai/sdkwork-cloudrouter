@@ -30,7 +30,7 @@ impl ProviderAdapter for EchoProviderAdapter {
         "echo"
     }
 
-    fn provider_codes(&self) -> &'static [&'static str] {
+    fn supplier_codes(&self) -> &'static [&'static str] {
         &["tencent-cloud"]
     }
 
@@ -608,13 +608,13 @@ async fn adapter_service_rejects_provider_path_that_does_not_match_invocation_st
 }
 
 #[tokio::test]
-async fn adapter_service_rejects_provider_code_that_does_not_match_invocation_provider_context() {
+async fn adapter_service_rejects_supplier_code_that_does_not_match_invocation_provider_context() {
     let router = sdkwork_claw_provider_adapter::router_with_adapters(
         vec![Arc::new(EchoProviderAdapter)],
         "test-token",
     );
     let mut request = adapter_request();
-    request.provider.provider_code = "vidu-official".to_owned();
+    request.provider.supplier_code = "vidu-official".to_owned();
 
     let response = router
         .oneshot(
@@ -797,8 +797,8 @@ fn adapter_request() -> AdapterInvocationRequest {
             pricing_plan_code: "standard".to_owned(),
         },
         provider: AdapterProviderContext {
-            provider_code: "tencent-cloud".to_owned(),
-            channel_id: 3001,
+            supplier_code: "tencent-cloud".to_owned(),
+            account_id: 3001,
             region_code: "global".to_owned(),
             provider_model: "hunyuan-video".to_owned(),
             base_url: Some("https://hunyuan.tencentcloudapi.com".to_owned()),

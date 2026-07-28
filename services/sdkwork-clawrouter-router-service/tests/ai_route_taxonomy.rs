@@ -3,7 +3,7 @@ use sdkwork_clawrouter_router_service::application::{
 };
 use sdkwork_clawrouter_router_service::domain::{
     AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy, BillingMeter,
-    ProviderChannelRoute, RoutingCapability,
+    UpstreamAccountRoute, RoutingCapability,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 
@@ -160,13 +160,13 @@ fn builtin_route_taxonomy_classifies_standard_ai_api_routes() {
 #[test]
 fn routing_index_filters_group_api_and_capability_without_full_selector_policy() {
     let mut catalog = InMemoryPricingCatalog::default();
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-chat", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-chat", 3001)
+            .with_upstream_endpoint(
                 Some("https://openrouter.example/v1"),
                 Some("vault://openrouter/chat"),
             )
-            .with_resource_scoped_group_binding(
+            .with_resource_scoped_account_group_binding(
                 10,
                 10,
                 100,
@@ -174,13 +174,13 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
                 vec!["llm"],
             ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter-image", 3002)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter-image", 3002)
+            .with_upstream_endpoint(
                 Some("https://openrouter.example/v1"),
                 Some("vault://openrouter/image"),
             )
-            .with_resource_scoped_group_binding(
+            .with_resource_scoped_account_group_binding(
                 10,
                 20,
                 100,
@@ -188,10 +188,10 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
                 vec!["image"],
             ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("other-group-chat", 3003)
-            .with_provider_endpoint(Some("https://other.example/v1"), Some("vault://other/chat"))
-            .with_resource_scoped_group_binding(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("other-group-chat", 3003)
+            .with_upstream_endpoint(Some("https://other.example/v1"), Some("vault://other/chat"))
+            .with_resource_scoped_account_group_binding(
                 99,
                 1,
                 100,
@@ -209,7 +209,7 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
         Some("openai/gpt-4o-mini"),
         Some("gpt-4o-mini"),
     );
-    assert_eq!(vec![3001], channel_ids(&chat_candidates));
+    assert_eq!(vec![3001], account_ids(&chat_candidates));
 
     let image_candidates = index.matching_channels(
         10,
@@ -218,7 +218,7 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
         Some("openai/gpt-image-1"),
         Some("gpt-image-1"),
     );
-    assert_eq!(vec![3002], channel_ids(&image_candidates));
+    assert_eq!(vec![3002], account_ids(&image_candidates));
 
     let other_model_same_api = index.matching_channels(
         10,
@@ -227,7 +227,7 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
         Some("openai/gpt-5"),
         Some("gpt-5"),
     );
-    assert_eq!(vec![3001], channel_ids(&other_model_same_api));
+    assert_eq!(vec![3001], account_ids(&other_model_same_api));
 
     let wrong_group = index.matching_channels(
         11,
@@ -239,6 +239,6 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
     assert!(wrong_group.is_empty());
 }
 
-fn channel_ids(routes: &[ProviderChannelRoute]) -> Vec<i64> {
-    routes.iter().map(|route| route.channel_id).collect()
+fn account_ids(routes: &[UpstreamAccountRoute]) -> Vec<i64> {
+    routes.iter().map(|route| route.account_id).collect()
 }

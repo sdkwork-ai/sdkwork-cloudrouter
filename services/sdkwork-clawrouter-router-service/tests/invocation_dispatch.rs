@@ -55,24 +55,24 @@ fn invocation_with_plan(
     invocation
 }
 
-fn candidate(provider_code: &str, channel_id: i64) -> InvocationRouteCandidate {
+fn candidate(supplier_code: &str, account_id: i64) -> InvocationRouteCandidate {
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::Model,
-        provider_code: provider_code.to_owned(),
-        channel_id,
-        channel_group_id: Some(10),
-        channel_group_code: Some("standard-group".to_owned()),
+        supplier_code: supplier_code.to_owned(),
+        account_id,
+        account_group_id: Some(10),
+        account_group_code: Some("standard-group".to_owned()),
         pricing_plan_code: Some("standard".to_owned()),
         policy_id: Some(1),
         rule_id: Some(2),
         api_code: "openai.chat_completions".to_owned(),
         catalog_key: Some("openai/gpt-4o-mini".to_owned()),
         requested_model: Some("gpt-4o-mini".to_owned()),
-        provider_model: Some(format!("{provider_code}-model")),
+        provider_model: Some(format!("{supplier_code}-model")),
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,
-        base_url: Some(format!("https://provider.example/{provider_code}")),
+        base_url: Some(format!("https://provider.example/{supplier_code}")),
         secret_ref: None,
         auth_profile: ProviderAuthProfile::default(),
         timeout_ms: None,
@@ -81,7 +81,7 @@ fn candidate(provider_code: &str, channel_id: i64) -> InvocationRouteCandidate {
 }
 
 fn with_secret_ref(mut candidate: InvocationRouteCandidate) -> InvocationRouteCandidate {
-    candidate.secret_ref = Some(format!("vault://provider/{}", candidate.provider_code));
+    candidate.secret_ref = Some(format!("vault://provider/{}", candidate.supplier_code));
     candidate
 }
 
@@ -139,12 +139,12 @@ impl ProviderAdapterRouteResolver for AccountProviderAdapterResolver {
     fn resolve_adapter_target(&self, invocation: &Invocation) -> Option<InvocationAdapterTarget> {
         let account = invocation.account.as_ref()?;
         Some(InvocationAdapterTarget {
-            provider_code: account.provider_code.clone(),
-            endpoint_key: format!("{}.text2video", account.provider_code),
-            base_url: format!("https://adapter.example/{}", account.provider_code),
-            path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+            supplier_code: account.supplier_code.clone(),
+            endpoint_key: format!("{}.text2video", account.supplier_code),
+            base_url: format!("https://adapter.example/{}", account.supplier_code),
+            path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
             standard_path: "/v1/videos/text2video".to_owned(),
-            gateway_token: Some(format!("adapter-token-{}", account.provider_code)),
+            gateway_token: Some(format!("adapter-token-{}", account.supplier_code)),
             shape: InvocationShape::Json,
             adapter_invocation_shape: AdapterInvocationShape::SyncJson,
         })
@@ -183,7 +183,7 @@ impl InvocationDispatcher for FakeDispatcher {
             self.providers
                 .lock()
                 .expect("providers")
-                .push(account.provider_code.clone());
+                .push(account.supplier_code.clone());
             self.provider_requests
                 .lock()
                 .expect("provider requests")
@@ -287,7 +287,7 @@ async fn dispatches_internal_adapter_route() {
 async fn synthetic_local_response_does_not_call_dispatcher() {
     let dispatcher = FakeDispatcher::new(vec![ok(200, json!({"unexpected": true}))]);
     let mut invocation =
-        invocation_with_plan(AiRouteStrategy::PrimaryChannel, vec![candidate("local", 1)]);
+        invocation_with_plan(AiRouteStrategy::PrimaryAccount, vec![candidate("local", 1)]);
     invocation.dispatch = InvocationDispatch {
         mode: DispatchMode::SyntheticLocalResponse,
         invocation_shape: InvocationShape::Json,
@@ -322,7 +322,7 @@ async fn synthetic_local_response_does_not_call_dispatcher() {
 async fn noop_free_response_does_not_call_dispatcher() {
     let dispatcher = FakeDispatcher::new(vec![ok(200, json!({"unexpected": true}))]);
     let mut invocation =
-        invocation_with_plan(AiRouteStrategy::PrimaryChannel, vec![candidate("free", 1)]);
+        invocation_with_plan(AiRouteStrategy::PrimaryAccount, vec![candidate("free", 1)]);
     invocation.dispatch.mode = DispatchMode::NoopFree;
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
@@ -744,10 +744,10 @@ async fn adapter_wrapper_retryable_status_does_not_fail_over_for_safe_get() {
 
 fn adapter_target() -> InvocationAdapterTarget {
     InvocationAdapterTarget {
-        provider_code: "kling".to_owned(),
+        supplier_code: "kling".to_owned(),
         endpoint_key: "kling.text2video".to_owned(),
         base_url: "https://adapter.example".to_owned(),
-        path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+        path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
         standard_path: "/v1/videos/text2video".to_owned(),
         gateway_token: Some("adapter-token".to_owned()),
         shape: InvocationShape::Json,
@@ -849,7 +849,7 @@ async fn non_idempotent_post_preparation_failure_is_not_failed_over() {
     assert_eq!(1, invocation.routing.attempted_routes.len());
     assert_eq!(
         "primary",
-        invocation.routing.attempted_routes[0].provider_code
+        invocation.routing.attempted_routes[0].supplier_code
     );
     assert!(!invocation.routing.attempted_routes[0].success);
     assert_eq!(

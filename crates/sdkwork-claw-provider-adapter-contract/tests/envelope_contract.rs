@@ -28,8 +28,8 @@ fn adapter_invocation_request_serializes_stable_gateway_envelope() {
             pricing_plan_code: "standard".to_owned(),
         },
         provider: AdapterProviderContext {
-            provider_code: "vidu-official".to_owned(),
-            channel_id: 3001,
+            supplier_code: "vidu-official".to_owned(),
+            account_id: 3001,
             region_code: "global".to_owned(),
             provider_model: "vidu-q1".to_owned(),
             base_url: Some("https://api.vidu.example".to_owned()),

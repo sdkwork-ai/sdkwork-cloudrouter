@@ -142,8 +142,8 @@ fn product_direct_http_tests_use_standard_query_names() {
             ("billingMeter=", "billing_meter"),
             ("searchQuery=", "search_query"),
             ("bindingType=", "binding_type"),
-            ("channelId=", "channel_id"),
-            ("channelCode=", "channel_code"),
+            ("channelId=", "account_id"),
+            ("channelCode=", "account_code"),
             ("rankScope=", "rank_scope"),
             ("reportType=", "report_type"),
         ] {

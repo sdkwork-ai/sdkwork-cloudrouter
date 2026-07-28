@@ -7,9 +7,9 @@ use sdkwork_clawrouter_router_service::application::{
     PricingPreflightInterceptor, PricingSettlementInterceptor, ResourceType,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderAuthProfile, ProviderChannelRoute, RoutingCapability,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    ProviderAuthProfile, UpstreamAccountRoute, RoutingCapability,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_clawrouter_router_service::ports::GatewayUsageQuantity;
@@ -42,7 +42,7 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
         DecimalValue::parse("1.000000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new_scoped(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new_scoped(
         10,
         10,
         20,
@@ -54,20 +54,20 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
     catalog
         .add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test").with_owner(10, 20, 30));
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter",
             3001,
             "gpt-4o-mini-upstream",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("https://provider.example/openrouter"),
             Some("vault://provider/openrouter"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001).with_upstream_endpoint(
             Some("https://provider.example/openrouter"),
             Some("vault://provider/openrouter"),
         ),
@@ -97,20 +97,20 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
         "0.480000",
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "fallback",
             3002,
             "gpt-4o-mini-fallback",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("https://provider.example/fallback"),
             Some("vault://provider/fallback"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("fallback", 3002).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("fallback", 3002).with_upstream_endpoint(
             Some("https://provider.example/fallback"),
             Some("vault://provider/fallback"),
         ),
@@ -192,8 +192,8 @@ fn add_price_for_resource(
 fn add_provider_price(
     catalog: &mut InMemoryPricingCatalog,
     meter: BillingMeter,
-    provider_code: &str,
-    channel_id: i64,
+    supplier_code: &str,
+    account_id: i64,
     unit_price: &str,
 ) {
     catalog.add_price(
@@ -204,7 +204,7 @@ fn add_provider_price(
             meter,
             Money::usd(unit_price).unwrap(),
         )
-        .for_provider(provider_code, channel_id),
+        .for_provider(supplier_code, account_id),
     );
 }
 
@@ -246,8 +246,8 @@ fn chat_invocation() -> Invocation {
     );
     invocation.routing = routing;
     invocation.account = Some(InvocationAccount {
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,
@@ -267,8 +267,8 @@ fn chat_invocation() -> Invocation {
 
 fn fallback_account() -> InvocationAccount {
     InvocationAccount {
-        provider_code: "fallback".to_owned(),
-        channel_id: 3002,
+        supplier_code: "fallback".to_owned(),
+        account_id: 3002,
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,
@@ -305,8 +305,8 @@ async fn pricing_preflight_quotes_token_input_and_output_prices() {
         .quote_for_meter(&BillingMeter::LlmInputToken)
         .expect("input quote");
     assert_eq!("openai/gpt-4o-mini", input.catalog_key);
-    assert_eq!(Some("openrouter"), input.provider_code.as_deref());
-    assert_eq!(Some(3001), input.channel_id);
+    assert_eq!(Some("openrouter"), input.supplier_code.as_deref());
+    assert_eq!(Some(3001), input.account_id);
     assert_eq!("global", input.region_code);
     assert_eq!(
         "0.150000",
@@ -480,8 +480,8 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
     let input = &invocation.usage.settlement_commands[0];
     assert_eq!("req-price", input.request_id);
     assert_eq!("openai/gpt-4o-mini", input.catalog_key);
-    assert_eq!("openrouter", input.provider_code);
-    assert_eq!(3001, input.channel_id);
+    assert_eq!("openrouter", input.supplier_code);
+    assert_eq!(3001, input.account_id);
     assert_eq!("llm_input_token", input.billing_meter_code);
     assert_eq!("12", input.billable_quantity);
     assert_eq!(12, input.prompt_tokens);
@@ -695,15 +695,15 @@ async fn pricing_after_requotes_usage_lines_for_final_failover_account() {
         .expect("settlement");
 
     let input = &invocation.usage.settlement_commands[0];
-    assert_eq!("fallback", input.provider_code);
-    assert_eq!(3002, input.channel_id);
+    assert_eq!("fallback", input.supplier_code);
+    assert_eq!(3002, input.account_id);
     assert!(input
         .pricing_snapshot
         .contains("\"upstreamUnitPrice\":\"0.050000\""));
 
     let output = &invocation.usage.settlement_commands[1];
-    assert_eq!("fallback", output.provider_code);
-    assert_eq!(3002, output.channel_id);
+    assert_eq!("fallback", output.supplier_code);
+    assert_eq!(3002, output.account_id);
     assert!(output
         .pricing_snapshot
         .contains("\"upstreamUnitPrice\":\"0.090000\""));

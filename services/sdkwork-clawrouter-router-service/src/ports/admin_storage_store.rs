@@ -41,7 +41,7 @@ pub struct AdminStorageCollection {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateStorageProviderCommand {
     pub subject: AdminStorageSubject,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub provider_type: String,
     pub endpoint_url: Option<String>,
     pub region: Option<String>,

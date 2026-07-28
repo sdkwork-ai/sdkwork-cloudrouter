@@ -157,7 +157,7 @@ pub use paypal_payment_adapter::{
 };
 pub use provider_route_selector::{
     ProviderRouteSelectionError, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
-    SelectProviderChannelRouteQuery, SelectProviderRouteQuery, SelectedProviderChannelRoute,
+    SelectUpstreamAccountRouteQuery, SelectProviderRouteQuery, SelectedUpstreamAccountRoute,
     SelectedProviderRoute, SelectedProviderRoutePlan,
 };
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};

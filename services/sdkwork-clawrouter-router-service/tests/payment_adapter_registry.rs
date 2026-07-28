@@ -21,12 +21,12 @@ const EXTENSION_PROVIDERS: &[&str] = &["unionpay", "yeepay", "jd_pay", "lianlian
 fn default_registry_resolves_mainstream_provider_adapters() {
     let registry = default_payment_provider_registry();
 
-    for provider_code in MAINSTREAM_PROVIDERS {
+    for supplier_code in MAINSTREAM_PROVIDERS {
         let adapter = registry
-            .resolve(provider_code)
-            .unwrap_or_else(|error| panic!("expected {provider_code} to resolve: {error}"));
+            .resolve(supplier_code)
+            .unwrap_or_else(|error| panic!("expected {supplier_code} to resolve: {error}"));
 
-        assert_eq!(*provider_code, adapter.capabilities().provider_code);
+        assert_eq!(*supplier_code, adapter.capabilities().supplier_code);
         assert!(adapter
             .capabilities()
             .operations
@@ -39,18 +39,18 @@ fn default_registry_resolves_mainstream_provider_adapters() {
 fn default_registry_rejects_extension_providers_until_adapters_exist() {
     let registry = default_payment_provider_registry();
 
-    for provider_code in EXTENSION_PROVIDERS {
-        let error = match registry.resolve(provider_code) {
+    for supplier_code in EXTENSION_PROVIDERS {
+        let error = match registry.resolve(supplier_code) {
             Ok(adapter) => panic!(
                 "extension provider must not resolve before adapter onboarding: {}",
-                adapter.capabilities().provider_code
+                adapter.capabilities().supplier_code
             ),
             Err(error) => error,
         };
 
         assert_eq!(
             PaymentProviderRegistryError::UnsupportedProvider {
-                provider_code: (*provider_code).to_owned()
+                supplier_code: (*supplier_code).to_owned()
             },
             error
         );
@@ -74,7 +74,7 @@ fn registry_normalizes_supported_aliases_before_resolution() {
             .resolve(alias)
             .unwrap_or_else(|error| panic!("expected alias {alias} to resolve: {error}"));
 
-        assert_eq!(canonical, adapter.capabilities().provider_code);
+        assert_eq!(canonical, adapter.capabilities().supplier_code);
     }
 }
 
@@ -90,7 +90,7 @@ async fn sandbox_adapters_return_capability_errors_for_runtime_calls() {
 
     assert_eq!(
         PaymentProviderRegistryError::UnsupportedCapability {
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             operation: PaymentAdapterOperation::CreatePaymentIntent,
         },
         error
@@ -139,7 +139,7 @@ async fn registry_can_replace_mainstream_sandbox_adapter_with_configured_real_ad
     let registry = default_payment_provider_registry().with_adapter("stripe", Arc::new(stripe));
 
     let adapter = registry.resolve("stripe_checkout").unwrap();
-    assert_eq!("stripe", adapter.capabilities().provider_code);
+    assert_eq!("stripe", adapter.capabilities().supplier_code);
     assert!(!adapter.capabilities().sandbox_only);
 
     let outcome = adapter
@@ -159,7 +159,7 @@ async fn registry_can_replace_mainstream_sandbox_adapter_with_configured_real_ad
 }
 
 #[test]
-fn registry_rejects_adapter_registration_for_mismatched_provider_code() {
+fn registry_rejects_adapter_registration_for_mismatched_supplier_code() {
     let stripe = StripePaymentProviderAdapter::new(
         StripePaymentProviderConfig {
             secret_key: "sk_test_registry".to_owned(),

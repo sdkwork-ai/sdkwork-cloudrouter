@@ -224,7 +224,7 @@ impl AdminStorageStore for TestAdminStorageStore {
         command: CreateStorageProviderCommand,
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
         Box::pin(async move {
-            assert_eq!("aws-primary", command.provider_code);
+            assert_eq!("aws-primary", command.supplier_code);
             Ok(provider_record("provider-created"))
         })
     }

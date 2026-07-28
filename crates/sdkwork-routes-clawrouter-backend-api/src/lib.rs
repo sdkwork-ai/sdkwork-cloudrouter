@@ -4,6 +4,7 @@ mod http_route_manifest;
 pub mod manifest;
 pub mod paths;
 pub mod routes;
+mod upstream;
 mod web_bootstrap;
 
 pub use manifest::{route_manifest, RouterApiRouteManifest};

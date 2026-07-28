@@ -15,7 +15,7 @@ pub struct ProviderAdapterProviderManifest {
     pub package: String,
     pub provider_family: String,
     #[serde(default)]
-    pub provider_codes: Vec<String>,
+    pub supplier_codes: Vec<String>,
     #[serde(default)]
     pub endpoints: Vec<ProviderAdapterEndpointManifest>,
 }

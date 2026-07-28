@@ -15,10 +15,10 @@ pub(crate) fn require_subject(
 }
 
 pub(crate) fn row_to_provider<R: Row + RowMapping>(row: &R) -> RepositoryResult<AppProviderItem> {
-    let provider_code = row.string_cell("provider_code");
+    let supplier_code = row.string_cell("supplier_code");
     let default_vendor_code = row.string_cell("default_vendor_code");
     let integration_type = integration_type_code(row)?;
-    let channel_required = row.optional_integer_cell("channel_id").is_some();
+    let channel_required = row.optional_integer_cell("account_id").is_some();
     let account_required = row.optional_integer_cell("account_id").is_some();
     let proxy_required = row.optional_integer_cell("proxy_id").is_some();
     let provider_status = row.required_integer_cell("provider_status")?;
@@ -30,7 +30,7 @@ pub(crate) fn row_to_provider<R: Row + RowMapping>(row: &R) -> RepositoryResult<
     let proxy_health_status = row.related_integer_cell("proxy_health_status", proxy_required)?;
     Ok(AppProviderItem {
         id: row.string_cell("id"),
-        provider_family: provider_family_code(&provider_code, &default_vendor_code),
+        provider_family: provider_family_code(&supplier_code, &default_vendor_code),
         integration_type,
         name: row.string_cell("name"),
         description: row.string_cell("description"),

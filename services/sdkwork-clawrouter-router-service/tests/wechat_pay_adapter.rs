@@ -118,7 +118,7 @@ async fn wechat_native_create_maps_standard_payment_intent() {
         .await
         .unwrap();
 
-    assert_eq!("wechat_pay", outcome.provider_code);
+    assert_eq!("wechat_pay", outcome.supplier_code);
     assert_eq!(Some("order-1".to_owned()), outcome.native_id);
     assert_eq!(Some("CREATED".to_owned()), outcome.raw_status);
     assert_eq!(
@@ -260,7 +260,7 @@ async fn wechat_normalize_webhook_decrypts_resource_when_present() {
         .await
         .unwrap();
 
-    assert_eq!("wechat_pay", event.provider_code);
+    assert_eq!("wechat_pay", event.supplier_code);
     assert_eq!(Some("TRANSACTION.SUCCESS".to_owned()), event.event_type);
     assert_eq!(Some("event-1".to_owned()), event.provider_event_id);
     assert_eq!(

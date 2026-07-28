@@ -5,9 +5,9 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderChannelRoute, ProviderRetryPolicy, RouteCandidate, RoutingCapability, RoutingPolicy,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    UpstreamAccountRoute, ProviderRetryPolicy, RouteCandidate, RoutingCapability, RoutingPolicy,
     RoutingPolicyScope, RoutingRule,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -32,23 +32,23 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         vec!["chat", "tools"],
     ));
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter",
             3001,
             "openai/gpt-4o-mini",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/main"),
         )
         .with_timeout_ms(30_000)
         .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/main"),
             )
@@ -61,7 +61,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -124,7 +124,7 @@ fn add_group_routing_policy(
     rule_id: i64,
     rule_code: &str,
     catalog_key: &str,
-    channel_id: i64,
+    account_id: i64,
 ) {
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -132,7 +132,7 @@ fn add_group_routing_policy(
             10,
             20,
             &format!("{rule_code}-policy"),
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(group_id),
             Some(profile_id),
         )
@@ -149,7 +149,7 @@ fn add_group_routing_policy(
             &format!(r#"{{"catalogKey":"{catalog_key}"}}"#),
             catalog_key,
         )
-        .with_candidate_channels(vec![RouteCandidate::new(channel_id, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(account_id, 100)]),
     );
 }
 
@@ -273,7 +273,7 @@ async fn gateway_can_mount_non_stream_chat_completion_relay() {
 
     assert_eq!("chatcmpl-gateway", payload["id"]);
     assert_eq!("gateway-pong", payload["choices"][0]["message"]["content"]);
-    assert_eq!("openrouter", captured.lock().unwrap()[0].provider_code);
+    assert_eq!("openrouter", captured.lock().unwrap()[0].supplier_code);
 }
 
 #[tokio::test]
@@ -324,5 +324,5 @@ async fn gateway_can_mount_streaming_chat_completion_relay() {
 
     assert!(body.contains("chatcmpl-gateway-stream"));
     assert!(body.contains("data: [DONE]"));
-    assert_eq!("openrouter", captured.lock().unwrap()[0].provider_code);
+    assert_eq!("openrouter", captured.lock().unwrap()[0].supplier_code);
 }

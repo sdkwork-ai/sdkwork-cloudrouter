@@ -27,7 +27,7 @@ impl PaymentCallbackStatus {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PaymentCallbackCommand {
-    pub provider_code: String,
+    pub supplier_code: String,
     pub event_uuid: String,
     pub delivery_uuid: String,
     pub account_uuid: String,

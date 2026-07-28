@@ -59,7 +59,7 @@ struct ListSiteChannelsParams {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SiteRequest {
-    site_code: Option<String>,
+    supplier_code: Option<String>,
     site_name: Option<String>,
     display_name: Option<String>,
     description: Option<String>,
@@ -81,7 +81,7 @@ struct SiteRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SiteUpdateRequest {
-    site_code: Option<String>,
+    supplier_code: Option<String>,
     site_name: Option<String>,
     display_name: Option<String>,
     description: Option<Option<String>>,
@@ -122,7 +122,7 @@ struct SiteDeleteResponse {
 #[serde(rename_all = "camelCase")]
 struct SiteResponse {
     id: String,
-    site_code: String,
+    supplier_code: String,
     site_name: String,
     display_name: String,
     description: Option<String>,
@@ -149,11 +149,11 @@ struct SiteResponse {
 #[serde(rename_all = "camelCase")]
 struct SiteChannelResponse {
     id: String,
-    channel_code: String,
+    account_code: String,
     channel_name: String,
-    provider_code: Option<String>,
-    site_code: Option<String>,
-    site_service_code: Option<String>,
+    supplier_code: Option<String>,
+    supplier_code: Option<String>,
+    endpoint_code: Option<String>,
     site_channel_role: Option<String>,
     health_status: String,
     status: String,
@@ -162,7 +162,7 @@ struct SiteChannelResponse {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SiteConnectionCheckResponse {
-    site_id: String,
+    supplier_id: String,
     status: String,
     health_status: String,
     latency_ms: Option<i64>,
@@ -182,19 +182,19 @@ pub fn admin_site_router_with_store(
     Router::new()
         .route("/backend/v3/api/sites", get(fetch_sites).post(create_site))
         .route(
-            "/backend/v3/api/sites/{site_id}",
+            "/backend/v3/api/sites/{supplier_id}",
             patch(update_site).delete(delete_site),
         )
         .route(
-            "/backend/v3/api/sites/{site_id}/channels",
+            "/backend/v3/api/sites/{supplier_id}/channels",
             get(fetch_site_channels),
         )
         .route(
-            "/backend/v3/api/sites/{site_id}/test_connection",
+            "/backend/v3/api/sites/{supplier_id}/test_connection",
             post(test_site_connection),
         )
         .route(
-            "/backend/v3/api/sites/{site_id}/health_check",
+            "/backend/v3/api/sites/{supplier_id}/health_check",
             post(health_check_site),
         )
         .with_state(AdminSiteState {
@@ -266,21 +266,21 @@ async fn create_site(
 
 async fn update_site(
     State(state): State<AdminSiteState>,
-    Path(site_id): Path<String>,
+    Path(supplier_id): Path<String>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
     body: Bytes,
 ) -> Response {
     let subject = scoped.into();
-    let site_id = match parse_positive_id(&site_id, "site id") {
-        Ok(site_id) => site_id,
+    let supplier_id = match parse_positive_id(&supplier_id, "site id") {
+        Ok(supplier_id) => supplier_id,
         Err(message) => return bad_request(message),
     };
     let request = match parse_json_body::<SiteUpdateRequest>(&body, "site update") {
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
-    let command = match build_update_site_command(state.clone(), subject, site_id, request) {
+    let command = match build_update_site_command(state.clone(), subject, supplier_id, request) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
     };
@@ -297,16 +297,16 @@ async fn update_site(
 
 async fn delete_site(
     State(state): State<AdminSiteState>,
-    Path(site_id): Path<String>,
+    Path(supplier_id): Path<String>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
-    let site_id = match parse_positive_id(&site_id, "site id") {
-        Ok(site_id) => site_id,
+    let supplier_id = match parse_positive_id(&supplier_id, "site id") {
+        Ok(supplier_id) => supplier_id,
         Err(message) => return bad_request(message),
     };
-    let command = match build_delete_site_command(state.clone(), subject, site_id) {
+    let command = match build_delete_site_command(state.clone(), subject, supplier_id) {
         Ok(command) => command,
         Err(error) => return command_build_error_response(error),
     };
@@ -320,14 +320,14 @@ async fn delete_site(
 
 async fn fetch_site_channels(
     State(state): State<AdminSiteState>,
-    Path(site_id): Path<String>,
+    Path(supplier_id): Path<String>,
     Query(params): Query<ListSiteChannelsParams>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
-    let site_id = match parse_positive_id(&site_id, "site id") {
-        Ok(site_id) => site_id,
+    let supplier_id = match parse_positive_id(&supplier_id, "site id") {
+        Ok(supplier_id) => supplier_id,
         Err(message) => return bad_request(message),
     };
     let pagination = match parse_offset_list_query(params.page, params.page_size) {
@@ -338,7 +338,7 @@ async fn fetch_site_channels(
         .store
         .list_site_channels(ListAdminSiteChannelsQuery {
             subject,
-            site_id,
+            supplier_id,
             page_no: pagination.page_no,
             page_size: pagination.page_size,
             offset: pagination.offset,
@@ -359,36 +359,36 @@ async fn fetch_site_channels(
 
 async fn test_site_connection(
     State(state): State<AdminSiteState>,
-    Path(site_id): Path<String>,
+    Path(supplier_id): Path<String>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
 ) -> Response {
-    site_connection_action(state, site_id, scoped, headers, false).await
+    site_connection_action(state, supplier_id, scoped, headers, false).await
 }
 
 async fn health_check_site(
     State(state): State<AdminSiteState>,
-    Path(site_id): Path<String>,
+    Path(supplier_id): Path<String>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
 ) -> Response {
-    site_connection_action(state, site_id, scoped, headers, true).await
+    site_connection_action(state, supplier_id, scoped, headers, true).await
 }
 
 async fn site_connection_action(
     state: AdminSiteState,
-    site_id: String,
+    supplier_id: String,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
     persist_health: bool,
 ) -> Response {
     let subject = scoped.into();
-    let site_id = match parse_positive_id(&site_id, "site id") {
-        Ok(site_id) => site_id,
+    let supplier_id = match parse_positive_id(&supplier_id, "site id") {
+        Ok(supplier_id) => supplier_id,
         Err(message) => return bad_request(message),
     };
     let command =
-        match build_test_site_connection_command(state.clone(), subject, site_id, persist_health) {
+        match build_test_site_connection_command(state.clone(), subject, supplier_id, persist_health) {
             Ok(command) => command,
             Err(error) => return command_build_error_response(error),
         };
@@ -405,16 +405,16 @@ fn build_create_site_command(
     request: SiteRequest,
 ) -> Result<CreateAdminSiteCommand, SiteCommandBuildError> {
     let site_uuid = generate_entity_uuid(&state)?;
-    let site_code = match normalize_optional(request.site_code, MAX_SITE_CODE_LEN) {
+    let supplier_code = match normalize_optional(request.supplier_code, MAX_SITE_CODE_LEN) {
         Some(value) => normalize_code(value)?,
-        None => generated_site_code(&site_uuid),
+        None => generated_supplier_code(&site_uuid),
     };
     Ok(CreateAdminSiteCommand {
         subject,
         site_uuid,
         service_uuid: generate_entity_uuid(&state)?,
         audit_log_uuid: generate_entity_uuid(&state)?,
-        site_code,
+        supplier_code,
         site_name: required_text(request.site_name, "siteName", "site name", MAX_NAME_LEN)?,
         display_name: required_text(
             request.display_name,
@@ -444,14 +444,14 @@ fn build_create_site_command(
 fn build_update_site_command(
     state: AdminSiteState,
     subject: AdminSiteSubject,
-    site_id: i64,
+    supplier_id: i64,
     request: SiteUpdateRequest,
 ) -> Result<UpdateAdminSiteCommand, SiteCommandBuildError> {
     Ok(UpdateAdminSiteCommand {
         subject,
-        site_id,
+        supplier_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
-        site_code: optional_code(request.site_code)?,
+        supplier_code: optional_code(request.supplier_code)?,
         site_name: optional_text(request.site_name, "siteName", "site name", MAX_NAME_LEN)?,
         display_name: optional_text(
             request.display_name,
@@ -506,11 +506,11 @@ fn build_update_site_command(
 fn build_delete_site_command(
     state: AdminSiteState,
     subject: AdminSiteSubject,
-    site_id: i64,
+    supplier_id: i64,
 ) -> Result<DeleteAdminSiteCommand, SiteCommandBuildError> {
     Ok(DeleteAdminSiteCommand {
         subject,
-        site_id,
+        supplier_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         request_id: generate_request_id()?,
         requested_at: now_iso_string(),
@@ -520,12 +520,12 @@ fn build_delete_site_command(
 fn build_test_site_connection_command(
     state: AdminSiteState,
     subject: AdminSiteSubject,
-    site_id: i64,
+    supplier_id: i64,
     persist_health: bool,
 ) -> Result<TestAdminSiteConnectionCommand, SiteCommandBuildError> {
     Ok(TestAdminSiteConnectionCommand {
         subject,
-        site_id,
+        supplier_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         request_id: generate_request_id()?,
         requested_at: now_iso_string(),
@@ -536,7 +536,7 @@ fn build_test_site_connection_command(
 fn to_site_response(item: AdminSiteItem) -> SiteResponse {
     SiteResponse {
         id: item.id.to_string(),
-        site_code: item.site_code,
+        supplier_code: item.supplier_code,
         site_name: item.site_name,
         display_name: item.display_name,
         description: item.description,
@@ -563,11 +563,11 @@ fn to_site_response(item: AdminSiteItem) -> SiteResponse {
 fn to_site_channel_response(item: AdminSiteChannelItem) -> SiteChannelResponse {
     SiteChannelResponse {
         id: item.id.to_string(),
-        channel_code: item.channel_code,
+        account_code: item.account_code,
         channel_name: item.channel_name,
-        provider_code: item.provider_code,
-        site_code: item.site_code,
-        site_service_code: item.site_service_code,
+        supplier_code: item.supplier_code,
+        supplier_code: item.supplier_code,
+        endpoint_code: item.endpoint_code,
         site_channel_role: item.site_channel_role,
         health_status: item.health_status,
         status: item.status,
@@ -576,7 +576,7 @@ fn to_site_channel_response(item: AdminSiteChannelItem) -> SiteChannelResponse {
 
 fn to_connection_response(item: AdminSiteConnectionCheckItem) -> SiteConnectionCheckResponse {
     SiteConnectionCheckResponse {
-        site_id: item.site_id.to_string(),
+        supplier_id: item.supplier_id.to_string(),
         status: item.status,
         health_status: item.health_status,
         latency_ms: item.latency_ms,
@@ -654,7 +654,7 @@ fn optional_code(value: Option<String>) -> Result<Option<String>, SiteCommandBui
     }
 }
 
-fn generated_site_code(site_uuid: &str) -> String {
+fn generated_supplier_code(site_uuid: &str) -> String {
     let normalized: String = site_uuid
         .chars()
         .filter(|ch| ch.is_ascii_alphanumeric())

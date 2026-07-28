@@ -2,9 +2,9 @@ use sdkwork_clawrouter_router_service::application::{
     PricingResolver, ResolveModelPriceQuery, ResolvedPriceSource,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderChannelRoute,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 
@@ -21,7 +21,7 @@ fn catalog_with_openai_model() -> InMemoryPricingCatalog {
         "openai",
         vec!["chat", "tools"],
     ));
-    catalog.add_provider_route(ModelProviderRoute::new_for_catalog_key(
+    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",
@@ -34,7 +34,7 @@ fn catalog_with_openai_model() -> InMemoryPricingCatalog {
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -67,18 +67,18 @@ fn catalog_with_openai_model() -> InMemoryPricingCatalog {
 }
 
 #[test]
-fn resolves_customer_price_from_channel_group_plan_and_official_reference() {
+fn resolves_customer_price_from_upstream_account_group_plan_and_official_reference() {
     let catalog = catalog_with_openai_model();
     let resolver = PricingResolver::new(&catalog);
 
     let resolved = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("openrouter".to_owned()),
-            channel_id: None,
+            supplier_code: Some("openrouter".to_owned()),
+            account_id: None,
             region_code: None,
         })
         .unwrap();
@@ -86,7 +86,7 @@ fn resolves_customer_price_from_channel_group_plan_and_official_reference() {
     assert_eq!("standard-group", resolved.group_code);
     assert_eq!("standard", resolved.pricing_plan_code);
     assert_eq!(ModelVendor::OpenAi, resolved.vendor);
-    assert_eq!("openrouter", resolved.provider_code.as_deref().unwrap());
+    assert_eq!("openrouter", resolved.supplier_code.as_deref().unwrap());
     assert_eq!(
         ResolvedPriceSource::DerivedFromOfficialReference,
         resolved.source
@@ -125,7 +125,7 @@ fn resolves_customer_price_from_channel_group_plan_and_official_reference() {
 #[test]
 fn resolves_upstream_cost_for_the_selected_provider_channel() {
     let mut catalog = catalog_with_openai_model();
-    catalog.add_provider_route(ModelProviderRoute::new_for_catalog_key(
+    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",
@@ -148,11 +148,11 @@ fn resolves_upstream_cost_for_the_selected_provider_channel() {
     let resolved = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("openrouter".to_owned()),
-            channel_id: Some(3002),
+            supplier_code: Some("openrouter".to_owned()),
+            account_id: Some(3002),
             region_code: None,
         })
         .unwrap();
@@ -187,7 +187,7 @@ fn model_catalog_identity_does_not_supply_pricing_region_without_route_context()
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -210,11 +210,11 @@ fn model_catalog_identity_does_not_supply_pricing_region_without_route_context()
     let error = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::VideoOutputSecond,
-            provider_code: None,
-            channel_id: None,
+            supplier_code: None,
+            account_id: None,
             region_code: None,
         })
         .unwrap_err();
@@ -245,7 +245,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
         DecimalValue::parse("1.000000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -254,7 +254,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
     ));
     catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test"));
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "minimax/MiniMax-M2.7",
             "MiniMax-M2.7",
             "minimax_cn_direct",
@@ -264,7 +264,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
         .with_region_code("cn"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "minimax/MiniMax-M2.7",
             "MiniMax-M2.7",
             "minimax_global_direct",
@@ -319,11 +319,11 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
     let resolved = PricingResolver::new(&catalog)
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "minimax/MiniMax-M2.7".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("minimax_cn_direct".to_owned()),
-            channel_id: Some(3001),
+            supplier_code: Some("minimax_cn_direct".to_owned()),
+            account_id: Some(3001),
             region_code: None,
         })
         .unwrap();
@@ -345,11 +345,11 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
     let resolved = PricingResolver::new(&catalog)
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "minimax/MiniMax-M2.7".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("minimax_global_direct".to_owned()),
-            channel_id: Some(3002),
+            supplier_code: Some("minimax_global_direct".to_owned()),
+            account_id: Some(3002),
             region_code: None,
         })
         .unwrap();
@@ -392,7 +392,7 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
         DecimalValue::parse("1.000000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -401,7 +401,7 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
     ));
     catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test"));
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "deepseek/deepseek-v4-pro",
             "deepseek-v4-pro",
             "deepseek_official",
@@ -411,7 +411,7 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
         .with_region_code("global"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "deepseek/deepseek-v4-pro",
             "deepseek-v4-pro",
             "deepseek_official",
@@ -444,11 +444,11 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
     let resolved = PricingResolver::new(&catalog)
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "deepseek/deepseek-v4-pro".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("deepseek_official".to_owned()),
-            channel_id: Some(3001),
+            supplier_code: Some("deepseek_official".to_owned()),
+            account_id: Some(3001),
             region_code: Some("cn".to_owned()),
         })
         .unwrap();
@@ -480,11 +480,11 @@ fn rejects_selected_channel_that_is_not_a_provider_route_for_the_model() {
     let error = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("openrouter".to_owned()),
-            channel_id: Some(9999),
+            supplier_code: Some("openrouter".to_owned()),
+            account_id: Some(9999),
             region_code: None,
         })
         .unwrap_err();
@@ -510,7 +510,7 @@ fn channel_route_resolves_price_stack_with_its_explicit_region() {
         DecimalValue::parse("1.000000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -518,8 +518,8 @@ fn channel_route_resolves_price_stack_with_its_explicit_region() {
         DecimalValue::parse("1.000000").unwrap(),
     ));
     catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test"));
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("minimax_upstream", 4001).with_region_code("cn"),
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("minimax_upstream", 4001).with_region_code("cn"),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -556,11 +556,11 @@ fn channel_route_resolves_price_stack_with_its_explicit_region() {
     let resolved = PricingResolver::new(&catalog)
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "minimax/MiniMax-M2.7".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("minimax_upstream".to_owned()),
-            channel_id: Some(4001),
+            supplier_code: Some("minimax_upstream".to_owned()),
+            account_id: Some(4001),
             region_code: None,
         })
         .unwrap();
@@ -601,11 +601,11 @@ fn explicit_plan_customer_price_overrides_official_reference_and_keeps_group_mul
     let resolved = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
-            provider_code: Some("openrouter".to_owned()),
-            channel_id: None,
+            supplier_code: Some("openrouter".to_owned()),
+            account_id: None,
             region_code: None,
         })
         .unwrap();
@@ -647,11 +647,11 @@ fn supports_non_token_meter_without_new_pricing_table_shape() {
     let resolved = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::ApiResult,
-            provider_code: None,
-            channel_id: None,
+            supplier_code: None,
+            account_id: None,
             region_code: None,
         })
         .unwrap();
@@ -671,11 +671,11 @@ fn missing_price_returns_a_domain_error_instead_of_fake_success() {
     let error = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::VideoOutputSecond,
-            provider_code: None,
-            channel_id: None,
+            supplier_code: None,
+            account_id: None,
             region_code: None,
         })
         .unwrap_err();
@@ -713,11 +713,11 @@ fn pricing_resolver_returns_domain_error_when_decimal_math_overflows() {
     let error = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
-            channel_group_id: None,
+            account_group_id: None,
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::ApiResult,
-            provider_code: None,
-            channel_id: None,
+            supplier_code: None,
+            account_id: None,
             region_code: None,
         })
         .unwrap_err();

@@ -64,7 +64,7 @@ async fn load_statement_by_idempotency(
 ) -> DomainResult<Option<PaymentStatementRecord>> {
     let row = sqlx::query(
         r#"
-        SELECT id, tenant_id, organization_id, statement_no, provider_code, provider_account_id,
+        SELECT id, tenant_id, organization_id, statement_no, supplier_code, provider_account_id,
                statement_type, settlement_currency, period_start, period_end, provider_statement_id,
                file_ref, file_digest, download_status, parse_status, row_count, total_amount,
                fee_amount, net_amount, downloaded_at, parsed_at, request_no, idempotency_key,
@@ -90,7 +90,7 @@ async fn load_statement_items(
 ) -> DomainResult<Vec<PaymentStatementItemRecord>> {
     let rows = sqlx::query(
         r#"
-        SELECT id, tenant_id, organization_id, statement_id, provider_code, provider_account_id,
+        SELECT id, tenant_id, organization_id, statement_id, supplier_code, provider_account_id,
                row_no, native_trade_id, native_refund_id, native_order_no, sdkwork_out_trade_no,
                sdkwork_out_refund_no, transaction_type, occurred_at, settled_at, gross_amount,
                fee_amount, net_amount, currency_code, provider_status, raw_row_digest,
@@ -121,7 +121,7 @@ async fn insert_statement(
     sqlx::query(
         r#"
         INSERT INTO commerce_payment_statement
-            (id, tenant_id, organization_id, statement_no, provider_code, provider_account_id,
+            (id, tenant_id, organization_id, statement_no, supplier_code, provider_account_id,
              statement_type, settlement_currency, period_start, period_end, provider_statement_id,
              file_ref, file_digest, download_status, parse_status, row_count, total_amount,
              fee_amount, net_amount, downloaded_at, parsed_at, request_no, idempotency_key,
@@ -135,7 +135,7 @@ async fn insert_statement(
     .bind(&statement.tenant_id)
     .bind(statement.organization_id.as_deref())
     .bind(&statement.statement_no)
-    .bind(&statement.provider_code)
+    .bind(&statement.supplier_code)
     .bind(statement.provider_account_id.as_deref())
     .bind(&statement.statement_type)
     .bind(&statement.settlement_currency)
@@ -164,7 +164,7 @@ async fn insert_statement(
         sqlx::query(
             r#"
             INSERT INTO commerce_payment_statement_item
-                (id, tenant_id, organization_id, statement_id, provider_code, provider_account_id,
+                (id, tenant_id, organization_id, statement_id, supplier_code, provider_account_id,
                  row_no, native_trade_id, native_refund_id, native_order_no, sdkwork_out_trade_no,
                  sdkwork_out_refund_no, transaction_type, occurred_at, settled_at, gross_amount,
                  fee_amount, net_amount, currency_code, provider_status, raw_row_digest,
@@ -178,7 +178,7 @@ async fn insert_statement(
         .bind(&item.tenant_id)
         .bind(item.organization_id.as_deref())
         .bind(&item.statement_id)
-        .bind(&item.provider_code)
+        .bind(&item.supplier_code)
         .bind(item.provider_account_id.as_deref())
         .bind(&item.row_no)
         .bind(item.native_trade_id.as_deref())
@@ -219,7 +219,7 @@ async fn insert_reconciliation_items(
             r#"
             INSERT INTO commerce_payment_reconciliation_item
                 (id, tenant_id, organization_id, reconciliation_run_id, statement_id, statement_item_id,
-                 payment_attempt_id, refund_id, refund_attempt_id, provider_code, difference_type,
+                 payment_attempt_id, refund_id, refund_attempt_id, supplier_code, difference_type,
                  match_status, internal_amount, provider_amount, difference_amount, currency_code,
                  internal_status, provider_status, resolution_status, resolution_note, resolved_by,
                  resolved_at, created_at, updated_at)
@@ -237,7 +237,7 @@ async fn insert_reconciliation_items(
         .bind(item.payment_attempt_id.as_deref())
         .bind(item.refund_id.as_deref())
         .bind(item.refund_attempt_id.as_deref())
-        .bind(&item.provider_code)
+        .bind(&item.supplier_code)
         .bind(item.difference_type.as_str())
         .bind(&item.match_status)
         .bind(item.internal_amount.as_deref())
@@ -268,7 +268,7 @@ fn statement_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentStatem
         tenant_id: string_cell(row, "tenant_id"),
         organization_id: optional_string_cell(row, "organization_id"),
         statement_no: string_cell(row, "statement_no"),
-        provider_code: string_cell(row, "provider_code"),
+        supplier_code: string_cell(row, "supplier_code"),
         provider_account_id: optional_string_cell(row, "provider_account_id"),
         statement_type: string_cell(row, "statement_type"),
         settlement_currency: string_cell(row, "settlement_currency"),
@@ -305,7 +305,7 @@ fn statement_item_from_row(
         tenant_id: string_cell(row, "tenant_id"),
         organization_id: optional_string_cell(row, "organization_id"),
         statement_id: string_cell(row, "statement_id"),
-        provider_code: string_cell(row, "provider_code"),
+        supplier_code: string_cell(row, "supplier_code"),
         provider_account_id: optional_string_cell(row, "provider_account_id"),
         row_no: string_cell(row, "row_no"),
         native_trade_id: optional_string_cell(row, "native_trade_id"),

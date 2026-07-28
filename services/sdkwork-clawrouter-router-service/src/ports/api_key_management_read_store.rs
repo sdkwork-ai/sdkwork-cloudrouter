@@ -2,7 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::domain::{
-    ChannelGroup, ChannelGroupMetricSnapshot, DomainResult, GatewayAccessPolicy, GatewayApiKey,
+    UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, DomainResult, GatewayAccessPolicy, GatewayApiKey,
     QuotaPolicy,
 };
 use crate::ports::PricingCatalog;
@@ -30,7 +30,7 @@ pub struct GatewayApiKeyListPage {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ListAppChannelGroupsQuery {
+pub struct ListAppUpstreamAccountGroupsQuery {
     pub tenant_id: i64,
     pub organization_id: i64,
     pub page_no: i64,
@@ -40,8 +40,8 @@ pub struct ListAppChannelGroupsQuery {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AppChannelGroupListPage {
-    pub items: Vec<ChannelGroup>,
+pub struct AppUpstreamAccountGroupListPage {
+    pub items: Vec<UpstreamAccountGroup>,
     pub total: i64,
     pub page_no: i64,
     pub page_size: i64,
@@ -50,10 +50,10 @@ pub struct AppChannelGroupListPage {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct GatewayApiKeyManagementSnapshot {
     pub api_keys: Vec<GatewayApiKey>,
-    pub channel_groups: Vec<ChannelGroup>,
+    pub upstream_account_groups: Vec<UpstreamAccountGroup>,
     pub access_policies: Vec<GatewayAccessPolicy>,
     pub quota_policies: Vec<QuotaPolicy>,
-    pub channel_group_metric_snapshots: Vec<ChannelGroupMetricSnapshot>,
+    pub upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
 }
 
 impl GatewayApiKeyManagementSnapshot {
@@ -62,23 +62,23 @@ impl GatewayApiKeyManagementSnapshot {
         C: PricingCatalog + ?Sized,
     {
         let api_keys = catalog.list_api_keys();
-        let channel_groups = catalog.list_channel_groups();
+        let upstream_account_groups = catalog.list_upstream_account_groups();
         let access_policies = collect_access_policies(catalog, &api_keys);
         let quota_policies = collect_quota_policies(catalog, &api_keys);
-        let channel_group_metric_snapshots =
-            collect_channel_group_metric_snapshots(catalog, &channel_groups);
+        let upstream_account_group_metric_snapshots =
+            collect_upstream_account_group_metric_snapshots(catalog, &upstream_account_groups);
 
         Self {
             api_keys,
-            channel_groups,
+            upstream_account_groups,
             access_policies,
             quota_policies,
-            channel_group_metric_snapshots,
+            upstream_account_group_metric_snapshots,
         }
     }
 
-    pub fn find_channel_group(&self, group_id: i64) -> Option<ChannelGroup> {
-        self.channel_groups
+    pub fn find_upstream_account_group(&self, group_id: i64) -> Option<UpstreamAccountGroup> {
+        self.upstream_account_groups
             .iter()
             .find(|group| group.id == group_id)
             .cloned()
@@ -102,13 +102,13 @@ impl GatewayApiKeyManagementSnapshot {
             .cloned()
     }
 
-    pub fn find_channel_group_for_subject(
+    pub fn find_upstream_account_group_for_subject(
         &self,
         group_id: i64,
         tenant_id: i64,
         organization_id: i64,
-    ) -> Option<ChannelGroup> {
-        self.channel_groups
+    ) -> Option<UpstreamAccountGroup> {
+        self.upstream_account_groups
             .iter()
             .find(|group| {
                 group.id == group_id && group_matches_subject(group, tenant_id, organization_id)
@@ -116,13 +116,13 @@ impl GatewayApiKeyManagementSnapshot {
             .cloned()
     }
 
-    pub fn find_channel_group_by_code_for_subject(
+    pub fn find_upstream_account_group_by_code_for_subject(
         &self,
         code: &str,
         tenant_id: i64,
         organization_id: i64,
-    ) -> Option<ChannelGroup> {
-        self.channel_groups
+    ) -> Option<UpstreamAccountGroup> {
+        self.upstream_account_groups
             .iter()
             .find(|group| {
                 group.code == code && group_matches_subject(group, tenant_id, organization_id)
@@ -130,13 +130,13 @@ impl GatewayApiKeyManagementSnapshot {
             .cloned()
     }
 
-    pub fn single_channel_group_for_subject(
+    pub fn single_upstream_account_group_for_subject(
         &self,
         tenant_id: i64,
         organization_id: i64,
-    ) -> Option<ChannelGroup> {
+    ) -> Option<UpstreamAccountGroup> {
         let mut groups = self
-            .channel_groups
+            .upstream_account_groups
             .iter()
             .filter(|group| group_matches_subject(group, tenant_id, organization_id));
         let group = groups.next()?.clone();
@@ -161,11 +161,11 @@ impl GatewayApiKeyManagementSnapshot {
             .cloned()
     }
 
-    pub fn find_latest_channel_group_metric_snapshot(
+    pub fn find_latest_upstream_account_group_metric_snapshot(
         &self,
         group_id: i64,
-    ) -> Option<ChannelGroupMetricSnapshot> {
-        self.channel_group_metric_snapshots
+    ) -> Option<UpstreamAccountGroupMetricSnapshot> {
+        self.upstream_account_group_metric_snapshots
             .iter()
             .find(|snapshot| snapshot.group_id == group_id)
             .cloned()
@@ -185,17 +185,17 @@ impl GatewayApiKeyManagementSnapshot {
             .collect();
         let access_policies = collect_snapshot_access_policies(self, &api_keys);
         let quota_policies = collect_snapshot_quota_policies(self, &api_keys);
-        let channel_groups: Vec<ChannelGroup> = self
-            .channel_groups
+        let upstream_account_groups: Vec<UpstreamAccountGroup> = self
+            .upstream_account_groups
             .iter()
             .filter(|group| group_matches_subject(group, tenant_id, organization_id))
             .cloned()
             .collect();
-        let channel_group_metric_snapshots = self
-            .channel_group_metric_snapshots
+        let upstream_account_group_metric_snapshots = self
+            .upstream_account_group_metric_snapshots
             .iter()
             .filter(|snapshot| {
-                channel_groups
+                upstream_account_groups
                     .iter()
                     .any(|group| group.id == snapshot.group_id)
             })
@@ -204,10 +204,10 @@ impl GatewayApiKeyManagementSnapshot {
 
         Self {
             api_keys,
-            channel_groups,
+            upstream_account_groups,
             access_policies,
             quota_policies,
-            channel_group_metric_snapshots,
+            upstream_account_group_metric_snapshots,
         }
     }
 
@@ -253,7 +253,7 @@ impl GatewayApiKeyManagementSnapshot {
     }
 }
 
-fn group_matches_subject(group: &ChannelGroup, tenant_id: i64, organization_id: i64) -> bool {
+fn group_matches_subject(group: &UpstreamAccountGroup, tenant_id: i64, organization_id: i64) -> bool {
     (group.tenant_id == 0 || group.tenant_id == tenant_id)
         && (group.organization_id == 0 || group.organization_id == organization_id)
 }
@@ -268,10 +268,10 @@ pub trait GatewayApiKeyManagementReadStore {
         query: ListGatewayApiKeysQuery,
     ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyListPage>;
 
-    fn list_app_channel_groups<'a>(
+    fn list_app_upstream_account_groups<'a>(
         &'a self,
-        query: ListAppChannelGroupsQuery,
-    ) -> ApiKeyManagementReadFuture<'a, AppChannelGroupListPage>;
+        query: ListAppUpstreamAccountGroupsQuery,
+    ) -> ApiKeyManagementReadFuture<'a, AppUpstreamAccountGroupListPage>;
 }
 
 fn collect_access_policies<C>(catalog: &C, api_keys: &[GatewayApiKey]) -> Vec<GatewayAccessPolicy>
@@ -315,16 +315,16 @@ where
     policies
 }
 
-fn collect_channel_group_metric_snapshots<C>(
+fn collect_upstream_account_group_metric_snapshots<C>(
     catalog: &C,
-    groups: &[ChannelGroup],
-) -> Vec<ChannelGroupMetricSnapshot>
+    groups: &[UpstreamAccountGroup],
+) -> Vec<UpstreamAccountGroupMetricSnapshot>
 where
     C: PricingCatalog + ?Sized,
 {
     let mut snapshots = Vec::new();
     for group in groups {
-        if let Some(snapshot) = catalog.find_latest_channel_group_metric_snapshot(group.id) {
+        if let Some(snapshot) = catalog.find_latest_upstream_account_group_metric_snapshot(group.id) {
             snapshots.push(snapshot);
         }
     }

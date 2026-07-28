@@ -787,7 +787,7 @@ async fn create_tables(pool: &SqlitePool) {
             vendor_code TEXT,
             region_code TEXT,
             vendor_name_snapshot TEXT,
-            provider_code TEXT,
+            supplier_code TEXT,
             modality INTEGER,
             rank_no INTEGER,
             previous_rank_no INTEGER,

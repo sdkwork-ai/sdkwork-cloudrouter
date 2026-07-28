@@ -74,7 +74,7 @@ impl ProviderAdapterEndpoint {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AdapterInvocationContext {
-    pub provider_code: String,
+    pub supplier_code: String,
     pub request_id: Option<String>,
     pub trace_id: Option<String>,
 }
@@ -100,7 +100,7 @@ pub trait ProviderAdapter: Send + Sync {
 
     fn provider_family(&self) -> &'static str;
 
-    fn provider_codes(&self) -> &'static [&'static str];
+    fn supplier_codes(&self) -> &'static [&'static str];
 
     fn endpoints(&self) -> Vec<ProviderAdapterEndpoint>;
 
@@ -117,10 +117,10 @@ pub fn provider_adapter_manifest(adapters: &[Arc<dyn ProviderAdapter>]) -> Provi
             .map(|adapter| ProviderAdapterProviderManifest {
                 package: adapter.package().to_owned(),
                 provider_family: adapter.provider_family().to_owned(),
-                provider_codes: adapter
-                    .provider_codes()
+                supplier_codes: adapter
+                    .supplier_codes()
                     .iter()
-                    .map(|provider_code| (*provider_code).to_owned())
+                    .map(|supplier_code| (*supplier_code).to_owned())
                     .collect(),
                 endpoints: adapter
                     .endpoints()

@@ -253,7 +253,7 @@ impl AdminUserStore for PostgresAdminUserStore {
                 return Err(DomainError::not_found("user was not found"));
             }
             ensure_api_key_idempotency_available(&mut tx, &command).await?;
-            let group_id = ensure_default_channel_group(
+            let group_id = ensure_default_upstream_account_group(
                 &mut tx,
                 command.subject.tenant_id,
                 command.subject.organization_id,
@@ -878,7 +878,7 @@ async fn ensure_api_key_idempotency_available(
     }
 }
 
-async fn find_default_channel_group(
+async fn find_default_upstream_account_group(
     tx: &mut Transaction<'_, Postgres>,
     tenant_id: i64,
     organization_id: i64,
@@ -886,7 +886,7 @@ async fn find_default_channel_group(
     sqlx::query_scalar(
         r#"
         SELECT id
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE (tenant_id IS NULL OR tenant_id = $1)
           AND (organization_id IS NULL OR organization_id = $2)
           AND group_code = $3
@@ -905,23 +905,23 @@ async fn find_default_channel_group(
     .map_err(|error| store_error("failed to load default channel group", error))
 }
 
-async fn ensure_default_channel_group(
+async fn ensure_default_upstream_account_group(
     tx: &mut Transaction<'_, Postgres>,
     tenant_id: i64,
     organization_id: i64,
     _source_uuid: &str,
     requested_at: &str,
 ) -> DomainResult<i64> {
-    if let Some(group_id) = find_default_channel_group(tx, tenant_id, organization_id).await? {
+    if let Some(group_id) = find_default_upstream_account_group(tx, tenant_id, organization_id).await? {
         return Ok(group_id);
     }
 
     let group_uuid = format!("default-channel-group-{tenant_id}-{organization_id}");
     let pricing_plan_id = find_default_pricing_plan_id(tx, tenant_id, organization_id).await?;
-    let id = next_claw_runtime_id("ai_channel_group")?;
+    let id = next_claw_runtime_id("ai_upstream_account_group")?;
     let row = sqlx::query_scalar(
         r#"
-        INSERT INTO ai_channel_group
+        INSERT INTO ai_upstream_account_group
             (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata, id)
         VALUES
             ($1, $2, $3, 1, 1, $4::timestamptz, $4::timestamptz, 0, $5, $6, '', 'default', 1, $7, $8, '1.000000'::numeric, '1.000000'::numeric, 1, 0, '{}'::jsonb, '{}'::jsonb, $9)
@@ -929,11 +929,11 @@ async fn ensure_default_channel_group(
         DO UPDATE SET
             status = 1,
             deleted_at = NULL,
-            group_name = COALESCE(NULLIF(ai_channel_group.group_name, ''), EXCLUDED.group_name),
-            pricing_plan_id = COALESCE(ai_channel_group.pricing_plan_id, EXCLUDED.pricing_plan_id),
-            pricing_plan_code = COALESCE(NULLIF(ai_channel_group.pricing_plan_code, ''), EXCLUDED.pricing_plan_code),
-            rate_multiplier = COALESCE(ai_channel_group.rate_multiplier, EXCLUDED.rate_multiplier),
-            official_price_multiplier = COALESCE(ai_channel_group.official_price_multiplier, EXCLUDED.official_price_multiplier),
+            group_name = COALESCE(NULLIF(ai_upstream_account_group.group_name, ''), EXCLUDED.group_name),
+            pricing_plan_id = COALESCE(ai_upstream_account_group.pricing_plan_id, EXCLUDED.pricing_plan_id),
+            pricing_plan_code = COALESCE(NULLIF(ai_upstream_account_group.pricing_plan_code, ''), EXCLUDED.pricing_plan_code),
+            rate_multiplier = COALESCE(ai_upstream_account_group.rate_multiplier, EXCLUDED.rate_multiplier),
+            official_price_multiplier = COALESCE(ai_upstream_account_group.official_price_multiplier, EXCLUDED.official_price_multiplier),
             updated_at = EXCLUDED.updated_at
         RETURNING id
         "#,
@@ -995,7 +995,7 @@ async fn insert_api_key(
     sqlx::query_scalar(
         r#"
         INSERT INTO iam_gateway_api_key
-            (id, uuid, tenant_id, organization_id, user_id, channel_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, status, created_at, updated_at, last_revealed_at)
+            (id, uuid, tenant_id, organization_id, user_id, account_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, status, created_at, updated_at, last_revealed_at)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 1, $14::timestamp AT TIME ZONE 'UTC', $14::timestamp AT TIME ZONE 'UTC', CURRENT_TIMESTAMP)
         RETURNING id

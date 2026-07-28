@@ -28,14 +28,14 @@ impl InvocationProviderAdapterResolver {
 
 impl ProviderAdapterRouteResolver for InvocationProviderAdapterResolver {
     fn resolve_adapter_target(&self, invocation: &Invocation) -> Option<InvocationAdapterTarget> {
-        let provider_code = invocation
+        let supplier_code = invocation
             .account
             .as_ref()
-            .map(|account| account.provider_code.as_str())
-            .or(invocation.resource.provider_code.as_deref())?;
+            .map(|account| account.supplier_code.as_str())
+            .or(invocation.resource.supplier_code.as_deref())?;
         for standard_path in adapter_lookup_standard_paths(invocation) {
             let lookup = ProviderAdapterLookup {
-                provider_code,
+                supplier_code,
                 method: invocation.request.method.as_str(),
                 standard_path: standard_path.as_str(),
                 capability: Some(provider_native_capability_code(
@@ -48,7 +48,7 @@ impl ProviderAdapterRouteResolver for InvocationProviderAdapterResolver {
             {
                 let adapter_invocation_shape = route.invocation_shape.clone();
                 return Some(InvocationAdapterTarget {
-                    provider_code: route.provider_code.clone(),
+                    supplier_code: route.supplier_code.clone(),
                     endpoint_key: route
                         .endpoint_key
                         .clone()
@@ -69,23 +69,23 @@ impl ProviderAdapterRouteResolver for InvocationProviderAdapterResolver {
 fn adapter_lookup_standard_paths(invocation: &Invocation) -> Vec<String> {
     let path = invocation.request.path.clone();
     let mut paths = vec![path.clone()];
-    let provider_code = invocation
+    let supplier_code = invocation
         .account
         .as_ref()
-        .map(|account| account.provider_code.as_str())
-        .or(invocation.resource.provider_code.as_deref())
+        .map(|account| account.supplier_code.as_str())
+        .or(invocation.resource.supplier_code.as_deref())
         .unwrap_or_default();
-    if !provider_code.is_empty() {
+    if !supplier_code.is_empty() {
         let prefixed = format!(
             "/{}/{}",
-            provider_code.trim().trim_matches('/'),
+            supplier_code.trim().trim_matches('/'),
             path.trim_start_matches('/')
         );
         if prefixed != path && !paths.iter().any(|candidate| candidate == &prefixed) {
             paths.push(prefixed);
         }
     }
-    if provider_code.eq_ignore_ascii_case("tencent-cloud") {
+    if supplier_code.eq_ignore_ascii_case("tencent-cloud") {
         if path == "/ent/v2/start-end2video" {
             paths.push("/vidu/ent/v2/start-end2video".to_owned());
         } else if path == "/ent/v2/reference2image" {

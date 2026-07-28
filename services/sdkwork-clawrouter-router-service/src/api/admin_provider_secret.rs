@@ -40,7 +40,7 @@ struct NormalizedListRequest {
     page_no: i64,
     page_size: i64,
     offset: i64,
-    provider_code: Option<String>,
+    supplier_code: Option<String>,
     status: Option<String>,
     q: Option<String>,
 }
@@ -50,13 +50,13 @@ struct ProviderSecretListQuery {
     page: Option<i64>,
     page_size: Option<i64>,
     q: Option<String>,
-    provider_code: Option<String>,
+    supplier_code: Option<String>,
     status: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NormalizedCreateRequest {
-    provider_code: String,
+    supplier_code: String,
     name: String,
     auth_type: String,
     secret_ref: String,
@@ -67,7 +67,7 @@ struct NormalizedCreateRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NormalizedUpdateRequest {
     secret_id: i64,
-    provider_code: Option<String>,
+    supplier_code: Option<String>,
     name: Option<String>,
     auth_type: Option<String>,
     secret_ref: Option<String>,
@@ -96,7 +96,7 @@ struct AdminProviderSecretDeleteResponse {
 #[serde(rename_all = "camelCase")]
 struct AdminProviderSecretItemResponse {
     id: String,
-    provider_code: String,
+    supplier_code: String,
     account_code: String,
     name: String,
     auth_type: String,
@@ -319,13 +319,13 @@ fn normalize_list_request(
     request: Map<String, Value>,
     query_params: ProviderSecretListQuery,
 ) -> Result<NormalizedListRequest, String> {
-    let provider_code = optional_any_text(
+    let supplier_code = optional_any_text(
         &request,
         &["providerCode", "vendor"],
         "provider code",
         MAX_PROVIDER_CODE_LEN,
     )?
-    .map(|value| normalize_provider_code(&value))
+    .map(|value| normalize_supplier_code(&value))
     .transpose()?;
     let status = optional_text(&request, "status", "provider secret status", 32)?
         .map(|status| normalize_status(&status))
@@ -335,14 +335,14 @@ fn normalize_list_request(
         .or(optional_integer(&request, "page_size")?)
         .or(query_params.page_size);
     let q = optional_text(&request, "q", "q", 128)?.or(query_params.q);
-    let provider_code = match provider_code {
+    let supplier_code = match supplier_code {
         Some(code) => Some(code),
         None => query_params
-            .provider_code
+            .supplier_code
             .as_deref()
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .map(normalize_provider_code)
+            .map(normalize_supplier_code)
             .transpose()?,
     };
     let status = match status {
@@ -360,19 +360,19 @@ fn normalize_list_request(
         page_no: pagination.page_no,
         page_size: pagination.page_size,
         offset: pagination.offset,
-        provider_code,
+        supplier_code,
         status,
         q: normalize_list_search_query(q, "q")?,
     })
 }
 
 fn normalize_list_query(query: ProviderSecretListQuery) -> Result<NormalizedListRequest, String> {
-    let provider_code = query
-        .provider_code
+    let supplier_code = query
+        .supplier_code
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
-        .map(normalize_provider_code)
+        .map(normalize_supplier_code)
         .transpose()?;
     let status = query
         .status
@@ -386,7 +386,7 @@ fn normalize_list_query(query: ProviderSecretListQuery) -> Result<NormalizedList
         page_no: pagination.page_no,
         page_size: pagination.page_size,
         offset: pagination.offset,
-        provider_code,
+        supplier_code,
         status,
         q: normalize_list_search_query(query.q, "q")?,
     })
@@ -401,7 +401,7 @@ fn build_list_query(
         page_no: request.page_no,
         page_size: request.page_size,
         offset: request.offset,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         status: request.status,
         q: request.q,
     })
@@ -411,7 +411,7 @@ fn normalize_create_request(
     request: Map<String, Value>,
 ) -> Result<NormalizedCreateRequest, String> {
     reject_plaintext_secret_values(&request)?;
-    let provider_code = normalize_provider_code(&required_any_text(
+    let supplier_code = normalize_supplier_code(&required_any_text(
         &request,
         &["providerCode", "vendor"],
         "provider code",
@@ -438,7 +438,7 @@ fn normalize_create_request(
     let status = normalize_status(&status)?;
 
     Ok(NormalizedCreateRequest {
-        provider_code,
+        supplier_code,
         name,
         auth_type,
         masked_label: mask_secret_ref(&secret_ref),
@@ -455,13 +455,13 @@ fn normalize_update_request(
         &required_text(&request, "id", "provider secret id", 64)?,
         "provider secret id",
     )?;
-    let provider_code = optional_any_text(
+    let supplier_code = optional_any_text(
         &request,
         &["providerCode", "vendor"],
         "provider code",
         MAX_PROVIDER_CODE_LEN,
     )?
-    .map(|value| normalize_provider_code(&value))
+    .map(|value| normalize_supplier_code(&value))
     .transpose()?;
     let name = optional_any_text(
         &request,
@@ -487,7 +487,7 @@ fn normalize_update_request(
         .map(|status| normalize_status(&status))
         .transpose()?;
 
-    if provider_code.is_none()
+    if supplier_code.is_none()
         && name.is_none()
         && auth_type.is_none()
         && secret_ref.is_none()
@@ -498,7 +498,7 @@ fn normalize_update_request(
 
     Ok(NormalizedUpdateRequest {
         secret_id,
-        provider_code,
+        supplier_code,
         name,
         auth_type,
         secret_ref,
@@ -629,7 +629,7 @@ fn optional_integer(request: &Map<String, Value>, key: &str) -> Result<Option<i6
     }
 }
 
-fn normalize_provider_code(value: &str) -> Result<String, String> {
+fn normalize_supplier_code(value: &str) -> Result<String, String> {
     let normalized = value.trim().to_ascii_lowercase();
     let code = match normalized.as_str() {
         "openai" => "openai",
@@ -721,7 +721,7 @@ fn build_create_command(
         account_uuid,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         name: request.name,
         auth_type: request.auth_type,
         secret_ref: request.secret_ref,
@@ -743,7 +743,7 @@ fn build_update_command(
         secret_id: request.secret_id,
         audit_log_uuid: generate_entity_uuid(&state)?,
         config_snapshot_uuid: generate_entity_uuid(&state)?,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         name: request.name,
         auth_type: request.auth_type,
         secret_ref: request.secret_ref,
@@ -791,7 +791,7 @@ fn request_id_error(error: RequestIdError) -> ProviderSecretCommandBuildError {
 fn to_item_response(item: AdminProviderSecretItem) -> AdminProviderSecretItemResponse {
     AdminProviderSecretItemResponse {
         id: item.id.to_string(),
-        provider_code: item.provider_code,
+        supplier_code: item.supplier_code,
         account_code: item.account_code,
         name: item.name,
         auth_type: item.auth_type,
@@ -885,12 +885,12 @@ mod tests {
             page: None,
             page_size: None,
             q: None,
-            provider_code: Some("OpenAI".to_owned()),
+            supplier_code: Some("OpenAI".to_owned()),
             status: Some("disabled".to_owned()),
         })
         .expect("provider secret query should normalize");
 
-        assert_eq!(Some("openai".to_owned()), request.provider_code);
+        assert_eq!(Some("openai".to_owned()), request.supplier_code);
         assert_eq!(Some("disabled".to_owned()), request.status);
     }
 }

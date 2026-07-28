@@ -42,7 +42,7 @@ pub enum ResourceType {
 pub struct InvocationResource {
     pub surface: InvocationSurface,
     pub provider_family: Option<String>,
-    pub provider_code: Option<String>,
+    pub supplier_code: Option<String>,
     pub route_key: String,
     pub api_code: String,
     pub endpoint_key: Option<String>,
@@ -68,7 +68,7 @@ impl InvocationResource {
         Self {
             surface: InvocationSurface::OpenAiCompatible,
             provider_family: None,
-            provider_code: None,
+            supplier_code: None,
             route_key: route_key.into(),
             api_code: api_code.into(),
             endpoint_key: None,
@@ -93,7 +93,7 @@ impl InvocationResource {
         Self {
             surface: InvocationSurface::OpenAiCompatible,
             provider_family: None,
-            provider_code: None,
+            supplier_code: None,
             route_key: route_key.into(),
             api_code: api_code.into(),
             endpoint_key: None,

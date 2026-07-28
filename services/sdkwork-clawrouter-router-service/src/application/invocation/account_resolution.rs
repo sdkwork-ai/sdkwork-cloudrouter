@@ -49,8 +49,8 @@ where
             validate_callable_candidate(candidate)?;
 
             invocation.account = Some(InvocationAccount {
-                provider_code: candidate.provider_code.clone(),
-                channel_id: candidate.channel_id,
+                supplier_code: candidate.supplier_code.clone(),
+                account_id: candidate.account_id,
                 region_code: candidate.region_code.clone(),
                 credential_id: candidate.credential_id,
                 credential_rotation: candidate.credential_rotation.clone(),
@@ -69,7 +69,7 @@ where
                     .filter(|value| !is_blank(Some(value)))
                 {
                     invocation.resource.requested_model_catalog_key = Some(
-                        canonical_provider_catalog_key(&candidate.provider_code, model),
+                        canonical_provider_catalog_key(&candidate.supplier_code, model),
                     );
                 } else if let Some(catalog_key) = candidate.catalog_key.as_ref() {
                     invocation.resource.requested_model_catalog_key = Some(catalog_key.clone());
@@ -86,29 +86,29 @@ where
     }
 }
 
-fn canonical_provider_catalog_key(provider_code: &str, model: &str) -> String {
-    let provider_code = provider_code.trim();
+fn canonical_provider_catalog_key(supplier_code: &str, model: &str) -> String {
+    let supplier_code = supplier_code.trim();
     let model = model.trim();
     let model_provider = model
         .split('/')
         .map(str::trim)
         .find(|part| !is_blank(Some(part)));
-    if model_provider == Some(provider_code) {
+    if model_provider == Some(supplier_code) {
         model.to_owned()
     } else {
-        format!("{provider_code}/{model}")
+        format!("{supplier_code}/{model}")
     }
 }
 
 fn validate_callable_candidate(
     candidate: &InvocationRouteCandidate,
 ) -> Result<(), InvocationError> {
-    if is_blank(Some(candidate.provider_code.as_str())) {
+    if is_blank(Some(candidate.supplier_code.as_str())) {
         return Err(account_error(
             "resolved route candidate is missing provider code",
         ));
     }
-    if candidate.channel_id <= 0 {
+    if candidate.account_id <= 0 {
         return Err(account_error(
             "resolved route candidate is missing channel id",
         ));
@@ -116,7 +116,7 @@ fn validate_callable_candidate(
     if is_blank(candidate.base_url.as_deref()) {
         return Err(account_error(format!(
             "resolved route candidate {}:{} is missing base URL",
-            candidate.provider_code, candidate.channel_id
+            candidate.supplier_code, candidate.account_id
         )));
     }
     if is_blank(candidate.secret_ref.as_deref())
@@ -124,7 +124,7 @@ fn validate_callable_candidate(
     {
         return Err(account_error(format!(
             "resolved route candidate {}:{} is missing secret ref",
-            candidate.provider_code, candidate.channel_id
+            candidate.supplier_code, candidate.account_id
         )));
     }
     Ok(())

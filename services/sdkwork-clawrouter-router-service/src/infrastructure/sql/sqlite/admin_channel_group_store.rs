@@ -36,14 +36,14 @@ impl SqliteAdminChannelGroupStore {
 }
 
 impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
-    fn list_channel_groups<'a>(
+    fn list_upstream_account_groups<'a>(
         &'a self,
         query: ListAdminChannelGroupsQuery,
     ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupListPage> {
-        Box::pin(async move { list_channel_groups(&self.pool, query).await })
+        Box::pin(async move { list_upstream_account_groups(&self.pool, query).await })
     }
 
-    fn create_channel_group<'a>(
+    fn create_upstream_account_group<'a>(
         &'a self,
         command: CreateAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupItem> {
@@ -58,7 +58,7 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 command.subject.organization_id,
             )
             .await?;
-            let id = insert_channel_group(&mut tx, &command, pricing_plan.as_ref()).await?;
+            let id = insert_upstream_account_group(&mut tx, &command, pricing_plan.as_ref()).await?;
             if let Some((pricing_plan_id, pricing_plan_code)) = pricing_plan {
                 upsert_pricing_plan_binding(
                     &mut tx,
@@ -93,14 +93,14 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 command.subject.tenant_id,
                 command.subject.organization_id,
                 command.subject.operator_id,
-                "create_channel_group",
+                "create_upstream_account_group",
                 id,
                 serde_json::json!({
-                    "action": "create_channel_group",
+                    "action": "create_upstream_account_group",
                     "accessGroupId": id,
                     "groupName": &command.group_name,
                     "groupCode": &command.group_code,
-                    "providerCode": &command.provider_code,
+                    "providerCode": &command.supplier_code,
                     "priceReferenceMode": &command.price_reference_mode,
                     "rateMultiplier": command.rate_multiplier,
                     "officialPriceMultiplier": command.official_price_multiplier,
@@ -121,14 +121,14 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 command.subject.organization_id,
                 command.subject.operator_id,
                 command.subject.operator_type,
-                "create_channel_group",
+                "create_upstream_account_group",
                 id,
                 serde_json::json!({
-                    "action": "create_channel_group",
+                    "action": "create_upstream_account_group",
                     "accessGroupId": id,
                     "groupName": &command.group_name,
                     "groupCode": &command.group_code,
-                    "providerCode": &command.provider_code,
+                    "providerCode": &command.supplier_code,
                     "priceReferenceMode": &command.price_reference_mode,
                     "rateMultiplier": command.rate_multiplier,
                     "officialPriceMultiplier": command.official_price_multiplier,
@@ -140,13 +140,13 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
             .await?;
             record_sqlite_ai_routing_config_change(
                 &mut tx,
-                channel_group_routing_config_change(
+                upstream_account_group_routing_config_change(
                     command.subject.tenant_id,
                     command.subject.organization_id,
                     command.subject.operator_id,
                     &command.request_id,
                     &command.requested_at,
-                    "create_channel_group",
+                    "create_upstream_account_group",
                     id,
                     serde_json::json!({
                         "accessGroupId": id,
@@ -159,7 +159,7 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 ),
             )
             .await?;
-            let item = load_channel_group_by_id(
+            let item = load_upstream_account_group_by_id(
                 &mut tx,
                 id,
                 command.subject.tenant_id,
@@ -174,7 +174,7 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
         })
     }
 
-    fn update_channel_group<'a>(
+    fn update_upstream_account_group<'a>(
         &'a self,
         command: UpdateAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, Option<AdminChannelGroupItem>> {
@@ -183,7 +183,7 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 self.pool.begin().await.map_err(|error| {
                     store_error("failed to begin channel group transaction", error)
                 })?;
-            let updated = update_channel_group(&mut tx, &command).await?;
+            let updated = update_upstream_account_group(&mut tx, &command).await?;
             if !updated {
                 tx.commit().await.map_err(|error| {
                     store_error("failed to commit channel group transaction", error)
@@ -191,7 +191,7 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 return Ok(None);
             }
             if let Some(status) = command.status.as_deref() {
-                sync_channel_group_relationship_status(
+                sync_upstream_account_group_relationship_status(
                     &mut tx,
                     command.subject.tenant_id,
                     command.subject.organization_id,
@@ -229,14 +229,14 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 command.subject.tenant_id,
                 command.subject.organization_id,
                 command.subject.operator_id,
-                "update_channel_group",
+                "update_upstream_account_group",
                 command.group_id,
                 serde_json::json!({
-                    "action": "update_channel_group",
+                    "action": "update_upstream_account_group",
                     "accessGroupId": command.group_id,
                     "groupCodeChanged": command.group_code.is_some(),
                     "groupNameChanged": command.group_name.is_some(),
-                    "providerCodeChanged": command.provider_code.is_some(),
+                    "providerCodeChanged": command.supplier_code.is_some(),
                     "priceReferenceModeChanged": command.price_reference_mode.is_some(),
                     "rateMultiplier": command.rate_multiplier,
                     "officialPriceMultiplier": command.official_price_multiplier,
@@ -257,14 +257,14 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 command.subject.organization_id,
                 command.subject.operator_id,
                 command.subject.operator_type,
-                "update_channel_group",
+                "update_upstream_account_group",
                 command.group_id,
                 serde_json::json!({
-                    "action": "update_channel_group",
+                    "action": "update_upstream_account_group",
                     "accessGroupId": command.group_id,
                     "groupCodeChanged": command.group_code.is_some(),
                     "groupNameChanged": command.group_name.is_some(),
-                    "providerCodeChanged": command.provider_code.is_some(),
+                    "providerCodeChanged": command.supplier_code.is_some(),
                     "priceReferenceModeChanged": command.price_reference_mode.is_some(),
                     "rateMultiplier": command.rate_multiplier,
                     "officialPriceMultiplier": command.official_price_multiplier,
@@ -276,13 +276,13 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
             .await?;
             record_sqlite_ai_routing_config_change(
                 &mut tx,
-                channel_group_routing_config_change(
+                upstream_account_group_routing_config_change(
                     command.subject.tenant_id,
                     command.subject.organization_id,
                     command.subject.operator_id,
                     &command.request_id,
                     &command.requested_at,
-                    "update_channel_group",
+                    "update_upstream_account_group",
                     command.group_id,
                     serde_json::json!({
                         "accessGroupId": command.group_id,
@@ -297,7 +297,7 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 ),
             )
             .await?;
-            let item = load_channel_group_by_id(
+            let item = load_upstream_account_group_by_id(
                 &mut tx,
                 command.group_id,
                 command.subject.tenant_id,
@@ -342,7 +342,7 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
         })
     }
 
-    fn delete_channel_group<'a>(
+    fn delete_upstream_account_group<'a>(
         &'a self,
         command: DeleteAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, bool> {
@@ -351,9 +351,9 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 self.pool.begin().await.map_err(|error| {
                     store_error("failed to begin channel group transaction", error)
                 })?;
-            let deleted = soft_delete_channel_group(&mut tx, &command).await?;
+            let deleted = soft_delete_upstream_account_group(&mut tx, &command).await?;
             if deleted {
-                soft_delete_group_bindings(&mut tx, &command).await?;
+                soft_delete_account_group_bindings(&mut tx, &command).await?;
                 insert_config_snapshot(
                     &mut tx,
                     &command.config_snapshot_uuid,
@@ -361,10 +361,10 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                     command.subject.tenant_id,
                     command.subject.organization_id,
                     command.subject.operator_id,
-                    "delete_channel_group",
+                    "delete_upstream_account_group",
                     command.group_id,
                     serde_json::json!({
-                        "action": "delete_channel_group",
+                        "action": "delete_upstream_account_group",
                         "accessGroupId": command.group_id,
                         "deleted": true
                     }),
@@ -379,23 +379,23 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                     command.subject.organization_id,
                     command.subject.operator_id,
                     command.subject.operator_type,
-                    "delete_channel_group",
+                    "delete_upstream_account_group",
                     command.group_id,
                     serde_json::json!({
-                        "action": "delete_channel_group",
+                        "action": "delete_upstream_account_group",
                         "accessGroupId": command.group_id
                     }),
                 )
                 .await?;
                 record_sqlite_ai_routing_config_change(
                     &mut tx,
-                    channel_group_routing_config_change(
+                    upstream_account_group_routing_config_change(
                         command.subject.tenant_id,
                         command.subject.organization_id,
                         command.subject.operator_id,
                         &command.request_id,
                         &command.requested_at,
-                        "delete_channel_group",
+                        "delete_upstream_account_group",
                         command.group_id,
                         serde_json::json!({
                             "accessGroupId": command.group_id,
@@ -438,12 +438,12 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 command.subject.tenant_id,
                 command.subject.organization_id,
                 command.subject.operator_id,
-                "replace_channel_group_channel_bindings",
+                "replace_upstream_account_group_channel_bindings",
                 command.group_id,
                 serde_json::json!({
-                    "action": "replace_channel_group_channel_bindings",
+                    "action": "replace_upstream_account_group_channel_bindings",
                     "accessGroupId": command.group_id,
-                    "channelIds": items.iter().map(|item| item.channel_id).collect::<Vec<_>>()
+                    "channelIds": items.iter().map(|item| item.account_id).collect::<Vec<_>>()
                 }),
                 &command.requested_at,
             )
@@ -456,28 +456,28 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 command.subject.organization_id,
                 command.subject.operator_id,
                 command.subject.operator_type,
-                "replace_channel_group_channel_bindings",
+                "replace_upstream_account_group_channel_bindings",
                 command.group_id,
                 serde_json::json!({
-                    "action": "replace_channel_group_channel_bindings",
+                    "action": "replace_upstream_account_group_channel_bindings",
                     "accessGroupId": command.group_id,
-                    "channelIds": items.iter().map(|item| item.channel_id).collect::<Vec<_>>()
+                    "channelIds": items.iter().map(|item| item.account_id).collect::<Vec<_>>()
                 }),
             )
             .await?;
             record_sqlite_ai_routing_config_change(
                 &mut tx,
-                channel_group_routing_config_change(
+                upstream_account_group_routing_config_change(
                     command.subject.tenant_id,
                     command.subject.organization_id,
                     command.subject.operator_id,
                     &command.request_id,
                     &command.requested_at,
-                    "replace_channel_group_channel_bindings",
+                    "replace_upstream_account_group_channel_bindings",
                     command.group_id,
                     serde_json::json!({
                         "accessGroupId": command.group_id,
-                        "channelIds": items.iter().map(|item| item.channel_id).collect::<Vec<_>>(),
+                        "channelIds": items.iter().map(|item| item.account_id).collect::<Vec<_>>(),
                         "resourceBindingsChanged": true
                     }),
                 ),
@@ -502,7 +502,7 @@ async fn list_channel_bindings(
         r#"
         WHERE b.tenant_id = ?
           AND b.organization_id = ?
-          AND b.channel_group_id = ?
+          AND b.account_group_id = ?
           AND b.deleted_at IS NULL
         ORDER BY b.priority ASC, b.weight DESC, b.id ASC
         "#,
@@ -537,25 +537,25 @@ async fn replace_channel_bindings(
     )
     .await?;
 
-    let channel_ids = command
+    let account_ids = command
         .items
         .iter()
-        .map(|item| item.channel_id)
+        .map(|item| item.account_id)
         .collect::<Vec<_>>();
-    for channel_id in &channel_ids {
+    for account_id in &account_ids {
         ensure_channel_exists(
             tx,
             command.subject.tenant_id,
             command.subject.organization_id,
-            *channel_id,
+            *account_id,
         )
         .await?;
     }
 
-    if channel_ids.is_empty() {
+    if account_ids.is_empty() {
         sqlx::query(
             r#"
-            UPDATE ai_channel_group_member
+            UPDATE ai_upstream_account_group_member
             SET status = 0,
                 deleted_at = ?,
                 deleted_by = ?,
@@ -563,7 +563,7 @@ async fn replace_channel_bindings(
                 version = COALESCE(version, 0) + 1
             WHERE tenant_id = ?
               AND organization_id = ?
-              AND channel_group_id = ?
+              AND account_group_id = ?
               AND deleted_at IS NULL
             "#,
         )
@@ -578,12 +578,12 @@ async fn replace_channel_bindings(
         .map_err(|error| store_error("failed to clear channel group channel bindings", error))?;
     } else {
         let placeholders = std::iter::repeat("?")
-            .take(channel_ids.len())
+            .take(account_ids.len())
             .collect::<Vec<_>>()
             .join(", ");
         let sql = format!(
             r#"
-            UPDATE ai_channel_group_member
+            UPDATE ai_upstream_account_group_member
             SET status = 0,
                 deleted_at = ?,
                 deleted_by = ?,
@@ -591,9 +591,9 @@ async fn replace_channel_bindings(
                 version = COALESCE(version, 0) + 1
             WHERE tenant_id = ?
               AND organization_id = ?
-              AND channel_group_id = ?
+              AND account_group_id = ?
               AND deleted_at IS NULL
-              AND channel_id NOT IN ({placeholders})
+              AND account_id NOT IN ({placeholders})
             "#,
         );
         let mut query = sqlx::query(&sql)
@@ -603,8 +603,8 @@ async fn replace_channel_bindings(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.group_id);
-        for channel_id in &channel_ids {
-            query = query.bind(*channel_id);
+        for account_id in &account_ids {
+            query = query.bind(*account_id);
         }
         query.execute(&mut **tx).await.map_err(|error| {
             store_error(
@@ -619,7 +619,7 @@ async fn replace_channel_bindings(
             .binding_uuids
             .get(index)
             .cloned()
-            .unwrap_or_else(|| format!("group-channel-{}-{}", command.group_id, item.channel_id));
+            .unwrap_or_else(|| format!("group-channel-{}-{}", command.group_id, item.account_id));
         let requested_status = status_code(&item.status);
         let persisted_status = relationship_status_for_group(group_status, requested_status);
         let metadata = relationship_metadata_for_group(
@@ -627,20 +627,20 @@ async fn replace_channel_bindings(
             requested_status,
             RESOURCE_ACCESS_SOURCE_CHANNEL_BINDING,
         );
-        let binding_id = next_claw_runtime_id("ai_channel_group_member")?;
+        let binding_id = next_claw_runtime_id("ai_upstream_account_group_member")?;
         sqlx::query(
             r#"
-            INSERT INTO ai_channel_group_member
-                (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_group_id, channel_id, priority, weight, metadata, id)
+            INSERT INTO ai_upstream_account_group_member
+                (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, account_group_id, account_id, priority, weight, metadata, id)
             VALUES
                 (?, ?, ?, 1, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(tenant_id, organization_id, channel_group_id, channel_id)
+            ON CONFLICT(tenant_id, organization_id, account_group_id, account_id)
             DO UPDATE SET
                 status = excluded.status,
                 updated_at = excluded.updated_at,
                 deleted_at = NULL,
                 deleted_by = NULL,
-                version = COALESCE(ai_channel_group_member.version, 0) + 1,
+                version = COALESCE(ai_upstream_account_group_member.version, 0) + 1,
                 priority = excluded.priority,
                 weight = excluded.weight,
                 metadata = excluded.metadata
@@ -653,7 +653,7 @@ async fn replace_channel_bindings(
         .bind(&command.requested_at)
         .bind(&command.requested_at)
         .bind(command.group_id)
-        .bind(item.channel_id)
+        .bind(item.account_id)
         .bind(item.priority)
         .bind(item.weight)
         .bind(metadata)
@@ -678,7 +678,7 @@ async fn list_channel_bindings_for_tx(
         r#"
         WHERE b.tenant_id = ?
           AND b.organization_id = ?
-          AND b.channel_group_id = ?
+          AND b.account_group_id = ?
           AND b.deleted_at IS NULL
         ORDER BY b.priority ASC, b.weight DESC, b.id ASC
         "#,
@@ -703,7 +703,7 @@ async fn load_group_status(
     let status: i32 = sqlx::query_scalar(
         r#"
         SELECT status
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE id = ?
           AND tenant_id = ?
           AND organization_id = ?
@@ -728,7 +728,7 @@ async fn ensure_group_exists(
     let exists: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(1)
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE id = ?
           AND tenant_id = ?
           AND organization_id = ?
@@ -751,7 +751,7 @@ async fn ensure_channel_exists(
     tx: &mut Transaction<'_, Sqlite>,
     tenant_id: i64,
     organization_id: i64,
-    channel_id: i64,
+    account_id: i64,
 ) -> DomainResult<()> {
     let exists: i64 = sqlx::query_scalar(
         r#"
@@ -763,7 +763,7 @@ async fn ensure_channel_exists(
           AND deleted_at IS NULL
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .bind(tenant_id)
     .bind(organization_id)
     .fetch_one(&mut **tx)
@@ -771,7 +771,7 @@ async fn ensure_channel_exists(
     .map_err(|error| store_error("failed to load AI channel for channel group binding", error))?;
     if exists == 0 {
         return Err(DomainError::not_found(format!(
-            "AI channel was not found: {channel_id}"
+            "AI channel was not found: {account_id}"
         )));
     }
     Ok(())
@@ -817,7 +817,7 @@ async fn replace_group_resource_access(
 ) -> DomainResult<()> {
     sqlx::query(
         r#"
-        UPDATE ai_channel_group_resource
+        UPDATE ai_upstream_account_group_resource
         SET status = 0,
             deleted_at = ?,
             deleted_by = ?,
@@ -825,7 +825,7 @@ async fn replace_group_resource_access(
             version = COALESCE(version, 0) + 1
         WHERE tenant_id = ?
           AND organization_id = ?
-          AND channel_group_id = ?
+          AND account_group_id = ?
           AND deleted_at IS NULL
           AND COALESCE(json_extract(COALESCE(NULLIF(metadata, ''), '{}'), '$.source'), 'channel_binding') = ?
         "#,
@@ -1046,14 +1046,14 @@ async fn upsert_group_resource_access(
     let resource_hash = digest_hex(&format!("{source}:{access_code}"));
     let persisted_status = relationship_status_for_group(group_status, 1);
     let metadata = relationship_metadata_for_group(group_status, 1, source);
-    let resource_access_id = next_claw_runtime_id("ai_channel_group_resource")?;
+    let resource_access_id = next_claw_runtime_id("ai_upstream_account_group_resource")?;
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, channel_group_id, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, id)
+        INSERT INTO ai_upstream_account_group_resource
+            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, account_group_id, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, id)
         VALUES
             (?, ?, ?, 1, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, 'allow', ?, ?)
-        ON CONFLICT(tenant_id, organization_id, channel_group_id, resource_code, resource_group_code)
+        ON CONFLICT(tenant_id, organization_id, account_group_id, resource_code, resource_group_code)
         DO UPDATE SET
             status = excluded.status,
             deleted_at = NULL,
@@ -1064,7 +1064,7 @@ async fn upsert_group_resource_access(
             grant_type = excluded.grant_type,
             priority = excluded.priority,
             metadata = excluded.metadata,
-            version = COALESCE(ai_channel_group_resource.version, 0) + 1
+            version = COALESCE(ai_upstream_account_group_resource.version, 0) + 1
         "#,
     )
     .bind(format!("ai-channel-group-resource-{group_id}-{resource_hash}"))
@@ -1087,7 +1087,7 @@ async fn upsert_group_resource_access(
     Ok(())
 }
 
-async fn list_channel_groups(
+async fn list_upstream_account_groups(
     pool: &SqlitePool,
     query: ListAdminChannelGroupsQuery,
 ) -> DomainResult<AdminChannelGroupListPage> {
@@ -1095,7 +1095,7 @@ async fn list_channel_groups(
         .q
         .as_ref()
         .map(|value| format!("%{}%", value.to_lowercase()));
-    let sql = channel_group_select_sql(
+    let sql = upstream_account_group_select_sql(
         r#"
         WHERE g.tenant_id = ?
           AND g.organization_id = ?
@@ -1189,7 +1189,7 @@ async fn find_group_pricing_plan(
     let row = sqlx::query(
         r#"
         SELECT pricing_plan_id, COALESCE(pricing_plan_code, '') AS pricing_plan_code
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE id = ?
           AND tenant_id = ?
           AND organization_id = ?
@@ -1217,7 +1217,7 @@ async fn find_group_pricing_plan(
     Ok(Some((id, code)))
 }
 
-async fn insert_channel_group(
+async fn insert_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
     command: &CreateAdminChannelGroupCommand,
     pricing_plan: Option<&(i64, String)>,
@@ -1225,11 +1225,11 @@ async fn insert_channel_group(
     let (pricing_plan_id, pricing_plan_code) = pricing_plan
         .map(|(id, code)| (Some(*id), Some(code.as_str())))
         .unwrap_or((None, None));
-    let id = next_claw_runtime_id("ai_channel_group")?;
+    let id = next_claw_runtime_id("ai_upstream_account_group")?;
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group
-            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, provider_code, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, price_reference_mode, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata, id)
+        INSERT INTO ai_upstream_account_group
+            (uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, supplier_code, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, price_reference_mode, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata, id)
         VALUES
             (?, ?, ?, 1, ?, ?, ?, 0, ?, ?, '', ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, '{}', '{}', ?)
         "#,
@@ -1242,7 +1242,7 @@ async fn insert_channel_group(
     .bind(&command.requested_at)
     .bind(&command.group_name)
     .bind(&command.group_code)
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.group_type)
     .bind(pricing_plan_id)
     .bind(pricing_plan_code)
@@ -1259,16 +1259,16 @@ async fn insert_channel_group(
     Ok(id)
 }
 
-async fn update_channel_group(
+async fn update_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
     command: &UpdateAdminChannelGroupCommand,
 ) -> DomainResult<bool> {
     let result = sqlx::query(
         r#"
-        UPDATE ai_channel_group
+        UPDATE ai_upstream_account_group
         SET group_name = COALESCE(?, group_name),
             group_code = COALESCE(?, group_code),
-            provider_code = COALESCE(?, provider_code),
+            supplier_code = COALESCE(?, supplier_code),
             price_reference_mode = COALESCE(?, price_reference_mode),
             rate_multiplier = COALESCE(?, rate_multiplier),
             official_price_multiplier = COALESCE(?, official_price_multiplier),
@@ -1285,7 +1285,7 @@ async fn update_channel_group(
     )
     .bind(command.group_name.as_deref())
     .bind(command.group_code.as_deref())
-    .bind(command.provider_code.as_deref())
+    .bind(command.supplier_code.as_deref())
     .bind(
         command
             .price_reference_mode
@@ -1308,7 +1308,7 @@ async fn update_channel_group(
     Ok(result.rows_affected() > 0)
 }
 
-async fn sync_channel_group_relationship_status(
+async fn sync_upstream_account_group_relationship_status(
     tx: &mut Transaction<'_, Sqlite>,
     tenant_id: i64,
     organization_id: i64,
@@ -1319,14 +1319,14 @@ async fn sync_channel_group_relationship_status(
     if status == 0 {
         sqlx::query(
             r#"
-            UPDATE ai_channel_group_member
+            UPDATE ai_upstream_account_group_member
             SET status = 0,
                 metadata = json_set(COALESCE(NULLIF(metadata, ''), '{}'), '$.disabledByParent', 1),
                 updated_at = ?,
                 version = COALESCE(version, 0) + 1
             WHERE tenant_id = ?
               AND organization_id = ?
-              AND channel_group_id = ?
+              AND account_group_id = ?
               AND status = 1
               AND deleted_at IS NULL
             "#,
@@ -1341,14 +1341,14 @@ async fn sync_channel_group_relationship_status(
 
         sqlx::query(
             r#"
-            UPDATE ai_channel_group_resource
+            UPDATE ai_upstream_account_group_resource
             SET status = 0,
                 metadata = json_set(COALESCE(NULLIF(metadata, ''), '{}'), '$.disabledByParent', 1),
                 updated_at = ?,
                 version = COALESCE(version, 0) + 1
             WHERE tenant_id = ?
               AND organization_id = ?
-              AND channel_group_id = ?
+              AND account_group_id = ?
               AND status = 1
               AND deleted_at IS NULL
             "#,
@@ -1363,14 +1363,14 @@ async fn sync_channel_group_relationship_status(
     } else if status == 1 {
         sqlx::query(
             r#"
-            UPDATE ai_channel_group_member
+            UPDATE ai_upstream_account_group_member
             SET status = 1,
                 metadata = json_remove(COALESCE(NULLIF(metadata, ''), '{}'), '$.disabledByParent'),
                 updated_at = ?,
                 version = COALESCE(version, 0) + 1
             WHERE tenant_id = ?
               AND organization_id = ?
-              AND channel_group_id = ?
+              AND account_group_id = ?
               AND status = 0
               AND deleted_at IS NULL
               AND json_extract(COALESCE(NULLIF(metadata, ''), '{}'), '$.disabledByParent') = 1
@@ -1386,14 +1386,14 @@ async fn sync_channel_group_relationship_status(
 
         sqlx::query(
             r#"
-            UPDATE ai_channel_group_resource
+            UPDATE ai_upstream_account_group_resource
             SET status = 1,
                 metadata = json_remove(COALESCE(NULLIF(metadata, ''), '{}'), '$.disabledByParent'),
                 updated_at = ?,
                 version = COALESCE(version, 0) + 1
             WHERE tenant_id = ?
               AND organization_id = ?
-              AND channel_group_id = ?
+              AND account_group_id = ?
               AND status = 0
               AND deleted_at IS NULL
               AND json_extract(COALESCE(NULLIF(metadata, ''), '{}'), '$.disabledByParent') = 1
@@ -1435,7 +1435,7 @@ fn relationship_metadata_for_group(
     serde_json::Value::Object(metadata).to_string()
 }
 
-fn channel_group_routing_config_change<'a>(
+fn upstream_account_group_routing_config_change<'a>(
     tenant_id: i64,
     organization_id: i64,
     operator_id: i64,
@@ -1451,20 +1451,20 @@ fn channel_group_routing_config_change<'a>(
         operator_id,
         request_id,
         requested_at,
-        changed_object_type: "ai_channel_group",
+        changed_object_type: "ai_upstream_account_group",
         changed_object_id: group_id,
         action,
         event_payload,
     }
 }
 
-async fn soft_delete_channel_group(
+async fn soft_delete_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
     command: &DeleteAdminChannelGroupCommand,
 ) -> DomainResult<bool> {
     let result = sqlx::query(
         r#"
-        UPDATE ai_channel_group
+        UPDATE ai_upstream_account_group
         SET status = -1,
             deleted_at = ?,
             deleted_by = ?,
@@ -1489,13 +1489,13 @@ async fn soft_delete_channel_group(
     Ok(result.rows_affected() > 0)
 }
 
-async fn load_channel_group_by_id(
+async fn load_upstream_account_group_by_id(
     tx: &mut Transaction<'_, Sqlite>,
     id: i64,
     tenant_id: i64,
     organization_id: i64,
 ) -> DomainResult<Option<AdminChannelGroupItem>> {
-    let sql = channel_group_select_sql(
+    let sql = upstream_account_group_select_sql(
         r#"
         WHERE g.id = ?
           AND g.tenant_id = ?
@@ -1588,7 +1588,7 @@ async fn upsert_pricing_plan_binding(
     Ok(())
 }
 
-async fn soft_delete_group_bindings(
+async fn soft_delete_account_group_bindings(
     tx: &mut Transaction<'_, Sqlite>,
     command: &DeleteAdminChannelGroupCommand,
 ) -> DomainResult<()> {
@@ -1620,7 +1620,7 @@ async fn soft_delete_group_bindings(
 
     sqlx::query(
         r#"
-        UPDATE ai_channel_group_member
+        UPDATE ai_upstream_account_group_member
         SET status = -1,
             deleted_at = ?,
             deleted_by = ?,
@@ -1628,7 +1628,7 @@ async fn soft_delete_group_bindings(
             version = COALESCE(version, 0) + 1
         WHERE tenant_id = ?
           AND organization_id = ?
-          AND channel_group_id = ?
+          AND account_group_id = ?
           AND deleted_at IS NULL
         "#,
     )
@@ -1644,7 +1644,7 @@ async fn soft_delete_group_bindings(
 
     sqlx::query(
         r#"
-        UPDATE ai_channel_group_resource
+        UPDATE ai_upstream_account_group_resource
         SET status = -1,
             deleted_at = ?,
             deleted_by = ?,
@@ -1652,7 +1652,7 @@ async fn soft_delete_group_bindings(
             version = COALESCE(version, 0) + 1
         WHERE tenant_id = ?
           AND organization_id = ?
-          AND channel_group_id = ?
+          AND account_group_id = ?
           AND deleted_at IS NULL
         "#,
     )
@@ -1726,7 +1726,7 @@ async fn insert_config_snapshot(
         INSERT INTO ops_config_snapshot
             (uuid, tenant_id, organization_id, user_id, request_id, status, snapshot_no, config_scope, config_type, source_table, source_ids, config_payload, config_hash, published_at, published_by, id)
         VALUES
-            (?, ?, ?, ?, ?, 1, ?, ?, ?, 'ai_channel_group', ?, ?, ?, ?, ?, ?)
+            (?, ?, ?, ?, ?, 1, ?, ?, ?, 'ai_upstream_account_group', ?, ?, ?, ?, ?, ?)
         "#,
     )
     .bind(snapshot_uuid)
@@ -1749,7 +1749,7 @@ async fn insert_config_snapshot(
     Ok(())
 }
 
-fn channel_group_select_sql(predicate: &str) -> String {
+fn upstream_account_group_select_sql(predicate: &str) -> String {
     format!(
         r#"
         SELECT
@@ -1759,7 +1759,7 @@ fn channel_group_select_sql(predicate: &str) -> String {
             g.organization_id,
             COALESCE(g.group_code, '') AS group_code,
             COALESCE(g.group_name, g.group_code, '') AS group_name,
-            COALESCE(g.provider_code, '') AS provider_code,
+            COALESCE(g.supplier_code, '') AS supplier_code,
             COALESCE(g.price_reference_mode, 1) AS price_reference_mode,
             CAST(COALESCE(g.rate_multiplier, 1) AS TEXT) AS rate_multiplier,
             CAST(COALESCE(g.official_price_multiplier, 1) AS TEXT) AS official_price_multiplier,
@@ -1775,10 +1775,10 @@ fn channel_group_select_sql(predicate: &str) -> String {
                     SELECT json_group_array(selected.code)
                     FROM (
                         SELECT DISTINCT gr.resource_group_code AS code, gr.priority
-                        FROM ai_channel_group_resource gr
+                        FROM ai_upstream_account_group_resource gr
                         WHERE gr.tenant_id = g.tenant_id
                           AND gr.organization_id = g.organization_id
-                          AND gr.channel_group_id = g.id
+                          AND gr.account_group_id = g.id
                           AND gr.deleted_at IS NULL
                           AND NULLIF(gr.resource_group_code, '') IS NOT NULL
                           AND COALESCE(json_extract(COALESCE(NULLIF(gr.metadata, ''), '{{}}'), '$.source'), 'channel_binding') = 'group_form'
@@ -1792,10 +1792,10 @@ fn channel_group_select_sql(predicate: &str) -> String {
                     SELECT json_group_array(selected.code)
                     FROM (
                         SELECT DISTINCT gr.resource_code AS code, gr.priority
-                        FROM ai_channel_group_resource gr
+                        FROM ai_upstream_account_group_resource gr
                         WHERE gr.tenant_id = g.tenant_id
                           AND gr.organization_id = g.organization_id
-                          AND gr.channel_group_id = g.id
+                          AND gr.account_group_id = g.id
                           AND gr.deleted_at IS NULL
                           AND NULLIF(gr.resource_code, '') IS NOT NULL
                           AND COALESCE(json_extract(COALESCE(NULLIF(gr.metadata, ''), '{{}}'), '$.source'), 'channel_binding') = 'group_form'
@@ -1807,14 +1807,14 @@ fn channel_group_select_sql(predicate: &str) -> String {
             g.status,
             CAST(g.deleted_at AS TEXT) AS deleted_at,
             COUNT(*) OVER() AS total
-        FROM ai_channel_group g
-        LEFT JOIN ai_channel_group_metric_snapshot m
+        FROM ai_upstream_account_group g
+        LEFT JOIN ai_upstream_account_group_metric_snapshot m
           ON m.id = (
               SELECT latest.id
-              FROM ai_channel_group_metric_snapshot latest
+              FROM ai_upstream_account_group_metric_snapshot latest
               WHERE latest.tenant_id = g.tenant_id
                 AND latest.organization_id = g.organization_id
-                AND latest.channel_group_id = g.id
+                AND latest.account_group_id = g.id
                 AND latest.status = 1
               ORDER BY latest.snapshot_at DESC, latest.id DESC
               LIMIT 1
@@ -1832,7 +1832,7 @@ fn item_from_row(row: sqlx::sqlite::SqliteRow) -> DomainResult<AdminChannelGroup
         organization_id: row.try_get("organization_id").map_err(row_error)?,
         group_code: row.try_get("group_code").map_err(row_error)?,
         group_name: row.try_get("group_name").map_err(row_error)?,
-        provider_code: row.try_get("provider_code").map_err(row_error)?,
+        supplier_code: row.try_get("supplier_code").map_err(row_error)?,
         price_reference_mode: price_reference_mode_label(required_integer_cell(
             &row,
             "price_reference_mode",
@@ -1862,18 +1862,18 @@ fn channel_binding_select_sql(predicate: &str) -> &'static str {
             b.uuid,
             b.tenant_id,
             b.organization_id,
-            b.channel_group_id AS group_id,
-            b.channel_id,
-            COALESCE(c.channel_name, c.channel_code, '') AS channel_name,
-            COALESCE(c.provider_code, '') AS provider_code,
-            COALESCE(p.display_name, p.provider_code, c.provider_code, '') AS provider_name,
-            COALESCE(c.channel_code, '') AS channel_code,
+            b.account_group_id AS group_id,
+            b.account_id,
+            COALESCE(c.channel_name, c.account_code, '') AS channel_name,
+            COALESCE(c.supplier_code, '') AS supplier_code,
+            COALESCE(p.display_name, p.supplier_code, c.supplier_code, '') AS provider_name,
+            COALESCE(c.account_code, '') AS account_code,
             COALESCE(
                 (
                     SELECT json_group_array(selected.code)
                     FROM (
                         SELECT DISTINCT COALESCE(NULLIF(gr.resource_code, ''), gr.resource_group_code) AS code
-                        FROM ai_channel_group_resource gr
+                        FROM ai_upstream_account_group_resource gr
                         LEFT JOIN ai_resource r
                           ON r.resource_code = gr.resource_code
                          AND r.tenant_id = gr.tenant_id
@@ -1884,7 +1884,7 @@ fn channel_binding_select_sql(predicate: &str) -> &'static str {
                          AND rg.tenant_id = gr.tenant_id
                          AND rg.organization_id = gr.organization_id
                          AND rg.deleted_at IS NULL
-                        WHERE gr.channel_group_id = b.channel_group_id
+                        WHERE gr.account_group_id = b.account_group_id
                           AND gr.tenant_id = b.tenant_id
                           AND gr.organization_id = b.organization_id
                           AND gr.deleted_at IS NULL
@@ -1900,7 +1900,7 @@ fn channel_binding_select_sql(predicate: &str) -> &'static str {
                     SELECT json_group_array(selected.code)
                     FROM (
                         SELECT DISTINCT COALESCE(r.api_code, NULLIF(gr.resource_code, ''), gr.resource_group_code) AS code
-                        FROM ai_channel_group_resource gr
+                        FROM ai_upstream_account_group_resource gr
                         LEFT JOIN ai_resource r
                           ON r.resource_code = gr.resource_code
                          AND r.tenant_id = gr.tenant_id
@@ -1911,7 +1911,7 @@ fn channel_binding_select_sql(predicate: &str) -> &'static str {
                          AND rg.tenant_id = gr.tenant_id
                          AND rg.organization_id = gr.organization_id
                          AND rg.deleted_at IS NULL
-                        WHERE gr.channel_group_id = b.channel_group_id
+                        WHERE gr.account_group_id = b.account_group_id
                           AND gr.tenant_id = b.tenant_id
                           AND gr.organization_id = b.organization_id
                           AND gr.deleted_at IS NULL
@@ -1932,7 +1932,7 @@ fn channel_binding_select_sql(predicate: &str) -> &'static str {
                     SELECT json_group_array(selected.code)
                     FROM (
                         SELECT DISTINCT COALESCE(NULLIF(r.modality_code, ''), NULLIF(gr.resource_code, ''), gr.resource_group_code) AS code
-                        FROM ai_channel_group_resource gr
+                        FROM ai_upstream_account_group_resource gr
                         LEFT JOIN ai_resource r
                           ON r.resource_code = gr.resource_code
                          AND r.tenant_id = gr.tenant_id
@@ -1943,7 +1943,7 @@ fn channel_binding_select_sql(predicate: &str) -> &'static str {
                          AND rg.tenant_id = gr.tenant_id
                          AND rg.organization_id = gr.organization_id
                          AND rg.deleted_at IS NULL
-                        WHERE gr.channel_group_id = b.channel_group_id
+                        WHERE gr.account_group_id = b.account_group_id
                           AND gr.tenant_id = b.tenant_id
                           AND gr.organization_id = b.organization_id
                           AND gr.deleted_at IS NULL
@@ -1968,14 +1968,14 @@ fn channel_binding_select_sql(predicate: &str) -> &'static str {
             b.status,
             COALESCE(c.health_status, 1) AS health_status,
             CAST(b.deleted_at AS TEXT) AS deleted_at
-        FROM ai_channel_group_member b
+        FROM ai_upstream_account_group_member b
         JOIN ai_channel c
-          ON c.id = b.channel_id
+          ON c.id = b.account_id
          AND c.tenant_id = b.tenant_id
          AND c.organization_id = b.organization_id
          AND c.deleted_at IS NULL
         LEFT JOIN ai_provider p
-          ON p.provider_code = c.provider_code
+          ON p.supplier_code = c.supplier_code
          AND p.deleted_at IS NULL
          AND (
              (p.tenant_id = c.tenant_id AND p.organization_id = c.organization_id)
@@ -1984,7 +1984,7 @@ fn channel_binding_select_sql(predicate: &str) -> &'static str {
          )
         WHERE b.tenant_id = ?
           AND b.organization_id = ?
-          AND b.channel_group_id = ?
+          AND b.account_group_id = ?
           AND b.deleted_at IS NULL
         ORDER BY b.priority ASC, b.weight DESC, b.id ASC
         "#
@@ -1999,11 +1999,11 @@ fn channel_binding_item_from_row(
         tenant_id: row.try_get("tenant_id").map_err(row_error)?,
         organization_id: row.try_get("organization_id").map_err(row_error)?,
         group_id: row.try_get("group_id").map_err(row_error)?,
-        channel_id: row.try_get("channel_id").map_err(row_error)?,
+        account_id: row.try_get("account_id").map_err(row_error)?,
         channel_name: row.try_get("channel_name").map_err(row_error)?,
-        provider_code: row.try_get("provider_code").map_err(row_error)?,
+        supplier_code: row.try_get("supplier_code").map_err(row_error)?,
         provider_name: row.try_get("provider_name").map_err(row_error)?,
-        channel_code: row.try_get("channel_code").map_err(row_error)?,
+        account_code: row.try_get("account_code").map_err(row_error)?,
         resource_codes: json_string_array_cell(&row, "resource_codes_json")?,
         api_scope: json_string_array_cell(&row, "api_scope_json")?,
         capabilities: json_string_array_cell(&row, "capabilities_json")?,

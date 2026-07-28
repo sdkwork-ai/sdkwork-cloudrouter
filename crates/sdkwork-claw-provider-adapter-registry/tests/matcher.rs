@@ -8,7 +8,7 @@ use sdkwork_claw_provider_adapter_registry::{
 
 fn vidu_route(priority: i32, status: AdapterRouteStatus) -> ProviderAdapterRouteConfig {
     ProviderAdapterRouteConfig {
-        provider_code: "tencent-cloud".to_owned(),
+        supplier_code: "tencent-cloud".to_owned(),
         adapter_kind: AdapterKind::InternalHttp,
         adapter_base_url: "http://127.0.0.1:39110".to_owned(),
         capability: Some("video_generation".to_owned()),
@@ -22,7 +22,7 @@ fn vidu_route(priority: i32, status: AdapterRouteStatus) -> ProviderAdapterRoute
         method: "POST".to_owned(),
         invocation_shape: AdapterInvocationShape::AsyncTaskStart,
         standard_path_pattern: "/vidu/ent/v2/start-end2video".to_owned(),
-        adapter_path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+        adapter_path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
         status,
         priority,
     }
@@ -33,7 +33,7 @@ fn tencent_cloud_vidu_route(
     status: AdapterRouteStatus,
 ) -> ProviderAdapterRouteConfig {
     ProviderAdapterRouteConfig {
-        provider_code: "tencent-cloud".to_owned(),
+        supplier_code: "tencent-cloud".to_owned(),
         adapter_kind: AdapterKind::InternalHttp,
         adapter_base_url: "http://127.0.0.1:39110".to_owned(),
         capability: Some("video_generation".to_owned()),
@@ -47,7 +47,7 @@ fn tencent_cloud_vidu_route(
         method: "POST".to_owned(),
         invocation_shape: AdapterInvocationShape::AsyncTaskStart,
         standard_path_pattern: "/vidu/ent/v2/start-end2video".to_owned(),
-        adapter_path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+        adapter_path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
         status,
         priority,
     }
@@ -58,10 +58,10 @@ fn openrouter_text2video_route(
     status: AdapterRouteStatus,
 ) -> ProviderAdapterRouteConfig {
     let mut route = vidu_route(priority, status);
-    route.provider_code = "openrouter".to_owned();
+    route.supplier_code = "openrouter".to_owned();
     route.endpoint_key = Some("text2video".to_owned());
     route.standard_path_pattern = "/v1/videos/text2video".to_owned();
-    route.adapter_path_template = "/providers/{provider_code}{standard_path}".to_owned();
+    route.adapter_path_template = "/providers/{supplier_code}{standard_path}".to_owned();
     route
 }
 
@@ -70,7 +70,7 @@ fn exact_provider_method_and_path_match_returns_internal_adapter_route() {
     let registry = ProviderAdapterRegistry::new(vec![vidu_route(10, AdapterRouteStatus::Enabled)]);
 
     let resolution = registry.resolve(&ProviderAdapterLookup {
-        provider_code: "tencent-cloud",
+        supplier_code: "tencent-cloud",
         method: "POST",
         standard_path: "/vidu/ent/v2/start-end2video",
         capability: Some("video_generation"),
@@ -92,7 +92,7 @@ fn standard_path_lookup_matches_endpoint_route_when_endpoint_key_is_unknown() {
     let registry = ProviderAdapterRegistry::new(vec![vidu_route(10, AdapterRouteStatus::Enabled)]);
 
     let resolution = registry.resolve_standard_path(&ProviderAdapterLookup {
-        provider_code: "tencent-cloud",
+        supplier_code: "tencent-cloud",
         method: "POST",
         standard_path: "/vidu/ent/v2/start-end2video",
         capability: None,
@@ -113,7 +113,7 @@ fn standard_path_lookup_allows_endpoint_alias_when_exact_path_matches() {
     )]);
 
     let resolution = registry.resolve_standard_path(&ProviderAdapterLookup {
-        provider_code: "openrouter",
+        supplier_code: "openrouter",
         method: "POST",
         standard_path: "/v1/videos/text2video",
         capability: Some("video_generation"),
@@ -134,7 +134,7 @@ fn standard_path_metadata_can_be_resolved_without_implying_public_provider_adapt
     )]);
 
     let public_provider_resolution = registry.resolve_standard_path(&ProviderAdapterLookup {
-        provider_code: "vidu",
+        supplier_code: "vidu",
         method: "POST",
         standard_path: "/vidu/ent/v2/start-end2video",
         capability: None,
@@ -148,7 +148,7 @@ fn standard_path_metadata_can_be_resolved_without_implying_public_provider_adapt
     let metadata_route = registry
         .resolve_standard_path_metadata("POST", "/vidu/ent/v2/start-end2video")
         .expect("exact standard path metadata should be available from concrete adapter routes");
-    assert_eq!("tencent-cloud", metadata_route.provider_code);
+    assert_eq!("tencent-cloud", metadata_route.supplier_code);
     assert_eq!(
         Some("video.start_end2video"),
         metadata_route.endpoint_key.as_deref()
@@ -164,7 +164,7 @@ fn disabled_adapter_endpoint_is_ignored_and_returns_direct_http() {
     let registry = ProviderAdapterRegistry::new(vec![vidu_route(10, AdapterRouteStatus::Disabled)]);
 
     let resolution = registry.resolve(&ProviderAdapterLookup {
-        provider_code: "tencent-cloud",
+        supplier_code: "tencent-cloud",
         method: "POST",
         standard_path: "/vidu/ent/v2/start-end2video",
         capability: Some("video_generation"),
@@ -187,7 +187,7 @@ fn more_specific_path_wins_over_capability_default() {
     let registry = ProviderAdapterRegistry::new(vec![fallback, exact]);
 
     let resolution = registry.resolve(&ProviderAdapterLookup {
-        provider_code: "tencent-cloud",
+        supplier_code: "tencent-cloud",
         method: "POST",
         standard_path: "/vidu/ent/v2/start-end2video",
         capability: Some("video_generation"),
@@ -205,7 +205,7 @@ fn registry_miss_returns_direct_http() {
     let registry = ProviderAdapterRegistry::new(vec![vidu_route(10, AdapterRouteStatus::Enabled)]);
 
     let resolution = registry.resolve(&ProviderAdapterLookup {
-        provider_code: "openrouter",
+        supplier_code: "openrouter",
         method: "POST",
         standard_path: "/v1/chat/completions",
         capability: Some("chat"),
@@ -223,7 +223,7 @@ fn official_standard_provider_stays_direct_http_when_only_non_standard_adapter_r
     let registry = ProviderAdapterRegistry::new(vec![vidu_route(10, AdapterRouteStatus::Enabled)]);
 
     let resolution = registry.resolve(&ProviderAdapterLookup {
-        provider_code: "openai-official",
+        supplier_code: "openai-official",
         method: "POST",
         standard_path: "/v1/chat/completions",
         capability: Some("chat"),

@@ -6,7 +6,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use sdkwork_clawrouter_router_service::domain::{
-    ChannelGroup, DomainError, DomainResult, GatewayApiKey,
+    UpstreamAccountGroup, DomainError, DomainResult, GatewayApiKey,
 };
 use sdkwork_clawrouter_router_service::ports::{
     AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserApiKeyListPage,
@@ -14,7 +14,7 @@ use sdkwork_clawrouter_router_service::ports::{
     ApiKeyCommandStoreFuture, CreateAdminUserApiKeyCommand, CreateAdminUserCommand,
     CreateGatewayApiKeyCommand, CreatedGatewayApiKey, DeleteAdminUserApiKeyCommand,
     DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
-    EnsureDefaultChannelGroupCommand, GatewayApiKeyCommandStore, ListAdminUserApiKeysQuery,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore, ListAdminUserApiKeysQuery,
     ListAdminUsersQuery, UpdateAdminUserCommand, UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 use serde_json::Value;
@@ -328,12 +328,12 @@ struct TestApiKeyCommandStore {
 }
 
 impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
-    fn ensure_default_channel_group<'a>(
+    fn ensure_default_upstream_account_group<'a>(
         &'a self,
-        command: EnsureDefaultChannelGroupCommand,
-    ) -> ApiKeyCommandStoreFuture<'a, ChannelGroup> {
+        command: EnsureDefaultUpstreamAccountGroupCommand,
+    ) -> ApiKeyCommandStoreFuture<'a, UpstreamAccountGroup> {
         Box::pin(async move {
-            Ok(ChannelGroup::new_scoped(
+            Ok(UpstreamAccountGroup::new_scoped(
                 501,
                 command.tenant_id,
                 command.organization_id,
@@ -370,7 +370,7 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                     expire_at: command.expire_at,
                     status_code: 1,
                     default_for_runtime: false,
-                    group_bindings: Vec::new(),
+                    account_group_bindings: Vec::new(),
                 },
                 access_policy: None,
                 quota_policy: None,

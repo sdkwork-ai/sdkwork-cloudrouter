@@ -28,9 +28,9 @@ pub struct StickyRouting {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StickyRouteConstraint {
-    pub provider_code: String,
-    pub channel_id: i64,
-    pub channel_group_id: Option<i64>,
+    pub supplier_code: String,
+    pub account_id: i64,
+    pub account_group_id: Option<i64>,
     pub vendor_code: Option<String>,
     pub api_code: Option<String>,
     pub catalog_key: Option<String>,
@@ -49,10 +49,10 @@ pub enum InvocationRouteCandidateKind {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationRouteCandidate {
     pub kind: InvocationRouteCandidateKind,
-    pub provider_code: String,
-    pub channel_id: i64,
-    pub channel_group_id: Option<i64>,
-    pub channel_group_code: Option<String>,
+    pub supplier_code: String,
+    pub account_id: i64,
+    pub account_group_id: Option<i64>,
+    pub account_group_code: Option<String>,
     pub pricing_plan_code: Option<String>,
     pub policy_id: Option<i64>,
     pub rule_id: Option<i64>,
@@ -78,8 +78,8 @@ pub struct InvocationRoutePlan {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationRouteAttempt {
-    pub provider_code: String,
-    pub channel_id: i64,
+    pub supplier_code: String,
+    pub account_id: i64,
     pub candidate_index: usize,
     pub status_code: Option<u16>,
     pub success: bool,

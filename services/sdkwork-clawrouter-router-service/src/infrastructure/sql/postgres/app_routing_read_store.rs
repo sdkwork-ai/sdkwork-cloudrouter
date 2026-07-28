@@ -14,11 +14,11 @@ use crate::ports::{
 const LOAD_ROUTING_CHANNELS: &str = r#"
 SELECT
     CAST(c.id AS TEXT) AS id,
-    COALESCE(NULLIF(c.channel_name, ''), NULLIF(c.channel_code, ''), NULLIF(c.provider_code, ''), '') AS name,
-    COALESCE(NULLIF(c.provider_code, ''), 'custom') AS vendor,
-    COALESCE(NULLIF(c.provider_code, ''), 'custom') AS provider,
-    COALESCE(NULLIF(c.provider_code, ''), 'custom') AS provider_code,
-    CASE LOWER(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.provider_code, ''), 'openai'))
+    COALESCE(NULLIF(c.channel_name, ''), NULLIF(c.account_code, ''), NULLIF(c.supplier_code, ''), '') AS name,
+    COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS vendor,
+    COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS provider,
+    COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS supplier_code,
+    CASE LOWER(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.supplier_code, ''), 'openai'))
         WHEN 'openai' THEN 1
         WHEN 'anthropic' THEN 2
         WHEN 'gemini' THEN 3
@@ -74,7 +74,7 @@ SELECT
                      AND rg.tenant_id = cr.tenant_id
                      AND rg.organization_id = cr.organization_id
                      AND rg.deleted_at IS NULL
-                    WHERE cr.channel_id = c.id
+                    WHERE cr.account_id = c.id
                       AND cr.tenant_id = c.tenant_id
                       AND cr.organization_id = c.organization_id
                       AND cr.deleted_at IS NULL
@@ -107,7 +107,7 @@ FROM ai_channel c
 LEFT JOIN LATERAL (
     SELECT credential.id, credential.base_url, credential.masked_label
     FROM ai_channel_credential credential
-    WHERE credential.channel_id = c.id
+    WHERE credential.account_id = c.id
       AND credential.tenant_id = c.tenant_id
       AND credential.organization_id = c.organization_id
       AND credential.status = 1
@@ -118,7 +118,7 @@ LEFT JOIN LATERAL (
 WHERE c.tenant_id = $1
   AND c.organization_id = $2
   AND c.deleted_at IS NULL
-  AND ($3::text IS NULL OR lower(COALESCE(c.channel_name, c.channel_code, c.provider_code, '')) LIKE lower($3))
+  AND ($3::text IS NULL OR lower(COALESCE(c.channel_name, c.account_code, c.supplier_code, '')) LIKE lower($3))
 ORDER BY c.priority ASC NULLS LAST, c.weight DESC NULLS LAST, c.id DESC
 LIMIT $4 OFFSET $5
 "#;
@@ -240,7 +240,7 @@ SELECT
     COALESCE(NULLIF(t.trace_id, ''), '') AS trace_id,
     COALESCE(NULLIF(t.request_id, ''), '') AS request_id,
     COALESCE(NULLIF(u.catalog_key, ''), NULLIF(d.resolved_model, ''), NULLIF(t.provider_model, ''), NULLIF(t.requested_model, ''), '-') AS model,
-    COALESCE(NULLIF(t.channel_name_snapshot, ''), CAST(d.selected_channel_id AS TEXT), '-') AS channel,
+    COALESCE(NULLIF(t.channel_name_snapshot, ''), CAST(d.selected_account_id AS TEXT), '-') AS channel,
     COALESCE(NULLIF(t.request_path, ''), '') AS request_path,
     COALESCE(NULLIF(t.http_method, ''), '') AS http_method,
     t.http_status AS http_status,
@@ -528,7 +528,7 @@ fn row_to_channel(row: sqlx::postgres::PgRow) -> DomainResult<AppRoutingChannelI
         name: string_cell(&row, "name"),
         vendor: display_vendor(&string_cell(&row, "vendor")),
         provider: display_vendor(&string_cell(&row, "provider")),
-        provider_code: string_cell(&row, "provider_code"),
+        supplier_code: string_cell(&row, "supplier_code"),
         protocol: protocol_label(required_integer_cell(&row, "protocol")?)?,
         access_type: access_type_label(required_integer_cell(&row, "access_type")?)?,
         base_url: string_cell(&row, "base_url"),

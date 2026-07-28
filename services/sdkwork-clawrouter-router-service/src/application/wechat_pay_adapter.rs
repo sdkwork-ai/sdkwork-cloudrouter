@@ -32,7 +32,7 @@ const WECHAT_PAY_PROVIDER_CODE: &str = "wechat_pay";
 const WECHAT_PAY_API_BASE_URL: &str = "https://api.mch.weixin.qq.com";
 
 static WECHAT_PAY_REAL_CAPABILITIES: PaymentProviderCapabilities = PaymentProviderCapabilities {
-    provider_code: WECHAT_PAY_PROVIDER_CODE,
+    supplier_code: WECHAT_PAY_PROVIDER_CODE,
     operations: STANDARD_PAYMENT_ADAPTER_OPERATIONS,
     sandbox_only: false,
 };
@@ -164,7 +164,7 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 )
                 .await?;
             Ok(PaymentProviderOperationOutcome {
-                provider_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
+                supplier_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
                 native_id: Some(out_trade_no),
                 raw_status: Some("CREATED".to_owned()),
                 payload: response,
@@ -203,7 +203,7 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 )
                 .await?;
             Ok(PaymentProviderOperationOutcome {
-                provider_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
+                supplier_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
                 native_id: Some(out_trade_no.clone()),
                 raw_status: Some("CLOSED".to_owned()),
                 payload: json!({ "out_trade_no": out_trade_no, "status": "CLOSED" }),
@@ -341,7 +341,7 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 }
             }
             Ok(PaymentNormalizedWebhookEvent {
-                provider_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
+                supplier_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
                 event_type: payload
                     .get("event_type")
                     .and_then(Value::as_str)
@@ -391,7 +391,7 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 statement_id: Some(format!("wechat_pay_tradebill_{bill_date}")),
                 content,
                 metadata: json!({
-                    "provider_code": WECHAT_PAY_PROVIDER_CODE,
+                    "supplier_code": WECHAT_PAY_PROVIDER_CODE,
                     "source_type": "wechat_pay_tradebill",
                     "bill_date": bill_date,
                     "download_url": response.get("download_url").and_then(Value::as_str),
@@ -416,7 +416,7 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 statement_id: request.statement_id,
                 item_count: parsed.item_count,
                 metadata: json!({
-                    "provider_code": WECHAT_PAY_PROVIDER_CODE,
+                    "supplier_code": WECHAT_PAY_PROVIDER_CODE,
                     "source_type": "wechat_pay_tradebill",
                     "gross_amount_minor": parsed.gross_amount_minor,
                     "fee_amount_minor": parsed.fee_amount_minor,
@@ -575,7 +575,7 @@ fn wechat_pay_operation_outcome(
         .map(str::to_owned)
         .ok_or_else(|| invalid_response(operation, "WeChat Pay response is missing native id"))?;
     Ok(PaymentProviderOperationOutcome {
-        provider_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
+        supplier_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
         native_id: Some(native_id),
         raw_status: response
             .get("status")
@@ -830,7 +830,7 @@ fn validate_config_secret(field: &str, value: &str) -> Result<(), PaymentProvide
 fn unsupported<T>(operation: PaymentAdapterOperation) -> PaymentAdapterFuture<'static, T> {
     Box::pin(async move {
         Err(PaymentProviderRegistryError::UnsupportedCapability {
-            provider_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
+            supplier_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
             operation,
         })
     })
@@ -841,7 +841,7 @@ fn invalid_request(
     message: impl Into<String>,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::InvalidProviderRequest {
-        provider_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
+        supplier_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
     }
@@ -853,7 +853,7 @@ fn provider_failed(
     retryable: bool,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::ProviderRequestFailed {
-        provider_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
+        supplier_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
         retryable,
@@ -865,7 +865,7 @@ fn invalid_response(
     message: impl Into<String>,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::InvalidProviderResponse {
-        provider_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
+        supplier_code: WECHAT_PAY_PROVIDER_CODE.to_owned(),
         operation,
         message: message.into(),
     }

@@ -6,8 +6,8 @@ fn tencent_cloud_adapter_exposes_definition_only_vidu_standard_endpoint_mapping(
 
     assert_eq!("tencent-cloud", adapter.package());
     assert_eq!("tencent-cloud", adapter.provider_family());
-    assert!(adapter.provider_codes().contains(&"tencent-cloud"));
-    assert!(adapter.provider_codes().contains(&"tencent-hunyuan"));
+    assert!(adapter.supplier_codes().contains(&"tencent-cloud"));
+    assert!(adapter.supplier_codes().contains(&"tencent-hunyuan"));
 
     let endpoints = adapter.endpoints();
     let start_end2video = endpoints
@@ -73,8 +73,8 @@ fn sample_request() -> sdkwork_claw_provider_adapter_contract::AdapterInvocation
             pricing_plan_code: "standard".to_owned(),
         },
         provider: AdapterProviderContext {
-            provider_code: "tencent-cloud".to_owned(),
-            channel_id: 9301,
+            supplier_code: "tencent-cloud".to_owned(),
+            account_id: 9301,
             region_code: "global".to_owned(),
             provider_model: "vidu2.0".to_owned(),
             base_url: Some("https://vidu.example.test".to_owned()),

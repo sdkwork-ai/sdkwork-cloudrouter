@@ -65,7 +65,7 @@ pub struct AppRoutingChannelItem {
     pub name: String,
     pub vendor: String,
     pub provider: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub protocol: String,
     pub access_type: String,
     pub base_url: String,

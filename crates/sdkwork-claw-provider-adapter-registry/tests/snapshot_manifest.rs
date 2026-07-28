@@ -10,7 +10,7 @@ fn snapshot_builds_internal_http_routes_from_adapter_manifest() {
         providers: vec![ProviderAdapterProviderManifest {
             package: "tencent-cloud".to_owned(),
             provider_family: "tencent-cloud".to_owned(),
-            provider_codes: vec!["tencent-cloud".to_owned(), "tencent-hunyuan".to_owned()],
+            supplier_codes: vec!["tencent-cloud".to_owned(), "tencent-hunyuan".to_owned()],
             endpoints: vec![ProviderAdapterEndpointManifest {
                 endpoint_key: "video.start_end2video".to_owned(),
                 capability: Some("video_generation".to_owned()),
@@ -36,7 +36,7 @@ fn snapshot_builds_internal_http_routes_from_adapter_manifest() {
     let official_route = snapshot
         .routes
         .iter()
-        .find(|route| route.provider_code == "tencent-cloud")
+        .find(|route| route.supplier_code == "tencent-cloud")
         .unwrap();
     assert_eq!(AdapterKind::InternalHttp, official_route.adapter_kind);
     assert_eq!("http://127.0.0.1:39110", official_route.adapter_base_url);
@@ -58,7 +58,7 @@ fn snapshot_builds_internal_http_routes_from_adapter_manifest() {
         official_route.standard_path_pattern
     );
     assert_eq!(
-        "/providers/{provider_code}{standard_path}",
+        "/providers/{supplier_code}{standard_path}",
         official_route.adapter_path_template
     );
     assert_eq!(AdapterRouteStatus::Enabled, official_route.status);
@@ -83,7 +83,7 @@ fn snapshot_rejects_blank_adapter_base_url_when_manifest_has_routes() {
         providers: vec![ProviderAdapterProviderManifest {
             package: "tencent-cloud".to_owned(),
             provider_family: "tencent-cloud".to_owned(),
-            provider_codes: vec!["tencent-cloud".to_owned()],
+            supplier_codes: vec!["tencent-cloud".to_owned()],
             endpoints: vec![ProviderAdapterEndpointManifest {
                 endpoint_key: "video.start_end2video".to_owned(),
                 capability: Some("video_generation".to_owned()),
@@ -113,7 +113,7 @@ fn snapshot_ignores_definition_only_s3_contract_endpoints_for_runtime_dispatch()
         providers: vec![ProviderAdapterProviderManifest {
             package: "sdkwork-cloud-storage".to_owned(),
             provider_family: "s3-compatible-object-storage".to_owned(),
-            provider_codes: vec!["aws_s3".to_owned()],
+            supplier_codes: vec!["aws_s3".to_owned()],
             endpoints: vec![ProviderAdapterEndpointManifest {
                 endpoint_key: "storage.objects.put".to_owned(),
                 capability: Some("s3_object_put".to_owned()),
@@ -148,7 +148,7 @@ fn snapshot_preserves_runtime_available_s3_plugin_metadata_on_routes() {
         providers: vec![ProviderAdapterProviderManifest {
             package: "sdkwork-cloud-storage".to_owned(),
             provider_family: "s3-compatible-object-storage".to_owned(),
-            provider_codes: vec!["aws_s3".to_owned()],
+            supplier_codes: vec!["aws_s3".to_owned()],
             endpoints: vec![ProviderAdapterEndpointManifest {
                 endpoint_key: "storage.objects.put".to_owned(),
                 capability: Some("s3_object_put".to_owned()),

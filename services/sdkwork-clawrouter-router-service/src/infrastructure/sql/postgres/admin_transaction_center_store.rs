@@ -438,7 +438,7 @@ async fn list_fulfillments(
             'status', status,
             'warehouse_id', warehouse_id,
             'address_snapshot_id', address_snapshot_id,
-            'provider_code', provider_code,
+            'supplier_code', supplier_code,
             'created_at', created_at,
             'completed_at', completed_at,
             'updated_at', updated_at
@@ -558,8 +558,8 @@ async fn list_payment_providers(
             'id', id,
             'tenant_id', tenant_id,
             'organization_id', organization_id,
-            'provider_code', provider_code,
-            'providerCode', provider_code,
+            'supplier_code', supplier_code,
+            'providerCode', supplier_code,
             'display_name', display_name,
             'displayName', display_name,
             'provider_type', provider_type,
@@ -583,7 +583,7 @@ async fn list_payment_providers(
         WHERE tenant_id IN (CAST($1 AS TEXT), '0')
           AND (organization_id = CAST($2 AS TEXT) OR organization_id = '0')
           AND (CAST($3 AS TEXT) IS NULL OR status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR provider_code = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR supplier_code = CAST($4 AS TEXT))
         ORDER BY
             CASE
                 WHEN tenant_id = CAST($1 AS TEXT) AND organization_id = CAST($2 AS TEXT) THEN 0
@@ -598,7 +598,7 @@ async fn list_payment_providers(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.page_size)
     .bind(query.offset)
     .fetch_all(pool)
@@ -618,7 +618,7 @@ async fn list_payment_provider_accounts(
         WHERE tenant_id IN (CAST($1 AS TEXT), '0')
           AND (organization_id = CAST($2 AS TEXT) OR organization_id = '0')
           AND (CAST($3 AS TEXT) IS NULL OR status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR provider_code = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR supplier_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR id = CAST($5 AS TEXT) OR account_no = CAST($5 AS TEXT))
         ORDER BY
             CASE
@@ -634,7 +634,7 @@ async fn list_payment_provider_accounts(
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
         .bind(query.status.as_deref())
-        .bind(query.provider_code.as_deref())
+        .bind(query.supplier_code.as_deref())
         .bind(query.provider_account_id.as_deref())
         .bind(query.page_size)
         .bind(query.offset)
@@ -668,7 +668,7 @@ async fn create_payment_provider_account(
         tenant_id: command.subject.tenant_id,
         organization_id: command.subject.organization_id,
         provider_account_id: id.clone(),
-        provider_code: command.provider_code.clone(),
+        supplier_code: command.supplier_code.clone(),
         environment: command.environment.clone(),
         country_code: command.country_code.clone(),
         settlement_currency: command.settlement_currency.clone(),
@@ -680,7 +680,7 @@ async fn create_payment_provider_account(
     let insert_result = sqlx::query(
         r#"
         INSERT INTO commerce_payment_provider_account
-            (id, tenant_id, organization_id, account_no, provider_code, merchant_id, environment,
+            (id, tenant_id, organization_id, account_no, supplier_code, merchant_id, environment,
              country_code, settlement_currency, secret_ref, webhook_secret_ref, certificate_ref,
              status, rotated_at, created_at, updated_at)
         VALUES
@@ -691,7 +691,7 @@ async fn create_payment_provider_account(
     .bind(command.subject.tenant_id.to_string())
     .bind(command.subject.organization_id.to_string())
     .bind(&command.account_no)
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.merchant_id)
     .bind(&command.environment)
     .bind(&command.country_code)
@@ -764,7 +764,7 @@ async fn update_payment_provider_account(
         tenant_id: command.subject.tenant_id,
         organization_id: command.subject.organization_id,
         provider_account_id: provider_account_id.clone(),
-        provider_code: command.provider_code.clone(),
+        supplier_code: command.supplier_code.clone(),
         environment: command.environment.clone(),
         country_code: command.country_code.clone(),
         settlement_currency: command.settlement_currency.clone(),
@@ -775,7 +775,7 @@ async fn update_payment_provider_account(
     let update_result = sqlx::query(
         r#"
         UPDATE commerce_payment_provider_account
-        SET provider_code = $1,
+        SET supplier_code = $1,
             merchant_id = $2,
             environment = $3,
             country_code = $4,
@@ -791,7 +791,7 @@ async fn update_payment_provider_account(
           AND id = $14
         "#,
     )
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(&command.merchant_id)
     .bind(&command.environment)
     .bind(&command.country_code)
@@ -825,7 +825,7 @@ async fn update_payment_provider_account(
             idempotency_key: Some(command.idempotency_key.as_str()),
             requested_at: &command.requested_at,
             change_summary: serde_json::json!({
-                "providerCode": command.provider_code,
+                "providerCode": command.supplier_code,
                 "accountRole": command.account_role,
                 "merchantId": command.merchant_id,
                 "environment": command.environment,
@@ -944,7 +944,7 @@ struct PaymentProviderAccountChannelScope {
     tenant_id: i64,
     organization_id: i64,
     provider_account_id: String,
-    provider_code: String,
+    supplier_code: String,
     environment: String,
     country_code: String,
     settlement_currency: String,
@@ -961,7 +961,7 @@ async fn load_payment_provider_account_channel_scope(
 ) -> DomainResult<Option<PaymentProviderAccountChannelScope>> {
     let row = sqlx::query(
         r#"
-        SELECT provider_code, environment, country_code, settlement_currency
+        SELECT supplier_code, environment, country_code, settlement_currency
         FROM commerce_payment_provider_account
         WHERE tenant_id = CAST($1 AS TEXT)
           AND organization_id = CAST($2 AS TEXT)
@@ -982,7 +982,7 @@ async fn load_payment_provider_account_channel_scope(
         tenant_id: subject.tenant_id,
         organization_id: subject.organization_id,
         provider_account_id: provider_account_id.to_owned(),
-        provider_code: string_cell(&row, "provider_code")?,
+        supplier_code: string_cell(&row, "supplier_code")?,
         environment: string_cell(&row, "environment")?,
         country_code: string_cell(&row, "country_code")?,
         settlement_currency: string_cell(&row, "settlement_currency")?,
@@ -1006,7 +1006,7 @@ async fn deactivate_peer_payment_provider_accounts_for_channel_scope(
         WHERE tenant_id = CAST($2 AS TEXT)
           AND organization_id = CAST($3 AS TEXT)
           AND id <> $4
-          AND provider_code = $5
+          AND supplier_code = $5
           AND environment = $6
           AND country_code = $7
           AND settlement_currency = $8
@@ -1017,7 +1017,7 @@ async fn deactivate_peer_payment_provider_accounts_for_channel_scope(
     .bind(scope.tenant_id)
     .bind(scope.organization_id)
     .bind(&scope.provider_account_id)
-    .bind(&scope.provider_code)
+    .bind(&scope.supplier_code)
     .bind(&scope.environment)
     .bind(&scope.country_code)
     .bind(&scope.settlement_currency)
@@ -1059,7 +1059,7 @@ fn payment_provider_account_channel_scope_lock_key(
         "{}:{}:{}:{}:{}:{}",
         scope.tenant_id,
         scope.organization_id,
-        scope.provider_code,
+        scope.supplier_code,
         scope.environment,
         scope.country_code,
         scope.settlement_currency
@@ -1146,7 +1146,7 @@ async fn insert_payment_provider_account_audit_if_absent(
         .unwrap_or(command.idempotency_key.as_str());
     let change_summary = serde_json::json!({
         "accountNo": command.account_no,
-        "providerCode": command.provider_code,
+        "providerCode": command.supplier_code,
         "accountRole": command.account_role,
         "merchantId": command.merchant_id,
         "environment": command.environment,
@@ -1413,7 +1413,7 @@ async fn list_payment_methods(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.method_code.as_deref())
     .bind(query.page_size)
     .bind(query.offset)
@@ -1440,7 +1440,7 @@ async fn list_payment_channels(
             'providerAccountId', c.provider_account_id,
             'method_id', c.method_id,
             'methodCode', m.method_key,
-            'providerCode', a.provider_code,
+            'providerCode', a.supplier_code,
             'scene_code', c.scene_code,
             'sceneCode', c.scene_code,
             'currency_code', c.currency_code,
@@ -1461,7 +1461,7 @@ async fn list_payment_channels(
         WHERE c.tenant_id IN (CAST($1 AS TEXT), '0')
           AND (c.organization_id = CAST($2 AS TEXT) OR c.organization_id = '0')
           AND (CAST($3 AS TEXT) IS NULL OR c.status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR a.provider_code = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR a.supplier_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR c.provider_account_id = CAST($5 AS TEXT))
           AND (CAST($6 AS TEXT) IS NULL OR m.method_key = CAST($6 AS TEXT))
           AND (CAST($7 AS TEXT) IS NULL OR c.country_code = CAST($7 AS TEXT))
@@ -1480,7 +1480,7 @@ async fn list_payment_channels(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.provider_account_id.as_deref())
     .bind(query.method_code.as_deref())
     .bind(query.country_code.as_deref())
@@ -1518,8 +1518,8 @@ async fn list_payment_route_rules(
             'amount_max', r.amount_max,
             'user_segment', r.user_segment,
             'risk_level', r.risk_level,
-            'channel_id', r.channel_id,
-            'channelId', r.channel_id,
+            'account_id', r.account_id,
+            'channelId', r.account_id,
             'fallbackChannelId', NULL,
             'fallbackEnabled', false,
             'methodCode', m.method_key,
@@ -1533,7 +1533,7 @@ async fn list_payment_route_rules(
         ) AS item,
         COUNT(*) OVER() AS total
         FROM commerce_payment_route_rule r
-        LEFT JOIN commerce_payment_channel c ON c.tenant_id = r.tenant_id AND c.id = r.channel_id
+        LEFT JOIN commerce_payment_channel c ON c.tenant_id = r.tenant_id AND c.id = r.account_id
         LEFT JOIN commerce_payment_method m ON m.tenant_id = c.tenant_id AND m.id = c.method_id
         WHERE r.tenant_id IN (CAST($1 AS TEXT), '0')
           AND (r.organization_id = CAST($2 AS TEXT) OR r.organization_id = '0')
@@ -1556,7 +1556,7 @@ async fn list_payment_route_rules(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.method_code.as_deref())
     .bind(query.country_code.as_deref())
     .bind(query.currency_code.as_deref())
@@ -1637,7 +1637,7 @@ async fn list_payment_intents(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.order_id.as_deref())
     .bind(query.intent_id.as_deref())
     .bind(query.page_size)
@@ -1709,7 +1709,7 @@ async fn list_payment_attempts(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.order_id.as_deref())
     .bind(query.intent_id.as_deref())
     .bind(query.page_size)
@@ -1767,7 +1767,7 @@ async fn list_payment_webhook_events(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.page_size)
     .bind(query.offset)
     .fetch_all(pool)
@@ -1789,8 +1789,8 @@ async fn list_payment_reconciliation_runs(
             'organization_id', organization_id,
             'run_no', run_no,
             'runNo', run_no,
-            'provider_code', provider_code,
-            'providerCode', provider_code,
+            'supplier_code', supplier_code,
+            'providerCode', supplier_code,
             'provider_account_id', provider_account_id,
             'providerAccountId', provider_account_id,
             'settlement_currency', settlement_currency,
@@ -1821,7 +1821,7 @@ async fn list_payment_reconciliation_runs(
         WHERE tenant_id = CAST($1 AS TEXT)
           AND organization_id = CAST($2 AS TEXT)
           AND (CAST($3 AS TEXT) IS NULL OR status = CAST($3 AS TEXT))
-          AND (CAST($4 AS TEXT) IS NULL OR provider_code = CAST($4 AS TEXT))
+          AND (CAST($4 AS TEXT) IS NULL OR supplier_code = CAST($4 AS TEXT))
           AND (CAST($5 AS TEXT) IS NULL OR period_start = CAST($5 AS TEXT))
         ORDER BY created_at DESC NULLS LAST, id DESC
         LIMIT $6 OFFSET $7
@@ -1830,7 +1830,7 @@ async fn list_payment_reconciliation_runs(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.provider_code.as_deref())
+    .bind(query.supplier_code.as_deref())
     .bind(query.business_date.as_deref())
     .bind(query.page_size)
     .bind(query.offset)
@@ -1855,8 +1855,8 @@ fn payment_provider_account_json_sql(total_projection: &str, suffix: &str) -> St
             'organization_id', organization_id,
             'account_no', account_no,
             'accountNo', account_no,
-            'provider_code', provider_code,
-            'providerCode', provider_code,
+            'supplier_code', supplier_code,
+            'providerCode', supplier_code,
             'accountRole', (
                 SELECT audit.change_summary->>'accountRole'
                 FROM ops_audit_log audit
@@ -2032,7 +2032,7 @@ fn ensure_payment_provider_account_replay_matches(
 ) -> DomainResult<()> {
     for (field, expected) in [
         ("accountNo", command.account_no.as_str()),
-        ("providerCode", command.provider_code.as_str()),
+        ("providerCode", command.supplier_code.as_str()),
         ("merchantId", command.merchant_id.as_str()),
         ("environment", command.environment.as_str()),
         ("countryCode", command.country_code.as_str()),

@@ -90,7 +90,7 @@ struct AdminStorageQuery {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateStorageProviderRequest {
-    provider_code: String,
+    supplier_code: String,
     provider_type: String,
     endpoint_url: Option<String>,
     region: Option<String>,
@@ -666,8 +666,8 @@ fn validated_provider_create_command(
     ensure_enum(&provider_type, PROVIDER_TYPES, "providerType")?;
     Ok(CreateStorageProviderCommand {
         subject,
-        provider_code: normalize_required_text(
-            request.provider_code,
+        supplier_code: normalize_required_text(
+            request.supplier_code,
             "providerCode",
             MAX_CODE_LEN,
         )?,

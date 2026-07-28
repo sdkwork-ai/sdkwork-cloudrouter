@@ -3,9 +3,9 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderChannelRoute,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use tower::ServiceExt;
@@ -93,7 +93,7 @@ fn catalog() -> InMemoryPricingCatalog {
                 },
             ),
     );
-    catalog.add_provider_route(ModelProviderRoute::new_for_catalog_key(
+    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",
@@ -106,15 +106,15 @@ fn catalog() -> InMemoryPricingCatalog {
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
         DecimalValue::parse("1.000000").unwrap(),
         DecimalValue::parse("1.100000").unwrap(),
     ));
-    catalog.add_channel_group(
-        ChannelGroup::new(
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new(
             11,
             "premium-lab",
             "standard",
@@ -183,7 +183,7 @@ fn catalog() -> InMemoryPricingCatalog {
         Money::usd("99.000000").unwrap(),
     )
     .with_catalog_key("openai/gpt-4o-mini");
-    channel_scoped_official_price.channel_id = Some(3001);
+    channel_scoped_official_price.account_id = Some(3001);
     catalog.add_price(channel_scoped_official_price);
     catalog.add_price(
         ModelPrice::new(
@@ -603,8 +603,8 @@ async fn app_model_catalog_route_keeps_unpriced_models_explicitly_unavailable() 
 #[tokio::test]
 async fn app_model_catalog_route_returns_public_taxonomy_and_filters_server_side() {
     let mut catalog = catalog();
-    catalog.add_channel_group(
-        ChannelGroup::new(
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new(
             12,
             "empty-admin-group",
             "standard",
@@ -613,10 +613,10 @@ async fn app_model_catalog_route_returns_public_taxonomy_and_filters_server_side
         )
         .with_name("Empty Admin Group"),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_resource_scoped_group_binding(10, 10, 100, Vec::<String>::new(), vec!["llm"])
-            .with_resource_scoped_group_binding(11, 20, 100, Vec::<String>::new(), vec!["tools"]),
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_resource_scoped_account_group_binding(10, 10, 100, Vec::<String>::new(), vec!["llm"])
+            .with_resource_scoped_account_group_binding(11, 20, 100, Vec::<String>::new(), vec!["tools"]),
     );
     let router =
         sdkwork_clawrouter_router_service::api::app_model_catalog_router(Arc::new(catalog));

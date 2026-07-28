@@ -59,7 +59,7 @@ impl ChatCompletionRelay for AdapterAwareChatCompletionRelay {
     ) -> ChatCompletionRelayFuture<'a> {
         Box::pin(async move {
             let lookup = ProviderAdapterLookup {
-                provider_code: request.provider_code.as_str(),
+                supplier_code: request.supplier_code.as_str(),
                 method: CHAT_COMPLETIONS_ENDPOINT.method,
                 standard_path: CHAT_COMPLETIONS_ENDPOINT.standard_path,
                 capability: Some(CHAT_COMPLETIONS_ENDPOINT.capability),
@@ -116,8 +116,8 @@ fn chat_completion_adapter_invocation(
             group_id: request.group_id,
             group_code: request.group_code,
             pricing_plan_code: request.pricing_plan_code,
-            provider_code: request.provider_code,
-            provider_channel_id: request.provider_channel_id,
+            supplier_code: request.supplier_code,
+            provider_account_id: request.provider_account_id,
             provider_region_code: request.provider_region_code,
             provider_model: request.provider_model,
             provider_base_url: request.provider_base_url,

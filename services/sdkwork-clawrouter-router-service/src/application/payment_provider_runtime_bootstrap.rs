@@ -54,7 +54,7 @@ pub async fn bootstrap_payment_provider_registry(
         page_size: PAYMENT_ACCOUNT_LIST_PAGE_SIZE,
         offset: 0,
         status: Some("active".to_owned()),
-        provider_code: None,
+        supplier_code: None,
         provider_account_id: None,
         method_code: None,
         country_code: None,
@@ -99,7 +99,7 @@ pub async fn bootstrap_payment_provider_registry(
         for failure in &report.failures {
             tracing::warn!(
                 account_no = %failure.account_no,
-                provider_code = %failure.provider_code,
+                supplier_code = %failure.supplier_code,
                 message = %failure.message,
                 "payment provider adapter registration failed during bootstrap"
             );

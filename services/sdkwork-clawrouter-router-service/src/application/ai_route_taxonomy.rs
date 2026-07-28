@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 use crate::domain::{
     AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy, BillingMeter,
-    ProviderChannelRoute, RoutingCapability,
+    UpstreamAccountRoute, RoutingCapability,
 };
 use crate::ports::PricingCatalog;
 
@@ -32,7 +32,7 @@ impl AiRouteTaxonomyEntry {
 
 #[derive(Debug, Clone)]
 pub struct AiRoutingIndex {
-    routes: Vec<ProviderChannelRoute>,
+    routes: Vec<UpstreamAccountRoute>,
     group_binding_count: usize,
     by_group_api: BTreeMap<(i64, String), Vec<usize>>,
 }
@@ -50,14 +50,14 @@ pub fn find_builtin_ai_route(route_key: &str) -> Option<&'static AiRouteTaxonomy
 
 impl AiRoutingIndex {
     pub fn compile<C: PricingCatalog>(catalog: &C) -> Self {
-        Self::from_channel_routes(catalog.list_provider_channel_routes())
+        Self::from_channel_routes(catalog.list_upstream_account_routes())
     }
 
-    pub fn from_channel_routes(routes: Vec<ProviderChannelRoute>) -> Self {
+    pub fn from_channel_routes(routes: Vec<UpstreamAccountRoute>) -> Self {
         let mut group_binding_count = 0;
         let mut by_group_api = BTreeMap::<(i64, String), Vec<usize>>::new();
         for (index, route) in routes.iter().enumerate() {
-            for binding in &route.group_bindings {
+            for binding in &route.account_group_bindings {
                 group_binding_count += 1;
                 if binding.api_scope.is_empty() {
                     by_group_api
@@ -94,7 +94,7 @@ impl AiRoutingIndex {
         capability: RoutingCapability,
         _catalog_key: Option<&str>,
         _requested_model: Option<&str>,
-    ) -> Vec<ProviderChannelRoute> {
+    ) -> Vec<UpstreamAccountRoute> {
         let api_scope_keys = [api_code];
 
         if self.group_binding_count == 0 {
@@ -123,7 +123,7 @@ impl AiRoutingIndex {
             .filter(|route| channel_route_is_callable(route))
             .filter_map(|route| {
                 let matched_bindings = route
-                    .group_bindings
+                    .account_group_bindings
                     .iter()
                     .filter(|binding| {
                         binding.group_id == group_id
@@ -546,7 +546,7 @@ const fn channel(
         capability,
         billing_meter,
         model_requirement: AiRouteModelRequirement::Ignored,
-        route_strategy: AiRouteStrategy::PrimaryChannel,
+        route_strategy: AiRouteStrategy::PrimaryAccount,
         failure_strategy: AiRouteFailureStrategy::FailClosed,
         sticky_object_type: None,
         sticky_scope: None,
@@ -608,17 +608,17 @@ const fn sticky_optional(
     }
 }
 
-fn sorted_callable_routes(routes: Vec<ProviderChannelRoute>) -> Vec<ProviderChannelRoute> {
+fn sorted_callable_routes(routes: Vec<UpstreamAccountRoute>) -> Vec<UpstreamAccountRoute> {
     let mut routes = routes;
-    routes.sort_by_key(|route| route.channel_id);
+    routes.sort_by_key(|route| route.account_id);
     routes
 }
 
 fn sorted_bound_routes(
-    candidates: Vec<((i32, Reverse<i32>, i64), ProviderChannelRoute)>,
-) -> Vec<ProviderChannelRoute> {
+    candidates: Vec<((i32, Reverse<i32>, i64), UpstreamAccountRoute)>,
+) -> Vec<UpstreamAccountRoute> {
     let mut candidates = candidates;
-    candidates.sort_by_key(|(sort_key, route)| (sort_key.0, sort_key.1, route.channel_id));
+    candidates.sort_by_key(|(sort_key, route)| (sort_key.0, sort_key.1, route.account_id));
     candidates
         .into_iter()
         .map(|(_sort_key, route)| route)
@@ -627,7 +627,7 @@ fn sorted_bound_routes(
 
 fn best_binding_sort_key<'a, I>(bindings: I) -> Option<(i32, Reverse<i32>, i64)>
 where
-    I: IntoIterator<Item = &'a crate::domain::ProviderChannelGroupBinding>,
+    I: IntoIterator<Item = &'a crate::domain::UpstreamAccountGroupBinding>,
 {
     bindings
         .into_iter()
@@ -710,7 +710,7 @@ fn normalize_route_key(value: &str) -> String {
         .replace(['/', ':', '-'], ".")
 }
 
-fn channel_route_is_callable(route: &ProviderChannelRoute) -> bool {
+fn channel_route_is_callable(route: &UpstreamAccountRoute) -> bool {
     has_text(route.base_url.as_deref()) && has_text(route.secret_ref.as_deref())
 }
 

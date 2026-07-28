@@ -69,18 +69,18 @@ fn openrouter_account_pool_secret_map() -> ProviderSecretMapConfig {
 
 async fn set_channel_and_credential_base_url(
     pool: &sqlx::SqlitePool,
-    channel_id: i64,
+    account_id: i64,
     base_url: &str,
 ) {
     sqlx::query("UPDATE ai_channel SET base_url = ? WHERE id = ?")
         .bind(base_url)
-        .bind(channel_id)
+        .bind(account_id)
         .execute(pool)
         .await
         .unwrap();
-    sqlx::query("UPDATE ai_channel_credential SET base_url = ? WHERE channel_id = ?")
+    sqlx::query("UPDATE ai_channel_credential SET base_url = ? WHERE account_id = ?")
         .bind(base_url)
-        .bind(channel_id)
+        .bind(account_id)
         .execute(pool)
         .await
         .unwrap();
@@ -88,7 +88,7 @@ async fn set_channel_and_credential_base_url(
 
 async fn set_channel_and_credential_secret(
     pool: &sqlx::SqlitePool,
-    channel_id: i64,
+    account_id: i64,
     secret_ref: &str,
     auth_config: &str,
 ) {
@@ -102,7 +102,7 @@ async fn set_channel_and_credential_secret(
     )
     .bind(secret_ref)
     .bind(auth_config)
-    .bind(channel_id)
+    .bind(account_id)
     .execute(pool)
     .await
     .unwrap();
@@ -111,12 +111,12 @@ async fn set_channel_and_credential_secret(
         UPDATE ai_channel_credential
         SET credential_ref = ?,
             auth_config = ?
-        WHERE channel_id = ?
+        WHERE account_id = ?
         "#,
     )
     .bind(secret_ref)
     .bind(auth_config)
-    .bind(channel_id)
+    .bind(account_id)
     .execute(pool)
     .await
     .unwrap();
@@ -125,9 +125,9 @@ async fn set_channel_and_credential_secret(
 async fn insert_channel_credential(
     pool: &sqlx::SqlitePool,
     credential_id: i64,
-    channel_id: i64,
-    provider_code: &str,
-    channel_code: &str,
+    account_id: i64,
+    supplier_code: &str,
+    account_code: &str,
     secret_ref: &str,
     base_url: &str,
     auth_config: &str,
@@ -135,7 +135,7 @@ async fn insert_channel_credential(
     sqlx::query(
         r#"
         INSERT INTO ai_channel_credential
-            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code,
              credential_name, auth_config, credential_ref, credential_hash, base_url,
              priority, weight, health_status, status)
         VALUES
@@ -143,13 +143,13 @@ async fn insert_channel_credential(
         "#,
     )
     .bind(credential_id)
-    .bind(format!("channel-credential-{channel_code}"))
-    .bind(channel_id)
-    .bind(provider_code)
-    .bind(channel_code)
+    .bind(format!("channel-credential-{account_code}"))
+    .bind(account_id)
+    .bind(supplier_code)
+    .bind(account_code)
     .bind(auth_config)
     .bind(secret_ref)
-    .bind(format!("hash:{channel_code}"))
+    .bind(format!("hash:{account_code}"))
     .bind(base_url)
     .execute(pool)
     .await
@@ -566,7 +566,7 @@ async fn gateway_provider_native_passthrough_keeps_official_standard_provider_di
                     "endpointKey": "video.start_end2video",
                     "method": "POST",
                     "standardPathPattern": "/vidu/ent/v2/start-end2video",
-                    "adapterPathTemplate": "/providers/{{provider_code}}{{standard_path}}",
+                    "adapterPathTemplate": "/providers/{{supplier_code}}{{standard_path}}",
                     "invocationShape": "async_task_start",
                     "status": "enabled",
                     "priority": 10
@@ -692,7 +692,7 @@ async fn gateway_provider_native_passthrough_adapts_registered_non_standard_prov
                     "endpointKey": "video.start_end2video",
                     "method": "POST",
                     "standardPathPattern": "/vidu/ent/v2/start-end2video",
-                    "adapterPathTemplate": "/providers/{{provider_code}}{{standard_path}}",
+                    "adapterPathTemplate": "/providers/{{supplier_code}}{{standard_path}}",
                     "invocationShape": "async_task_start",
                     "status": "enabled",
                     "priority": 10
@@ -748,7 +748,7 @@ async fn gateway_provider_native_passthrough_adapts_registered_non_standard_prov
     );
     assert_eq!(
         "tencent-cloud",
-        adapter_calls[0].body.provider.provider_code
+        adapter_calls[0].body.provider.supplier_code
     );
     assert_eq!(
         Some(format!("http://{provider_addr}/vidu")),
@@ -809,7 +809,7 @@ async fn gateway_database_provider_native_adapter_routes_after_channel_route_sel
                         "endpointKey": "video.start_end2video",
                         "method": "POST",
                         "standardPathPattern": "/vidu/ent/v2/start-end2video",
-                        "adapterPathTemplate": "/providers/{{provider_code}}{{standard_path}}",
+                        "adapterPathTemplate": "/providers/{{supplier_code}}{{standard_path}}",
                         "invocationShape": "async_task_start",
                         "status": "enabled",
                         "priority": 10
@@ -870,9 +870,9 @@ async fn gateway_database_provider_native_adapter_routes_after_channel_route_sel
     );
     assert_eq!(
         "tencent-cloud",
-        adapter_calls[0].body.provider.provider_code
+        adapter_calls[0].body.provider.supplier_code
     );
-    assert_eq!(9301, adapter_calls[0].body.provider.channel_id);
+    assert_eq!(9301, adapter_calls[0].body.provider.account_id);
     assert_eq!(
         Some(format!("http://{direct_addr}/vidu")),
         adapter_calls[0].body.provider.base_url
@@ -1002,8 +1002,8 @@ async fn gateway_database_provider_native_adapter_routes_by_standard_api_code_wi
         "/kling/v1/videos/text2video",
         adapter_calls[0].body.invocation.standard_path
     );
-    assert_eq!("kling", adapter_calls[0].body.provider.provider_code);
-    assert_eq!(9501, adapter_calls[0].body.provider.channel_id);
+    assert_eq!("kling", adapter_calls[0].body.provider.supplier_code);
+    assert_eq!(9501, adapter_calls[0].body.provider.account_id);
     assert_eq!(
         Some(format!("http://{direct_addr}")),
         adapter_calls[0].body.provider.base_url
@@ -1059,7 +1059,7 @@ async fn gateway_database_provider_native_adapter_records_standard_usage_lines()
                         "endpointKey": "video.start_end2video",
                         "method": "POST",
                         "standardPathPattern": "/vidu/ent/v2/start-end2video",
-                        "adapterPathTemplate": "/providers/{{provider_code}}{{standard_path}}",
+                        "adapterPathTemplate": "/providers/{{supplier_code}}{{standard_path}}",
                         "invocationShape": "async_task_start",
                         "status": "enabled",
                         "priority": 10
@@ -1133,15 +1133,15 @@ async fn gateway_database_provider_native_adapter_records_standard_usage_lines()
     );
     assert_eq!(
         "tencent-cloud",
-        adapter_calls[0].body.provider.provider_code
+        adapter_calls[0].body.provider.supplier_code
     );
-    assert_eq!(9301_i64, adapter_calls[0].body.provider.channel_id);
+    assert_eq!(9301_i64, adapter_calls[0].body.provider.account_id);
 
     let pool = catalog.open_pool().await.unwrap();
     let rows = sqlx::query(
         r#"
         SELECT request_id, trace_id, catalog_key, requested_model_catalog_key, model,
-               provider_native_model, channel_id, modality, usage_type, billing_meter_code,
+               provider_native_model, account_id, modality, usage_type, billing_meter_code,
                billable_quantity, request_count, result_count,
                CASE WHEN video_seconds IS NULL THEN NULL ELSE printf('%.12f', video_seconds) END AS video_seconds,
                printf('%.12f', official_reference_amount) AS official_reference_amount,
@@ -1193,7 +1193,7 @@ async fn gateway_database_provider_native_adapter_records_standard_usage_lines()
         "vidu2.0",
         request_row.get::<String, _>("provider_native_model")
     );
-    assert_eq!(9301_i64, request_row.get::<i64, _>("channel_id"));
+    assert_eq!(9301_i64, request_row.get::<i64, _>("account_id"));
     assert_eq!(5_i64, request_row.get::<i64, _>("modality"));
     assert_eq!("1", request_row.get::<String, _>("billable_quantity"));
     assert_eq!(1_i64, request_row.get::<i64, _>("request_count"));
@@ -1301,7 +1301,7 @@ async fn gateway_database_provider_native_adapter_directs_when_selected_account_
                     "endpointKey": "video.start_end2video",
                     "method": "POST",
                     "standardPathPattern": "/vidu/ent/v2/start-end2video",
-                    "adapterPathTemplate": "/providers/{{provider_code}}{{standard_path}}",
+                    "adapterPathTemplate": "/providers/{{supplier_code}}{{standard_path}}",
                     "invocationShape": "async_task_start",
                     "status": "enabled",
                     "priority": 1
@@ -2325,8 +2325,8 @@ async fn gateway_database_provider_native_direct_passthrough_records_api_request
     let usage = sqlx::query(
         r#"
         SELECT trace_id, tenant_id, organization_id, user_id, api_key_id,
-               channel_group_snapshot, catalog_key, requested_model_catalog_key,
-               model, channel_id, provider_native_model,
+               upstream_account_group_snapshot, catalog_key, requested_model_catalog_key,
+               model, account_id, provider_native_model,
                modality, usage_type,
                billing_meter_code, billable_quantity, request_count,
                customer_charge_amount, currency, pricing_plan_code,
@@ -2356,7 +2356,7 @@ async fn gateway_database_provider_native_direct_passthrough_records_api_request
     assert_eq!(100_i64, usage.get::<i64, _>("api_key_id"));
     assert_eq!(
         "standard-group",
-        usage.get::<String, _>("channel_group_snapshot")
+        usage.get::<String, _>("upstream_account_group_snapshot")
     );
     assert_eq!(
         "google/gemini-2.5-flash",
@@ -2367,7 +2367,7 @@ async fn gateway_database_provider_native_direct_passthrough_records_api_request
         usage.get::<String, _>("requested_model_catalog_key")
     );
     assert_eq!("gemini-2.5-flash", usage.get::<String, _>("model"));
-    assert_eq!(9601_i64, usage.get::<i64, _>("channel_id"));
+    assert_eq!(9601_i64, usage.get::<i64, _>("account_id"));
     assert_eq!(
         "gemini-2.5-flash",
         usage.get::<String, _>("provider_native_model")
@@ -2534,7 +2534,7 @@ async fn gateway_database_router_does_not_duplicate_openai_v1_prefix_for_configu
 }
 
 #[tokio::test]
-async fn gateway_database_openai_passthrough_routes_by_channel_group_channel_route() {
+async fn gateway_database_openai_passthrough_routes_by_upstream_account_group_channel_route() {
     let captured_standard = Arc::new(Mutex::new(Vec::new()));
     let standard_provider = Router::new()
         .route(
@@ -3442,8 +3442,8 @@ async fn gateway_database_route_scoped_openai_chat_passthrough_records_usage() {
     let usage = sqlx::query(
         r#"
         SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id,
-               channel_group_snapshot, model, requested_model_catalog_key,
-               provider_native_model, channel_id, usage_type,
+               upstream_account_group_snapshot, model, requested_model_catalog_key,
+               provider_native_model, account_id, usage_type,
                billing_meter_code, billable_quantity, prompt_tokens, completion_tokens,
                cached_tokens, total_tokens, customer_charge_amount,
                currency, pricing_plan_code, settlement_status
@@ -3472,7 +3472,7 @@ async fn gateway_database_route_scoped_openai_chat_passthrough_records_usage() {
     assert_eq!(100_i64, usage.get::<i64, _>("api_key_id"));
     assert_eq!(
         "standard-group",
-        usage.get::<String, _>("channel_group_snapshot")
+        usage.get::<String, _>("upstream_account_group_snapshot")
     );
     assert_eq!("gpt-4o-mini", usage.get::<String, _>("model"));
     assert_eq!(
@@ -3483,7 +3483,7 @@ async fn gateway_database_route_scoped_openai_chat_passthrough_records_usage() {
         "gpt-4o-mini",
         usage.get::<String, _>("provider_native_model")
     );
-    assert_eq!(3001_i64, usage.get::<i64, _>("channel_id"));
+    assert_eq!(3001_i64, usage.get::<i64, _>("account_id"));
     assert_eq!(1_i64, usage.get::<i64, _>("usage_type"));
     assert_eq!(
         "llm_input_token",
@@ -3581,8 +3581,8 @@ async fn gateway_database_route_scoped_openai_legacy_completion_passthrough_reco
     let usage = sqlx::query(
         r#"
         SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id,
-               channel_group_snapshot, model, requested_model_catalog_key,
-               provider_native_model, channel_id, usage_type, billing_meter_code,
+               upstream_account_group_snapshot, model, requested_model_catalog_key,
+               provider_native_model, account_id, usage_type, billing_meter_code,
                billable_quantity, prompt_tokens, completion_tokens, cached_tokens,
                total_tokens, customer_charge_amount, currency,
                pricing_plan_code, settlement_status
@@ -3611,7 +3611,7 @@ async fn gateway_database_route_scoped_openai_legacy_completion_passthrough_reco
     assert_eq!(100_i64, usage.get::<i64, _>("api_key_id"));
     assert_eq!(
         "standard-group",
-        usage.get::<String, _>("channel_group_snapshot")
+        usage.get::<String, _>("upstream_account_group_snapshot")
     );
     assert_eq!("gpt-4o-mini", usage.get::<String, _>("model"));
     assert_eq!(
@@ -3622,7 +3622,7 @@ async fn gateway_database_route_scoped_openai_legacy_completion_passthrough_reco
         "gpt-4o-mini",
         usage.get::<String, _>("provider_native_model")
     );
-    assert_eq!(3001_i64, usage.get::<i64, _>("channel_id"));
+    assert_eq!(3001_i64, usage.get::<i64, _>("account_id"));
     assert_eq!(1_i64, usage.get::<i64, _>("usage_type"));
     assert_eq!(
         "llm_input_token",
@@ -3722,7 +3722,7 @@ async fn gateway_database_route_scoped_openai_image_passthrough_records_image_re
     let usage = sqlx::query(
         r#"
         SELECT request_id, trace_id, catalog_key, model, requested_model_catalog_key,
-               provider_native_model, channel_id, modality, billing_meter_code,
+               provider_native_model, account_id, modality, billing_meter_code,
                billable_quantity, image_count, request_count, customer_charge_amount,
                currency, pricing_plan_code, settlement_status
         FROM ai_usage
@@ -3754,7 +3754,7 @@ async fn gateway_database_route_scoped_openai_image_passthrough_records_image_re
         "gpt-image-1-standard",
         usage.get::<String, _>("provider_native_model")
     );
-    assert_eq!(3001_i64, usage.get::<i64, _>("channel_id"));
+    assert_eq!(3001_i64, usage.get::<i64, _>("account_id"));
     assert_eq!(2_i64, usage.get::<i64, _>("modality"));
     assert_eq!("image_result", usage.get::<String, _>("billing_meter_code"));
     assert_eq!("2", usage.get::<String, _>("billable_quantity"));
@@ -3841,8 +3841,8 @@ async fn gateway_database_route_scoped_openai_management_passthrough_records_api
     let usage = sqlx::query(
         r#"
         SELECT request_id, trace_id, tenant_id, organization_id, user_id, api_key_id,
-               channel_group_snapshot, catalog_key, model, requested_model_catalog_key,
-               provider_native_model, channel_id, billing_meter_code,
+               upstream_account_group_snapshot, catalog_key, model, requested_model_catalog_key,
+               provider_native_model, account_id, billing_meter_code,
                billable_quantity, request_count, customer_charge_amount,
                currency, pricing_plan_code, settlement_status
         FROM ai_usage
@@ -3870,7 +3870,7 @@ async fn gateway_database_route_scoped_openai_management_passthrough_records_api
     assert_eq!(100_i64, usage.get::<i64, _>("api_key_id"));
     assert_eq!(
         "standard-group",
-        usage.get::<String, _>("channel_group_snapshot")
+        usage.get::<String, _>("upstream_account_group_snapshot")
     );
     assert_eq!(
         "openai/management/files",
@@ -3882,7 +3882,7 @@ async fn gateway_database_route_scoped_openai_management_passthrough_records_api
         usage.get::<String, _>("requested_model_catalog_key")
     );
     assert_eq!("", usage.get::<String, _>("provider_native_model"));
-    assert_eq!(3001_i64, usage.get::<i64, _>("channel_id"));
+    assert_eq!(3001_i64, usage.get::<i64, _>("account_id"));
     assert_eq!("api_request", usage.get::<String, _>("billing_meter_code"));
     assert_eq!("1", usage.get::<String, _>("billable_quantity"));
     assert_eq!(1_i64, usage.get::<i64, _>("request_count"));
@@ -5445,7 +5445,7 @@ async fn openai_passthrough_group_route_catalog_template_fork_preserves_seeded_r
     );
     let image_route_channel_count: i64 = sqlx::query_scalar(
         r#"
-        SELECT COUNT(DISTINCT cr.channel_id)
+        SELECT COUNT(DISTINCT cr.account_id)
         FROM ai_channel_resource cr
         JOIN ai_resource_group_item rgi
           ON rgi.tenant_id = cr.tenant_id
@@ -5465,7 +5465,7 @@ async fn openai_passthrough_group_route_catalog_template_fork_preserves_seeded_r
              r.id = rgi.resource_id
              OR (NULLIF(rgi.resource_code, '') IS NOT NULL AND r.resource_code = rgi.resource_code)
          )
-        WHERE cr.channel_id IN (3001, 3002)
+        WHERE cr.account_id IN (3001, 3002)
           AND cr.status = 1
           AND cr.grant_type = 'allow'
           AND r.catalog_key = 'openai/gpt-image-1'
@@ -5491,7 +5491,7 @@ async fn openai_passthrough_group_route_catalog_template_fork_preserves_seeded_r
 
     let premium_key = sqlx::query(
         r#"
-        SELECT channel_group_id, key_prefix, length(key_hash) AS key_hash_len
+        SELECT account_group_id, key_prefix, length(key_hash) AS key_hash_len
         FROM iam_gateway_api_key
         WHERE id = 101
         "#,
@@ -5499,7 +5499,7 @@ async fn openai_passthrough_group_route_catalog_template_fork_preserves_seeded_r
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(11_i64, premium_key.get::<i64, _>("channel_group_id"));
+    assert_eq!(11_i64, premium_key.get::<i64, _>("account_group_id"));
     assert_eq!("sk-premium", premium_key.get::<String, _>("key_prefix"));
     assert_eq!(64_i64, premium_key.get::<i64, _>("key_hash_len"));
 
@@ -6006,14 +6006,14 @@ async fn ensure_ai_provider_object_route_table(catalog: &SeededSqliteCatalog) {
             deleted_by INTEGER,
             metadata TEXT NOT NULL DEFAULT '{}',
             api_key_id INTEGER,
-            channel_group_id INTEGER,
+            account_group_id INTEGER,
             object_type TEXT NOT NULL,
             object_id TEXT NOT NULL,
             object_key_hash TEXT NOT NULL,
             parent_object_type TEXT,
             parent_object_id TEXT,
-            provider_code TEXT,
-            channel_id INTEGER NOT NULL,
+            supplier_code TEXT,
+            account_id INTEGER NOT NULL,
             vendor_code TEXT,
             api_code TEXT,
             catalog_key TEXT,
@@ -6111,24 +6111,24 @@ async fn add_resource_to_openrouter_standard_bundle(
 async fn grant_openrouter_standard_bundle_to_channel(
     pool: &sqlx::SqlitePool,
     grant_id: i64,
-    channel_id: i64,
-    channel_code: &str,
+    account_id: i64,
+    account_code: &str,
     priority: i64,
     weight: i64,
 ) {
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code,
              resource_group_id, resource_group_code, grant_type, priority, weight, status)
         VALUES
             (?, ?, 100001, 0, ?, 'openrouter', ?, ?, ?, 'allow', ?, ?, 1)
         "#,
     )
     .bind(grant_id)
-    .bind(format!("channel-resource-openrouter-{channel_code}"))
-    .bind(channel_id)
-    .bind(channel_code)
+    .bind(format!("channel-resource-openrouter-{account_code}"))
+    .bind(account_id)
+    .bind(account_code)
     .bind(OPENROUTER_STANDARD_RESOURCE_GROUP_ID)
     .bind(OPENROUTER_STANDARD_RESOURCE_GROUP_CODE)
     .bind(priority)
@@ -6141,13 +6141,13 @@ async fn grant_openrouter_standard_bundle_to_channel(
 async fn grant_openrouter_standard_bundle_to_group(
     pool: &sqlx::SqlitePool,
     grant_id: i64,
-    channel_group_id: i64,
+    account_group_id: i64,
     priority: i64,
 ) {
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
-            (id, uuid, tenant_id, organization_id, channel_group_id,
+        INSERT INTO ai_upstream_account_group_resource
+            (id, uuid, tenant_id, organization_id, account_group_id,
              resource_group_id, resource_group_code, grant_type, priority, status)
         VALUES
             (?, ?, 100001, 0, ?, ?, ?, 'allow', ?, 1)
@@ -6155,9 +6155,9 @@ async fn grant_openrouter_standard_bundle_to_group(
     )
     .bind(grant_id)
     .bind(format!(
-        "channel-group-resource-openrouter-{channel_group_id}"
+        "channel-group-resource-openrouter-{account_group_id}"
     ))
-    .bind(channel_group_id)
+    .bind(account_group_id)
     .bind(OPENROUTER_STANDARD_RESOURCE_GROUP_ID)
     .bind(OPENROUTER_STANDARD_RESOURCE_GROUP_CODE)
     .bind(priority)
@@ -6168,8 +6168,8 @@ async fn grant_openrouter_standard_bundle_to_group(
 
 struct ChannelScopedModelMappingSeed<'a> {
     rule_id: i64,
-    channel_id: i64,
-    channel_code: &'a str,
+    account_id: i64,
+    account_code: &'a str,
     source_model: &'a str,
     source_catalog_key: &'a str,
     target_model: &'a str,
@@ -6212,9 +6212,9 @@ async fn insert_channel_scoped_model_mapping(
         seed.rule_id
     ))
     .bind(seed.rule_id)
-    .bind(seed.channel_id)
-    .bind(seed.channel_code)
-    .bind(seed.channel_code)
+    .bind(seed.account_id)
+    .bind(seed.account_code)
+    .bind(seed.account_code)
     .bind(seed.sort_order)
     .execute(pool)
     .await
@@ -6247,8 +6247,8 @@ async fn insert_channel_scoped_model_mapping(
 async fn grant_provider_native_api_resource(
     pool: &sqlx::SqlitePool,
     id: i64,
-    channel_id: i64,
-    provider_code: &str,
+    account_id: i64,
+    supplier_code: &str,
     vendor_code: &str,
     api_code: &str,
 ) {
@@ -6276,17 +6276,17 @@ async fn grant_provider_native_api_resource(
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code,
              resource_id, resource_code, grant_type, priority, weight, status)
         VALUES
             (?, ?, 100001, 0, ?, ?, ?, ?, ?, 'allow', 1, 100, 1)
         "#,
     )
     .bind(id)
-    .bind(format!("channel-resource-{provider_code}-{uuid_suffix}"))
-    .bind(channel_id)
-    .bind(provider_code)
-    .bind(format!("{provider_code}-main"))
+    .bind(format!("channel-resource-{supplier_code}-{uuid_suffix}"))
+    .bind(account_id)
+    .bind(supplier_code)
+    .bind(format!("{supplier_code}-main"))
     .bind(id)
     .bind(&resource_code)
     .execute(pool)
@@ -6294,8 +6294,8 @@ async fn grant_provider_native_api_resource(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
-            (id, uuid, tenant_id, organization_id, channel_group_id,
+        INSERT INTO ai_upstream_account_group_resource
+            (id, uuid, tenant_id, organization_id, account_group_id,
              resource_id, resource_code, grant_type, priority, status)
         VALUES
             (?, ?, 100001, 0, 10, ?, ?, 'allow', 1, 1)
@@ -6303,7 +6303,7 @@ async fn grant_provider_native_api_resource(
     )
     .bind(id)
     .bind(format!(
-        "channel-group-resource-{provider_code}-{uuid_suffix}"
+        "channel-group-resource-{supplier_code}-{uuid_suffix}"
     ))
     .bind(id)
     .bind(&resource_code)
@@ -6315,8 +6315,8 @@ async fn grant_provider_native_api_resource(
 async fn grant_provider_native_api_resource_with_modality(
     pool: &sqlx::SqlitePool,
     id: i64,
-    channel_id: i64,
-    provider_code: &str,
+    account_id: i64,
+    supplier_code: &str,
     vendor_code: &str,
     api_code: &str,
     modality_code: &str,
@@ -6346,17 +6346,17 @@ async fn grant_provider_native_api_resource_with_modality(
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code,
              resource_id, resource_code, grant_type, priority, weight, status)
         VALUES
             (?, ?, 100001, 0, ?, ?, ?, ?, ?, 'allow', 1, 100, 1)
         "#,
     )
     .bind(id)
-    .bind(format!("channel-resource-{provider_code}-{uuid_suffix}"))
-    .bind(channel_id)
-    .bind(provider_code)
-    .bind(format!("{provider_code}-main"))
+    .bind(format!("channel-resource-{supplier_code}-{uuid_suffix}"))
+    .bind(account_id)
+    .bind(supplier_code)
+    .bind(format!("{supplier_code}-main"))
     .bind(id)
     .bind(&resource_code)
     .execute(pool)
@@ -6364,8 +6364,8 @@ async fn grant_provider_native_api_resource_with_modality(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
-            (id, uuid, tenant_id, organization_id, channel_group_id,
+        INSERT INTO ai_upstream_account_group_resource
+            (id, uuid, tenant_id, organization_id, account_group_id,
              resource_id, resource_code, grant_type, priority, status)
         VALUES
             (?, ?, 100001, 0, 10, ?, ?, 'allow', 1, 1)
@@ -6373,7 +6373,7 @@ async fn grant_provider_native_api_resource_with_modality(
     )
     .bind(id)
     .bind(format!(
-        "channel-group-resource-{provider_code}-{uuid_suffix}"
+        "channel-group-resource-{supplier_code}-{uuid_suffix}"
     ))
     .bind(id)
     .bind(&resource_code)
@@ -6385,9 +6385,9 @@ async fn grant_provider_native_api_resource_with_modality(
 async fn grant_provider_native_model_api_resource(
     pool: &sqlx::SqlitePool,
     id: i64,
-    channel_id: i64,
-    provider_code: &str,
-    channel_code: &str,
+    account_id: i64,
+    supplier_code: &str,
+    account_code: &str,
     vendor_code: &str,
     api_code: &str,
     modality_code: &str,
@@ -6424,17 +6424,17 @@ async fn grant_provider_native_model_api_resource(
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code,
              resource_id, resource_code, grant_type, priority, weight, status)
         VALUES
             (?, ?, 100001, 0, ?, ?, ?, ?, ?, 'allow', 1, 100, 1)
         "#,
     )
     .bind(id)
-    .bind(format!("channel-resource-{provider_code}-{uuid_suffix}"))
-    .bind(channel_id)
-    .bind(provider_code)
-    .bind(channel_code)
+    .bind(format!("channel-resource-{supplier_code}-{uuid_suffix}"))
+    .bind(account_id)
+    .bind(supplier_code)
+    .bind(account_code)
     .bind(id)
     .bind(&resource_code)
     .execute(pool)
@@ -6442,8 +6442,8 @@ async fn grant_provider_native_model_api_resource(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
-            (id, uuid, tenant_id, organization_id, channel_group_id,
+        INSERT INTO ai_upstream_account_group_resource
+            (id, uuid, tenant_id, organization_id, account_group_id,
              resource_id, resource_code, grant_type, priority, status)
         VALUES
             (?, ?, 100001, 0, 10, ?, ?, 'allow', 1, 1)
@@ -6451,7 +6451,7 @@ async fn grant_provider_native_model_api_resource(
     )
     .bind(id)
     .bind(format!(
-        "channel-group-resource-{provider_code}-{uuid_suffix}"
+        "channel-group-resource-{supplier_code}-{uuid_suffix}"
     ))
     .bind(id)
     .bind(&resource_code)
@@ -6504,7 +6504,7 @@ async fn seed_gemini_generate_content_channel_route(
     sqlx::query(
         r#"
         INSERT INTO ai_provider
-            (id, provider_code, default_vendor_code, provider_type, protocol_code, base_url, status)
+            (id, supplier_code, default_vendor_code, provider_type, protocol_code, base_url, status)
         VALUES
             (9601, 'google', 'google', 'official', 'vendor_native', ?, 1)
         "#,
@@ -6516,7 +6516,7 @@ async fn seed_gemini_generate_content_channel_route(
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, tenant_id, organization_id, provider_id, provider_code, channel_code,
+            (id, tenant_id, organization_id, provider_id, supplier_code, account_code,
              channel_name, channel_type, protocol_code, auth_type, auth_config,
              credential_ref, base_url, status, priority, weight, health_status)
         VALUES
@@ -6572,12 +6572,12 @@ async fn seed_gemini_generate_content_channel_route(
         r#"
         INSERT INTO ai_routing_rule
             (id, tenant_id, organization_id, profile_id, rule_code, priority,
-             match_expression, target_model, candidate_channels, fallback_chain,
+             match_expression, target_model, candidate_account_groups, fallback_chain,
              constraints, status)
         VALUES
             (9601, 100001, 0, 9601, 'gemini-generate-content', 1,
              '{"routeKey":"gemini.generate_content"}',
-             'gemini.generate_content', '[{"channel_id":9601,"weight":100}]',
+             'gemini.generate_content', '[{"account_id":9601,"weight":100}]',
              '[]', '{}', 1)
         "#,
     )
@@ -6586,8 +6586,8 @@ async fn seed_gemini_generate_content_channel_route(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_member
-            (id, tenant_id, organization_id, channel_group_id, channel_id, priority, weight,
+        INSERT INTO ai_upstream_account_group_member
+            (id, tenant_id, organization_id, account_group_id, account_id, priority, weight,
              enabled, status)
         VALUES
             (9601, 100001, 0, 10, 9601, 1, 100, 1, 1)
@@ -6705,7 +6705,7 @@ async fn seed_gemini_generate_content_billing_catalog(
         INSERT INTO ai_model_pricing
             (id, uuid, tenant_id, organization_id, model_id, catalog_key, model,
              vendor_code, region_code, price_side, billing_meter_code, unit_price,
-             currency, provider_code, channel_id, status, priority)
+             currency, supplier_code, account_id, status, priority)
         VALUES
             (9602, 'price-google-gemini-api-request-upstream', 100001, 0, 9601,
              'google/gemini-2.5-flash', 'gemini-2.5-flash', 'google',
@@ -6727,7 +6727,7 @@ async fn seed_kling_text_to_video_channel_route(
     sqlx::query(
         r#"
         INSERT INTO ai_provider
-            (id, provider_code, default_vendor_code, provider_type, protocol_code, base_url, status)
+            (id, supplier_code, default_vendor_code, provider_type, protocol_code, base_url, status)
         VALUES
             (9501, 'kling', 'kling', 'official', 'vendor_native', ?, 1)
         "#,
@@ -6739,7 +6739,7 @@ async fn seed_kling_text_to_video_channel_route(
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, tenant_id, organization_id, provider_id, provider_code, channel_code,
+            (id, tenant_id, organization_id, provider_id, supplier_code, account_code,
              channel_name, channel_type, protocol_code, auth_type, auth_config,
              credential_ref, base_url, status, priority, weight, health_status)
         VALUES
@@ -6795,12 +6795,12 @@ async fn seed_kling_text_to_video_channel_route(
         r#"
         INSERT INTO ai_routing_rule
             (id, tenant_id, organization_id, profile_id, rule_code, priority,
-             match_expression, target_model, candidate_channels, fallback_chain,
+             match_expression, target_model, candidate_account_groups, fallback_chain,
              constraints, status)
         VALUES
             (9501, 100001, 0, 9501, 'kling-text-to-video', 1,
              '{"routeKey":"kling.text_to_video"}',
-             'kling.text_to_video', '[{"channel_id":9501,"weight":100}]',
+             'kling.text_to_video', '[{"account_id":9501,"weight":100}]',
              '[]', '{}', 1)
         "#,
     )
@@ -6809,8 +6809,8 @@ async fn seed_kling_text_to_video_channel_route(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_member
-            (id, tenant_id, organization_id, channel_group_id, channel_id, priority, weight,
+        INSERT INTO ai_upstream_account_group_member
+            (id, tenant_id, organization_id, account_group_id, account_id, priority, weight,
              enabled, status)
         VALUES
             (9501, 100001, 0, 10, 9501, 1, 100, 1, 1)
@@ -6883,7 +6883,7 @@ async fn seed_kling_text_to_video_channel_route(
         INSERT INTO ai_model_pricing
             (id, uuid, tenant_id, organization_id, model_id, catalog_key, model,
              vendor_code, region_code, price_side, billing_meter_code, unit_price,
-             currency, provider_code, channel_id, status, priority)
+             currency, supplier_code, account_id, status, priority)
         VALUES
             (9503, 'price-kling-kling-v2-api-request-upstream', 100001, 0, 9502,
              'kling/kling-v2', 'kling-v2', 'kling',
@@ -6899,9 +6899,9 @@ async fn seed_kling_text_to_video_channel_route(
 async fn seed_start_end2video_channel_route(
     catalog: &sdkwork_claw_test_support::SeededSqliteCatalog,
     id: i64,
-    provider_code: &str,
+    supplier_code: &str,
     upstream_vendor_code: &str,
-    upstream_provider_code: &str,
+    upstream_supplier_code: &str,
     secret_ref: &str,
     auth_type: &str,
     auth_config: &str,
@@ -6911,15 +6911,15 @@ async fn seed_start_end2video_channel_route(
     sqlx::query(
         r#"
         INSERT INTO ai_provider
-            (id, provider_code, default_vendor_code, provider_type, protocol_code, base_url, status)
+            (id, supplier_code, default_vendor_code, provider_type, protocol_code, base_url, status)
         VALUES
             (?, ?, ?, 'relay_aggregator', ?, ?, 1)
         "#,
     )
     .bind(id)
-    .bind(provider_code)
+    .bind(supplier_code)
     .bind(upstream_vendor_code)
-    .bind(upstream_provider_code)
+    .bind(upstream_supplier_code)
     .bind(base_url)
     .execute(&pool)
     .await
@@ -6927,7 +6927,7 @@ async fn seed_start_end2video_channel_route(
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, tenant_id, organization_id, provider_id, provider_code, channel_code,
+            (id, tenant_id, organization_id, provider_id, supplier_code, account_code,
              channel_name, channel_type, protocol_code, auth_type, auth_config,
              credential_ref, base_url, status, priority, weight, health_status)
         VALUES
@@ -6936,10 +6936,10 @@ async fn seed_start_end2video_channel_route(
     )
     .bind(id)
     .bind(id)
-    .bind(provider_code)
-    .bind(format!("{provider_code}-main"))
-    .bind(format!("{provider_code} Main"))
-    .bind(upstream_provider_code)
+    .bind(supplier_code)
+    .bind(format!("{supplier_code}-main"))
+    .bind(format!("{supplier_code} Main"))
+    .bind(upstream_supplier_code)
     .bind(auth_type)
     .bind(auth_config)
     .bind(secret_ref)
@@ -6951,8 +6951,8 @@ async fn seed_start_end2video_channel_route(
         &pool,
         id * 100 + 1,
         id,
-        provider_code,
-        &format!("{provider_code}-main"),
+        supplier_code,
+        &format!("{supplier_code}-main"),
         secret_ref,
         base_url,
         auth_config,
@@ -6990,12 +6990,12 @@ async fn seed_start_end2video_channel_route(
         r#"
         INSERT INTO ai_routing_rule
             (id, tenant_id, organization_id, profile_id, rule_code, priority,
-             match_expression, target_model, candidate_channels, fallback_chain,
+             match_expression, target_model, candidate_account_groups, fallback_chain,
              constraints, status)
         VALUES
             (9301, 100001, 0, 9301, 'vidu-start-end2video', 1,
              '{"routeKey":"vidu.start_end_to_video"}',
-             'vidu.start_end_to_video', '[{"channel_id":9301,"weight":100}]',
+             'vidu.start_end_to_video', '[{"account_id":9301,"weight":100}]',
              '[]', '{}', 1)
         "#,
     )
@@ -7004,8 +7004,8 @@ async fn seed_start_end2video_channel_route(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_member
-            (id, tenant_id, organization_id, channel_group_id, channel_id, priority, weight,
+        INSERT INTO ai_upstream_account_group_member
+            (id, tenant_id, organization_id, account_group_id, account_id, priority, weight,
              enabled, status)
         VALUES
             (?, 100001, 0, 10, ?, 1, 100, 1, 1)
@@ -7020,7 +7020,7 @@ async fn seed_start_end2video_channel_route(
         &pool,
         id + 10000,
         id,
-        provider_code,
+        supplier_code,
         upstream_vendor_code,
         "vidu.start_end_to_video",
     )
@@ -7127,7 +7127,7 @@ async fn seed_tencent_cloud_vidu_billing_catalog(
         INSERT INTO ai_model_pricing
             (id, uuid, tenant_id, organization_id, model_id, catalog_key, model,
              vendor_code, region_code, price_side, billing_meter_code, unit_price,
-             currency, provider_code, channel_id, status, priority)
+             currency, supplier_code, account_id, status, priority)
         VALUES
             (9403, 'price-tencent-cloud-vidu-api-request-upstream', 100001, 0, 9401,
              'tencent-cloud/vidu2.0', 'vidu2.0', 'tencent-cloud',
@@ -7154,7 +7154,7 @@ async fn seed_vidu_official_billing_catalog(
 async fn seed_vidu_billing_catalog_for_provider(
     catalog: &sdkwork_claw_test_support::SeededSqliteCatalog,
     seed_id: i64,
-    provider_code: &str,
+    supplier_code: &str,
     display_name: &str,
 ) {
     let pool = catalog.open_pool().await.unwrap();
@@ -7167,8 +7167,8 @@ async fn seed_vidu_billing_catalog_for_provider(
         "#,
     )
     .bind(seed_id)
-    .bind(format!("vendor-{provider_code}"))
-    .bind(provider_code)
+    .bind(format!("vendor-{supplier_code}"))
+    .bind(supplier_code)
     .bind(display_name)
     .bind(seed_id)
     .execute(&pool)
@@ -7184,14 +7184,14 @@ async fn seed_vidu_billing_catalog_for_provider(
         "#,
     )
     .bind(seed_id)
-    .bind(format!("family-{provider_code}-vidu"))
+    .bind(format!("family-{supplier_code}-vidu"))
     .bind(seed_id)
-    .bind(provider_code)
+    .bind(supplier_code)
     .bind(seed_id)
     .execute(&pool)
     .await
     .unwrap();
-    let catalog_key = format!("{provider_code}/vidu2.0");
+    let catalog_key = format!("{supplier_code}/vidu2.0");
     sqlx::query(
         r#"
         INSERT INTO ai_model
@@ -7208,10 +7208,10 @@ async fn seed_vidu_billing_catalog_for_provider(
         "#,
     )
     .bind(seed_id)
-    .bind(format!("model-{provider_code}-vidu2"))
+    .bind(format!("model-{supplier_code}-vidu2"))
     .bind(&catalog_key)
     .bind(seed_id)
-    .bind(provider_code)
+    .bind(supplier_code)
     .bind(display_name)
     .bind(seed_id)
     .execute(&pool)
@@ -7229,10 +7229,10 @@ async fn seed_vidu_billing_catalog_for_provider(
         "#,
     )
     .bind(seed_id)
-    .bind(format!("cap-{provider_code}-global-vidu2-video"))
+    .bind(format!("cap-{supplier_code}-global-vidu2-video"))
     .bind(seed_id)
     .bind(&catalog_key)
-    .bind(provider_code)
+    .bind(supplier_code)
     .bind(seed_id)
     .execute(&pool)
     .await
@@ -7241,9 +7241,9 @@ async fn seed_vidu_billing_catalog_for_provider(
         &pool,
         seed_id + 10000,
         9301,
-        provider_code,
-        &format!("{provider_code}-main"),
-        provider_code,
+        supplier_code,
+        &format!("{supplier_code}-main"),
+        supplier_code,
         "vidu.start_end_to_video",
         "video",
         &catalog_key,
@@ -7263,10 +7263,10 @@ async fn seed_vidu_billing_catalog_for_provider(
         "#,
     )
     .bind(seed_id)
-    .bind(format!("price-{provider_code}-vidu-api-request-reference"))
+    .bind(format!("price-{supplier_code}-vidu-api-request-reference"))
     .bind(seed_id)
     .bind(&catalog_key)
-    .bind(provider_code)
+    .bind(supplier_code)
     .execute(&pool)
     .await
     .unwrap();
@@ -7275,22 +7275,22 @@ async fn seed_vidu_billing_catalog_for_provider(
         INSERT INTO ai_model_pricing
             (id, uuid, tenant_id, organization_id, model_id, catalog_key, model,
              vendor_code, region_code, price_side, billing_meter_code, unit_price,
-             currency, provider_code, channel_id, status, priority)
+             currency, supplier_code, account_id, status, priority)
         VALUES
             (?, ?, 100001, 0, ?, ?, 'vidu2.0', ?,
              'global', 2, 'api_request', '0.010000', 'USD', ?, 9301, 1, 1)
         "#,
     )
     .bind(seed_id + 1)
-    .bind(format!("price-{provider_code}-vidu-api-request-upstream"))
+    .bind(format!("price-{supplier_code}-vidu-api-request-upstream"))
     .bind(seed_id)
     .bind(&catalog_key)
-    .bind(provider_code)
-    .bind(provider_code)
+    .bind(supplier_code)
+    .bind(supplier_code)
     .execute(&pool)
     .await
     .unwrap();
-    if provider_code != "vidu" {
+    if supplier_code != "vidu" {
         sqlx::query(
             r#"
             INSERT INTO ai_model_vendor
@@ -7352,7 +7352,7 @@ async fn seed_vidu_billing_catalog_for_provider(
             INSERT INTO ai_model_pricing
                 (id, uuid, tenant_id, organization_id, model_id, catalog_key, model,
                  vendor_code, region_code, price_side, billing_meter_code, unit_price,
-                 currency, provider_code, channel_id, status, priority)
+                 currency, supplier_code, account_id, status, priority)
             VALUES
                 (?, ?, 100001, 0, ?, ?, 'vidu2.0', 'vidu',
                  'global', 2, 'api_request', '0.010000', 'USD', ?, 9301, 1, 1)
@@ -7362,7 +7362,7 @@ async fn seed_vidu_billing_catalog_for_provider(
         .bind(format!("price-vidu-vidu2-api-request-upstream-{seed_id}"))
         .bind(seed_id + 2)
         .bind(&alias_catalog_key)
-        .bind(provider_code)
+        .bind(supplier_code)
         .execute(&pool)
         .await
         .unwrap();
@@ -7736,7 +7736,7 @@ async fn seed_openai_passthrough_group_channel_routes(
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, uuid, tenant_id, organization_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, supplier_code, account_code,
              channel_name, channel_type, credential_ref, base_url, status, priority,
              weight, health_status)
         VALUES
@@ -7764,8 +7764,8 @@ async fn seed_openai_passthrough_group_channel_routes(
         &pool,
         &ChannelScopedModelMappingSeed {
             rule_id: 9001,
-            channel_id: 3001,
-            channel_code: "openrouter-main",
+            account_id: 3001,
+            account_code: "openrouter-main",
             source_model: "gpt-image-1",
             source_catalog_key: "openai/gpt-image-1",
             target_model: "gpt-image-1",
@@ -7780,8 +7780,8 @@ async fn seed_openai_passthrough_group_channel_routes(
         &pool,
         &ChannelScopedModelMappingSeed {
             rule_id: 9002,
-            channel_id: 3002,
-            channel_code: "openrouter-premium",
+            account_id: 3002,
+            account_code: "openrouter-premium",
             source_model: "gpt-image-1",
             source_catalog_key: "openai/gpt-image-1",
             target_model: "gpt-image-1",
@@ -7797,7 +7797,7 @@ async fn seed_openai_passthrough_group_channel_routes(
 
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group
+        INSERT INTO ai_upstream_account_group
             (id, tenant_id, organization_id, group_code, group_name, pricing_plan_code,
              rate_multiplier, official_price_multiplier, status)
         VALUES
@@ -7812,7 +7812,7 @@ async fn seed_openai_passthrough_group_channel_routes(
     sqlx::query(
         r#"
         INSERT INTO iam_gateway_api_key
-            (id, tenant_id, organization_id, user_id, channel_group_id, key_prefix, key_hash,
+            (id, tenant_id, organization_id, user_id, account_group_id, key_prefix, key_hash,
              idempotency_key, status)
         VALUES
             (101, 100001, 0, 31, 11, 'sk-premium', ?, 'seed-api-key-101', 1)
@@ -7824,8 +7824,8 @@ async fn seed_openai_passthrough_group_channel_routes(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_member
-            (id, uuid, tenant_id, organization_id, channel_group_id, channel_id, priority, weight,
+        INSERT INTO ai_upstream_account_group_member
+            (id, uuid, tenant_id, organization_id, account_group_id, account_id, priority, weight,
              enabled, status)
         VALUES
             (601, 'channel-group-member-openrouter-premium', 100001, 0, 11, 3002, 1, 100, 1, 1)
@@ -7854,7 +7854,7 @@ async fn seed_openai_passthrough_group_channel_routes(
         INSERT INTO ai_model_pricing
             (id, uuid, tenant_id, organization_id, model_id, catalog_key, model,
              vendor_code, region_code, price_side, billing_meter_code, unit_price,
-             currency, provider_code, channel_id, status, priority)
+             currency, supplier_code, account_id, status, priority)
         VALUES
             (9002, 'price-openai-global-gpt-image-1-standard-upstream', 100001, 0,
              9001, 'openai/gpt-image-1', 'gpt-image-1', 'openai',
@@ -8048,16 +8048,16 @@ async fn seed_openai_passthrough_group_channel_routes(
         r#"
         INSERT INTO ai_routing_rule
             (id, tenant_id, organization_id, profile_id, rule_code, priority,
-             match_expression, target_model, candidate_channels, fallback_chain,
+             match_expression, target_model, candidate_account_groups, fallback_chain,
              constraints, status)
         VALUES
             (9211, 100001, 0, 9201, 'standard-gpt-image-1', 1,
              '{"catalogKey":"openai/gpt-image-1"}',
-             'openai/gpt-image-1', '[{"channel_id":3001,"weight":100}]',
+             'openai/gpt-image-1', '[{"account_id":3001,"weight":100}]',
              '[]', '{}', 1),
             (9212, 100001, 0, 9202, 'premium-gpt-image-1', 1,
              '{"catalogKey":"openai/gpt-image-1"}',
-             'openai/gpt-image-1', '[{"channel_id":3002,"weight":100}]',
+             'openai/gpt-image-1', '[{"account_id":3002,"weight":100}]',
              '[]', '{}', 1)
         "#,
     )
@@ -8069,7 +8069,7 @@ async fn seed_openai_passthrough_group_channel_routes(
 
 async fn set_channel_managed_provider_secret(
     catalog: &sdkwork_claw_test_support::SeededSqliteCatalog,
-    channel_id: i64,
+    account_id: i64,
     secret_ref: &str,
     secret_value: &str,
 ) {
@@ -8078,7 +8078,7 @@ async fn set_channel_managed_provider_secret(
     let ciphertext = codec.encode_secret(secret_value).unwrap();
     let auth_config = json!({ "secretMaterialCiphertext": ciphertext }).to_string();
     let pool = catalog.open_pool().await.unwrap();
-    set_channel_and_credential_secret(&pool, channel_id, secret_ref, &auth_config).await;
+    set_channel_and_credential_secret(&pool, account_id, secret_ref, &auth_config).await;
     pool.close().await;
 }
 
@@ -8088,8 +8088,8 @@ async fn seed_openai_chat_fallback_route(catalog: &sdkwork_claw_test_support::Se
         &pool,
         &ChannelScopedModelMappingSeed {
             rule_id: 9011,
-            channel_id: 3002,
-            channel_code: "openrouter-premium",
+            account_id: 3002,
+            account_code: "openrouter-premium",
             source_model: "gpt-4o-mini",
             source_catalog_key: "openai/gpt-4o-mini",
             target_model: "gpt-4o-mini",
@@ -8105,7 +8105,7 @@ async fn seed_openai_chat_fallback_route(catalog: &sdkwork_claw_test_support::Se
         INSERT INTO ai_model_pricing
             (id, uuid, tenant_id, organization_id, model_id, catalog_key, model,
              vendor_code, region_code, price_side, billing_meter_code, unit_price,
-             currency, provider_code, channel_id, status, priority)
+             currency, supplier_code, account_id, status, priority)
         VALUES
             (9011, 'price-openai-gpt-4o-mini-fallback-input-upstream', 100001, 0,
              1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai',
@@ -8118,8 +8118,8 @@ async fn seed_openai_chat_fallback_route(catalog: &sdkwork_claw_test_support::Se
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_member
-            (id, uuid, tenant_id, organization_id, channel_group_id, channel_id, priority, weight,
+        INSERT INTO ai_upstream_account_group_member
+            (id, uuid, tenant_id, organization_id, account_group_id, account_id, priority, weight,
              enabled, status)
         VALUES
             (602, 'channel-group-member-openrouter-standard-fallback', 100001, 0, 10, 3002, 2, 50, 1, 1)
@@ -8131,7 +8131,7 @@ async fn seed_openai_chat_fallback_route(catalog: &sdkwork_claw_test_support::Se
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code,
              resource_group_id, resource_group_code, grant_type, priority, weight, status)
         VALUES
             (9021, 'channel-resource-openrouter-chat-fallback', 100001, 0, 3002,
@@ -8155,7 +8155,7 @@ async fn seed_openai_chat_fallback_route(catalog: &sdkwork_claw_test_support::Se
     sqlx::query(
         r#"
         UPDATE ai_routing_rule
-        SET fallback_chain = '[{"channel_id":3002,"weight":50}]'
+        SET fallback_chain = '[{"account_id":3002,"weight":50}]'
         WHERE id = 9102
         "#,
     )
@@ -8187,7 +8187,7 @@ async fn seed_openai_passthrough_default_channel_route_fallback(
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, uuid, tenant_id, organization_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, supplier_code, account_code,
              channel_name, channel_type, credential_ref, base_url, status, priority,
              weight, health_status)
         VALUES
@@ -8243,12 +8243,12 @@ async fn seed_openai_passthrough_default_channel_route_fallback(
         r#"
         INSERT INTO ai_routing_rule
             (id, tenant_id, organization_id, profile_id, rule_code, priority,
-             match_expression, target_model, candidate_channels, fallback_chain,
+             match_expression, target_model, candidate_account_groups, fallback_chain,
              constraints, status)
         VALUES
             (9314, 0, 0, 9304, 'global-default-files', 1,
              '{"routeKey":"openai/management/files"}',
-             'openai/management/files', '[{"channel_id":3004,"weight":100}]',
+             'openai/management/files', '[{"account_id":3004,"weight":100}]',
              '[]', '{}', 1)
         "#,
     )
@@ -8257,8 +8257,8 @@ async fn seed_openai_passthrough_default_channel_route_fallback(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_member
-            (id, tenant_id, organization_id, channel_group_id, channel_id, priority, weight,
+        INSERT INTO ai_upstream_account_group_member
+            (id, tenant_id, organization_id, account_group_id, account_id, priority, weight,
              enabled, status)
         VALUES
             (604, 100001, 0, 10, 3004, 1, 100, 1, 1)
@@ -8287,7 +8287,7 @@ async fn seed_openai_passthrough_default_channel_route_fallback(
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code,
              resource_id, resource_code, grant_type, priority, weight, status)
         VALUES
             (9004, 'channel-resource-openrouter-default-files', 100001, 0, 3004,
@@ -8300,8 +8300,8 @@ async fn seed_openai_passthrough_default_channel_route_fallback(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
-            (id, uuid, tenant_id, organization_id, channel_group_id,
+        INSERT INTO ai_upstream_account_group_resource
+            (id, uuid, tenant_id, organization_id, account_group_id,
              resource_id, resource_code, grant_type, priority, status)
         VALUES
             (9004, 'channel-group-resource-openrouter-default-files', 100001, 0, 10,
@@ -8372,7 +8372,7 @@ async fn seed_openai_passthrough_header_auth_channel_route_with_auth_config(
     sqlx::query(
         r#"
         INSERT INTO ai_provider
-            (id, provider_code, default_vendor_code, provider_type, protocol_code,
+            (id, supplier_code, default_vendor_code, provider_type, protocol_code,
              base_url, status)
         VALUES
             (9005, 'google', 'google', 'relay_aggregator', 'google', ?, 1)
@@ -8385,9 +8385,9 @@ async fn seed_openai_passthrough_header_auth_channel_route_with_auth_config(
     sqlx::query(
         r#"
         UPDATE ai_channel
-        SET provider_code = 'google',
+        SET supplier_code = 'google',
             provider_id = 9005,
-            channel_code = 'google-main',
+            account_code = 'google-main',
             channel_name = 'Google Main',
             channel_type = 'relay',
             protocol_code = 'google',
@@ -8406,12 +8406,12 @@ async fn seed_openai_passthrough_header_auth_channel_route_with_auth_config(
     sqlx::query(
         r#"
         UPDATE ai_channel_credential
-        SET provider_code = 'google',
-            channel_code = 'google-main',
+        SET supplier_code = 'google',
+            account_code = 'google-main',
             credential_ref = 'vault://providers/google/account/main',
             base_url = ?,
             auth_config = ?
-        WHERE channel_id = 3001
+        WHERE account_id = 3001
         "#,
     )
     .bind(base_url)
@@ -8494,7 +8494,7 @@ async fn seed_openai_passthrough_header_auth_channel_route_with_auth_config(
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource
-            (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code,
+            (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code,
              resource_id, resource_code, grant_type, priority, weight, status)
         VALUES
             (9005, 'channel-resource-google-files', 100001, 0, 3001,
@@ -8507,8 +8507,8 @@ async fn seed_openai_passthrough_header_auth_channel_route_with_auth_config(
     .unwrap();
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group_resource
-            (id, uuid, tenant_id, organization_id, channel_group_id,
+        INSERT INTO ai_upstream_account_group_resource
+            (id, uuid, tenant_id, organization_id, account_group_id,
              resource_id, resource_code, grant_type, priority, status)
         VALUES
             (9005, 'channel-group-resource-google-files', 100001, 0, 10,

@@ -52,7 +52,7 @@ async fn generate_reconciliation_items_reports_missing_fee_and_status_cases() {
             generated_at: "2026-05-29T00:00:00Z".to_owned(),
             internal_items: vec![
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: Some("pay-attempt-1".to_owned()),
                     refund_id: None,
                     refund_attempt_id: None,
@@ -68,7 +68,7 @@ async fn generate_reconciliation_items_reports_missing_fee_and_status_cases() {
                     occurred_at: "2026-05-29T00:00:00Z".to_owned(),
                 },
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: Some("pay-attempt-2".to_owned()),
                     refund_id: None,
                     refund_attempt_id: None,
@@ -84,7 +84,7 @@ async fn generate_reconciliation_items_reports_missing_fee_and_status_cases() {
                     occurred_at: "2026-05-29T00:00:00Z".to_owned(),
                 },
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: Some("pay-attempt-3".to_owned()),
                     refund_id: None,
                     refund_attempt_id: None,
@@ -100,7 +100,7 @@ async fn generate_reconciliation_items_reports_missing_fee_and_status_cases() {
                     occurred_at: "2026-05-29T00:00:00Z".to_owned(),
                 },
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: None,
                     refund_id: Some("refund-1".to_owned()),
                     refund_attempt_id: Some("refund-attempt-1".to_owned()),
@@ -155,7 +155,7 @@ async fn generate_reconciliation_items_reports_duplicate_amount_and_currency_cas
             generated_at: "2026-05-29T00:00:00Z".to_owned(),
             internal_items: vec![
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: Some("pay-dup".to_owned()),
                     refund_id: None,
                     refund_attempt_id: None,
@@ -171,7 +171,7 @@ async fn generate_reconciliation_items_reports_duplicate_amount_and_currency_cas
                     occurred_at: "2026-05-29T00:00:00Z".to_owned(),
                 },
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: Some("pay-amount".to_owned()),
                     refund_id: None,
                     refund_attempt_id: None,
@@ -187,7 +187,7 @@ async fn generate_reconciliation_items_reports_duplicate_amount_and_currency_cas
                     occurred_at: "2026-05-29T00:00:00Z".to_owned(),
                 },
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: Some("pay-currency".to_owned()),
                     refund_id: None,
                     refund_attempt_id: None,
@@ -239,7 +239,7 @@ async fn generate_reconciliation_items_reports_settlement_and_chargeback_cases()
             generated_at: "2026-05-29T00:00:00Z".to_owned(),
             internal_items: vec![
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: Some("pay-settlement".to_owned()),
                     refund_id: None,
                     refund_attempt_id: None,
@@ -255,7 +255,7 @@ async fn generate_reconciliation_items_reports_settlement_and_chargeback_cases()
                     occurred_at: "2026-05-29T00:00:00Z".to_owned(),
                 },
                 RuntimeReconciliationLedgerEntry {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     payment_attempt_id: Some("pay-chargeback".to_owned()),
                     refund_id: None,
                     refund_attempt_id: None,
@@ -296,7 +296,7 @@ fn import_command_with_reconciliation_rows() -> RuntimeImportPaymentStatementCom
         .items
         .push(RuntimeImportPaymentStatementItemCommand {
             row_no: "statement-row-3".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             provider_account_id: Some("acct-1".to_owned()),
             native_trade_id: Some("native-trade-3".to_owned()),
             native_refund_id: None,
@@ -318,7 +318,7 @@ fn import_command_with_reconciliation_rows() -> RuntimeImportPaymentStatementCom
         .items
         .push(RuntimeImportPaymentStatementItemCommand {
             row_no: "statement-row-4".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             provider_account_id: Some("acct-1".to_owned()),
             native_trade_id: Some("native-trade-4".to_owned()),
             native_refund_id: None,
@@ -351,7 +351,7 @@ fn import_command_with_duplicate_amount_and_currency_rows() -> RuntimeImportPaym
     command.items = vec![
         RuntimeImportPaymentStatementItemCommand {
             row_no: "statement-row-dup-1".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             provider_account_id: Some("acct-1".to_owned()),
             native_trade_id: Some("native-dup-1".to_owned()),
             native_refund_id: None,
@@ -371,7 +371,7 @@ fn import_command_with_duplicate_amount_and_currency_rows() -> RuntimeImportPaym
         },
         RuntimeImportPaymentStatementItemCommand {
             row_no: "statement-row-dup-2".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             provider_account_id: Some("acct-1".to_owned()),
             native_trade_id: Some("native-dup-2".to_owned()),
             native_refund_id: None,
@@ -391,7 +391,7 @@ fn import_command_with_duplicate_amount_and_currency_rows() -> RuntimeImportPaym
         },
         RuntimeImportPaymentStatementItemCommand {
             row_no: "statement-row-amount".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             provider_account_id: Some("acct-1".to_owned()),
             native_trade_id: Some("native-amount".to_owned()),
             native_refund_id: None,
@@ -411,7 +411,7 @@ fn import_command_with_duplicate_amount_and_currency_rows() -> RuntimeImportPaym
         },
         RuntimeImportPaymentStatementItemCommand {
             row_no: "statement-row-currency".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             provider_account_id: Some("acct-1".to_owned()),
             native_trade_id: Some("native-currency".to_owned()),
             native_refund_id: None,
@@ -444,7 +444,7 @@ fn import_command_with_settlement_and_chargeback_rows() -> RuntimeImportPaymentS
     command.items = vec![
         RuntimeImportPaymentStatementItemCommand {
             row_no: "statement-row-settlement".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             provider_account_id: Some("acct-1".to_owned()),
             native_trade_id: Some("native-settlement".to_owned()),
             native_refund_id: None,
@@ -464,7 +464,7 @@ fn import_command_with_settlement_and_chargeback_rows() -> RuntimeImportPaymentS
         },
         RuntimeImportPaymentStatementItemCommand {
             row_no: "statement-row-chargeback".to_owned(),
-            provider_code: "stripe".to_owned(),
+            supplier_code: "stripe".to_owned(),
             provider_account_id: Some("acct-1".to_owned()),
             native_trade_id: Some("native-chargeback".to_owned()),
             native_refund_id: None,
@@ -491,7 +491,7 @@ fn import_command() -> RuntimeImportPaymentStatementCommand {
         tenant_id: "100001".to_owned(),
         organization_id: Some("0".to_owned()),
         statement_no: "stmt-2026-05-001".to_owned(),
-        provider_code: "stripe".to_owned(),
+        supplier_code: "stripe".to_owned(),
         provider_account_id: Some("acct-1".to_owned()),
         statement_type: "payment".to_owned(),
         settlement_currency: "CNY".to_owned(),
@@ -513,7 +513,7 @@ fn import_command() -> RuntimeImportPaymentStatementCommand {
         items: vec![
             RuntimeImportPaymentStatementItemCommand {
                 row_no: "statement-row-1".to_owned(),
-                provider_code: "stripe".to_owned(),
+                supplier_code: "stripe".to_owned(),
                 provider_account_id: Some("acct-1".to_owned()),
                 native_trade_id: Some("native-trade-1".to_owned()),
                 native_refund_id: None,
@@ -533,7 +533,7 @@ fn import_command() -> RuntimeImportPaymentStatementCommand {
             },
             RuntimeImportPaymentStatementItemCommand {
                 row_no: "statement-row-2".to_owned(),
-                provider_code: "stripe".to_owned(),
+                supplier_code: "stripe".to_owned(),
                 provider_account_id: Some("acct-1".to_owned()),
                 native_trade_id: Some("native-trade-2".to_owned()),
                 native_refund_id: None,

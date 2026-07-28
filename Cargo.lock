@@ -2764,7 +2764,6 @@ dependencies = [
  "sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
  "sdkwork-clawrouter-app-providers-repository-sqlx",
  "sdkwork-clawrouter-database-host",
- "sdkwork-clawrouter-router-service-test-support",
  "sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
  "sdkwork-commerce-promotion-repository-sqlx",
  "sdkwork-commerce-promotion-service",
@@ -2797,20 +2796,6 @@ dependencies = [
  "tower",
  "tracing",
  "url",
-]
-
-[[package]]
-name = "sdkwork-clawrouter-router-service-test-support"
-version = "0.3.0"
-dependencies = [
- "sdkwork-clawrouter-database-host",
- "sdkwork-clawrouter-router-service",
- "sdkwork-database-config",
- "sdkwork-database-lifecycle",
- "sdkwork-database-sqlx",
- "sdkwork-models-database-host",
- "sqlx",
- "tokio",
 ]
 
 [[package]]
@@ -3612,6 +3597,7 @@ dependencies = [
  "sdkwork-models-contract-service",
  "sdkwork-routes-iam-backend-api",
  "sdkwork-routes-models-catalog-backend-api",
+ "sdkwork-utils-rust",
  "sdkwork-web-axum",
  "sdkwork-web-contract",
  "sdkwork-web-core",

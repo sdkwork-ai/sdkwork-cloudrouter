@@ -115,14 +115,14 @@ impl MetricsInterceptor {
             .routing
             .attempted_routes
             .last()
-            .map(|attempt| attempt.provider_code.as_str())
+            .map(|attempt| attempt.supplier_code.as_str())
             .or_else(|| {
                 invocation
                     .routing
                     .route_plan
                     .as_ref()
                     .and_then(|plan| plan.current_candidate())
-                    .map(|candidate| candidate.provider_code.as_str())
+                    .map(|candidate| candidate.supplier_code.as_str())
             })
             .unwrap_or("unknown")
     }

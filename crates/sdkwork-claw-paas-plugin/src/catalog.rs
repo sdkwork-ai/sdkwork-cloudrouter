@@ -6,7 +6,7 @@ pub struct PaasServiceGroup {
     pub name: &'static str,
     pub description: &'static str,
     pub capability: PaasCapability,
-    pub provider_codes: Vec<&'static str>,
+    pub supplier_codes: Vec<&'static str>,
     pub operations: Vec<&'static str>,
     pub standard_operations: Vec<PaasOperation>,
 }
@@ -152,7 +152,7 @@ fn service_group(
         name,
         description,
         capability,
-        provider_codes: vec!["baidu", "alibaba", "tencent"],
+        supplier_codes: vec!["baidu", "alibaba", "tencent"],
         operations: operations.iter().map(|(code, _)| *code).collect(),
         standard_operations: operations
             .into_iter()

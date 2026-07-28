@@ -28,8 +28,8 @@ pub(crate) struct OpenAiAdapterInvocationParts {
     pub group_id: i64,
     pub group_code: String,
     pub pricing_plan_code: String,
-    pub provider_code: String,
-    pub provider_channel_id: i64,
+    pub supplier_code: String,
+    pub provider_account_id: i64,
     pub provider_region_code: String,
     pub provider_model: String,
     pub provider_base_url: Option<String>,
@@ -73,8 +73,8 @@ pub(crate) fn build_openai_adapter_invocation_with_shape(
                 "{}-{}-{}-{}",
                 endpoint.invocation_id_prefix,
                 parts.api_key_id,
-                parts.provider_code,
-                parts.provider_channel_id
+                parts.supplier_code,
+                parts.provider_account_id
             ),
             endpoint_key: endpoint.endpoint_key.to_owned(),
             method: endpoint.method.to_owned(),
@@ -94,8 +94,8 @@ pub(crate) fn build_openai_adapter_invocation_with_shape(
             pricing_plan_code: parts.pricing_plan_code,
         },
         provider: AdapterProviderContext {
-            provider_code: parts.provider_code,
-            channel_id: parts.provider_channel_id,
+            supplier_code: parts.supplier_code,
+            account_id: parts.provider_account_id,
             region_code: normalized_adapter_provider_region_code(&parts.provider_region_code),
             provider_model: parts.provider_model,
             base_url: parts.provider_base_url,

@@ -23,7 +23,7 @@ async fn postgres_and_sqlite_return_the_same_scoped_provider_page() -> anyhow::R
             id BIGINT NOT NULL PRIMARY KEY,
             tenant_id BIGINT,
             organization_id BIGINT,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             default_vendor_code TEXT,
             provider_type TEXT,
             auth_type BIGINT,
@@ -52,8 +52,8 @@ async fn postgres_and_sqlite_return_the_same_scoped_provider_page() -> anyhow::R
             tenant_id BIGINT NOT NULL,
             organization_id BIGINT NOT NULL,
             provider_id BIGINT,
-            provider_code TEXT NOT NULL,
-            channel_code TEXT,
+            supplier_code TEXT NOT NULL,
+            account_code TEXT,
             proxy_id BIGINT,
             base_url TEXT,
             status BIGINT NOT NULL,
@@ -80,7 +80,7 @@ async fn postgres_and_sqlite_return_the_same_scoped_provider_page() -> anyhow::R
             id BIGINT NOT NULL PRIMARY KEY,
             tenant_id BIGINT NOT NULL,
             organization_id BIGINT NOT NULL,
-            channel_id BIGINT NOT NULL,
+            account_id BIGINT NOT NULL,
             resource_id BIGINT,
             resource_code TEXT,
             grant_type TEXT NOT NULL DEFAULT 'allow',
@@ -92,7 +92,7 @@ async fn postgres_and_sqlite_return_the_same_scoped_provider_page() -> anyhow::R
         "#,
         r#"
         INSERT INTO ai_provider (
-            id, tenant_id, organization_id, provider_code, default_vendor_code,
+            id, tenant_id, organization_id, supplier_code, default_vendor_code,
             provider_type, auth_type, display_name, description, base_url, status, sort_order
         ) VALUES
             (1, 100001, 0, 'azure_openai', 'openai', 'cloud_platform', 2,
@@ -102,7 +102,7 @@ async fn postgres_and_sqlite_return_the_same_scoped_provider_page() -> anyhow::R
         "#,
         r#"
         INSERT INTO ai_channel (
-            id, tenant_id, organization_id, provider_id, provider_code, channel_code,
+            id, tenant_id, organization_id, provider_id, supplier_code, account_code,
             base_url, status, health_status, priority, weight
         ) VALUES
             (2001, 100001, 0, 1, 'azure_openai', 'chn-1',
@@ -117,7 +117,7 @@ async fn postgres_and_sqlite_return_the_same_scoped_provider_page() -> anyhow::R
         "#,
         r#"
         INSERT INTO ai_channel_resource (
-            id, tenant_id, organization_id, channel_id, resource_id, resource_code,
+            id, tenant_id, organization_id, account_id, resource_id, resource_code,
             grant_type, status
         ) VALUES
             (4001, 100001, 0, 2001, 3001, 'model.azure.gpt-4o-mini', 'allow', 1)

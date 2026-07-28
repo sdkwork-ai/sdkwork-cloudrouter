@@ -17,7 +17,7 @@ pub struct AdminSiteSubject {
 #[derive(Debug, Clone, PartialEq)]
 pub struct AdminSiteItem {
     pub id: i64,
-    pub site_code: String,
+    pub supplier_code: String,
     pub site_name: String,
     pub display_name: String,
     pub description: Option<String>,
@@ -43,11 +43,11 @@ pub struct AdminSiteItem {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminSiteChannelItem {
     pub id: i64,
-    pub channel_code: String,
+    pub account_code: String,
     pub channel_name: String,
-    pub provider_code: Option<String>,
-    pub site_code: Option<String>,
-    pub site_service_code: Option<String>,
+    pub supplier_code: Option<String>,
+    pub supplier_code: Option<String>,
+    pub endpoint_code: Option<String>,
     pub site_channel_role: Option<String>,
     pub health_status: String,
     pub status: String,
@@ -55,7 +55,7 @@ pub struct AdminSiteChannelItem {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminSiteConnectionCheckItem {
-    pub site_id: i64,
+    pub supplier_id: i64,
     pub status: String,
     pub health_status: String,
     pub latency_ms: Option<i64>,
@@ -86,7 +86,7 @@ pub struct CreateAdminSiteCommand {
     pub site_uuid: String,
     pub service_uuid: String,
     pub audit_log_uuid: String,
-    pub site_code: String,
+    pub supplier_code: String,
     pub site_name: String,
     pub display_name: String,
     pub description: Option<String>,
@@ -110,9 +110,9 @@ pub struct CreateAdminSiteCommand {
 #[derive(Debug, Clone, PartialEq)]
 pub struct UpdateAdminSiteCommand {
     pub subject: AdminSiteSubject,
-    pub site_id: i64,
+    pub supplier_id: i64,
     pub audit_log_uuid: String,
-    pub site_code: Option<String>,
+    pub supplier_code: Option<String>,
     pub site_name: Option<String>,
     pub display_name: Option<String>,
     pub description: Option<Option<String>>,
@@ -136,7 +136,7 @@ pub struct UpdateAdminSiteCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeleteAdminSiteCommand {
     pub subject: AdminSiteSubject,
-    pub site_id: i64,
+    pub supplier_id: i64,
     pub audit_log_uuid: String,
     pub request_id: String,
     pub requested_at: String,
@@ -145,7 +145,7 @@ pub struct DeleteAdminSiteCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminSiteChannelsQuery {
     pub subject: AdminSiteSubject,
-    pub site_id: i64,
+    pub supplier_id: i64,
     pub page_no: i64,
     pub page_size: i64,
     pub offset: i64,
@@ -162,7 +162,7 @@ pub struct AdminSiteChannelListPage {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TestAdminSiteConnectionCommand {
     pub subject: AdminSiteSubject,
-    pub site_id: i64,
+    pub supplier_id: i64,
     pub audit_log_uuid: String,
     pub request_id: String,
     pub requested_at: String,

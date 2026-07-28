@@ -336,7 +336,7 @@ async fn create_routing_usage_tables(pool: &SqlitePool) {
             request_id TEXT NOT NULL,
             status INTEGER NOT NULL,
             resolved_model TEXT,
-            selected_channel_id INTEGER
+            selected_account_id INTEGER
         )
         "#,
         r#"
@@ -365,8 +365,8 @@ async fn create_routing_channel_tables(pool: &SqlitePool) {
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
             channel_name TEXT,
-            channel_code TEXT,
-            provider_code TEXT,
+            account_code TEXT,
+            supplier_code TEXT,
             protocol_code TEXT,
             auth_type INTEGER NOT NULL,
             base_url TEXT,
@@ -391,7 +391,7 @@ async fn create_routing_channel_tables(pool: &SqlitePool) {
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
-            channel_id INTEGER NOT NULL,
+            account_id INTEGER NOT NULL,
             resource_code TEXT,
             resource_group_code TEXT,
             grant_type TEXT NOT NULL DEFAULT 'allow',
@@ -404,7 +404,7 @@ async fn create_routing_channel_tables(pool: &SqlitePool) {
             id INTEGER PRIMARY KEY,
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
-            channel_id INTEGER NOT NULL,
+            account_id INTEGER NOT NULL,
             base_url TEXT,
             masked_label TEXT,
             priority INTEGER,
@@ -457,7 +457,7 @@ async fn seed_routing_channel(pool: &SqlitePool) {
     sqlx::query(
         r#"
         INSERT INTO ai_channel (
-            id, tenant_id, organization_id, channel_name, provider_code, protocol_code, auth_type,
+            id, tenant_id, organization_id, channel_name, supplier_code, protocol_code, auth_type,
             base_url, masked_label, timeout_ms, retry_policy, circuit_breaker_policy, weight, status, health_status, last_latency_ms,
             rpm_limit, consecutive_error_count, priority
         )
@@ -478,7 +478,7 @@ async fn seed_routing_channel(pool: &SqlitePool) {
     sqlx::query(
         r#"
         INSERT INTO ai_channel_resource (
-            id, tenant_id, organization_id, channel_id, resource_code, grant_type, status
+            id, tenant_id, organization_id, account_id, resource_code, grant_type, status
         )
         VALUES (6001, 100001, 0, 2001, 'llm', 'allow', 1)
         "#,

@@ -465,8 +465,8 @@ pub(super) async fn notify_route_fault(
             tracing::warn!(
                 error_code = error.code,
                 error = %error.message,
-                provider_code = route.provider_code,
-                channel_id = route.channel_id,
+                supplier_code = route.supplier_code,
+                account_id = route.account_id,
                 "openai invocation route fault hook failed"
             );
         }
@@ -484,8 +484,8 @@ pub(super) async fn notify_route_success(
             tracing::warn!(
                 error_code = error.code,
                 error = %error.message,
-                provider_code = route.provider_code,
-                channel_id = route.channel_id,
+                supplier_code = route.supplier_code,
+                account_id = route.account_id,
                 status_code = outcome.status_code,
                 "openai invocation route success hook failed"
             );

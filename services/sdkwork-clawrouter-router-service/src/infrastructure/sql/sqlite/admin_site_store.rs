@@ -4,7 +4,7 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::sql_admin_product_center::drive_uri_from_resource;
 use crate::infrastructure::sql::sql_admin_site::{
-    default_site_service_code, health_status_label, site_environment_code, site_environment_label,
+    default_endpoint_code, health_status_label, site_environment_code, site_environment_label,
     site_status_code, site_status_label,
 };
 use crate::ports::{
@@ -75,14 +75,14 @@ async fn list_sites(
     let search = query.search.as_ref().map(|value| format!("%{}%", value));
     let rows = sqlx::query(
         r#"
-        SELECT id, site_code, site_name, display_name, description, COALESCE(base_url, '') AS base_url,
+        SELECT id, supplier_code, site_name, display_name, description, COALESCE(base_url, '') AS base_url,
                website_url, docs_url, CAST(logo_resource_snapshot AS TEXT) AS logo_resource_snapshot,
                COALESCE(metadata, '{}') AS metadata, site_type, owner_kind, region_code, environment, health_status,
                last_latency_ms, consecutive_error_count, last_checked_at, last_sync_at, sort_order, status,
                COUNT(*) OVER() AS total
         FROM ai_site
         WHERE tenant_id = ?1 AND organization_id = ?2 AND deleted_at IS NULL
-          AND (?3 IS NULL OR site_code LIKE ?4 OR site_name LIKE ?5 OR display_name LIKE ?6)
+          AND (?3 IS NULL OR supplier_code LIKE ?4 OR site_name LIKE ?5 OR display_name LIKE ?6)
         ORDER BY sort_order ASC, id ASC
         LIMIT ?7 OFFSET ?8
         "#,
@@ -116,19 +116,19 @@ async fn create_site(
     command: CreateAdminSiteCommand,
 ) -> DomainResult<AdminSiteItem> {
     let mut tx = pool.begin().await.map_err(store_error)?;
-    let service_code = default_site_service_code(&command.site_code);
+    let service_code = default_endpoint_code(&command.supplier_code);
     let status = site_status_code(&command.status);
     let environment = site_environment_code(&command.environment);
     let logo = command.logo.as_ref();
     let logo_drive_uri = logo.and_then(drive_uri_from_resource);
     let logo_resource_snapshot = logo.map(serde_json::Value::to_string);
     let metadata = site_metadata_json(&command.domains, &command.vendor_codes)?;
-    let site_id = next_claw_runtime_id("ai_site")?;
-    let site_service_id = next_claw_runtime_id("ai_site_service")?;
+    let supplier_id = next_claw_runtime_id("ai_site")?;
+    let endpoint_id = next_claw_runtime_id("ai_site_service")?;
     sqlx::query(
         r#"
         INSERT INTO ai_site (
-            uuid, tenant_id, organization_id, status, site_code, site_name, display_name,
+            uuid, tenant_id, organization_id, status, supplier_code, site_name, display_name,
             description, base_url, website_url, docs_url, logo_drive_uri,
             logo_resource_snapshot, metadata, site_type, owner_kind,
             region_code, environment, health_status, id
@@ -139,7 +139,7 @@ async fn create_site(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(status)
-    .bind(&command.site_code)
+    .bind(&command.supplier_code)
     .bind(&command.site_name)
     .bind(&command.display_name)
     .bind(&command.description)
@@ -153,14 +153,14 @@ async fn create_site(
     .bind(&command.owner_kind)
     .bind(&command.region_code)
     .bind(environment)
-    .bind(site_id)
+    .bind(supplier_id)
     .execute(&mut *tx)
     .await
     .map_err(conflict_or_store_error)?;
     sqlx::query(
         r#"
         INSERT INTO ai_site_service (
-            uuid, tenant_id, organization_id, status, site_id, site_code, service_code, service_name,
+            uuid, tenant_id, organization_id, status, supplier_id, supplier_code, service_code, service_name,
             service_type, protocol_code, base_url, credential_ref, masked_label, region_code,
             environment, health_status, id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ai_model_relay', 'openai_compatible', ?, ?, ?, ?, ?, 1, ?)
@@ -170,8 +170,8 @@ async fn create_site(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(status)
-    .bind(site_id)
-    .bind(&command.site_code)
+    .bind(supplier_id)
+    .bind(&command.supplier_code)
     .bind(&service_code)
     .bind(format!("{} AI model relay", command.display_name))
     .bind(&command.base_url)
@@ -179,7 +179,7 @@ async fn create_site(
     .bind(&command.masked_label)
     .bind(&command.region_code)
     .bind(environment)
-    .bind(site_service_id)
+    .bind(endpoint_id)
     .execute(&mut *tx)
     .await
     .map_err(conflict_or_store_error)?;
@@ -192,7 +192,7 @@ async fn create_site(
         command.subject.operator_id,
         command.subject.operator_type,
         "create_site",
-        site_id,
+        supplier_id,
         &command.requested_at,
     )
     .await?;
@@ -201,7 +201,7 @@ async fn create_site(
         pool,
         command.subject.tenant_id,
         command.subject.organization_id,
-        site_id,
+        supplier_id,
     )
     .await?
     .ok_or_else(|| DomainError::new("created site could not be reloaded"))
@@ -215,15 +215,15 @@ async fn update_site(
         pool,
         command.subject.tenant_id,
         command.subject.organization_id,
-        command.site_id,
+        command.supplier_id,
     )
     .await?
     else {
         return Ok(None);
     };
-    let site_code = command
-        .site_code
-        .unwrap_or_else(|| current.site_code.clone());
+    let supplier_code = command
+        .supplier_code
+        .unwrap_or_else(|| current.supplier_code.clone());
     let site_name = command
         .site_name
         .unwrap_or_else(|| current.site_name.clone());
@@ -252,14 +252,14 @@ async fn update_site(
     sqlx::query(
         r#"
         UPDATE ai_site
-        SET site_code = ?, site_name = ?, display_name = ?, description = ?, base_url = ?,
+        SET supplier_code = ?, site_name = ?, display_name = ?, description = ?, base_url = ?,
             website_url = ?, docs_url = ?, logo_drive_uri = ?,
             logo_resource_snapshot = ?, metadata = ?, site_type = ?, owner_kind = ?, region_code = ?,
             environment = ?, status = ?, updated_at = CURRENT_TIMESTAMP, version = version + 1
         WHERE tenant_id = ? AND organization_id = ? AND id = ? AND deleted_at IS NULL
         "#,
     )
-    .bind(&site_code)
+    .bind(&supplier_code)
     .bind(&site_name)
     .bind(&display_name)
     .bind(&description)
@@ -276,20 +276,20 @@ async fn update_site(
     .bind(status)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
-    .bind(command.site_id)
+    .bind(command.supplier_id)
     .execute(&mut *tx)
     .await
     .map_err(conflict_or_store_error)?;
     sqlx::query(
         r#"
         UPDATE ai_site_service
-        SET site_code = ?, service_name = ?, base_url = ?, region_code = ?, environment = ?,
+        SET supplier_code = ?, service_name = ?, base_url = ?, region_code = ?, environment = ?,
             status = ?, credential_ref = COALESCE(?, credential_ref),
             masked_label = COALESCE(?, masked_label), updated_at = CURRENT_TIMESTAMP, version = version + 1
-        WHERE tenant_id = ? AND organization_id = ? AND site_id = ? AND deleted_at IS NULL
+        WHERE tenant_id = ? AND organization_id = ? AND supplier_id = ? AND deleted_at IS NULL
         "#,
     )
-    .bind(&site_code)
+    .bind(&supplier_code)
     .bind(format!("{display_name} AI model relay"))
     .bind(&base_url)
     .bind(&region_code)
@@ -299,7 +299,7 @@ async fn update_site(
     .bind(command.masked_label.flatten())
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
-    .bind(command.site_id)
+    .bind(command.supplier_id)
     .execute(&mut *tx)
     .await
     .map_err(store_error)?;
@@ -312,7 +312,7 @@ async fn update_site(
         command.subject.operator_id,
         command.subject.operator_type,
         "update_site",
-        command.site_id,
+        command.supplier_id,
         &command.requested_at,
     )
     .await?;
@@ -321,17 +321,17 @@ async fn update_site(
         pool,
         command.subject.tenant_id,
         command.subject.organization_id,
-        command.site_id,
+        command.supplier_id,
     )
     .await
 }
 
 async fn delete_site(pool: &SqlitePool, command: DeleteAdminSiteCommand) -> DomainResult<bool> {
     let mut tx = pool.begin().await.map_err(store_error)?;
-    let bound_channels: i64 = sqlx::query_scalar("SELECT COUNT(1) FROM ai_channel WHERE tenant_id = ? AND organization_id = ? AND site_id = ? AND deleted_at IS NULL")
+    let bound_channels: i64 = sqlx::query_scalar("SELECT COUNT(1) FROM ai_channel WHERE tenant_id = ? AND organization_id = ? AND supplier_id = ? AND deleted_at IS NULL")
         .bind(command.subject.tenant_id)
         .bind(command.subject.organization_id)
-        .bind(command.site_id)
+        .bind(command.supplier_id)
         .fetch_one(&mut *tx)
         .await
         .map_err(store_error)?;
@@ -341,18 +341,18 @@ async fn delete_site(pool: &SqlitePool, command: DeleteAdminSiteCommand) -> Doma
         ));
     }
     sqlx::query(
-        "DELETE FROM ai_site_service WHERE tenant_id = ? AND organization_id = ? AND site_id = ?",
+        "DELETE FROM ai_site_service WHERE tenant_id = ? AND organization_id = ? AND supplier_id = ?",
     )
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
-    .bind(command.site_id)
+    .bind(command.supplier_id)
     .execute(&mut *tx)
     .await
     .map_err(store_error)?;
     let affected = sqlx::query("DELETE FROM ai_site WHERE tenant_id = ? AND organization_id = ? AND id = ? AND deleted_at IS NULL")
         .bind(command.subject.tenant_id)
         .bind(command.subject.organization_id)
-        .bind(command.site_id)
+        .bind(command.supplier_id)
         .execute(&mut *tx)
         .await
         .map_err(store_error)?
@@ -367,7 +367,7 @@ async fn delete_site(pool: &SqlitePool, command: DeleteAdminSiteCommand) -> Doma
             command.subject.operator_id,
             command.subject.operator_type,
             "delete_site",
-            command.site_id,
+            command.supplier_id,
             &command.requested_at,
         )
         .await?;
@@ -382,18 +382,18 @@ async fn list_site_channels(
 ) -> DomainResult<AdminSiteChannelListPage> {
     let rows = sqlx::query(
         r#"
-        SELECT id, channel_code, channel_name, provider_code, site_code, site_service_code,
+        SELECT id, account_code, channel_name, supplier_code, supplier_code, endpoint_code,
                site_channel_role, health_status, status,
                COUNT(*) OVER() AS total
         FROM ai_channel
-        WHERE tenant_id = ? AND organization_id = ? AND site_id = ? AND deleted_at IS NULL
+        WHERE tenant_id = ? AND organization_id = ? AND supplier_id = ? AND deleted_at IS NULL
         ORDER BY priority ASC, weight DESC, id ASC
         LIMIT ? OFFSET ?
         "#,
     )
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
-    .bind(query.site_id)
+    .bind(query.supplier_id)
     .bind(query.page_size)
     .bind(query.offset)
     .fetch_all(pool)
@@ -420,7 +420,7 @@ async fn test_site_connection(
         pool,
         command.subject.tenant_id,
         command.subject.organization_id,
-        command.site_id,
+        command.supplier_id,
     )
     .await?
     else {
@@ -433,7 +433,7 @@ async fn test_site_connection(
             .bind(latency_ms)
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
-            .bind(command.site_id)
+            .bind(command.supplier_id)
             .execute(pool)
             .await
             .map_err(store_error)?;
@@ -451,12 +451,12 @@ async fn test_site_connection(
         } else {
             "test_site_connection"
         },
-        command.site_id,
+        command.supplier_id,
         &command.requested_at,
     )
     .await?;
     Ok(AdminSiteConnectionCheckItem {
-        site_id: site.id,
+        supplier_id: site.id,
         status: "success".to_owned(),
         health_status: "healthy".to_owned(),
         latency_ms,
@@ -469,11 +469,11 @@ async fn load_site(
     pool: &SqlitePool,
     tenant_id: i64,
     organization_id: i64,
-    site_id: i64,
+    supplier_id: i64,
 ) -> DomainResult<Option<AdminSiteItem>> {
     sqlx::query(
         r#"
-        SELECT id, site_code, site_name, display_name, description, COALESCE(base_url, '') AS base_url,
+        SELECT id, supplier_code, site_name, display_name, description, COALESCE(base_url, '') AS base_url,
                website_url, docs_url, CAST(logo_resource_snapshot AS TEXT) AS logo_resource_snapshot,
                COALESCE(metadata, '{}') AS metadata, site_type, owner_kind, region_code, environment, health_status,
                last_latency_ms, consecutive_error_count, last_checked_at, last_sync_at, sort_order, status
@@ -483,7 +483,7 @@ async fn load_site(
     )
     .bind(tenant_id)
     .bind(organization_id)
-    .bind(site_id)
+    .bind(supplier_id)
     .fetch_optional(pool)
     .await
     .map_err(store_error)
@@ -495,7 +495,7 @@ fn site_from_row(row: sqlx::sqlite::SqliteRow) -> AdminSiteItem {
     let metadata = site_metadata_from_row(&row);
     AdminSiteItem {
         id: row.get("id"),
-        site_code: row.get("site_code"),
+        supplier_code: row.get("supplier_code"),
         site_name: row.get("site_name"),
         display_name: row.get("display_name"),
         description: row.try_get("description").ok(),
@@ -522,11 +522,11 @@ fn site_from_row(row: sqlx::sqlite::SqliteRow) -> AdminSiteItem {
 fn site_channel_from_row(row: sqlx::sqlite::SqliteRow) -> AdminSiteChannelItem {
     AdminSiteChannelItem {
         id: row.get("id"),
-        channel_code: row.get("channel_code"),
+        account_code: row.get("account_code"),
         channel_name: row.get("channel_name"),
-        provider_code: row.try_get("provider_code").ok(),
-        site_code: row.try_get("site_code").ok(),
-        site_service_code: row.try_get("site_service_code").ok(),
+        supplier_code: row.try_get("supplier_code").ok(),
+        supplier_code: row.try_get("supplier_code").ok(),
+        endpoint_code: row.try_get("endpoint_code").ok(),
         site_channel_role: row.try_get("site_channel_role").ok(),
         health_status: health_status_label(row.get::<i32, _>("health_status")),
         status: site_status_label(row.get::<i32, _>("status")),

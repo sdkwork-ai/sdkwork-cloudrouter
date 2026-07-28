@@ -96,7 +96,7 @@ fn classifies_openai_management_api_requests_and_free_endpoints() {
     assert_eq!(ResourceType::FreeEndpoint, models.resource_type);
     assert_eq!(BillingMode::Free, billing.mode);
     assert_eq!(None, billing.meter);
-    assert_eq!(AiRouteStrategy::PrimaryChannel, routing.strategy);
+    assert_eq!(AiRouteStrategy::PrimaryAccount, routing.strategy);
 }
 
 #[test]
@@ -167,7 +167,7 @@ fn classifies_openai_modal_generation_and_management_resource_families() {
             RoutingCapability::Audio,
             BillingMode::ApiRequest,
             AiRouteModelRequirement::Ignored,
-            AiRouteStrategy::PrimaryChannel,
+            AiRouteStrategy::PrimaryAccount,
         ),
         (
             Method::POST,
@@ -211,7 +211,7 @@ fn classifies_openai_modal_generation_and_management_resource_families() {
             RoutingCapability::Chat,
             BillingMode::ApiRequest,
             AiRouteModelRequirement::Ignored,
-            AiRouteStrategy::PrimaryChannel,
+            AiRouteStrategy::PrimaryAccount,
         ),
         (
             Method::GET,
@@ -334,7 +334,7 @@ fn classifies_extended_sticky_object_ids() {
 #[test]
 fn classifies_provider_native_routes_from_provider_prefix_and_endpoint_key() {
     let request = InvocationClassificationRequest::new(Method::POST, "/kling/v1/videos/text2video")
-        .with_provider_code("kling")
+        .with_supplier_code("kling")
         .with_provider_family("media")
         .with_endpoint_key("text_to_video")
         .with_capability(RoutingCapability::Video);
@@ -345,7 +345,7 @@ fn classifies_provider_native_routes_from_provider_prefix_and_endpoint_key() {
     let (resource, billing, routing) = classification.into_parts();
 
     assert_eq!(InvocationSurface::ProviderNative, resource.surface);
-    assert_eq!(Some("kling"), resource.provider_code.as_deref());
+    assert_eq!(Some("kling"), resource.supplier_code.as_deref());
     assert_eq!(Some("media"), resource.provider_family.as_deref());
     assert_eq!("kling.text_to_video", resource.route_key);
     assert_eq!("kling.text_to_video", resource.api_code);
@@ -392,7 +392,7 @@ fn classifies_provider_native_standard_paths_to_seeded_route_keys() {
         ),
     ] {
         let request = InvocationClassificationRequest::new(Method::POST, path)
-            .with_provider_code(provider)
+            .with_supplier_code(provider)
             .with_provider_family("media");
 
         let classification = ProviderNativeResourceClassifier::default()
@@ -426,7 +426,7 @@ fn classifies_provider_native_standard_paths_to_seeded_route_keys() {
 #[test]
 fn classifies_provider_native_unknown_paths_with_normalized_fallback_route_key() {
     let request = InvocationClassificationRequest::new(Method::POST, "/v2/custom/jobs")
-        .with_provider_code("Custom-Provider")
+        .with_supplier_code("Custom-Provider")
         .with_capability(RoutingCapability::Network);
 
     let classification = ProviderNativeResourceClassifier::default()
@@ -434,7 +434,7 @@ fn classifies_provider_native_unknown_paths_with_normalized_fallback_route_key()
         .expect("provider native classification");
     let (resource, _billing, routing) = classification.into_parts();
 
-    assert_eq!(Some("custom-provider"), resource.provider_code.as_deref());
+    assert_eq!(Some("custom-provider"), resource.supplier_code.as_deref());
     assert_eq!("custom-provider.jobs", resource.route_key);
     assert_eq!("custom-provider.jobs", resource.api_code);
     assert_eq!(Some("jobs"), resource.endpoint_key.as_deref());

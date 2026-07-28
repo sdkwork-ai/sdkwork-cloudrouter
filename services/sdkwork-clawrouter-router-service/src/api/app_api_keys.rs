@@ -18,13 +18,13 @@ use crate::api::response::{
 };
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{
-    ChannelGroup, ChannelGroupMetricSnapshot, DecimalValue, DomainError, GatewayAccessPolicy,
+    UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, DecimalValue, DomainError, GatewayAccessPolicy,
     GatewayApiKey, QuotaPolicy,
 };
 use crate::ports::{
-    CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand, EnsureDefaultChannelGroupCommand,
+    CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand, EnsureDefaultUpstreamAccountGroupCommand,
     GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
-    ListAppChannelGroupsQuery, ListGatewayApiKeysQuery, PricingCatalog, UpdateGatewayApiKeyCommand,
+    ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery, PricingCatalog, UpdateGatewayApiKeyCommand,
 };
 
 const DEFAULT_CHANNEL_GROUP: &str = "default";
@@ -76,13 +76,13 @@ impl Clone for AppApiKeyState {
 #[serde(rename_all = "camelCase")]
 struct AppApiKeyListResponse {
     items: Vec<AppApiKeyItemResponse>,
-    groups: Vec<AppChannelGroupResponse>,
+    groups: Vec<AppUpstreamAccountGroupResponse>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct AppChannelGroupListResponse {
-    items: Vec<AppChannelGroupResponse>,
+struct AppUpstreamAccountGroupListResponse {
+    items: Vec<AppUpstreamAccountGroupResponse>,
 }
 
 #[derive(Debug, Serialize)]
@@ -113,8 +113,8 @@ struct AppApiKeyItemResponse {
     masked_key: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     copyable_key: Option<String>,
-    channel_group: String,
-    channel_group_name: String,
+    upstream_account_group: String,
+    upstream_account_group_name: String,
     rate: Option<String>,
     quota: String,
     used_quota: String,
@@ -128,7 +128,7 @@ struct AppApiKeyItemResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct AppChannelGroupResponse {
+struct AppUpstreamAccountGroupResponse {
     id: String,
     code: String,
     name: String,
@@ -139,8 +139,8 @@ struct AppChannelGroupResponse {
 #[serde(rename_all = "camelCase")]
 struct AppApiKeyCreateRequest {
     name: Option<String>,
-    channel_group: Option<String>,
-    channel_group_id: Option<i64>,
+    upstream_account_group: Option<String>,
+    account_group_id: Option<i64>,
     quota: Option<String>,
     is_unlimited_quota: Option<bool>,
     modalities: Option<Vec<String>>,
@@ -153,8 +153,8 @@ struct AppApiKeyCreateRequest {
 #[serde(rename_all = "camelCase")]
 struct AppApiKeyUpdateRequest {
     name: Option<String>,
-    channel_group: Option<String>,
-    channel_group_id: Option<i64>,
+    upstream_account_group: Option<String>,
+    account_group_id: Option<i64>,
     quota: Option<String>,
     is_unlimited_quota: Option<bool>,
     modalities: Option<Vec<String>>,
@@ -170,7 +170,7 @@ where
     Router::new()
         .route("/app/v3/api/iam/api_keys", get(fetch_catalog_keys::<C>))
         .route(
-            "/app/v3/api/ai/channel_groups",
+            "/app/v3/api/ai/upstream_account_groups",
             get(fetch_catalog_key_groups::<C>),
         )
         .with_state(ReadOnlyAppApiKeyState { catalog })
@@ -184,7 +184,7 @@ pub fn app_api_key_router_with_read_store_and_command_store(
 ) -> Router {
     Router::new()
         .route("/app/v3/api/iam/api_keys", get(fetch_keys).post(create_key))
-        .route("/app/v3/api/ai/channel_groups", get(fetch_key_groups))
+        .route("/app/v3/api/ai/upstream_account_groups", get(fetch_key_groups))
         .route(
             "/app/v3/api/iam/api_keys/{api_key_id}",
             patch(update_key).delete(delete_key),
@@ -267,13 +267,13 @@ async fn fetch_key_groups(
     RequiredAppSqlScopedSubject(scope): RequiredAppSqlScopedSubject,
     Query(request): Query<AppApiKeyListQueryRequest>,
 ) -> Response {
-    let list_query = match build_channel_group_list_query(scope, request) {
+    let list_query = match build_upstream_account_group_list_query(scope, request) {
         Ok(query) => query,
         Err(message) => {
             return problem_from_wire_code("4001", message).into_response();
         }
     };
-    match state.read_store.list_app_channel_groups(list_query).await {
+    match state.read_store.list_app_upstream_account_groups(list_query).await {
         Ok(page) => json_success_list_response(
             None,
             page.items.into_iter().map(to_group_response).collect(),
@@ -303,12 +303,12 @@ fn build_api_key_list_query(
     })
 }
 
-fn build_channel_group_list_query(
+fn build_upstream_account_group_list_query(
     scope: SqlScopedSubject,
     request: AppApiKeyListQueryRequest,
-) -> Result<ListAppChannelGroupsQuery, String> {
+) -> Result<ListAppUpstreamAccountGroupsQuery, String> {
     let pagination = parse_offset_list_query(request.page, request.page_size)?;
-    Ok(ListAppChannelGroupsQuery {
+    Ok(ListAppUpstreamAccountGroupsQuery {
         tenant_id: scope.tenant_id,
         organization_id: scope.organization_id,
         page_no: pagination.page_no,
@@ -401,8 +401,8 @@ async fn create_key_inner(
         .map_err(system_error)?;
     let mut response_snapshot = snapshot.clone();
     let group = resolve_group(&snapshot, &request, subject, &state).await?;
-    if snapshot.find_channel_group(group.id).is_none() {
-        response_snapshot.channel_groups.push(group.clone());
+    if snapshot.find_upstream_account_group(group.id).is_none() {
+        response_snapshot.upstream_account_groups.push(group.clone());
     }
     let name = normalize_name(request.name.as_deref())?;
     let quota_limit = normalize_quota_limit(&request)?;
@@ -627,7 +627,7 @@ fn list_response(snapshot: &GatewayApiKeyManagementSnapshot) -> AppApiKeyListRes
         .map(|api_key| to_item_response(snapshot, api_key))
         .collect();
     let groups = snapshot
-        .channel_groups
+        .upstream_account_groups
         .clone()
         .into_iter()
         .map(to_group_response)
@@ -636,15 +636,15 @@ fn list_response(snapshot: &GatewayApiKeyManagementSnapshot) -> AppApiKeyListRes
     AppApiKeyListResponse { items, groups }
 }
 
-fn group_list_response(snapshot: &GatewayApiKeyManagementSnapshot) -> AppChannelGroupListResponse {
+fn group_list_response(snapshot: &GatewayApiKeyManagementSnapshot) -> AppUpstreamAccountGroupListResponse {
     let items = snapshot
-        .channel_groups
+        .upstream_account_groups
         .clone()
         .into_iter()
         .map(to_group_response)
         .collect();
 
-    AppChannelGroupListResponse { items }
+    AppUpstreamAccountGroupListResponse { items }
 }
 
 fn public_catalog_list_response(
@@ -676,14 +676,14 @@ fn to_item_response_with_used_quota(
     api_key: GatewayApiKey,
     used_quota_override: Option<String>,
 ) -> AppApiKeyItemResponse {
-    let group = snapshot.find_channel_group(api_key.group_id);
+    let group = snapshot.find_upstream_account_group(api_key.group_id);
     let access_policy = api_key
         .policy_id
         .and_then(|policy_id| snapshot.find_access_policy(policy_id));
     let quota_policy = api_key
         .quota_policy_id
         .and_then(|policy_id| snapshot.find_quota_policy(policy_id));
-    let metric_snapshot = snapshot.find_latest_channel_group_metric_snapshot(api_key.group_id);
+    let metric_snapshot = snapshot.find_latest_upstream_account_group_metric_snapshot(api_key.group_id);
     let masked_key = api_key.masked_key();
 
     AppApiKeyItemResponse {
@@ -691,8 +691,8 @@ fn to_item_response_with_used_quota(
         name: api_key.display_name(),
         masked_key,
         copyable_key: api_key.copyable_key.clone(),
-        channel_group: group_code(group.as_ref()),
-        channel_group_name: group_name(group.as_ref()),
+        upstream_account_group: group_code(group.as_ref()),
+        upstream_account_group_name: group_name(group.as_ref()),
         rate: group_rate(group.as_ref()),
         quota: quota_limit(quota_policy.as_ref(), metric_snapshot.as_ref()),
         used_quota: used_quota_override.unwrap_or_else(|| used_quota(metric_snapshot.as_ref())),
@@ -708,8 +708,8 @@ fn to_item_response_with_used_quota(
     }
 }
 
-fn to_group_response(group: ChannelGroup) -> AppChannelGroupResponse {
-    AppChannelGroupResponse {
+fn to_group_response(group: UpstreamAccountGroup) -> AppUpstreamAccountGroupResponse {
+    AppUpstreamAccountGroupResponse {
         id: group.id.to_string(),
         name: group.display_name(),
         code: group.code,
@@ -717,25 +717,25 @@ fn to_group_response(group: ChannelGroup) -> AppChannelGroupResponse {
     }
 }
 
-fn group_code(group: Option<&ChannelGroup>) -> String {
+fn group_code(group: Option<&UpstreamAccountGroup>) -> String {
     group
         .map(|group| group.code.clone())
         .unwrap_or_else(|| "unassigned".to_owned())
 }
 
-fn group_name(group: Option<&ChannelGroup>) -> String {
+fn group_name(group: Option<&UpstreamAccountGroup>) -> String {
     group
-        .map(ChannelGroup::display_name)
+        .map(UpstreamAccountGroup::display_name)
         .unwrap_or_else(|| "Unassigned".to_owned())
 }
 
-fn group_rate(group: Option<&ChannelGroup>) -> Option<String> {
+fn group_rate(group: Option<&UpstreamAccountGroup>) -> Option<String> {
     group.map(|group| format!("{}x", group.rate_multiplier.to_fixed_string(2)))
 }
 
 fn quota_limit(
     quota_policy: Option<&QuotaPolicy>,
-    metric_snapshot: Option<&ChannelGroupMetricSnapshot>,
+    metric_snapshot: Option<&UpstreamAccountGroupMetricSnapshot>,
 ) -> String {
     quota_policy
         .and_then(|policy| policy.quota_limit)
@@ -744,7 +744,7 @@ fn quota_limit(
         .unwrap_or_else(|| "unlimited".to_owned())
 }
 
-fn used_quota(metric_snapshot: Option<&ChannelGroupMetricSnapshot>) -> String {
+fn used_quota(metric_snapshot: Option<&UpstreamAccountGroupMetricSnapshot>) -> String {
     metric_snapshot
         .and_then(|snapshot| snapshot.usage_amount_total.or(snapshot.capacity_used))
         .map(|quota| quota.to_fixed_string(6))
@@ -784,22 +784,22 @@ async fn resolve_group(
     request: &AppApiKeyCreateRequest,
     subject: SqlScopedSubject,
     state: &AppApiKeyState,
-) -> Result<ChannelGroup, AppApiKeyCreateError> {
-    if let Some(group_id) = request.channel_group_id {
+) -> Result<UpstreamAccountGroup, AppApiKeyCreateError> {
+    if let Some(group_id) = request.account_group_id {
         return snapshot
-            .find_channel_group_for_subject(group_id, subject.tenant_id, subject.organization_id)
+            .find_upstream_account_group_for_subject(group_id, subject.tenant_id, subject.organization_id)
             .ok_or_else(|| {
                 AppApiKeyCreateError::BadRequest("channel group is not available".to_owned())
             });
     }
 
     if let Some(group_code) = request
-        .channel_group
+        .upstream_account_group
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
-        if let Some(group) = snapshot.find_channel_group_by_code_for_subject(
+        if let Some(group) = snapshot.find_upstream_account_group_by_code_for_subject(
             group_code,
             subject.tenant_id,
             subject.organization_id,
@@ -815,7 +815,7 @@ async fn resolve_group(
     }
 
     if let Some(group) =
-        snapshot.single_channel_group_for_subject(subject.tenant_id, subject.organization_id)
+        snapshot.single_upstream_account_group_for_subject(subject.tenant_id, subject.organization_id)
     {
         return Ok(group);
     }
@@ -826,10 +826,10 @@ fn resolve_update_group(
     snapshot: &GatewayApiKeyManagementSnapshot,
     request: &AppApiKeyUpdateRequest,
     subject: SqlScopedSubject,
-) -> Result<Option<ChannelGroup>, AppApiKeyCreateError> {
-    if let Some(group_id) = request.channel_group_id {
+) -> Result<Option<UpstreamAccountGroup>, AppApiKeyCreateError> {
+    if let Some(group_id) = request.account_group_id {
         return snapshot
-            .find_channel_group_for_subject(group_id, subject.tenant_id, subject.organization_id)
+            .find_upstream_account_group_for_subject(group_id, subject.tenant_id, subject.organization_id)
             .map(Some)
             .ok_or_else(|| {
                 AppApiKeyCreateError::BadRequest("channel group is not available".to_owned())
@@ -837,7 +837,7 @@ fn resolve_update_group(
     }
 
     let Some(group_code) = request
-        .channel_group
+        .upstream_account_group
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
@@ -846,7 +846,7 @@ fn resolve_update_group(
     };
 
     snapshot
-        .find_channel_group_by_code_for_subject(
+        .find_upstream_account_group_by_code_for_subject(
             group_code,
             subject.tenant_id,
             subject.organization_id,
@@ -861,12 +861,12 @@ async fn ensure_default_group(
     snapshot: &GatewayApiKeyManagementSnapshot,
     subject: SqlScopedSubject,
     state: &AppApiKeyState,
-) -> Result<ChannelGroup, AppApiKeyCreateError> {
+) -> Result<UpstreamAccountGroup, AppApiKeyCreateError> {
     let pricing_plan_code =
         default_pricing_plan_code(snapshot, subject.tenant_id, subject.organization_id);
     let group = state
         .command_store
-        .ensure_default_channel_group(EnsureDefaultChannelGroupCommand {
+        .ensure_default_upstream_account_group(EnsureDefaultUpstreamAccountGroupCommand {
             group_uuid: state
                 .secret_generator
                 .generate_entity_uuid()
@@ -896,7 +896,7 @@ fn default_pricing_plan_code(
     organization_id: i64,
 ) -> String {
     snapshot
-        .channel_groups
+        .upstream_account_groups
         .iter()
         .filter(|group| {
             (group.tenant_id == 0 || group.tenant_id == tenant_id)

@@ -1,7 +1,7 @@
 use crate::domain::{
-    AiModel, BillingMeter, ChannelGroup, ChannelGroupMetricSnapshot, GatewayAccessPolicy,
+    AiModel, BillingMeter, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, GatewayAccessPolicy,
     GatewayApiKey, GatewayRiskRule, ModelMappingBindingType, ModelMappingRule, ModelPrice,
-    ModelProviderRoute, ModelVendorDefinition, PriceSide, PricingPlan, ProviderChannelRoute,
+    ModelUpstreamRoute, ModelVendorDefinition, PriceSide, PricingPlan, UpstreamAccountRoute,
     QuotaPolicy, ResolveModelMappingContext, RoutingPolicy, RoutingRule,
 };
 use crate::ports::PricingCatalog;
@@ -10,18 +10,18 @@ use crate::ports::PricingCatalog;
 pub struct InMemoryPricingCatalog {
     vendors: Vec<ModelVendorDefinition>,
     models: Vec<AiModel>,
-    provider_routes: Vec<ModelProviderRoute>,
-    provider_channel_routes: Vec<ProviderChannelRoute>,
+    provider_routes: Vec<ModelUpstreamRoute>,
+    upstream_account_routes: Vec<UpstreamAccountRoute>,
     routing_policies: Vec<RoutingPolicy>,
     routing_rules: Vec<RoutingRule>,
     model_mappings: Vec<ModelMappingRule>,
     plans: Vec<PricingPlan>,
-    channel_groups: Vec<ChannelGroup>,
+    upstream_account_groups: Vec<UpstreamAccountGroup>,
     api_keys: Vec<GatewayApiKey>,
     access_policies: Vec<GatewayAccessPolicy>,
     quota_policies: Vec<QuotaPolicy>,
     gateway_risk_rules: Vec<GatewayRiskRule>,
-    channel_group_metric_snapshots: Vec<ChannelGroupMetricSnapshot>,
+    upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
     prices: Vec<ModelPrice>,
 }
 
@@ -34,14 +34,14 @@ impl InMemoryPricingCatalog {
         self.models.push(model);
     }
 
-    pub fn add_provider_route(&mut self, route: ModelProviderRoute) {
+    pub fn add_provider_route(&mut self, route: ModelUpstreamRoute) {
         self.provider_routes.push(route);
     }
 
-    pub fn add_provider_channel_route(&mut self, route: ProviderChannelRoute) {
-        self.provider_channel_routes
-            .retain(|existing| !same_provider_channel_route_identity(existing, &route));
-        self.provider_channel_routes.push(route);
+    pub fn add_upstream_account_route(&mut self, route: UpstreamAccountRoute) {
+        self.upstream_account_routes
+            .retain(|existing| !same_upstream_account_route_identity(existing, &route));
+        self.upstream_account_routes.push(route);
     }
 
     pub fn add_routing_policy(&mut self, policy: RoutingPolicy) {
@@ -60,8 +60,8 @@ impl InMemoryPricingCatalog {
         self.plans.push(plan);
     }
 
-    pub fn add_channel_group(&mut self, group: ChannelGroup) {
-        self.channel_groups.push(group);
+    pub fn add_upstream_account_group(&mut self, group: UpstreamAccountGroup) {
+        self.upstream_account_groups.push(group);
     }
 
     pub fn update_group_rate_multiplier(
@@ -70,7 +70,7 @@ impl InMemoryPricingCatalog {
         multiplier: crate::domain::DecimalValue,
     ) {
         if let Some(group) = self
-            .channel_groups
+            .upstream_account_groups
             .iter_mut()
             .find(|group| group.id == group_id)
         {
@@ -95,8 +95,8 @@ impl InMemoryPricingCatalog {
         self.gateway_risk_rules.push(rule);
     }
 
-    pub fn add_channel_group_metric_snapshot(&mut self, snapshot: ChannelGroupMetricSnapshot) {
-        self.channel_group_metric_snapshots.push(snapshot);
+    pub fn add_upstream_account_group_metric_snapshot(&mut self, snapshot: UpstreamAccountGroupMetricSnapshot) {
+        self.upstream_account_group_metric_snapshots.push(snapshot);
     }
 
     pub fn add_price(&mut self, price: ModelPrice) {
@@ -104,12 +104,12 @@ impl InMemoryPricingCatalog {
     }
 }
 
-fn same_provider_channel_route_identity(
-    left: &ProviderChannelRoute,
-    right: &ProviderChannelRoute,
+fn same_upstream_account_route_identity(
+    left: &UpstreamAccountRoute,
+    right: &UpstreamAccountRoute,
 ) -> bool {
-    left.provider_code == right.provider_code
-        && left.channel_id == right.channel_id
+    left.supplier_code == right.supplier_code
+        && left.account_id == right.account_id
         && left.credential_id == right.credential_id
         && normalized_region_code(&left.region_code)
             .eq_ignore_ascii_case(&normalized_region_code(&right.region_code))
@@ -138,7 +138,7 @@ impl PricingCatalog for InMemoryPricingCatalog {
             .collect()
     }
 
-    fn list_provider_routes(&self, model: &str) -> Vec<ModelProviderRoute> {
+    fn list_model_upstream_routes(&self, model: &str) -> Vec<ModelUpstreamRoute> {
         self.provider_routes
             .iter()
             .filter(|route| catalog_key_matches_route_scope(&route.catalog_key, model))
@@ -146,8 +146,8 @@ impl PricingCatalog for InMemoryPricingCatalog {
             .collect()
     }
 
-    fn list_provider_channel_routes(&self) -> Vec<ProviderChannelRoute> {
-        self.provider_channel_routes.clone()
+    fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
+        self.upstream_account_routes.clone()
     }
 
     fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
@@ -170,8 +170,8 @@ impl PricingCatalog for InMemoryPricingCatalog {
         self.api_keys.clone()
     }
 
-    fn list_channel_groups(&self) -> Vec<ChannelGroup> {
-        self.channel_groups.clone()
+    fn list_upstream_account_groups(&self) -> Vec<UpstreamAccountGroup> {
+        self.upstream_account_groups.clone()
     }
 
     fn list_model_prices(
@@ -216,8 +216,8 @@ impl PricingCatalog for InMemoryPricingCatalog {
             .cloned()
     }
 
-    fn find_channel_group(&self, group_id: i64) -> Option<ChannelGroup> {
-        self.channel_groups
+    fn find_upstream_account_group(&self, group_id: i64) -> Option<UpstreamAccountGroup> {
+        self.upstream_account_groups
             .iter()
             .find(|group| group.id == group_id)
             .cloned()
@@ -241,11 +241,11 @@ impl PricingCatalog for InMemoryPricingCatalog {
         self.gateway_risk_rules.clone()
     }
 
-    fn find_latest_channel_group_metric_snapshot(
+    fn find_latest_upstream_account_group_metric_snapshot(
         &self,
         group_id: i64,
-    ) -> Option<ChannelGroupMetricSnapshot> {
-        self.channel_group_metric_snapshots
+    ) -> Option<UpstreamAccountGroupMetricSnapshot> {
+        self.upstream_account_group_metric_snapshots
             .iter()
             .find(|snapshot| snapshot.group_id == group_id)
             .cloned()
@@ -281,12 +281,12 @@ impl PricingCatalog for InMemoryPricingCatalog {
         resolve_model_mapping_from_rules(&self.model_mappings, source_model, context)
     }
 
-    fn find_provider_route(&self, model: &str, provider_code: &str) -> Option<ModelProviderRoute> {
+    fn find_model_upstream_route(&self, model: &str, supplier_code: &str) -> Option<ModelUpstreamRoute> {
         self.provider_routes
             .iter()
             .find(|route| {
                 catalog_key_matches_route_scope(&route.catalog_key, model)
-                    && route.provider_code == provider_code
+                    && route.supplier_code == supplier_code
             })
             .cloned()
     }
@@ -296,7 +296,7 @@ impl PricingCatalog for InMemoryPricingCatalog {
         model: &str,
         price_side: PriceSide,
         billing_meter: BillingMeter,
-        provider_code: Option<&str>,
+        supplier_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
         self.prices
@@ -305,7 +305,7 @@ impl PricingCatalog for InMemoryPricingCatalog {
                 catalog_key_matches_price_scope(&price.catalog_key, model)
                     && price.price_side == price_side
                     && price.billing_meter == billing_meter
-                    && option_matches(price.provider_code.as_deref(), provider_code)
+                    && option_matches(price.supplier_code.as_deref(), supplier_code)
                     && option_matches(price.pricing_plan_code.as_deref(), pricing_plan_code)
             })
             .cloned()
@@ -320,7 +320,7 @@ pub(crate) fn resolve_model_mapping_from_rules(
     [
         ModelMappingBindingType::ProviderAccount,
         ModelMappingBindingType::Channel,
-        ModelMappingBindingType::ChannelGroup,
+        ModelMappingBindingType::UpstreamAccountGroup,
         ModelMappingBindingType::Vendor,
         ModelMappingBindingType::Global,
         ModelMappingBindingType::Site,
@@ -359,14 +359,14 @@ fn model_mapping_rule_matches(
             rule.binding_code.as_deref(),
         ),
         ModelMappingBindingType::Channel => binding_id_or_code_matches(
-            context.channel_id,
-            context.channel_code.as_deref(),
+            context.account_id,
+            context.account_code.as_deref(),
             rule.binding_id,
             rule.binding_code.as_deref(),
         ),
-        ModelMappingBindingType::ChannelGroup => binding_id_or_code_matches(
-            context.channel_group_id,
-            context.channel_group_code.as_deref(),
+        ModelMappingBindingType::UpstreamAccountGroup => binding_id_or_code_matches(
+            context.account_group_id,
+            context.account_group_code.as_deref(),
             rule.binding_id,
             rule.binding_code.as_deref(),
         ),
@@ -375,14 +375,14 @@ fn model_mapping_rule_matches(
         }
         ModelMappingBindingType::Global => true,
         ModelMappingBindingType::Site => binding_id_or_code_matches(
-            context.site_id,
-            context.site_code.as_deref(),
+            context.supplier_id,
+            context.supplier_code.as_deref(),
             rule.binding_id,
             rule.binding_code.as_deref(),
         ),
         ModelMappingBindingType::SiteService => binding_id_or_code_matches(
-            context.site_service_id,
-            context.site_service_code.as_deref(),
+            context.endpoint_id,
+            context.endpoint_code.as_deref(),
             rule.binding_id,
             rule.binding_code.as_deref(),
         ),

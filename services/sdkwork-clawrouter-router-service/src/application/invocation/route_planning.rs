@@ -6,12 +6,12 @@ use super::{
     InvocationRoutePlan, InvocationSurface, ResourceType, StickyRouteConstraint,
 };
 use crate::application::{
-    AuthenticatedApiKeyContext, ProviderRouteSelector, SelectProviderChannelRouteQuery,
-    SelectProviderRouteQuery, SelectedProviderChannelRoute, SelectedProviderRoute,
+    AuthenticatedApiKeyContext, ProviderRouteSelector, SelectUpstreamAccountRouteQuery,
+    SelectProviderRouteQuery, SelectedUpstreamAccountRoute, SelectedProviderRoute,
 };
 use crate::domain::{
-    provider_native_model_id, AiModel, BillingMeter, ModelProviderRoute, ProviderAuthProfile,
-    ProviderChannelRoute, ResolveModelMappingContext,
+    provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute, ProviderAuthProfile,
+    UpstreamAccountRoute, ResolveModelMappingContext,
 };
 use crate::ports::PricingCatalog;
 
@@ -125,7 +125,7 @@ where
     C: PricingCatalog + Send + Sync + 'static,
 {
     let selection = ProviderRouteSelector::new(catalog)
-        .select_channel_route(SelectProviderChannelRouteQuery {
+        .select_channel_route(SelectUpstreamAccountRouteQuery {
             context,
             route_key: invocation.resource.route_key.clone(),
             api_code: invocation.resource.api_code.clone(),
@@ -151,19 +151,19 @@ where
 {
     let channel_route = matching_channel_route(catalog, &sticky_route);
     let group = sticky_route
-        .channel_group_id
-        .and_then(|group_id| catalog.find_channel_group(group_id));
+        .account_group_id
+        .and_then(|group_id| catalog.find_upstream_account_group(group_id));
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::Sticky,
-        provider_code: sticky_route.provider_code.clone(),
-        channel_id: sticky_route.channel_id,
-        channel_group_id: sticky_route
-            .channel_group_id
-            .or(invocation.subject.channel_group_id),
-        channel_group_code: group
+        supplier_code: sticky_route.supplier_code.clone(),
+        account_id: sticky_route.account_id,
+        account_group_id: sticky_route
+            .account_group_id
+            .or(invocation.subject.account_group_id),
+        account_group_code: group
             .as_ref()
             .map(|group| group.code.clone())
-            .or_else(|| invocation.subject.channel_group_code.clone()),
+            .or_else(|| invocation.subject.account_group_code.clone()),
         pricing_plan_code: group
             .as_ref()
             .map(|group| group.pricing_plan_code.clone())
@@ -218,7 +218,7 @@ where
     C: PricingCatalog + Send + Sync + 'static,
 {
     let route = &selection.route;
-    let channel_routes = catalog.list_provider_channel_routes();
+    let channel_routes = catalog.list_upstream_account_routes();
     let channel_metadata = find_channel_route_metadata(route, &channel_routes);
     let vendor_code = catalog
         .find_model(&route.catalog_key)
@@ -228,15 +228,15 @@ where
         requested_model,
         &ResolveModelMappingContext::new()
             .with_vendor_code(vendor_code.as_str())
-            .with_channel_id(route.channel_id)
-            .with_channel_code(
+            .with_account_id(route.account_id)
+            .with_account_code(
                 channel_metadata
                     .as_ref()
-                    .and_then(|route| route.channel_code.as_deref())
+                    .and_then(|route| route.account_code.as_deref())
                     .unwrap_or_default(),
             )
-            .with_channel_group_id(context.group_id)
-            .with_channel_group_code(context.group_code.as_str()),
+            .with_account_group_id(context.group_id)
+            .with_account_group_code(context.group_code.as_str()),
     );
     let catalog_key = route.catalog_key.clone();
     let model = route.model.clone();
@@ -254,15 +254,15 @@ where
 }
 
 fn find_channel_route_metadata(
-    model_route: &ModelProviderRoute,
-    channel_routes: &[ProviderChannelRoute],
-) -> Option<ProviderChannelRoute> {
+    model_route: &ModelUpstreamRoute,
+    channel_routes: &[UpstreamAccountRoute],
+) -> Option<UpstreamAccountRoute> {
     let mut candidates = channel_routes
         .iter()
         .filter(|route| {
-            route.channel_id == model_route.channel_id
+            route.account_id == model_route.account_id
                 && route.credential_id == model_route.credential_id
-                && route.provider_code == model_route.provider_code
+                && route.supplier_code == model_route.supplier_code
                 && same_region(&route.region_code, &model_route.region_code)
         })
         .cloned()
@@ -273,7 +273,7 @@ fn find_channel_route_metadata(
             std::cmp::Reverse(route.credential_weight),
             route.credential_id.unwrap_or(i64::MAX),
             route.region_code.clone(),
-            route.provider_code.clone(),
+            route.supplier_code.clone(),
         )
     });
     candidates.into_iter().next()
@@ -309,10 +309,10 @@ fn model_candidate(selection: SelectedProviderRoute) -> InvocationRouteCandidate
     let route = selection.route;
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::Model,
-        provider_code: route.provider_code.clone(),
-        channel_id: route.channel_id,
-        channel_group_id: Some(selection.group_id),
-        channel_group_code: Some(selection.group_code),
+        supplier_code: route.supplier_code.clone(),
+        account_id: route.account_id,
+        account_group_id: Some(selection.group_id),
+        account_group_code: Some(selection.group_code),
         pricing_plan_code: Some(selection.pricing_plan_code),
         policy_id: selection.policy_id,
         rule_id: selection.rule_id,
@@ -332,16 +332,16 @@ fn model_candidate(selection: SelectedProviderRoute) -> InvocationRouteCandidate
 }
 
 fn channel_candidate(
-    selection: SelectedProviderChannelRoute,
+    selection: SelectedUpstreamAccountRoute,
     invocation: &Invocation,
 ) -> InvocationRouteCandidate {
     let route = selection.route;
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::Channel,
-        provider_code: route.provider_code.clone(),
-        channel_id: route.channel_id,
-        channel_group_id: Some(selection.group_id),
-        channel_group_code: Some(selection.group_code),
+        supplier_code: route.supplier_code.clone(),
+        account_id: route.account_id,
+        account_group_id: Some(selection.group_id),
+        account_group_code: Some(selection.group_code),
         pricing_plan_code: Some(selection.pricing_plan_code),
         policy_id: selection.policy_id,
         rule_id: selection.rule_id,
@@ -369,7 +369,7 @@ fn authenticated_context(
         .ok_or_else(|| route_error("route planning requires api key context"))?;
     let group_id = invocation
         .subject
-        .channel_group_id
+        .account_group_id
         .ok_or_else(|| route_error("route planning requires channel group context"))?;
     Ok(AuthenticatedApiKeyContext {
         api_key_id,
@@ -384,7 +384,7 @@ fn authenticated_context(
         group_id,
         group_code: invocation
             .subject
-            .channel_group_code
+            .account_group_code
             .clone()
             .unwrap_or_default(),
         pricing_plan_code: invocation
@@ -454,16 +454,16 @@ fn model_matches_requested(model: &AiModel, requested_model: &str) -> bool {
 fn matching_channel_route<C>(
     catalog: &C,
     sticky_route: &StickyRouteConstraint,
-) -> Option<ProviderChannelRoute>
+) -> Option<UpstreamAccountRoute>
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
     catalog
-        .list_provider_channel_routes()
+        .list_upstream_account_routes()
         .into_iter()
         .filter(|route| {
-            route.provider_code == sticky_route.provider_code
-                && route.channel_id == sticky_route.channel_id
+            route.supplier_code == sticky_route.supplier_code
+                && route.account_id == sticky_route.account_id
                 && sticky_route
                     .region_code
                     .as_deref()

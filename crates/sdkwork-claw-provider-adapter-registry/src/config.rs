@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderAdapterRouteConfig {
-    pub provider_code: String,
+    pub supplier_code: String,
     pub adapter_kind: AdapterKind,
     pub adapter_base_url: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -37,14 +37,14 @@ pub struct ProviderAdapterRouteConfig {
 impl ProviderAdapterRouteConfig {
     pub fn adapter_path(&self, standard_path: &str) -> String {
         self.adapter_path_template
-            .replace("{provider_code}", self.provider_code.as_str())
+            .replace("{supplier_code}", self.supplier_code.as_str())
             .replace("{standard_path}", standard_path)
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProviderAdapterLookup<'a> {
-    pub provider_code: &'a str,
+    pub supplier_code: &'a str,
     pub method: &'a str,
     pub standard_path: &'a str,
     pub capability: Option<&'a str>,

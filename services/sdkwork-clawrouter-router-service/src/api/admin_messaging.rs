@@ -85,7 +85,7 @@ struct AdminMessagingListRequestQuery {
     q: Option<String>,
     status: Option<String>,
     channel: Option<String>,
-    provider_code: Option<String>,
+    supplier_code: Option<String>,
     scene_code: Option<String>,
     target_hash: Option<String>,
     reason_code: Option<String>,
@@ -103,7 +103,7 @@ struct MessagingCredentialRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct MessagingProviderAccountCreateRequest {
-    provider_code: String,
+    supplier_code: String,
     account_code: String,
     account_name: String,
     channel: String,
@@ -611,8 +611,8 @@ fn validated_list_query(
         status: normalize_optional_text(query.status, "status", MAX_STATUS_LEN)?
             .map(|value| value.to_ascii_lowercase()),
         channel: normalize_optional_channel(query.channel)?,
-        provider_code: normalize_optional_text(
-            query.provider_code,
+        supplier_code: normalize_optional_text(
+            query.supplier_code,
             "providerCode",
             MAX_PROVIDER_CODE_LEN,
         )?,
@@ -634,8 +634,8 @@ fn validated_provider_account_create_command(
     let request_id = server_request_id()?;
     Ok(CreateMessagingProviderAccountCommand {
         subject,
-        provider_code: normalize_required_text(
-            request.provider_code,
+        supplier_code: normalize_required_text(
+            request.supplier_code,
             "providerCode",
             MAX_PROVIDER_CODE_LEN,
         )?,

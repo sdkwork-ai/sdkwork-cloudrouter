@@ -1,17 +1,17 @@
-use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteAdminChannelGroupStore;
+use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteAdminUpstreamAccountGroupStore;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminChannelGroupChannelBindingInput, AdminChannelGroupStore, AdminChannelGroupSubject,
-    CreateAdminChannelGroupCommand, ListAdminChannelGroupChannelBindingsQuery,
-    ReplaceAdminChannelGroupChannelBindingsCommand, UpdateAdminChannelGroupCommand,
+    AdminUpstreamAccountGroupChannelBindingInput, AdminUpstreamAccountGroupStore, AdminUpstreamAccountGroupSubject,
+    CreateAdminUpstreamAccountGroupCommand, ListAdminUpstreamAccountGroupChannelBindingsQuery,
+    ReplaceAdminUpstreamAccountGroupChannelBindingsCommand, UpdateAdminUpstreamAccountGroupCommand,
 };
 use sdkwork_clawrouter_router_service_test_support::schema_sqlite_pool;
 
 #[tokio::test]
-async fn sqlite_admin_channel_group_store_allows_one_channel_in_multiple_groups() {
+async fn sqlite_admin_upstream_account_group_store_allows_one_channel_in_multiple_groups() {
     let pool = schema_sqlite_pool().await;
-    seed_channel_group_channel_fixture(&pool).await;
-    let store = SqliteAdminChannelGroupStore::new(pool.clone());
-    let subject = AdminChannelGroupSubject {
+    seed_upstream_account_group_channel_fixture(&pool).await;
+    let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());
+    let subject = AdminUpstreamAccountGroupSubject {
         tenant_id: 100001,
         organization_id: 0,
         operator_id: 30,
@@ -31,7 +31,7 @@ async fn sqlite_admin_channel_group_store_allows_one_channel_in_multiple_groups(
         .await
         .unwrap();
     assert_eq!(2, group_10_bindings.len());
-    assert_eq!(3001, group_10_bindings[0].channel_id);
+    assert_eq!(3001, group_10_bindings[0].account_id);
     assert_eq!("OpenAI primary", group_10_bindings[0].channel_name);
 
     let group_11_bindings = store
@@ -44,15 +44,15 @@ async fn sqlite_admin_channel_group_store_allows_one_channel_in_multiple_groups(
         .await
         .unwrap();
     assert_eq!(1, group_11_bindings.len());
-    assert_eq!(3001, group_11_bindings[0].channel_id);
+    assert_eq!(3001, group_11_bindings[0].account_id);
 
     let shared_channel_active_group_count: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(1)
-        FROM ai_channel_group_member
+        FROM ai_upstream_account_group_member
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_id = 3001
+          AND account_id = 3001
           AND status = 1
           AND deleted_at IS NULL
         "#,
@@ -79,7 +79,7 @@ async fn sqlite_admin_channel_group_store_allows_one_channel_in_multiple_groups(
     assert_eq!(100, replaced_group_10_bindings[0].weight);
 
     let group_11_after_replace = store
-        .list_channel_bindings(ListAdminChannelGroupChannelBindingsQuery {
+        .list_channel_bindings(ListAdminUpstreamAccountGroupChannelBindingsQuery {
             subject,
             group_id: 11,
         })
@@ -87,17 +87,17 @@ async fn sqlite_admin_channel_group_store_allows_one_channel_in_multiple_groups(
         .unwrap();
     assert_eq!(1, group_11_after_replace.len());
     assert_eq!(
-        3001, group_11_after_replace[0].channel_id,
+        3001, group_11_after_replace[0].account_id,
         "replacing one group must not remove another group's channel usage"
     );
 }
 
 #[tokio::test]
-async fn sqlite_admin_channel_group_store_prefers_resource_group_for_group_backed_resource_code() {
+async fn sqlite_admin_upstream_account_group_store_prefers_resource_group_for_group_backed_resource_code() {
     let pool = schema_sqlite_pool().await;
-    seed_channel_group_channel_fixture(&pool).await;
-    let store = SqliteAdminChannelGroupStore::new(pool.clone());
-    let subject = AdminChannelGroupSubject {
+    seed_upstream_account_group_channel_fixture(&pool).await;
+    let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());
+    let subject = AdminUpstreamAccountGroupSubject {
         tenant_id: 100001,
         organization_id: 0,
         operator_id: 30,
@@ -122,8 +122,8 @@ async fn sqlite_admin_channel_group_store_prefers_resource_group_for_group_backe
     ) = sqlx::query_as(
         r#"
         SELECT resource_id, resource_code, resource_group_id, resource_group_code
-        FROM ai_channel_group_resource
-        WHERE channel_group_id = 10
+        FROM ai_upstream_account_group_resource
+        WHERE account_group_id = 10
           AND resource_group_code = 'bundle.openrouter.openai.standard'
           AND status = 1
           AND deleted_at IS NULL
@@ -143,12 +143,12 @@ async fn sqlite_admin_channel_group_store_prefers_resource_group_for_group_backe
 }
 
 #[tokio::test]
-async fn sqlite_admin_channel_group_store_keeps_resource_authorization_normalized_and_cascades_group_delete(
+async fn sqlite_admin_upstream_account_group_store_keeps_resource_authorization_normalized_and_cascades_group_delete(
 ) {
     let pool = schema_sqlite_pool().await;
-    seed_channel_group_channel_fixture(&pool).await;
-    let store = SqliteAdminChannelGroupStore::new(pool.clone());
-    let subject = AdminChannelGroupSubject {
+    seed_upstream_account_group_channel_fixture(&pool).await;
+    let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());
+    let subject = AdminUpstreamAccountGroupSubject {
         tenant_id: 100001,
         organization_id: 0,
         operator_id: 30,
@@ -168,10 +168,10 @@ async fn sqlite_admin_channel_group_store_keeps_resource_authorization_normalize
     let resource_codes: Vec<Option<String>> = sqlx::query_scalar(
         r#"
         SELECT NULLIF(resource_code, '')
-        FROM ai_channel_group_resource
+        FROM ai_upstream_account_group_resource
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_group_id = 10
+          AND account_group_id = 10
           AND status = 1
           AND deleted_at IS NULL
         ORDER BY priority ASC
@@ -191,7 +191,7 @@ async fn sqlite_admin_channel_group_store_keeps_resource_authorization_normalize
     let dangling_count: i64 = sqlx::query_scalar(
         r#"
         SELECT COUNT(1)
-        FROM ai_channel_group_resource gr
+        FROM ai_upstream_account_group_resource gr
         LEFT JOIN ai_resource r
           ON r.id = gr.resource_id
          AND r.tenant_id = gr.tenant_id
@@ -204,7 +204,7 @@ async fn sqlite_admin_channel_group_store_keeps_resource_authorization_normalize
          AND rg.deleted_at IS NULL
         WHERE gr.tenant_id = 100001
           AND gr.organization_id = 0
-          AND gr.channel_group_id = 10
+          AND gr.account_group_id = 10
           AND gr.status = 1
           AND gr.deleted_at IS NULL
           AND r.id IS NULL
@@ -217,8 +217,8 @@ async fn sqlite_admin_channel_group_store_keeps_resource_authorization_normalize
     assert_eq!(0, dangling_count);
 
     let deleted = store
-        .delete_channel_group(
-            sdkwork_clawrouter_router_service::ports::DeleteAdminChannelGroupCommand {
+        .delete_upstream_account_group(
+            sdkwork_clawrouter_router_service::ports::DeleteAdminUpstreamAccountGroupCommand {
                 subject,
                 group_id: 10,
                 audit_log_uuid: "audit-delete-group-10".to_owned(),
@@ -235,17 +235,17 @@ async fn sqlite_admin_channel_group_store_keeps_resource_authorization_normalize
         r#"
         SELECT (
             SELECT COUNT(1)
-            FROM ai_channel_group_member
+            FROM ai_upstream_account_group_member
             WHERE tenant_id = 100001
               AND organization_id = 0
-              AND channel_group_id = 10
+              AND account_group_id = 10
               AND deleted_at IS NULL
         ) + (
             SELECT COUNT(1)
-            FROM ai_channel_group_resource
+            FROM ai_upstream_account_group_resource
             WHERE tenant_id = 100001
               AND organization_id = 0
-              AND channel_group_id = 10
+              AND account_group_id = 10
               AND deleted_at IS NULL
         )
         "#,
@@ -260,11 +260,11 @@ async fn sqlite_admin_channel_group_store_keeps_resource_authorization_normalize
 }
 
 #[tokio::test]
-async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_access() {
+async fn sqlite_admin_upstream_account_group_store_creates_and_updates_direct_resource_access() {
     let pool = schema_sqlite_pool().await;
     seed_system_resource_access_fixture(&pool).await;
-    let store = SqliteAdminChannelGroupStore::new(pool.clone());
-    let subject = AdminChannelGroupSubject {
+    let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());
+    let subject = AdminUpstreamAccountGroupSubject {
         tenant_id: 100001,
         organization_id: 0,
         operator_id: 30,
@@ -272,7 +272,7 @@ async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_ac
     };
 
     let created = store
-        .create_channel_group(CreateAdminChannelGroupCommand {
+        .create_upstream_account_group(CreateAdminUpstreamAccountGroupCommand {
             subject,
             group_uuid: "resource-access-group".to_owned(),
             audit_log_uuid: "audit-resource-access-create".to_owned(),
@@ -280,7 +280,7 @@ async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_ac
             binding_uuid: "pricing-binding-resource-access-create".to_owned(),
             group_code: "resource-access-group".to_owned(),
             group_name: "Resource Access Group".to_owned(),
-            provider_code: "openai".to_owned(),
+            supplier_code: "openai".to_owned(),
             price_reference_mode: "multiplier".to_owned(),
             rate_multiplier: 1.0,
             official_price_multiplier: 1.0,
@@ -301,10 +301,10 @@ async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_ac
     let rows: Vec<(Option<i64>, Option<String>, Option<i64>, Option<String>)> = sqlx::query_as(
         r#"
         SELECT resource_group_id, NULLIF(resource_group_code, ''), resource_id, NULLIF(resource_code, '')
-        FROM ai_channel_group_resource
+        FROM ai_upstream_account_group_resource
         WHERE tenant_id = 100001
           AND organization_id = 0
-          AND channel_group_id = ?
+          AND account_group_id = ?
           AND status = 1
           AND deleted_at IS NULL
         ORDER BY priority ASC
@@ -329,7 +329,7 @@ async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_ac
     );
 
     let updated = store
-        .update_channel_group(UpdateAdminChannelGroupCommand {
+        .update_upstream_account_group(UpdateAdminUpstreamAccountGroupCommand {
             subject,
             group_id: created.id,
             audit_log_uuid: "audit-resource-access-update".to_owned(),
@@ -337,7 +337,7 @@ async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_ac
             binding_uuid: "pricing-binding-resource-access-update".to_owned(),
             group_code: None,
             group_name: Some("Resource Access Group Updated".to_owned()),
-            provider_code: None,
+            supplier_code: None,
             price_reference_mode: None,
             rate_multiplier: None,
             official_price_multiplier: None,
@@ -363,8 +363,8 @@ async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_ac
     );
 
     let listed = store
-        .list_channel_groups(
-            sdkwork_clawrouter_router_service::ports::ListAdminChannelGroupsQuery {
+        .list_upstream_account_groups(
+            sdkwork_clawrouter_router_service::ports::ListAdminUpstreamAccountGroupsQuery {
                 subject,
                 page_no: 1,
                 page_size: 100,
@@ -388,11 +388,11 @@ async fn sqlite_admin_channel_group_store_creates_and_updates_direct_resource_ac
 }
 
 #[tokio::test]
-async fn sqlite_admin_channel_group_store_syncs_relationship_status_when_group_status_changes() {
+async fn sqlite_admin_upstream_account_group_store_syncs_relationship_status_when_group_status_changes() {
     let pool = schema_sqlite_pool().await;
-    seed_channel_group_channel_fixture(&pool).await;
-    let store = SqliteAdminChannelGroupStore::new(pool.clone());
-    let subject = AdminChannelGroupSubject {
+    seed_upstream_account_group_channel_fixture(&pool).await;
+    let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());
+    let subject = AdminUpstreamAccountGroupSubject {
         tenant_id: 100001,
         organization_id: 0,
         operator_id: 30,
@@ -413,7 +413,7 @@ async fn sqlite_admin_channel_group_store_syncs_relationship_status_when_group_s
         .unwrap();
 
     let disabled = store
-        .update_channel_group(update_channel_group_status_command(
+        .update_upstream_account_group(update_upstream_account_group_status_command(
             subject,
             "disabled",
             "2026-05-25 10:07:00",
@@ -428,19 +428,19 @@ async fn sqlite_admin_channel_group_store_syncs_relationship_status_when_group_s
         SELECT
             (
                 SELECT COUNT(1)
-                FROM ai_channel_group_member
+                FROM ai_upstream_account_group_member
                 WHERE tenant_id = 100001
                   AND organization_id = 0
-                  AND channel_group_id = 10
+                  AND account_group_id = 10
                   AND status = 1
                   AND deleted_at IS NULL
             ) AS active_member_count,
             (
                 SELECT COUNT(1)
-                FROM ai_channel_group_resource
+                FROM ai_upstream_account_group_resource
                 WHERE tenant_id = 100001
                   AND organization_id = 0
-                  AND channel_group_id = 10
+                  AND account_group_id = 10
                   AND status = 1
                   AND deleted_at IS NULL
             ) AS active_resource_count
@@ -453,7 +453,7 @@ async fn sqlite_admin_channel_group_store_syncs_relationship_status_when_group_s
     assert_eq!(0, active_resource_count);
 
     let enabled = store
-        .update_channel_group(update_channel_group_status_command(
+        .update_upstream_account_group(update_upstream_account_group_status_command(
             subject,
             "active",
             "2026-05-25 10:08:00",
@@ -468,19 +468,19 @@ async fn sqlite_admin_channel_group_store_syncs_relationship_status_when_group_s
         SELECT
             (
                 SELECT COUNT(1)
-                FROM ai_channel_group_member
+                FROM ai_upstream_account_group_member
                 WHERE tenant_id = 100001
                   AND organization_id = 0
-                  AND channel_group_id = 10
+                  AND account_group_id = 10
                   AND status = 1
                   AND deleted_at IS NULL
             ) AS active_member_count,
             (
                 SELECT COUNT(1)
-                FROM ai_channel_group_resource
+                FROM ai_upstream_account_group_resource
                 WHERE tenant_id = 100001
                   AND organization_id = 0
-                  AND channel_group_id = 10
+                  AND account_group_id = 10
                   AND status = 1
                   AND deleted_at IS NULL
             ) AS active_resource_count
@@ -497,12 +497,12 @@ async fn sqlite_admin_channel_group_store_syncs_relationship_status_when_group_s
 }
 
 #[tokio::test]
-async fn sqlite_admin_channel_group_store_keeps_replaced_relationships_disabled_when_group_is_disabled(
+async fn sqlite_admin_upstream_account_group_store_keeps_replaced_relationships_disabled_when_group_is_disabled(
 ) {
     let pool = schema_sqlite_pool().await;
-    seed_channel_group_channel_fixture(&pool).await;
-    let store = SqliteAdminChannelGroupStore::new(pool.clone());
-    let subject = AdminChannelGroupSubject {
+    seed_upstream_account_group_channel_fixture(&pool).await;
+    let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());
+    let subject = AdminUpstreamAccountGroupSubject {
         tenant_id: 100001,
         organization_id: 0,
         operator_id: 30,
@@ -510,7 +510,7 @@ async fn sqlite_admin_channel_group_store_keeps_replaced_relationships_disabled_
     };
 
     store
-        .update_channel_group(update_channel_group_status_command(
+        .update_upstream_account_group(update_upstream_account_group_status_command(
             subject,
             "disabled",
             "2026-05-25 10:09:00",
@@ -534,19 +534,19 @@ async fn sqlite_admin_channel_group_store_keeps_replaced_relationships_disabled_
         SELECT
             (
                 SELECT COUNT(1)
-                FROM ai_channel_group_member
+                FROM ai_upstream_account_group_member
                 WHERE tenant_id = 100001
                   AND organization_id = 0
-                  AND channel_group_id = 10
+                  AND account_group_id = 10
                   AND status = 1
                   AND deleted_at IS NULL
             ) AS active_member_count,
             (
                 SELECT COUNT(1)
-                FROM ai_channel_group_resource
+                FROM ai_upstream_account_group_resource
                 WHERE tenant_id = 100001
                   AND organization_id = 0
-                  AND channel_group_id = 10
+                  AND account_group_id = 10
                   AND status = 1
                   AND deleted_at IS NULL
             ) AS active_resource_count
@@ -559,7 +559,7 @@ async fn sqlite_admin_channel_group_store_keeps_replaced_relationships_disabled_
     assert_eq!(0, active_resource_count);
 
     store
-        .update_channel_group(update_channel_group_status_command(
+        .update_upstream_account_group(update_upstream_account_group_status_command(
             subject,
             "active",
             "2026-05-25 10:11:00",
@@ -573,19 +573,19 @@ async fn sqlite_admin_channel_group_store_keeps_replaced_relationships_disabled_
         SELECT
             (
                 SELECT COUNT(1)
-                FROM ai_channel_group_member
+                FROM ai_upstream_account_group_member
                 WHERE tenant_id = 100001
                   AND organization_id = 0
-                  AND channel_group_id = 10
+                  AND account_group_id = 10
                   AND status = 1
                   AND deleted_at IS NULL
             ) AS active_member_count,
             (
                 SELECT COUNT(1)
-                FROM ai_channel_group_resource
+                FROM ai_upstream_account_group_resource
                 WHERE tenant_id = 100001
                   AND organization_id = 0
-                  AND channel_group_id = 10
+                  AND account_group_id = 10
                   AND status = 1
                   AND deleted_at IS NULL
             ) AS active_resource_count
@@ -599,12 +599,12 @@ async fn sqlite_admin_channel_group_store_keeps_replaced_relationships_disabled_
 }
 
 #[tokio::test]
-async fn sqlite_admin_channel_group_store_records_routing_config_version_for_group_and_binding_changes(
+async fn sqlite_admin_upstream_account_group_store_records_routing_config_version_for_group_and_binding_changes(
 ) {
     let pool = schema_sqlite_pool().await;
-    seed_channel_group_channel_fixture(&pool).await;
-    let store = SqliteAdminChannelGroupStore::new(pool.clone());
-    let subject = AdminChannelGroupSubject {
+    seed_upstream_account_group_channel_fixture(&pool).await;
+    let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());
+    let subject = AdminUpstreamAccountGroupSubject {
         tenant_id: 100001,
         organization_id: 0,
         operator_id: 30,
@@ -621,7 +621,7 @@ async fn sqlite_admin_channel_group_store_records_routing_config_version_for_gro
         .await
         .unwrap();
     store
-        .update_channel_group(update_channel_group_status_command(
+        .update_upstream_account_group(update_upstream_account_group_status_command(
             subject,
             "disabled",
             "2026-05-25 10:13:00",
@@ -644,7 +644,7 @@ async fn sqlite_admin_channel_group_store_records_routing_config_version_for_gro
         .await
         .unwrap();
     assert_eq!(2, config_version);
-    assert_eq!("ai_channel_group", changed_object_type);
+    assert_eq!("ai_upstream_account_group", changed_object_type);
     assert_eq!(10, changed_object_id);
 
     let event_actions: Vec<String> = sqlx::query_scalar(
@@ -654,7 +654,7 @@ async fn sqlite_admin_channel_group_store_records_routing_config_version_for_gro
         WHERE tenant_id = 100001
           AND organization_id = 0
           AND config_scope = 'routing'
-          AND changed_object_type = 'ai_channel_group'
+          AND changed_object_type = 'ai_upstream_account_group'
           AND changed_object_id = 10
         ORDER BY config_version ASC
         "#,
@@ -664,30 +664,30 @@ async fn sqlite_admin_channel_group_store_records_routing_config_version_for_gro
     .unwrap();
     assert_eq!(
         vec![
-            "replace_channel_group_channel_bindings".to_owned(),
-            "update_channel_group".to_owned()
+            "replace_upstream_account_group_channel_bindings".to_owned(),
+            "update_upstream_account_group".to_owned()
         ],
         event_actions
     );
 }
 
 fn replace_bindings_command(
-    subject: AdminChannelGroupSubject,
+    subject: AdminUpstreamAccountGroupSubject,
     group_id: i64,
-    items: Vec<AdminChannelGroupChannelBindingInput>,
+    items: Vec<AdminUpstreamAccountGroupChannelBindingInput>,
     requested_at: &str,
-) -> ReplaceAdminChannelGroupChannelBindingsCommand {
+) -> ReplaceAdminUpstreamAccountGroupChannelBindingsCommand {
     let suffix = requested_at
         .chars()
         .filter(|value| value.is_ascii_alphanumeric())
         .collect::<String>();
-    ReplaceAdminChannelGroupChannelBindingsCommand {
+    ReplaceAdminUpstreamAccountGroupChannelBindingsCommand {
         subject,
         group_id,
         binding_uuids: items
             .iter()
             .enumerate()
-            .map(|(index, item)| format!("binding-{group_id}-{}-{index}", item.channel_id))
+            .map(|(index, item)| format!("binding-{group_id}-{}-{index}", item.account_id))
             .collect(),
         audit_log_uuid: format!("audit-group-channel-{group_id}-{suffix}"),
         config_snapshot_uuid: format!("snapshot-group-channel-{group_id}-{suffix}"),
@@ -697,16 +697,16 @@ fn replace_bindings_command(
     }
 }
 
-fn update_channel_group_status_command(
-    subject: AdminChannelGroupSubject,
+fn update_upstream_account_group_status_command(
+    subject: AdminUpstreamAccountGroupSubject,
     status: &str,
     requested_at: &str,
-) -> UpdateAdminChannelGroupCommand {
+) -> UpdateAdminUpstreamAccountGroupCommand {
     let suffix = requested_at
         .chars()
         .filter(|value| value.is_ascii_alphanumeric())
         .collect::<String>();
-    UpdateAdminChannelGroupCommand {
+    UpdateAdminUpstreamAccountGroupCommand {
         subject,
         group_id: 10,
         audit_log_uuid: format!("audit-update-group-status-{suffix}"),
@@ -714,7 +714,7 @@ fn update_channel_group_status_command(
         binding_uuid: format!("pricing-binding-update-group-status-{suffix}"),
         group_code: None,
         group_name: None,
-        provider_code: None,
+        supplier_code: None,
         price_reference_mode: None,
         rate_multiplier: None,
         official_price_multiplier: None,
@@ -729,13 +729,13 @@ fn update_channel_group_status_command(
 }
 
 fn binding_input(
-    channel_id: i64,
+    account_id: i64,
     priority: i64,
     weight: i64,
     status: &str,
-) -> AdminChannelGroupChannelBindingInput {
-    AdminChannelGroupChannelBindingInput {
-        channel_id,
+) -> AdminUpstreamAccountGroupChannelBindingInput {
+    AdminUpstreamAccountGroupChannelBindingInput {
+        account_id,
         priority,
         weight,
         status: status.to_owned(),
@@ -749,11 +749,11 @@ fn binding_input(
     }
 }
 
-async fn seed_channel_group_channel_fixture(pool: &sqlx::SqlitePool) {
+async fn seed_upstream_account_group_channel_fixture(pool: &sqlx::SqlitePool) {
     sqlx::query(
         r#"
-        INSERT INTO ai_channel_group
-            (id, uuid, tenant_id, organization_id, status, group_name, group_code, provider_code, billing_type, group_type, capacity_limit, rate_multiplier)
+        INSERT INTO ai_upstream_account_group
+            (id, uuid, tenant_id, organization_id, status, group_name, group_code, supplier_code, billing_type, group_type, capacity_limit, rate_multiplier)
         VALUES
             (10, 'group-standard', 100001, 0, 1, 'Standard group', 'standard-group', 'openai', 1, 1, 100000, '1.000000'),
             (11, 'group-premium', 100001, 0, 1, 'Premium group', 'premium-group', 'openai', 1, 1, 100000, '1.000000')
@@ -766,7 +766,7 @@ async fn seed_channel_group_channel_fixture(pool: &sqlx::SqlitePool) {
     sqlx::query(
         r#"
         INSERT INTO ai_provider
-            (id, uuid, tenant_id, organization_id, status, provider_code, display_name, base_url)
+            (id, uuid, tenant_id, organization_id, status, supplier_code, display_name, base_url)
         VALUES
             (1001, 'provider-openai', 100001, 0, 1, 'openai', 'OpenAI', 'https://api.openai.com/v1'),
             (1003, 'provider-google', 100001, 0, 1, 'google', 'Google', 'https://generativelanguage.googleapis.com/v1')
@@ -779,7 +779,7 @@ async fn seed_channel_group_channel_fixture(pool: &sqlx::SqlitePool) {
     sqlx::query(
         r#"
         INSERT INTO ai_channel
-            (id, uuid, tenant_id, organization_id, status, provider_id, provider_code, channel_code, channel_name, channel_type, base_url, credential_ref, masked_label, priority, weight, health_status)
+            (id, uuid, tenant_id, organization_id, status, provider_id, supplier_code, account_code, channel_name, channel_type, base_url, credential_ref, masked_label, priority, weight, health_status)
         VALUES
             (3001, 'channel-openai-primary', 100001, 0, 1, 1001, 'openai', 'openai-primary', 'OpenAI primary', 'official', 'https://api.openai.com/v1', 'secret://ai-channels/openai/main', 'sk-***main', 10, 80, 1),
             (3003, 'channel-google-fallback', 100001, 0, 1, 1003, 'google', 'google-fallback', 'Google fallback', 'official', 'https://generativelanguage.googleapis.com/v1', 'secret://ai-channels/google/main', 'sk-***main', 20, 30, 1)

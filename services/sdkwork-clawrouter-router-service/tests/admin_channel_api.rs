@@ -947,13 +947,13 @@ impl AdminChannelStore for TestChannelStore {
             self.commands.lock().unwrap().push("create");
             let item = AdminChannelItem {
                 id: 1,
-                channel_id: 101,
+                account_id: 101,
                 uuid: command.channel_uuid,
                 tenant_id: command.subject.tenant_id,
                 organization_id: command.subject.organization_id,
                 name: command.name,
                 vendor: command.vendor,
-                provider_code: command.provider_code,
+                supplier_code: command.supplier_code,
                 channel_type: command.channel_type,
                 protocol: command.protocol,
                 access_type: command.access_type,
@@ -1004,7 +1004,7 @@ impl AdminChannelStore for TestChannelStore {
             self.commands.lock().unwrap().push("update");
             let mut items = self.items.lock().unwrap();
             let Some(item) = items.iter_mut().find(|item| {
-                item.id == command.channel_id
+                item.id == command.account_id
                     && item.tenant_id == command.subject.tenant_id
                     && item.organization_id == command.subject.organization_id
                     && item.deleted_at.is_none()
@@ -1017,8 +1017,8 @@ impl AdminChannelStore for TestChannelStore {
             if let Some(vendor) = command.vendor {
                 item.vendor = vendor;
             }
-            if let Some(provider_code) = command.provider_code {
-                item.provider_code = provider_code;
+            if let Some(supplier_code) = command.supplier_code {
+                item.supplier_code = supplier_code;
             }
             if let Some(channel_type) = command.channel_type {
                 item.channel_type = channel_type;
@@ -1089,7 +1089,7 @@ impl AdminChannelStore for TestChannelStore {
             self.commands.lock().unwrap().push("delete");
             let mut items = self.items.lock().unwrap();
             let Some(item) = items.iter_mut().find(|item| {
-                item.id == command.channel_id
+                item.id == command.account_id
                     && item.tenant_id == command.subject.tenant_id
                     && item.organization_id == command.subject.organization_id
                     && item.deleted_at.is_none()
@@ -1112,7 +1112,7 @@ impl AdminChannelStore for TestChannelStore {
             self.commands.lock().unwrap().push("test");
             let mut items = self.items.lock().unwrap();
             let Some(item) = items.iter_mut().find(|item| {
-                item.id == command.channel_id
+                item.id == command.account_id
                     && item.tenant_id == command.subject.tenant_id
                     && item.organization_id == command.subject.organization_id
                     && item.deleted_at.is_none()
@@ -1123,7 +1123,7 @@ impl AdminChannelStore for TestChannelStore {
             item.errors = 0;
             Ok(Some(
                 sdkwork_clawrouter_router_service::ports::AdminChannelTestOutcome {
-                    channel_id: item.id.to_string(),
+                    account_id: item.id.to_string(),
                     success: true,
                     status: item.status.clone(),
                     latency: "37ms".to_owned(),

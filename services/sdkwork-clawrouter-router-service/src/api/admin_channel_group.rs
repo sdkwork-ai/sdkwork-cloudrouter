@@ -94,7 +94,7 @@ struct AdminChannelGroupChannelBindingReplaceRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct AdminChannelGroupChannelBindingRequestItem {
-    channel_id: Option<String>,
+    account_id: Option<String>,
     priority: Option<i64>,
     weight: Option<i64>,
     status: Option<String>,
@@ -113,7 +113,7 @@ struct GroupCapacityRequest {
 struct NormalizedCreateRequest {
     group_name: String,
     group_code: String,
-    provider_code: String,
+    supplier_code: String,
     price_reference_mode: String,
     rate_multiplier: f64,
     official_price_multiplier: f64,
@@ -128,7 +128,7 @@ struct NormalizedCreateRequest {
 struct NormalizedUpdateRequest {
     group_name: Option<String>,
     group_code: Option<String>,
-    provider_code: Option<String>,
+    supplier_code: Option<String>,
     price_reference_mode: Option<String>,
     rate_multiplier: Option<f64>,
     official_price_multiplier: Option<f64>,
@@ -139,7 +139,7 @@ struct NormalizedUpdateRequest {
     status: Option<String>,
 }
 
-enum ChannelGroupCommandBuildError {
+enum UpstreamAccountGroupCommandBuildError {
     BadRequest(String),
     System(DomainError),
 }
@@ -200,7 +200,7 @@ struct AdminChannelGroupItemResponse {
     id: String,
     group_code: String,
     group_name: String,
-    provider_code: String,
+    supplier_code: String,
     price_reference_mode: String,
     rate_multiplier: f64,
     official_price_multiplier: f64,
@@ -217,12 +217,12 @@ struct AdminChannelGroupItemResponse {
 #[serde(rename_all = "camelCase")]
 struct AdminChannelGroupChannelBindingItemResponse {
     id: String,
-    channel_group_id: String,
-    channel_id: String,
+    account_group_id: String,
+    account_id: String,
     channel_name: String,
-    provider_code: String,
+    supplier_code: String,
     provider_name: String,
-    channel_code: String,
+    account_code: String,
     resource_codes: Vec<String>,
     api_scope: Vec<String>,
     capabilities: Vec<String>,
@@ -259,20 +259,20 @@ pub fn admin_channel_group_router_with_store(
 ) -> Router {
     Router::new()
         .route(
-            "/backend/v3/api/ai/channel_groups",
-            get(fetch_channel_groups).post(create_channel_group),
+            "/backend/v3/api/ai/upstream_account_groups",
+            get(fetch_upstream_account_groups).post(create_upstream_account_group),
         )
         .route(
-            "/backend/v3/api/ai/channel_groups/{channelGroupId}",
-            patch(update_channel_group).delete(delete_channel_group),
+            "/backend/v3/api/ai/upstream_account_groups/{channelGroupId}",
+            patch(update_upstream_account_group).delete(delete_upstream_account_group),
         )
         .route(
-            "/backend/v3/api/ai/channel_groups/{channelGroupId}/route_explain",
-            get(fetch_channel_group_route_explain),
+            "/backend/v3/api/ai/upstream_account_groups/{channelGroupId}/route_explain",
+            get(fetch_upstream_account_group_route_explain),
         )
         .route(
-            "/backend/v3/api/ai/channel_groups/{channelGroupId}/channel_bindings",
-            get(fetch_channel_group_channel_bindings).put(replace_channel_group_channel_bindings),
+            "/backend/v3/api/ai/upstream_account_groups/{channelGroupId}/channel_bindings",
+            get(fetch_upstream_account_group_channel_bindings).put(replace_upstream_account_group_channel_bindings),
         )
         .with_state(AdminChannelGroupState {
             store,
@@ -280,7 +280,7 @@ pub fn admin_channel_group_router_with_store(
         })
 }
 
-async fn fetch_channel_group_channel_bindings(
+async fn fetch_upstream_account_group_channel_bindings(
     State(state): State<AdminChannelGroupState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
@@ -306,14 +306,14 @@ async fn fetch_channel_group_channel_bindings(
             },
         ))
         .into_response(),
-        Err(error) => channel_group_system_response(
+        Err(error) => upstream_account_group_system_response(
             "channel group channel binding read model is unavailable",
             error,
         ),
     }
 }
 
-async fn replace_channel_group_channel_bindings(
+async fn replace_upstream_account_group_channel_bindings(
     State(state): State<AdminChannelGroupState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
@@ -359,14 +359,14 @@ async fn replace_channel_group_channel_bindings(
         .into_response(),
         Err(error) if error.is_not_found() => not_found_response("channel group was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => channel_group_system_response(
+        Err(error) => upstream_account_group_system_response(
             "channel group channel binding command store is unavailable",
             error,
         ),
     }
 }
 
-async fn fetch_channel_group_route_explain(
+async fn fetch_upstream_account_group_route_explain(
     State(state): State<AdminChannelGroupState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
@@ -380,7 +380,7 @@ async fn fetch_channel_group_route_explain(
 
     let group = match state
         .store
-        .list_channel_groups(ListAdminChannelGroupsQuery {
+        .list_upstream_account_groups(ListAdminChannelGroupsQuery {
             subject,
             page_no: 1,
             page_size: 1,
@@ -395,7 +395,7 @@ async fn fetch_channel_group_route_explain(
             None => return not_found_response("channel group was not found"),
         },
         Err(error) => {
-            return channel_group_system_response("channel group read model is unavailable", error);
+            return upstream_account_group_system_response("channel group read model is unavailable", error);
         }
     };
 
@@ -404,18 +404,18 @@ async fn fetch_channel_group_route_explain(
         .list_channel_bindings(ListAdminChannelGroupChannelBindingsQuery { subject, group_id })
         .await
     {
-        Ok(bindings) => Json(success_envelope(build_channel_group_route_explain(
+        Ok(bindings) => Json(success_envelope(build_upstream_account_group_route_explain(
             &group, &bindings,
         )))
         .into_response(),
-        Err(error) => channel_group_system_response(
+        Err(error) => upstream_account_group_system_response(
             "channel group channel binding read model is unavailable",
             error,
         ),
     }
 }
 
-async fn fetch_channel_groups(
+async fn fetch_upstream_account_groups(
     State(state): State<AdminChannelGroupState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
@@ -427,14 +427,14 @@ async fn fetch_channel_groups(
         Err(message) => return bad_request(message),
     };
 
-    match state.store.list_channel_groups(query).await {
+    match state.store.list_upstream_account_groups(query).await {
         Ok(page) => json_success_list_response(
             None,
             page.items.into_iter().map(to_item_response).collect(),
             offset_page_info(page.page_no, page.page_size, page.total),
         ),
         Err(error) => {
-            channel_group_system_response("channel group read model is unavailable", error)
+            upstream_account_group_system_response("channel group read model is unavailable", error)
         }
     }
 }
@@ -454,7 +454,7 @@ fn build_list_query(
     })
 }
 
-async fn create_channel_group(
+async fn create_upstream_account_group(
     State(state): State<AdminChannelGroupState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
@@ -474,7 +474,7 @@ async fn create_channel_group(
         Err(error) => return command_build_error_response(error),
     };
 
-    match state.store.create_channel_group(command).await {
+    match state.store.create_upstream_account_group(command).await {
         Ok(item) => json_created_response(
             None,
             AdminChannelGroupItemEnvelope {
@@ -483,12 +483,12 @@ async fn create_channel_group(
         ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            channel_group_system_response("channel group command store is unavailable", error)
+            upstream_account_group_system_response("channel group command store is unavailable", error)
         }
     }
 }
 
-async fn update_channel_group(
+async fn update_upstream_account_group(
     State(state): State<AdminChannelGroupState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
@@ -513,7 +513,7 @@ async fn update_channel_group(
         Err(error) => return command_build_error_response(error),
     };
 
-    match state.store.update_channel_group(command).await {
+    match state.store.update_upstream_account_group(command).await {
         Ok(Some(item)) => Json(success_envelope(AdminChannelGroupItemEnvelope {
             item: to_item_response(item),
         }))
@@ -521,12 +521,12 @@ async fn update_channel_group(
         Ok(None) => not_found_response("channel group was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            channel_group_system_response("channel group command store is unavailable", error)
+            upstream_account_group_system_response("channel group command store is unavailable", error)
         }
     }
 }
 
-async fn delete_channel_group(
+async fn delete_upstream_account_group(
     State(state): State<AdminChannelGroupState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: HeaderMap,
@@ -542,12 +542,12 @@ async fn delete_channel_group(
         Err(error) => return command_build_error_response(error),
     };
 
-    match state.store.delete_channel_group(command).await {
+    match state.store.delete_upstream_account_group(command).await {
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("channel group was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            channel_group_system_response("channel group command store is unavailable", error)
+            upstream_account_group_system_response("channel group command store is unavailable", error)
         }
     }
 }
@@ -580,7 +580,7 @@ fn normalize_create_request(
             MAX_NAME_LEN,
         )?,
         group_code: normalize_group_code(request.group_code.as_deref())?,
-        provider_code: normalize_platform(None)?,
+        supplier_code: normalize_platform(None)?,
         price_reference_mode,
         rate_multiplier,
         official_price_multiplier,
@@ -678,7 +678,7 @@ fn normalize_update_request(
     Ok(NormalizedUpdateRequest {
         group_name,
         group_code,
-        provider_code: None,
+        supplier_code: None,
         price_reference_mode,
         rate_multiplier,
         official_price_multiplier,
@@ -702,14 +702,14 @@ fn normalize_channel_binding_replace_request(
     let mut seen = std::collections::BTreeSet::new();
     let mut normalized = Vec::with_capacity(items.len());
     for item in items {
-        let channel_id = parse_positive_id(item.channel_id.as_deref().unwrap_or(""), "channel id")?;
-        if !seen.insert(channel_id) {
+        let account_id = parse_positive_id(item.account_id.as_deref().unwrap_or(""), "channel id")?;
+        if !seen.insert(account_id) {
             return Err(format!(
-                "channel group channel bindings contains duplicate channel id: {channel_id}"
+                "channel group channel bindings contains duplicate channel id: {account_id}"
             ));
         }
         normalized.push(AdminChannelGroupChannelBindingInput {
-            channel_id,
+            account_id,
             priority: normalize_integer_range(
                 item.priority.unwrap_or(100),
                 "channel group channel binding priority",
@@ -960,7 +960,7 @@ fn parse_positive_id(value: &str, field_name: &str) -> Result<i64, String> {
     Ok(id)
 }
 
-fn build_channel_group_route_explain(
+fn build_upstream_account_group_route_explain(
     group: &AdminChannelGroupItem,
     bindings: &[AdminChannelGroupChannelBindingItem],
 ) -> AdminChannelGroupRouteExplainResponse {
@@ -992,7 +992,7 @@ fn build_channel_group_route_explain(
     );
     let routable_binding_count =
         count_routable_explain_bindings(&resource_codes, &active_healthy_binding_resource_codes);
-    let issues = build_channel_group_route_explain_issues(
+    let issues = build_upstream_account_group_route_explain_issues(
         group,
         bindings,
         &resource_codes,
@@ -1020,7 +1020,7 @@ fn build_channel_group_route_explain(
     }
 }
 
-fn build_channel_group_route_explain_issues(
+fn build_upstream_account_group_route_explain_issues(
     group: &AdminChannelGroupItem,
     bindings: &[AdminChannelGroupChannelBindingItem],
     resource_codes: &[String],
@@ -1031,34 +1031,34 @@ fn build_channel_group_route_explain_issues(
     let mut issues = Vec::new();
 
     if group.status != "active" {
-        issues.push(channel_group_route_explain_issue(
+        issues.push(upstream_account_group_route_explain_issue(
             "group.disabled",
             "blocking",
             Vec::new(),
         ));
     }
     if group.account_available <= 0 {
-        issues.push(channel_group_route_explain_issue(
+        issues.push(upstream_account_group_route_explain_issue(
             "group.account_count.empty",
             "blocking",
             Vec::new(),
         ));
     }
     if resource_codes.is_empty() && resource_group_codes.is_empty() {
-        issues.push(channel_group_route_explain_issue(
+        issues.push(upstream_account_group_route_explain_issue(
             "group.resource_access.empty",
             "blocking",
             Vec::new(),
         ));
     }
     if bindings.is_empty() {
-        issues.push(channel_group_route_explain_issue(
+        issues.push(upstream_account_group_route_explain_issue(
             "group.bindings.empty",
             "blocking",
             Vec::new(),
         ));
     } else if active_healthy_bindings.is_empty() {
-        issues.push(channel_group_route_explain_issue(
+        issues.push(upstream_account_group_route_explain_issue(
             "group.bindings.no_active_healthy_member",
             "blocking",
             Vec::new(),
@@ -1077,7 +1077,7 @@ fn build_channel_group_route_explain_issues(
                 has_any_explain_overlap(resource_codes, binding_resource_codes)
             })
     {
-        issues.push(channel_group_route_explain_issue(
+        issues.push(upstream_account_group_route_explain_issue(
             "group.bindings.no_resource_overlap",
             "warning",
             resource_codes.to_vec(),
@@ -1087,7 +1087,7 @@ fn build_channel_group_route_explain_issues(
         normalize_explain_string_list(&binding.api_scope).is_empty()
             && normalize_explain_string_list(&binding.capabilities).is_empty()
     }) {
-        issues.push(channel_group_route_explain_issue(
+        issues.push(upstream_account_group_route_explain_issue(
             "group.bindings.missing_scope_metadata",
             "warning",
             Vec::new(),
@@ -1097,7 +1097,7 @@ fn build_channel_group_route_explain_issues(
     issues
 }
 
-fn channel_group_route_explain_issue(
+fn upstream_account_group_route_explain_issue(
     code: &'static str,
     severity: &'static str,
     details: Vec<String>,
@@ -1165,7 +1165,7 @@ fn build_create_command(
     _headers: &HeaderMap,
     subject: AdminChannelGroupSubject,
     request: NormalizedCreateRequest,
-) -> Result<CreateAdminChannelGroupCommand, ChannelGroupCommandBuildError> {
+) -> Result<CreateAdminChannelGroupCommand, UpstreamAccountGroupCommandBuildError> {
     let group_uuid = generate_entity_uuid(&state)?;
     Ok(CreateAdminChannelGroupCommand {
         subject,
@@ -1175,7 +1175,7 @@ fn build_create_command(
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         binding_uuid: generate_entity_uuid(&state)?,
         group_name: request.group_name,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         price_reference_mode: request.price_reference_mode,
         rate_multiplier: request.rate_multiplier,
         official_price_multiplier: request.official_price_multiplier,
@@ -1195,7 +1195,7 @@ fn build_update_command(
     subject: AdminChannelGroupSubject,
     group_id: i64,
     request: NormalizedUpdateRequest,
-) -> Result<UpdateAdminChannelGroupCommand, ChannelGroupCommandBuildError> {
+) -> Result<UpdateAdminChannelGroupCommand, UpstreamAccountGroupCommandBuildError> {
     Ok(UpdateAdminChannelGroupCommand {
         subject,
         group_id,
@@ -1204,7 +1204,7 @@ fn build_update_command(
         binding_uuid: generate_entity_uuid(&state)?,
         group_code: request.group_code,
         group_name: request.group_name,
-        provider_code: request.provider_code,
+        supplier_code: request.supplier_code,
         price_reference_mode: request.price_reference_mode,
         rate_multiplier: request.rate_multiplier,
         official_price_multiplier: request.official_price_multiplier,
@@ -1223,7 +1223,7 @@ fn build_delete_command(
     _headers: &HeaderMap,
     subject: AdminChannelGroupSubject,
     group_id: i64,
-) -> Result<DeleteAdminChannelGroupCommand, ChannelGroupCommandBuildError> {
+) -> Result<DeleteAdminChannelGroupCommand, UpstreamAccountGroupCommandBuildError> {
     Ok(DeleteAdminChannelGroupCommand {
         subject,
         group_id,
@@ -1240,7 +1240,7 @@ fn build_replace_channel_bindings_command(
     subject: AdminChannelGroupSubject,
     group_id: i64,
     items: Vec<AdminChannelGroupChannelBindingInput>,
-) -> Result<ReplaceAdminChannelGroupChannelBindingsCommand, ChannelGroupCommandBuildError> {
+) -> Result<ReplaceAdminChannelGroupChannelBindingsCommand, UpstreamAccountGroupCommandBuildError> {
     let mut binding_uuids = Vec::with_capacity(items.len());
     for _ in &items {
         binding_uuids.push(generate_entity_uuid(&state)?);
@@ -1259,18 +1259,18 @@ fn build_replace_channel_bindings_command(
 
 fn generate_entity_uuid(
     state: &AdminChannelGroupState,
-) -> Result<String, ChannelGroupCommandBuildError> {
+) -> Result<String, UpstreamAccountGroupCommandBuildError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
-        .map_err(ChannelGroupCommandBuildError::System)
+        .map_err(UpstreamAccountGroupCommandBuildError::System)
 }
 
-fn request_id_error(error: RequestIdError) -> ChannelGroupCommandBuildError {
+fn request_id_error(error: RequestIdError) -> UpstreamAccountGroupCommandBuildError {
     match error {
-        RequestIdError::Invalid(message) => ChannelGroupCommandBuildError::BadRequest(message),
+        RequestIdError::Invalid(message) => UpstreamAccountGroupCommandBuildError::BadRequest(message),
         RequestIdError::System(message) => {
-            ChannelGroupCommandBuildError::System(DomainError::new(message))
+            UpstreamAccountGroupCommandBuildError::System(DomainError::new(message))
         }
     }
 }
@@ -1280,7 +1280,7 @@ fn to_item_response(item: AdminChannelGroupItem) -> AdminChannelGroupItemRespons
         id: item.id.to_string(),
         group_code: item.group_code,
         group_name: item.group_name,
-        provider_code: item.provider_code,
+        supplier_code: item.supplier_code,
         price_reference_mode: item.price_reference_mode,
         rate_multiplier: item.rate_multiplier,
         official_price_multiplier: item.official_price_multiplier,
@@ -1308,12 +1308,12 @@ fn to_channel_binding_item_response(
 ) -> AdminChannelGroupChannelBindingItemResponse {
     AdminChannelGroupChannelBindingItemResponse {
         id: item.id.to_string(),
-        channel_group_id: item.group_id.to_string(),
-        channel_id: item.channel_id.to_string(),
+        account_group_id: item.group_id.to_string(),
+        account_id: item.account_id.to_string(),
         channel_name: item.channel_name,
-        provider_code: item.provider_code,
+        supplier_code: item.supplier_code,
         provider_name: item.provider_name,
-        channel_code: item.channel_code,
+        account_code: item.account_code,
         resource_codes: item.resource_codes,
         api_scope: item.api_scope,
         capabilities: item.capabilities,
@@ -1336,16 +1336,16 @@ fn conflict_response(error: DomainError) -> Response {
     problem_from_wire_code("4090", error.to_string()).into_response()
 }
 
-fn command_build_error_response(error: ChannelGroupCommandBuildError) -> Response {
+fn command_build_error_response(error: UpstreamAccountGroupCommandBuildError) -> Response {
     match error {
-        ChannelGroupCommandBuildError::BadRequest(message) => bad_request(message),
-        ChannelGroupCommandBuildError::System(error) => {
-            channel_group_system_response("channel group command is invalid", error)
+        UpstreamAccountGroupCommandBuildError::BadRequest(message) => bad_request(message),
+        UpstreamAccountGroupCommandBuildError::System(error) => {
+            upstream_account_group_system_response("channel group command is invalid", error)
         }
     }
 }
 
-fn channel_group_system_response(context: &str, error: DomainError) -> Response {
+fn upstream_account_group_system_response(context: &str, error: DomainError) -> Response {
     problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 

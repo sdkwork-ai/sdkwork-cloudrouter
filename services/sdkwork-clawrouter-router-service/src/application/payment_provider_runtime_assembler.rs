@@ -169,16 +169,16 @@ impl PaymentProviderRuntimeAssemblyReport {
             registered: self.registered.len(),
             failed: self.failures.len(),
             skipped: self.skipped.len(),
-            registered_provider_codes: unique_provider_codes(
+            registered_supplier_codes: unique_supplier_codes(
                 self.registered
                     .iter()
-                    .map(|item| item.provider_code.as_str()),
+                    .map(|item| item.supplier_code.as_str()),
             ),
-            failed_provider_codes: unique_provider_codes(
-                self.failures.iter().map(|item| item.provider_code.as_str()),
+            failed_supplier_codes: unique_supplier_codes(
+                self.failures.iter().map(|item| item.supplier_code.as_str()),
             ),
-            skipped_provider_codes: unique_provider_codes(
-                self.skipped.iter().map(|item| item.provider_code.as_str()),
+            skipped_supplier_codes: unique_supplier_codes(
+                self.skipped.iter().map(|item| item.supplier_code.as_str()),
             ),
         }
     }
@@ -190,7 +190,7 @@ impl PaymentProviderRuntimeAssemblyReport {
             events.push(PaymentProviderRuntimeAssemblyEvent {
                 kind: "registered".to_owned(),
                 account_no: item.account_no.clone(),
-                provider_code: item.provider_code.clone(),
+                supplier_code: item.supplier_code.clone(),
                 reason: None,
                 message: None,
             });
@@ -199,7 +199,7 @@ impl PaymentProviderRuntimeAssemblyReport {
             events.push(PaymentProviderRuntimeAssemblyEvent {
                 kind: "failed".to_owned(),
                 account_no: item.account_no.clone(),
-                provider_code: item.provider_code.clone(),
+                supplier_code: item.supplier_code.clone(),
                 reason: None,
                 message: Some(item.message.clone()),
             });
@@ -208,7 +208,7 @@ impl PaymentProviderRuntimeAssemblyReport {
             events.push(PaymentProviderRuntimeAssemblyEvent {
                 kind: "skipped".to_owned(),
                 account_no: item.account_no.clone(),
-                provider_code: item.provider_code.clone(),
+                supplier_code: item.supplier_code.clone(),
                 reason: Some(item.reason.clone()),
                 message: None,
             });
@@ -224,9 +224,9 @@ pub struct PaymentProviderRuntimeAssemblySummary {
     pub registered: usize,
     pub failed: usize,
     pub skipped: usize,
-    pub registered_provider_codes: Vec<String>,
-    pub failed_provider_codes: Vec<String>,
-    pub skipped_provider_codes: Vec<String>,
+    pub registered_supplier_codes: Vec<String>,
+    pub failed_supplier_codes: Vec<String>,
+    pub skipped_supplier_codes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -234,7 +234,7 @@ pub struct PaymentProviderRuntimeAssemblySummary {
 pub struct PaymentProviderRuntimeAssemblyEvent {
     pub kind: String,
     pub account_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub reason: Option<String>,
     pub message: Option<String>,
 }
@@ -242,20 +242,20 @@ pub struct PaymentProviderRuntimeAssemblyEvent {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaymentProviderRuntimeAssemblySuccess {
     pub account_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaymentProviderRuntimeAssemblyFailure {
     pub account_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub message: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaymentProviderRuntimeAssemblySkipped {
     pub account_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub reason: String,
 }
 
@@ -284,7 +284,7 @@ impl PaymentProviderRuntimeAssembler {
     ) -> Result<PaymentProviderRegistry, PaymentProviderRegistryError> {
         let credentials = self.credential_resolver.resolve(account).await?;
         let adapter = self.adapter_factory.build_adapter(credentials).await?;
-        registry.try_with_adapter(adapter.capabilities().provider_code, adapter)
+        registry.try_with_adapter(adapter.capabilities().supplier_code, adapter)
     }
 
     pub async fn resolve_many_and_register(
@@ -297,18 +297,18 @@ impl PaymentProviderRuntimeAssembler {
 
         for account in accounts {
             let account_no = payment_account_no(&account);
-            let provider_code = normalize_provider_code(&account.provider_code);
+            let supplier_code = normalize_supplier_code(&account.supplier_code);
             match self.resolve_and_register(registry.clone(), account).await {
                 Ok(next_registry) => {
                     registry = next_registry;
                     registered.push(PaymentProviderRuntimeAssemblySuccess {
                         account_no,
-                        provider_code,
+                        supplier_code,
                     });
                 }
                 Err(error) => failures.push(PaymentProviderRuntimeAssemblyFailure {
                     account_no,
-                    provider_code,
+                    supplier_code,
                     message: error.to_string(),
                 }),
             }
@@ -344,7 +344,7 @@ impl PaymentProviderRuntimeAssembler {
                 Ok(account) => accounts.push(account),
                 Err(error) => failures.push(PaymentProviderRuntimeAssemblyFailure {
                     account_no: projection_account_no(record),
-                    provider_code: projection_provider_code(record),
+                    supplier_code: projection_supplier_code(record),
                     message: error.to_string(),
                 }),
             }
@@ -371,12 +371,12 @@ impl PaymentProviderRuntimeAssembler {
             match PaymentProviderAccountCredentialRefs::from_projection(record) {
                 Ok(account) => {
                     let account_no = payment_account_no(&account);
-                    let provider_code = normalize_provider_code(&account.provider_code);
+                    let supplier_code = normalize_supplier_code(&account.supplier_code);
                     let status = payment_account_status(&account);
                     if status != "active" {
                         skipped.push(PaymentProviderRuntimeAssemblySkipped {
                             account_no,
-                            provider_code,
+                            supplier_code,
                             reason: status,
                         });
                         continue;
@@ -384,7 +384,7 @@ impl PaymentProviderRuntimeAssembler {
                     if normalize_environment(&account.environment) != target_environment {
                         skipped.push(PaymentProviderRuntimeAssemblySkipped {
                             account_no,
-                            provider_code,
+                            supplier_code,
                             reason: "environment_mismatch".to_owned(),
                         });
                         continue;
@@ -393,7 +393,7 @@ impl PaymentProviderRuntimeAssembler {
                 }
                 Err(error) => failures.push(PaymentProviderRuntimeAssemblyFailure {
                     account_no: projection_account_no(record),
-                    provider_code: projection_provider_code(record),
+                    supplier_code: projection_supplier_code(record),
                     message: error.to_string(),
                 }),
             }
@@ -420,8 +420,8 @@ fn payment_account_no(account: &PaymentProviderAccountCredentialRefs) -> String 
         .unwrap_or_else(|| account.merchant_id.clone())
 }
 
-fn normalize_provider_code(provider_code: &str) -> String {
-    provider_code
+fn normalize_supplier_code(supplier_code: &str) -> String {
+    supplier_code
         .trim()
         .to_ascii_lowercase()
         .replace(['-', ' '], "_")
@@ -446,14 +446,14 @@ fn payment_account_status(account: &PaymentProviderAccountCredentialRefs) -> Str
         .unwrap_or_else(|| "active".to_owned())
 }
 
-fn unique_provider_codes<'a>(provider_codes: impl Iterator<Item = &'a str>) -> Vec<String> {
-    let mut provider_codes = provider_codes
-        .filter(|provider_code| !provider_code.trim().is_empty())
+fn unique_supplier_codes<'a>(supplier_codes: impl Iterator<Item = &'a str>) -> Vec<String> {
+    let mut supplier_codes = supplier_codes
+        .filter(|supplier_code| !supplier_code.trim().is_empty())
         .map(str::to_owned)
         .collect::<Vec<_>>();
-    provider_codes.sort();
-    provider_codes.dedup();
-    provider_codes
+    supplier_codes.sort();
+    supplier_codes.dedup();
+    supplier_codes
 }
 
 fn projection_account_no(record: &Map<String, serde_json::Value>) -> String {
@@ -476,22 +476,22 @@ fn projection_account_no(record: &Map<String, serde_json::Value>) -> String {
         .unwrap_or_else(|| "unknown".to_owned())
 }
 
-fn projection_provider_code(record: &Map<String, serde_json::Value>) -> String {
+fn projection_supplier_code(record: &Map<String, serde_json::Value>) -> String {
     record
         .get("providerCode")
-        .or_else(|| record.get("provider_code"))
+        .or_else(|| record.get("supplier_code"))
         .and_then(serde_json::Value::as_str)
-        .map(normalize_provider_code)
+        .map(normalize_supplier_code)
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "unknown".to_owned())
 }
 
 fn invalid_dependency(
-    provider_code: &str,
+    supplier_code: &str,
     message: impl Into<String>,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::InvalidProviderRequest {
-        provider_code: provider_code.to_owned(),
+        supplier_code: supplier_code.to_owned(),
         operation: PaymentAdapterOperation::Capabilities,
         message: message.into(),
     }

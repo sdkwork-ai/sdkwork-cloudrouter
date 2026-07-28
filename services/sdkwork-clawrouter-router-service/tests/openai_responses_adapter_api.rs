@@ -14,9 +14,9 @@ use sdkwork_claw_provider_adapter_contract::{
 use sdkwork_claw_provider_adapter_registry::{ProviderAdapterRegistry, ProviderAdapterRouteConfig};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderChannelRoute, RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    UpstreamAccountRoute, RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope,
     RoutingRule,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -136,8 +136,8 @@ async fn openai_responses_registry_hit_calls_internal_adapter_without_direct_rel
         AdapterInvocationShape::SyncJson,
         adapter_call.invocation.shape
     );
-    assert_eq!("openrouter", adapter_call.provider.provider_code);
-    assert_eq!(3001, adapter_call.provider.channel_id);
+    assert_eq!("openrouter", adapter_call.provider.supplier_code);
+    assert_eq!(3001, adapter_call.provider.account_id);
     assert_eq!("gpt-4.1-mini", adapter_call.provider.provider_model);
     assert_gateway_resolved_secret(&adapter_call.secret, "sk-openrouter-responses");
     drop(adapter_calls);
@@ -187,7 +187,7 @@ async fn openai_responses_registry_miss_calls_existing_direct_relay() {
 
 fn adapter_route(base_url: &str) -> ProviderAdapterRouteConfig {
     ProviderAdapterRouteConfig {
-        provider_code: "openrouter".to_owned(),
+        supplier_code: "openrouter".to_owned(),
         adapter_kind: AdapterKind::InternalHttp,
         adapter_base_url: base_url.to_owned(),
         capability: Some("responses".to_owned()),
@@ -201,7 +201,7 @@ fn adapter_route(base_url: &str) -> ProviderAdapterRouteConfig {
         method: "POST".to_owned(),
         invocation_shape: AdapterInvocationShape::SyncJson,
         standard_path_pattern: "/v1/responses".to_owned(),
-        adapter_path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+        adapter_path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
         status: AdapterRouteStatus::Enabled,
         priority: 10,
     }
@@ -273,20 +273,20 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         .with_catalog_key("openai/gpt-4.1-mini"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4.1-mini",
             "gpt-4.1-mini",
             "openrouter",
             3001,
             "gpt-4.1-mini",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/responses"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001).with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001).with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/responses"),
         ),
@@ -297,7 +297,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -328,7 +328,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             10,
             20,
             "standard-group-responses-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -345,7 +345,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/gpt-4.1-mini"}"#,
             "openai/gpt-4.1-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog
 }

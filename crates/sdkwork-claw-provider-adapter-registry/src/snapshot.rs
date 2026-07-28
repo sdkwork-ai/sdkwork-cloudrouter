@@ -20,7 +20,7 @@ impl ProviderAdapterSnapshot {
         if manifest
             .providers
             .iter()
-            .any(|provider| !provider.provider_codes.is_empty() && !provider.endpoints.is_empty())
+            .any(|provider| !provider.supplier_codes.is_empty() && !provider.endpoints.is_empty())
             && adapter_base_url.is_empty()
         {
             return Err("adapter base URL must not be blank".to_owned());
@@ -31,9 +31,9 @@ impl ProviderAdapterSnapshot {
             .iter()
             .flat_map(|provider| {
                 provider
-                    .provider_codes
+                    .supplier_codes
                     .iter()
-                    .flat_map(move |provider_code| {
+                    .flat_map(move |supplier_code| {
                         provider
                             .endpoints
                             .iter()
@@ -42,7 +42,7 @@ impl ProviderAdapterSnapshot {
                                     == AdapterEndpointRuntimeState::RuntimeAvailable
                             })
                             .map(move |endpoint| ProviderAdapterRouteConfig {
-                                provider_code: provider_code.clone(),
+                                supplier_code: supplier_code.clone(),
                                 adapter_kind: AdapterKind::InternalHttp,
                                 adapter_base_url: adapter_base_url.to_owned(),
                                 capability: endpoint.capability.clone(),
@@ -58,7 +58,7 @@ impl ProviderAdapterSnapshot {
                                 standard_path_pattern: normalize_path(
                                     endpoint.standard_path_pattern.as_str(),
                                 ),
-                                adapter_path_template: "/providers/{provider_code}{standard_path}"
+                                adapter_path_template: "/providers/{supplier_code}{standard_path}"
                                     .to_owned(),
                                 status: AdapterRouteStatus::Enabled,
                                 priority: 10,

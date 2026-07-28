@@ -66,7 +66,7 @@ SELECT
     COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_id,
     CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS started_at,
     COALESCE(NULLIF(t.api_key_name_snapshot, ''), '-') AS api_key_name_snapshot,
-    COALESCE(NULLIF(g.group_name, ''), NULLIF(t.channel_group_snapshot, ''), '-') AS channel_group_display_name,
+    COALESCE(NULLIF(g.group_name, ''), NULLIF(t.upstream_account_group_snapshot, ''), '-') AS upstream_account_group_display_name,
     COALESCE(
         u.modality,
         CASE
@@ -119,11 +119,11 @@ SELECT
     COALESCE(NULLIF(t.client_ip_masked, ''), '-') AS client_ip_masked,
     COALESCE(NULLIF(json_extract(t.metadata, '$.userAgent'), ''), '') AS user_agent
 FROM selected_trace t
-LEFT JOIN ai_channel_group g
+LEFT JOIN ai_upstream_account_group g
   ON g.status = 1
  AND g.tenant_id = t.tenant_id
  AND g.organization_id = t.organization_id
- AND g.id = t.channel_group_id
+ AND g.id = t.account_group_id
 LEFT JOIN usage_by_request u
   ON u.tenant_id = t.tenant_id
  AND u.organization_id = t.organization_id
@@ -137,7 +137,7 @@ WHERE (
     ?6 IS NULL
     OR lower(COALESCE(t.request_id, '')) LIKE ?6
     OR lower(COALESCE(t.api_key_name_snapshot, '')) LIKE ?6
-    OR lower(COALESCE(t.channel_group_snapshot, '')) LIKE ?6
+    OR lower(COALESCE(t.upstream_account_group_snapshot, '')) LIKE ?6
     OR lower(COALESCE(g.group_name, '')) LIKE ?6
     OR lower(COALESCE(t.requested_model, '')) LIKE ?6
     OR lower(COALESCE(t.requested_model_catalog_key, '')) LIKE ?6
@@ -199,11 +199,11 @@ usage_by_request AS (
 )
 SELECT CAST(COUNT(1) AS TEXT) AS total
 FROM selected_trace t
-LEFT JOIN ai_channel_group g
+LEFT JOIN ai_upstream_account_group g
   ON g.status = 1
  AND g.tenant_id = t.tenant_id
  AND g.organization_id = t.organization_id
- AND g.id = t.channel_group_id
+ AND g.id = t.account_group_id
 LEFT JOIN usage_by_request u
   ON u.tenant_id = t.tenant_id
  AND u.organization_id = t.organization_id
@@ -217,7 +217,7 @@ WHERE (
     ?6 IS NULL
     OR lower(COALESCE(t.request_id, '')) LIKE ?6
     OR lower(COALESCE(t.api_key_name_snapshot, '')) LIKE ?6
-    OR lower(COALESCE(t.channel_group_snapshot, '')) LIKE ?6
+    OR lower(COALESCE(t.upstream_account_group_snapshot, '')) LIKE ?6
     OR lower(COALESCE(g.group_name, '')) LIKE ?6
     OR lower(COALESCE(t.requested_model, '')) LIKE ?6
     OR lower(COALESCE(t.requested_model_catalog_key, '')) LIKE ?6
@@ -316,7 +316,7 @@ fn row_to_usage_log(row: sqlx::sqlite::SqliteRow) -> Result<UsageLogItem, Domain
         request_id: string_cell(&row, "request_id"),
         time: string_cell(&row, "started_at"),
         token_name: string_cell(&row, "api_key_name_snapshot"),
-        group: string_cell(&row, "channel_group_display_name"),
+        group: string_cell(&row, "upstream_account_group_display_name"),
         log_type: modality_label(optional_integer_cell(&row, "modality")),
         model: string_cell(&row, "model"),
         provider_native_model: string_cell(&row, "provider_native_model"),
@@ -485,16 +485,16 @@ mod tests {
     }
 
     #[test]
-    fn usage_logs_query_uses_channel_group_name_for_display_and_search() {
+    fn usage_logs_query_uses_upstream_account_group_name_for_display_and_search() {
         for sql in [LOAD_USAGE_LOGS, LOAD_USAGE_LOGS_TOTAL] {
             assert!(
-                sql.contains("LEFT JOIN ai_channel_group g"),
+                sql.contains("LEFT JOIN ai_upstream_account_group g"),
                 "usage logs SQLite SQL must join the channel group table"
             );
             assert!(
                 sql.contains("g.tenant_id = t.tenant_id")
                     && sql.contains("g.organization_id = t.organization_id")
-                    && sql.contains("g.id = t.channel_group_id"),
+                    && sql.contains("g.id = t.account_group_id"),
                 "usage logs SQLite SQL must scope group lookup by tenant, organization, and group id"
             );
             assert!(
@@ -504,7 +504,7 @@ mod tests {
         }
         assert!(
             LOAD_USAGE_LOGS.contains(
-                "COALESCE(NULLIF(g.group_name, ''), NULLIF(t.channel_group_snapshot, ''), '-') AS channel_group_display_name"
+                "COALESCE(NULLIF(g.group_name, ''), NULLIF(t.upstream_account_group_snapshot, ''), '-') AS upstream_account_group_display_name"
             ),
             "usage logs SQLite SQL must project the maintained channel group name with snapshot fallback"
         );

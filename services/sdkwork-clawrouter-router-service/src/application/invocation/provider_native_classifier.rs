@@ -19,21 +19,21 @@ impl InvocationResourceClassifier for ProviderNativeResourceClassifier {
         &self,
         request: &InvocationClassificationRequest,
     ) -> Result<InvocationClassification, InvocationError> {
-        let provider_code = request
-            .provider_code
+        let supplier_code = request
+            .supplier_code
             .as_deref()
-            .and_then(normalize_provider_code)
+            .and_then(normalize_supplier_code)
             .ok_or_else(|| {
                 InvocationError::new(
                     InvocationErrorKind::ResourceClassification,
-                    "provider-native classification requires provider_code",
+                    "provider-native classification requires supplier_code",
                 )
             })?;
-        let spec = classify_provider_native_spec(&provider_code, request);
+        let spec = classify_provider_native_spec(&supplier_code, request);
         let resource = InvocationResource {
             surface: InvocationSurface::ProviderNative,
             provider_family: request.provider_family.clone(),
-            provider_code: Some(provider_code),
+            supplier_code: Some(supplier_code),
             route_key: spec.route_key.clone(),
             api_code: spec.api_code.clone(),
             endpoint_key: Some(spec.endpoint_key.clone()),
@@ -72,11 +72,11 @@ struct ProviderNativeRouteSpec {
 }
 
 fn classify_provider_native_spec(
-    provider_code: &str,
+    supplier_code: &str,
     request: &InvocationClassificationRequest,
 ) -> ProviderNativeRouteSpec {
     if let Some(api_code) =
-        provider_native_api_code_from_standard_path(provider_code, &request.path)
+        provider_native_api_code_from_standard_path(supplier_code, &request.path)
     {
         if let Some(route) = find_builtin_ai_route(&api_code) {
             let provider_native_model = provider_native_model_from_standard_path(&request.path);
@@ -97,7 +97,7 @@ fn classify_provider_native_spec(
                 requested_model: provider_native_model.clone(),
                 requested_model_catalog_key: provider_native_model
                     .as_ref()
-                    .map(|model| canonical_provider_native_catalog_key(provider_code, model)),
+                    .map(|model| canonical_provider_native_catalog_key(supplier_code, model)),
                 provider_native_model,
             };
         }
@@ -108,7 +108,7 @@ fn classify_provider_native_spec(
         .as_deref()
         .and_then(normalize_endpoint_key)
         .unwrap_or_else(|| infer_endpoint_key(&request.path));
-    let route_key = fallback_route_key(provider_code, &endpoint_key);
+    let route_key = fallback_route_key(supplier_code, &endpoint_key);
     let builtin = find_builtin_ai_route(&route_key);
     ProviderNativeRouteSpec {
         route_key: builtin
@@ -153,11 +153,11 @@ fn external_usage_line_billing(meter: Option<BillingMeter>) -> InvocationBilling
 }
 
 fn provider_native_api_code_from_standard_path(
-    provider_code: &str,
+    supplier_code: &str,
     standard_path: &str,
 ) -> Option<String> {
-    let provider = normalize_provider_match_key(provider_code);
-    let path = normalize_provider_api_path(provider_code, provider.as_str(), standard_path);
+    let provider = normalize_provider_match_key(supplier_code);
+    let path = normalize_provider_api_path(supplier_code, provider.as_str(), standard_path);
     let api_code = match provider.as_str() {
         "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
         "google" | "gemini" if path == "/v1beta/live/sessions" => "gemini.live",
@@ -230,31 +230,31 @@ fn provider_native_model_from_standard_path(path: &str) -> Option<String> {
 }
 
 fn canonical_provider_native_catalog_key(
-    provider_code: &str,
+    supplier_code: &str,
     provider_native_model: &str,
 ) -> String {
-    let provider_code = provider_code.trim();
+    let supplier_code = supplier_code.trim();
     let provider_native_model = provider_native_model.trim();
     let provider_prefix = provider_native_model
         .split('/')
         .map(str::trim)
         .find(|part| !part.is_empty());
-    if provider_prefix == Some(provider_code) {
+    if provider_prefix == Some(supplier_code) {
         provider_native_model.to_owned()
     } else {
-        format!("{provider_code}/{provider_native_model}")
+        format!("{supplier_code}/{provider_native_model}")
     }
 }
 
 fn normalize_provider_api_path(
-    provider_code: &str,
+    supplier_code: &str,
     provider_match_key: &str,
     standard_path: &str,
 ) -> String {
     let path = normalize_standard_api_path(standard_path);
     let provider_path_prefix = format!(
         "/{}/",
-        provider_code.trim().trim_matches('/').to_ascii_lowercase()
+        supplier_code.trim().trim_matches('/').to_ascii_lowercase()
     );
     if let Some(suffix) = path.strip_prefix(&provider_path_prefix) {
         return format!("/{suffix}");
@@ -284,9 +284,9 @@ fn normalize_provider_match_key(value: &str) -> String {
         .to_owned()
 }
 
-fn normalize_provider_code(value: &str) -> Option<String> {
-    let provider_code = value.trim().trim_matches('/').to_ascii_lowercase();
-    (!provider_code.is_empty()).then_some(provider_code)
+fn normalize_supplier_code(value: &str) -> Option<String> {
+    let supplier_code = value.trim().trim_matches('/').to_ascii_lowercase();
+    (!supplier_code.is_empty()).then_some(supplier_code)
 }
 
 fn normalize_endpoint_key(value: &str) -> Option<String> {
@@ -294,11 +294,11 @@ fn normalize_endpoint_key(value: &str) -> Option<String> {
     (!endpoint_key.is_empty()).then_some(endpoint_key)
 }
 
-fn fallback_route_key(provider_code: &str, endpoint_key: &str) -> String {
-    if endpoint_key.starts_with(&format!("{provider_code}.")) {
+fn fallback_route_key(supplier_code: &str, endpoint_key: &str) -> String {
+    if endpoint_key.starts_with(&format!("{supplier_code}.")) {
         endpoint_key.to_owned()
     } else {
-        format!("{provider_code}.{endpoint_key}")
+        format!("{supplier_code}.{endpoint_key}")
     }
 }
 

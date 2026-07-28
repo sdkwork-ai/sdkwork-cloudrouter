@@ -1,16 +1,16 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::domain::{
-    AiModel, BillingMeter, ChannelGroup, ChannelGroupMetricSnapshot, DecimalValue, DomainResult,
+    AiModel, BillingMeter, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, DecimalValue, DomainResult,
     GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule, ModelMappingRule, ModelPrice,
-    ModelProviderRoute, ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderChannelRoute,
+    ModelUpstreamRoute, ModelVendorDefinition, Money, PriceSide, PricingPlan, UpstreamAccountRoute,
     QuotaPolicy, ResolveModelMappingContext, RoutingPolicy, RoutingRule,
 };
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
-    AiModelRow, ChannelGroupMetricSnapshotRow, ChannelGroupRow, GatewayAccessPolicyRow,
+    AiModelRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, GatewayAccessPolicyRow,
     GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow, ModelPriceRow,
-    ModelProviderRouteRow, ModelVendorRow, PricingPlanRow, ProviderChannelRouteRow, QuotaPolicyRow,
+    ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow, UpstreamAccountRouteRow, QuotaPolicyRow,
     RoutingPolicyRow, RoutingRuleRow,
 };
 use crate::ports::PricingCatalog;
@@ -20,18 +20,18 @@ use std::sync::{Arc, RwLock};
 pub struct PricingCatalogRows {
     pub vendors: Vec<ModelVendorRow>,
     pub models: Vec<AiModelRow>,
-    pub provider_routes: Vec<ModelProviderRouteRow>,
-    pub provider_channel_routes: Vec<ProviderChannelRouteRow>,
+    pub provider_routes: Vec<ModelUpstreamRouteRow>,
+    pub upstream_account_routes: Vec<UpstreamAccountRouteRow>,
     pub routing_policies: Vec<RoutingPolicyRow>,
     pub routing_rules: Vec<RoutingRuleRow>,
     pub model_mappings: Vec<ModelMappingRuleRow>,
     pub pricing_plans: Vec<PricingPlanRow>,
-    pub channel_groups: Vec<ChannelGroupRow>,
+    pub upstream_account_groups: Vec<UpstreamAccountGroupRow>,
     pub api_keys: Vec<GatewayApiKeyRow>,
     pub access_policies: Vec<GatewayAccessPolicyRow>,
     pub quota_policies: Vec<QuotaPolicyRow>,
     pub gateway_risk_rules: Vec<GatewayRiskRuleRow>,
-    pub channel_group_metric_snapshots: Vec<ChannelGroupMetricSnapshotRow>,
+    pub upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshotRow>,
     pub prices: Vec<ModelPriceRow>,
 }
 
@@ -41,14 +41,14 @@ pub struct SqlPricingCatalogSnapshotSummary {
     pub models: usize,
     pub provider_routes: usize,
     pub callable_provider_routes: usize,
-    pub provider_channel_routes: usize,
-    pub callable_provider_channel_routes: usize,
-    pub provider_channel_group_bindings: usize,
+    pub upstream_account_routes: usize,
+    pub callable_upstream_account_routes: usize,
+    pub provider_upstream_account_account_group_bindings: usize,
     pub routing_policies: usize,
     pub routing_rules: usize,
     pub model_mappings: usize,
     pub pricing_plans: usize,
-    pub channel_groups: usize,
+    pub upstream_account_groups: usize,
     pub api_keys: usize,
     pub prices: usize,
     pub managed_provider_secrets: usize,
@@ -74,8 +74,8 @@ struct ModelPriceBusinessIdentity {
     region_code: String,
     price_side: PriceSide,
     billing_meter: BillingMeter,
-    provider_code: Option<String>,
-    channel_id: Option<i64>,
+    supplier_code: Option<String>,
+    account_id: Option<i64>,
     pricing_plan_code: Option<String>,
 }
 
@@ -86,8 +86,8 @@ impl From<&ModelPrice> for ModelPriceBusinessIdentity {
             region_code: price.region_code.clone(),
             price_side: price.price_side,
             billing_meter: price.billing_meter.clone(),
-            provider_code: price.provider_code.clone(),
-            channel_id: price.channel_id,
+            supplier_code: price.supplier_code.clone(),
+            account_id: price.account_id,
             pricing_plan_code: price.pricing_plan_code.clone(),
         }
     }
@@ -96,28 +96,28 @@ impl From<&ModelPrice> for ModelPriceBusinessIdentity {
 pub struct SqlPricingCatalogSnapshot {
     vendors: Vec<ModelVendorDefinition>,
     models: Vec<AiModel>,
-    provider_routes: Vec<ModelProviderRoute>,
-    provider_channel_routes: Vec<ProviderChannelRoute>,
+    provider_routes: Vec<ModelUpstreamRoute>,
+    upstream_account_routes: Vec<UpstreamAccountRoute>,
     routing_policies: Vec<RoutingPolicy>,
     routing_rules: Vec<RoutingRule>,
     model_mappings: Vec<ModelMappingRule>,
     pricing_plans: Vec<ScopedPricingPlan>,
-    channel_groups: Vec<ChannelGroup>,
+    upstream_account_groups: Vec<UpstreamAccountGroup>,
     api_keys: Vec<GatewayApiKey>,
     access_policies: Vec<GatewayAccessPolicy>,
     quota_policies: Vec<QuotaPolicy>,
     gateway_risk_rules: Vec<GatewayRiskRule>,
-    channel_group_metric_snapshots: Vec<ChannelGroupMetricSnapshot>,
+    upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
     prices: Vec<ScopedModelPrice>,
     managed_provider_secrets: BTreeMap<String, String>,
     // --- Indexes for O(1) hot-path lookups ---
     models_by_key: HashMap<String, AiModel>,
     api_keys_by_hash: HashMap<String, GatewayApiKey>,
     api_keys_by_id: HashMap<i64, GatewayApiKey>,
-    channel_groups_by_id: HashMap<i64, ChannelGroup>,
+    upstream_account_groups_by_id: HashMap<i64, UpstreamAccountGroup>,
     pricing_plans_by_code: HashMap<String, Vec<ScopedPricingPlan>>,
     vendors_by_code: HashMap<String, ModelVendorDefinition>,
-    provider_routes_by_key: HashMap<String, Vec<ModelProviderRoute>>,
+    provider_routes_by_key: HashMap<String, Vec<ModelUpstreamRoute>>,
     prices_by_key: HashMap<String, Vec<ScopedModelPrice>>,
 }
 
@@ -137,17 +137,17 @@ impl SqlPricingCatalogSnapshot {
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
             provider_routes: map_rows(
                 rows.provider_routes,
-                ModelProviderRouteRow::try_into_domain,
+                ModelUpstreamRouteRow::try_into_domain,
             )?,
-            provider_channel_routes: map_rows(
-                rows.provider_channel_routes,
-                ProviderChannelRouteRow::try_into_domain,
+            upstream_account_routes: map_rows(
+                rows.upstream_account_routes,
+                UpstreamAccountRouteRow::try_into_domain,
             )?,
             routing_policies: map_rows(rows.routing_policies, RoutingPolicyRow::try_into_domain)?,
             routing_rules: map_rows(rows.routing_rules, RoutingRuleRow::try_into_domain)?,
             model_mappings: map_rows(rows.model_mappings, ModelMappingRuleRow::try_into_domain)?,
             pricing_plans,
-            channel_groups: map_rows(rows.channel_groups, ChannelGroupRow::try_into_domain)?,
+            upstream_account_groups: map_rows(rows.upstream_account_groups, UpstreamAccountGroupRow::try_into_domain)?,
             api_keys: map_rows(rows.api_keys, GatewayApiKeyRow::try_into_domain)?,
             access_policies: map_rows(
                 rows.access_policies,
@@ -158,16 +158,16 @@ impl SqlPricingCatalogSnapshot {
                 rows.gateway_risk_rules,
                 GatewayRiskRuleRow::try_into_domain,
             )?,
-            channel_group_metric_snapshots: map_rows(
-                rows.channel_group_metric_snapshots,
-                ChannelGroupMetricSnapshotRow::try_into_domain,
+            upstream_account_group_metric_snapshots: map_rows(
+                rows.upstream_account_group_metric_snapshots,
+                UpstreamAccountGroupMetricSnapshotRow::try_into_domain,
             )?,
             prices,
             managed_provider_secrets,
             models_by_key: HashMap::new(),
             api_keys_by_hash: HashMap::new(),
             api_keys_by_id: HashMap::new(),
-            channel_groups_by_id: HashMap::new(),
+            upstream_account_groups_by_id: HashMap::new(),
             pricing_plans_by_code: HashMap::new(),
             vendors_by_code: HashMap::new(),
             provider_routes_by_key: HashMap::new(),
@@ -196,8 +196,8 @@ impl SqlPricingCatalogSnapshot {
             .iter()
             .map(|api_key| (api_key.id, api_key.clone()))
             .collect();
-        self.channel_groups_by_id = self
-            .channel_groups
+        self.upstream_account_groups_by_id = self
+            .upstream_account_groups
             .iter()
             .map(|group| (group.id, group.clone()))
             .collect();
@@ -250,24 +250,24 @@ impl SqlPricingCatalogSnapshot {
                     has_text(route.base_url.as_deref()) && has_text(route.secret_ref.as_deref())
                 })
                 .count(),
-            provider_channel_routes: self.provider_channel_routes.len(),
-            callable_provider_channel_routes: self
-                .provider_channel_routes
+            upstream_account_routes: self.upstream_account_routes.len(),
+            callable_upstream_account_routes: self
+                .upstream_account_routes
                 .iter()
                 .filter(|route| {
                     has_text(route.base_url.as_deref()) && has_text(route.secret_ref.as_deref())
                 })
                 .count(),
-            provider_channel_group_bindings: self
-                .provider_channel_routes
+            provider_upstream_account_account_group_bindings: self
+                .upstream_account_routes
                 .iter()
-                .map(|route| route.group_bindings.len())
+                .map(|route| route.account_group_bindings.len())
                 .sum(),
             routing_policies: self.routing_policies.len(),
             routing_rules: self.routing_rules.len(),
             model_mappings: self.model_mappings.len(),
             pricing_plans: self.pricing_plans.len(),
-            channel_groups: self.channel_groups.len(),
+            upstream_account_groups: self.upstream_account_groups.len(),
             api_keys: self.api_keys.len(),
             prices: self.prices.len(),
             managed_provider_secrets: self.managed_provider_secrets.len(),
@@ -393,12 +393,12 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         self.current_snapshot().list_models(vendor_code)
     }
 
-    fn list_provider_routes(&self, model: &str) -> Vec<ModelProviderRoute> {
-        self.current_snapshot().list_provider_routes(model)
+    fn list_model_upstream_routes(&self, model: &str) -> Vec<ModelUpstreamRoute> {
+        self.current_snapshot().list_model_upstream_routes(model)
     }
 
-    fn list_provider_channel_routes(&self) -> Vec<ProviderChannelRoute> {
-        self.current_snapshot().list_provider_channel_routes()
+    fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
+        self.current_snapshot().list_upstream_account_routes()
     }
 
     fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
@@ -417,8 +417,8 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         self.current_snapshot().list_api_keys()
     }
 
-    fn list_channel_groups(&self) -> Vec<ChannelGroup> {
-        self.current_snapshot().list_channel_groups()
+    fn list_upstream_account_groups(&self) -> Vec<UpstreamAccountGroup> {
+        self.current_snapshot().list_upstream_account_groups()
     }
 
     fn list_model_prices(
@@ -476,8 +476,8 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         self.current_snapshot().find_api_key_by_hash(key_hash)
     }
 
-    fn find_channel_group(&self, group_id: i64) -> Option<ChannelGroup> {
-        self.current_snapshot().find_channel_group(group_id)
+    fn find_upstream_account_group(&self, group_id: i64) -> Option<UpstreamAccountGroup> {
+        self.current_snapshot().find_upstream_account_group(group_id)
     }
 
     fn find_access_policy(&self, policy_id: i64) -> Option<GatewayAccessPolicy> {
@@ -492,12 +492,12 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         self.current_snapshot().list_gateway_risk_rules()
     }
 
-    fn find_latest_channel_group_metric_snapshot(
+    fn find_latest_upstream_account_group_metric_snapshot(
         &self,
         group_id: i64,
-    ) -> Option<ChannelGroupMetricSnapshot> {
+    ) -> Option<UpstreamAccountGroupMetricSnapshot> {
         self.current_snapshot()
-            .find_latest_channel_group_metric_snapshot(group_id)
+            .find_latest_upstream_account_group_metric_snapshot(group_id)
     }
 
     fn find_pricing_plan(&self, plan_code: &str) -> Option<PricingPlan> {
@@ -531,9 +531,9 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
             .resolve_model_mapping(source_model, context)
     }
 
-    fn find_provider_route(&self, model: &str, provider_code: &str) -> Option<ModelProviderRoute> {
+    fn find_model_upstream_route(&self, model: &str, supplier_code: &str) -> Option<ModelUpstreamRoute> {
         self.current_snapshot()
-            .find_provider_route(model, provider_code)
+            .find_model_upstream_route(model, supplier_code)
     }
 
     fn find_model_price(
@@ -541,14 +541,14 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         model: &str,
         price_side: PriceSide,
         billing_meter: BillingMeter,
-        provider_code: Option<&str>,
+        supplier_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
         self.current_snapshot().find_model_price(
             model,
             price_side,
             billing_meter,
-            provider_code,
+            supplier_code,
             pricing_plan_code,
         )
     }
@@ -560,7 +560,7 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         model: &str,
         price_side: PriceSide,
         billing_meter: BillingMeter,
-        provider_code: Option<&str>,
+        supplier_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
         self.current_snapshot().find_model_price_for_scope(
@@ -569,7 +569,7 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
             model,
             price_side,
             billing_meter,
-            provider_code,
+            supplier_code,
             pricing_plan_code,
         )
     }
@@ -588,15 +588,15 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
             .collect()
     }
 
-    fn list_provider_routes(&self, model: &str) -> Vec<ModelProviderRoute> {
+    fn list_model_upstream_routes(&self, model: &str) -> Vec<ModelUpstreamRoute> {
         self.provider_routes_by_key
             .get(model.trim())
             .cloned()
             .unwrap_or_default()
     }
 
-    fn list_provider_channel_routes(&self) -> Vec<ProviderChannelRoute> {
-        self.provider_channel_routes.clone()
+    fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
+        self.upstream_account_routes.clone()
     }
 
     fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
@@ -619,8 +619,8 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         self.api_keys.clone()
     }
 
-    fn list_channel_groups(&self) -> Vec<ChannelGroup> {
-        self.channel_groups.clone()
+    fn list_upstream_account_groups(&self) -> Vec<UpstreamAccountGroup> {
+        self.upstream_account_groups.clone()
     }
 
     fn list_model_prices(
@@ -671,8 +671,8 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         self.api_keys_by_hash.get(key_hash).cloned()
     }
 
-    fn find_channel_group(&self, group_id: i64) -> Option<ChannelGroup> {
-        self.channel_groups_by_id.get(&group_id).cloned()
+    fn find_upstream_account_group(&self, group_id: i64) -> Option<UpstreamAccountGroup> {
+        self.upstream_account_groups_by_id.get(&group_id).cloned()
     }
 
     fn find_access_policy(&self, policy_id: i64) -> Option<GatewayAccessPolicy> {
@@ -693,11 +693,11 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         self.gateway_risk_rules.clone()
     }
 
-    fn find_latest_channel_group_metric_snapshot(
+    fn find_latest_upstream_account_group_metric_snapshot(
         &self,
         group_id: i64,
-    ) -> Option<ChannelGroupMetricSnapshot> {
-        self.channel_group_metric_snapshots
+    ) -> Option<UpstreamAccountGroupMetricSnapshot> {
+        self.upstream_account_group_metric_snapshots
             .iter()
             .find(|snapshot| snapshot.group_id == group_id)
             .cloned()
@@ -732,13 +732,13 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         resolve_model_mapping_from_rules(&self.model_mappings, source_model, context)
     }
 
-    fn find_provider_route(&self, model: &str, provider_code: &str) -> Option<ModelProviderRoute> {
+    fn find_model_upstream_route(&self, model: &str, supplier_code: &str) -> Option<ModelUpstreamRoute> {
         self.provider_routes_by_key
             .get(model.trim())
             .and_then(|routes| {
                 routes
                     .iter()
-                    .find(|route| route.provider_code == provider_code)
+                    .find(|route| route.supplier_code == supplier_code)
                     .cloned()
             })
     }
@@ -748,7 +748,7 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         model: &str,
         price_side: PriceSide,
         billing_meter: BillingMeter,
-        provider_code: Option<&str>,
+        supplier_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
         self.find_model_price_for_scope(
@@ -757,7 +757,7 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
             model,
             price_side,
             billing_meter,
-            provider_code,
+            supplier_code,
             pricing_plan_code,
         )
     }
@@ -769,13 +769,13 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         model: &str,
         price_side: PriceSide,
         billing_meter: BillingMeter,
-        provider_code: Option<&str>,
+        supplier_code: Option<&str>,
         pricing_plan_code: Option<&str>,
     ) -> Option<ModelPrice> {
         self.visible_model_prices(tenant_id, organization_id, model, |price| {
             price.price_side == price_side
                 && price.billing_meter == billing_meter
-                && option_matches(price.provider_code.as_deref(), provider_code)
+                && option_matches(price.supplier_code.as_deref(), supplier_code)
                 && option_matches(price.pricing_plan_code.as_deref(), pricing_plan_code)
         })
         .into_iter()

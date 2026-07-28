@@ -20,8 +20,8 @@ impl InvocationUsage {
         if self.pricing_quotes.iter().any(|existing| {
             existing.meter == quote.meter
                 && existing.catalog_key == quote.catalog_key
-                && existing.provider_code == quote.provider_code
-                && existing.channel_id == quote.channel_id
+                && existing.supplier_code == quote.supplier_code
+                && existing.account_id == quote.account_id
                 && existing.region_code == quote.region_code
         }) {
             return;
@@ -84,8 +84,8 @@ impl InvocationUsageLine {
 pub struct InvocationPricingQuote {
     pub catalog_key: String,
     pub requested_model: String,
-    pub provider_code: Option<String>,
-    pub channel_id: Option<i64>,
+    pub supplier_code: Option<String>,
+    pub account_id: Option<i64>,
     pub region_code: String,
     pub meter: BillingMeter,
     pub official_reference_unit_price: Money,

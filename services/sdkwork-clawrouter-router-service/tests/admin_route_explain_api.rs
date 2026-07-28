@@ -5,13 +5,13 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use common::InternalTrustedSubjectHeaders;
-use sdkwork_clawrouter_router_service::domain::{ChannelGroup, DecimalValue, GatewayApiKey};
+use sdkwork_clawrouter_router_service::domain::{UpstreamAccountGroup, DecimalValue, GatewayApiKey};
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use tower::ServiceExt;
 
 fn catalog() -> InMemoryPricingCatalog {
     let mut catalog = InMemoryPricingCatalog::default();
-    catalog.add_channel_group(ChannelGroup::new_scoped(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new_scoped(
         10,
         100001,
         7,
@@ -20,7 +20,7 @@ fn catalog() -> InMemoryPricingCatalog {
         DecimalValue::parse("1.000000").unwrap(),
         DecimalValue::parse("1.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new_scoped(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new_scoped(
         20,
         200002,
         8,
@@ -36,7 +36,7 @@ fn catalog() -> InMemoryPricingCatalog {
     catalog
 }
 
-fn explain_request(api_key_id: i64, channel_group_id: Option<i64>) -> Request<Body> {
+fn explain_request(api_key_id: i64, account_group_id: Option<i64>) -> Request<Body> {
     let mut payload = serde_json::json!({
         "apiKeyId": api_key_id.to_string(),
         "resourceCode": "api.openai.files",
@@ -44,8 +44,8 @@ fn explain_request(api_key_id: i64, channel_group_id: Option<i64>) -> Request<Bo
         "capability": "network",
         "billingMeter": "api_request"
     });
-    if let Some(channel_group_id) = channel_group_id {
-        payload["channelGroupId"] = serde_json::Value::String(channel_group_id.to_string());
+    if let Some(account_group_id) = account_group_id {
+        payload["channelGroupId"] = serde_json::Value::String(account_group_id.to_string());
     }
     Request::builder()
         .method("POST")

@@ -101,17 +101,17 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 .begin()
                 .await
                 .map_err(|error| store_error("failed to begin channel transaction", error))?;
-            let channel_id =
+            let account_id =
                 insert_channel(&mut tx, &command, self.api_key_secret_codec.as_deref()).await?;
             replace_channel_credentials(
                 &mut tx,
                 ReplaceChannelCredentialsScope {
-                    channel_id,
+                    account_id,
                     tenant_id: command.subject.tenant_id,
                     organization_id: command.subject.organization_id,
                     operator_id: command.subject.operator_id,
-                    provider_code: command.provider_code.clone(),
-                    channel_code: entity_code("chn", &command.channel_uuid),
+                    supplier_code: command.supplier_code.clone(),
+                    account_code: entity_code("chn", &command.channel_uuid),
                     requested_at: command.requested_at.clone(),
                 },
                 &command.credentials,
@@ -119,19 +119,19 @@ impl AdminChannelStore for PostgresAdminChannelStore {
             )
             .await?;
             let resource_codes = merge_capability_resource_codes(
-                &command.provider_code,
+                &command.supplier_code,
                 &command.resource_codes,
                 &command.capabilities,
             );
             replace_ai_resource_bindings(
                 &mut tx,
                 AiResourceBindingScope {
-                    channel_id,
+                    account_id,
                     tenant_id: command.subject.tenant_id,
                     organization_id: command.subject.organization_id,
                     operator_id: command.subject.operator_id,
-                    provider_code: command.provider_code.clone(),
-                    channel_code: entity_code("chn", &command.channel_uuid),
+                    supplier_code: command.supplier_code.clone(),
+                    account_code: entity_code("chn", &command.channel_uuid),
                     weight: command.weight,
                     request_id: command.request_id.clone(),
                     requested_at: command.requested_at.clone(),
@@ -147,8 +147,8 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 command.subject.organization_id,
                 command.subject.operator_id,
                 "create_channel",
-                channel_id,
-                &channel_snapshot_payload(channel_id, &command.name, &command.provider_code),
+                account_id,
+                &channel_snapshot_payload(account_id, &command.name, &command.supplier_code),
                 &command.requested_at,
             )
             .await?;
@@ -161,12 +161,12 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 command.subject.operator_id,
                 command.subject.operator_type,
                 "create_channel",
-                channel_id,
+                account_id,
                 serde_json::json!({
                     "action": "create_channel",
-                    "channelId": channel_id,
+                    "channelId": account_id,
                     "name": &command.name,
-                    "providerCode": &command.provider_code,
+                    "providerCode": &command.supplier_code,
                     "channelType": &command.channel_type,
                     "capabilities": &command.capabilities,
                     "resourceCodes": &resource_codes,
@@ -185,10 +185,10 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                     &command.request_id,
                     &command.requested_at,
                     "create_channel",
-                    channel_id,
+                    account_id,
                     serde_json::json!({
-                        "channelId": channel_id,
-                        "providerCode": &command.provider_code,
+                        "channelId": account_id,
+                        "providerCode": &command.supplier_code,
                         "channelType": &command.channel_type,
                         "resourcesChanged": true,
                         "credentialsChanged": true,
@@ -199,7 +199,7 @@ impl AdminChannelStore for PostgresAdminChannelStore {
             .await?;
             let item = load_channel_by_id(
                 &mut tx,
-                channel_id,
+                account_id,
                 command.subject.tenant_id,
                 command.subject.organization_id,
                 self.api_key_secret_codec.as_deref(),
@@ -233,7 +233,7 @@ impl AdminChannelStore for PostgresAdminChannelStore {
             if let Some(credentials) = command.credentials.as_ref() {
                 let Some(binding_context) = load_resource_binding_context(
                     &mut tx,
-                    command.channel_id,
+                    command.account_id,
                     command.subject.tenant_id,
                     command.subject.organization_id,
                 )
@@ -247,15 +247,15 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 replace_channel_credentials(
                     &mut tx,
                     ReplaceChannelCredentialsScope {
-                        channel_id: command.channel_id,
+                        account_id: command.account_id,
                         tenant_id: command.subject.tenant_id,
                         organization_id: command.subject.organization_id,
                         operator_id: command.subject.operator_id,
-                        provider_code: command
-                            .provider_code
+                        supplier_code: command
+                            .supplier_code
                             .clone()
-                            .unwrap_or(binding_context.provider_code),
-                        channel_code: binding_context.channel_code,
+                            .unwrap_or(binding_context.supplier_code),
+                        account_code: binding_context.account_code,
                         requested_at: command.requested_at.clone(),
                     },
                     credentials,
@@ -266,7 +266,7 @@ impl AdminChannelStore for PostgresAdminChannelStore {
             if command.resource_codes.is_some() || command.capabilities.is_some() {
                 let Some(binding_context) = load_resource_binding_context(
                     &mut tx,
-                    command.channel_id,
+                    command.account_id,
                     command.subject.tenant_id,
                     command.subject.organization_id,
                 )
@@ -278,15 +278,15 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                     return Ok(None);
                 };
                 let binding_scope = AiResourceBindingScope {
-                    channel_id: binding_context.channel_id,
+                    account_id: binding_context.account_id,
                     tenant_id: command.subject.tenant_id,
                     organization_id: command.subject.organization_id,
                     operator_id: command.subject.operator_id,
-                    provider_code: command
-                        .provider_code
+                    supplier_code: command
+                        .supplier_code
                         .clone()
-                        .unwrap_or(binding_context.provider_code),
-                    channel_code: binding_context.channel_code,
+                        .unwrap_or(binding_context.supplier_code),
+                    account_code: binding_context.account_code,
                     weight: command.weight.unwrap_or(binding_context.weight),
                     request_id: command.request_id.clone(),
                     requested_at: command.requested_at.clone(),
@@ -294,7 +294,7 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 if let Some(resource_codes) = command.resource_codes.as_ref() {
                     let resource_codes = if let Some(capabilities) = command.capabilities.as_ref() {
                         merge_capability_resource_codes(
-                            &binding_scope.provider_code,
+                            &binding_scope.supplier_code,
                             resource_codes,
                             capabilities,
                         )
@@ -320,11 +320,11 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 command.subject.organization_id,
                 command.subject.operator_id,
                 "update_channel",
-                command.channel_id,
+                command.account_id,
                 &serde_json::json!({
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "nameChanged": command.name.is_some(),
-                    "providerChanged": command.provider_code.is_some(),
+                    "providerChanged": command.supplier_code.is_some(),
                     "channelTypeChanged": command.channel_type.is_some(),
                     "capabilitiesChanged": command.capabilities.is_some(),
                     "resourcesChanged": command.resource_codes.is_some(),
@@ -348,12 +348,12 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 command.subject.operator_id,
                 command.subject.operator_type,
                 "update_channel",
-                command.channel_id,
+                command.account_id,
                 serde_json::json!({
                     "action": "update_channel",
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "nameChanged": command.name.is_some(),
-                    "providerChanged": command.provider_code.is_some(),
+                    "providerChanged": command.supplier_code.is_some(),
                     "channelTypeChanged": command.channel_type.is_some(),
                     "protocol": command.protocol,
                     "accessType": command.access_type,
@@ -378,10 +378,10 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                     &command.request_id,
                     &command.requested_at,
                     "update_channel",
-                    command.channel_id,
+                    command.account_id,
                     serde_json::json!({
-                        "channelId": command.channel_id,
-                        "providerChanged": command.provider_code.is_some(),
+                        "channelId": command.account_id,
+                        "providerChanged": command.supplier_code.is_some(),
                         "channelTypeChanged": command.channel_type.is_some(),
                         "capabilitiesChanged": command.capabilities.is_some(),
                         "resourcesChanged": command.resource_codes.is_some(),
@@ -398,7 +398,7 @@ impl AdminChannelStore for PostgresAdminChannelStore {
             .await?;
             let item = load_channel_by_id(
                 &mut tx,
-                command.channel_id,
+                command.account_id,
                 command.subject.tenant_id,
                 command.subject.organization_id,
                 self.api_key_secret_codec.as_deref(),
@@ -432,8 +432,8 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                     command.subject.organization_id,
                     command.subject.operator_id,
                     "delete_channel",
-                    command.channel_id,
-                    &serde_json::json!({ "channelId": command.channel_id, "deleted": true }),
+                    command.account_id,
+                    &serde_json::json!({ "channelId": command.account_id, "deleted": true }),
                     &command.requested_at,
                 )
                 .await?;
@@ -446,10 +446,10 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                     command.subject.operator_id,
                     command.subject.operator_type,
                     "delete_channel",
-                    command.channel_id,
+                    command.account_id,
                     serde_json::json!({
                         "action": "delete_channel",
-                        "channelId": command.channel_id
+                        "channelId": command.account_id
                     }),
                 )
                 .await?;
@@ -462,9 +462,9 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                         &command.request_id,
                         &command.requested_at,
                         "delete_channel",
-                        command.channel_id,
+                        command.account_id,
                         serde_json::json!({
-                            "channelId": command.channel_id,
+                            "channelId": command.account_id,
                             "deleted": true
                         }),
                     ),
@@ -534,9 +534,9 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 command.subject.organization_id,
                 command.subject.operator_id,
                 "test_channel",
-                command.channel_id,
+                command.account_id,
                 &serde_json::json!({
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "success": probe_outcome.success,
                     "healthStatus": if probe_outcome.success { "healthy" } else { "error" },
                     "httpStatus": probe_outcome.http_status
@@ -553,10 +553,10 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                 command.subject.operator_id,
                 command.subject.operator_type,
                 "test_channel",
-                command.channel_id,
+                command.account_id,
                 serde_json::json!({
                     "action": "test_channel",
-                    "channelId": command.channel_id,
+                    "channelId": command.account_id,
                     "success": probe_outcome.success,
                     "healthStatus": if probe_outcome.success { "healthy" } else { "error" },
                     "httpStatus": probe_outcome.http_status
@@ -572,9 +572,9 @@ impl AdminChannelStore for PostgresAdminChannelStore {
                     &command.request_id,
                     &command.requested_at,
                     "test_channel",
-                    command.channel_id,
+                    command.account_id,
                     serde_json::json!({
-                        "channelId": command.channel_id,
+                        "channelId": command.account_id,
                         "success": probe_outcome.success,
                         "healthStatus": if probe_outcome.success { "healthy" } else { "error" },
                         "httpStatus": probe_outcome.http_status
@@ -584,7 +584,7 @@ impl AdminChannelStore for PostgresAdminChannelStore {
             .await?;
             let item = load_channel_by_id(
                 &mut tx,
-                command.channel_id,
+                command.account_id,
                 command.subject.tenant_id,
                 command.subject.organization_id,
                 self.api_key_secret_codec.as_deref(),
@@ -592,7 +592,7 @@ impl AdminChannelStore for PostgresAdminChannelStore {
             .await?
             .ok_or_else(|| DomainError::new("tested channel could not be reloaded"))?;
             let outcome = AdminChannelTestOutcome {
-                channel_id: item.id.to_string(),
+                account_id: item.id.to_string(),
                 success: probe_outcome.success,
                 status: item.status.clone(),
                 latency: duration_label(probe_outcome.latency_ms),
@@ -619,16 +619,16 @@ async fn list_channels(
         r#"
         SELECT
             c.id,
-            c.id AS channel_id,
+            c.id AS account_id,
             c.uuid,
             c.tenant_id,
             c.organization_id,
             c.created_at::text AS created_at,
             c.metadata->>'expiresAt' AS expires_at,
-            COALESCE(NULLIF(c.channel_name, ''), p.display_name, c.provider_code, '') AS name,
-            COALESCE(NULLIF(p.display_name, ''), c.provider_code, '') AS vendor,
-            COALESCE(c.provider_code, '') AS provider_code,
-            CASE LOWER(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.provider_code, ''), 'openai'))
+            COALESCE(NULLIF(c.channel_name, ''), p.display_name, c.supplier_code, '') AS name,
+            COALESCE(NULLIF(p.display_name, ''), c.supplier_code, '') AS vendor,
+            COALESCE(c.supplier_code, '') AS supplier_code,
+            CASE LOWER(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.supplier_code, ''), 'openai'))
                 WHEN 'openai' THEN 1
                 WHEN 'anthropic' THEN 2
                 WHEN 'gemini' THEN 3
@@ -656,7 +656,7 @@ async fn list_channels(
                      AND rg.tenant_id = cr.tenant_id
                      AND rg.organization_id = cr.organization_id
                      AND rg.deleted_at IS NULL
-                    WHERE cr.channel_id = c.id
+                    WHERE cr.account_id = c.id
                       AND cr.tenant_id = c.tenant_id
                       AND cr.organization_id = c.organization_id
                       AND cr.deleted_at IS NULL
@@ -677,15 +677,15 @@ async fn list_channels(
             COUNT(*) OVER() AS total
         FROM ai_channel c
         LEFT JOIN ai_provider p
-            ON p.provider_code = c.provider_code
+            ON p.supplier_code = c.supplier_code
            AND p.deleted_at IS NULL
         WHERE c.tenant_id = $1
           AND c.organization_id = $2
           AND c.deleted_at IS NULL
           AND (
               $3 IS NULL
-              OR LOWER(COALESCE(NULLIF(c.channel_name, ''), p.display_name, c.provider_code, '')) LIKE $3
-              OR LOWER(COALESCE(NULLIF(p.display_name, ''), c.provider_code, '')) LIKE $3
+              OR LOWER(COALESCE(NULLIF(c.channel_name, ''), p.display_name, c.supplier_code, '')) LIKE $3
+              OR LOWER(COALESCE(NULLIF(p.display_name, ''), c.supplier_code, '')) LIKE $3
           )
         ORDER BY c.priority ASC NULLS LAST, c.weight DESC NULLS LAST, c.id DESC
         LIMIT $4 OFFSET $5
@@ -732,17 +732,17 @@ async fn insert_channel(
     _api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
 ) -> DomainResult<i64> {
     let metadata_json = channel_metadata_json(command.expires_at.as_deref())?;
-    let channel_id = next_claw_runtime_id("admin channel creation")?;
+    let account_id = next_claw_runtime_id("admin channel creation")?;
     sqlx::query_scalar(
         r#"
         INSERT INTO ai_channel
-            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, provider_code, channel_code, channel_name, channel_type, protocol_code, auth_type, credential_rotation_strategy, timeout_ms, retry_policy, circuit_breaker_policy, environment, priority, weight, health_status, consecutive_error_count)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, supplier_code, account_code, channel_name, channel_type, protocol_code, auth_type, credential_rotation_strategy, timeout_ms, retry_policy, circuit_breaker_policy, environment, priority, weight, health_status, consecutive_error_count)
         VALUES
             ($1, $2, $3, $4, 1, $5, $6::timestamptz, $7::timestamptz, 0, $8::jsonb, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18::jsonb, 1, 100, $19, $20, 0)
         RETURNING id
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .bind(&command.channel_uuid)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -750,7 +750,7 @@ async fn insert_channel(
     .bind(&command.requested_at)
     .bind(&command.requested_at)
     .bind(metadata_json)
-    .bind(&command.provider_code)
+    .bind(&command.supplier_code)
     .bind(entity_code("chn", &command.channel_uuid))
     .bind(&command.name)
     .bind(&command.channel_type)
@@ -792,7 +792,7 @@ async fn update_channel(
         r#"
         UPDATE ai_channel
         SET channel_name = COALESCE($1, channel_name),
-            provider_code = COALESCE($2, provider_code),
+            supplier_code = COALESCE($2, supplier_code),
             channel_type = COALESCE($3, channel_type),
             protocol_code = COALESCE($4, protocol_code),
             auth_type = COALESCE($5, auth_type),
@@ -817,7 +817,7 @@ async fn update_channel(
         "#,
     )
     .bind(command.name.as_deref())
-    .bind(command.provider_code.as_deref())
+    .bind(command.supplier_code.as_deref())
     .bind(command.channel_type.as_deref())
     .bind(command.protocol.as_ref().map(|value| protocol_storage_code(value)))
     .bind(
@@ -844,7 +844,7 @@ async fn update_channel(
             .map(|value| health_status_code(value)),
     )
     .bind(&command.requested_at)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -920,12 +920,12 @@ fn channel_secret_ciphertext(auth_config_json: Option<&str>) -> DomainResult<Opt
 
 #[derive(Debug, Clone)]
 struct ReplaceChannelCredentialsScope {
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
     operator_id: i64,
-    provider_code: String,
-    channel_code: String,
+    supplier_code: String,
+    account_code: String,
     requested_at: String,
 }
 
@@ -937,7 +937,7 @@ async fn replace_channel_credentials(
 ) -> DomainResult<()> {
     soft_delete_channel_credentials(
         tx,
-        scope.channel_id,
+        scope.account_id,
         scope.tenant_id,
         scope.organization_id,
         scope.operator_id,
@@ -952,7 +952,7 @@ async fn replace_channel_credentials(
 
 async fn soft_delete_channel_credentials(
     tx: &mut Transaction<'_, Postgres>,
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
     operator_id: i64,
@@ -966,7 +966,7 @@ async fn soft_delete_channel_credentials(
             deleted_by = $2,
             updated_at = $3::timestamptz,
             version = COALESCE(version, 0) + 1
-        WHERE channel_id = $4
+        WHERE account_id = $4
           AND tenant_id = $5
           AND organization_id = $6
           AND deleted_at IS NULL
@@ -975,7 +975,7 @@ async fn soft_delete_channel_credentials(
     .bind(requested_at)
     .bind(operator_id)
     .bind(requested_at)
-    .bind(channel_id)
+    .bind(account_id)
     .bind(tenant_id)
     .bind(organization_id)
     .execute(&mut **tx)
@@ -999,7 +999,7 @@ async fn insert_channel_credential(
     sqlx::query(
         r#"
         INSERT INTO ai_channel_credential
-            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, channel_id, provider_code, channel_code, credential_name, base_url, auth_config, credential_ref, credential_hash, masked_label, priority, weight, health_status, consecutive_error_count)
+            (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, metadata, account_id, supplier_code, account_code, credential_name, base_url, auth_config, credential_ref, credential_hash, masked_label, priority, weight, health_status, consecutive_error_count)
         VALUES
             ($1, $2, $3, $4, 1, $5, $6::timestamptz, $7::timestamptz, 0, '{}'::jsonb, $8, $9, $10, $11, $12, $13::jsonb, $14, $15, $16, $17, $18, $19, 0)
         "#,
@@ -1011,9 +1011,9 @@ async fn insert_channel_credential(
     .bind(status_code(&credential.status))
     .bind(&scope.requested_at)
     .bind(&scope.requested_at)
-    .bind(scope.channel_id)
-    .bind(&scope.provider_code)
-    .bind(&scope.channel_code)
+    .bind(scope.account_id)
+    .bind(&scope.supplier_code)
+    .bind(&scope.account_code)
     .bind(&credential.name)
     .bind(&credential.base_url)
     .bind(auth_config)
@@ -1031,12 +1031,12 @@ async fn insert_channel_credential(
 
 #[derive(Debug, Clone)]
 struct AiResourceBindingScope {
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
     operator_id: i64,
-    provider_code: String,
-    channel_code: String,
+    supplier_code: String,
+    account_code: String,
     weight: i64,
     request_id: String,
     requested_at: String,
@@ -1044,9 +1044,9 @@ struct AiResourceBindingScope {
 
 #[derive(Debug, Clone)]
 struct ResourceBindingContext {
-    channel_id: i64,
-    provider_code: String,
-    channel_code: String,
+    account_id: i64,
+    supplier_code: String,
+    account_code: String,
     weight: i64,
 }
 
@@ -1078,13 +1078,13 @@ fn modality_resource_codes(capabilities: &[String]) -> Vec<String> {
 }
 
 fn merge_capability_resource_codes(
-    provider_code: &str,
+    supplier_code: &str,
     resource_codes: &[String],
     capabilities: &[String],
 ) -> Vec<String> {
     let mut merged: Vec<String> = resource_codes.to_vec();
-    let provider_vendor_resource = format!("vendor.{provider_code}");
-    if !provider_code.trim().is_empty()
+    let provider_vendor_resource = format!("vendor.{supplier_code}");
+    if !supplier_code.trim().is_empty()
         && !merged
             .iter()
             .any(|existing| existing.eq_ignore_ascii_case(&provider_vendor_resource))
@@ -1130,7 +1130,7 @@ async fn upsert_ai_resource_bindings(
     for (index, resource_code) in resource_codes.iter().enumerate() {
         let uuid_suffix = digest_hex(&format!(
             "{}:{}:{}",
-            scope.request_id, scope.channel_id, resource_code
+            scope.request_id, scope.account_id, resource_code
         ))
         .chars()
         .take(32)
@@ -1168,17 +1168,17 @@ async fn upsert_ai_resource_bindings(
         sqlx::query(
             r#"
             INSERT INTO ai_channel_resource
-                (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, channel_id, provider_code, channel_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
+                (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, account_id, supplier_code, account_code, resource_id, resource_code, resource_group_id, resource_group_code, grant_type, priority, weight)
             VALUES
                 ($1, $2, $3, $4, 1, 1, $5::timestamptz, $6::timestamptz, 0, $7, $8, $9,
                  $10, $11, $12, $13, 'allow', $14, $15)
-            ON CONFLICT(tenant_id, organization_id, channel_id, resource_code, resource_group_code) DO UPDATE SET
+            ON CONFLICT(tenant_id, organization_id, account_id, resource_code, resource_group_code) DO UPDATE SET
                 status = 1,
                 deleted_at = NULL,
                 deleted_by = NULL,
                 updated_at = excluded.updated_at,
-                provider_code = excluded.provider_code,
-                channel_code = excluded.channel_code,
+                supplier_code = excluded.supplier_code,
+                account_code = excluded.account_code,
                 resource_id = excluded.resource_id,
                 resource_group_id = excluded.resource_group_id,
                 grant_type = excluded.grant_type,
@@ -1193,9 +1193,9 @@ async fn upsert_ai_resource_bindings(
         .bind(scope.organization_id)
         .bind(&scope.requested_at)
         .bind(&scope.requested_at)
-        .bind(scope.channel_id)
-        .bind(&scope.provider_code)
-        .bind(&scope.channel_code)
+        .bind(scope.account_id)
+        .bind(&scope.supplier_code)
+        .bind(&scope.account_code)
         .bind(resource_id)
         .bind(direct_resource_code)
         .bind(resource_group_id)
@@ -1293,7 +1293,7 @@ async fn ensure_channel_resource_resolved(
         FROM ai_channel_resource
         WHERE tenant_id = $1
           AND organization_id = $2
-          AND channel_id = $3
+          AND account_id = $3
           AND COALESCE(NULLIF(resource_code, ''), resource_group_code) = $4
           AND deleted_at IS NULL
           AND (
@@ -1304,7 +1304,7 @@ async fn ensure_channel_resource_resolved(
     )
     .bind(scope.tenant_id)
     .bind(scope.organization_id)
-    .bind(scope.channel_id)
+    .bind(scope.account_id)
     .bind(resource_code)
     .fetch_one(&mut **tx)
     .await
@@ -1330,7 +1330,7 @@ async fn soft_delete_removed_resources(
                 updated_at = $3::timestamptz, version = COALESCE(version, 0) + 1
             WHERE tenant_id = $4
               AND organization_id = $5
-              AND channel_id = $6
+              AND account_id = $6
               AND deleted_at IS NULL
             "#,
         )
@@ -1339,7 +1339,7 @@ async fn soft_delete_removed_resources(
         .bind(&scope.requested_at)
         .bind(scope.tenant_id)
         .bind(scope.organization_id)
-        .bind(scope.channel_id)
+        .bind(scope.account_id)
         .execute(&mut **tx)
         .await
         .map_err(|error| store_error("failed to clear channel resources", error))?;
@@ -1354,7 +1354,7 @@ async fn soft_delete_removed_resources(
             updated_at = $3::timestamptz, version = COALESCE(version, 0) + 1
         WHERE tenant_id = $4
           AND organization_id = $5
-          AND channel_id = $6
+          AND account_id = $6
           AND deleted_at IS NULL
           AND COALESCE(NULLIF(resource_code, ''), resource_group_code) NOT IN (
               SELECT value
@@ -1367,7 +1367,7 @@ async fn soft_delete_removed_resources(
     .bind(&scope.requested_at)
     .bind(scope.tenant_id)
     .bind(scope.organization_id)
-    .bind(scope.channel_id)
+    .bind(scope.account_id)
     .bind(&keep_json)
     .execute(&mut **tx)
     .await
@@ -1388,7 +1388,7 @@ async fn soft_delete_removed_modality_resources(
             updated_at = $3::timestamptz, version = COALESCE(version, 0) + 1
         WHERE tenant_id = $4
           AND organization_id = $5
-          AND channel_id = $6
+          AND account_id = $6
           AND deleted_at IS NULL
           AND (
               COALESCE(resource_code, '') LIKE 'modality.%'
@@ -1421,7 +1421,7 @@ async fn soft_delete_removed_modality_resources(
     .bind(&scope.requested_at)
     .bind(scope.tenant_id)
     .bind(scope.organization_id)
-    .bind(scope.channel_id)
+    .bind(scope.account_id)
     .bind(&keep_json)
     .execute(&mut **tx)
     .await
@@ -1439,7 +1439,7 @@ async fn load_non_modality_resource_priority_ceiling(
         FROM ai_channel_resource
         WHERE tenant_id = $1
           AND organization_id = $2
-          AND channel_id = $3
+          AND account_id = $3
           AND deleted_at IS NULL
           AND status = 1
           AND NOT (
@@ -1466,7 +1466,7 @@ async fn load_non_modality_resource_priority_ceiling(
     )
     .bind(scope.tenant_id)
     .bind(scope.organization_id)
-    .bind(scope.channel_id)
+    .bind(scope.account_id)
     .fetch_one(&mut **tx)
     .await
     .map_err(|error| store_error("failed to load channel resource priority ceiling", error))?;
@@ -1475,16 +1475,16 @@ async fn load_non_modality_resource_priority_ceiling(
 
 async fn load_resource_binding_context(
     tx: &mut Transaction<'_, Postgres>,
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
 ) -> DomainResult<Option<ResourceBindingContext>> {
     let row = sqlx::query(
         r#"
         SELECT
-            c.id AS channel_id,
-            COALESCE(c.provider_code, 'custom') AS provider_code,
-            COALESCE(NULLIF(c.channel_code, ''), '') AS channel_code,
+            c.id AS account_id,
+            COALESCE(c.supplier_code, 'custom') AS supplier_code,
+            COALESCE(NULLIF(c.account_code, ''), '') AS account_code,
             COALESCE(c.weight, 100) AS weight
         FROM ai_channel c
         WHERE c.id = $1
@@ -1494,7 +1494,7 @@ async fn load_resource_binding_context(
         LIMIT 1
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .bind(tenant_id)
     .bind(organization_id)
     .fetch_optional(&mut **tx)
@@ -1503,9 +1503,9 @@ async fn load_resource_binding_context(
 
     row.map(|row| {
         Ok(ResourceBindingContext {
-            channel_id: row.try_get("channel_id").map_err(row_error)?,
-            provider_code: row.try_get("provider_code").map_err(row_error)?,
-            channel_code: row.try_get("channel_code").map_err(row_error)?,
+            account_id: row.try_get("account_id").map_err(row_error)?,
+            supplier_code: row.try_get("supplier_code").map_err(row_error)?,
+            account_code: row.try_get("account_code").map_err(row_error)?,
             weight: row.try_get("weight").map_err(row_error)?,
         })
     })
@@ -1531,7 +1531,7 @@ async fn soft_delete_channel_relationships(
                 deleted_by = $2,
                 updated_at = $3::timestamptz,
                 version = COALESCE(version, 0) + 1
-            WHERE channel_id = $4
+            WHERE account_id = $4
               AND tenant_id = $5
               AND organization_id = $6
               AND deleted_at IS NULL
@@ -1541,7 +1541,7 @@ async fn soft_delete_channel_relationships(
             .bind(&command.requested_at)
             .bind(command.subject.operator_id)
             .bind(&command.requested_at)
-            .bind(command.channel_id)
+            .bind(command.account_id)
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .execute(&mut **tx)
@@ -1572,7 +1572,7 @@ async fn soft_delete_channel(
     .bind(&command.requested_at)
     .bind(command.subject.operator_id)
     .bind(&command.requested_at)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -1607,13 +1607,13 @@ async fn load_channel_probe_target(
             c.timeout_ms
         FROM ai_channel c
         JOIN ai_channel_credential cc
-          ON cc.channel_id = c.id
+          ON cc.account_id = c.id
          AND cc.tenant_id = c.tenant_id
          AND cc.organization_id = c.organization_id
          AND cc.status = 1
          AND cc.deleted_at IS NULL
         LEFT JOIN ai_provider p
-          ON p.provider_code = c.provider_code
+          ON p.supplier_code = c.supplier_code
          AND p.deleted_at IS NULL
          AND (
              (p.tenant_id = c.tenant_id AND p.organization_id = c.organization_id)
@@ -1621,7 +1621,7 @@ async fn load_channel_probe_target(
              OR (p.tenant_id IS NULL AND p.organization_id IS NULL)
          )
         LEFT JOIN ai_channel_resource cr
-          ON cr.channel_id = c.id
+          ON cr.account_id = c.id
          AND cr.tenant_id = c.tenant_id
          AND cr.organization_id = c.organization_id
          AND cr.status = 1
@@ -1642,7 +1642,7 @@ async fn load_channel_probe_target(
         LIMIT 1
         "#,
     )
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .fetch_optional(&mut **tx)
@@ -1705,7 +1705,7 @@ async fn record_channel_health_test(
     .bind(health_status)
     .bind(outcome.latency_ms)
     .bind(health_status)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -1738,7 +1738,7 @@ async fn update_channel_credential_health(
             END,
             version = COALESCE(version, 0) + 1
         WHERE id = $6
-          AND channel_id = $7
+          AND account_id = $7
           AND tenant_id = $8
           AND organization_id = $9
           AND deleted_at IS NULL
@@ -1750,7 +1750,7 @@ async fn update_channel_credential_health(
     .bind(&command.requested_at)
     .bind(health_status)
     .bind(target.provider_account_id)
-    .bind(command.channel_id)
+    .bind(command.account_id)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .execute(&mut **tx)
@@ -1766,7 +1766,7 @@ async fn update_channel_credential_health(
 
 async fn load_channel_by_id(
     tx: &mut Transaction<'_, Postgres>,
-    channel_id: i64,
+    account_id: i64,
     tenant_id: i64,
     organization_id: i64,
     api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
@@ -1775,16 +1775,16 @@ async fn load_channel_by_id(
         r#"
         SELECT
             c.id,
-            c.id AS channel_id,
+            c.id AS account_id,
             c.uuid,
             c.tenant_id,
             c.organization_id,
             c.created_at::text AS created_at,
             c.metadata->>'expiresAt' AS expires_at,
-            COALESCE(NULLIF(c.channel_name, ''), p.display_name, c.provider_code, '') AS name,
-            COALESCE(NULLIF(p.display_name, ''), c.provider_code, '') AS vendor,
-            COALESCE(c.provider_code, '') AS provider_code,
-            CASE LOWER(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.provider_code, ''), 'openai'))
+            COALESCE(NULLIF(c.channel_name, ''), p.display_name, c.supplier_code, '') AS name,
+            COALESCE(NULLIF(p.display_name, ''), c.supplier_code, '') AS vendor,
+            COALESCE(c.supplier_code, '') AS supplier_code,
+            CASE LOWER(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.supplier_code, ''), 'openai'))
                 WHEN 'openai' THEN 1
                 WHEN 'anthropic' THEN 2
                 WHEN 'gemini' THEN 3
@@ -1812,7 +1812,7 @@ async fn load_channel_by_id(
                      AND rg.tenant_id = cr.tenant_id
                      AND rg.organization_id = cr.organization_id
                      AND rg.deleted_at IS NULL
-                    WHERE cr.channel_id = c.id
+                    WHERE cr.account_id = c.id
                       AND cr.tenant_id = c.tenant_id
                       AND cr.organization_id = c.organization_id
                       AND cr.deleted_at IS NULL
@@ -1832,7 +1832,7 @@ async fn load_channel_by_id(
             c.deleted_at::text AS deleted_at
         FROM ai_channel c
         LEFT JOIN ai_provider p
-            ON p.provider_code = c.provider_code
+            ON p.supplier_code = c.supplier_code
            AND p.deleted_at IS NULL
         WHERE c.id = $1
           AND c.tenant_id = $2
@@ -1841,7 +1841,7 @@ async fn load_channel_by_id(
         LIMIT 1
         "#,
     )
-    .bind(channel_id)
+    .bind(account_id)
     .bind(tenant_id)
     .bind(organization_id)
     .fetch_optional(&mut **tx)
@@ -1865,7 +1865,7 @@ async fn load_resources_for_channels(
 ) -> DomainResult<HashMap<i64, Vec<String>>> {
     let rows = sqlx::query(
         r#"
-        SELECT channel_id, COALESCE(NULLIF(resource_code, ''), resource_group_code) AS resource_code
+        SELECT account_id, COALESCE(NULLIF(resource_code, ''), resource_group_code) AS resource_code
         FROM ai_channel_resource
         WHERE tenant_id = $1
           AND organization_id = $2
@@ -1892,7 +1892,7 @@ async fn load_resources_for_channels_tx(
 ) -> DomainResult<HashMap<i64, Vec<String>>> {
     let rows = sqlx::query(
         r#"
-        SELECT channel_id, COALESCE(NULLIF(resource_code, ''), resource_group_code) AS resource_code
+        SELECT account_id, COALESCE(NULLIF(resource_code, ''), resource_group_code) AS resource_code
         FROM ai_channel_resource
         WHERE tenant_id = $1
           AND organization_id = $2
@@ -1924,7 +1924,7 @@ async fn load_credentials_for_channels(
             id,
             id AS credential_id,
             uuid,
-            channel_id,
+            account_id,
             COALESCE(NULLIF(credential_name, ''), 'Credential') AS name,
             base_url,
             credential_ref AS secret_ref,
@@ -1939,7 +1939,7 @@ async fn load_credentials_for_channels(
         WHERE tenant_id = $1
           AND organization_id = $2
           AND deleted_at IS NULL
-        ORDER BY channel_id ASC, priority ASC, weight DESC, id ASC
+        ORDER BY account_id ASC, priority ASC, weight DESC, id ASC
         "#,
     )
     .bind(tenant_id)
@@ -1962,7 +1962,7 @@ async fn load_credentials_for_channels_tx(
             id,
             id AS credential_id,
             uuid,
-            channel_id,
+            account_id,
             COALESCE(NULLIF(credential_name, ''), 'Credential') AS name,
             base_url,
             credential_ref AS secret_ref,
@@ -1977,7 +1977,7 @@ async fn load_credentials_for_channels_tx(
         WHERE tenant_id = $1
           AND organization_id = $2
           AND deleted_at IS NULL
-        ORDER BY channel_id ASC, priority ASC, weight DESC, id ASC
+        ORDER BY account_id ASC, priority ASC, weight DESC, id ASC
         "#,
     )
     .bind(tenant_id)
@@ -1994,9 +1994,9 @@ fn credentials_from_rows(
 ) -> DomainResult<HashMap<i64, Vec<AdminChannelCredentialItem>>> {
     let mut credentials: HashMap<i64, Vec<AdminChannelCredentialItem>> = HashMap::new();
     for row in rows {
-        let channel_id: i64 = row.try_get("channel_id").map_err(row_error)?;
+        let account_id: i64 = row.try_get("account_id").map_err(row_error)?;
         credentials
-            .entry(channel_id)
+            .entry(account_id)
             .or_default()
             .push(credential_from_postgres_row(row, api_key_secret_codec)?);
     }
@@ -2032,10 +2032,10 @@ fn resources_from_rows(
 ) -> DomainResult<HashMap<i64, Vec<String>>> {
     let mut resources: HashMap<i64, Vec<String>> = HashMap::new();
     for row in rows {
-        let channel_id: i64 = row.try_get("channel_id").map_err(row_error)?;
+        let account_id: i64 = row.try_get("account_id").map_err(row_error)?;
         let resource_code: String = row.try_get("resource_code").map_err(row_error)?;
         if !resource_code.trim().is_empty() {
-            resources.entry(channel_id).or_default().push(resource_code);
+            resources.entry(account_id).or_default().push(resource_code);
         }
     }
     Ok(resources)
@@ -2152,7 +2152,7 @@ fn item_from_postgres_row(
     );
     Ok(AdminChannelItem {
         id,
-        channel_id: row.try_get("channel_id").map_err(row_error)?,
+        account_id: row.try_get("account_id").map_err(row_error)?,
         uuid: row.try_get("uuid").map_err(row_error)?,
         tenant_id: row.try_get("tenant_id").map_err(row_error)?,
         organization_id: row.try_get("organization_id").map_err(row_error)?,
@@ -2164,7 +2164,7 @@ fn item_from_postgres_row(
                 .map_err(row_error)?
                 .as_str(),
         ),
-        provider_code: row.try_get("provider_code").map_err(row_error)?,
+        supplier_code: row.try_get("supplier_code").map_err(row_error)?,
         channel_type: row.try_get("channel_type").map_err(row_error)?,
         protocol: protocol_label(required_integer_cell(&row, "protocol", "protocol")?)?,
         access_type: access_type_label(required_integer_cell(&row, "access_type", "access_type")?)?,
@@ -2186,11 +2186,11 @@ fn item_from_postgres_row(
     })
 }
 
-fn channel_snapshot_payload(channel_id: i64, name: &str, provider_code: &str) -> serde_json::Value {
+fn channel_snapshot_payload(account_id: i64, name: &str, supplier_code: &str) -> serde_json::Value {
     serde_json::json!({
-        "channelId": channel_id,
+        "channelId": account_id,
         "name": name,
-        "providerCode": provider_code
+        "providerCode": supplier_code
     })
 }
 
@@ -2201,7 +2201,7 @@ fn channel_routing_config_change<'a>(
     request_id: &'a str,
     requested_at: &'a str,
     action: &'a str,
-    channel_id: i64,
+    account_id: i64,
     event_payload: serde_json::Value,
 ) -> AiRoutingConfigChange<'a> {
     AiRoutingConfigChange {
@@ -2211,7 +2211,7 @@ fn channel_routing_config_change<'a>(
         request_id,
         requested_at,
         changed_object_type: "ai_channel",
-        changed_object_id: channel_id,
+        changed_object_id: account_id,
         action,
         event_payload,
     }

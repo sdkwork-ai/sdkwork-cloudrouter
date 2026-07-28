@@ -14,7 +14,6 @@ members = [
     "crates/sdkwork-claw-http",
     "crates/sdkwork-claw-observability",
     "crates/sdkwork-claw-test-support",
-    "crates/sdkwork-clawrouter-router-service-test-support",
     "crates/sdkwork-routes-clawrouter-llm-open-api",
     "crates/sdkwork-routes-image-open-api",
     "crates/sdkwork-routes-video-open-api",
@@ -57,7 +56,6 @@ default-members = [
     "crates/sdkwork-claw-http",
     "crates/sdkwork-claw-observability",
     "crates/sdkwork-claw-test-support",
-    "crates/sdkwork-clawrouter-router-service-test-support",
     "crates/sdkwork-routes-clawrouter-llm-open-api",
     "crates/sdkwork-routes-image-open-api",
     "crates/sdkwork-routes-video-open-api",
@@ -147,7 +145,6 @@ sdkwork-claw-paas-plugin = { path = "crates/sdkwork-claw-paas-plugin" }
 sdkwork-claw-security = { path = "crates/sdkwork-claw-security" }
 sdkwork-claw-http = { path = "crates/sdkwork-claw-http" }
 sdkwork-claw-observability = { path = "crates/sdkwork-claw-observability" }
-sdkwork-clawrouter-router-service-test-support = { path = "crates/sdkwork-clawrouter-router-service-test-support" }
 sdkwork-clawrouter-admin-monitor-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx" }
 sdkwork-clawrouter-admin-dashboard-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx" }
 sdkwork-clawrouter-admin-analytics-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx" }

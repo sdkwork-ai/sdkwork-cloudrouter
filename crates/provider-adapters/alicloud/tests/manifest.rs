@@ -6,8 +6,8 @@ fn alicloud_adapter_exposes_definition_only_text_generation_mapping() {
 
     assert_eq!("alicloud", adapter.package());
     assert_eq!("alicloud", adapter.provider_family());
-    assert!(adapter.provider_codes().contains(&"alicloud"));
-    assert!(adapter.provider_codes().contains(&"aliyun"));
+    assert!(adapter.supplier_codes().contains(&"alicloud"));
+    assert!(adapter.supplier_codes().contains(&"aliyun"));
 
     let endpoints = adapter.endpoints();
     assert_eq!(1, endpoints.len());
@@ -67,8 +67,8 @@ fn sample_request() -> sdkwork_claw_provider_adapter_contract::AdapterInvocation
             pricing_plan_code: "standard".to_owned(),
         },
         provider: AdapterProviderContext {
-            provider_code: "alicloud".to_owned(),
-            channel_id: 9301,
+            supplier_code: "alicloud".to_owned(),
+            account_id: 9301,
             region_code: "global".to_owned(),
             provider_model: "qwen-plus".to_owned(),
             base_url: Some("https://dashscope.aliyuncs.com".to_owned()),

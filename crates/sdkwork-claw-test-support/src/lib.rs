@@ -324,7 +324,7 @@ async fn seeded_sqlite_template_current(template_path: &Path) -> bool {
     let valid = sqlite_template_contains_seed_catalog(&pool).await
         && sqlite_template_contains_current_channel_schema(&pool).await
         && sqlite_template_contains_current_model_mapping_schema(&pool).await
-        && sqlite_template_contains_current_gateway_api_key_channel_group_schema(&pool).await
+        && sqlite_template_contains_current_gateway_api_key_upstream_account_group_schema(&pool).await
         && sqlite_template_contains_current_iam_membership_schema(&pool).await
         && sqlite_template_contains_current_provider_object_route_schema(&pool).await
         && sqlite_template_contains_current_gateway_policy_schema(&pool).await
@@ -348,7 +348,7 @@ async fn sqlite_template_contains_seed_catalog(pool: &SqlitePool) -> bool {
     .fetch_one(pool)
     .await;
     let bundle_grant_count = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(1) FROM ai_channel_resource WHERE channel_id = 3001 AND resource_group_code = 'bundle.openrouter.openai.standard' AND status = 1",
+        "SELECT COUNT(1) FROM ai_channel_resource WHERE account_id = 3001 AND resource_group_code = 'bundle.openrouter.openai.standard' AND status = 1",
     )
     .fetch_one(pool)
     .await;
@@ -377,10 +377,10 @@ async fn sqlite_template_contains_current_channel_schema(pool: &SqlitePool) -> b
         FROM pragma_table_info('ai_channel')
         WHERE name IN (
             'credential_rotation_strategy',
-            'site_id',
-            'site_service_id',
-            'site_code',
-            'site_service_code',
+            'supplier_id',
+            'endpoint_id',
+            'supplier_code',
+            'endpoint_code',
             'site_channel_role'
         )
         "#,
@@ -411,21 +411,21 @@ async fn sqlite_template_contains_current_model_mapping_schema(pool: &SqlitePool
     )
 }
 
-async fn sqlite_template_contains_current_gateway_api_key_channel_group_schema(
+async fn sqlite_template_contains_current_gateway_api_key_upstream_account_group_schema(
     pool: &SqlitePool,
 ) -> bool {
     let required_column_count = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT COUNT(1)
-        FROM pragma_table_info('iam_gateway_api_key_channel_group')
+        FROM pragma_table_info('iam_gateway_api_key_upstream_account_group')
         WHERE name IN (
             'uuid',
             'tenant_id',
             'organization_id',
             'user_id',
             'api_key_id',
-            'channel_group_id',
-            'channel_group_code',
+            'account_group_id',
+            'account_group_code',
             'binding_role',
             'routing_strategy',
             'priority',
@@ -439,10 +439,10 @@ async fn sqlite_template_contains_current_gateway_api_key_channel_group_schema(
     let seed_binding_count = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT COUNT(1)
-        FROM iam_gateway_api_key_channel_group
+        FROM iam_gateway_api_key_upstream_account_group
         WHERE api_key_id = 100
-          AND channel_group_id = 10
-          AND channel_group_code = 'standard-group'
+          AND account_group_id = 10
+          AND account_group_code = 'standard-group'
           AND status = 1
         "#,
     )
@@ -513,14 +513,14 @@ async fn sqlite_template_contains_current_provider_object_route_schema(pool: &Sq
             'deleted_by',
             'metadata',
             'api_key_id',
-            'channel_group_id',
+            'account_group_id',
             'object_type',
             'object_id',
             'object_key_hash',
             'parent_object_type',
             'parent_object_id',
-            'provider_code',
-            'channel_id',
+            'supplier_code',
+            'account_id',
             'vendor_code',
             'api_code',
             'catalog_key',
@@ -1172,7 +1172,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             deleted_by INTEGER,
             source_code TEXT NOT NULL,
             vendor_code TEXT,
-            provider_code TEXT,
+            supplier_code TEXT,
             source_name TEXT NOT NULL,
             source_url TEXT,
             source_kind INTEGER NOT NULL,
@@ -1208,7 +1208,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             source_version INTEGER,
             source_code TEXT NOT NULL,
             vendor_code TEXT,
-            provider_code TEXT,
+            supplier_code TEXT,
             run_status INTEGER NOT NULL,
             started_at TEXT NOT NULL,
             finished_at TEXT,
@@ -1259,7 +1259,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             uuid TEXT NOT NULL DEFAULT 'provider-uuid',
             tenant_id INTEGER NOT NULL DEFAULT 100001,
             organization_id INTEGER NOT NULL DEFAULT 0,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             display_name TEXT,
             default_vendor_code TEXT,
             provider_type TEXT,
@@ -1280,13 +1280,13 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             version INTEGER NOT NULL DEFAULT 0,
             metadata TEXT NOT NULL DEFAULT '{}',
             provider_id INTEGER,
-            provider_code TEXT NOT NULL,
-            site_id INTEGER,
-            site_service_id INTEGER,
-            site_code TEXT,
-            site_service_code TEXT,
+            supplier_code TEXT NOT NULL,
+            supplier_id INTEGER,
+            endpoint_id INTEGER,
+            supplier_code TEXT,
+            endpoint_code TEXT,
             site_channel_role TEXT,
-            channel_code TEXT,
+            account_code TEXT,
             channel_name TEXT,
             channel_type TEXT NOT NULL DEFAULT 'relay',
             protocol_code TEXT,
@@ -1322,9 +1322,9 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             metadata TEXT NOT NULL DEFAULT '{}',
             deleted_at TEXT,
             deleted_by INTEGER,
-            channel_id INTEGER NOT NULL,
-            provider_code TEXT,
-            channel_code TEXT,
+            account_id INTEGER NOT NULL,
+            supplier_code TEXT,
+            account_code TEXT,
             credential_name TEXT NOT NULL,
             auth_type INTEGER,
             auth_config TEXT NOT NULL DEFAULT '{}',
@@ -1351,9 +1351,9 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             metadata TEXT NOT NULL DEFAULT '{}',
             deleted_at TEXT,
             deleted_by INTEGER,
-            channel_id INTEGER NOT NULL,
-            provider_code TEXT,
-            channel_code TEXT,
+            account_id INTEGER NOT NULL,
+            supplier_code TEXT,
+            account_code TEXT,
             resource_id INTEGER,
             resource_code TEXT,
             resource_group_id INTEGER,
@@ -1430,7 +1430,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             priority INTEGER,
             match_expression TEXT,
             target_model TEXT,
-            candidate_channels TEXT,
+            candidate_account_groups TEXT,
             fallback_chain TEXT,
             constraints TEXT,
             rate_limit_policy_id INTEGER,
@@ -1566,8 +1566,8 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             pricing_plan_code TEXT,
             rule_code TEXT,
             model TEXT,
-            provider_code TEXT,
-            channel_id INTEGER,
+            supplier_code TEXT,
+            account_id INTEGER,
             billing_meter_code TEXT,
             price_side INTEGER,
             multiplier TEXT,
@@ -1603,7 +1603,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             effective_from TEXT,
             effective_to TEXT
         )"#,
-        r#"CREATE TABLE ai_channel_group (
+        r#"CREATE TABLE ai_upstream_account_group (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL DEFAULT 'channel-group-uuid',
             tenant_id INTEGER NOT NULL DEFAULT 0,
@@ -1618,13 +1618,13 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             deleted_at TEXT,
             updated_at TEXT
         )"#,
-        r#"CREATE TABLE ai_channel_group_member (
+        r#"CREATE TABLE ai_upstream_account_group_member (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL DEFAULT 'channel-group-member-uuid',
             tenant_id INTEGER NOT NULL DEFAULT 0,
             organization_id INTEGER NOT NULL DEFAULT 0,
-            channel_group_id INTEGER NOT NULL,
-            channel_id INTEGER NOT NULL,
+            account_group_id INTEGER NOT NULL,
+            account_id INTEGER NOT NULL,
             priority INTEGER,
             weight INTEGER,
             enabled INTEGER,
@@ -1633,12 +1633,12 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             status INTEGER NOT NULL,
             deleted_at TEXT
         )"#,
-        r#"CREATE TABLE ai_channel_group_resource (
+        r#"CREATE TABLE ai_upstream_account_group_resource (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL DEFAULT 'channel-group-resource-uuid',
             tenant_id INTEGER NOT NULL DEFAULT 0,
             organization_id INTEGER NOT NULL DEFAULT 0,
-            channel_group_id INTEGER NOT NULL,
+            account_group_id INTEGER NOT NULL,
             resource_id INTEGER,
             resource_code TEXT,
             resource_group_id INTEGER,
@@ -1664,14 +1664,14 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             deleted_by INTEGER,
             metadata TEXT NOT NULL DEFAULT '{}',
             api_key_id INTEGER,
-            channel_group_id INTEGER,
+            account_group_id INTEGER,
             object_type TEXT NOT NULL,
             object_id TEXT NOT NULL,
             object_key_hash TEXT NOT NULL,
             parent_object_type TEXT,
             parent_object_id TEXT,
-            provider_code TEXT,
-            channel_id INTEGER NOT NULL,
+            supplier_code TEXT,
+            account_id INTEGER NOT NULL,
             vendor_code TEXT,
             api_code TEXT,
             catalog_key TEXT,
@@ -1690,7 +1690,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
         r#"CREATE INDEX idx_ai_provider_object_route_parent
             ON ai_provider_object_route (tenant_id, organization_id, parent_object_type, parent_object_id, status, id)"#,
         r#"CREATE INDEX idx_ai_provider_object_route_channel
-            ON ai_provider_object_route (tenant_id, organization_id, channel_group_id, channel_id, status, id)"#,
+            ON ai_provider_object_route (tenant_id, organization_id, account_group_id, account_id, status, id)"#,
         r#"CREATE INDEX idx_ai_provider_object_route_expiry
             ON ai_provider_object_route (tenant_id, organization_id, expires_at, status, id)"#,
         r#"CREATE TABLE iam_gateway_api_key (
@@ -1698,7 +1698,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
             user_id INTEGER NOT NULL,
-            channel_group_id INTEGER NOT NULL,
+            account_group_id INTEGER NOT NULL,
             name TEXT,
             key_prefix TEXT NOT NULL,
             key_display_masked TEXT,
@@ -1714,15 +1714,15 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             updated_at TEXT,
             metadata TEXT NOT NULL DEFAULT '{}'
         )"#,
-        r#"CREATE TABLE iam_gateway_api_key_channel_group (
+        r#"CREATE TABLE iam_gateway_api_key_upstream_account_group (
             id INTEGER PRIMARY KEY,
             uuid TEXT NOT NULL DEFAULT 'gateway-api-key-channel-group-uuid',
             tenant_id INTEGER NOT NULL,
             organization_id INTEGER NOT NULL,
             user_id INTEGER NOT NULL DEFAULT 0,
             api_key_id INTEGER NOT NULL,
-            channel_group_id INTEGER NOT NULL,
-            channel_group_code TEXT,
+            account_group_id INTEGER NOT NULL,
+            account_group_code TEXT,
             binding_role TEXT NOT NULL DEFAULT 'route',
             routing_strategy TEXT NOT NULL DEFAULT 'auto',
             priority INTEGER NOT NULL DEFAULT 100,
@@ -1745,7 +1745,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
         )"#,
         r#"CREATE TABLE ai_quota_policy (
             id INTEGER PRIMARY KEY,
-            channel_group_id INTEGER,
+            account_group_id INTEGER,
             model TEXT,
             quota_limit TEXT,
             requests_per_second INTEGER,
@@ -1780,9 +1780,9 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             effective_from TEXT,
             effective_to TEXT
         )"#,
-        r#"CREATE TABLE ai_channel_group_metric_snapshot (
+        r#"CREATE TABLE ai_upstream_account_group_metric_snapshot (
             id INTEGER PRIMARY KEY,
-            channel_group_id INTEGER NOT NULL,
+            account_group_id INTEGER NOT NULL,
             group_code TEXT,
             capacity_used TEXT,
             capacity_limit TEXT,
@@ -1802,11 +1802,11 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             attempt_no INTEGER,
             api_key_id INTEGER,
             api_key_name_snapshot TEXT,
-            channel_group_id INTEGER,
-            channel_group_snapshot TEXT,
+            account_group_id INTEGER,
+            upstream_account_group_snapshot TEXT,
             owner_type INTEGER,
             owner_id INTEGER,
-            channel_id INTEGER,
+            account_id INTEGER,
             channel_name_snapshot TEXT,
             requested_model TEXT,
             requested_model_catalog_key TEXT,
@@ -1844,8 +1844,8 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             status INTEGER NOT NULL,
             api_key_id INTEGER,
             api_key_name_snapshot TEXT,
-            channel_group_id INTEGER,
-            channel_group_snapshot TEXT,
+            account_group_id INTEGER,
+            upstream_account_group_snapshot TEXT,
             owner_type INTEGER,
             owner_id INTEGER,
             catalog_key TEXT,
@@ -1853,7 +1853,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             model TEXT,
             provider_native_model TEXT,
             region_code TEXT,
-            channel_id INTEGER,
+            account_id INTEGER,
             modality INTEGER,
             usage_type INTEGER,
             billing_meter_code TEXT,
@@ -2267,7 +2267,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             provider_step_id TEXT,
             model TEXT,
             provider TEXT,
-            channel_id INTEGER,
+            account_id INTEGER,
             tool_name TEXT,
             tool_call_id TEXT,
             mcp_server_id TEXT,
@@ -2392,8 +2392,8 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             unit INTEGER,
             unit_price TEXT NOT NULL,
             currency TEXT NOT NULL,
-            provider_code TEXT,
-            channel_id INTEGER,
+            supplier_code TEXT,
+            account_id INTEGER,
             pricing_plan_id INTEGER,
             pricing_plan_code TEXT,
             unit_size TEXT,
@@ -2468,7 +2468,7 @@ async fn create_schema(pool: &SqlitePool) -> anyhow::Result<()> {
             vendor_code TEXT,
             region_code TEXT NOT NULL,
             vendor_name_snapshot TEXT,
-            provider_code TEXT,
+            supplier_code TEXT,
             modality INTEGER,
             rank_no INTEGER,
             previous_rank_no INTEGER,
@@ -2536,10 +2536,10 @@ async fn seed_catalog(pool: &SqlitePool) -> anyhow::Result<()> {
         "INSERT INTO ai_resource_group_item (id, uuid, tenant_id, organization_id, resource_group_id, resource_group_code, item_type, resource_id, resource_code, item_role, status, sort_order) VALUES (1, 'resource-member-openrouter-gpt-4o-mini', 100001, 0, 5, 'bundle.openrouter.openai.standard', 'resource', 3, 'model.openai.gpt-4o-mini.chat', 'include', 1, 1)",
         "INSERT INTO ai_resource_group_item (id, uuid, tenant_id, organization_id, resource_group_id, resource_group_code, item_type, resource_id, resource_code, item_role, status, sort_order) VALUES (2, 'resource-member-openrouter-embedding-small', 100001, 0, 5, 'bundle.openrouter.openai.standard', 'resource', 4, 'model.openai.text-embedding-3-small.embedding', 'include', 1, 2)",
         "INSERT INTO ai_resource_group_item (id, uuid, tenant_id, organization_id, resource_group_id, resource_group_code, item_type, resource_id, resource_code, item_role, status, sort_order) VALUES (3, 'resource-member-openrouter-gpt-4o-mini-responses', 100001, 0, 5, 'bundle.openrouter.openai.standard', 'resource', 6, 'model.openai.gpt-4o-mini.responses', 'include', 1, 3)",
-        "INSERT INTO ai_provider (id, uuid, tenant_id, organization_id, provider_code, display_name, default_vendor_code, provider_type, protocol_code, base_url, status) VALUES (2, 'provider-openrouter', 100001, 0, 'openrouter', 'OpenRouter', 'openai', 'relay', 'openai_v1', 'http://provider-proxy.internal/openrouter-template', 1)",
-        "INSERT INTO ai_channel (id, uuid, tenant_id, organization_id, provider_code, channel_code, channel_name, channel_type, credential_ref, base_url, status, priority, weight) VALUES (3001, 'channel-openrouter-main', 100001, 0, 'openrouter', 'openrouter-main', 'OpenRouter Main', 'relay', 'vault://providers/openrouter/account/main', 'http://provider-proxy.internal/openrouter', 1, 10, 100)",
-        "INSERT INTO ai_channel_credential (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code, credential_name, auth_config, credential_ref, credential_hash, base_url, priority, weight, health_status, status) VALUES (300101, 'channel-credential-openrouter-main', 100001, 0, 3001, 'openrouter', 'openrouter-main', 'primary', '{}', 'vault://providers/openrouter/account/main', 'hash:openrouter-main', 'http://provider-proxy.internal/openrouter', 1, 100, 1, 1)",
-        "INSERT INTO ai_channel_resource (id, uuid, tenant_id, organization_id, channel_id, provider_code, channel_code, resource_group_id, resource_group_code, grant_type, priority, weight, status) VALUES (1, 'channel-resource-openrouter-bundle', 100001, 0, 3001, 'openrouter', 'openrouter-main', 5, 'bundle.openrouter.openai.standard', 'allow', 1, 100, 1)",
+        "INSERT INTO ai_provider (id, uuid, tenant_id, organization_id, supplier_code, display_name, default_vendor_code, provider_type, protocol_code, base_url, status) VALUES (2, 'provider-openrouter', 100001, 0, 'openrouter', 'OpenRouter', 'openai', 'relay', 'openai_v1', 'http://provider-proxy.internal/openrouter-template', 1)",
+        "INSERT INTO ai_channel (id, uuid, tenant_id, organization_id, supplier_code, account_code, channel_name, channel_type, credential_ref, base_url, status, priority, weight) VALUES (3001, 'channel-openrouter-main', 100001, 0, 'openrouter', 'openrouter-main', 'OpenRouter Main', 'relay', 'vault://providers/openrouter/account/main', 'http://provider-proxy.internal/openrouter', 1, 10, 100)",
+        "INSERT INTO ai_channel_credential (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code, credential_name, auth_config, credential_ref, credential_hash, base_url, priority, weight, health_status, status) VALUES (300101, 'channel-credential-openrouter-main', 100001, 0, 3001, 'openrouter', 'openrouter-main', 'primary', '{}', 'vault://providers/openrouter/account/main', 'hash:openrouter-main', 'http://provider-proxy.internal/openrouter', 1, 100, 1, 1)",
+        "INSERT INTO ai_channel_resource (id, uuid, tenant_id, organization_id, account_id, supplier_code, account_code, resource_group_id, resource_group_code, grant_type, priority, weight, status) VALUES (1, 'channel-resource-openrouter-bundle', 100001, 0, 3001, 'openrouter', 'openrouter-main', 5, 'bundle.openrouter.openai.standard', 'allow', 1, 100, 1)",
         r#"INSERT INTO ai_routing_profile
             (id, uuid, tenant_id, organization_id, policy_id, profile_version, profile_name, release_status, traffic_percent, config_hash, status)
             VALUES (9101, 'routing-profile-standard-group', 100001, 0, 9001, 1, 'Standard Group Profile', 2, '100.000000', 'standard-group-profile-hash', 1)"#,
@@ -2547,23 +2547,23 @@ async fn seed_catalog(pool: &SqlitePool) -> anyhow::Result<()> {
             (id, uuid, tenant_id, organization_id, policy_code, name, policy_scope, subject_id, capability, default_profile_id, fallback_mode, status)
             VALUES (9001, 'routing-policy-standard-group', 100001, 0, 'standard-group-policy', 'Standard Group Policy', 5, 100001, NULL, 9101, 1, 1)"#,
         r#"INSERT INTO ai_routing_rule
-            (id, uuid, tenant_id, organization_id, profile_id, rule_code, priority, match_expression, target_model, candidate_channels, fallback_chain, constraints, status)
-            VALUES (9102, 'routing-rule-standard-group-default', 100001, 0, 9101, 'standard-group-default', 1, '{"catalogKey":"*"}', NULL, '[{"channel_id":3001,"weight":100}]', '[]', '{}', 1)"#,
+            (id, uuid, tenant_id, organization_id, profile_id, rule_code, priority, match_expression, target_model, candidate_account_groups, fallback_chain, constraints, status)
+            VALUES (9102, 'routing-rule-standard-group-default', 100001, 0, 9101, 'standard-group-default', 1, '{"catalogKey":"*"}', NULL, '[{"account_id":3001,"weight":100}]', '[]', '{}', 1)"#,
         "INSERT INTO ai_pricing_plan (id, uuid, tenant_id, organization_id, plan_code, plan_name, plan_scope, base_price_side, default_multiplier, default_markup_amount, currency, status, priority) VALUES (1, 'pricing-plan-standard', 100001, 0, 'standard', 'Standard', 1, 1, '1.200000', '0.000000', 'USD', 1, 1)",
         "INSERT INTO ai_pricing_plan_binding (id, uuid, tenant_id, organization_id, pricing_plan_id, pricing_plan_code, subject_type, subject_id, subject_code, multiplier_override, status, priority) VALUES (1, 'pricing-plan-binding-standard-group', 100001, 0, 1, 'standard', 1, 100001, 'standard-group', '1.000000', 1, 1)",
-        "INSERT INTO ai_channel_group (id, uuid, tenant_id, organization_id, group_code, group_name, pricing_plan_code, rate_multiplier, official_price_multiplier, status) VALUES (10, 'channel-group-standard', 100001, 0, 'standard-group', 'Standard Group', 'standard', '1.000000', '1.100000', 1)",
-        "INSERT INTO ai_channel_group_member (id, uuid, tenant_id, organization_id, channel_group_id, channel_id, priority, weight, enabled, status) VALUES (600, 'channel-group-member-openrouter', 100001, 0, 10, 3001, 1, 100, 1, 1)",
-        "INSERT INTO ai_channel_group_resource (id, uuid, tenant_id, organization_id, channel_group_id, resource_group_id, resource_group_code, grant_type, priority, status) VALUES (1, 'channel-group-resource-openrouter-standard', 100001, 0, 10, 5, 'bundle.openrouter.openai.standard', 'allow', 1, 1)",
-        "INSERT INTO iam_gateway_api_key (id, tenant_id, organization_id, user_id, channel_group_id, key_prefix, key_hash, idempotency_key, status) VALUES (100, 100001, 0, 30, 10, 'sk-live', 'hash:placeholder', 'seed-api-key-100', 1)",
-        "INSERT INTO iam_gateway_api_key_channel_group (id, uuid, tenant_id, organization_id, user_id, api_key_id, channel_group_id, channel_group_code, binding_role, routing_strategy, priority, weight, status) VALUES (1000, 'gateway-api-key-channel-group-standard', 100001, 0, 30, 100, 10, 'standard-group', 'route', 'auto', 100, 100, 1)",
+        "INSERT INTO ai_upstream_account_group (id, uuid, tenant_id, organization_id, group_code, group_name, pricing_plan_code, rate_multiplier, official_price_multiplier, status) VALUES (10, 'channel-group-standard', 100001, 0, 'standard-group', 'Standard Group', 'standard', '1.000000', '1.100000', 1)",
+        "INSERT INTO ai_upstream_account_group_member (id, uuid, tenant_id, organization_id, account_group_id, account_id, priority, weight, enabled, status) VALUES (600, 'channel-group-member-openrouter', 100001, 0, 10, 3001, 1, 100, 1, 1)",
+        "INSERT INTO ai_upstream_account_group_resource (id, uuid, tenant_id, organization_id, account_group_id, resource_group_id, resource_group_code, grant_type, priority, status) VALUES (1, 'channel-group-resource-openrouter-standard', 100001, 0, 10, 5, 'bundle.openrouter.openai.standard', 'allow', 1, 1)",
+        "INSERT INTO iam_gateway_api_key (id, tenant_id, organization_id, user_id, account_group_id, key_prefix, key_hash, idempotency_key, status) VALUES (100, 100001, 0, 30, 10, 'sk-live', 'hash:placeholder', 'seed-api-key-100', 1)",
+        "INSERT INTO iam_gateway_api_key_upstream_account_group (id, uuid, tenant_id, organization_id, user_id, api_key_id, account_group_id, account_group_code, binding_role, routing_strategy, priority, weight, status) VALUES (1000, 'gateway-api-key-channel-group-standard', 100001, 0, 30, 100, 10, 'standard-group', 'route', 'auto', 100, 100, 1)",
         r#"INSERT INTO iam_user (id, tenant_id, username, display_name, email, phone, avatar_media_resource_id, avatar_object_blob_id, avatar_resource_snapshot, status, created_at, updated_at) VALUES ('1', '100001', 'bootstrap-admin', 'Bootstrap Admin', 'bootstrap-admin@example.com', '', 'media-bootstrap-admin-avatar', 'iam-user-avatar:bootstrap-admin', '{"kind":"image","source":"provider_asset","uri":"iam-user-avatar:bootstrap-admin"}', 'active', '2026-04-01 08:00:00', '2026-04-29 08:30:00')"#,
         "INSERT INTO iam_organization_membership (id, tenant_id, organization_id, user_id, membership_kind, display_name, is_primary, status, joined_at, left_at, remark, created_at, updated_at) VALUES ('member-1-admin', '100001', '0', '1', 'admin', 'Bootstrap Admin', 1, 'active', '2026-04-01 08:00:00', NULL, 'seed bootstrap admin membership', '2026-04-01 08:00:00', '2026-04-29 08:30:00')",
         "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, status, priority) VALUES (1, 'price-openai-global-gpt-4o-mini-input-reference', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 1, 'llm_input_token', '0.150000', 'USD', 1, 1)",
-        "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority) VALUES (2, 'price-openai-global-gpt-4o-mini-input-upstream', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 2, 'llm_input_token', '0.110000', 'USD', 'openrouter', 3001, 1, 1)",
+        "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, supplier_code, account_id, status, priority) VALUES (2, 'price-openai-global-gpt-4o-mini-input-upstream', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 2, 'llm_input_token', '0.110000', 'USD', 'openrouter', 3001, 1, 1)",
         "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, status, priority) VALUES (3, 'price-openai-global-gpt-4o-mini-output-reference', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 1, 'llm_output_token', '0.600000', 'USD', 1, 1)",
-        "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority) VALUES (4, 'price-openai-global-gpt-4o-mini-output-upstream', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 2, 'llm_output_token', '0.440000', 'USD', 'openrouter', 3001, 1, 1)",
+        "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, supplier_code, account_id, status, priority) VALUES (4, 'price-openai-global-gpt-4o-mini-output-upstream', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 2, 'llm_output_token', '0.440000', 'USD', 'openrouter', 3001, 1, 1)",
         "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, status, priority) VALUES (5, 'price-openai-global-text-embedding-3-small-input-reference', 100001, 0, 2, 'openai/text-embedding-3-small', 'text-embedding-3-small', 'openai', 'global', 1, 'embedding_input_token', '0.020000', 'USD', 1, 1)",
-        "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority) VALUES (6, 'price-openai-global-text-embedding-3-small-input-upstream', 100001, 0, 2, 'openai/text-embedding-3-small', 'text-embedding-3-small', 'openai', 'global', 2, 'embedding_input_token', '0.010000', 'USD', 'openrouter', 3001, 1, 1)",
+        "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, supplier_code, account_id, status, priority) VALUES (6, 'price-openai-global-text-embedding-3-small-input-upstream', 100001, 0, 2, 'openai/text-embedding-3-small', 'text-embedding-3-small', 'openai', 'global', 2, 'embedding_input_token', '0.010000', 'USD', 'openrouter', 3001, 1, 1)",
         "INSERT INTO ai_pricing_import_snapshot (id, uuid, tenant_id, organization_id, request_id, status, import_source, source_name, source_hash, data_format, row_count, accepted_count, rejected_count, currency, observed_at) VALUES (1, 'pricing-import-seed', 100001, 0, 'seed-pricing-import', 1, 1, 'seed', 'seed-hash', 'database', 6, 6, 0, 'USD', '2026-04-10 20:55:41')",
         "INSERT INTO ai_model_rank_snapshot (id, uuid, tenant_id, organization_id, source_type, source_id, source_version, status, snapshot_date, snapshot_period, rank_scope, model_id, catalog_key, model, vendor_code, region_code, vendor_name_snapshot, modality, rank_no, request_count, cost_amount, currency) VALUES (1, 'rank-openai-global-gpt-4o-mini', 100001, 0, 'seed', 1, 1, 1, '2026-04-10', 1, 'global', 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 'OpenAI', 1, 1, 100, '0.000000', 'USD')",
     ] {
@@ -2592,7 +2592,7 @@ async fn seed_openai_standard_passthrough_extensions(pool: &SqlitePool) -> anyho
         "INSERT INTO ai_resource_group_item (id, uuid, tenant_id, organization_id, resource_group_id, resource_group_code, item_type, resource_id, resource_code, item_role, status, sort_order) VALUES (6, 'resource-member-openrouter-gpt-4o-mini-completions', 100001, 0, 5, 'bundle.openrouter.openai.standard', 'resource', 9, 'model.openai.gpt-4o-mini.completions', 'include', 1, 6)",
         "INSERT INTO ai_resource_group_item (id, uuid, tenant_id, organization_id, resource_group_id, resource_group_code, item_type, resource_id, resource_code, item_role, status, sort_order) VALUES (7, 'resource-member-openrouter-gpt-4o-mini-models', 100001, 0, 5, 'bundle.openrouter.openai.standard', 'resource', 10, 'model.openai.gpt-4o-mini.models', 'include', 1, 7)",
         "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, status, priority) VALUES (7, 'price-openai-global-gpt-4o-mini-api-request-reference', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 1, 'api_request', '0.001000', 'USD', 1, 1)",
-        "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, provider_code, channel_id, status, priority) VALUES (8, 'price-openai-global-gpt-4o-mini-api-request-upstream', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 2, 'api_request', '0.000500', 'USD', 'openrouter', 3001, 1, 1)",
+        "INSERT INTO ai_model_pricing (id, uuid, tenant_id, organization_id, model_id, catalog_key, model, vendor_code, region_code, price_side, billing_meter_code, unit_price, currency, supplier_code, account_id, status, priority) VALUES (8, 'price-openai-global-gpt-4o-mini-api-request-upstream', 100001, 0, 1, 'openai/gpt-4o-mini', 'gpt-4o-mini', 'openai', 'global', 2, 'api_request', '0.000500', 'USD', 'openrouter', 3001, 1, 1)",
         "UPDATE ai_pricing_import_snapshot SET row_count = 8, accepted_count = 8 WHERE id = 1",
     ] {
         sqlx::query(statement).execute(pool).await?;
@@ -2730,7 +2730,7 @@ mod tests {
             WHERE m.catalog_key = 'openai/text-embedding-3-small'
               AND r.resource_type = 'model_api'
               AND r.api_code = 'openai.embeddings'
-              AND cri.channel_id = 3001
+              AND cri.account_id = 3001
               AND cri.status = 1
             "#,
         )
@@ -2750,14 +2750,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn seeded_sqlite_catalog_contains_gateway_api_key_channel_group_binding() {
+    async fn seeded_sqlite_catalog_contains_gateway_api_key_upstream_account_group_binding() {
         let catalog = seeded_sqlite_catalog().await.unwrap();
         let pool = catalog.open_pool().await.unwrap();
 
         let row = sqlx::query(
             r#"
-            SELECT kg.channel_group_id, kg.channel_group_code
-            FROM iam_gateway_api_key_channel_group kg
+            SELECT kg.account_group_id, kg.account_group_code
+            FROM iam_gateway_api_key_upstream_account_group kg
             WHERE kg.api_key_id = 100
               AND kg.status = 1
             "#,
@@ -2766,8 +2766,8 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(10_i64, row.get::<i64, _>("channel_group_id"));
-        assert_eq!("standard-group", row.get::<String, _>("channel_group_code"));
+        assert_eq!(10_i64, row.get::<i64, _>("account_group_id"));
+        assert_eq!("standard-group", row.get::<String, _>("account_group_code"));
     }
 
     #[tokio::test]
@@ -2814,14 +2814,14 @@ mod tests {
                 'organization_id',
                 'status',
                 'api_key_id',
-                'channel_group_id',
+                'account_group_id',
                 'object_type',
                 'object_id',
                 'object_key_hash',
                 'parent_object_type',
                 'parent_object_id',
-                'provider_code',
-                'channel_id',
+                'supplier_code',
+                'account_id',
                 'vendor_code',
                 'api_code',
                 'catalog_key',

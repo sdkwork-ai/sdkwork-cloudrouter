@@ -63,8 +63,8 @@ fn invocation_with_auth(auth_profile: ProviderAuthProfile) -> Invocation {
     invocation.resource.requested_model_catalog_key = Some("openai/gpt-4o-mini".to_owned());
     invocation.resource.provider_native_model = Some("gpt-4o-mini-provider".to_owned());
     invocation.account = Some(InvocationAccount {
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,
@@ -392,10 +392,10 @@ async fn builds_adapter_request_as_standard_json_body() {
     invocation.dispatch.mode =
         sdkwork_clawrouter_router_service::application::DispatchMode::InternalProviderAdapter;
     invocation.dispatch.adapter_target = Some(InvocationAdapterTarget {
-        provider_code: "openrouter".to_owned(),
+        supplier_code: "openrouter".to_owned(),
         endpoint_key: "openai.chat_completions".to_owned(),
         base_url: "https://adapter.example".to_owned(),
-        path_template: "/providers/{provider_code}{standard_path}".to_owned(),
+        path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
         standard_path: "/v1/chat/completions".to_owned(),
         gateway_token: Some("adapter-token".to_owned()),
         shape: InvocationShape::Json,

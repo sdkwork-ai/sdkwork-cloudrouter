@@ -6,9 +6,9 @@ use sdkwork_clawrouter_router_service::application::{
     RoutePlanningInterceptor, StickyRouteConstraint,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderChannelRoute, RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    UpstreamAccountRoute, RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope,
     RoutingRule,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -32,7 +32,7 @@ fn base_catalog() -> InMemoryPricingCatalog {
         DecimalValue::parse("1.000000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new_scoped(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new_scoped(
         10,
         10,
         20,
@@ -55,24 +55,24 @@ fn base_catalog() -> InMemoryPricingCatalog {
 
 fn add_model_route(
     catalog: &mut InMemoryPricingCatalog,
-    channel_id: i64,
-    provider_code: &str,
+    account_id: i64,
+    supplier_code: &str,
     provider_model: &str,
     api_code: &str,
     unit_price: &str,
 ) {
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
-            provider_code,
-            channel_id,
+            supplier_code,
+            account_id,
             provider_model,
         )
         .with_api_code(api_code)
-        .with_provider_endpoint(
-            Some(format!("https://provider.example/{provider_code}")),
-            Some(format!("vault://providers/{provider_code}/main")),
+        .with_upstream_endpoint(
+            Some(format!("https://provider.example/{supplier_code}")),
+            Some(format!("vault://providers/{supplier_code}/main")),
         ),
     );
     catalog.add_price(
@@ -83,15 +83,15 @@ fn add_model_route(
             BillingMeter::LlmInputToken,
             Money::usd(unit_price).unwrap(),
         )
-        .for_provider(provider_code, channel_id),
+        .for_provider(supplier_code, account_id),
     );
 }
 
-fn add_channel_route(catalog: &mut InMemoryPricingCatalog, channel_id: i64, provider_code: &str) {
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new(provider_code, channel_id).with_provider_endpoint(
-            Some(format!("https://provider.example/{provider_code}")),
-            Some(format!("vault://providers/{provider_code}/main")),
+fn add_channel_route(catalog: &mut InMemoryPricingCatalog, account_id: i64, supplier_code: &str) {
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new(supplier_code, account_id).with_upstream_endpoint(
+            Some(format!("https://provider.example/{supplier_code}")),
+            Some(format!("vault://providers/{supplier_code}/main")),
         ),
     );
 }
@@ -111,7 +111,7 @@ fn add_group_policy_rule(
         10,
         20,
         &format!("group-policy-{policy_id}"),
-        RoutingPolicyScope::ChannelGroup,
+        RoutingPolicyScope::UpstreamAccountGroup,
         Some(10),
         Some(profile_id),
     ));
@@ -126,7 +126,7 @@ fn add_group_policy_rule(
             match_expression,
             target_model,
         )
-        .with_candidate_channels(candidates)
+        .with_candidate_account_groups(candidates)
         .with_fallback_chain(fallback),
     );
 }
@@ -164,14 +164,14 @@ fn openai_invocation(method: Method, path: &str, body: InvocationBody) -> Invoca
 }
 
 fn provider_native_invocation(
-    provider_code: &str,
+    supplier_code: &str,
     path: &str,
     capability: RoutingCapability,
 ) -> Invocation {
     let classification = ProviderNativeResourceClassifier::default()
         .classify(
             &InvocationClassificationRequest::new(Method::POST, path)
-                .with_provider_code(provider_code)
+                .with_supplier_code(supplier_code)
                 .with_capability(capability),
         )
         .expect("provider-native classification");
@@ -240,8 +240,8 @@ async fn plans_model_route_and_resolves_account() {
         .expect("account resolution");
 
     let account = invocation.account.expect("account");
-    assert_eq!("openrouter-main", account.provider_code);
-    assert_eq!(3001, account.channel_id);
+    assert_eq!("openrouter-main", account.supplier_code);
+    assert_eq!(3001, account.account_id);
     assert_eq!(Some("gpt-4o-mini-main"), account.provider_model.as_deref());
     assert_eq!(
         Some("https://provider.example/openrouter-main"),
@@ -280,8 +280,8 @@ async fn plans_management_api_channel_route() {
         .expect("account resolution");
 
     let account = invocation.account.expect("account");
-    assert_eq!("openrouter-files", account.provider_code);
-    assert_eq!(3002, account.channel_id);
+    assert_eq!("openrouter-files", account.supplier_code);
+    assert_eq!(3002, account.account_id);
     assert_eq!(Some(3), invocation.routing.policy_id);
     assert_eq!(Some(302), invocation.routing.rule_id);
 }
@@ -314,8 +314,8 @@ async fn plans_provider_native_channel_route_and_resolves_account() {
         .expect("account resolution");
 
     let account = invocation.account.expect("account");
-    assert_eq!("kling", account.provider_code);
-    assert_eq!(4001, account.channel_id);
+    assert_eq!("kling", account.supplier_code);
+    assert_eq!(4001, account.account_id);
     assert_eq!(Some(6), invocation.routing.policy_id);
     assert_eq!(Some(602), invocation.routing.rule_id);
     assert_eq!("kling.text_to_video", invocation.resource.route_key);
@@ -360,8 +360,8 @@ async fn plans_provider_native_channel_route_even_when_request_contains_model_me
         .expect("account resolution");
 
     let account = invocation.account.expect("account");
-    assert_eq!("kling", account.provider_code);
-    assert_eq!(4001, account.channel_id);
+    assert_eq!("kling", account.supplier_code);
+    assert_eq!(4001, account.account_id);
     assert_eq!("kling.text_to_video", invocation.resource.route_key);
     assert_eq!(
         Some("kling-v2"),
@@ -380,9 +380,9 @@ async fn sticky_route_constraint_overrides_normal_route_selection() {
         InvocationBody::Empty,
     );
     invocation.routing.sticky_route = Some(StickyRouteConstraint {
-        provider_code: "sticky-provider".to_owned(),
-        channel_id: 3003,
-        channel_group_id: Some(10),
+        supplier_code: "sticky-provider".to_owned(),
+        account_id: 3003,
+        account_group_id: Some(10),
         vendor_code: Some("sticky-provider".to_owned()),
         api_code: Some("openai.files".to_owned()),
         catalog_key: Some("openai/gpt-4o-mini".to_owned()),
@@ -401,8 +401,8 @@ async fn sticky_route_constraint_overrides_normal_route_selection() {
         .expect("account resolution");
 
     let account = invocation.account.expect("account");
-    assert_eq!("sticky-provider", account.provider_code);
-    assert_eq!(3003, account.channel_id);
+    assert_eq!("sticky-provider", account.supplier_code);
+    assert_eq!(3003, account.account_id);
     assert_eq!(Some("sticky-model"), account.provider_model.as_deref());
 }
 
@@ -453,7 +453,7 @@ async fn model_route_plan_preserves_failover_order() {
         vec!["primary-provider", "fallback-provider"],
         plan.candidates
             .iter()
-            .map(|candidate| candidate.provider_code.as_str())
+            .map(|candidate| candidate.supplier_code.as_str())
             .collect::<Vec<_>>()
     );
 }
@@ -462,7 +462,7 @@ async fn model_route_plan_preserves_failover_order() {
 async fn account_resolution_preserves_credential_rotation() {
     let mut catalog = base_catalog();
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "credential-provider",
@@ -471,7 +471,7 @@ async fn account_resolution_preserves_credential_rotation() {
         )
         .with_api_code("openai.chat_completions")
         .with_credential(Some(9001), "round_robin", 10, 100)
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("https://provider.example/credential-provider"),
             Some("vault://providers/credential-provider/9001"),
         ),

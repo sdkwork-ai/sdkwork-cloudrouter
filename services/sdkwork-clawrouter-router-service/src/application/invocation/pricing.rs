@@ -205,8 +205,8 @@ fn dedupe_quotes<'a>(
         if deduped.iter().any(|existing: &InvocationPricingQuote| {
             existing.meter == quote.meter
                 && existing.catalog_key == quote.catalog_key
-                && existing.provider_code == quote.provider_code
-                && existing.channel_id == quote.channel_id
+                && existing.supplier_code == quote.supplier_code
+                && existing.account_id == quote.account_id
                 && existing.region_code == quote.region_code
         }) {
             continue;
@@ -242,11 +242,11 @@ where
     let resolved = PricingResolver::new(catalog)
         .resolve(ResolveModelPriceQuery {
             api_key_id,
-            channel_group_id: invocation.subject.channel_group_id,
+            account_group_id: invocation.subject.account_group_id,
             model,
             billing_meter: meter,
-            provider_code: Some(account.provider_code.clone()),
-            channel_id: Some(account.channel_id),
+            supplier_code: Some(account.supplier_code.clone()),
+            account_id: Some(account.account_id),
             region_code: Some(account.region_code.clone()),
         })
         .map_err(|error| pricing_error(error.to_string()))?;
@@ -293,11 +293,11 @@ fn quote_from_resolved(
     InvocationPricingQuote {
         catalog_key: resolved.official_reference.catalog_key.clone(),
         requested_model: priced_requested_model(invocation, resolved, catalog_key_override),
-        provider_code: resolved.provider_code.clone(),
-        channel_id: invocation
+        supplier_code: resolved.supplier_code.clone(),
+        account_id: invocation
             .account
             .as_ref()
-            .map(|account| account.channel_id),
+            .map(|account| account.account_id),
         region_code: resolved.official_reference.region_code.clone(),
         meter: resolved.billing_meter.clone(),
         official_reference_unit_price: resolved.official_reference.unit_price.clone(),
@@ -382,8 +382,8 @@ mod tests {
         InvocationPricingQuote {
             catalog_key: "openai/gpt-4o-mini".to_owned(),
             requested_model: requested_model.to_owned(),
-            provider_code: Some("openrouter".to_owned()),
-            channel_id: Some(3001),
+            supplier_code: Some("openrouter".to_owned()),
+            account_id: Some(3001),
             region_code: "global".to_owned(),
             meter,
             official_reference_unit_price: price.clone(),

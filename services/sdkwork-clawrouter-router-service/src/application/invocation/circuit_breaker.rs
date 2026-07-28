@@ -62,7 +62,7 @@ impl CircuitEntry {
 /// Circuit breaker statistics for monitoring and metrics.
 #[derive(Debug, Clone)]
 pub struct CircuitBreakerStats {
-    pub channel_id: i64,
+    pub account_id: i64,
     pub state: CircuitState,
     pub consecutive_failures: u32,
     pub consecutive_successes: u32,
@@ -90,9 +90,9 @@ impl CircuitCallPermit {
 }
 
 impl CircuitBreakerStats {
-    fn new(channel_id: i64) -> Self {
+    fn new(account_id: i64) -> Self {
         Self {
-            channel_id,
+            account_id,
             state: CircuitState::Closed,
             consecutive_failures: 0,
             consecutive_successes: 0,
@@ -181,23 +181,23 @@ pub struct CircuitBreakerInterceptor {
 /// Implementations must be safe for concurrent access across nodes.
 #[async_trait::async_trait]
 pub trait CircuitBreakerStateStore: Send + Sync {
-    /// Atomically reserves a call slot for `channel_id`.
-    async fn acquire_call_permit(&self, channel_id: i64) -> CircuitCallPermit;
+    /// Atomically reserves a call slot for `account_id`.
+    async fn acquire_call_permit(&self, account_id: i64) -> CircuitCallPermit;
 
     /// Releases a half-open probe that was reserved but never dispatched.
-    async fn release_half_open_probe(&self, channel_id: i64);
+    async fn release_half_open_probe(&self, account_id: i64);
 
-    /// Record a successful call for `channel_id`.
-    async fn record_success(&self, channel_id: i64);
+    /// Record a successful call for `account_id`.
+    async fn record_success(&self, account_id: i64);
 
-    /// Record a failed call for `channel_id`.
-    async fn record_failure(&self, channel_id: i64);
+    /// Record a failed call for `account_id`.
+    async fn record_failure(&self, account_id: i64);
 
     /// Get current state for a channel.
-    async fn get_state(&self, channel_id: i64) -> CircuitState;
+    async fn get_state(&self, account_id: i64) -> CircuitState;
 
     /// Reset circuit breaker for a channel.
-    async fn reset(&self, channel_id: i64);
+    async fn reset(&self, account_id: i64);
 
     fn is_distributed_ha(&self) -> bool;
 }
@@ -263,13 +263,13 @@ impl CircuitBreakerInterceptor {
     }
 
     /// Get current state of a circuit breaker.
-    pub fn get_state(&self, channel_id: i64) -> CircuitState {
+    pub fn get_state(&self, account_id: i64) -> CircuitState {
         let circuits = match self.circuits.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
         circuits
-            .get(&channel_id)
+            .get(&account_id)
             .map(|e| e.state)
             .unwrap_or(CircuitState::Closed)
     }
@@ -284,42 +284,42 @@ impl CircuitBreakerInterceptor {
     }
 
     /// Get statistics for a specific circuit breaker.
-    pub fn get_stats(&self, channel_id: i64) -> Option<CircuitBreakerStats> {
+    pub fn get_stats(&self, account_id: i64) -> Option<CircuitBreakerStats> {
         let stats = match self.stats.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        stats.get(&channel_id).cloned()
+        stats.get(&account_id).cloned()
     }
 
     /// Reset circuit breaker for a channel.
-    pub fn reset(&self, channel_id: i64) {
+    pub fn reset(&self, account_id: i64) {
         let mut circuits = match self.circuits.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        if let Some(entry) = circuits.get_mut(&channel_id) {
+        if let Some(entry) = circuits.get_mut(&account_id) {
             *entry = CircuitEntry::closed();
         }
         let mut stats = match self.stats.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        if let Some(s) = stats.get_mut(&channel_id) {
+        if let Some(s) = stats.get_mut(&account_id) {
             s.state = CircuitState::Closed;
             s.last_state_change = Some(std::time::SystemTime::now());
         }
     }
 
-    /// Returns `true` if the circuit for `channel_id` allows a call.
+    /// Returns `true` if the circuit for `account_id` allows a call.
     /// Transitions Open → HalfOpen if the cool-down has elapsed.
-    fn acquire_call_permit(&self, channel_id: i64) -> CircuitCallPermit {
+    fn acquire_call_permit(&self, account_id: i64) -> CircuitCallPermit {
         let mut circuits = match self.circuits.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
         let entry = circuits
-            .entry(channel_id)
+            .entry(account_id)
             .or_insert_with(CircuitEntry::closed);
         match entry.state {
             CircuitState::Closed => CircuitCallPermit::Closed,
@@ -334,8 +334,8 @@ impl CircuitBreakerInterceptor {
                     entry.state = CircuitState::HalfOpen;
                     entry.half_open_probes = 1;
                     entry.consecutive_successes = 0;
-                    self.record_state_change(channel_id, CircuitState::HalfOpen);
-                    tracing::debug!(channel_id, "circuit breaker transitioned open -> half_open");
+                    self.record_state_change(account_id, CircuitState::HalfOpen);
+                    tracing::debug!(account_id, "circuit breaker transitioned open -> half_open");
                     CircuitCallPermit::HalfOpenProbe
                 } else {
                     CircuitCallPermit::Rejected
@@ -353,29 +353,29 @@ impl CircuitBreakerInterceptor {
     }
 
     #[cfg(test)]
-    fn allow_call(&self, channel_id: i64) -> bool {
-        self.acquire_call_permit(channel_id).is_allowed()
+    fn allow_call(&self, account_id: i64) -> bool {
+        self.acquire_call_permit(account_id).is_allowed()
     }
 
-    fn release_half_open_probe(&self, channel_id: i64) {
+    fn release_half_open_probe(&self, account_id: i64) {
         let mut circuits = match self.circuits.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        if let Some(entry) = circuits.get_mut(&channel_id) {
+        if let Some(entry) = circuits.get_mut(&account_id) {
             if entry.state == CircuitState::HalfOpen {
                 entry.half_open_probes = entry.half_open_probes.saturating_sub(1);
             }
         }
     }
 
-    fn record_success(&self, channel_id: i64) {
+    fn record_success(&self, account_id: i64) {
         let mut circuits = match self.circuits.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
         let entry = circuits
-            .entry(channel_id)
+            .entry(account_id)
             .or_insert_with(CircuitEntry::closed);
         match entry.state {
             CircuitState::Closed => {
@@ -388,9 +388,9 @@ impl CircuitBreakerInterceptor {
                 if entry.consecutive_successes >= self.config.success_threshold {
                     let prev_state = entry.state;
                     *entry = CircuitEntry::closed();
-                    self.record_state_change(channel_id, CircuitState::Closed);
+                    self.record_state_change(account_id, CircuitState::Closed);
                     tracing::info!(
-                        channel_id,
+                        account_id,
                         "circuit breaker transitioned half_open -> closed"
                     );
                     let _ = prev_state;
@@ -398,16 +398,16 @@ impl CircuitBreakerInterceptor {
             }
             CircuitState::Open => {}
         }
-        self.record_success_metric(channel_id);
+        self.record_success_metric(account_id);
     }
 
-    fn record_failure(&self, channel_id: i64) {
+    fn record_failure(&self, account_id: i64) {
         let mut circuits = match self.circuits.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
         let entry = circuits
-            .entry(channel_id)
+            .entry(account_id)
             .or_insert_with(CircuitEntry::closed);
         match entry.state {
             CircuitState::Closed => {
@@ -417,9 +417,9 @@ impl CircuitBreakerInterceptor {
                     entry.state = CircuitState::Open;
                     entry.opened_at = Some(Instant::now());
                     entry.half_open_probes = 0;
-                    self.record_state_change(channel_id, CircuitState::Open);
+                    self.record_state_change(account_id, CircuitState::Open);
                     tracing::warn!(
-                        channel_id,
+                        account_id,
                         failures = entry.consecutive_failures,
                         "circuit breaker opened for channel"
                     );
@@ -430,9 +430,9 @@ impl CircuitBreakerInterceptor {
                 entry.opened_at = Some(Instant::now());
                 entry.half_open_probes = 0;
                 entry.consecutive_successes = 0;
-                self.record_state_change(channel_id, CircuitState::Open);
+                self.record_state_change(account_id, CircuitState::Open);
                 tracing::warn!(
-                    channel_id,
+                    account_id,
                     "circuit breaker re-opened from half-open due to probe failure"
                 );
             }
@@ -440,42 +440,42 @@ impl CircuitBreakerInterceptor {
                 entry.opened_at = Some(Instant::now());
             }
         }
-        self.record_failure_metric(channel_id);
+        self.record_failure_metric(account_id);
     }
 
-    fn record_state_change(&self, channel_id: i64, new_state: CircuitState) {
+    fn record_state_change(&self, account_id: i64, new_state: CircuitState) {
         let mut stats = match self.stats.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
         let stat = stats
-            .entry(channel_id)
-            .or_insert_with(|| CircuitBreakerStats::new(channel_id));
+            .entry(account_id)
+            .or_insert_with(|| CircuitBreakerStats::new(account_id));
         stat.state = new_state;
         stat.last_state_change = Some(std::time::SystemTime::now());
     }
 
-    fn record_success_metric(&self, channel_id: i64) {
+    fn record_success_metric(&self, account_id: i64) {
         let mut stats = match self.stats.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
         let stat = stats
-            .entry(channel_id)
-            .or_insert_with(|| CircuitBreakerStats::new(channel_id));
+            .entry(account_id)
+            .or_insert_with(|| CircuitBreakerStats::new(account_id));
         stat.total_successes = stat.total_successes.saturating_add(1);
         stat.consecutive_successes = stat.consecutive_successes.saturating_add(1);
         stat.consecutive_failures = 0;
     }
 
-    fn record_failure_metric(&self, channel_id: i64) {
+    fn record_failure_metric(&self, account_id: i64) {
         let mut stats = match self.stats.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
         let stat = stats
-            .entry(channel_id)
-            .or_insert_with(|| CircuitBreakerStats::new(channel_id));
+            .entry(account_id)
+            .or_insert_with(|| CircuitBreakerStats::new(account_id));
         stat.total_failures = stat.total_failures.saturating_add(1);
         stat.consecutive_failures = stat.consecutive_failures.saturating_add(1);
         stat.consecutive_successes = 0;
@@ -488,16 +488,16 @@ impl CircuitBreakerInterceptor {
         for attempt in final_channel_attempts(attempts) {
             if let Some(store) = self.distributed.as_ref() {
                 if attempt.success {
-                    store.record_success(attempt.channel_id).await;
+                    store.record_success(attempt.account_id).await;
                 } else {
-                    store.record_failure(attempt.channel_id).await;
+                    store.record_failure(attempt.account_id).await;
                 }
             } else if self.distributed_required {
                 continue;
             } else if attempt.success {
-                self.record_success(attempt.channel_id);
+                self.record_success(attempt.account_id);
             } else {
-                self.record_failure(attempt.channel_id);
+                self.record_failure(attempt.account_id);
             }
         }
     }
@@ -514,18 +514,18 @@ impl CircuitBreakerInterceptor {
             .routing
             .attempted_routes
             .iter()
-            .map(|attempt| attempt.channel_id)
+            .map(|attempt| attempt.account_id)
             .collect::<HashSet<_>>();
         let reserved_probes =
             std::mem::take(&mut invocation.routing.circuit_half_open_probe_channels);
-        for channel_id in reserved_probes {
-            if attempted_channels.contains(&channel_id) {
+        for account_id in reserved_probes {
+            if attempted_channels.contains(&account_id) {
                 continue;
             }
             if let Some(store) = self.distributed.as_ref() {
-                store.release_half_open_probe(channel_id).await;
+                store.release_half_open_probe(account_id).await;
             } else if !self.distributed_required {
-                self.release_half_open_probe(channel_id);
+                self.release_half_open_probe(account_id);
             }
         }
     }
@@ -536,7 +536,7 @@ fn final_channel_attempts(attempts: &[InvocationRouteAttempt]) -> Vec<&Invocatio
     let mut final_attempts = attempts
         .iter()
         .rev()
-        .filter(|attempt| seen.insert(attempt.channel_id))
+        .filter(|attempt| seen.insert(attempt.account_id))
         .collect::<Vec<_>>();
     final_attempts.reverse();
     final_attempts
@@ -570,17 +570,17 @@ impl InvocationInterceptor for CircuitBreakerInterceptor {
                 let mut allowed = Vec::with_capacity(plan.candidates.len());
                 let mut permits = HashMap::new();
                 for candidate in plan.candidates.drain(..) {
-                    let permit = if let Some(permit) = permits.get(&candidate.channel_id) {
+                    let permit = if let Some(permit) = permits.get(&candidate.account_id) {
                         *permit
                     } else {
-                        let permit = store.acquire_call_permit(candidate.channel_id).await;
-                        permits.insert(candidate.channel_id, permit);
+                        let permit = store.acquire_call_permit(candidate.account_id).await;
+                        permits.insert(candidate.account_id, permit);
                         permit
                     };
                     if permit == CircuitCallPermit::HalfOpenProbe
-                        && !reserved_probes.contains(&candidate.channel_id)
+                        && !reserved_probes.contains(&candidate.account_id)
                     {
-                        reserved_probes.push(candidate.channel_id);
+                        reserved_probes.push(candidate.account_id);
                     }
                     if permit.is_allowed() {
                         allowed.push(candidate);
@@ -596,12 +596,12 @@ impl InvocationInterceptor for CircuitBreakerInterceptor {
                 let mut permits = HashMap::new();
                 plan.candidates.retain(|candidate| {
                     let permit = *permits
-                        .entry(candidate.channel_id)
-                        .or_insert_with(|| self.acquire_call_permit(candidate.channel_id));
+                        .entry(candidate.account_id)
+                        .or_insert_with(|| self.acquire_call_permit(candidate.account_id));
                     if permit == CircuitCallPermit::HalfOpenProbe
-                        && !reserved_probes.contains(&candidate.channel_id)
+                        && !reserved_probes.contains(&candidate.account_id)
                     {
-                        reserved_probes.push(candidate.channel_id);
+                        reserved_probes.push(candidate.account_id);
                     }
                     permit.is_allowed()
                 });
@@ -679,8 +679,8 @@ impl RedisCircuitBreakerStore {
         })
     }
 
-    fn redis_key(&self, channel_id: i64) -> String {
-        format!("{}:{channel_id}", self.key_prefix)
+    fn redis_key(&self, account_id: i64) -> String {
+        format!("{}:{account_id}", self.key_prefix)
     }
 
     /// Key TTL — auto-expire circuit state after 24h of inactivity.
@@ -841,7 +841,7 @@ impl RedisCircuitBreakerStore {
 
 #[async_trait::async_trait]
 impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
-    async fn acquire_call_permit(&self, channel_id: i64) -> CircuitCallPermit {
+    async fn acquire_call_permit(&self, account_id: i64) -> CircuitCallPermit {
         let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
             return if self.config.fail_open {
                 CircuitCallPermit::Closed
@@ -849,7 +849,7 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
                 CircuitCallPermit::Rejected
             };
         };
-        let key = self.redis_key(channel_id);
+        let key = self.redis_key(account_id);
         let now = now_unix_timestamp();
 
         let result: Result<i64, _> = redis::cmd("EVAL")
@@ -872,24 +872,24 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
         }
     }
 
-    async fn release_half_open_probe(&self, channel_id: i64) {
+    async fn release_half_open_probe(&self, account_id: i64) {
         let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
             return;
         };
         let _: Result<i64, _> = redis::cmd("EVAL")
             .arg(Self::lua_release_half_open_probe())
             .arg(1)
-            .arg(self.redis_key(channel_id))
+            .arg(self.redis_key(account_id))
             .arg(self.key_ttl_seconds() as i64)
             .query_async(&mut conn)
             .await;
     }
 
-    async fn record_success(&self, channel_id: i64) {
+    async fn record_success(&self, account_id: i64) {
         let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
             return;
         };
-        let key = self.redis_key(channel_id);
+        let key = self.redis_key(account_id);
 
         let _: Result<String, _> = redis::cmd("EVAL")
             .arg(Self::lua_record_success())
@@ -901,11 +901,11 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
             .await;
     }
 
-    async fn record_failure(&self, channel_id: i64) {
+    async fn record_failure(&self, account_id: i64) {
         let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
             return;
         };
-        let key = self.redis_key(channel_id);
+        let key = self.redis_key(account_id);
         let now = now_unix_timestamp();
 
         let result: Result<String, _> = redis::cmd("EVAL")
@@ -921,18 +921,18 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
         if let Ok(state) = result {
             if state == "reopened" {
                 tracing::warn!(
-                    channel_id,
+                    account_id,
                     "circuit breaker re-opened from half-open (distributed)"
                 );
             }
         }
     }
 
-    async fn get_state(&self, channel_id: i64) -> CircuitState {
+    async fn get_state(&self, account_id: i64) -> CircuitState {
         let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
             return CircuitState::Closed;
         };
-        let key = self.redis_key(channel_id);
+        let key = self.redis_key(account_id);
         let state: Option<String> = redis::cmd("HGET")
             .arg(&key)
             .arg("state")
@@ -943,11 +943,11 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
         CircuitState::from_str(state.as_deref().unwrap_or("closed"))
     }
 
-    async fn reset(&self, channel_id: i64) {
+    async fn reset(&self, account_id: i64) {
         let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
             return;
         };
-        let key = self.redis_key(channel_id);
+        let key = self.redis_key(account_id);
         let _: Result<(), _> = redis::cmd("DEL").arg(&key).query_async(&mut conn).await;
     }
 
@@ -1209,10 +1209,10 @@ mod tests {
         assert_eq!(CircuitState::from_str("unknown"), CircuitState::Closed);
     }
 
-    fn route_attempt(channel_id: i64, success: bool) -> InvocationRouteAttempt {
+    fn route_attempt(account_id: i64, success: bool) -> InvocationRouteAttempt {
         InvocationRouteAttempt {
-            provider_code: format!("provider-{channel_id}"),
-            channel_id,
+            supplier_code: format!("provider-{account_id}"),
+            account_id,
             candidate_index: 0,
             status_code: success.then_some(200),
             success,

@@ -4,14 +4,14 @@ use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 
 use crate::application::ApiKeySecretCodec;
 use crate::domain::{
-    ChannelGroup, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
+    UpstreamAccountGroup, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
 };
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand, CreatedGatewayApiKey,
     DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
-    EnsureDefaultChannelGroupCommand, GatewayApiKeyCommandStore, UpdateGatewayApiKeyCommand,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore, UpdateGatewayApiKeyCommand,
     UpdatedGatewayApiKey,
 };
 
@@ -36,15 +36,15 @@ impl SqliteGatewayApiKeyCommandStore {
 }
 
 impl GatewayApiKeyCommandStore for SqliteGatewayApiKeyCommandStore {
-    fn ensure_default_channel_group<'a>(
+    fn ensure_default_upstream_account_group<'a>(
         &'a self,
-        command: EnsureDefaultChannelGroupCommand,
-    ) -> ApiKeyCommandStoreFuture<'a, ChannelGroup> {
+        command: EnsureDefaultUpstreamAccountGroupCommand,
+    ) -> ApiKeyCommandStoreFuture<'a, UpstreamAccountGroup> {
         Box::pin(async move {
             let mut tx = self.pool.begin().await.map_err(|error| {
                 store_error("failed to begin default channel group transaction", error)
             })?;
-            let group = ensure_default_channel_group(&mut tx, &command).await?;
+            let group = ensure_default_upstream_account_group(&mut tx, &command).await?;
             tx.commit().await.map_err(|error| {
                 store_error("failed to commit default channel group transaction", error)
             })?;
@@ -145,11 +145,11 @@ impl GatewayApiKeyCommandStore for SqliteGatewayApiKeyCommandStore {
     }
 }
 
-async fn ensure_default_channel_group(
+async fn ensure_default_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
-    command: &EnsureDefaultChannelGroupCommand,
-) -> DomainResult<ChannelGroup> {
-    if let Some(group) = find_channel_group_by_code(tx, command).await? {
+    command: &EnsureDefaultUpstreamAccountGroupCommand,
+) -> DomainResult<UpstreamAccountGroup> {
+    if let Some(group) = find_upstream_account_group_by_code(tx, command).await? {
         return Ok(group);
     }
 
@@ -157,7 +157,7 @@ async fn ensure_default_channel_group(
     let group_id = next_claw_runtime_id("default channel group creation")?;
     let insert_result = sqlx::query(
         r#"
-        INSERT INTO ai_channel_group
+        INSERT INTO ai_upstream_account_group
             (id, uuid, tenant_id, organization_id, data_scope, status, created_at, updated_at, version, group_name, group_code, description, group_type, environment, pricing_plan_id, pricing_plan_code, rate_multiplier, official_price_multiplier, billing_type, capacity_limit, allowed_origin, metadata)
         VALUES
             (?, ?, ?, ?, 1, 1, ?, ?, 0, ?, ?, '', 'default', 1, ?, ?, ?, ?, 1, 0, '{}', '{}')
@@ -182,22 +182,22 @@ async fn ensure_default_channel_group(
         if !is_unique_violation(&error) {
             return Err(store_error("failed to create default channel group", error));
         }
-        reactivate_default_channel_group(tx, command, pricing_plan_id).await?;
+        reactivate_default_upstream_account_group(tx, command, pricing_plan_id).await?;
     }
 
-    find_channel_group_by_code(tx, command)
+    find_upstream_account_group_by_code(tx, command)
         .await?
         .ok_or_else(|| DomainError::new("default channel group could not be reloaded"))
 }
 
-async fn reactivate_default_channel_group(
+async fn reactivate_default_upstream_account_group(
     tx: &mut Transaction<'_, Sqlite>,
-    command: &EnsureDefaultChannelGroupCommand,
+    command: &EnsureDefaultUpstreamAccountGroupCommand,
     pricing_plan_id: Option<i64>,
 ) -> DomainResult<()> {
     sqlx::query(
         r#"
-        UPDATE ai_channel_group
+        UPDATE ai_upstream_account_group
         SET status = 1,
             deleted_at = NULL,
             group_name = COALESCE(NULLIF(group_name, ''), ?),
@@ -226,10 +226,10 @@ async fn reactivate_default_channel_group(
     Ok(())
 }
 
-async fn find_channel_group_by_code(
+async fn find_upstream_account_group_by_code(
     tx: &mut Transaction<'_, Sqlite>,
-    command: &EnsureDefaultChannelGroupCommand,
-) -> DomainResult<Option<ChannelGroup>> {
+    command: &EnsureDefaultUpstreamAccountGroupCommand,
+) -> DomainResult<Option<UpstreamAccountGroup>> {
     let row = sqlx::query(
         r#"
         SELECT
@@ -241,7 +241,7 @@ async fn find_channel_group_by_code(
             COALESCE(NULLIF(pricing_plan_code, ''), ?) AS pricing_plan_code,
             COALESCE(CAST(rate_multiplier AS TEXT), '1.000000') AS rate_multiplier,
             COALESCE(CAST(official_price_multiplier AS TEXT), '1.000000') AS official_price_multiplier
-        FROM ai_channel_group
+        FROM ai_upstream_account_group
         WHERE tenant_id = ?
           AND organization_id = ?
           AND group_code = ?
@@ -262,7 +262,7 @@ async fn find_channel_group_by_code(
         return Ok(None);
     };
     Ok(Some(
-        ChannelGroup::new_scoped(
+        UpstreamAccountGroup::new_scoped(
             row.try_get::<i64, _>("id").map_err(row_error)?,
             row.try_get::<i64, _>("tenant_id").map_err(row_error)?,
             row.try_get::<i64, _>("organization_id")
@@ -285,7 +285,7 @@ async fn find_channel_group_by_code(
 
 async fn find_pricing_plan_id(
     tx: &mut Transaction<'_, Sqlite>,
-    command: &EnsureDefaultChannelGroupCommand,
+    command: &EnsureDefaultUpstreamAccountGroupCommand,
 ) -> DomainResult<Option<i64>> {
     sqlx::query_scalar(
         r#"
@@ -433,7 +433,7 @@ async fn insert_api_key(
     sqlx::query(
         r#"
         INSERT INTO iam_gateway_api_key
-            (id, uuid, tenant_id, organization_id, user_id, channel_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, policy_id, quota_policy_id, status, created_at, updated_at, expire_at, last_revealed_at, metadata)
+            (id, uuid, tenant_id, organization_id, user_id, account_group_id, name, key_prefix, key_display_masked, key_hash, hash_alg, secret_version, idempotency_key, policy_id, quota_policy_id, status, created_at, updated_at, expire_at, last_revealed_at, metadata)
         VALUES
             (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, CURRENT_TIMESTAMP, ?)
         "#,
@@ -478,7 +478,7 @@ async fn insert_api_key(
         expire_at: command.expire_at.clone(),
         status_code: 1,
         default_for_runtime: command.default_for_runtime,
-        group_bindings: Vec::new(),
+        account_group_bindings: Vec::new(),
     })
 }
 
@@ -597,7 +597,7 @@ async fn update_api_key(
         r#"
         UPDATE iam_gateway_api_key
         SET name = ?,
-            channel_group_id = ?,
+            account_group_id = ?,
             policy_id = ?,
             quota_policy_id = ?,
             expire_at = ?,
@@ -647,7 +647,7 @@ async fn load_owned_api_key(
             COALESCE(tenant_id, 0) AS tenant_id,
             COALESCE(organization_id, 0) AS organization_id,
             COALESCE(user_id, 0) AS user_id,
-            COALESCE(channel_group_id, 0) AS group_id,
+            COALESCE(account_group_id, 0) AS group_id,
             COALESCE(name, '') AS name,
             COALESCE(key_prefix, '') AS key_prefix,
             COALESCE(NULLIF(key_display_masked, ''), COALESCE(key_prefix, '') || '********') AS key_display_masked,
@@ -776,7 +776,7 @@ fn gateway_api_key_from_row(
         default_for_runtime: row
             .try_get::<bool, _>("default_for_runtime")
             .map_err(row_error)?,
-        group_bindings: Vec::new(),
+        account_group_bindings: Vec::new(),
     })
 }
 

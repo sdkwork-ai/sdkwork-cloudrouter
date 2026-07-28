@@ -11,7 +11,7 @@ use super::{
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaymentProviderAccountCredentialRefs {
-    pub provider_code: String,
+    pub supplier_code: String,
     pub merchant_id: String,
     pub environment: String,
     pub secret_ref: String,
@@ -24,7 +24,7 @@ impl PaymentProviderAccountCredentialRefs {
     pub fn from_projection(
         record: &Map<String, Value>,
     ) -> Result<Self, PaymentProviderRegistryError> {
-        let provider_code = required_projection_text(record, &["providerCode", "provider_code"])?;
+        let supplier_code = required_projection_text(record, &["providerCode", "supplier_code"])?;
         let merchant_id = required_projection_text(record, &["merchantId", "merchant_id"])?;
         let environment = required_projection_text(record, &["environment"])?;
         let secret_ref = required_projection_text(record, &["secretRef", "secret_ref"])?;
@@ -51,7 +51,7 @@ impl PaymentProviderAccountCredentialRefs {
         }
 
         Ok(Self {
-            provider_code,
+            supplier_code,
             merchant_id,
             environment,
             secret_ref,
@@ -109,7 +109,7 @@ pub enum PaymentProviderResolvedCredentials {
 }
 
 impl PaymentProviderResolvedCredentials {
-    pub fn provider_code(&self) -> &'static str {
+    pub fn supplier_code(&self) -> &'static str {
         match self {
             Self::Stripe(_) => "stripe",
             Self::PayPal(_) => "paypal",
@@ -134,22 +134,22 @@ impl PaymentProviderAccountCredentialResolver {
         account: PaymentProviderAccountCredentialRefs,
     ) -> PaymentAdapterFuture<'_, PaymentProviderResolvedCredentials> {
         Box::pin(async move {
-            let provider_code = normalize_provider_code(&account.provider_code);
-            validate_payment_secret_ref(&provider_code, &account.secret_ref)?;
+            let supplier_code = normalize_supplier_code(&account.supplier_code);
+            validate_payment_secret_ref(&supplier_code, &account.secret_ref)?;
             if let Some(secret_ref) = account.webhook_secret_ref.as_deref() {
-                validate_payment_secret_ref(&provider_code, secret_ref)?;
+                validate_payment_secret_ref(&supplier_code, secret_ref)?;
             }
             if let Some(secret_ref) = account.certificate_ref.as_deref() {
-                validate_payment_secret_ref(&provider_code, secret_ref)?;
+                validate_payment_secret_ref(&supplier_code, secret_ref)?;
             }
 
-            match provider_code.as_str() {
+            match supplier_code.as_str() {
                 "stripe" => self.resolve_stripe(account).await,
                 "paypal" => self.resolve_paypal(account).await,
                 "alipay" => self.resolve_alipay(account).await,
                 "wechat_pay" => self.resolve_wechat_pay(account).await,
                 _ => Err(PaymentProviderRegistryError::UnsupportedProvider {
-                    provider_code: provider_code.to_owned(),
+                    supplier_code: supplier_code.to_owned(),
                 }),
             }
         })
@@ -261,7 +261,7 @@ impl PaymentProviderAccountCredentialResolver {
 }
 
 pub fn validate_payment_secret_ref(
-    provider_code: &str,
+    supplier_code: &str,
     secret_ref: &str,
 ) -> Result<(), PaymentProviderRegistryError> {
     let locator = if let Some(locator) = secret_ref.strip_prefix("vault://") {
@@ -270,7 +270,7 @@ pub fn validate_payment_secret_ref(
         locator
     } else {
         return Err(invalid_request(
-            provider_code,
+            supplier_code,
             PaymentAdapterOperation::Capabilities,
             "secretRef must start with vault:// or secret://",
         ));
@@ -280,14 +280,14 @@ pub fn validate_payment_secret_ref(
         .all(|character| character.is_ascii_graphic())
     {
         return Err(invalid_request(
-            provider_code,
+            supplier_code,
             PaymentAdapterOperation::Capabilities,
             "secretRef must contain only visible ASCII characters",
         ));
     }
     if locator.trim().is_empty() {
         return Err(invalid_request(
-            provider_code,
+            supplier_code,
             PaymentAdapterOperation::Capabilities,
             "secretRef must include a non-empty locator",
         ));
@@ -295,22 +295,22 @@ pub fn validate_payment_secret_ref(
     Ok(())
 }
 
-fn normalize_provider_code(provider_code: &str) -> String {
-    provider_code
+fn normalize_supplier_code(supplier_code: &str) -> String {
+    supplier_code
         .trim()
         .to_ascii_lowercase()
         .replace(['-', ' '], "_")
 }
 
 fn required_text(
-    provider_code: &str,
+    supplier_code: &str,
     field: &str,
     value: &str,
 ) -> Result<String, PaymentProviderRegistryError> {
     let value = value.trim();
     if value.is_empty() {
         return Err(invalid_request(
-            provider_code,
+            supplier_code,
             PaymentAdapterOperation::Capabilities,
             format!("{field} is required for payment provider account credentials"),
         ));
@@ -319,13 +319,13 @@ fn required_text(
 }
 
 fn required_ref<'a>(
-    provider_code: &str,
+    supplier_code: &str,
     field: &str,
     value: Option<&'a str>,
 ) -> Result<&'a str, PaymentProviderRegistryError> {
     let Some(value) = value else {
         return Err(invalid_request(
-            provider_code,
+            supplier_code,
             PaymentAdapterOperation::Capabilities,
             format!("{field} is required for payment provider account credentials"),
         ));
@@ -333,7 +333,7 @@ fn required_ref<'a>(
     let value = value.trim();
     if value.is_empty() {
         return Err(invalid_request(
-            provider_code,
+            supplier_code,
             PaymentAdapterOperation::Capabilities,
             format!("{field} is required for payment provider account credentials"),
         ));
@@ -343,12 +343,12 @@ fn required_ref<'a>(
 
 fn required_metadata_text(
     metadata: &Value,
-    provider_code: &str,
+    supplier_code: &str,
     keys: &[&str],
 ) -> Result<String, PaymentProviderRegistryError> {
     metadata_text(metadata, keys).ok_or_else(|| {
         invalid_request(
-            provider_code,
+            supplier_code,
             PaymentAdapterOperation::Capabilities,
             format!(
                 "{} is required in payment provider account metadata",
@@ -393,12 +393,12 @@ fn optional_projection_text(record: &Map<String, Value>, keys: &[&str]) -> Optio
 }
 
 fn invalid_request(
-    provider_code: &str,
+    supplier_code: &str,
     operation: PaymentAdapterOperation,
     message: impl Into<String>,
 ) -> PaymentProviderRegistryError {
     PaymentProviderRegistryError::InvalidProviderRequest {
-        provider_code: provider_code.to_owned(),
+        supplier_code: supplier_code.to_owned(),
         operation,
         message: message.into(),
     }

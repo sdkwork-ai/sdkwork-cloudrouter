@@ -5,14 +5,14 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use sdkwork_clawrouter_router_service::domain::{
-    ChannelGroup, DecimalValue, DomainResult, GatewayApiKey, QuotaPolicy,
+    UpstreamAccountGroup, DecimalValue, DomainResult, GatewayApiKey, QuotaPolicy,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    ApiKeyCommandStoreFuture, ApiKeyManagementReadFuture, AppChannelGroupListPage,
+    ApiKeyCommandStoreFuture, ApiKeyManagementReadFuture, AppUpstreamAccountGroupListPage,
     CreateGatewayApiKeyCommand, CreatedGatewayApiKey, DeleteGatewayApiKeyCommand,
-    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultChannelGroupCommand,
+    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
     GatewayApiKeyCommandStore, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
-    GatewayApiKeyManagementSnapshot, ListAppChannelGroupsQuery, ListGatewayApiKeysQuery,
+    GatewayApiKeyManagementSnapshot, ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery,
     UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 use serde_json::Value;
@@ -153,7 +153,7 @@ async fn app_api_key_list_returns_persisted_copyable_key_for_owner() {
 }
 
 #[tokio::test]
-async fn app_channel_group_list_returns_owner_groups_with_display_names() {
+async fn app_upstream_account_group_list_returns_owner_groups_with_display_names() {
     let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
     let command_store = Arc::new(TestApiKeyCommandStore::default());
     let router = sdkwork_clawrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
@@ -164,7 +164,7 @@ async fn app_channel_group_list_returns_owner_groups_with_display_names() {
     );
 
     let response = router
-        .oneshot(signed_request("GET", "/app/v3/api/ai/channel_groups", ""))
+        .oneshot(signed_request("GET", "/app/v3/api/ai/upstream_account_groups", ""))
         .await
         .unwrap();
 
@@ -208,7 +208,7 @@ async fn app_api_key_delete_revokes_owner_key() {
 }
 
 #[tokio::test]
-async fn app_channel_group_routes_do_not_expose_legacy_public_path() {
+async fn app_upstream_account_group_routes_do_not_expose_legacy_public_path() {
     let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
     let command_store = Arc::new(TestApiKeyCommandStore::default());
     let router = sdkwork_clawrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
@@ -277,7 +277,7 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
     ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyManagementSnapshot> {
         Box::pin(async move {
             let mut snapshot = GatewayApiKeyManagementSnapshot {
-                channel_groups: vec![ChannelGroup::new_scoped(
+                upstream_account_groups: vec![UpstreamAccountGroup::new_scoped(
                     99,
                     999,
                     999,
@@ -307,10 +307,10 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
                     expire_at: None,
                     status_code: 1,
                     default_for_runtime: false,
-                    group_bindings: Vec::new(),
+                    account_group_bindings: Vec::new(),
                 });
-                snapshot.channel_groups.push(
-                    ChannelGroup::new_scoped(
+                snapshot.upstream_account_groups.push(
+                    UpstreamAccountGroup::new_scoped(
                         502,
                         10,
                         20,
@@ -321,8 +321,8 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
                     )
                     .with_name("Premium customers"),
                 );
-                snapshot.channel_groups.push(
-                    ChannelGroup::new_scoped(
+                snapshot.upstream_account_groups.push(
+                    UpstreamAccountGroup::new_scoped(
                         501,
                         10,
                         20,
@@ -379,14 +379,14 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
         })
     }
 
-    fn list_app_channel_groups<'a>(
+    fn list_app_upstream_account_groups<'a>(
         &'a self,
-        query: ListAppChannelGroupsQuery,
-    ) -> ApiKeyManagementReadFuture<'a, AppChannelGroupListPage> {
+        query: ListAppUpstreamAccountGroupsQuery,
+    ) -> ApiKeyManagementReadFuture<'a, AppUpstreamAccountGroupListPage> {
         Box::pin(async move {
             let snapshot = self.load_gateway_api_key_management_snapshot().await?;
             let mut items: Vec<_> = snapshot
-                .channel_groups
+                .upstream_account_groups
                 .into_iter()
                 .filter(|group| {
                     (group.tenant_id == 0 || group.tenant_id == query.tenant_id)
@@ -409,7 +409,7 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
             } else {
                 items = items.into_iter().skip(offset).take(page_size).collect();
             }
-            Ok(AppChannelGroupListPage {
+            Ok(AppUpstreamAccountGroupListPage {
                 items,
                 total,
                 page_no: query.page_no,
@@ -426,13 +426,13 @@ struct TestApiKeyCommandStore {
 }
 
 impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
-    fn ensure_default_channel_group<'a>(
+    fn ensure_default_upstream_account_group<'a>(
         &'a self,
-        command: EnsureDefaultChannelGroupCommand,
-    ) -> ApiKeyCommandStoreFuture<'a, ChannelGroup> {
+        command: EnsureDefaultUpstreamAccountGroupCommand,
+    ) -> ApiKeyCommandStoreFuture<'a, UpstreamAccountGroup> {
         Box::pin(async move {
             assert_eq!("standard", command.pricing_plan_code);
-            Ok(ChannelGroup::new_scoped(
+            Ok(UpstreamAccountGroup::new_scoped(
                 501,
                 command.tenant_id,
                 command.organization_id,
@@ -469,7 +469,7 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                     expire_at: command.expire_at,
                     status_code: 1,
                     default_for_runtime: false,
-                    group_bindings: Vec::new(),
+                    account_group_bindings: Vec::new(),
                 },
                 access_policy: None,
                 quota_policy: Some(QuotaPolicy::new(
@@ -504,7 +504,7 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                     expire_at: None,
                     status_code: 1,
                     default_for_runtime: command.default_for_runtime.unwrap_or(false),
-                    group_bindings: Vec::new(),
+                    account_group_bindings: Vec::new(),
                 },
                 access_policy: None,
                 quota_policy: Some(QuotaPolicy::new(

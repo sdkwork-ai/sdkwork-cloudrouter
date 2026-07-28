@@ -73,7 +73,7 @@ ORDER BY rank_score DESC, display_name ASC, id ASC
 "#
     }
 
-    pub fn list_provider_routes() -> &'static str {
+    pub fn list_model_upstream_routes() -> &'static str {
         r#"
 WITH RECURSIVE
 active_channel_resource AS (
@@ -126,12 +126,12 @@ effective_resource_group AS (
     FROM resource_group_candidate
     WHERE candidate_rank = 1
 ),
-channel_group_binding AS (
+upstream_account_group_binding AS (
     SELECT
         cr.id AS binding_id,
         cr.tenant_id AS scope_tenant_id,
         cr.organization_id AS scope_organization_id,
-        cr.channel_id,
+        cr.account_id,
         cr.priority,
         cr.weight,
         resource_group.resource_group_id,
@@ -157,7 +157,7 @@ resource_group_tree AS (
         binding.binding_id,
         binding.scope_tenant_id,
         binding.scope_organization_id,
-        binding.channel_id,
+        binding.account_id,
         binding.priority,
         binding.weight,
         item.resource_id,
@@ -165,7 +165,7 @@ resource_group_tree AS (
         item.child_resource_group_id,
         item.child_resource_group_code,
         0 AS depth
-    FROM channel_group_binding binding
+    FROM upstream_account_group_binding binding
     JOIN ai_resource_group_item item
       ON item.tenant_id = binding.definition_tenant_id
      AND item.organization_id = binding.definition_organization_id
@@ -180,7 +180,7 @@ resource_group_tree AS (
         tree.binding_id,
         tree.scope_tenant_id,
         tree.scope_organization_id,
-        tree.channel_id,
+        tree.account_id,
         tree.priority,
         tree.weight,
         child.resource_id,
@@ -221,7 +221,7 @@ channel_resource_reference AS (
         cr.id AS binding_id,
         cr.tenant_id AS scope_tenant_id,
         cr.organization_id AS scope_organization_id,
-        cr.channel_id,
+        cr.account_id,
         cr.priority,
         cr.weight,
         cr.resource_id,
@@ -234,7 +234,7 @@ channel_resource_reference AS (
         binding_id,
         scope_tenant_id,
         scope_organization_id,
-        channel_id,
+        account_id,
         priority,
         weight,
         resource_id,
@@ -265,7 +265,7 @@ resource_candidate AS (
         reference.binding_id,
         reference.scope_tenant_id,
         reference.scope_organization_id,
-        reference.channel_id,
+        reference.account_id,
         reference.priority,
         reference.weight,
         resource.resource_code AS resolved_resource_code,
@@ -307,7 +307,7 @@ channel_resource_scope AS (
     SELECT DISTINCT
         scope_tenant_id AS tenant_id,
         scope_organization_id AS organization_id,
-        channel_id,
+        account_id,
         resource_type,
         vendor_code,
         api_code,
@@ -323,8 +323,8 @@ channel_resource_scope AS (
 SELECT
     m.catalog_key AS catalog_key,
     m.model AS model,
-    c.provider_code AS provider_code,
-    c.id AS channel_id,
+    c.supplier_code AS supplier_code,
+    c.id AS account_id,
     COALESCE(NULLIF(scope.provider_native_model, ''), NULLIF(scope.model, ''), NULLIF(m.model, ''), m.catalog_key) AS provider_model
 FROM ai_model m
 JOIN ai_channel c
@@ -332,11 +332,11 @@ JOIN ai_channel c
  AND c.tenant_id = m.tenant_id
  AND c.organization_id = m.organization_id
 LEFT JOIN ai_provider p
-  ON p.provider_code = c.provider_code
+  ON p.supplier_code = c.supplier_code
  AND p.tenant_id = c.tenant_id
  AND p.organization_id = c.organization_id
 LEFT JOIN channel_resource_scope scope
-  ON scope.channel_id = c.id
+  ON scope.account_id = c.id
  AND scope.tenant_id = c.tenant_id
  AND scope.organization_id = c.organization_id
  AND (
@@ -392,8 +392,8 @@ SELECT
     billing_meter_code,
     unit_price::text AS unit_price,
     currency,
-    provider_code,
-    channel_id,
+    supplier_code,
+    account_id,
     pricing_plan_code
 FROM ai_model_pricing
 WHERE deleted_at IS NULL
@@ -414,7 +414,7 @@ SELECT
     COALESCE(tenant_id, 0) AS tenant_id,
     COALESCE(organization_id, 0) AS organization_id,
     COALESCE(user_id, 0) AS user_id,
-    COALESCE(channel_group_id, 0) AS group_id,
+    COALESCE(account_group_id, 0) AS group_id,
     COALESCE(name, '') AS name,
     COALESCE(key_prefix, '') AS key_prefix,
     COALESCE(NULLIF(key_display_masked, ''), COALESCE(key_prefix, '') || '********') AS key_display_masked,
@@ -434,7 +434,7 @@ LIMIT 1
 "#
     }
 
-    pub fn find_channel_group() -> &'static str {
+    pub fn find_upstream_account_group() -> &'static str {
         r#"
 SELECT
     id,
@@ -444,7 +444,7 @@ SELECT
     COALESCE(NULLIF(BTRIM(pricing_plan_code), ''), 'standard') AS pricing_plan_code,
     rate_multiplier::text AS rate_multiplier,
     official_price_multiplier::text AS official_price_multiplier
-FROM ai_channel_group
+FROM ai_upstream_account_group
 WHERE deleted_at IS NULL
   AND status = 1
   AND id = $1
@@ -562,7 +562,7 @@ LIMIT 1
 "#
     }
 
-    pub fn find_provider_route() -> &'static str {
+    pub fn find_model_upstream_route() -> &'static str {
         r#"
 WITH RECURSIVE
 active_channel_resource AS (
@@ -615,12 +615,12 @@ effective_resource_group AS (
     FROM resource_group_candidate
     WHERE candidate_rank = 1
 ),
-channel_group_binding AS (
+upstream_account_group_binding AS (
     SELECT
         cr.id AS binding_id,
         cr.tenant_id AS scope_tenant_id,
         cr.organization_id AS scope_organization_id,
-        cr.channel_id,
+        cr.account_id,
         cr.priority,
         cr.weight,
         resource_group.resource_group_id,
@@ -646,7 +646,7 @@ resource_group_tree AS (
         binding.binding_id,
         binding.scope_tenant_id,
         binding.scope_organization_id,
-        binding.channel_id,
+        binding.account_id,
         binding.priority,
         binding.weight,
         item.resource_id,
@@ -654,7 +654,7 @@ resource_group_tree AS (
         item.child_resource_group_id,
         item.child_resource_group_code,
         0 AS depth
-    FROM channel_group_binding binding
+    FROM upstream_account_group_binding binding
     JOIN ai_resource_group_item item
       ON item.tenant_id = binding.definition_tenant_id
      AND item.organization_id = binding.definition_organization_id
@@ -669,7 +669,7 @@ resource_group_tree AS (
         tree.binding_id,
         tree.scope_tenant_id,
         tree.scope_organization_id,
-        tree.channel_id,
+        tree.account_id,
         tree.priority,
         tree.weight,
         child.resource_id,
@@ -710,7 +710,7 @@ channel_resource_reference AS (
         cr.id AS binding_id,
         cr.tenant_id AS scope_tenant_id,
         cr.organization_id AS scope_organization_id,
-        cr.channel_id,
+        cr.account_id,
         cr.priority,
         cr.weight,
         cr.resource_id,
@@ -723,7 +723,7 @@ channel_resource_reference AS (
         binding_id,
         scope_tenant_id,
         scope_organization_id,
-        channel_id,
+        account_id,
         priority,
         weight,
         resource_id,
@@ -754,7 +754,7 @@ resource_candidate AS (
         reference.binding_id,
         reference.scope_tenant_id,
         reference.scope_organization_id,
-        reference.channel_id,
+        reference.account_id,
         reference.priority,
         reference.weight,
         resource.resource_type,
@@ -795,7 +795,7 @@ channel_resource_scope AS (
     SELECT DISTINCT
         scope_tenant_id AS tenant_id,
         scope_organization_id AS organization_id,
-        channel_id,
+        account_id,
         resource_type,
         vendor_code,
         api_code,
@@ -811,8 +811,8 @@ channel_resource_scope AS (
 SELECT
     m.catalog_key AS catalog_key,
     m.model AS model,
-    c.provider_code AS provider_code,
-    c.id AS channel_id,
+    c.supplier_code AS supplier_code,
+    c.id AS account_id,
     COALESCE(NULLIF(scope.provider_native_model, ''), NULLIF(scope.model, ''), NULLIF(m.model, ''), m.catalog_key) AS provider_model
 FROM ai_model m
 JOIN ai_channel c
@@ -820,11 +820,11 @@ JOIN ai_channel c
  AND c.tenant_id = m.tenant_id
  AND c.organization_id = m.organization_id
 LEFT JOIN ai_provider p
-  ON p.provider_code = c.provider_code
+  ON p.supplier_code = c.supplier_code
  AND p.tenant_id = c.tenant_id
  AND p.organization_id = c.organization_id
 LEFT JOIN channel_resource_scope scope
-  ON scope.channel_id = c.id
+  ON scope.account_id = c.id
  AND scope.tenant_id = c.tenant_id
  AND scope.organization_id = c.organization_id
  AND (
@@ -845,7 +845,7 @@ LEFT JOIN channel_resource_scope scope
       )
  )
 WHERE m.catalog_key = $1
-  AND c.provider_code = $2
+  AND c.supplier_code = $2
   AND m.deleted_at IS NULL
   AND c.deleted_at IS NULL
   AND (p.id IS NULL OR p.deleted_at IS NULL)
@@ -882,8 +882,8 @@ SELECT
     billing_meter_code,
     unit_price::text AS unit_price,
     currency,
-    provider_code,
-    channel_id,
+    supplier_code,
+    account_id,
     pricing_plan_code
 FROM ai_model_pricing
 WHERE deleted_at IS NULL
@@ -891,7 +891,7 @@ WHERE deleted_at IS NULL
   AND catalog_key = $1
   AND price_side = $2
   AND billing_meter_code = $3
-  AND (($4 IS NULL AND provider_code IS NULL) OR provider_code = $4)
+  AND (($4 IS NULL AND supplier_code IS NULL) OR supplier_code = $4)
   AND (($5 IS NULL AND pricing_plan_code IS NULL) OR pricing_plan_code = $5)
   AND (effective_from IS NULL OR effective_from <= CURRENT_TIMESTAMP)
   AND (effective_to IS NULL OR effective_to > CURRENT_TIMESTAMP)

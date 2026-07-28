@@ -13,7 +13,7 @@ pub struct RuntimeImportPaymentStatementCommand {
     pub tenant_id: String,
     pub organization_id: Option<String>,
     pub statement_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub provider_account_id: Option<String>,
     pub statement_type: String,
     pub settlement_currency: String,
@@ -38,7 +38,7 @@ pub struct RuntimeImportPaymentStatementCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeImportPaymentStatementItemCommand {
     pub row_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub provider_account_id: Option<String>,
     pub native_trade_id: Option<String>,
     pub native_refund_id: Option<String>,
@@ -68,7 +68,7 @@ pub struct RuntimeGeneratePaymentReconciliationItemsCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeReconciliationLedgerEntry {
-    pub provider_code: String,
+    pub supplier_code: String,
     pub payment_attempt_id: Option<String>,
     pub refund_id: Option<String>,
     pub refund_attempt_id: Option<String>,
@@ -90,7 +90,7 @@ pub struct PaymentStatementRecord {
     pub tenant_id: String,
     pub organization_id: Option<String>,
     pub statement_no: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub provider_account_id: Option<String>,
     pub statement_type: String,
     pub settlement_currency: String,
@@ -119,7 +119,7 @@ pub struct PaymentStatementItemRecord {
     pub tenant_id: String,
     pub organization_id: Option<String>,
     pub statement_id: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub provider_account_id: Option<String>,
     pub row_no: String,
     pub native_trade_id: Option<String>,
@@ -180,7 +180,7 @@ pub struct PaymentReconciliationItemRecord {
     pub payment_attempt_id: Option<String>,
     pub refund_id: Option<String>,
     pub refund_attempt_id: Option<String>,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub difference_type: PaymentReconciliationDifferenceType,
     pub match_status: String,
     pub internal_amount: Option<String>,
@@ -269,7 +269,7 @@ where
             tenant_id: command.tenant_id.clone(),
             organization_id: command.organization_id.clone(),
             statement_no: command.statement_no.clone(),
-            provider_code: command.provider_code.clone(),
+            supplier_code: command.supplier_code.clone(),
             provider_account_id: command.provider_account_id.clone(),
             statement_type: command.statement_type.clone(),
             settlement_currency: command.settlement_currency.clone(),
@@ -433,7 +433,7 @@ where
             tenant_id: command.tenant_id.clone(),
             organization_id: command.organization_id.clone(),
             statement_id: statement_id.to_owned(),
-            provider_code: item.provider_code.clone(),
+            supplier_code: item.supplier_code.clone(),
             provider_account_id: item.provider_account_id.clone(),
             row_no: item.row_no.clone(),
             native_trade_id: item.native_trade_id.clone(),
@@ -477,7 +477,7 @@ where
             payment_attempt_id: internal.and_then(|item| item.payment_attempt_id.clone()),
             refund_id: internal.and_then(|item| item.refund_id.clone()),
             refund_attempt_id: internal.and_then(|item| item.refund_attempt_id.clone()),
-            provider_code: statement_item.provider_code.clone(),
+            supplier_code: statement_item.supplier_code.clone(),
             difference_type,
             match_status,
             internal_amount: internal.map(|item| item.internal_amount.clone()),
@@ -515,7 +515,7 @@ where
             payment_attempt_id: internal.payment_attempt_id.clone(),
             refund_id: internal.refund_id.clone(),
             refund_attempt_id: internal.refund_attempt_id.clone(),
-            provider_code: internal.provider_code.clone(),
+            supplier_code: internal.supplier_code.clone(),
             difference_type,
             match_status,
             internal_amount: Some(internal.internal_amount.clone()),
@@ -633,7 +633,7 @@ fn validate_import_statement_command(
 ) -> DomainResult<()> {
     require_non_empty("tenant_id", &command.tenant_id)?;
     require_non_empty("statement_no", &command.statement_no)?;
-    require_non_empty("provider_code", &command.provider_code)?;
+    require_non_empty("supplier_code", &command.supplier_code)?;
     require_non_empty("statement_type", &command.statement_type)?;
     require_non_empty("settlement_currency", &command.settlement_currency)?;
     require_non_empty("period_start", &command.period_start)?;
@@ -652,7 +652,7 @@ fn validate_import_statement_command(
     }
     for item in &command.items {
         require_non_empty("statement item row_no", &item.row_no)?;
-        require_non_empty("statement item provider_code", &item.provider_code)?;
+        require_non_empty("statement item supplier_code", &item.supplier_code)?;
         require_non_empty("statement item transaction_type", &item.transaction_type)?;
         require_non_empty("statement item occurred_at", &item.occurred_at)?;
         require_non_empty("statement item gross_amount", &item.gross_amount)?;

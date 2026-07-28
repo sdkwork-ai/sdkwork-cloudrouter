@@ -15,7 +15,7 @@ impl ProviderAdapter for EchoProviderAdapter {
         "echo"
     }
 
-    fn provider_codes(&self) -> &'static [&'static str] {
+    fn supplier_codes(&self) -> &'static [&'static str] {
         &["echo-provider"]
     }
 
@@ -44,7 +44,7 @@ fn provider_adapter_exposes_manifest_endpoint_metadata() {
     let endpoints = adapter.endpoints();
 
     assert_eq!(adapter.package(), "echo");
-    assert_eq!(adapter.provider_codes(), &["echo-provider"]);
+    assert_eq!(adapter.supplier_codes(), &["echo-provider"]);
     assert_eq!(endpoints[0].endpoint_key, "video.start_end2video");
     assert_eq!(endpoints[0].capability.as_deref(), Some("video_generation"));
     assert_eq!(

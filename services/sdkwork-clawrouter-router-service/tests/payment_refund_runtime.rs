@@ -52,7 +52,7 @@ async fn create_refund_records_failed_provider_attempt_for_mainstream_sandbox_ad
     assert_eq!(1, refunds.len());
     assert_eq!(intent.id, refunds[0].payment_intent_id);
     assert_eq!("refund-1001", refunds[0].merchant_refund_no);
-    assert_eq!("stripe", refunds[0].provider_code);
+    assert_eq!("stripe", refunds[0].supplier_code);
     assert_eq!(PaymentRefundStatus::Failed, refunds[0].status);
     assert_eq!(1, store.refund_attempts().len());
     assert_eq!("FAILED", store.refund_attempts()[0].status);
@@ -289,7 +289,7 @@ fn create_intent_command() -> RuntimeCreatePaymentIntentCommand {
         amount: "88.50".to_owned(),
         currency_code: "CNY".to_owned(),
         subject: "standard checkout".to_owned(),
-        provider_code: "stripe".to_owned(),
+        supplier_code: "stripe".to_owned(),
         payment_method: Some("card".to_owned()),
         scene: Some("web".to_owned()),
         idempotency_key: "intent-idem-1001".to_owned(),

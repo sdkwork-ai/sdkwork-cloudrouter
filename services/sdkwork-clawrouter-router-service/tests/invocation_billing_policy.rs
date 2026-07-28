@@ -227,7 +227,7 @@ async fn maps_provider_native_resources_to_adapter_usage_line_billing() {
     let classification = ProviderNativeResourceClassifier::default()
         .classify(
             &InvocationClassificationRequest::new(Method::POST, "/kling/v1/videos/text2video")
-                .with_provider_code("kling")
+                .with_supplier_code("kling")
                 .with_provider_family("media")
                 .with_endpoint_key("text_to_video")
                 .with_capability(RoutingCapability::Video),

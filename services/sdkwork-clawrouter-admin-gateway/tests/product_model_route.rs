@@ -3,9 +3,9 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelProviderRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderChannelRoute, RouteCandidate, RoutingPolicy, RoutingPolicyScope, RoutingRule,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    UpstreamAccountRoute, RouteCandidate, RoutingPolicy, RoutingPolicyScope, RoutingRule,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use tower::ServiceExt;
@@ -24,7 +24,7 @@ fn catalog() -> InMemoryPricingCatalog {
         vec!["chat"],
     ));
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter",
@@ -32,19 +32,19 @@ fn catalog() -> InMemoryPricingCatalog {
             "gpt-4o-mini",
         )
         .with_api_code("openai.chat_completions")
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("https://openrouter.example.test/v1"),
             Some("vault://providers/openrouter/account/main"),
         ),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_channel_code("openrouter-main")
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_account_code("openrouter-main")
+            .with_upstream_endpoint(
                 Some("https://openrouter.example.test/v1"),
                 Some("vault://providers/openrouter/account/main"),
             )
-            .with_resource_scoped_group_binding(10, 1, 100, ["openai.chat_completions"], ["llm"]),
+            .with_resource_scoped_account_group_binding(10, 1, 100, ["openai.chat_completions"], ["llm"]),
     );
     catalog.add_plan(PricingPlan::new(
         "standard",
@@ -52,7 +52,7 @@ fn catalog() -> InMemoryPricingCatalog {
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new_scoped(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new_scoped(
         10,
         10,
         20,
@@ -68,7 +68,7 @@ fn catalog() -> InMemoryPricingCatalog {
         10,
         20,
         "standard-chat-policy",
-        RoutingPolicyScope::ChannelGroup,
+        RoutingPolicyScope::UpstreamAccountGroup,
         Some(10),
         Some(201),
     ));
@@ -83,7 +83,7 @@ fn catalog() -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog.add_price(ModelPrice::new_for_catalog_key(
         "openai/gpt-4o-mini",

@@ -184,10 +184,10 @@ fn trace_command_from_invocation(
             .api_key_name_snapshot
             .clone()
             .unwrap_or_default(),
-        channel_group_id: invocation.subject.channel_group_id.unwrap_or_default(),
-        channel_group_snapshot: invocation
+        account_group_id: invocation.subject.account_group_id.unwrap_or_default(),
+        upstream_account_group_snapshot: invocation
             .subject
-            .channel_group_code
+            .account_group_code
             .clone()
             .or_else(|| {
                 invocation
@@ -195,7 +195,7 @@ fn trace_command_from_invocation(
                     .route_plan
                     .as_ref()
                     .and_then(|plan| plan.current_candidate())
-                    .and_then(|candidate| candidate.channel_group_code.clone())
+                    .and_then(|candidate| candidate.account_group_code.clone())
             })
             .unwrap_or_default(),
         catalog_key: catalog_key.clone(),
@@ -205,25 +205,25 @@ fn trace_command_from_invocation(
             .requested_model_catalog_key
             .clone()
             .unwrap_or_else(|| catalog_key.clone()),
-        provider_code: account
-            .map(|account| account.provider_code.clone())
-            .or_else(|| invocation.resource.provider_code.clone())
+        supplier_code: account
+            .map(|account| account.supplier_code.clone())
+            .or_else(|| invocation.resource.supplier_code.clone())
             .or_else(|| {
                 invocation
                     .routing
                     .attempted_routes
                     .last()
-                    .map(|attempt| attempt.provider_code.clone())
+                    .map(|attempt| attempt.supplier_code.clone())
             })
             .unwrap_or_default(),
-        channel_id: account
-            .map(|account| account.channel_id)
+        account_id: account
+            .map(|account| account.account_id)
             .or_else(|| {
                 invocation
                     .routing
                     .attempted_routes
                     .last()
-                    .map(|attempt| attempt.channel_id)
+                    .map(|attempt| attempt.account_id)
             })
             .unwrap_or_default(),
         provider_model: provider_model.clone(),

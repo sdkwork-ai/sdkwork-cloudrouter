@@ -30,7 +30,7 @@ async fn sqlite_admin_storage_store_manages_storage_center_records() {
     let created_provider = store
         .create_provider(CreateStorageProviderCommand {
             subject: subject(),
-            provider_code: "minio-dev".to_owned(),
+            supplier_code: "minio-dev".to_owned(),
             provider_type: "minio".to_owned(),
             endpoint_url: Some("http://127.0.0.1:9000".to_owned()),
             region: Some("local".to_owned()),
@@ -253,7 +253,7 @@ async fn create_storage_tables(pool: &sqlx::SqlitePool) {
             status INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            provider_code TEXT NOT NULL,
+            supplier_code TEXT NOT NULL,
             provider_type TEXT NOT NULL,
             endpoint_url TEXT,
             region TEXT,
@@ -268,7 +268,7 @@ async fn create_storage_tables(pool: &sqlx::SqlitePool) {
             request_id TEXT
         )
         "#,
-        "CREATE UNIQUE INDEX uq_object_provider_tenant_code ON object_provider (tenant_id, organization_id, provider_code)",
+        "CREATE UNIQUE INDEX uq_object_provider_tenant_code ON object_provider (tenant_id, organization_id, supplier_code)",
         r#"
         CREATE TABLE object_bucket (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -474,7 +474,7 @@ async fn seed_storage_center(pool: &sqlx::SqlitePool) {
     sqlx::query(
         r#"
         INSERT INTO object_provider
-            (id, uuid, tenant_id, organization_id, provider_code, provider_type, endpoint_url, region, credential_ref, supports_multipart, supports_lifecycle, health_status)
+            (id, uuid, tenant_id, organization_id, supplier_code, provider_type, endpoint_url, region, credential_ref, supports_multipart, supports_lifecycle, health_status)
         VALUES
             (1, 'provider-aws-primary', 100001, 0, 'aws-primary', 'aws_s3', 'https://s3.amazonaws.com', 'us-east-1', 'secret://oss/aws-primary', 1, 1, 'healthy')
         "#,

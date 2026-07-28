@@ -401,30 +401,30 @@ impl AiRoutingCacheInvalidatingAdminChannelGroupStore {
 }
 
 impl AdminChannelGroupStore for AiRoutingCacheInvalidatingAdminChannelGroupStore {
-    fn list_channel_groups<'a>(
+    fn list_upstream_account_groups<'a>(
         &'a self,
         query: ListAdminChannelGroupsQuery,
     ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupListPage> {
-        self.inner.list_channel_groups(query)
+        self.inner.list_upstream_account_groups(query)
     }
 
-    fn create_channel_group<'a>(
+    fn create_upstream_account_group<'a>(
         &'a self,
         command: CreateAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupItem> {
         Box::pin(async move {
-            let item = self.inner.create_channel_group(command).await?;
+            let item = self.inner.create_upstream_account_group(command).await?;
             self.invalidator.invalidate_routing_facts().await?;
             Ok(item)
         })
     }
 
-    fn update_channel_group<'a>(
+    fn update_upstream_account_group<'a>(
         &'a self,
         command: UpdateAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, Option<AdminChannelGroupItem>> {
         Box::pin(async move {
-            let item = self.inner.update_channel_group(command).await?;
+            let item = self.inner.update_upstream_account_group(command).await?;
             if item.is_some() {
                 self.invalidator.invalidate_routing_facts().await?;
             }
@@ -432,12 +432,12 @@ impl AdminChannelGroupStore for AiRoutingCacheInvalidatingAdminChannelGroupStore
         })
     }
 
-    fn delete_channel_group<'a>(
+    fn delete_upstream_account_group<'a>(
         &'a self,
         command: DeleteAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, bool> {
         Box::pin(async move {
-            let deleted = self.inner.delete_channel_group(command).await?;
+            let deleted = self.inner.delete_upstream_account_group(command).await?;
             if deleted {
                 self.invalidator.invalidate_routing_facts().await?;
             }

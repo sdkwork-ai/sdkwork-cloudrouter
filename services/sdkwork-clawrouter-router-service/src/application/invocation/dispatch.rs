@@ -8,7 +8,7 @@ use serde_json::Value;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct InvocationAdapterTarget {
-    pub provider_code: String,
+    pub supplier_code: String,
     pub endpoint_key: String,
     pub base_url: String,
     pub path_template: String,
@@ -22,7 +22,7 @@ impl Debug for InvocationAdapterTarget {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         formatter
             .debug_struct("InvocationAdapterTarget")
-            .field("provider_code", &self.provider_code)
+            .field("supplier_code", &self.supplier_code)
             .field("endpoint_key", &self.endpoint_key)
             .field("base_url", &self.base_url)
             .field("path_template", &self.path_template)

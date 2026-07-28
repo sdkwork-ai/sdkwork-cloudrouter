@@ -38,6 +38,6 @@ pub(crate) fn health_status_label(value: i32) -> String {
     .to_owned()
 }
 
-pub(crate) fn default_site_service_code(site_code: &str) -> String {
-    format!("{site_code}_ai_model_relay")
+pub(crate) fn default_endpoint_code(supplier_code: &str) -> String {
+    format!("{supplier_code}_ai_model_relay")
 }

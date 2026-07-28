@@ -16,11 +16,11 @@ pub type PaasProviderPluginFuture<'a> = Pin<
 pub trait PaasProviderPlugin: Send + Sync {
     fn metadata(&self) -> PaasProviderPluginMetadata;
 
-    fn supports_provider(&self, provider_code: &str) -> bool {
+    fn supports_provider(&self, supplier_code: &str) -> bool {
         self.metadata()
-            .provider_codes
+            .supplier_codes
             .iter()
-            .any(|candidate| candidate == provider_code)
+            .any(|candidate| candidate == supplier_code)
     }
 
     fn supports_operation(&self, operation: PaasOperation) -> bool {
@@ -34,7 +34,7 @@ pub trait PaasProviderPlugin: Send + Sync {
     ) -> PaasProviderPluginFuture<'a> {
         Box::pin(async move {
             Err(PaasProviderPluginError::ProviderNotConfigured {
-                provider_code: context.provider_code,
+                supplier_code: context.supplier_code,
                 operation: request.operation(),
             })
         })
@@ -45,7 +45,7 @@ pub trait PaasProviderPlugin: Send + Sync {
 pub struct PaasProviderPluginMetadata {
     pub plugin_id: String,
     pub provider_family: String,
-    pub provider_codes: Vec<String>,
+    pub supplier_codes: Vec<String>,
     pub capabilities: Vec<PaasCapability>,
     pub operations: Vec<PaasOperation>,
     pub credential_kinds: Vec<String>,
@@ -55,26 +55,26 @@ pub struct PaasProviderPluginMetadata {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PaasProviderPluginError {
     ProviderNotConfigured {
-        provider_code: String,
+        supplier_code: String,
         operation: PaasOperation,
     },
     UnsupportedOperation {
-        provider_code: String,
+        supplier_code: String,
         operation: PaasOperation,
     },
     InvalidProviderRequest {
-        provider_code: String,
+        supplier_code: String,
         message: String,
     },
     ProviderFailed {
-        provider_code: String,
+        supplier_code: String,
         message: String,
     },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaasProviderRoutingKey<'a> {
-    pub provider_code: &'a str,
+    pub supplier_code: &'a str,
     pub operation: PaasOperation,
 }
 
@@ -98,7 +98,7 @@ impl PaasProviderRegistry {
             .iter()
             .map(|plugin| plugin.as_ref())
             .find(|plugin| {
-                plugin.supports_provider(key.provider_code)
+                plugin.supports_provider(key.supplier_code)
                     && plugin.supports_operation(key.operation)
             })
     }
@@ -135,7 +135,7 @@ impl PaasProviderPlugin for BaiduPaasProviderPlugin {
     /// produces a synthetic response for billing settlement and trace
     /// correlation. The actual HTTP relay to Baidu Cloud OCR API is performed
     /// by the cloud-gateway passthrough transport; this adapter records the
-    /// provider_request_id and provider_code so downstream usage tracking can
+    /// provider_request_id and supplier_code so downstream usage tracking can
     /// attribute the call correctly.
     ///
     /// Non-OCR operations fall through to the default `ProviderNotConfigured`
@@ -149,7 +149,7 @@ impl PaasProviderPlugin for BaiduPaasProviderPlugin {
             match request {
                 PaasStandardRequest::Ocr(ocr_request) => invoke_baidu_ocr(context, ocr_request),
                 _ => Err(PaasProviderPluginError::ProviderNotConfigured {
-                    provider_code: context.provider_code,
+                    supplier_code: context.supplier_code,
                     operation: request.operation(),
                 }),
             }
@@ -161,7 +161,7 @@ impl PaasProviderPlugin for BaiduPaasProviderPlugin {
 /// billing settlement and trace correlation.
 ///
 /// The synthetic body carries:
-/// - `provider_code` — routing attribution for downstream usage tracking
+/// - `supplier_code` — routing attribution for downstream usage tracking
 /// - `provider_request_id` — stable identifier for trace correlation across
 ///   the cloud-gateway passthrough transport and the billing pipeline
 /// - `pages` — minimal page shape matching `PaasOcrResponse` contract
@@ -176,7 +176,7 @@ fn invoke_baidu_ocr(
     let input_summary = summarize_image_input(&request.image);
 
     Ok(PaasStandardResponse::Ocr(PaasOcrResponse {
-        provider_code: context.provider_code,
+        supplier_code: context.supplier_code,
         provider_request_id: Some(provider_request_id),
         pages: vec![PaasDocumentPage {
             page_index: 0,
@@ -251,14 +251,14 @@ impl PaasProviderPlugin for TencentPaasProviderPlugin {
 fn builtin_provider_metadata(
     plugin_id: &str,
     provider_family: &str,
-    provider_codes: &[&str],
+    supplier_codes: &[&str],
     credential_kinds: &[&str],
     default_regions: &[&str],
 ) -> PaasProviderPluginMetadata {
     PaasProviderPluginMetadata {
         plugin_id: plugin_id.to_owned(),
         provider_family: provider_family.to_owned(),
-        provider_codes: provider_codes
+        supplier_codes: supplier_codes
             .iter()
             .map(|code| (*code).to_owned())
             .collect(),

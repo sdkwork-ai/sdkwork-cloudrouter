@@ -9,7 +9,7 @@ pub struct InvocationClassificationRequest {
     pub path: String,
     pub query: Option<String>,
     pub provider_family: Option<String>,
-    pub provider_code: Option<String>,
+    pub supplier_code: Option<String>,
     pub endpoint_key: Option<String>,
     pub operation_id: Option<String>,
     pub capability: Option<RoutingCapability>,
@@ -24,7 +24,7 @@ impl InvocationClassificationRequest {
             path,
             query,
             provider_family: None,
-            provider_code: None,
+            supplier_code: None,
             endpoint_key: None,
             operation_id: None,
             capability: None,
@@ -36,8 +36,8 @@ impl InvocationClassificationRequest {
         self
     }
 
-    pub fn with_provider_code(mut self, provider_code: impl Into<String>) -> Self {
-        self.provider_code = Some(provider_code.into());
+    pub fn with_supplier_code(mut self, supplier_code: impl Into<String>) -> Self {
+        self.supplier_code = Some(supplier_code.into());
         self
     }
 

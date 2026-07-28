@@ -22,7 +22,7 @@ pub struct AdminChannelGroupItem {
     pub organization_id: i64,
     pub group_code: String,
     pub group_name: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub price_reference_mode: String,
     pub rate_multiplier: f64,
     pub official_price_multiplier: f64,
@@ -46,11 +46,11 @@ pub struct AdminChannelGroupChannelBindingItem {
     pub tenant_id: i64,
     pub organization_id: i64,
     pub group_id: i64,
-    pub channel_id: i64,
+    pub account_id: i64,
     pub channel_name: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub provider_name: String,
-    pub channel_code: String,
+    pub account_code: String,
     pub resource_codes: Vec<String>,
     pub api_scope: Vec<String>,
     pub capabilities: Vec<String>,
@@ -63,7 +63,7 @@ pub struct AdminChannelGroupChannelBindingItem {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminChannelGroupChannelBindingInput {
-    pub channel_id: i64,
+    pub account_id: i64,
     pub priority: i64,
     pub weight: i64,
     pub status: String,
@@ -105,7 +105,7 @@ pub struct CreateAdminChannelGroupCommand {
     pub binding_uuid: String,
     pub group_code: String,
     pub group_name: String,
-    pub provider_code: String,
+    pub supplier_code: String,
     pub price_reference_mode: String,
     pub rate_multiplier: f64,
     pub official_price_multiplier: f64,
@@ -127,7 +127,7 @@ pub struct UpdateAdminChannelGroupCommand {
     pub binding_uuid: String,
     pub group_code: Option<String>,
     pub group_name: Option<String>,
-    pub provider_code: Option<String>,
+    pub supplier_code: Option<String>,
     pub price_reference_mode: Option<String>,
     pub rate_multiplier: Option<f64>,
     pub official_price_multiplier: Option<f64>,
@@ -163,22 +163,22 @@ pub struct ReplaceAdminChannelGroupChannelBindingsCommand {
 }
 
 pub trait AdminChannelGroupStore {
-    fn list_channel_groups<'a>(
+    fn list_upstream_account_groups<'a>(
         &'a self,
         query: ListAdminChannelGroupsQuery,
     ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupListPage>;
 
-    fn create_channel_group<'a>(
+    fn create_upstream_account_group<'a>(
         &'a self,
         command: CreateAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, AdminChannelGroupItem>;
 
-    fn update_channel_group<'a>(
+    fn update_upstream_account_group<'a>(
         &'a self,
         command: UpdateAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, Option<AdminChannelGroupItem>>;
 
-    fn delete_channel_group<'a>(
+    fn delete_upstream_account_group<'a>(
         &'a self,
         command: DeleteAdminChannelGroupCommand,
     ) -> AdminChannelGroupCommandFuture<'a, bool>;

@@ -83,7 +83,7 @@ fn build_adapter_provider_request(
         })?;
         headers.insert(header::AUTHORIZATION, value);
     }
-    let path = adapter_path(&target.path_template, &target.provider_code, standard_path);
+    let path = adapter_path(&target.path_template, &target.supplier_code, standard_path);
     Ok(InvocationProviderRequest {
         method: axum::http::Method::POST,
         url: provider_url(Some(&target.base_url), &path, None),
@@ -360,13 +360,13 @@ fn build_adapter_body(
             "organizationId": invocation.subject.organization_id,
             "userId": invocation.subject.user_id,
             "apiKeyId": invocation.subject.api_key_id,
-            "groupId": invocation.subject.channel_group_id,
-            "groupCode": invocation.subject.channel_group_code.as_deref(),
+            "groupId": invocation.subject.account_group_id,
+            "groupCode": invocation.subject.account_group_code.as_deref(),
             "pricingPlanCode": invocation.subject.pricing_plan_code.as_deref()
         },
         "provider": {
-            "providerCode": account.provider_code.as_str(),
-            "channelId": account.channel_id,
+            "providerCode": account.supplier_code.as_str(),
+            "channelId": account.account_id,
             "regionCode": account.region_code.as_str(),
             "providerModel": account.provider_model.as_deref().unwrap_or_default(),
             "baseUrl": account.base_url.as_deref(),
@@ -409,9 +409,9 @@ fn adapter_endpoint_key(invocation: &Invocation) -> Option<&str> {
         .or(invocation.resource.endpoint_key.as_deref())
 }
 
-fn adapter_path(path_template: &str, provider_code: &str, standard_path: &str) -> String {
+fn adapter_path(path_template: &str, supplier_code: &str, standard_path: &str) -> String {
     let path = path_template
-        .replace("{provider_code}", provider_code)
+        .replace("{supplier_code}", supplier_code)
         .replace("{standard_path}", standard_path);
     if path.starts_with('/') {
         path

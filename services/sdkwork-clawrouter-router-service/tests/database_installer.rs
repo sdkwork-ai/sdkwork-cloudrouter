@@ -186,7 +186,7 @@ async fn seed_snapshot(pool: &SqlitePool) -> SeedSnapshot {
         channel_rows: sqlx::query_scalar(
             r#"SELECT COUNT(*) FROM ai_channel
                WHERE tenant_id = 100001 AND organization_id = 0
-                 AND channel_code = 'openai-default' AND deleted_at IS NULL"#,
+                 AND account_code = 'openai-default' AND deleted_at IS NULL"#,
         )
         .fetch_one(pool)
         .await
@@ -194,7 +194,7 @@ async fn seed_snapshot(pool: &SqlitePool) -> SeedSnapshot {
         credential_rows: sqlx::query_scalar(
             r#"SELECT COUNT(*) FROM ai_channel_credential
                WHERE tenant_id = 100001 AND organization_id = 0
-                 AND channel_code = 'openai-default' AND deleted_at IS NULL"#,
+                 AND account_code = 'openai-default' AND deleted_at IS NULL"#,
         )
         .fetch_one(pool)
         .await

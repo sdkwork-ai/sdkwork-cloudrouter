@@ -75,7 +75,7 @@ impl ProviderAdapterRegistry {
         self.routes
             .iter()
             .filter(|route| route.status == AdapterRouteStatus::Enabled)
-            .filter(|route| value_eq(route.provider_code.as_str(), lookup.provider_code))
+            .filter(|route| value_eq(route.supplier_code.as_str(), lookup.supplier_code))
             .filter(|route| value_eq(route.method.as_str(), lookup.method))
             .filter_map(|route| {
                 let path_score =

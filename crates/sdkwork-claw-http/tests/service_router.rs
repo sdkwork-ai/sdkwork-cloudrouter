@@ -590,7 +590,7 @@ async fn service_router_exposes_s3_compatible_cloud_services_openapi_document() 
     assert_eq!("cloud-services", payload["x-sdkwork-sdk-family"]);
     assert_eq!(true, payload["x-s3-compatible"]);
 
-    for provider_code in [
+    for supplier_code in [
         "aws_s3",
         "minio",
         "cloudflare_r2",
@@ -600,11 +600,11 @@ async fn service_router_exposes_s3_compatible_cloud_services_openapi_document() 
         "volcengine_tos",
         "baidu_bos",
     ] {
-        assert_json_array_contains(&payload["x-supported-provider-codes"], provider_code);
+        assert_json_array_contains(&payload["x-supported-provider-codes"], supplier_code);
         assert_json_array_contains(
             &payload["components"]["schemas"]["S3StorageProviderCode"]
                 ["x-sdkwork-initial-provider-codes"],
-            provider_code,
+            supplier_code,
         );
     }
 
@@ -612,7 +612,7 @@ async fn service_router_exposes_s3_compatible_cloud_services_openapi_document() 
         .as_array()
         .expect("cloud storage OpenAPI must expose provider capability matrix");
     assert_eq!(8, provider_matrix.len());
-    for provider_code in [
+    for supplier_code in [
         "aws_s3",
         "minio",
         "cloudflare_r2",
@@ -624,27 +624,27 @@ async fn service_router_exposes_s3_compatible_cloud_services_openapi_document() 
     ] {
         let provider_profile = provider_matrix
             .iter()
-            .find(|profile| profile["providerCode"] == provider_code)
-            .unwrap_or_else(|| panic!("missing provider capability profile for {provider_code}"));
+            .find(|profile| profile["providerCode"] == supplier_code)
+            .unwrap_or_else(|| panic!("missing provider capability profile for {supplier_code}"));
         assert_eq!(true, provider_profile["s3Compatible"]);
         assert_eq!("aws-s3-compatible", provider_profile["sdkFamily"]);
         assert!(
             provider_profile["endpointStyles"]
                 .as_array()
                 .is_some_and(|styles| !styles.is_empty()),
-            "provider capability profile must describe endpoint styles for {provider_code}"
+            "provider capability profile must describe endpoint styles for {supplier_code}"
         );
         assert!(
             provider_profile["credentialModes"]
                 .as_array()
                 .is_some_and(|modes| !modes.is_empty()),
-            "provider capability profile must describe credential modes for {provider_code}"
+            "provider capability profile must describe credential modes for {supplier_code}"
         );
         assert!(
             provider_profile["regionExamples"]
                 .as_array()
                 .is_some_and(|regions| !regions.is_empty()),
-            "provider capability profile must include region examples for {provider_code}"
+            "provider capability profile must include region examples for {supplier_code}"
         );
         assert_json_array_contains(&provider_profile["capabilityCodes"], "s3_object_put");
         assert_json_array_contains(&provider_profile["capabilityCodes"], "s3_presigned_url");
@@ -823,7 +823,7 @@ async fn service_router_exposes_iaas_compute_cloud_services_openapi_document() {
     assert_eq!("definition-only", payload["x-sdkwork-contract-state"]);
     assert_eq!("cloud-services", payload["x-sdkwork-sdk-family"]);
 
-    for provider_code in [
+    for supplier_code in [
         "aws_ec2",
         "azure_compute",
         "gcp_compute",
@@ -832,11 +832,11 @@ async fn service_router_exposes_iaas_compute_cloud_services_openapi_document() {
         "huawei_ecs",
         "volcengine_ecs",
     ] {
-        assert_json_array_contains(&payload["x-supported-provider-codes"], provider_code);
+        assert_json_array_contains(&payload["x-supported-provider-codes"], supplier_code);
         assert_json_array_contains(
             &payload["components"]["schemas"]["CloudIaasProviderCode"]
                 ["x-sdkwork-initial-provider-codes"],
-            provider_code,
+            supplier_code,
         );
     }
     let iaas_provider_matrix = payload["x-sdkwork-iaas-provider-capability-matrix"]
@@ -846,12 +846,12 @@ async fn service_router_exposes_iaas_compute_cloud_services_openapi_document() {
         iaas_provider_matrix.len() >= 7,
         "cloud IaaS provider capability matrix must cover major IaaS providers"
     );
-    for provider_code in ["aws_ec2", "alicloud_ecs", "tencent_cvm"] {
+    for supplier_code in ["aws_ec2", "alicloud_ecs", "tencent_cvm"] {
         let provider_profile = iaas_provider_matrix
             .iter()
-            .find(|profile| profile["providerCode"] == provider_code)
+            .find(|profile| profile["providerCode"] == supplier_code)
             .unwrap_or_else(|| {
-                panic!("missing IaaS provider capability profile for {provider_code}")
+                panic!("missing IaaS provider capability profile for {supplier_code}")
             });
         assert_json_array_contains(
             &provider_profile["capabilityCodes"],
@@ -1451,7 +1451,7 @@ async fn service_router_exposes_iaas_compute_cloud_services_openapi_document() {
         iaas_plugin_contract["providerFamily"], manifest_provider["providerFamily"],
         "IaaS plugin manifest example must use the contract provider family"
     );
-    for provider_code in [
+    for supplier_code in [
         "aws_ec2",
         "azure_compute",
         "gcp_compute",
@@ -1460,7 +1460,7 @@ async fn service_router_exposes_iaas_compute_cloud_services_openapi_document() {
         "huawei_ecs",
         "volcengine_ecs",
     ] {
-        assert_json_array_contains(&manifest_provider["providerCodes"], provider_code);
+        assert_json_array_contains(&manifest_provider["providerCodes"], supplier_code);
     }
     let manifest_endpoints = manifest_provider["endpoints"]
         .as_array()
@@ -1625,12 +1625,12 @@ async fn service_router_exposes_paas_openapi_document() {
     assert!(payload["paths"].get("/paas/v3/ocr/recognitions").is_some());
     assert!(payload["paths"].get("/paas/v3/faces/compare").is_some());
     assert!(payload["paths"].get("/paas/v3/faces/liveness").is_some());
-    for provider_code in ["baidu", "alibaba", "tencent"] {
-        assert_json_array_contains(&payload["x-supported-provider-codes"], provider_code);
+    for supplier_code in ["baidu", "alibaba", "tencent"] {
+        assert_json_array_contains(&payload["x-supported-provider-codes"], supplier_code);
         assert_json_array_contains(
             &payload["components"]["schemas"]["PaaSProviderCode"]
                 ["x-sdkwork-initial-provider-codes"],
-            provider_code,
+            supplier_code,
         );
     }
 }
@@ -1698,7 +1698,7 @@ async fn service_router_payment_aggregate_openapi_contract_defines_standard_paym
     assert_eq!("definition-only", payload["x-sdkwork-contract-state"]);
     assert_eq!("payment-aggregate", payload["x-sdkwork-sdk-family"]);
 
-    for provider_code in [
+    for supplier_code in [
         "wechat_pay",
         "alipay",
         "stripe",
@@ -1709,11 +1709,11 @@ async fn service_router_payment_aggregate_openapi_contract_defines_standard_paym
         assert_json_array_contains(
             &payload["components"]["schemas"]["PaymentProviderCode"]
                 ["x-sdkwork-initial-provider-codes"],
-            provider_code,
+            supplier_code,
         );
-        assert_json_array_contains(&payload["x-supported-provider-codes"], provider_code);
+        assert_json_array_contains(&payload["x-supported-provider-codes"], supplier_code);
     }
-    for provider_code in [
+    for supplier_code in [
         "yeepay",
         "unionpay",
         "jd_pay",
@@ -1736,9 +1736,9 @@ async fn service_router_payment_aggregate_openapi_contract_defines_standard_paym
         assert_json_array_contains(
             &payload["components"]["schemas"]["PaymentProviderCode"]
                 ["x-sdkwork-extension-provider-codes"],
-            provider_code,
+            supplier_code,
         );
-        assert_json_array_contains(&payload["x-extension-provider-codes"], provider_code);
+        assert_json_array_contains(&payload["x-extension-provider-codes"], supplier_code);
     }
     for provider_option in [
         "wechatPay",

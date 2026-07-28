@@ -2,8 +2,8 @@ use crate::domain::{ProviderAuthProfile, ProviderRetryPolicy};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationAccount {
-    pub provider_code: String,
-    pub channel_id: i64,
+    pub supplier_code: String,
+    pub account_id: i64,
     pub region_code: String,
     pub credential_id: Option<i64>,
     pub credential_rotation: Option<String>,

@@ -18,9 +18,9 @@ use sdkwork_clawrouter_router_service::application::{
     InvocationResource, InvocationSubject,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, ChannelGroup, DecimalValue, DomainError, DomainResult,
-    GatewayAccessPolicy, GatewayApiKey, ModelPrice, ModelProviderRoute, ModelVendor,
-    ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderChannelRoute,
+    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, DomainError, DomainResult,
+    GatewayAccessPolicy, GatewayApiKey, ModelPrice, ModelUpstreamRoute, ModelVendor,
+    ModelVendorDefinition, Money, PriceSide, PricingPlan, UpstreamAccountRoute,
     ProviderRetryPolicy, QuotaPolicy, RouteCandidate, RoutingCapability, RoutingPolicy,
     RoutingPolicyScope, RoutingRule,
 };
@@ -47,8 +47,8 @@ struct CapturedDispatch {
     organization_id: i64,
     user_id: i64,
     request_path: String,
-    provider_code: String,
-    channel_id: i64,
+    supplier_code: String,
+    account_id: i64,
     provider_request: Option<InvocationProviderRequest>,
 }
 
@@ -70,8 +70,8 @@ impl InvocationDispatcher for CapturingDispatcher {
                 organization_id: invocation.subject.organization_id,
                 user_id: invocation.subject.user_id,
                 request_path: invocation.request.path.clone(),
-                provider_code: account.provider_code.clone(),
-                channel_id: account.channel_id,
+                supplier_code: account.supplier_code.clone(),
+                account_id: account.account_id,
                 provider_request: invocation.dispatch.provider_request.clone(),
             });
             if invocation.billing.quantity_source == BillingQuantitySource::AdapterUsageLines {
@@ -384,23 +384,23 @@ fn catalog_with_hashed_api_key_and_base_url(
         .with_catalog_key("kling.text_to_video"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "openrouter",
             3001,
             "gpt-4o-mini-provider",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some(base_url),
             Some("vault://providers/openrouter/account/main"),
         )
         .with_timeout_ms(30_000)
         .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
                 Some(base_url),
                 Some("vault://providers/openrouter/account/main"),
             )
@@ -413,7 +413,7 @@ fn catalog_with_hashed_api_key_and_base_url(
         DecimalValue::parse("1.200000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_channel_group(ChannelGroup::new(
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
         "standard",
@@ -471,7 +471,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             10,
             20,
             "standard-group-gpt-4o-mini-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9101),
         )
@@ -488,7 +488,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -496,7 +496,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             10,
             20,
             "standard-group-network-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9201),
         )
@@ -513,7 +513,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             r#"{"routeKey":"openai/management/files"}"#,
             "openai/management/files",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -521,7 +521,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             10,
             20,
             "standard-group-video-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9301),
         )
@@ -538,7 +538,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             r#"{"routeKey":"kling.text_to_video"}"#,
             "kling.text_to_video",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog
 }
@@ -550,23 +550,23 @@ fn catalog_with_failover_routes_and_hashed_api_key(
 ) -> InMemoryPricingCatalog {
     let mut catalog = catalog_with_hashed_api_key_and_base_url(key_hash, primary_base_url);
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
             "fallback",
             3002,
             "gpt-4o-mini-fallback",
         )
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some(fallback_base_url),
             Some("vault://providers/fallback/account/main"),
         )
         .with_timeout_ms(30_000)
         .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
     );
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("fallback", 3002)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("fallback", 3002)
+            .with_upstream_endpoint(
                 Some(fallback_base_url),
                 Some("vault://providers/fallback/account/main"),
             )
@@ -604,7 +604,7 @@ fn catalog_with_failover_routes_and_hashed_api_key(
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_channels(vec![
+        .with_candidate_account_groups(vec![
             RouteCandidate::new(3001, 100),
             RouteCandidate::new(3002, 90),
         ]),
@@ -632,7 +632,7 @@ fn catalog_with_encoded_image_model_and_hashed_api_key(key_hash: &str) -> InMemo
         .with_catalog_key("openrouter/gpt-4o-mini+latest"),
     );
     catalog.add_provider_route(
-        ModelProviderRoute::new_for_catalog_key(
+        ModelUpstreamRoute::new_for_catalog_key(
             "openrouter/gpt-4o-mini+latest",
             "openrouter/gpt-4o-mini+latest",
             "openrouter",
@@ -640,7 +640,7 @@ fn catalog_with_encoded_image_model_and_hashed_api_key(key_hash: &str) -> InMemo
             "openrouter/gpt-4o-mini+latest",
         )
         .with_api_code("openai.images.generations")
-        .with_provider_endpoint(
+        .with_upstream_endpoint(
             Some("http://provider-proxy.internal/openrouter"),
             Some("vault://providers/openrouter/account/main"),
         ),
@@ -659,7 +659,7 @@ fn catalog_with_encoded_image_model_and_hashed_api_key(key_hash: &str) -> InMemo
             10,
             20,
             "standard-group-image-policy",
-            RoutingPolicyScope::ChannelGroup,
+            RoutingPolicyScope::UpstreamAccountGroup,
             Some(10),
             Some(9301),
         )
@@ -676,7 +676,7 @@ fn catalog_with_encoded_image_model_and_hashed_api_key(key_hash: &str) -> InMemo
             r#"{"catalogKey":"openrouter/gpt-4o-mini+latest"}"#,
             "openrouter/gpt-4o-mini+latest",
         )
-        .with_candidate_channels(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
     );
     catalog
 }
@@ -765,7 +765,7 @@ fn provider_adapter_config(adapter_base_url: &str) -> ProviderAdapterConfig {
                         "endpointKey": "text2video",
                         "method": "POST",
                         "standardPathPattern": "/v1/videos/text2video",
-                        "adapterPathTemplate": "/providers/{{provider_code}}{{standard_path}}",
+                        "adapterPathTemplate": "/providers/{{supplier_code}}{{standard_path}}",
                         "invocationShape": "async_task_start",
                         "status": "enabled",
                         "priority": 10
@@ -830,8 +830,8 @@ async fn invocation_router_dispatches_openai_model_call_through_pipeline() {
     assert_eq!(20, call.organization_id);
     assert_eq!(30, call.user_id);
     assert_eq!("/v1/chat/completions", call.request_path);
-    assert_eq!("openrouter", call.provider_code);
-    assert_eq!(3001, call.channel_id);
+    assert_eq!("openrouter", call.supplier_code);
+    assert_eq!(3001, call.account_id);
 
     let provider_request = call.provider_request.as_ref().expect("provider request");
     assert_eq!(
@@ -926,7 +926,7 @@ async fn invocation_router_can_failover_when_primary_secret_is_missing() {
     assert_eq!(StatusCode::OK, response.status());
     let calls = dispatcher.calls();
     assert_eq!(1, calls.len());
-    assert_eq!("fallback", calls[0].provider_code);
+    assert_eq!("fallback", calls[0].supplier_code);
     let provider_request = calls[0]
         .provider_request
         .as_ref()
@@ -1126,7 +1126,7 @@ async fn invocation_router_records_metered_usage_after_settlement() {
     assert_eq!(2, commands[1].completion_tokens);
     assert!(commands
         .iter()
-        .all(|command| command.provider_code == "openrouter" && command.channel_id == 3001));
+        .all(|command| command.supplier_code == "openrouter" && command.account_id == 3001));
     assert!(usage_recorder.traces().is_empty());
 }
 
@@ -1188,9 +1188,9 @@ async fn invocation_router_resolves_lookup_sticky_route_before_dispatch() {
             object_id: "file-sticky-1".to_owned(),
             parent_object_type: None,
             parent_object_id: None,
-            provider_code: "openrouter".to_owned(),
-            channel_id: 3001,
-            channel_group_id: Some(10),
+            supplier_code: "openrouter".to_owned(),
+            account_id: 3001,
+            account_group_id: Some(10),
             vendor_code: Some("openrouter".to_owned()),
             api_code: Some("openai.files".to_owned()),
             catalog_key: Some("openai/management/files".to_owned()),
@@ -1230,8 +1230,8 @@ async fn invocation_router_resolves_lookup_sticky_route_before_dispatch() {
 
     let calls = dispatcher.calls();
     assert_eq!(1, calls.len());
-    assert_eq!("openrouter", calls[0].provider_code);
-    assert_eq!(3001, calls[0].channel_id);
+    assert_eq!("openrouter", calls[0].supplier_code);
+    assert_eq!(3001, calls[0].account_id);
 }
 
 #[tokio::test]
@@ -1270,11 +1270,11 @@ async fn invocation_router_commits_create_then_sticky_route_after_successful_dis
     assert_eq!(10, upserts[0].tenant_id);
     assert_eq!(20, upserts[0].organization_id);
     assert_eq!(Some(101), upserts[0].api_key_id);
-    assert_eq!(Some(10), upserts[0].channel_group_id);
+    assert_eq!(Some(10), upserts[0].account_group_id);
     assert_eq!("file", upserts[0].object_type);
     assert_eq!("chatcmpl-invocation-router", upserts[0].object_id);
-    assert_eq!("openrouter", upserts[0].provider_code);
-    assert_eq!(3001, upserts[0].channel_id);
+    assert_eq!("openrouter", upserts[0].supplier_code);
+    assert_eq!(3001, upserts[0].account_id);
     assert_eq!(
         Some("openai/management/files"),
         upserts[0].catalog_key.as_deref()
@@ -1489,8 +1489,8 @@ async fn invocation_router_provider_native_adapter_uses_standard_chain_and_recor
     assert_eq!("2", commands[1].billable_quantity);
     assert!(commands.iter().all(|command| {
         command.request_id == request_id
-            && command.provider_code == "openrouter"
-            && command.channel_id == 3001
+            && command.supplier_code == "openrouter"
+            && command.account_id == 3001
             && command.request_path == "/v1/videos/text2video"
             && command.http_status == 202
     }));
@@ -1959,9 +1959,9 @@ async fn invocation_router_times_out_an_unpolled_stream_and_releases_idempotency
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let mut catalog = catalog_with_hashed_api_key(&key_hash);
-    catalog.add_provider_channel_route(
-        ProviderChannelRoute::new("openrouter", 3001)
-            .with_provider_endpoint(
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/main"),
             )
@@ -2104,8 +2104,8 @@ async fn invocation_http_dispatcher_forwards_provider_header_auth_after_sanitizi
         body: InvocationBody::Json(json!({"model": "gpt-4o-mini-provider"})),
     });
     let account = InvocationAccount {
-        provider_code: "anthropic".to_owned(),
-        channel_id: 4001,
+        supplier_code: "anthropic".to_owned(),
+        account_id: 4001,
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,
@@ -2165,8 +2165,8 @@ async fn invocation_http_dispatcher_enforces_account_timeout() {
         body: InvocationBody::Json(json!({"ping": true})),
     });
     let account = InvocationAccount {
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,

@@ -192,7 +192,7 @@ impl PaymentProviderAdapterFactory for RegistryPaymentProviderAdapterFactory {
                     Ok(adapter)
                 }
                 other => Err(PaymentProviderRegistryError::UnsupportedProvider {
-                    provider_code: other.provider_code().to_owned(),
+                    supplier_code: other.supplier_code().to_owned(),
                 }),
             }
         })
@@ -224,7 +224,7 @@ async fn assembler_registers_stripe_adapter_from_projection() {
         .unwrap();
 
     let adapter = registry.resolve("stripe_checkout").unwrap();
-    assert_eq!("stripe", adapter.capabilities().provider_code);
+    assert_eq!("stripe", adapter.capabilities().supplier_code);
     assert!(!adapter.capabilities().sandbox_only);
 
     let outcome = adapter
@@ -253,7 +253,7 @@ async fn assembler_registers_paypal_adapter_from_resolved_credentials() {
         .resolve_and_register(
             PaymentProviderRegistry::empty(),
             PaymentProviderAccountCredentialRefs {
-                provider_code: "paypal".to_owned(),
+                supplier_code: "paypal".to_owned(),
                 merchant_id: "paypal-client-id".to_owned(),
                 environment: "live".to_owned(),
                 secret_ref: "secret://payments/paypal/client-secret".to_owned(),
@@ -266,7 +266,7 @@ async fn assembler_registers_paypal_adapter_from_resolved_credentials() {
         .unwrap();
 
     let adapter = registry.resolve("paypal_checkout").unwrap();
-    assert_eq!("paypal", adapter.capabilities().provider_code);
+    assert_eq!("paypal", adapter.capabilities().supplier_code);
     assert!(!adapter.capabilities().sandbox_only);
 }
 
@@ -280,7 +280,7 @@ async fn assembler_default_factory_registers_stripe_without_custom_factory() {
         .resolve_and_register(
             PaymentProviderRegistry::empty(),
             PaymentProviderAccountCredentialRefs {
-                provider_code: "stripe".to_owned(),
+                supplier_code: "stripe".to_owned(),
                 merchant_id: "acct_stripe_1".to_owned(),
                 environment: "sandbox".to_owned(),
                 secret_ref: "secret://payments/stripe/default-factory-key".to_owned(),
@@ -293,7 +293,7 @@ async fn assembler_default_factory_registers_stripe_without_custom_factory() {
         .unwrap();
 
     let adapter = registry.resolve("stripe").unwrap();
-    assert_eq!("stripe", adapter.capabilities().provider_code);
+    assert_eq!("stripe", adapter.capabilities().supplier_code);
     assert!(!adapter.capabilities().sandbox_only);
 }
 
@@ -310,7 +310,7 @@ async fn default_adapter_factory_builds_stripe_and_paypal_real_adapters() {
         ))
         .await
         .unwrap();
-    assert_eq!("stripe", stripe.capabilities().provider_code);
+    assert_eq!("stripe", stripe.capabilities().supplier_code);
     assert!(!stripe.capabilities().sandbox_only);
 
     let paypal = factory
@@ -323,7 +323,7 @@ async fn default_adapter_factory_builds_stripe_and_paypal_real_adapters() {
         ))
         .await
         .unwrap();
-    assert_eq!("paypal", paypal.capabilities().provider_code);
+    assert_eq!("paypal", paypal.capabilities().supplier_code);
     assert!(!paypal.capabilities().sandbox_only);
 }
 
@@ -345,7 +345,7 @@ async fn default_adapter_factory_requires_injected_crypto_for_domestic_adapters(
     {
         Ok(adapter) => panic!(
             "Alipay must require an injected signer/client factory: {}",
-            adapter.capabilities().provider_code
+            adapter.capabilities().supplier_code
         ),
         Err(error) => error,
     };
@@ -370,7 +370,7 @@ async fn default_adapter_factory_requires_injected_crypto_for_domestic_adapters(
     {
         Ok(adapter) => panic!(
             "WeChat Pay must require an injected crypto/client factory: {}",
-            adapter.capabilities().provider_code
+            adapter.capabilities().supplier_code
         ),
         Err(error) => error,
     };
@@ -405,7 +405,7 @@ async fn configurable_adapter_factory_builds_alipay_and_wechat_pay_when_security
         ))
         .await
         .unwrap();
-    assert_eq!("alipay", alipay.capabilities().provider_code);
+    assert_eq!("alipay", alipay.capabilities().supplier_code);
     assert!(!alipay.capabilities().sandbox_only);
 
     let wechat_pay = factory
@@ -421,7 +421,7 @@ async fn configurable_adapter_factory_builds_alipay_and_wechat_pay_when_security
         ))
         .await
         .unwrap();
-    assert_eq!("wechat_pay", wechat_pay.capabilities().provider_code);
+    assert_eq!("wechat_pay", wechat_pay.capabilities().supplier_code);
     assert!(!wechat_pay.capabilities().sandbox_only);
 }
 
@@ -451,7 +451,7 @@ async fn configurable_adapter_factory_rejects_partial_domestic_security_injectio
     {
         Ok(adapter) => panic!(
             "partial factory must not build WeChat Pay adapter: {}",
-            adapter.capabilities().provider_code
+            adapter.capabilities().supplier_code
         ),
         Err(error) => error,
     };
@@ -471,7 +471,7 @@ async fn configurable_adapter_factory_rejects_partial_domestic_security_injectio
     {
         Ok(adapter) => panic!(
             "partial factory must not build Alipay adapter: {}",
-            adapter.capabilities().provider_code
+            adapter.capabilities().supplier_code
         ),
         Err(error) => error,
     };
@@ -490,7 +490,7 @@ async fn assembler_registers_many_accounts_and_collects_failures_without_abortin
             PaymentProviderRegistry::empty(),
             vec![
                 PaymentProviderAccountCredentialRefs {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     merchant_id: "acct_stripe_1".to_owned(),
                     environment: "sandbox".to_owned(),
                     secret_ref: "secret://payments/stripe/key".to_owned(),
@@ -499,7 +499,7 @@ async fn assembler_registers_many_accounts_and_collects_failures_without_abortin
                     metadata: json!({ "accountNo": "stripe-main" }),
                 },
                 PaymentProviderAccountCredentialRefs {
-                    provider_code: "paypal".to_owned(),
+                    supplier_code: "paypal".to_owned(),
                     merchant_id: "paypal-client-id".to_owned(),
                     environment: "live".to_owned(),
                     secret_ref: "paypal-plaintext-secret".to_owned(),
@@ -508,7 +508,7 @@ async fn assembler_registers_many_accounts_and_collects_failures_without_abortin
                     metadata: json!({ "accountNo": "paypal-bad-secret" }),
                 },
                 PaymentProviderAccountCredentialRefs {
-                    provider_code: "alipay".to_owned(),
+                    supplier_code: "alipay".to_owned(),
                     merchant_id: "alipay-app-id".to_owned(),
                     environment: "live".to_owned(),
                     secret_ref: "secret://payments/alipay/private-key".to_owned(),
@@ -521,19 +521,19 @@ async fn assembler_registers_many_accounts_and_collects_failures_without_abortin
         .await;
 
     let stripe = report.registry.resolve("stripe").unwrap();
-    assert_eq!("stripe", stripe.capabilities().provider_code);
+    assert_eq!("stripe", stripe.capabilities().supplier_code);
     assert_eq!(1, report.registered.len());
     assert_eq!("stripe-main", report.registered[0].account_no);
-    assert_eq!("stripe", report.registered[0].provider_code);
+    assert_eq!("stripe", report.registered[0].supplier_code);
 
     assert_eq!(2, report.failures.len());
     assert_eq!("paypal-bad-secret", report.failures[0].account_no);
-    assert_eq!("paypal", report.failures[0].provider_code);
+    assert_eq!("paypal", report.failures[0].supplier_code);
     assert!(report.failures[0]
         .message
         .contains("secretRef must start with vault:// or secret://"));
     assert_eq!("alipay-missing-signer", report.failures[1].account_no);
-    assert_eq!("alipay", report.failures[1].provider_code);
+    assert_eq!("alipay", report.failures[1].supplier_code);
     assert!(report.failures[1].message.contains("Alipay OpenAPI client"));
 }
 
@@ -577,11 +577,11 @@ async fn assembler_registers_many_projection_records_and_collects_parse_failures
             .resolve("stripe")
             .unwrap()
             .capabilities()
-            .provider_code
+            .supplier_code
     );
     assert_eq!(1, report.failures.len());
     assert_eq!("missing-provider", report.failures[0].account_no);
-    assert_eq!("unknown", report.failures[0].provider_code);
+    assert_eq!("unknown", report.failures[0].supplier_code);
     assert!(report.failures[0]
         .message
         .contains("providerCode is required"));
@@ -655,7 +655,7 @@ async fn assembly_report_exposes_stable_summary_and_events_without_secret_materi
             PaymentProviderRegistry::empty(),
             vec![
                 PaymentProviderAccountCredentialRefs {
-                    provider_code: "stripe".to_owned(),
+                    supplier_code: "stripe".to_owned(),
                     merchant_id: "acct_stripe_1".to_owned(),
                     environment: "sandbox".to_owned(),
                     secret_ref: "secret://payments/stripe/key".to_owned(),
@@ -664,7 +664,7 @@ async fn assembly_report_exposes_stable_summary_and_events_without_secret_materi
                     metadata: json!({ "accountNo": "stripe-main" }),
                 },
                 PaymentProviderAccountCredentialRefs {
-                    provider_code: "paypal".to_owned(),
+                    supplier_code: "paypal".to_owned(),
                     merchant_id: "paypal-client-id".to_owned(),
                     environment: "live".to_owned(),
                     secret_ref: "paypal-plaintext-secret".to_owned(),
@@ -681,18 +681,18 @@ async fn assembly_report_exposes_stable_summary_and_events_without_secret_materi
     assert_eq!(1, summary.registered);
     assert_eq!(1, summary.failed);
     assert_eq!(0, summary.skipped);
-    assert_eq!(vec!["stripe"], summary.registered_provider_codes);
-    assert_eq!(vec!["paypal"], summary.failed_provider_codes);
+    assert_eq!(vec!["stripe"], summary.registered_supplier_codes);
+    assert_eq!(vec!["paypal"], summary.failed_supplier_codes);
 
     let events = report.events();
     assert_eq!(2, events.len());
     assert_eq!("registered", events[0].kind);
     assert_eq!("stripe-main", events[0].account_no);
-    assert_eq!("stripe", events[0].provider_code);
+    assert_eq!("stripe", events[0].supplier_code);
     assert_eq!(None, events[0].message);
     assert_eq!("failed", events[1].kind);
     assert_eq!("paypal-bad-secret", events[1].account_no);
-    assert_eq!("paypal", events[1].provider_code);
+    assert_eq!("paypal", events[1].supplier_code);
     assert!(events[1]
         .message
         .as_deref()
@@ -731,7 +731,7 @@ async fn assembly_report_events_include_skipped_reason() {
     assert_eq!(1, events.len());
     assert_eq!("skipped", events[0].kind);
     assert_eq!("stripe-inactive-sandbox", events[0].account_no);
-    assert_eq!("stripe", events[0].provider_code);
+    assert_eq!("stripe", events[0].supplier_code);
     assert_eq!(Some("disabled".to_owned()), events[0].reason);
     assert_eq!(None, events[0].message);
 }

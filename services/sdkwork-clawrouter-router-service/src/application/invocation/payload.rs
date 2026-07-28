@@ -220,21 +220,21 @@ fn top_level_model_from_json_value(value: &Value) -> Result<Option<String>, Invo
 
 fn provider_native_catalog_key(invocation: &Invocation, model: &str) -> String {
     let model = model.trim();
-    let provider_code = invocation
+    let supplier_code = invocation
         .resource
-        .provider_code
+        .supplier_code
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty());
-    if let Some(provider_code) = provider_code {
+    if let Some(supplier_code) = supplier_code {
         let model_provider = model
             .split('/')
             .map(str::trim)
             .find(|part| !part.is_empty());
-        if model_provider == Some(provider_code) {
+        if model_provider == Some(supplier_code) {
             return model.to_owned();
         }
-        return format!("{provider_code}/{model}");
+        return format!("{supplier_code}/{model}");
     }
     model.to_owned()
 }

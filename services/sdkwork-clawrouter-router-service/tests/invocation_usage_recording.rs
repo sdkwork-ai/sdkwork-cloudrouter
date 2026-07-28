@@ -163,8 +163,8 @@ fn subject() -> InvocationSubject {
 
 fn account() -> InvocationAccount {
     InvocationAccount {
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,
@@ -217,7 +217,7 @@ fn provider_native_invocation() -> Invocation {
     let resource = InvocationResource {
         surface: InvocationSurface::ProviderNative,
         provider_family: None,
-        provider_code: Some("kling".to_owned()),
+        supplier_code: Some("kling".to_owned()),
         route_key: "kling.text_to_video".to_owned(),
         api_code: "kling.text_to_video".to_owned(),
         endpoint_key: Some("kling.text_to_video".to_owned()),
@@ -248,7 +248,7 @@ fn provider_native_invocation() -> Invocation {
         },
     );
     invocation.account = Some(InvocationAccount {
-        provider_code: "openrouter".to_owned(),
+        supplier_code: "openrouter".to_owned(),
         provider_model: None,
         ..account()
     });
@@ -271,13 +271,13 @@ fn usage_command() -> GatewayUsageRecordCommand {
         user_id: 30,
         api_key_id: 101,
         api_key_name_snapshot: "Owner Usage Key".to_owned(),
-        channel_group_id: 10,
-        channel_group_snapshot: "standard-group".to_owned(),
+        account_group_id: 10,
+        upstream_account_group_snapshot: "standard-group".to_owned(),
         catalog_key: "openai/gpt-4o-mini".to_owned(),
         requested_model: "gpt-4o-mini".to_owned(),
         requested_model_catalog_key: "openai/gpt-4o-mini".to_owned(),
-        provider_code: "openrouter".to_owned(),
-        channel_id: 3001,
+        supplier_code: "openrouter".to_owned(),
+        account_id: 3001,
         provider_model: "gpt-4o-mini-upstream".to_owned(),
         provider_native_model: "gpt-4o-mini-upstream".to_owned(),
         region_code: "global".to_owned(),
@@ -488,8 +488,8 @@ async fn usage_recording_records_trace_only_when_no_settlement_command_exists() 
     assert_eq!(101, trace.api_key_id);
     assert_eq!("openai/gpt-4o-mini", trace.catalog_key);
     assert_eq!("gpt-4o-mini", trace.requested_model);
-    assert_eq!("openrouter", trace.provider_code);
-    assert_eq!(3001, trace.channel_id);
+    assert_eq!("openrouter", trace.supplier_code);
+    assert_eq!(3001, trace.account_id);
     assert_eq!("gpt-4o-mini-upstream", trace.provider_model);
     assert_eq!("gpt-4o-mini-upstream", trace.provider_native_model);
     assert_eq!("/v1/chat/completions", trace.request_path);
@@ -588,8 +588,8 @@ async fn usage_recording_uses_endpoint_key_for_provider_native_trace_model() {
     assert_eq!("req-provider-native-trace", trace.request_id);
     assert_eq!("kling.text_to_video", trace.catalog_key);
     assert_eq!("kling.text_to_video", trace.requested_model);
-    assert_eq!("openrouter", trace.provider_code);
-    assert_eq!(3001, trace.channel_id);
+    assert_eq!("openrouter", trace.supplier_code);
+    assert_eq!(3001, trace.account_id);
     assert_eq!("/v1/videos/text2video", trace.request_path);
     assert_eq!(Some(200), trace.http_status);
 }
