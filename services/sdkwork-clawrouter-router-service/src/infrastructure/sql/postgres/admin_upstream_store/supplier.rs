@@ -1,5 +1,5 @@
 use sqlx::postgres::PgRow;
-use sqlx::{PgPool, Postgres, Row, Transaction};
+use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{column, conflict, not_found, search_pattern, store_error, DEFAULT_DATA_SCOPE};
 use crate::domain::{DomainError, DomainResult};

@@ -4411,9 +4411,9 @@ tables:
         postgres_type: VARCHAR(128)
         constraints: NOT NULL
       credential_ref:
-        type: string(256)
+        type: text
         required: true
-        postgres_type: VARCHAR(256)
+        postgres_type: TEXT
         constraints: NOT NULL
       credential_hash:
         type: string(128)
@@ -4520,13 +4520,6 @@ tables:
           - is_active
           - priority
           - id
-        unique: false
-        where: null
-      - name: idx_ai_upstream_account_credential_ref
-        columns:
-          - tenant_id
-          - organization_id
-          - credential_ref
         unique: false
         where: null
     source_tables: []

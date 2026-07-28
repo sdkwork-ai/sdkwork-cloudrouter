@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: ef3cdfe18f0e312080baff68d61db3f2a7e15f4bd71686df2ad4c20209385e1e.
+-- Registry SHA-256: d31176846b6286be19312d25d82363a993e17c74c9e34d5d668dee531a55bf71.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -881,7 +881,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_credential (
     account_id BIGINT NOT NULL,
     auth_method_code VARCHAR(64) NOT NULL,
     credential_name VARCHAR(128) NOT NULL,
-    credential_ref VARCHAR(256) NOT NULL,
+    credential_ref TEXT NOT NULL,
     credential_hash VARCHAR(128) NOT NULL,
     masked_label VARCHAR(128),
     credential_version BIGINT NOT NULL DEFAULT 1,
@@ -899,7 +899,6 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_credential (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_credential_uuid ON ai_upstream_account_credential (uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_credential_version ON ai_upstream_account_credential (tenant_id, organization_id, account_id, credential_version);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_credential_account ON ai_upstream_account_credential (tenant_id, organization_id, account_id, status, is_active, priority, id);
-CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_credential_ref ON ai_upstream_account_credential (tenant_id, organization_id, credential_ref);
 
 CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
     id BIGINT NOT NULL PRIMARY KEY,
