@@ -1,0 +1,25 @@
+{
+  "name": "@sdkwork/clawrouter-pc-admin-upstream",
+  "version": "1.0.0",
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "./src/index.tsx",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/clawrouter-pc-admin-core": "workspace:*",
+    "@sdkwork/clawroutes-pc-commons": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    }
+  }
+}
