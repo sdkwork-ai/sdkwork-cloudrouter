@@ -224,7 +224,9 @@ pub(super) async fn delete(
     .await
     .map_err(|error| store_error("failed to delete upstream supplier", error))?;
     if result.rows_affected() != 1 {
-        return Err(conflict("upstream supplier version changed during deletion"));
+        return Err(conflict(
+            "upstream supplier version changed during deletion",
+        ));
     }
     tx.commit()
         .await
@@ -507,11 +509,7 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             "website_url",
             "failed to map upstream supplier website URL",
         )?,
-        docs_url: column(
-            &row,
-            "docs_url",
-            "failed to map upstream supplier docs URL",
-        )?,
+        docs_url: column(&row, "docs_url", "failed to map upstream supplier docs URL")?,
         region_code: column(
             &row,
             "region_code",
@@ -533,11 +531,7 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             "failed to map upstream supplier sort order",
         )?,
         status: column(&row, "status", "failed to map upstream supplier status")?,
-        version: column(
-            &row,
-            "version",
-            "failed to map upstream supplier version",
-        )?,
+        version: column(&row, "version", "failed to map upstream supplier version")?,
         updated_at: column(
             &row,
             "updated_at",

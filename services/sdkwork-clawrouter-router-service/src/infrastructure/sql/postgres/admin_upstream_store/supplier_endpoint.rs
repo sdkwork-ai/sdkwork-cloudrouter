@@ -12,8 +12,7 @@ use super::supplier;
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
-    AdminUpstreamSubject, AdminUpstreamSupplierEndpointInput,
-    AdminUpstreamSupplierEndpointItem,
+    AdminUpstreamSubject, AdminUpstreamSupplierEndpointInput, AdminUpstreamSupplierEndpointItem,
 };
 
 const ENDPOINT_COLUMNS: &str = r#"
@@ -124,7 +123,14 @@ pub(super) async fn replace(
         .map_err(|error| store_error("failed to upsert upstream supplier endpoint", error))?;
     }
 
-    retire_omitted(&mut tx, &subject, supplier_id, &endpoint_codes, &requested_at).await?;
+    retire_omitted(
+        &mut tx,
+        &subject,
+        supplier_id,
+        &endpoint_codes,
+        &requested_at,
+    )
+    .await?;
     supplier::bump_nested_version(
         &mut tx,
         &subject,
@@ -291,11 +297,7 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierEndpointItem> {
             "endpoint_name",
             "failed to map upstream endpoint name",
         )?,
-        base_url: column(
-            &row,
-            "base_url",
-            "failed to map upstream endpoint base URL",
-        )?,
+        base_url: column(&row, "base_url", "failed to map upstream endpoint base URL")?,
         protocol_code: column(
             &row,
             "protocol_code",
@@ -311,11 +313,7 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierEndpointItem> {
             "environment",
             "failed to map upstream endpoint environment",
         )?,
-        priority: column(
-            &row,
-            "priority",
-            "failed to map upstream endpoint priority",
-        )?,
+        priority: column(&row, "priority", "failed to map upstream endpoint priority")?,
         routing_weight: column(
             &row,
             "routing_weight",

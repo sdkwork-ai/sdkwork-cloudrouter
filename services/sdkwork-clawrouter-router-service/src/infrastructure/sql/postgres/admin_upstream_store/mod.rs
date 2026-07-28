@@ -104,9 +104,7 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
         subject: AdminUpstreamSubject,
         supplier_id: i64,
     ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamSupplierEndpointItem>> {
-        Box::pin(async move {
-            supplier_endpoint::list(&self.pool, subject, supplier_id).await
-        })
+        Box::pin(async move { supplier_endpoint::list(&self.pool, subject, supplier_id).await })
     }
 
     fn replace_supplier_endpoints<'a>(
@@ -317,9 +315,9 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
         subject: AdminUpstreamSubject,
         account_group_id: i64,
     ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamAccountGroupMemberItem>> {
-        Box::pin(async move {
-            account_group_member::list(&self.pool, subject, account_group_id).await
-        })
+        Box::pin(
+            async move { account_group_member::list(&self.pool, subject, account_group_id).await },
+        )
     }
 
     fn replace_account_group_members<'a>(

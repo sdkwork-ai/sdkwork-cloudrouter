@@ -12,8 +12,7 @@ use super::supplier;
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
-    AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
-    AdminUpstreamSupplierAuthMethodItem,
+    AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
 };
 
 const AUTH_COLUMNS: &str = r#"
@@ -258,7 +257,10 @@ fn validate_inputs(items: &[AdminUpstreamSupplierAuthMethodInput]) -> DomainResu
         if matches!(
             item.auth_type.as_str(),
             "oauth2_client_credentials" | "oauth2_authorization_code"
-        ) && item.token_url.as_deref().is_none_or(|value| value.trim().is_empty())
+        ) && item
+            .token_url
+            .as_deref()
+            .is_none_or(|value| value.trim().is_empty())
         {
             return Err(DomainError::new(
                 "tokenUrl is required for OAuth2 authentication methods",
@@ -313,11 +315,7 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierAuthMethodItem> {
             "auth_method_name",
             "failed to map upstream auth method name",
         )?,
-        auth_type: column(
-            &row,
-            "auth_type",
-            "failed to map upstream auth method type",
-        )?,
+        auth_type: column(&row, "auth_type", "failed to map upstream auth method type")?,
         config_schema: column(
             &row,
             "config_schema",
@@ -333,20 +331,12 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierAuthMethodItem> {
             "token_url",
             "failed to map upstream auth method token URL",
         )?,
-        scopes: column(
-            &row,
-            "scopes",
-            "failed to map upstream auth method scopes",
-        )?,
+        scopes: column(&row, "scopes", "failed to map upstream auth method scopes")?,
         priority: column(
             &row,
             "priority",
             "failed to map upstream auth method priority",
         )?,
-        status: column(
-            &row,
-            "status",
-            "failed to map upstream auth method status",
-        )?,
+        status: column(&row, "status", "failed to map upstream auth method status")?,
     })
 }

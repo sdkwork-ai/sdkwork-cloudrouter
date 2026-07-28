@@ -11,8 +11,7 @@ use super::shared::{
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
-    AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
-    AdminUpstreamSubject,
+    AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem, AdminUpstreamSubject,
 };
 
 const MEMBER_COLUMNS: &str = r#"
@@ -307,10 +306,6 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamAccountGroupMemberItem> {
             "enabled",
             "failed to map account group member enabled state",
         )?,
-        status: column(
-            &row,
-            "status",
-            "failed to map account group member status",
-        )?,
+        status: column(&row, "status", "failed to map account group member status")?,
     })
 }

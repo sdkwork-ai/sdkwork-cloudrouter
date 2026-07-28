@@ -18,7 +18,8 @@ pub(super) fn column<T>(row: &PgRow, name: &str, context: &str) -> DomainResult<
 where
     for<'row> T: Decode<'row, Postgres> + Type<Postgres>,
 {
-    row.try_get(name).map_err(|error| store_error(context, error))
+    row.try_get(name)
+        .map_err(|error| store_error(context, error))
 }
 
 pub(super) fn conflict(message: impl Into<String>) -> DomainError {
@@ -26,22 +27,26 @@ pub(super) fn conflict(message: impl Into<String>) -> DomainError {
 }
 
 pub(super) fn not_found(entity: &str) -> DomainError {
-    DomainError::not_found(format!("{entity} was not found in the active organization scope"))
+    DomainError::not_found(format!(
+        "{entity} was not found in the active organization scope"
+    ))
 }
 
 pub(super) fn search_pattern(q: Option<&str>) -> Option<String> {
-    q.map(str::trim).filter(|value| !value.is_empty()).map(|value| {
-        let mut escaped = String::with_capacity(value.len() + 2);
-        escaped.push('%');
-        for character in value.chars() {
-            if matches!(character, '%' | '_' | '\\') {
-                escaped.push('\\');
+    q.map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            let mut escaped = String::with_capacity(value.len() + 2);
+            escaped.push('%');
+            for character in value.chars() {
+                if matches!(character, '%' | '_' | '\\') {
+                    escaped.push('\\');
+                }
+                escaped.push(character);
             }
-            escaped.push(character);
-        }
-        escaped.push('%');
-        escaped
-    })
+            escaped.push('%');
+            escaped
+        })
 }
 
 pub(super) fn ensure_bounded_collection<T>(items: &[T], name: &str) -> DomainResult<()> {
@@ -98,16 +103,8 @@ pub(super) fn map_resource_row(row: PgRow) -> DomainResult<AdminUpstreamResource
             "grant_type",
             "failed to map upstream resource grant_type",
         )?,
-        priority: column(
-            &row,
-            "priority",
-            "failed to map upstream resource priority",
-        )?,
-        status: column(
-            &row,
-            "status",
-            "failed to map upstream resource status",
-        )?,
+        priority: column(&row, "priority", "failed to map upstream resource priority")?,
+        status: column(&row, "status", "failed to map upstream resource status")?,
     })
 }
 

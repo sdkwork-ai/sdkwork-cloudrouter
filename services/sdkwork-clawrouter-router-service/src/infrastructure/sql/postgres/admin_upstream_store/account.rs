@@ -316,9 +316,7 @@ pub(super) async fn create_credential(
         return Err(DomainError::new("credentialName is required"));
     }
     if command.priority < 0 {
-        return Err(DomainError::new(
-            "credential priority must be non-negative",
-        ));
+        return Err(DomainError::new("credential priority must be non-negative"));
     }
     let credential_ref = secret_codec.encode_secret(&command.secret)?;
     let credential_hash = secret_hasher.hash_secret(&command.secret)?;
@@ -432,14 +430,10 @@ pub(super) async fn create_credential(
             "credential idempotency key was already used with a different secret",
         ));
     }
-    let item = get_credential_in_transaction(
-        &mut tx,
-        &command.subject,
-        command.account_id,
-        resolved_id,
-    )
-    .await?
-    .ok_or_else(|| DomainError::new("created credential could not be reloaded"))?;
+    let item =
+        get_credential_in_transaction(&mut tx, &command.subject, command.account_id, resolved_id)
+            .await?
+            .ok_or_else(|| DomainError::new("created credential could not be reloaded"))?;
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit credential transaction", error))?;
@@ -848,9 +842,7 @@ async fn get_credential_in_transaction(
 
 fn validate_account_command(command: &SaveAdminUpstreamAccountCommand) -> DomainResult<()> {
     if command.account_code.trim().is_empty() || command.account_name.trim().is_empty() {
-        return Err(DomainError::new(
-            "accountCode and accountName are required",
-        ));
+        return Err(DomainError::new("accountCode and accountName are required"));
     }
     if command.auth_method_code.trim().is_empty() {
         return Err(DomainError::new("authMethodCode is required"));
@@ -894,21 +886,9 @@ fn map_account_row(row: PgRow) -> DomainResult<AdminUpstreamAccountItem> {
             "preferred_endpoint_id",
             "failed to map upstream account preferred endpoint",
         )?,
-        account_code: column(
-            &row,
-            "account_code",
-            "failed to map upstream account code",
-        )?,
-        account_name: column(
-            &row,
-            "account_name",
-            "failed to map upstream account name",
-        )?,
-        account_type: column(
-            &row,
-            "account_type",
-            "failed to map upstream account type",
-        )?,
+        account_code: column(&row, "account_code", "failed to map upstream account code")?,
+        account_name: column(&row, "account_name", "failed to map upstream account name")?,
+        account_type: column(&row, "account_type", "failed to map upstream account type")?,
         auth_method_code: column(
             &row,
             "auth_method_code",
@@ -924,11 +904,7 @@ fn map_account_row(row: PgRow) -> DomainResult<AdminUpstreamAccountItem> {
             "environment",
             "failed to map upstream account environment",
         )?,
-        region_code: column(
-            &row,
-            "region_code",
-            "failed to map upstream account region",
-        )?,
+        region_code: column(&row, "region_code", "failed to map upstream account region")?,
         quota_limit: column(
             &row,
             "quota_limit",
@@ -959,11 +935,7 @@ fn map_account_row(row: PgRow) -> DomainResult<AdminUpstreamAccountItem> {
             "rpm_limit",
             "failed to map upstream account RPM limit",
         )?,
-        timeout_ms: column(
-            &row,
-            "timeout_ms",
-            "failed to map upstream account timeout",
-        )?,
+        timeout_ms: column(&row, "timeout_ms", "failed to map upstream account timeout")?,
         health_status: column(
             &row,
             "health_status",
@@ -1032,10 +1004,6 @@ fn map_credential_row(row: PgRow) -> DomainResult<AdminUpstreamAccountCredential
             "last_used_at",
             "failed to map upstream credential use time",
         )?,
-        status: column(
-            &row,
-            "status",
-            "failed to map upstream credential status",
-        )?,
+        status: column(&row, "status", "failed to map upstream credential status")?,
     })
 }
