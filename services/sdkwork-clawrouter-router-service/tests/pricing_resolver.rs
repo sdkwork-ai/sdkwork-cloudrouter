@@ -28,6 +28,11 @@ fn catalog_with_openai_model() -> InMemoryPricingCatalog {
         3001,
         "gpt-4o-mini",
     ));
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_contract_cost_multiplier(DecimalValue::parse("0.800000").unwrap())
+            .with_account_group_binding(10, 100, 100),
+    );
     catalog.add_plan(PricingPlan::new(
         "standard",
         PriceSide::OfficialReference,
@@ -38,7 +43,7 @@ fn catalog_with_openai_model() -> InMemoryPricingCatalog {
         10,
         "standard-group",
         "standard",
-        DecimalValue::parse("1.000000").unwrap(),
+        DecimalValue::parse("1.250000").unwrap(),
         DecimalValue::parse("1.100000").unwrap(),
     ));
     catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test"));
@@ -78,7 +83,7 @@ fn resolves_customer_price_from_upstream_account_group_plan_and_official_referen
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
             supplier_code: Some("openrouter".to_owned()),
-            account_id: None,
+            account_id: Some(3001),
             region_code: None,
         })
         .unwrap();
@@ -98,7 +103,7 @@ fn resolves_customer_price_from_upstream_account_group_plan_and_official_referen
     assert_eq!(
         "0.110000",
         resolved
-            .upstream_cost
+            .raw_upstream_cost
             .unwrap()
             .unit_price
             .to_fixed_string(6)
@@ -107,12 +112,37 @@ fn resolves_customer_price_from_upstream_account_group_plan_and_official_referen
         "0.198000",
         resolved.customer_charge.unit_price.to_fixed_string(6)
     );
-    assert_eq!("1.000000", resolved.rate_multiplier.to_fixed_string(6));
-    assert_eq!("1.320000", resolved.reference_multiplier.to_fixed_string(6));
+    assert_eq!(
+        "0.110000",
+        resolved.procurement_cost.unwrap().to_fixed_string(6)
+    );
+    assert_eq!(
+        "0.800000",
+        resolved
+            .account_contract_cost_multiplier
+            .unwrap()
+            .to_fixed_string(6)
+    );
+    assert_eq!(
+        "1.250000",
+        resolved
+            .account_group_cost_multiplier
+            .unwrap()
+            .to_fixed_string(6)
+    );
+    assert_eq!(
+        "1.000000",
+        resolved
+            .procurement_cost_multiplier
+            .unwrap()
+            .to_fixed_string(6)
+    );
+    assert_eq!("1.100000", resolved.sale_multiplier.to_fixed_string(6));
+    assert_eq!("1.200000", resolved.reference_multiplier.to_fixed_string(6));
     assert_eq!(
         "0.198000",
         resolved
-            .customer_charge_before_rate
+            .customer_charge_before_sale_multiplier
             .unit_price
             .to_fixed_string(6)
     );
@@ -132,6 +162,11 @@ fn resolves_upstream_cost_for_the_selected_provider_channel() {
         3002,
         "gpt-4o-mini-premium",
     ));
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3002)
+            .with_contract_cost_multiplier(DecimalValue::parse("0.800000").unwrap())
+            .with_account_group_binding(10, 100, 100),
+    );
     catalog.add_price(
         ModelPrice::new(
             "gpt-4o-mini",
@@ -160,7 +195,7 @@ fn resolves_upstream_cost_for_the_selected_provider_channel() {
     assert_eq!(
         "0.125000",
         resolved
-            .upstream_cost
+            .raw_upstream_cost
             .unwrap()
             .unit_price
             .to_fixed_string(6)
@@ -273,6 +308,16 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
         )
         .with_region_code("global"),
     );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("minimax_cn_direct", 3001)
+            .with_region_code("cn")
+            .with_account_group_binding(10, 100, 100),
+    );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("minimax_global_direct", 3002)
+            .with_region_code("global")
+            .with_account_group_binding(10, 100, 100),
+    );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
             "minimax/MiniMax-M2.7",
@@ -336,7 +381,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
     assert_eq!(
         "0.150000",
         resolved
-            .upstream_cost
+            .raw_upstream_cost
             .unwrap()
             .unit_price
             .to_fixed_string(6)
@@ -362,7 +407,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
     assert_eq!(
         "0.020000",
         resolved
-            .upstream_cost
+            .raw_upstream_cost
             .unwrap()
             .unit_price
             .to_fixed_string(6)
@@ -420,6 +465,11 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
         )
         .with_region_code("cn"),
     );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("deepseek_official", 3001)
+            .with_region_code("cn")
+            .with_account_group_binding(10, 100, 100),
+    );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
             "deepseek/deepseek-v4-pro",
@@ -439,6 +489,17 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
             Money::new("CNY", "0.210000").unwrap(),
         )
         .with_region_code("cn"),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "deepseek/deepseek-v4-pro",
+            "deepseek-v4-pro",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmInputToken,
+            Money::new("CNY", "0.160000").unwrap(),
+        )
+        .with_region_code("cn")
+        .for_upstream_account("deepseek_official", 3001),
     );
 
     let resolved = PricingResolver::new(&catalog)
@@ -519,7 +580,9 @@ fn channel_route_resolves_price_stack_with_its_explicit_region() {
     ));
     catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test"));
     catalog.add_upstream_account_route(
-        UpstreamAccountRoute::new("minimax_upstream", 4001).with_region_code("cn"),
+        UpstreamAccountRoute::new("minimax_upstream", 4001)
+            .with_region_code("cn")
+            .with_account_group_binding(10, 100, 100),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -574,7 +637,7 @@ fn channel_route_resolves_price_stack_with_its_explicit_region() {
     assert_eq!(
         "0.150000",
         resolved
-            .upstream_cost
+            .raw_upstream_cost
             .unwrap()
             .unit_price
             .to_fixed_string(6)
@@ -605,7 +668,7 @@ fn explicit_plan_customer_price_overrides_official_reference_and_keeps_group_mul
             model: "openai/gpt-4o-mini".to_owned(),
             billing_meter: BillingMeter::LlmInputToken,
             supplier_code: Some("openrouter".to_owned()),
-            account_id: None,
+            account_id: Some(3001),
             region_code: None,
         })
         .unwrap();
@@ -615,11 +678,11 @@ fn explicit_plan_customer_price_overrides_official_reference_and_keeps_group_mul
         "0.270000",
         resolved.customer_charge.unit_price.to_fixed_string(6)
     );
-    assert_eq!("0.900000", resolved.rate_multiplier.to_fixed_string(6));
+    assert_eq!("0.900000", resolved.sale_multiplier.to_fixed_string(6));
     assert_eq!(
         "0.300000",
         resolved
-            .customer_charge_before_rate
+            .customer_charge_before_sale_multiplier
             .unit_price
             .to_fixed_string(6)
     );
