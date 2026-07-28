@@ -20,9 +20,12 @@ import {
   type ModelCatalogFilters,
   type ModelCatalogPricingCell,
 } from '../modelCatalog';
-import { ModelService, type ModelCatalogGroup } from '../modelService';
+import {
+  ModelService,
+  type ModelCatalogGroup,
+  type ModelCatalogProvider,
+} from '../modelService';
 import { FilterSidebar, CollapsibleSection, FilterCheckbox, BottomPagination } from '@sdkwork/clawroutes-pc-commons';
-import { snakeCase } from '@sdkwork/clawroutes-pc-commons/sdkwork-utils';
 
 import { ModalityIcon } from '../components/ModalityIcon';
 
@@ -38,7 +41,9 @@ export function Models() {
   const [showAllProviders, setShowAllProviders] = useState(false);
   const [catalogModels, setCatalogModels] = useState<Model[]>([]);
   const [catalogGroups, setCatalogGroups] = useState<ModelCatalogGroup[]>([]);
+  const [catalogProviders, setCatalogProviders] = useState<ModelCatalogProvider[]>([]);
   const [catalogLoadError, setCatalogLoadError] = useState<string | null>(null);
+  const [providerLoadError, setProviderLoadError] = useState<string | null>(null);
   const [catalogPage, setCatalogPage] = useState(1);
   const [catalogPageSize, setCatalogPageSize] = useState(DEFAULT_MODEL_CATALOG_UI_PAGE_SIZE);
   const [catalogTotal, setCatalogTotal] = useState(0);
@@ -76,8 +81,12 @@ export function Models() {
   };
 
   const filterOptions = useMemo(() => {
-    return deriveModelCatalogFilterOptions(catalogModels, catalogGroups);
-  }, [catalogGroups, catalogModels]);
+    return deriveModelCatalogFilterOptions(
+      catalogModels,
+      catalogGroups,
+      catalogProviders.map((provider) => provider.label),
+    );
+  }, [catalogGroups, catalogModels, catalogProviders]);
 
   const filteredProviders = useMemo(() => {
     return filterProvidersForCatalog(filterOptions.providers, filters.providerSearchQuery);
@@ -95,8 +104,8 @@ export function Models() {
     if (filters.selectedProviders.length === 0) {
       return [];
     }
-    return resolveSelectedProviderCodes(catalogModels, filters.selectedProviders);
-  }, [catalogModels, filters.selectedProviders]);
+    return resolveSelectedProviderCodes(catalogModels, catalogProviders, filters.selectedProviders);
+  }, [catalogModels, catalogProviders, filters.selectedProviders]);
   const selectedProviderCodesKey = selectedProviderCodes.join(',');
   const selectedModalitiesKey = filters.selectedModalities.join(',');
   const selectedCapabilitiesKey = filters.selectedCapabilities.join(',');
@@ -114,6 +123,29 @@ export function Models() {
     selectedGroupsKey,
     catalogPageSize,
   ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setProviderLoadError(null);
+
+    ModelService.fetchModelProviders()
+      .then((providers) => {
+        if (!cancelled) {
+          setCatalogProviders(providers);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setProviderLoadError(
+            error instanceof Error ? error.message : t('models.loadError', 'Failed to load models'),
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -175,8 +207,8 @@ export function Models() {
   ]);
 
   const filteredModels = useMemo(() => {
-    return filterModelsForCatalog(catalogModels, filters);
-  }, [catalogModels, filters]);
+    return filterModelsForCatalog(catalogModels, filters, selectedProviderCodes);
+  }, [catalogModels, filters, selectedProviderCodes]);
 
   return (
     <div className="pt-24 pb-24 w-full mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-8 min-h-screen">
@@ -284,9 +316,9 @@ export function Models() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {catalogLoadError ? (
+        {catalogLoadError || providerLoadError ? (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-950/30 dark:text-red-200">
-            {catalogLoadError}
+            {catalogLoadError || providerLoadError}
           </div>
         ) : null}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
@@ -500,14 +532,19 @@ function pricingCellValueClassName(cell: ModelCatalogPricingCell, layout: 'token
   return 'text-xs font-mono text-slate-700 dark:text-slate-300';
 }
 
-function resolveSelectedProviderCodes(models: Model[], providers: string[]): string[] {
+function resolveSelectedProviderCodes(
+  models: Model[],
+  catalogProviders: ModelCatalogProvider[],
+  providers: string[],
+): string[] {
   const providerCodesByDisplayName = new Map<string, string>();
   for (const model of models) {
     providerCodesByDisplayName.set(model.provider, model.vendorCode);
   }
-  return providers.map((provider) => providerCodesByDisplayName.get(provider) ?? fallbackVendorCode(provider));
-}
-
-function fallbackVendorCode(provider: string): string {
-  return snakeCase(provider.trim()) || provider.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  for (const provider of catalogProviders) {
+    providerCodesByDisplayName.set(provider.label, provider.code);
+  }
+  return providers
+    .map((provider) => providerCodesByDisplayName.get(provider))
+    .filter((code): code is string => code !== undefined);
 }

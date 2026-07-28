@@ -23,7 +23,7 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
                     tenant_entity: [id, tenant_id, organization_id, created_at, deleted_at]
                 registry_dependencies: []
                 tables:
-                  - table: ai_channel
+                  - table: ai_upstream_supplier
                     domain: ai
                     profile: tenant_entity
                     compliance_level: L2
@@ -31,14 +31,14 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
                     system_of_record: true
                     common_columns: tenant_entity
                     columns:
-                      channel_code: string(64)
-                    required_columns: [channel_code]
+                      supplier_code: string(64)
+                    required_columns: [supplier_code]
                     unique_constraints:
-                      - name: uk_ai_channel_code
-                        columns: [tenant_id, organization_id, channel_code]
+                      - name: uk_ai_upstream_supplier_code
+                        columns: [tenant_id, organization_id, supplier_code]
                         where: deleted_at IS NULL
                     check_constraints:
-                      - name: ck_ai_channel_tenant
+                      - name: ck_ai_upstream_supplier_tenant
                         columns: [tenant_id]
                         expression: tenant_id > 0
                   - table: ai_model_vendor
@@ -56,8 +56,9 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
         (database / "database.manifest.json").write_text(
             json.dumps(
                 {
-                    "schemaVersion": 1,
+                    "schemaVersion": 2,
                     "kind": "sdkwork.database.module",
+                    "databaseRole": "authoritative-server",
                     "moduleId": "clawrouter",
                     "serviceCode": "CLAW_ROUTER",
                     "tablePrefix": "ai_",
@@ -86,42 +87,51 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
             rendered = DatabaseContractMaterializer(root, registry).render()
             contract = yaml.safe_load(rendered.schema_yaml)
 
-            self.assertEqual(["postgres", "sqlite"], contract["engines"])
+            self.assertEqual("authoritative-server", contract["database_role"])
+            self.assertEqual(["postgres"], contract["engines"])
             self.assertEqual("2.4.0", contract["contract_version"])
-            self.assertEqual(["ai_channel"], [table["name"] for table in contract["tables"]])
+            self.assertEqual(
+                ["ai_upstream_supplier"], [table["name"] for table in contract["tables"]]
+            )
             table = contract["tables"][0]
             self.assertEqual("int64", table["columns"]["tenant_id"]["type"])
             self.assertTrue(table["columns"]["tenant_id"]["required"])
             self.assertEqual("TIMESTAMPTZ", table["columns"]["created_at"]["postgres_type"])
-            self.assertEqual("TEXT", table["columns"]["created_at"]["sqlite_type"])
+            self.assertNotIn("sqlite_type", table["columns"]["created_at"])
             self.assertIn("primary_key", {item["type"] for item in table["constraints"]})
             self.assertIn("check", {item["type"] for item in table["constraints"]})
             self.assertEqual("deleted_at IS NULL", table["indexes"][0]["where"])
 
-    def test_materialize_writes_dual_dialect_assets_and_clears_db_composition(self) -> None:
+    def test_materialize_writes_authoritative_postgres_assets_and_clears_composition(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root, registry = self.make_root(tmp)
             materializer = DatabaseContractMaterializer(root, registry)
 
             materializer.materialize()
 
-            sqlite_baseline = (
+            postgres_baseline = (
                 root
                 / "database"
                 / "ddl"
                 / "baseline"
-                / "sqlite"
+                / "postgres"
                 / "0001_clawrouter_baseline.sql"
             ).read_text(encoding="utf-8")
-            self.assertIn("CREATE TABLE IF NOT EXISTS ai_channel", sqlite_baseline)
-            self.assertNotIn("::jsonb", sqlite_baseline)
-            self.assertNotIn("ai_model_vendor", sqlite_baseline)
+            self.assertIn("CREATE TABLE IF NOT EXISTS ai_upstream_supplier", postgres_baseline)
+            self.assertNotIn("ai_model_vendor", postgres_baseline)
+            self.assertFalse((root / "database" / "ddl" / "baseline" / "sqlite").exists())
 
             manifest = json.loads(
                 (root / "database" / "database.manifest.json").read_text(encoding="utf-8")
             )
             self.assertEqual([], manifest["modules"])
             self.assertNotIn("composeDependencies", manifest)
+            self.assertEqual(2, manifest["schemaVersion"])
+            self.assertEqual("authoritative-server", manifest["databaseRole"])
+            self.assertEqual(["postgres"], manifest["engines"])
+            self.assertEqual("ai_", manifest["tablePrefix"])
+            self.assertNotIn("tablePrefixes", manifest)
+            self.assertEqual("ai_upstream_supplier", manifest["baselineAnchorTable"])
             self.assertFalse(manifest["lifecycle"]["autoMigrate"])
             self.assertEqual(1, manifest["materializedTableCount"])
             self.assertEqual([], materializer.check())

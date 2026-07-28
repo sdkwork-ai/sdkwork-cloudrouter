@@ -327,14 +327,15 @@ pub fn normalize_list_search_query(
 
 /// Offset pagination metadata for list responses (`API_SPEC.md` §16).
 pub fn offset_page_info(page_no: i64, page_size: i64, total_items: i64) -> PageInfo {
-    let total_pages = if page_size > 0 && total_items >= 0 {
+    let total_page_count = if page_size > 0 && total_items >= 0 {
         total_items
             .checked_add(page_size - 1)
             .map(|total_with_remainder| total_with_remainder / page_size)
-            .and_then(|total_pages| i32::try_from(total_pages).ok())
     } else {
         None
     };
+    let total_pages = total_page_count.and_then(|value| i32::try_from(value).ok());
+    let has_more = total_page_count.is_some_and(|value| page_no > 0 && page_no < value);
     PageInfo {
         mode: PageMode::Offset,
         page: i32::try_from(page_no).ok(),
@@ -342,7 +343,7 @@ pub fn offset_page_info(page_no: i64, page_size: i64, total_items: i64) -> PageI
         total_items: Some(total_items.to_string()),
         total_pages,
         next_cursor: None,
-        has_more: None,
+        has_more: Some(has_more),
     }
 }
 
@@ -439,6 +440,14 @@ mod tests {
         assert_eq!(Some(1), page_info.page_size);
         assert_eq!(Some(i64::MAX.to_string()), page_info.total_items);
         assert_eq!(None, page_info.total_pages);
+        assert_eq!(Some(true), page_info.has_more);
+    }
+
+    #[test]
+    fn offset_page_info_reports_first_final_and_empty_page_continuation() {
+        assert_eq!(Some(true), offset_page_info(1, 10, 11).has_more);
+        assert_eq!(Some(false), offset_page_info(2, 10, 11).has_more);
+        assert_eq!(Some(false), offset_page_info(1, 20, 0).has_more);
     }
 
     #[test]
@@ -474,6 +483,7 @@ mod tests {
             "offset",
             payload["data"]["pageInfo"]["mode"].as_str().unwrap()
         );
+        assert_eq!(false, payload["data"]["pageInfo"]["hasMore"]);
         assert_eq!(1, payload["data"]["pageInfo"]["page"].as_i64().unwrap());
     }
 

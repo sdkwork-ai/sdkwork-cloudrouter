@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.table-registry",
+  "tables": [
+    {
+      "table_name": "iam_gateway_access_policy",
+      "owner": "gateway-iam-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "iam_gateway_api_key",
+      "owner": "gateway-iam-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "iam_gateway_api_key_account_group",
+      "owner": "gateway-iam-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "iam_gateway_risk_rule",
+      "owner": "gateway-iam-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    }
+  ]
+}

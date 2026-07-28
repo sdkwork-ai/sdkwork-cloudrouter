@@ -26,6 +26,7 @@ Generated SDK transport output, live credentials, private customer data, runtime
 | Document | Path |
 | --- | --- |
 | Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
+| Upstream supplier PRD | [product/prd/PRD-UPSTREAM-SUPPLIER.md](product/prd/PRD-UPSTREAM-SUPPLIER.md) |
 | Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
 | Historical standard alignment audit | [standard-alignment-audit.md](standard-alignment-audit.md) |
 | Active production-readiness requirement | [product/requirements/REQ-2026-0001-commercial-production-readiness.md](product/requirements/REQ-2026-0001-commercial-production-readiness.md) |

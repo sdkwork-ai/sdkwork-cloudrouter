@@ -1,3 +1,0 @@
--- Retired stub: legacy projection tables migrated to composed module baselines.
--- DDL authority: sdkwork-appstore, sdkwork-course; composed at install time in standalone mode.
--- Do not add CREATE TABLE statements to this file.

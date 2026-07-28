@@ -4,11 +4,17 @@
 -- module: clawrouter
 -- purpose: Add immutable gateway attribution snapshots, normalize trace error types, and add retention/query indexes.
 -- reversible: true
+-- rollback: down-migration
 -- transactional: true
 -- lock: table
+-- lock_timeout: 5s
+-- statement_timeout: 2min
 -- contract_version: 0.3.0
 
 BEGIN;
+
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '2min';
 
 ALTER TABLE ai_request_trace
     ADD COLUMN IF NOT EXISTS gateway_instance_id BIGINT,
@@ -69,40 +75,5 @@ CREATE INDEX IF NOT EXISTS idx_ai_pricing_import_snapshot_retention
 
 CREATE INDEX IF NOT EXISTS idx_ai_usage_retention
     ON ai_usage (retention_until, id);
-
-CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_retention
-    ON ai_usage_service_provider_edge (retention_until, id);
-
-CREATE INDEX IF NOT EXISTS idx_ops_alert_event_tenant_status_latest
-    ON ops_alert_event (tenant_id, organization_id, status, last_seen_at, id);
-
-CREATE INDEX IF NOT EXISTS idx_ops_alert_event_retention
-    ON ops_alert_event (retention_until, id);
-
-CREATE INDEX IF NOT EXISTS idx_ops_audit_log_retention
-    ON ops_audit_log (retention_until, id);
-
-CREATE INDEX IF NOT EXISTS idx_ops_config_snapshot_retention
-    ON ops_config_snapshot (retention_until, id);
-
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_instance_status_time
-    ON ops_gateway_heartbeat (instance_id, status, heartbeat_at, id);
-
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_retention
-    ON ops_gateway_heartbeat (retention_until, id);
-
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_instance_tenant_status_heartbeat
-    ON ops_gateway_instance (
-        tenant_id, organization_id, status, deleted_at,
-        last_heartbeat_at, updated_at, id
-    );
-
-CREATE INDEX IF NOT EXISTS idx_ops_job_execution_retention
-    ON ops_job_execution (retention_until, id);
-
--- Create replacement query indexes before retiring the superseded shapes.
-DROP INDEX IF EXISTS idx_ops_alert_event_status_severity;
-DROP INDEX IF EXISTS idx_ops_gateway_heartbeat_instance_time;
-DROP INDEX IF EXISTS idx_ops_gateway_instance_region_status;
 
 COMMIT;

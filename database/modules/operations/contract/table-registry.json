@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.table-registry",
+  "tables": [
+    {
+      "table_name": "ops_alert_event",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "audit_event",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_audit_log",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "audit_event",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_config_snapshot",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "audit_event",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_gateway_heartbeat",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_gateway_instance",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_job_execution",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_metric_snapshot",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "read_model",
+      "system_of_record": false
+    },
+    {
+      "table_name": "ops_notification_delivery",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_notification_message",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ops_notification_recipient",
+      "owner": "clawrouter-ops-runtime",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "relation_entity",
+      "system_of_record": true
+    }
+  ]
+}

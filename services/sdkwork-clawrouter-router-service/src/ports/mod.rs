@@ -24,6 +24,7 @@ mod admin_service_provider_store;
 mod admin_site_store;
 mod admin_storage_store;
 mod admin_transaction_center_store;
+mod admin_upstream_store;
 mod admin_user_store;
 mod api_key_command_store;
 mod api_key_management_read_store;
@@ -241,6 +242,7 @@ pub use admin_transaction_center_store::{
     LoadAdminTransactionRecordQuery, UpdateAdminPaymentProviderAccountCommand,
     UpdateAdminPaymentProviderAccountStatusCommand,
 };
+pub use admin_upstream_store::*;
 pub use admin_user_store::{
     AdjustAdminUserBalanceCommand, AdminUserApiKeyItem, AdminUserApiKeyListPage,
     AdminUserCommandFuture, AdminUserItem, AdminUserListPage, AdminUserStore, AdminUserSubject,

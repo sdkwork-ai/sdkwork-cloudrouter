@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 2,
+  "kind": "sdkwork.database.module",
+  "databaseRole": "authoritative-server",
+  "moduleId": "operations",
+  "serviceCode": "CLAW_ROUTER_OPERATIONS",
+  "displayName": "Claw Router Operations Database",
+  "owner": "claw-router-platform",
+  "engines": [
+    "postgres"
+  ],
+  "defaultEngine": "postgres",
+  "tablePrefix": "ops_",
+  "contractVersion": "0.3.0",
+  "baselineStrategy": "baseline-plus-migrations",
+  "baselineAnchorTable": "ops_gateway_instance",
+  "modules": [],
+  "lifecycle": {
+    "autoMigrate": false,
+    "seedOnBoot": false,
+    "defaultSeedLocale": "zh-CN",
+    "defaultSeedProfile": "standard",
+    "supportedSeedLocales": [
+      "zh-CN",
+      "en-US",
+      "ja-JP",
+      "de-DE",
+      "fr-FR",
+      "ru-RU",
+      "ko-KR"
+    ],
+    "activeSeedLocales": [
+      "zh-CN"
+    ],
+    "driftCheckIntervalSec": 60
+  },
+  "paths": {
+    "contract": "contract/schema.yaml",
+    "migrations": "migrations",
+    "seeds": "seeds",
+    "driftPolicy": "drift/policy.yaml"
+  },
+  "spi": {
+    "provider": "default",
+    "hooks": []
+  },
+  "materializedTableCount": 10,
+  "materializedTables": [
+    "ops_alert_event",
+    "ops_audit_log",
+    "ops_config_snapshot",
+    "ops_gateway_heartbeat",
+    "ops_gateway_instance",
+    "ops_job_execution",
+    "ops_metric_snapshot",
+    "ops_notification_delivery",
+    "ops_notification_message",
+    "ops_notification_recipient"
+  ]
+}

@@ -43,6 +43,31 @@ class AdminSiteRuntimeStandardTest(unittest.TestCase):
             "/backend/v3/api/sites",
             operations[f"{source}#fetchSites@/admin/model/sites"]["api_path"],
         )
+        fetch_sites_contract = next(
+            item
+            for item in contract["frontend_operations"]
+            if item.get("source") == source and item.get("operation") == "fetchSites"
+        )
+        self.assertEqual("sites.list", fetch_sites_contract["operation_id"])
+        self.assertEqual(
+            {"q", "page", "page_size"},
+            {item["name"] for item in fetch_sites_contract["query_parameters"]},
+        )
+        self.assertEqual(
+            ["items", "pageInfo"],
+            fetch_sites_contract["response_schema"]["required"],
+        )
+        self.assertNotEqual("NoData", fetch_sites_contract["response_schema"]["name"])
+        fetch_channels_contract = next(
+            item
+            for item in contract["frontend_operations"]
+            if item.get("source") == source and item.get("operation") == "fetchSiteChannels"
+        )
+        self.assertEqual("sites.channels.list", fetch_channels_contract["operation_id"])
+        self.assertEqual(
+            {"page", "page_size"},
+            {item["name"] for item in fetch_channels_contract["query_parameters"]},
+        )
         self.assertEqual(
             "/backend/v3/api/sites",
             operations[f"{source}#createSite@/admin/model/sites"]["api_path"],
@@ -75,6 +100,21 @@ class AdminSiteRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("relay_stations", serialized_operations)
         self.assertNotIn("integration_site", serialized_operations)
         self.assertNotIn("siteModels.", serialized_operations)
+
+        sdk_sites = (
+            ROOT
+            / "sdks"
+            / "clawrouter-backend-sdk"
+            / "clawrouter-backend-sdk-typescript"
+            / "src"
+            / "api"
+            / "sites.ts"
+        ).read_text(encoding="utf-8")
+        self.assertIn("export interface SitesListParams", sdk_sites)
+        self.assertIn("async list(params?: SitesListParams", sdk_sites)
+        self.assertIn("{ name: 'q', value: params?.q", sdk_sites)
+        self.assertIn("{ name: 'page_size', value: params?.pageSize", sdk_sites)
+        self.assertIn("async list(siteId: string, params?: SitesChannelsListParams", sdk_sites)
 
         tables = {item["table"]: item for item in table_items}
         for table_name in ["ai_site", "ai_site_service"]:

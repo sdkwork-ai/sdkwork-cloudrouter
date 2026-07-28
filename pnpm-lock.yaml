@@ -123,6 +123,9 @@ importers:
       '@sdkwork/account-backend-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-account-backend-sdk/sdkwork-account-backend-sdk-typescript
+      '@sdkwork/account-contracts':
+        specifier: workspace:*
+        version: link:../sdkwork-account-contracts
       '@sdkwork/account-sdk-ports':
         specifier: workspace:*
         version: link:../sdkwork-account-sdk-ports
@@ -159,12 +162,18 @@ importers:
 
   ../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet:
     dependencies:
+      '@sdkwork/account-pc-core':
+        specifier: workspace:*
+        version: link:../sdkwork-account-pc-core
       '@sdkwork/account-service':
         specifier: workspace:*
         version: link:../../../sdkwork-account-common/packages/sdkwork-account-service
       '@sdkwork/appbase-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.546.0(react@19.2.4)
     devDependencies:
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
@@ -3353,6 +3362,13 @@ importers:
       '@sdkwork/models-pc-admin-catalog':
         specifier: workspace:*
         version: link:../../../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region:
     dependencies:

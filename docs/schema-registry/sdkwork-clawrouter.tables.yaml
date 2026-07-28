@@ -202,40 +202,39 @@ table_fragments:
 modules:
   ai-routing:
     owner: claw-router-platform
-    description: AI routing, channel, provider, policy, site, quota, and runtime coordination tables.
+    description: AI routing, upstream supplier, upstream account, account-group, policy, quota, and runtime coordination tables.
     compliance_level: L2
     tables_count: 21
     tables:
-    - ai_channel
-    - ai_channel_credential
-    - ai_channel_group
-    - ai_channel_group_member
-    - ai_channel_group_metric_snapshot
-    - ai_channel_group_resource
-    - ai_channel_resource
+    - ai_upstream_account
+    - ai_upstream_account_credential
+    - ai_upstream_account_group
+    - ai_upstream_account_group_member
+    - ai_upstream_account_group_metric_snapshot
+    - ai_upstream_account_group_resource
+    - ai_upstream_supplier_resource
     - ai_config_version
     - ai_config_change_event
     - ai_model_mapping_rule
     - ai_model_mapping_rule_binding
     - ai_model_mapping_rule_item
-    - ai_provider
+    - ai_upstream_supplier
     - ai_provider_object_route
     - ai_quota_policy
     - ai_routing_decision_log
     - ai_routing_policy
     - ai_routing_profile
     - ai_routing_rule
-    - ai_site
-    - ai_site_service
+    - ai_upstream_supplier_endpoint
+    - ai_upstream_supplier_auth_method
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ai-metering:
     owner: claw-router-platform
-    description: AI usage facts, service-provider usage edges, and request traces.
+    description: AI usage facts and request traces.
     compliance_level: L3
-    tables_count: 3
+    tables_count: 2
     tables:
     - ai_usage
-    - ai_usage_service_provider_edge
     - ai_request_trace
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ai-pricing:
@@ -252,14 +251,14 @@ modules:
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   iam-gateway:
     owner: claw-router-platform
-    description: Gateway-owned IAM API key, access policy, channel-group binding, and risk rule tables used by Claw Router
+    description: Gateway-owned IAM API key, access policy, account-group binding, and risk rule tables used by Claw Router
       runtime.
     compliance_level: L2
     tables_count: 4
     tables:
     - iam_gateway_access_policy
     - iam_gateway_api_key
-    - iam_gateway_api_key_channel_group
+    - iam_gateway_api_key_account_group
     - iam_gateway_risk_rule
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ops-runtime:
@@ -371,33 +370,6 @@ registry_dependencies:
   - commerce_discount
   ownership: independent
   access: api_event
-- module_id: sdkwork-integration
-  locator: ../sdkwork-integration
-  registry_path: docs/schema-registry/sdkwork-integration.tables.yaml
-  description: "\u5916\u90E8\u4F9B\u5E94\u5546\u96C6\u6210\u3001\u8D26\u53F7\u7BA1\u7406\u3001\u4F9B\u5E94\u5546\u5BF9\u8D26\
-    \n\n\u884C\u4E1A\u5BF9\u6807: AWS IAM Roles + Stripe Connect\n\n\u6A21\u5757\u804C\u8D23:\n- \u5B9A\u4E49integration_provider_*\u7B49\
-    17\u5F20\u8868\n- \u72EC\u7ACB\u7BA1\u7406schema\n"
-  tables_count: 17
-  tables:
-  - integration_provider_account
-  - integration_provider
-  - integration_provider_member
-  - integration_provider_binding
-  - integration_provider_contract
-  - integration_provider_wallet
-  - integration_provider_price
-  - integration_provider_rule
-  - integration_provider_edge
-  - integration_account_health
-  - integration_proxy
-  - integration_webhook
-  - integration_provider_reconciliation
-  - integration_provider_reconciliation_run
-  - integration_provider_reconciliation_item
-  - integration_provider_statement
-  - integration_provider_adjustment
-  ownership: independent
-  access: sdk
 - module_id: sdkwork-kernel
   locator: ../sdkwork-kernel
   registry_path: docs/schema-registry/sdkwork-kernel.tables.yaml
@@ -513,7 +485,7 @@ compliance:
   security_tables:
   - iam_gateway_access_policy
   - iam_gateway_api_key
-  - iam_gateway_api_key_channel_group
+  - iam_gateway_api_key_account_group
   - iam_gateway_risk_rule
   audit_tables:
   - ai_request_trace

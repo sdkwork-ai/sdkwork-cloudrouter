@@ -1,0 +1,929 @@
+schema_version: 1
+kind: sdkwork.database.schema
+database_role: authoritative-server
+module_id: gateway-iam
+contract_version: 0.3.0
+owner_team: gateway-iam-service
+compliance_level: L2
+engines:
+  - postgres
+table_prefix: iam_gateway_
+source_registry: docs/schema-registry/sdkwork-clawrouter.tables.yaml
+tables:
+  - name: iam_gateway_access_policy
+    domain: iam_gateway
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: gateway-iam-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      policy_type:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      subject_type:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      subject_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      subject_ref_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      subject_ref_masked:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      allowed_capabilities:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      denied_capabilities:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      allowed_models:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      denied_models:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      network_policy_mode:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      ip_rule_count:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      ip_allowlist:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      ip_denylist:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      region_allowlist:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      max_context_tokens:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      data_retention_mode:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      effective_from:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      effective_to:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_iam_gateway_access_policy
+        type: primary_key
+        columns:
+          - id
+      - name: ck_iam_gateway_access_policy_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+    indexes:
+      - name: idx_iam_gateway_access_policy_tenant_subject_status
+        columns:
+          - tenant_id
+          - organization_id
+          - subject_type
+          - subject_id
+          - status
+        unique: false
+        where: null
+      - name: idx_iam_gateway_access_policy_subject_ref
+        columns:
+          - tenant_id
+          - organization_id
+          - subject_type
+          - subject_ref_hash
+          - status
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: iam_gateway_api_key
+    domain: iam_gateway
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: gateway-iam-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      owner_type:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      owner_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      legacy_api_key_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      account_group_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      key_prefix:
+        type: string(32)
+        required: false
+        postgres_type: VARCHAR(32)
+        constraints: ''
+      key_display_masked:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      key_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      hash_alg:
+        type: string(32)
+        required: false
+        postgres_type: VARCHAR(32)
+        constraints: ''
+      secret_version:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      idempotency_key:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      policy_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      quota_policy_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      rate_limit_policy_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      environment:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      expire_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_used_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_used_ip_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      last_used_ip_masked:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      last_used_ip_region:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      last_revealed_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      rotated_from_key_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      revoked_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      revoked_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+    constraints:
+      - name: pk_iam_gateway_api_key
+        type: primary_key
+        columns:
+          - id
+      - name: ck_iam_gateway_api_key_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_iam_gateway_api_key_hash
+        type: unique
+        columns: &id001
+          - key_hash
+        where: null
+      - name: uk_iam_gateway_api_key_legacy
+        type: unique
+        columns: &id002
+          - legacy_api_key_id
+        where: null
+      - name: uk_iam_gateway_api_key_idempotency
+        type: unique
+        columns: &id003
+          - tenant_id
+          - idempotency_key
+        where: null
+    indexes:
+      - name: uk_iam_gateway_api_key_hash
+        columns: *id001
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_iam_gateway_api_key_legacy
+        columns: *id002
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_iam_gateway_api_key_idempotency
+        columns: *id003
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_iam_gateway_api_key_scope_id
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_iam_gateway_api_key_tenant_user_status
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - status
+          - updated_at
+          - id
+        unique: false
+        where: null
+      - name: idx_iam_gateway_api_key_ai_account_group_status
+        columns:
+          - tenant_id
+          - organization_id
+          - account_group_id
+          - status
+          - updated_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: iam_gateway_api_key_account_group
+    domain: iam_gateway
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: gateway-iam-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      owner_type:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      owner_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      api_key_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      account_group_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      account_group_code:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      binding_role:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL DEFAULT 'route'
+      routing_strategy:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL DEFAULT 'auto'
+      priority:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 100
+      weight:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 100
+      effective_from:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      effective_to:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_iam_gateway_api_key_account_group
+        type: primary_key
+        columns:
+          - id
+      - name: ck_iam_gateway_api_key_account_group_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_iam_gateway_api_key_account_group_uuid
+        type: unique
+        columns: &id004
+          - uuid
+        where: null
+      - name: uk_iam_gateway_api_key_account_group_binding
+        type: unique
+        columns: &id005
+          - tenant_id
+          - organization_id
+          - api_key_id
+          - account_group_id
+          - binding_role
+        where: null
+      - name: fk_iam_gateway_api_key_account_group_api_key
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - api_key_id
+        references_table: iam_gateway_api_key
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_iam_gateway_api_key_account_group_ids
+        type: check
+        columns: []
+        expression: api_key_id > 0 AND account_group_id > 0
+      - name: ck_iam_gateway_api_key_account_group_weighting
+        type: check
+        columns: []
+        expression: priority >= 0 AND weight >= 0
+      - name: ck_iam_gateway_api_key_account_group_effective_interval
+        type: check
+        columns: []
+        expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
+    indexes:
+      - name: uk_iam_gateway_api_key_account_group_uuid
+        columns: *id004
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_iam_gateway_api_key_account_group_binding
+        columns: *id005
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_iam_gateway_api_key_account_group_active
+        columns:
+          - tenant_id
+          - organization_id
+          - api_key_id
+          - status
+          - priority
+          - weight
+          - id
+        unique: false
+        where: null
+      - name: idx_iam_gateway_api_key_account_group_group
+        columns:
+          - tenant_id
+          - organization_id
+          - account_group_id
+          - status
+          - priority
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: iam_gateway_risk_rule
+    domain: iam_gateway
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: gateway-iam-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      rule_name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      rule_category:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      rule_type:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      scope_type:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      scope_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      target_type:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      target_value:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      target_value_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      target_value_masked:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      target_value_cipher_ref:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      match_mode:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      reason:
+        type: string(512)
+        required: false
+        postgres_type: VARCHAR(512)
+        constraints: ''
+      action:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      priority:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      requests_per_second:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      requests_per_minute:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      requests_per_day:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      tokens_per_minute:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      burst_limit:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      block_duration_seconds:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      effective_from:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      effective_to:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      hit_count:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      last_hit_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_iam_gateway_risk_rule
+        type: primary_key
+        columns:
+          - id
+      - name: ck_iam_gateway_risk_rule_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_iam_gateway_risk_rule_tenant_target
+        type: unique
+        columns: &id006
+          - tenant_id
+          - organization_id
+          - rule_type
+          - target_type
+          - target_value
+        where: null
+    indexes:
+      - name: uk_iam_gateway_risk_rule_tenant_target
+        columns: *id006
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_iam_gateway_risk_rule_scope_priority
+        columns:
+          - tenant_id
+          - organization_id
+          - rule_category
+          - scope_type
+          - scope_id
+          - priority
+          - status
+        unique: false
+        where: null
+      - name: idx_iam_gateway_risk_rule_target_hash
+        columns:
+          - tenant_id
+          - organization_id
+          - target_type
+          - target_value_hash
+          - status
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null

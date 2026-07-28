@@ -263,7 +263,10 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
         </aside>
 
         <div className="relative flex min-h-0 w-full max-w-none min-w-0 flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-[#0f1115]">
-          <div className="flex min-h-0 w-full max-w-none flex-1 flex-col overflow-hidden p-0">
+          <div
+            className="flex min-h-0 w-full max-w-none flex-1 flex-col overflow-hidden p-3 sm:p-4 xl:p-5"
+            data-admin-content-viewport
+          >
             <AdminRoutePermissionGuard>
               <Outlet />
             </AdminRoutePermissionGuard>

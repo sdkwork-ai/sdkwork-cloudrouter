@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "f0cb9ca90a12840df5a6a274a5dd21f5b7d0e7aba3a80eaeaebb328efad55eec"
+      "sha256": "20314209894d0dc0ee8f2499bb3411451a9a3a69ca07b43c2996d0d05356061b"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -88,7 +88,7 @@
     },
     {
       "path": "src/api/sites.ts",
-      "sha256": "ec8d94510bc00fff16fa8f60f3700f3b7d926197f25afd3d539f010a2802e7fe"
+      "sha256": "dc1ad993bd0c15b2e60a9d32189971382cd002543defdf0a7c0d578a48a215a5"
     },
     {
       "path": "src/api/storage.ts",
@@ -96,7 +96,7 @@
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "876284da5080f42461d8b4152077f44fe65508050778d5e8dbe62e4bd6e16d94"
+      "sha256": "01d96f23410285499721e0c7d18c33da88f814940b3f1c71bfd5bad6bd63590c"
     },
     {
       "path": "src/auth/index.ts",
@@ -104,7 +104,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "0de037ee8ebbf0f59afe22af06b918ac098d50a271039f5a0733d01e7819a5d5"
+      "sha256": "cf21d09fa2b2a4297058b36507d58ed49644057186ef562dfb45e201bd0415e3"
     },
     {
       "path": "src/http/index.ts",
@@ -204,7 +204,7 @@
     },
     {
       "path": "src/types/admin-record-page.ts",
-      "sha256": "cfef1a2f7acd2df81a1ad5d7d1496851a70a9b9b79f5d2febdd0e86ece05b7d2"
+      "sha256": "63bac955a66e1931155aaa520421d3e1f71f672865cdb861128498b82970f9b1"
     },
     {
       "path": "src/types/admin-runtime-region-settings-response.ts",
@@ -235,6 +235,14 @@
       "sha256": "9a7010d08bfbee41869cdbd954c00dcab6154ba350867bf7e3a73be5a80ee1a3"
     },
     {
+      "path": "src/types/admin-site-channel-item.ts",
+      "sha256": "dd344bcf32981911f91119705c20a908a0763ee5e34504c2ff4beb668a5ac4f2"
+    },
+    {
+      "path": "src/types/admin-site-channel-list-response.ts",
+      "sha256": "c93612c597b2ce5835649e6478e709fed2f118f2b1d92910ae4b124be269025d"
+    },
+    {
       "path": "src/types/admin-site-connection-check-result.ts",
       "sha256": "8638b43fd1ca3c1712609b970ed0955a380aca73e0ad42a0484eb3479caa6871"
     },
@@ -245,6 +253,10 @@
     {
       "path": "src/types/admin-site-item.ts",
       "sha256": "0c2c95fc0e08a7ffb97a91bf80e7ad1e20abe089d961fd8f565da2d2e92a351d"
+    },
+    {
+      "path": "src/types/admin-site-list-response.ts",
+      "sha256": "57775f4f7b9952ee9ed4f3f4cea35d4f5c85f47ba86d45b238fa4db87e1175b1"
     },
     {
       "path": "src/types/admin-site-settings-response.ts",
@@ -324,7 +336,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "1259b251ef92a7f7ade3e9a2a8c27dbd72fe01c4374801d25b0a2d5d42c60aca"
+      "sha256": "2aabd5f150c0e182ae5560432de5f68c815dc7024719bb094b77706ca4d4d314"
     },
     {
       "path": "src/types/ip-limit-rule-item.ts",

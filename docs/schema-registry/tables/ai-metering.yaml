@@ -15,8 +15,8 @@ tables:
     api_key_id: int64
     legacy_api_key_id: int64
     api_key_name_snapshot: string(128)
-    channel_group_id: int64
-    channel_group_snapshot: string(128)
+    account_group_id: int64
+    account_group_snapshot: string(128)
     owner_type: int32
     owner_id: int64
     owner_name_snapshot: string(128)
@@ -27,8 +27,8 @@ tables:
     model: string(256)
     provider_native_model: string(256)
     region_code: string(64)
-    provider_id: int64
-    channel_id: int64
+    supplier_id: int64
+    account_id: int64
     modality: int32
     usage_type: int32
     billing_type: int32
@@ -217,143 +217,6 @@ tables:
       - tenant_id
       - organization_id
       - catalog_key
-- table: ai_usage_service_provider_edge
-  domain: ai
-  profile: ledger_source_fact
-  compliance_level: L2
-  system_of_record: true
-  write_owner: router-service
-  common_columns: ledger_source_fact
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    usage_fact_id:
-      type: int64
-      constraints: NOT NULL
-    edge_id:
-      type: int64
-      constraints: NOT NULL
-    edge_depth: int32
-    seller_provider_id: int64
-    buyer_provider_id: int64
-    amount_role: string(64)
-    pricing_plan_id: int64
-    pricing_rule_id: int64
-    billing_meter_code: string(64)
-    token_kind: string(64)
-    billable_quantity: decimal
-    unit_price: decimal
-    unit_size: decimal
-    charge_amount: decimal
-    currency: string(10)
-    fx_rate_snapshot: decimal
-    settlement_currency: string(10)
-    converted_charge_amount: decimal
-    seller_snapshot: json
-    buyer_snapshot: json
-    price_snapshot: json
-    occurred_at: instant
-    settlement_status: int32
-  required_columns:
-  - usage_fact_id
-  - edge_id
-  - edge_depth
-  - amount_role
-  - billable_quantity
-  - charge_amount
-  - currency
-  - occurred_at
-  unique_constraints:
-  - name: uk_ai_usage_service_provider_edge_usage_depth
-    columns:
-    - tenant_id
-    - organization_id
-    - usage_fact_id
-    - edge_depth
-    - amount_role
-  foreign_keys:
-  - name: fk_ai_usage_service_provider_edge_usage
-    columns:
-    - tenant_id
-    - organization_id
-    - usage_fact_id
-    references_table: ai_usage
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    on_delete: RESTRICT
-  check_constraints:
-  - name: ck_ai_usage_service_provider_edge_depth
-    expression: edge_depth >= 0
-  - name: ck_ai_usage_service_provider_edge_amounts
-    expression: billable_quantity >= 0 AND charge_amount >= 0
-      AND (converted_charge_amount IS NULL OR converted_charge_amount >= 0)
-  indexes:
-  - name: idx_ai_usage_service_provider_edge_seller_time
-    columns:
-    - tenant_id
-    - organization_id
-    - seller_provider_id
-    - occurred_at
-    - id
-  - name: idx_ai_usage_service_provider_edge_buyer_time
-    columns:
-    - tenant_id
-    - organization_id
-    - buyer_provider_id
-    - occurred_at
-    - id
-  - name: idx_ai_usage_service_provider_edge_retention
-    columns:
-    - retention_until
-    - id
-  lifecycle:
-    storage_strategy: indexed_append_only
-    retention:
-      online_retention: 12mo
-      archive_retention: 5y
-      grace_period: 24h
-    cleanup:
-      owner: router-service
-      scope: platform_cross_tenant
-      authorization:
-        mode: service_identity
-        service: router-service
-        audit_required: true
-      candidate_recheck:
-        required: true
-        operations:
-        - archive
-        - delete
-        key_columns:
-        - tenant_id
-        - organization_id
-        - id
-      batch_size: 1000
-      predicate: "retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false"
-      archive_before_delete: true
-      retry:
-        max_attempts: 5
-        backoff:
-          strategy: exponential
-          initial: 1s
-          maximum: 5m
-      monitoring:
-        metrics:
-        - cleanup_candidates
-        - cleanup_archived
-        - cleanup_deleted
-        - cleanup_skipped_legal_hold
-        - cleanup_failures
-        alerts:
-        - retention_lag
-        - retry_exhausted
-      dry_run:
-        supported: true
-        default: true
 - table: ai_request_trace
   domain: ai
   profile: event_log
@@ -371,14 +234,14 @@ tables:
     api_key_id: int64
     legacy_api_key_id: int64
     api_key_name_snapshot: string(128)
-    channel_group_id: int64
-    channel_group_snapshot: string(128)
+    account_group_id: int64
+    account_group_snapshot: string(128)
     owner_type: int32
     owner_id: int64
     owner_name_snapshot: string(128)
-    provider_id: int64
-    channel_id: int64
-    channel_name_snapshot: string(128)
+    supplier_id: int64
+    account_id: int64
+    account_name_snapshot: string(128)
     requested_model: string(256)
     requested_model_catalog_key: string(256)
     provider_model: string(256)

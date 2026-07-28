@@ -224,9 +224,28 @@ REQUIRED_TABLE_COLUMNS = {
         "video_unit_price",
         "per_request_price",
     },
-    "iam_gateway_api_key": {"channel_group_id", "key_hash", "policy_id", "quota_policy_id", "rate_limit_policy_id"},
-    "ai_channel_group": {"pricing_plan_id", "pricing_plan_code", "official_price_multiplier", "billing_type"},
-    "ai_provider": {"provider_code", "default_vendor_code", "provider_type", "resource_schema"},
+    "iam_gateway_api_key": {
+        "account_group_id",
+        "key_hash",
+        "policy_id",
+        "quota_policy_id",
+        "rate_limit_policy_id",
+    },
+    "ai_upstream_account_group": {
+        "pricing_plan_id",
+        "pricing_plan_code",
+        "routing_strategy",
+        "cost_multiplier",
+        "sale_multiplier",
+        "billing_type",
+    },
+    "ai_upstream_supplier": {
+        "supplier_code",
+        "supplier_type",
+        "adapter_code",
+        "protocol_code",
+        "default_vendor_code",
+    },
 }
 
 MESSAGING_STANDARD_TABLES: tuple[str, ...] = (

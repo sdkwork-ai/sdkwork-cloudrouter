@@ -3235,7 +3235,7 @@ frontend_operations:
 - route: /admin/model/sites
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
   operation: fetchSites
-  operation_id: sites.get
+  operation_id: sites.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -3245,9 +3245,22 @@ frontend_operations:
   - ai_site
   - ai_site_service
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AdminSiteListResponse
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/components/schemas/AdminSiteItem'
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: q
+    schema: { type: string, maxLength: 128 }
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /admin/model/sites
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
   operation: createSite
@@ -3310,7 +3323,7 @@ frontend_operations:
 - route: /admin/model/sites
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
   operation: fetchSiteChannels
-  operation_id: sites.byId.channels.get
+  operation_id: sites.channels.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -3321,9 +3334,33 @@ frontend_operations:
   - ai_site
   - ai_site_service
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AdminSiteChannelListResponse
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminSiteChannelItem
+          type: object
+          additionalProperties: false
+          required: [id, channelCode, channelName, providerCode, siteCode, siteServiceCode, siteChannelRole, healthStatus, status]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            channelCode: { type: string, minLength: 1, maxLength: 128 }
+            channelName: { type: string, minLength: 1, maxLength: 128 }
+            providerCode: { type: string, nullable: true, maxLength: 128 }
+            siteCode: { type: string, nullable: true, maxLength: 128 }
+            siteServiceCode: { type: string, nullable: true, maxLength: 128 }
+            siteChannelRole: { type: string, nullable: true, maxLength: 128 }
+            healthStatus: { type: string, enum: [unknown, healthy, degraded, unhealthy] }
+            status: { type: string, enum: [active, disabled] }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /admin/model/sites
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
   operation: healthCheckSite
@@ -3702,7 +3739,17 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: []
+  query_parameters:
+  - name: page
+    schema: { type: integer, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+  - name: user
+    schema: { type: string, maxLength: 128 }
+  - name: token
+    schema: { type: string, maxLength: 128 }
+  - name: model
+    schema: { type: string, maxLength: 128 }
 - route: /admin/runtime-region
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
   operation: fetchSettings

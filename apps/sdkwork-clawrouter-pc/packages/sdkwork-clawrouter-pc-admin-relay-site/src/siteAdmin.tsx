@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AdminTableShell, BusinessStateTableRow, ConfirmDialog, readMediaResourceUrl } from '@sdkwork/clawroutes-pc-commons';
+import { AdminTableShell, BottomPagination, BusinessStateTableRow, ConfirmDialog, readMediaResourceUrl } from '@sdkwork/clawroutes-pc-commons';
 import { Edit, Globe2, Image as ImageIcon, Loader2, Plus, RefreshCw, Search, Trash2, Upload, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ModelService, type Vendor } from '@sdkwork/models-pc-admin-catalog/modelService';
@@ -15,6 +15,12 @@ export function SiteAdmin() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalSites, setTotalSites] = useState('0');
+  const [hasMoreSites, setHasMoreSites] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSiteModalOpen, setIsSiteModalOpen] = useState(false);
@@ -23,17 +29,22 @@ export function SiteAdmin() {
   const [deleting, setDeleting] = useState(false);
   const selectedSite = sites.find((site) => site.id === selectedSiteId) ?? null;
 
-  const loadSites = async (query = search) => {
+  const loadSites = async (query: string, targetPage: number, targetPageSize: number) => {
     setLoading(true);
     setLoadError(null);
     try {
       const normalizedQuery = query.trim();
-      const [items, vendorItems] = await Promise.all([
-        normalizedQuery ? SiteService.fetchSites(normalizedQuery) : SiteService.fetchSites(),
+      const [sitePage, vendorItems] = await Promise.all([
+        SiteService.fetchSites({ q: normalizedQuery || undefined, page: targetPage, pageSize: targetPageSize }),
         ModelService.fetchVendors(),
       ]);
+      const items = sitePage.sites;
       setSites(items);
       setVendors(vendorItems);
+      setPage(sitePage.pageInfo.page);
+      setPageSize(sitePage.pageInfo.pageSize);
+      setTotalSites(sitePage.pageInfo.totalItems);
+      setHasMoreSites(sitePage.pageInfo.hasMore);
       const nextSelectedId = items.some((item) => item.id === selectedSiteId)
         ? selectedSiteId
         : items[0]?.id ?? null;
@@ -46,8 +57,28 @@ export function SiteAdmin() {
   };
 
   useEffect(() => {
-    void loadSites();
-  }, []);
+    void loadSites(appliedSearch, page, pageSize);
+  }, [appliedSearch, page, pageSize, refreshToken]);
+
+  const applySearch = () => {
+    const normalizedQuery = search.trim();
+    setAppliedSearch(normalizedQuery);
+    if (normalizedQuery !== appliedSearch || page !== 1) {
+      setPage(1);
+    } else {
+      setRefreshToken((current) => current + 1);
+    }
+  };
+
+  const refreshSites = () => {
+    const normalizedQuery = search.trim();
+    if (normalizedQuery !== appliedSearch) {
+      setAppliedSearch(normalizedQuery);
+      setPage(1);
+      return;
+    }
+    setRefreshToken((current) => current + 1);
+  };
 
   const openCreateSite = () => {
     setEditingSite(null);
@@ -66,15 +97,14 @@ export function SiteAdmin() {
     try {
       const input = siteInputFromForm(formData);
       if (editingSite) {
-        const updated = await SiteService.updateSite(editingSite.id, input);
-        setSites((current) => current.map((site) => (site.id === updated.id ? updated : site)));
+        await SiteService.updateSite(editingSite.id, input);
       } else {
         const created = await SiteService.createSite(input);
-        setSites((current) => [...current, created]);
         setSelectedSiteId(created.id);
       }
       setIsSiteModalOpen(false);
       setEditingSite(null);
+      setRefreshToken((current) => current + 1);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'Failed to save site');
     }
@@ -89,8 +119,12 @@ export function SiteAdmin() {
     try {
       const deleted = await SiteService.deleteSite(deleteTarget.id);
       if (deleted) {
-        setSites((current) => current.filter((item) => item.id !== deleteTarget.id));
         setSelectedSiteId((current) => (current === deleteTarget.id ? null : current));
+        if (page > 1 && sites.length <= 1) {
+          setPage((current) => Math.max(1, current - 1));
+        } else {
+          setRefreshToken((current) => current + 1);
+        }
       }
       setDeleteTarget(null);
     } catch (error) {
@@ -105,6 +139,29 @@ export function SiteAdmin() {
       <AdminTableShell
         data-admin-site-table-card
         className="flex-1 min-h-0"
+        footer={(
+          <div data-admin-site-pagination>
+            <BottomPagination
+              page={page}
+              pageSize={pageSize}
+              itemCount={sites.length}
+              hasNextPage={hasMoreSites}
+              disabled={loading}
+              showingLabel={t('admin.model.site.pagination.showing', { total: totalSites })}
+              pageLabel={t('admin.model.site.pagination.page', { page })}
+              pageSizeLabel={t('admin.model.site.pagination.pageSize')}
+              previousLabel={t('common.actions.previousPage')}
+              nextLabel={t('common.actions.nextPage')}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
+              onNextPage={() => setPage((current) => current + 1)}
+              onPageSizeChange={(nextPageSize) => {
+                setPageSize(nextPageSize);
+                setPage(1);
+              }}
+            />
+          </div>
+        )}
         viewportClassName="min-h-0 flex-1"
         viewportProps={{ 'data-admin-site-table-viewport': true }}
         header={(
@@ -116,7 +173,7 @@ export function SiteAdmin() {
               onChange={(event) => setSearch(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
-                  void loadSites(search);
+                  applySearch();
                 }
               }}
               placeholder={t('admin.model.site.search.placeholder')}
@@ -126,7 +183,7 @@ export function SiteAdmin() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <button
               type="button"
-              onClick={() => void loadSites(search)}
+              onClick={refreshSites}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
             >
               <RefreshCw className="h-4 w-4" />

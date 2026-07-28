@@ -6,16 +6,6 @@
       "prefix": "ai_",
       "owner": "claw-router-platform",
       "domain": "clawrouter"
-    },
-    {
-      "prefix": "iam_gateway_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
-    },
-    {
-      "prefix": "ops_",
-      "owner": "claw-router-platform",
-      "domain": "clawrouter"
     }
   ]
 }

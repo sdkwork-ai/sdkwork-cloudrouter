@@ -1,19 +1,21 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "kind": "sdkwork.database.module",
   "moduleId": "clawrouter",
   "serviceCode": "CLAW_ROUTER",
-  "displayName": "CLAW_ROUTER Database",
+  "displayName": "Claw Router AI Database",
   "owner": "claw-router-platform",
   "engines": [
-    "postgres",
-    "sqlite"
+    "postgres"
   ],
   "defaultEngine": "postgres",
   "contractVersion": "0.3.0",
   "baselineStrategy": "baseline-plus-migrations",
-  "baselineAnchorTable": "ai_channel",
-  "modules": [],
+  "baselineAnchorTable": "ai_upstream_supplier",
+  "modules": [
+    "gateway-iam",
+    "operations"
+  ],
   "lifecycle": {
     "autoMigrate": false,
     "seedOnBoot": false,
@@ -43,20 +45,8 @@
     "provider": "default",
     "hooks": []
   },
-  "tablePrefixes": [
-    "ai_",
-    "iam_gateway_",
-    "ops_"
-  ],
-  "materializedTableCount": 43,
+  "materializedTableCount": 28,
   "materializedTables": [
-    "ai_channel",
-    "ai_channel_credential",
-    "ai_channel_group",
-    "ai_channel_group_member",
-    "ai_channel_group_metric_snapshot",
-    "ai_channel_group_resource",
-    "ai_channel_resource",
     "ai_config_change_event",
     "ai_config_version",
     "ai_model_mapping_rule",
@@ -67,7 +57,6 @@
     "ai_pricing_plan_binding",
     "ai_pricing_rule",
     "ai_pricing_tier",
-    "ai_provider",
     "ai_provider_object_route",
     "ai_quota_policy",
     "ai_request_trace",
@@ -75,23 +64,18 @@
     "ai_routing_policy",
     "ai_routing_profile",
     "ai_routing_rule",
-    "ai_site",
-    "ai_site_service",
-    "ai_usage",
-    "ai_usage_service_provider_edge",
-    "iam_gateway_access_policy",
-    "iam_gateway_api_key",
-    "iam_gateway_api_key_channel_group",
-    "iam_gateway_risk_rule",
-    "ops_alert_event",
-    "ops_audit_log",
-    "ops_config_snapshot",
-    "ops_gateway_heartbeat",
-    "ops_gateway_instance",
-    "ops_job_execution",
-    "ops_metric_snapshot",
-    "ops_notification_delivery",
-    "ops_notification_message",
-    "ops_notification_recipient"
-  ]
+    "ai_upstream_account",
+    "ai_upstream_account_credential",
+    "ai_upstream_account_group",
+    "ai_upstream_account_group_member",
+    "ai_upstream_account_group_metric_snapshot",
+    "ai_upstream_account_group_resource",
+    "ai_upstream_supplier",
+    "ai_upstream_supplier_auth_method",
+    "ai_upstream_supplier_endpoint",
+    "ai_upstream_supplier_resource",
+    "ai_usage"
+  ],
+  "databaseRole": "authoritative-server",
+  "tablePrefix": "ai_"
 }

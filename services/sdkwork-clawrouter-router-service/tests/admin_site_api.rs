@@ -17,6 +17,38 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 #[tokio::test]
+async fn admin_site_lists_include_complete_offset_page_info() {
+    let router = sdkwork_clawrouter_router_service::api::admin_site_router_with_store(
+        Arc::new(TestSiteStore::default()),
+        Arc::new(TestUuidGenerator),
+    );
+
+    for uri in [
+        "/backend/v3/api/sites?page=1&page_size=20",
+        "/backend/v3/api/sites/1/channels?page=1&page_size=20",
+    ] {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(uri)
+                    .internal_trusted_subject(100001, 0, 30)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::OK, response.status());
+        let payload = json_payload(response).await;
+        assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
+        assert_eq!("0", payload["data"]["pageInfo"]["totalItems"]);
+        assert_eq!(false, payload["data"]["pageInfo"]["hasMore"]);
+    }
+}
+
+#[tokio::test]
 async fn admin_site_create_generates_site_code_when_portal_omits_it() {
     let store = Arc::new(TestSiteStore::default());
     let router = sdkwork_clawrouter_router_service::api::admin_site_router_with_store(

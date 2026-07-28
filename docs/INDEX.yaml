@@ -32,6 +32,12 @@ entries:
     status: active
     owner: clawrouter-platform
     title: Claw Router detailed PRD
+  - id: PRD-0004
+    path: docs/product/prd/PRD-UPSTREAM-SUPPLIER.md
+    kind: prd
+    status: active
+    owner: clawrouter-platform
+    title: Upstream supplier management
   - id: TECH-0001
     path: docs/architecture/tech/TECH_ARCHITECTURE.md
     kind: tech
@@ -56,6 +62,12 @@ entries:
     status: accepted
     owner: sdkwork-platform
     title: Commercial gateway safety boundaries
+  - id: ADR-20260728
+    path: docs/architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md
+    kind: adr
+    status: accepted
+    owner: clawrouter-platform
+    title: Standardize upstream supplier routing
   - id: PLAN-2026-0001
     path: docs/engineering/plans/PLAN-2026-0001-commercial-production-readiness.md
     kind: plan

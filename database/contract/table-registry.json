@@ -3,62 +3,6 @@
   "kind": "sdkwork.database.table-registry",
   "tables": [
     {
-      "table_name": "ai_channel",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "credential_ref",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_channel_credential",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "credential_ref",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_channel_group",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_channel_group_member",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_channel_group_metric_snapshot",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "projection",
-      "system_of_record": false
-    },
-    {
-      "table_name": "ai_channel_group_resource",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_channel_resource",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
       "table_name": "ai_config_change_event",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -139,14 +83,6 @@
       "system_of_record": true
     },
     {
-      "table_name": "ai_provider",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "credential_ref",
-      "system_of_record": true
-    },
-    {
       "table_name": "ai_provider_object_route",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -203,7 +139,15 @@
       "system_of_record": true
     },
     {
-      "table_name": "ai_site",
+      "table_name": "ai_upstream_account",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_account_credential",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",
@@ -211,11 +155,67 @@
       "system_of_record": true
     },
     {
-      "table_name": "ai_site_service",
+      "table_name": "ai_upstream_account_group",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",
-      "profile": "credential_ref",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_account_group_member",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "relation_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_account_group_metric_snapshot",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "projection",
+      "system_of_record": false
+    },
+    {
+      "table_name": "ai_upstream_account_group_resource",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "relation_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_supplier",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_supplier_auth_method",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_supplier_endpoint",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_supplier_resource",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "relation_entity",
       "system_of_record": true
     },
     {
@@ -224,126 +224,6 @@
       "compliance_level": "L3",
       "lifecycle_status": "active",
       "profile": "ledger_source_fact",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_usage_service_provider_edge",
-      "owner": "router-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "ledger_source_fact",
-      "system_of_record": true
-    },
-    {
-      "table_name": "iam_gateway_access_policy",
-      "owner": "gateway-iam-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "iam_gateway_api_key",
-      "owner": "gateway-iam-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "iam_gateway_api_key_channel_group",
-      "owner": "gateway-iam-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "iam_gateway_risk_rule",
-      "owner": "gateway-iam-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_alert_event",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "audit_event",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_audit_log",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L3",
-      "lifecycle_status": "active",
-      "profile": "audit_event",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_config_snapshot",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "audit_event",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_gateway_heartbeat",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "operational_state",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_gateway_instance",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "operational_state",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_job_execution",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "operational_state",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_metric_snapshot",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "read_model",
-      "system_of_record": false
-    },
-    {
-      "table_name": "ops_notification_delivery",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "user_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_notification_message",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "operational_state",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ops_notification_recipient",
-      "owner": "clawrouter-ops-runtime",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
       "system_of_record": true
     }
   ]

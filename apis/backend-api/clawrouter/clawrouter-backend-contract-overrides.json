@@ -1347,8 +1347,7 @@
       "additionalProperties": false,
       "required": [
         "items",
-        "pageInfo",
-        "total"
+        "pageInfo"
       ],
       "properties": {
         "items": {
@@ -1362,10 +1361,6 @@
         "pageInfo": {
           "$ref": "#/components/schemas/PageInfo",
           "description": "pageInfo field on AdminRecordPage."
-        },
-        "total": {
-          "type": "number",
-          "description": "total field on AdminRecordPage."
         }
       },
       "description": "AdminRecordPage contract."

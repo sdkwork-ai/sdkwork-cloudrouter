@@ -63,7 +63,7 @@ tables:
     owner_type: int32
     owner_id: int64
     legacy_api_key_id: int64
-    channel_group_id: int64
+    account_group_id: int64
     name: string(128)
     key_prefix: string(32)
     key_display_masked: string(64)
@@ -112,15 +112,15 @@ tables:
     - status
     - updated_at
     - id
-  - name: idx_iam_gateway_api_key_ai_channel_group_status
+  - name: idx_iam_gateway_api_key_ai_account_group_status
     columns:
     - tenant_id
     - organization_id
-    - channel_group_id
+    - account_group_id
     - status
     - updated_at
     - id
-- table: iam_gateway_api_key_channel_group
+- table: iam_gateway_api_key_account_group
   domain: iam_gateway
   profile: tenant_entity
   compliance_level: L2
@@ -140,10 +140,10 @@ tables:
     api_key_id:
       type: int64
       constraints: NOT NULL DEFAULT 0
-    channel_group_id:
+    account_group_id:
       type: int64
       constraints: NOT NULL DEFAULT 0
-    channel_group_code: string(64)
+    account_group_code: string(64)
     binding_role:
       type: string(32)
       constraints: NOT NULL DEFAULT 'route'
@@ -160,24 +160,24 @@ tables:
     effective_to: instant
   required_columns:
   - api_key_id
-  - channel_group_id
+  - account_group_id
   - binding_role
   - routing_strategy
   - priority
   - weight
   unique_constraints:
-  - name: uk_iam_gateway_api_key_channel_group_uuid
+  - name: uk_iam_gateway_api_key_account_group_uuid
     columns:
     - uuid
-  - name: uk_iam_gateway_api_key_channel_group_binding
+  - name: uk_iam_gateway_api_key_account_group_binding
     columns:
     - tenant_id
     - organization_id
     - api_key_id
-    - channel_group_id
+    - account_group_id
     - binding_role
   foreign_keys:
-  - name: fk_iam_gateway_api_key_channel_group_api_key
+  - name: fk_iam_gateway_api_key_account_group_api_key
     columns:
     - tenant_id
     - organization_id
@@ -189,14 +189,14 @@ tables:
     - id
     on_delete: RESTRICT
   check_constraints:
-  - name: ck_iam_gateway_api_key_channel_group_ids
-    expression: api_key_id > 0 AND channel_group_id > 0
-  - name: ck_iam_gateway_api_key_channel_group_weighting
+  - name: ck_iam_gateway_api_key_account_group_ids
+    expression: api_key_id > 0 AND account_group_id > 0
+  - name: ck_iam_gateway_api_key_account_group_weighting
     expression: priority >= 0 AND weight >= 0
-  - name: ck_iam_gateway_api_key_channel_group_effective_interval
+  - name: ck_iam_gateway_api_key_account_group_effective_interval
     expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
   indexes:
-  - name: idx_iam_gateway_api_key_channel_group_active
+  - name: idx_iam_gateway_api_key_account_group_active
     columns:
     - tenant_id
     - organization_id
@@ -205,11 +205,11 @@ tables:
     - priority
     - weight
     - id
-  - name: idx_iam_gateway_api_key_channel_group_group
+  - name: idx_iam_gateway_api_key_account_group_group
     columns:
     - tenant_id
     - organization_id
-    - channel_group_id
+    - account_group_id
     - status
     - priority
     - id

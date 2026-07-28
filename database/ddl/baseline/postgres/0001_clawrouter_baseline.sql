@@ -1,286 +1,9 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: e488b562ba6285144585ad352ade6bca9b3c5699af75a79e591c61f24b391cfb.
+-- Registry SHA-256: ef3cdfe18f0e312080baff68d61db3f2a7e15f4bd71686df2ad4c20209385e1e.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
-
-CREATE TABLE IF NOT EXISTS ai_channel (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    provider_id BIGINT,
-    provider_code VARCHAR(64),
-    site_id BIGINT,
-    site_service_id BIGINT,
-    site_code VARCHAR(64),
-    site_service_code VARCHAR(64),
-    site_channel_role VARCHAR(32),
-    channel_code VARCHAR(64) NOT NULL,
-    channel_name VARCHAR(128) NOT NULL,
-    channel_type VARCHAR(32) NOT NULL,
-    protocol_code VARCHAR(64),
-    auth_type INTEGER,
-    credential_profile INTEGER,
-    external_channel_id VARCHAR(128),
-    base_url VARCHAR(512),
-    auth_config JSONB,
-    credential_ref VARCHAR(256),
-    credential_hash VARCHAR(128),
-    credential_version BIGINT,
-    credential_rotation_policy JSONB,
-    credential_rotation_strategy VARCHAR(64) NOT NULL DEFAULT 'default',
-    masked_label VARCHAR(128),
-    environment INTEGER,
-    region_code VARCHAR(64),
-    quota_unit INTEGER,
-    quota_limit NUMERIC(38, 12),
-    quota_used NUMERIC(38, 12),
-    upstream_balance_amount NUMERIC(38, 12),
-    upstream_balance_currency VARCHAR(10),
-    last_balance_checked_at TIMESTAMPTZ,
-    last_rotated_at TIMESTAMPTZ,
-    next_rotate_at TIMESTAMPTZ,
-    last_verified_at TIMESTAMPTZ,
-    last_used_at TIMESTAMPTZ,
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    rpm_limit BIGINT,
-    timeout_ms INTEGER,
-    retry_policy JSONB,
-    circuit_breaker_policy JSONB,
-    health_status INTEGER NOT NULL DEFAULT 1,
-    last_latency_ms INTEGER,
-    consecutive_error_count BIGINT,
-    proxy_id BIGINT,
-    risk_level INTEGER,
-    CONSTRAINT ck_ai_channel_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_uuid ON ai_channel (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_tenant_code ON ai_channel (tenant_id, organization_id, channel_code);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_scope_id ON ai_channel (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_provider_type_status ON ai_channel (tenant_id, organization_id, provider_code, channel_type, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_health_status ON ai_channel (tenant_id, organization_id, status, health_status, priority, weight, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_site_status ON ai_channel (tenant_id, organization_id, site_id, status, health_status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_site_service_status ON ai_channel (tenant_id, organization_id, site_service_id, status, health_status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_site_code ON ai_channel (tenant_id, organization_id, site_code, site_service_code, status, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_credential (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    channel_id BIGINT NOT NULL,
-    provider_code VARCHAR(64),
-    channel_code VARCHAR(64),
-    credential_name VARCHAR(128) NOT NULL,
-    base_url VARCHAR(512) NOT NULL,
-    auth_config JSONB NOT NULL DEFAULT '{}'::jsonb,
-    credential_ref VARCHAR(256) NOT NULL,
-    credential_hash VARCHAR(128) NOT NULL,
-    masked_label VARCHAR(128),
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    health_status INTEGER NOT NULL DEFAULT 1,
-    last_latency_ms INTEGER,
-    consecutive_error_count BIGINT NOT NULL DEFAULT 0,
-    last_verified_at TIMESTAMPTZ,
-    last_used_at TIMESTAMPTZ,
-    CONSTRAINT ck_ai_channel_credential_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_credential_uuid ON ai_channel_credential (uuid);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_credential_channel ON ai_channel_credential (tenant_id, organization_id, channel_id, status, priority, weight, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_credential_ref ON ai_channel_credential (tenant_id, organization_id, credential_ref);
-
-CREATE TABLE IF NOT EXISTS ai_channel_group (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    group_code VARCHAR(64) NOT NULL,
-    group_name VARCHAR(128) NOT NULL,
-    description VARCHAR(512),
-    provider_code VARCHAR(64),
-    group_type VARCHAR(32),
-    routing_policy_id BIGINT,
-    quota_policy_id BIGINT,
-    rate_limit_policy_id BIGINT,
-    environment INTEGER,
-    pricing_plan_id BIGINT,
-    pricing_plan_code VARCHAR(64),
-    rate_multiplier NUMERIC(38, 12),
-    price_reference_mode INTEGER,
-    official_price_multiplier NUMERIC(38, 12),
-    billing_type INTEGER,
-    capacity_limit BIGINT,
-    allowed_origin JSONB,
-    CONSTRAINT ck_ai_channel_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_uuid ON ai_channel_group (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_tenant_code ON ai_channel_group (tenant_id, organization_id, group_code);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_scope_id ON ai_channel_group (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_provider_status ON ai_channel_group (tenant_id, organization_id, provider_code, status, updated_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_tenant_status_updated ON ai_channel_group (tenant_id, organization_id, status, updated_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_pricing ON ai_channel_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_group_member (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    channel_group_id BIGINT NOT NULL,
-    channel_id BIGINT NOT NULL,
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_ai_channel_group_member_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_ai_channel_group_member_group FOREIGN KEY (tenant_id, organization_id, channel_group_id) REFERENCES ai_channel_group (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT fk_ai_channel_group_member_channel FOREIGN KEY (tenant_id, organization_id, channel_id) REFERENCES ai_channel (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_channel_group_member_non_negative_weighting CHECK (priority >= 0 AND weight >= 0),
-    CONSTRAINT ck_ai_channel_group_member_effective_interval CHECK (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_member_uuid ON ai_channel_group_member (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_member ON ai_channel_group_member (tenant_id, organization_id, channel_group_id, channel_id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_member_status ON ai_channel_group_member (tenant_id, organization_id, status, channel_group_id, priority, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_member_group ON ai_channel_group_member (tenant_id, organization_id, channel_group_id, status, priority, weight, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_member_channel ON ai_channel_group_member (tenant_id, organization_id, channel_id, status, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_group_metric_snapshot (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    source_type VARCHAR(128),
-    source_id BIGINT,
-    source_version BIGINT NOT NULL,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    rebuild_version BIGINT NOT NULL DEFAULT 0,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    channel_group_id BIGINT NOT NULL,
-    group_code VARCHAR(64),
-    provider_code VARCHAR(64),
-    channel_available_count BIGINT,
-    channel_total_count BIGINT,
-    capacity_used NUMERIC(38, 12),
-    capacity_limit NUMERIC(38, 12),
-    request_count_today BIGINT,
-    request_count_total BIGINT,
-    usage_amount_today NUMERIC(38, 12),
-    usage_amount_total NUMERIC(38, 12),
-    health_status INTEGER,
-    snapshot_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_non_negative_counts CHECK ((channel_available_count IS NULL OR channel_available_count >= 0) AND (channel_total_count IS NULL OR channel_total_count >= 0) AND (request_count_today IS NULL OR request_count_today >= 0) AND (request_count_total IS NULL OR request_count_total >= 0)),
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_non_negative_amounts CHECK ((capacity_used IS NULL OR capacity_used >= 0) AND (capacity_limit IS NULL OR capacity_limit >= 0) AND (usage_amount_today IS NULL OR usage_amount_today >= 0) AND (usage_amount_total IS NULL OR usage_amount_total >= 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_metric_snapshot_uuid ON ai_channel_group_metric_snapshot (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_metric_snapshot ON ai_channel_group_metric_snapshot (tenant_id, organization_id, channel_group_id, snapshot_at);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_metric_tenant_status ON ai_channel_group_metric_snapshot (tenant_id, organization_id, status, snapshot_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_metric_status ON ai_channel_group_metric_snapshot (tenant_id, organization_id, provider_code, health_status, snapshot_at, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_group_resource (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    channel_group_id BIGINT NOT NULL,
-    resource_id BIGINT,
-    resource_code VARCHAR(192) NOT NULL DEFAULT '',
-    resource_group_id BIGINT,
-    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
-    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
-    priority INTEGER NOT NULL DEFAULT 100,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_ai_channel_group_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_resource_uuid ON ai_channel_group_resource (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_resource ON ai_channel_group_resource (tenant_id, organization_id, channel_group_id, resource_code, resource_group_code);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_resource_status ON ai_channel_group_resource (tenant_id, organization_id, status, channel_group_id, grant_type, priority, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_resource_lookup ON ai_channel_group_resource (tenant_id, organization_id, channel_group_id, status, grant_type, priority, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_resource (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    channel_id BIGINT NOT NULL,
-    provider_code VARCHAR(64),
-    channel_code VARCHAR(64),
-    resource_id BIGINT,
-    resource_code VARCHAR(192) NOT NULL DEFAULT '',
-    resource_group_id BIGINT,
-    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
-    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_ai_channel_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_resource_uuid ON ai_channel_resource (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_resource ON ai_channel_resource (tenant_id, organization_id, channel_id, resource_code, resource_group_code);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_resource_lookup ON ai_channel_resource (tenant_id, organization_id, status, channel_id, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_config_change_event (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -568,8 +291,8 @@ CREATE TABLE IF NOT EXISTS ai_pricing_rule (
     family_code VARCHAR(64),
     model_id BIGINT,
     model VARCHAR(256),
-    provider_code VARCHAR(64),
-    channel_id BIGINT,
+    supplier_code VARCHAR(64),
+    account_id BIGINT,
     provider_model VARCHAR(256),
     capability_code VARCHAR(64),
     platform_code VARCHAR(64),
@@ -614,7 +337,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_rule_uuid ON ai_pricing_rule (uu
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_rule_plan_code ON ai_pricing_rule (tenant_id, organization_id, pricing_plan_id, rule_code) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_rule_scope_id ON ai_pricing_rule (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_tenant_status_priority ON ai_pricing_rule (tenant_id, organization_id, status, priority, effective_from, id);
-CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_model_lookup ON ai_pricing_rule (tenant_id, organization_id, pricing_plan_id, model, provider_code, channel_id, billing_meter_code, status, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_model_lookup ON ai_pricing_rule (tenant_id, organization_id, pricing_plan_id, model, supplier_code, account_id, billing_meter_code, status, priority, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_meter_lookup ON ai_pricing_rule (tenant_id, organization_id, pricing_plan_id, billing_meter_code, match_type, status, priority, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_reference ON ai_pricing_rule (tenant_id, organization_id, reference_price_side, reference_pricing_id, status, id);
 
@@ -671,42 +394,6 @@ CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_tenant_status_effective ON ai_pri
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_rule_range ON ai_pricing_tier (tenant_id, organization_id, pricing_rule_id, billing_meter_code, min_quantity, max_quantity, sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_model_pricing ON ai_pricing_tier (tenant_id, organization_id, model_pricing_id, price_item_type, sort_order, id);
 
-CREATE TABLE IF NOT EXISTS ai_provider (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    provider_code VARCHAR(64) NOT NULL,
-    display_name VARCHAR(128) NOT NULL,
-    description VARCHAR(512),
-    icon_drive_uri VARCHAR(512),
-    icon_resource_snapshot JSONB,
-    color_token VARCHAR(64),
-    docs_url VARCHAR(512),
-    website_url VARCHAR(512),
-    default_vendor_code VARCHAR(64),
-    provider_type VARCHAR(32),
-    protocol_code VARCHAR(64),
-    base_url VARCHAR(512),
-    auth_type INTEGER,
-    resource_schema JSONB,
-    metadata_schema_version VARCHAR(32),
-    sort_order INTEGER,
-    CONSTRAINT ck_ai_provider_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_uuid ON ai_provider (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_tenant_code ON ai_provider (tenant_id, organization_id, provider_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_ai_provider_status_sort ON ai_provider (tenant_id, organization_id, status, sort_order, id);
-
 CREATE TABLE IF NOT EXISTS ai_provider_object_route (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
@@ -721,14 +408,14 @@ CREATE TABLE IF NOT EXISTS ai_provider_object_route (
     deleted_by BIGINT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     api_key_id BIGINT,
-    channel_group_id BIGINT,
+    account_group_id BIGINT,
     object_type VARCHAR(64) NOT NULL,
     object_id VARCHAR(256) NOT NULL,
     object_key_hash VARCHAR(128) NOT NULL,
     parent_object_type VARCHAR(64),
     parent_object_id VARCHAR(256),
-    provider_code VARCHAR(64),
-    channel_id BIGINT NOT NULL,
+    supplier_code VARCHAR(64),
+    account_id BIGINT NOT NULL,
     vendor_code VARCHAR(64),
     api_code VARCHAR(128),
     catalog_key VARCHAR(256),
@@ -744,7 +431,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_uuid ON ai_provide
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_object ON ai_provider_object_route (tenant_id, organization_id, object_type, object_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_fast ON ai_provider_object_route (tenant_id, organization_id, object_key_hash, status, id);
 CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_parent ON ai_provider_object_route (tenant_id, organization_id, parent_object_type, parent_object_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_channel ON ai_provider_object_route (tenant_id, organization_id, channel_group_id, channel_id, status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_account ON ai_provider_object_route (tenant_id, organization_id, account_group_id, account_id, status, id);
 CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_expiry ON ai_provider_object_route (tenant_id, organization_id, expires_at, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_quota_policy (
@@ -768,7 +455,7 @@ CREATE TABLE IF NOT EXISTS ai_quota_policy (
     subject_ref_masked VARCHAR(128),
     scope_type INTEGER,
     scope_id BIGINT,
-    channel_group_id BIGINT,
+    account_group_id BIGINT,
     model VARCHAR(256),
     quota_period INTEGER,
     quota_unit INTEGER,
@@ -788,7 +475,7 @@ CREATE TABLE IF NOT EXISTS ai_quota_policy (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_quota_policy_tenant_subject ON ai_quota_policy (tenant_id, organization_id, subject_type, subject_id, quota_period, quota_unit) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_subject_ref ON ai_quota_policy (tenant_id, organization_id, subject_type, subject_ref_hash, status);
-CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_model_channel_group ON ai_quota_policy (tenant_id, organization_id, model, channel_group_id, status);
+CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_model_account_group ON ai_quota_policy (tenant_id, organization_id, model, account_group_id, status);
 
 CREATE TABLE IF NOT EXISTS ai_request_trace (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -809,14 +496,14 @@ CREATE TABLE IF NOT EXISTS ai_request_trace (
     api_key_id BIGINT,
     legacy_api_key_id BIGINT,
     api_key_name_snapshot VARCHAR(128),
-    channel_group_id BIGINT,
-    channel_group_snapshot VARCHAR(128),
+    account_group_id BIGINT,
+    account_group_snapshot VARCHAR(128),
     owner_type INTEGER,
     owner_id BIGINT,
     owner_name_snapshot VARCHAR(128),
-    provider_id BIGINT,
-    channel_id BIGINT,
-    channel_name_snapshot VARCHAR(128),
+    supplier_id BIGINT,
+    account_id BIGINT,
+    account_name_snapshot VARCHAR(128),
     requested_model VARCHAR(256),
     requested_model_catalog_key VARCHAR(256),
     provider_model VARCHAR(256),
@@ -887,9 +574,9 @@ CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
     requested_model VARCHAR(256),
     resolved_model VARCHAR(256),
     capability INTEGER,
-    selected_provider_id BIGINT,
-    selected_channel_id BIGINT,
+    selected_supplier_id BIGINT,
     selected_account_id BIGINT,
+    selected_credential_id BIGINT,
     decision_mode INTEGER,
     decision_reason JSONB,
     candidate_snapshot JSONB,
@@ -981,7 +668,7 @@ CREATE TABLE IF NOT EXISTS ai_routing_rule (
     priority INTEGER,
     match_expression JSONB,
     target_model VARCHAR(256),
-    candidate_channels JSONB,
+    candidate_account_groups JSONB,
     fallback_chain JSONB,
     constraints JSONB,
     rate_limit_policy_id BIGINT,
@@ -996,7 +683,7 @@ CREATE TABLE IF NOT EXISTS ai_routing_rule (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_rule_profile_code ON ai_routing_rule (profile_id, rule_code) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_routing_rule_tenant_profile_priority ON ai_routing_rule (tenant_id, organization_id, profile_id, priority, status);
 
-CREATE TABLE IF NOT EXISTS ai_site (
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
     tenant_id BIGINT NOT NULL DEFAULT 0,
@@ -1009,17 +696,19 @@ CREATE TABLE IF NOT EXISTS ai_site (
     deleted_at TIMESTAMPTZ,
     deleted_by BIGINT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    site_code VARCHAR(64) NOT NULL,
-    site_name VARCHAR(128) NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    supplier_name VARCHAR(128) NOT NULL,
     display_name VARCHAR(128) NOT NULL,
-    description VARCHAR(1024),
-    base_url VARCHAR(512),
-    website_url VARCHAR(512),
-    docs_url VARCHAR(512),
-    logo_drive_uri VARCHAR(512),
-    logo_resource_snapshot JSONB,
+    description VARCHAR(512),
+    icon_drive_uri VARCHAR(512),
+    icon_resource_snapshot JSONB,
     color_token VARCHAR(64),
-    site_type VARCHAR(32) NOT NULL DEFAULT 'relay',
+    docs_url VARCHAR(512),
+    website_url VARCHAR(512),
+    default_vendor_code VARCHAR(64),
+    supplier_type VARCHAR(32) NOT NULL DEFAULT 'official',
+    adapter_code VARCHAR(64) NOT NULL,
+    protocol_code VARCHAR(64) NOT NULL,
     owner_kind VARCHAR(32),
     region_code VARCHAR(64),
     environment INTEGER NOT NULL DEFAULT 1,
@@ -1028,16 +717,21 @@ CREATE TABLE IF NOT EXISTS ai_site (
     consecutive_error_count BIGINT NOT NULL DEFAULT 0,
     last_checked_at TIMESTAMPTZ,
     last_sync_at TIMESTAMPTZ,
+    metadata_schema_version VARCHAR(32),
     sort_order INTEGER NOT NULL DEFAULT 100,
-    CONSTRAINT ck_ai_site_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+    CONSTRAINT ck_ai_upstream_supplier_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_upstream_supplier_type CHECK (supplier_type IN ('official', 'relay')),
+    CONSTRAINT ck_ai_upstream_supplier_health_values CHECK ((last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_site_uuid ON ai_site (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_site_tenant_code ON ai_site (tenant_id, organization_id, site_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_ai_site_status_sort ON ai_site (tenant_id, organization_id, status, sort_order, id);
-CREATE INDEX IF NOT EXISTS idx_ai_site_health_status ON ai_site (tenant_id, organization_id, status, health_status, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_uuid ON ai_upstream_supplier (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_tenant_code ON ai_upstream_supplier (tenant_id, organization_id, supplier_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_scope_id ON ai_upstream_supplier (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_scope_identity ON ai_upstream_supplier (tenant_id, organization_id, id, supplier_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_status_sort ON ai_upstream_supplier (tenant_id, organization_id, status, sort_order, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_adapter_status ON ai_upstream_supplier (tenant_id, organization_id, adapter_code, protocol_code, status, id);
 
-CREATE TABLE IF NOT EXISTS ai_site_service (
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier_endpoint (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
     tenant_id BIGINT NOT NULL DEFAULT 0,
@@ -1050,36 +744,337 @@ CREATE TABLE IF NOT EXISTS ai_site_service (
     deleted_at TIMESTAMPTZ,
     deleted_by BIGINT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    site_id BIGINT NOT NULL,
-    site_code VARCHAR(64) NOT NULL,
-    service_code VARCHAR(64) NOT NULL,
-    service_name VARCHAR(128) NOT NULL,
-    service_type VARCHAR(64) NOT NULL DEFAULT 'ai_model_relay',
+    supplier_id BIGINT NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    endpoint_code VARCHAR(64) NOT NULL,
+    endpoint_name VARCHAR(128) NOT NULL,
+    base_url VARCHAR(512) NOT NULL,
     protocol_code VARCHAR(64),
-    base_url VARCHAR(512),
-    auth_type INTEGER NOT NULL DEFAULT 1,
-    credential_profile INTEGER NOT NULL DEFAULT 1,
-    auth_config JSONB NOT NULL DEFAULT '{}'::jsonb,
-    credential_ref VARCHAR(512),
-    credential_hash VARCHAR(128),
-    masked_label VARCHAR(128),
-    credential_version BIGINT NOT NULL DEFAULT 1,
     region_code VARCHAR(64),
     environment INTEGER NOT NULL DEFAULT 1,
     health_status INTEGER NOT NULL DEFAULT 1,
     last_latency_ms INTEGER,
     consecutive_error_count BIGINT NOT NULL DEFAULT 0,
-    last_verified_at TIMESTAMPTZ,
+    last_checked_at TIMESTAMPTZ,
     last_sync_at TIMESTAMPTZ,
-    sort_order INTEGER NOT NULL DEFAULT 100,
-    CONSTRAINT ck_ai_site_service_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+    priority INTEGER NOT NULL DEFAULT 100,
+    routing_weight INTEGER NOT NULL DEFAULT 100,
+    timeout_ms INTEGER,
+    CONSTRAINT ck_ai_upstream_supplier_endpoint_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_supplier_endpoint_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id, supplier_code) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id, supplier_code) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_supplier_endpoint_values CHECK (priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms > 0) AND (last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_site_service_uuid ON ai_site_service (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_site_service_site_code ON ai_site_service (tenant_id, organization_id, site_id, service_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_ai_site_service_site_status ON ai_site_service (tenant_id, organization_id, site_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_site_service_type_status ON ai_site_service (tenant_id, organization_id, service_type, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_site_service_health_status ON ai_site_service (tenant_id, organization_id, status, health_status, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_uuid ON ai_upstream_supplier_endpoint (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_tenant_code ON ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, endpoint_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_scope_id ON ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_supplier_status ON ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, status, priority, routing_weight, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_health_status ON ai_upstream_supplier_endpoint (tenant_id, organization_id, status, health_status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier_auth_method (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    supplier_id BIGINT NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    auth_method_code VARCHAR(64) NOT NULL,
+    auth_method_name VARCHAR(128) NOT NULL,
+    auth_type VARCHAR(64) NOT NULL,
+    config_schema JSONB NOT NULL DEFAULT '{}'::jsonb,
+    authorization_url VARCHAR(512),
+    token_url VARCHAR(512),
+    scopes JSONB,
+    priority INTEGER NOT NULL DEFAULT 100,
+    CONSTRAINT ck_ai_upstream_supplier_auth_method_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_supplier_auth_method_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id, supplier_code) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id, supplier_code) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_supplier_auth_method_type CHECK (auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4', 'custom') AND priority >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_auth_method_uuid ON ai_upstream_supplier_auth_method (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_auth_method_supplier_code ON ai_upstream_supplier_auth_method (tenant_id, organization_id, supplier_id, auth_method_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_auth_method_supplier_status ON ai_upstream_supplier_auth_method (tenant_id, organization_id, supplier_id, status, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_auth_method_type_status ON ai_upstream_supplier_auth_method (tenant_id, organization_id, auth_type, status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    supplier_id BIGINT NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    preferred_endpoint_id BIGINT,
+    account_code VARCHAR(64) NOT NULL,
+    account_name VARCHAR(128) NOT NULL,
+    account_type VARCHAR(32) NOT NULL DEFAULT 'standard',
+    auth_method_code VARCHAR(64) NOT NULL,
+    external_account_id VARCHAR(128),
+    credential_rotation_policy JSONB,
+    credential_rotation_strategy VARCHAR(64) NOT NULL DEFAULT 'default',
+    environment INTEGER,
+    region_code VARCHAR(64),
+    quota_unit INTEGER,
+    quota_limit NUMERIC(38, 12),
+    quota_used NUMERIC(38, 12),
+    upstream_balance_amount NUMERIC(38, 12),
+    upstream_balance_currency VARCHAR(10),
+    contract_cost_multiplier NUMERIC(38, 12) NOT NULL DEFAULT 1,
+    last_balance_checked_at TIMESTAMPTZ,
+    last_rotated_at TIMESTAMPTZ,
+    next_rotate_at TIMESTAMPTZ,
+    last_verified_at TIMESTAMPTZ,
+    last_used_at TIMESTAMPTZ,
+    rpm_limit BIGINT,
+    timeout_ms INTEGER,
+    retry_policy JSONB,
+    circuit_breaker_policy JSONB,
+    health_status INTEGER NOT NULL DEFAULT 1,
+    last_latency_ms INTEGER,
+    consecutive_error_count BIGINT,
+    proxy_id BIGINT,
+    risk_level INTEGER,
+    CONSTRAINT ck_ai_upstream_account_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_account_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id, supplier_code) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id, supplier_code) ON DELETE RESTRICT,
+    CONSTRAINT fk_ai_upstream_account_preferred_endpoint FOREIGN KEY (tenant_id, organization_id, supplier_id, preferred_endpoint_id) REFERENCES ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, id) ON DELETE RESTRICT,
+    CONSTRAINT fk_ai_upstream_account_auth_method FOREIGN KEY (tenant_id, organization_id, supplier_id, auth_method_code) REFERENCES ai_upstream_supplier_auth_method (tenant_id, organization_id, supplier_id, auth_method_code) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_financial_values CHECK (contract_cost_multiplier > 0 AND (quota_limit IS NULL OR quota_limit >= 0) AND (quota_used IS NULL OR quota_used >= 0) AND (upstream_balance_amount IS NULL OR upstream_balance_amount >= 0)),
+    CONSTRAINT ck_ai_upstream_account_health_values CHECK ((last_latency_ms IS NULL OR last_latency_ms >= 0) AND (consecutive_error_count IS NULL OR consecutive_error_count >= 0) AND (timeout_ms IS NULL OR timeout_ms > 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_uuid ON ai_upstream_account (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_tenant_code ON ai_upstream_account (tenant_id, organization_id, account_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_scope_id ON ai_upstream_account (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_scope_auth_method ON ai_upstream_account (tenant_id, organization_id, id, auth_method_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_supplier_status ON ai_upstream_account (tenant_id, organization_id, supplier_id, status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_health_status ON ai_upstream_account (tenant_id, organization_id, status, health_status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_preferred_endpoint ON ai_upstream_account (tenant_id, organization_id, preferred_endpoint_id, status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_credential (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    account_id BIGINT NOT NULL,
+    auth_method_code VARCHAR(64) NOT NULL,
+    credential_name VARCHAR(128) NOT NULL,
+    credential_ref VARCHAR(256) NOT NULL,
+    credential_hash VARCHAR(128) NOT NULL,
+    masked_label VARCHAR(128),
+    credential_version BIGINT NOT NULL DEFAULT 1,
+    priority INTEGER NOT NULL DEFAULT 100,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    expires_at TIMESTAMPTZ,
+    last_rotated_at TIMESTAMPTZ,
+    last_verified_at TIMESTAMPTZ,
+    last_used_at TIMESTAMPTZ,
+    CONSTRAINT ck_ai_upstream_account_credential_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_account_credential_account FOREIGN KEY (tenant_id, organization_id, account_id, auth_method_code) REFERENCES ai_upstream_account (tenant_id, organization_id, id, auth_method_code) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_credential_version CHECK (credential_version > 0 AND priority >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_credential_uuid ON ai_upstream_account_credential (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_credential_version ON ai_upstream_account_credential (tenant_id, organization_id, account_id, credential_version);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_credential_account ON ai_upstream_account_credential (tenant_id, organization_id, account_id, status, is_active, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_credential_ref ON ai_upstream_account_credential (tenant_id, organization_id, credential_ref);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    group_code VARCHAR(64) NOT NULL,
+    group_name VARCHAR(128) NOT NULL,
+    description VARCHAR(512),
+    group_type VARCHAR(32) NOT NULL DEFAULT 'shared',
+    routing_strategy VARCHAR(32) NOT NULL DEFAULT 'weighted',
+    fallback_mode VARCHAR(32) NOT NULL DEFAULT 'sequential',
+    priority INTEGER NOT NULL DEFAULT 100,
+    routing_policy_id BIGINT,
+    quota_policy_id BIGINT,
+    rate_limit_policy_id BIGINT,
+    environment INTEGER,
+    pricing_plan_id BIGINT,
+    pricing_plan_code VARCHAR(64),
+    cost_multiplier NUMERIC(38, 12) NOT NULL DEFAULT 1,
+    sale_multiplier NUMERIC(38, 12) NOT NULL DEFAULT 1,
+    billing_type INTEGER,
+    capacity_limit BIGINT,
+    allowed_origin JSONB,
+    CONSTRAINT ck_ai_upstream_account_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_upstream_account_group_routing_strategy CHECK (routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'failover')),
+    CONSTRAINT ck_ai_upstream_account_group_fallback_mode CHECK (fallback_mode IN ('none', 'sequential', 'same_supplier', 'cross_supplier')),
+    CONSTRAINT ck_ai_upstream_account_group_financial_values CHECK (cost_multiplier > 0 AND sale_multiplier > 0 AND priority >= 0 AND (capacity_limit IS NULL OR capacity_limit >= 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_uuid ON ai_upstream_account_group (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_tenant_code ON ai_upstream_account_group (tenant_id, organization_id, group_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_scope_id ON ai_upstream_account_group (tenant_id, organization_id, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tenant_status_updated ON ai_upstream_account_group (tenant_id, organization_id, status, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_pricing ON ai_upstream_account_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_group_member (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    account_group_id BIGINT NOT NULL,
+    account_id BIGINT NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 100,
+    routing_weight INTEGER NOT NULL DEFAULT 100,
+    cost_multiplier_override NUMERIC(38, 12),
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    effective_from TIMESTAMPTZ,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_ai_upstream_account_group_member_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_account_group_member_group FOREIGN KEY (tenant_id, organization_id, account_group_id) REFERENCES ai_upstream_account_group (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT fk_ai_upstream_account_group_member_account FOREIGN KEY (tenant_id, organization_id, account_id) REFERENCES ai_upstream_account (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_group_member_non_negative_weighting CHECK (priority >= 0 AND routing_weight >= 0 AND (cost_multiplier_override IS NULL OR cost_multiplier_override > 0)),
+    CONSTRAINT ck_ai_upstream_account_group_member_effective_interval CHECK (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_member_uuid ON ai_upstream_account_group_member (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_member ON ai_upstream_account_group_member (tenant_id, organization_id, account_group_id, account_id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_member_status ON ai_upstream_account_group_member (tenant_id, organization_id, status, account_group_id, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_member_group ON ai_upstream_account_group_member (tenant_id, organization_id, account_group_id, status, priority, routing_weight, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_member_account ON ai_upstream_account_group_member (tenant_id, organization_id, account_id, status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_group_metric_snapshot (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    source_type VARCHAR(128),
+    source_id BIGINT,
+    source_version BIGINT NOT NULL,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    rebuild_version BIGINT NOT NULL DEFAULT 0,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    account_group_id BIGINT NOT NULL,
+    group_code VARCHAR(64),
+    account_available_count BIGINT,
+    account_total_count BIGINT,
+    capacity_used NUMERIC(38, 12),
+    capacity_limit NUMERIC(38, 12),
+    request_count_today BIGINT,
+    request_count_total BIGINT,
+    usage_amount_today NUMERIC(38, 12),
+    usage_amount_total NUMERIC(38, 12),
+    health_status INTEGER,
+    snapshot_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT ck_ai_upstream_account_group_metric_snapshot_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_ai_upstream_account_group_metric_counts CHECK ((account_available_count IS NULL OR account_available_count >= 0) AND (account_total_count IS NULL OR account_total_count >= 0) AND (request_count_today IS NULL OR request_count_today >= 0) AND (request_count_total IS NULL OR request_count_total >= 0)),
+    CONSTRAINT ck_ai_upstream_account_group_metric_amounts CHECK ((capacity_used IS NULL OR capacity_used >= 0) AND (capacity_limit IS NULL OR capacity_limit >= 0) AND (usage_amount_today IS NULL OR usage_amount_today >= 0) AND (usage_amount_total IS NULL OR usage_amount_total >= 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_metric_snapshot_uuid ON ai_upstream_account_group_metric_snapshot (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_metric_snapshot ON ai_upstream_account_group_metric_snapshot (tenant_id, organization_id, account_group_id, snapshot_at);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_metric_tenant_status ON ai_upstream_account_group_metric_snapshot (tenant_id, organization_id, status, snapshot_at, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_group_resource (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    account_group_id BIGINT NOT NULL,
+    resource_id BIGINT,
+    resource_code VARCHAR(192) NOT NULL DEFAULT '',
+    resource_group_id BIGINT,
+    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
+    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
+    priority INTEGER NOT NULL DEFAULT 100,
+    effective_from TIMESTAMPTZ,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_ai_upstream_account_group_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_account_group_resource_group FOREIGN KEY (tenant_id, organization_id, account_group_id) REFERENCES ai_upstream_account_group (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_group_resource_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_resource_uuid ON ai_upstream_account_group_resource (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_resource ON ai_upstream_account_group_resource (tenant_id, organization_id, account_group_id, resource_code, resource_group_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_resource_status ON ai_upstream_account_group_resource (tenant_id, organization_id, status, account_group_id, grant_type, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_resource_lookup ON ai_upstream_account_group_resource (tenant_id, organization_id, account_group_id, status, grant_type, priority, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier_resource (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    supplier_id BIGINT NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    resource_id BIGINT,
+    resource_code VARCHAR(192) NOT NULL DEFAULT '',
+    resource_group_id BIGINT,
+    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
+    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
+    priority INTEGER NOT NULL DEFAULT 100,
+    effective_from TIMESTAMPTZ,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_ai_upstream_supplier_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_supplier_resource_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id, supplier_code) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id, supplier_code) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_supplier_resource_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_resource_uuid ON ai_upstream_supplier_resource (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_resource ON ai_upstream_supplier_resource (tenant_id, organization_id, supplier_id, resource_code, resource_group_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_resource_lookup ON ai_upstream_supplier_resource (tenant_id, organization_id, status, supplier_id, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_usage (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1100,8 +1095,8 @@ CREATE TABLE IF NOT EXISTS ai_usage (
     api_key_id BIGINT,
     legacy_api_key_id BIGINT,
     api_key_name_snapshot VARCHAR(128),
-    channel_group_id BIGINT,
-    channel_group_snapshot VARCHAR(128),
+    account_group_id BIGINT,
+    account_group_snapshot VARCHAR(128),
     owner_type INTEGER,
     owner_id BIGINT,
     owner_name_snapshot VARCHAR(128),
@@ -1110,8 +1105,8 @@ CREATE TABLE IF NOT EXISTS ai_usage (
     model VARCHAR(256),
     provider_native_model VARCHAR(256),
     region_code VARCHAR(64),
-    provider_id BIGINT,
-    channel_id BIGINT,
+    supplier_id BIGINT,
+    account_id BIGINT,
     modality INTEGER,
     usage_type INTEGER NOT NULL,
     billing_type INTEGER,
@@ -1169,539 +1164,3 @@ CREATE INDEX IF NOT EXISTS idx_ai_usage_pricing_plan_occurred ON ai_usage (tenan
 CREATE INDEX IF NOT EXISTS idx_ai_usage_meter_occurred ON ai_usage (tenant_id, organization_id, billing_meter_code, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_settlement_status ON ai_usage (tenant_id, organization_id, settlement_status, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_retention ON ai_usage (retention_until, id);
-
-CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    user_id BIGINT,
-    request_id VARCHAR(128),
-    trace_id VARCHAR(128),
-    payload_hash VARCHAR(128),
-    idempotency_key VARCHAR(128),
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    retention_until TIMESTAMPTZ,
-    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    usage_fact_id BIGINT NOT NULL,
-    edge_id BIGINT NOT NULL,
-    edge_depth INTEGER NOT NULL,
-    seller_provider_id BIGINT,
-    buyer_provider_id BIGINT,
-    amount_role VARCHAR(64) NOT NULL,
-    pricing_plan_id BIGINT,
-    pricing_rule_id BIGINT,
-    billing_meter_code VARCHAR(64),
-    token_kind VARCHAR(64),
-    billable_quantity NUMERIC(38, 12) NOT NULL,
-    unit_price NUMERIC(38, 12),
-    unit_size NUMERIC(38, 12),
-    charge_amount NUMERIC(38, 12) NOT NULL,
-    currency VARCHAR(10) NOT NULL,
-    fx_rate_snapshot NUMERIC(38, 12),
-    settlement_currency VARCHAR(10),
-    converted_charge_amount NUMERIC(38, 12),
-    seller_snapshot JSONB,
-    buyer_snapshot JSONB,
-    price_snapshot JSONB,
-    occurred_at TIMESTAMPTZ NOT NULL,
-    settlement_status INTEGER,
-    CONSTRAINT ck_ai_usage_service_provider_edge_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT fk_ai_usage_service_provider_edge_usage FOREIGN KEY (tenant_id, organization_id, usage_fact_id) REFERENCES ai_usage (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_usage_service_provider_edge_depth CHECK (edge_depth >= 0),
-    CONSTRAINT ck_ai_usage_service_provider_edge_amounts CHECK (billable_quantity >= 0 AND charge_amount >= 0 AND (converted_charge_amount IS NULL OR converted_charge_amount >= 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_service_provider_edge_usage_depth ON ai_usage_service_provider_edge (tenant_id, organization_id, usage_fact_id, edge_depth, amount_role);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_seller_time ON ai_usage_service_provider_edge (tenant_id, organization_id, seller_provider_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_buyer_time ON ai_usage_service_provider_edge (tenant_id, organization_id, buyer_provider_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_retention ON ai_usage_service_provider_edge (retention_until, id);
-
-CREATE TABLE IF NOT EXISTS iam_gateway_access_policy (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    name VARCHAR(128),
-    policy_type INTEGER,
-    subject_type INTEGER,
-    subject_id BIGINT,
-    subject_ref_hash VARCHAR(128),
-    subject_ref_masked VARCHAR(128),
-    allowed_capabilities JSONB,
-    denied_capabilities JSONB,
-    allowed_models JSONB,
-    denied_models JSONB,
-    network_policy_mode INTEGER,
-    ip_rule_count INTEGER,
-    ip_allowlist JSONB,
-    ip_denylist JSONB,
-    region_allowlist JSONB,
-    max_context_tokens BIGINT,
-    data_retention_mode INTEGER,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_iam_gateway_access_policy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_access_policy_tenant_subject_status ON iam_gateway_access_policy (tenant_id, organization_id, subject_type, subject_id, status);
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_access_policy_subject_ref ON iam_gateway_access_policy (tenant_id, organization_id, subject_type, subject_ref_hash, status);
-
-CREATE TABLE IF NOT EXISTS iam_gateway_api_key (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    user_id BIGINT NOT NULL,
-    owner_type INTEGER,
-    owner_id BIGINT,
-    legacy_api_key_id BIGINT,
-    channel_group_id BIGINT,
-    name VARCHAR(128),
-    key_prefix VARCHAR(32),
-    key_display_masked VARCHAR(64),
-    key_hash VARCHAR(128),
-    hash_alg VARCHAR(32),
-    secret_version BIGINT,
-    idempotency_key VARCHAR(128) NOT NULL,
-    policy_id BIGINT,
-    quota_policy_id BIGINT,
-    rate_limit_policy_id BIGINT,
-    environment INTEGER,
-    expire_at TIMESTAMPTZ,
-    last_used_at TIMESTAMPTZ,
-    last_used_ip_hash VARCHAR(128),
-    last_used_ip_masked VARCHAR(64),
-    last_used_ip_region VARCHAR(128),
-    last_revealed_at TIMESTAMPTZ,
-    rotated_from_key_id BIGINT,
-    revoked_at TIMESTAMPTZ,
-    revoked_by BIGINT,
-    CONSTRAINT ck_iam_gateway_api_key_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_hash ON iam_gateway_api_key (key_hash) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_legacy ON iam_gateway_api_key (legacy_api_key_id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_idempotency ON iam_gateway_api_key (tenant_id, idempotency_key) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_scope_id ON iam_gateway_api_key (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_tenant_user_status ON iam_gateway_api_key (tenant_id, organization_id, user_id, status, updated_at, id);
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_ai_channel_group_status ON iam_gateway_api_key (tenant_id, organization_id, channel_group_id, status, updated_at, id);
-
-CREATE TABLE IF NOT EXISTS iam_gateway_api_key_channel_group (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    user_id BIGINT NOT NULL,
-    owner_type INTEGER,
-    owner_id BIGINT,
-    api_key_id BIGINT NOT NULL DEFAULT 0,
-    channel_group_id BIGINT NOT NULL DEFAULT 0,
-    channel_group_code VARCHAR(64),
-    binding_role VARCHAR(32) NOT NULL DEFAULT 'route',
-    routing_strategy VARCHAR(32) NOT NULL DEFAULT 'auto',
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_iam_gateway_api_key_channel_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_iam_gateway_api_key_channel_group_api_key FOREIGN KEY (tenant_id, organization_id, api_key_id) REFERENCES iam_gateway_api_key (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_iam_gateway_api_key_channel_group_ids CHECK (api_key_id > 0 AND channel_group_id > 0),
-    CONSTRAINT ck_iam_gateway_api_key_channel_group_weighting CHECK (priority >= 0 AND weight >= 0),
-    CONSTRAINT ck_iam_gateway_api_key_channel_group_effective_interval CHECK (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_channel_group_uuid ON iam_gateway_api_key_channel_group (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_channel_group_binding ON iam_gateway_api_key_channel_group (tenant_id, organization_id, api_key_id, channel_group_id, binding_role) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_channel_group_active ON iam_gateway_api_key_channel_group (tenant_id, organization_id, api_key_id, status, priority, weight, id);
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_channel_group_group ON iam_gateway_api_key_channel_group (tenant_id, organization_id, channel_group_id, status, priority, id);
-
-CREATE TABLE IF NOT EXISTS iam_gateway_risk_rule (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    rule_name VARCHAR(128),
-    rule_category INTEGER,
-    rule_type INTEGER,
-    scope_type INTEGER,
-    scope_id BIGINT,
-    target_type INTEGER,
-    target_value VARCHAR(256),
-    target_value_hash VARCHAR(128),
-    target_value_masked VARCHAR(128),
-    target_value_cipher_ref VARCHAR(256),
-    match_mode INTEGER,
-    reason VARCHAR(512),
-    action INTEGER,
-    priority INTEGER,
-    requests_per_second BIGINT,
-    requests_per_minute BIGINT,
-    requests_per_day BIGINT,
-    tokens_per_minute BIGINT,
-    burst_limit NUMERIC(38, 12),
-    block_duration_seconds BIGINT,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    hit_count BIGINT,
-    last_hit_at TIMESTAMPTZ,
-    CONSTRAINT ck_iam_gateway_risk_rule_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_risk_rule_tenant_target ON iam_gateway_risk_rule (tenant_id, organization_id, rule_type, target_type, target_value) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_risk_rule_scope_priority ON iam_gateway_risk_rule (tenant_id, organization_id, rule_category, scope_type, scope_id, priority, status);
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_risk_rule_target_hash ON iam_gateway_risk_rule (tenant_id, organization_id, target_type, target_value_hash, status);
-
-CREATE TABLE IF NOT EXISTS ops_alert_event (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    user_id BIGINT,
-    request_id VARCHAR(128),
-    trace_id VARCHAR(128),
-    payload_hash VARCHAR(128),
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    retention_until TIMESTAMPTZ,
-    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    alert_no VARCHAR(128),
-    severity INTEGER,
-    source VARCHAR(128),
-    title VARCHAR(200),
-    message VARCHAR(1024),
-    alert_status INTEGER,
-    first_seen_at TIMESTAMPTZ,
-    last_seen_at TIMESTAMPTZ,
-    resolved_at TIMESTAMPTZ,
-    resolved_by BIGINT,
-    CONSTRAINT ck_ops_alert_event_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_alert_event_no ON ops_alert_event (alert_no);
-CREATE INDEX IF NOT EXISTS idx_ops_alert_event_tenant_status_latest ON ops_alert_event (tenant_id, organization_id, status, last_seen_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_alert_event_retention ON ops_alert_event (retention_until, id);
-
-CREATE TABLE IF NOT EXISTS ops_audit_log (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    request_id VARCHAR(128),
-    trace_id VARCHAR(128),
-    operator_id BIGINT,
-    action VARCHAR(128),
-    target_type INTEGER,
-    target_id BIGINT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    retention_until TIMESTAMPTZ,
-    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    operator_type INTEGER,
-    operator_name_snapshot VARCHAR(128),
-    target_uuid VARCHAR(64),
-    client_ip_hash VARCHAR(128),
-    user_agent_hash VARCHAR(128),
-    before_hash VARCHAR(128),
-    after_hash VARCHAR(128),
-    change_summary JSONB,
-    risk_level INTEGER,
-    approval_id BIGINT,
-    CONSTRAINT ck_ops_audit_log_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0)
-);
-
-CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_operator_created ON ops_audit_log (tenant_id, organization_id, operator_type, operator_id, created_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_target_created ON ops_audit_log (tenant_id, organization_id, target_type, target_id, created_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_audit_log_request ON ops_audit_log (tenant_id, organization_id, request_id);
-CREATE INDEX IF NOT EXISTS idx_ops_audit_log_retention ON ops_audit_log (retention_until, id);
-
-CREATE TABLE IF NOT EXISTS ops_config_snapshot (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    user_id BIGINT,
-    request_id VARCHAR(128),
-    trace_id VARCHAR(128),
-    payload_hash VARCHAR(128),
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    retention_until TIMESTAMPTZ,
-    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    snapshot_no VARCHAR(128),
-    config_scope INTEGER,
-    config_type INTEGER,
-    source_table VARCHAR(128),
-    source_ids JSONB,
-    config_payload JSONB,
-    config_hash VARCHAR(128),
-    published_at TIMESTAMPTZ,
-    published_by BIGINT,
-    rollback_from_snapshot_id BIGINT,
-    CONSTRAINT ck_ops_config_snapshot_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_config_snapshot_no ON ops_config_snapshot (snapshot_no);
-CREATE INDEX IF NOT EXISTS idx_ops_config_snapshot_tenant_scope ON ops_config_snapshot (tenant_id, organization_id, config_scope, config_type, created_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_config_snapshot_retention ON ops_config_snapshot (retention_until, id);
-
-CREATE TABLE IF NOT EXISTS ops_gateway_heartbeat (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    user_id BIGINT,
-    request_id VARCHAR(128),
-    trace_id VARCHAR(128),
-    payload_hash VARCHAR(128),
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    retention_until TIMESTAMPTZ,
-    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    instance_id BIGINT,
-    heartbeat_at TIMESTAMPTZ,
-    cpu_percent NUMERIC(38, 12),
-    memory_percent NUMERIC(38, 12),
-    disk_percent NUMERIC(38, 12),
-    network_in_bytes BIGINT,
-    network_out_bytes BIGINT,
-    active_connections BIGINT,
-    uptime_seconds BIGINT,
-    open_file_count BIGINT,
-    thread_count BIGINT,
-    payload JSONB,
-    CONSTRAINT ck_ops_gateway_heartbeat_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_instance_status_time ON ops_gateway_heartbeat (instance_id, status, heartbeat_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_heartbeat_retention ON ops_gateway_heartbeat (retention_until, id);
-
-CREATE TABLE IF NOT EXISTS ops_gateway_instance (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    instance_code VARCHAR(128),
-    deployment_mode INTEGER,
-    region VARCHAR(64),
-    cell VARCHAR(64),
-    version_name VARCHAR(64),
-    host_name VARCHAR(128),
-    ip_address_hash VARCHAR(128),
-    ip_address_masked VARCHAR(64),
-    node_name VARCHAR(128),
-    pod_name VARCHAR(128),
-    container_id_hash VARCHAR(128),
-    desktop_device_hash VARCHAR(128),
-    runtime_type INTEGER,
-    orchestrator INTEGER,
-    started_at TIMESTAMPTZ,
-    last_heartbeat_at TIMESTAMPTZ,
-    health_status INTEGER,
-    config_hash VARCHAR(128),
-    CONSTRAINT ck_ops_gateway_instance_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_gateway_instance_code ON ops_gateway_instance (instance_code);
-CREATE INDEX IF NOT EXISTS idx_ops_gateway_instance_tenant_status_heartbeat ON ops_gateway_instance (tenant_id, organization_id, status, deleted_at, last_heartbeat_at, updated_at, id);
-
-CREATE TABLE IF NOT EXISTS ops_job_execution (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    user_id BIGINT,
-    request_id VARCHAR(128),
-    trace_id VARCHAR(128),
-    payload_hash VARCHAR(128),
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    retention_until TIMESTAMPTZ,
-    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    job_name VARCHAR(128),
-    job_type INTEGER,
-    trigger_type INTEGER,
-    started_at TIMESTAMPTZ,
-    ended_at TIMESTAMPTZ,
-    duration_ms BIGINT,
-    execution_status INTEGER,
-    processed_count BIGINT,
-    success_count BIGINT,
-    failure_count BIGINT,
-    failure_reason VARCHAR(1024),
-    payload JSONB,
-    CONSTRAINT ck_ops_job_execution_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE INDEX IF NOT EXISTS idx_ops_job_execution_name_started ON ops_job_execution (job_name, started_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_job_execution_status_started ON ops_job_execution (execution_status, started_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_job_execution_model_ranking_scope_started ON ops_job_execution (tenant_id, organization_id, status, job_type, job_name, started_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_job_execution_retention ON ops_job_execution (retention_until, id);
-
-CREATE TABLE IF NOT EXISTS ops_metric_snapshot (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    source_type VARCHAR(128),
-    source_id BIGINT,
-    source_version BIGINT NOT NULL,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    rebuild_version BIGINT NOT NULL DEFAULT 0,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    metric_scope INTEGER NOT NULL,
-    metric_name VARCHAR(128) NOT NULL,
-    metric_period INTEGER NOT NULL,
-    period_start TIMESTAMPTZ NOT NULL,
-    period_end TIMESTAMPTZ,
-    dimension_key VARCHAR(128) NOT NULL,
-    dimension_value VARCHAR(256) NOT NULL,
-    metric_value NUMERIC(38, 12) NOT NULL,
-    metric_unit VARCHAR(64),
-    payload JSONB,
-    CONSTRAINT ck_ops_metric_snapshot_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT ck_ops_metric_snapshot_period_interval CHECK (period_end IS NULL OR period_end > period_start)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_metric_snapshot ON ops_metric_snapshot (tenant_id, organization_id, metric_scope, metric_name, metric_period, period_start, dimension_key, dimension_value);
-
-CREATE TABLE IF NOT EXISTS ops_notification_message (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    app_id VARCHAR(128),
-    scope_type INTEGER NOT NULL DEFAULT 1,
-    message_code VARCHAR(128),
-    message_type INTEGER,
-    title VARCHAR(200),
-    summary VARCHAR(512),
-    content TEXT,
-    severity INTEGER,
-    priority INTEGER NOT NULL DEFAULT 0,
-    show_as_popup BOOLEAN NOT NULL DEFAULT FALSE,
-    action_url VARCHAR(1024),
-    published_at TIMESTAMPTZ,
-    expire_at TIMESTAMPTZ,
-    CONSTRAINT ck_ops_notification_message_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_notification_message_scope_id ON ops_notification_message (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_ops_notification_message_scope ON ops_notification_message (tenant_id, organization_id, app_id, scope_type, status, published_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_notification_message_popup ON ops_notification_message (tenant_id, organization_id, show_as_popup, published_at, id);
-
-CREATE TABLE IF NOT EXISTS ops_notification_delivery (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    user_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    app_id VARCHAR(128) NOT NULL DEFAULT 'default',
-    message_id BIGINT NOT NULL,
-    delivery_channel INTEGER NOT NULL,
-    delivery_status INTEGER,
-    read_at TIMESTAMPTZ,
-    popup_seen_at TIMESTAMPTZ,
-    archived_at TIMESTAMPTZ,
-    delivered_at TIMESTAMPTZ,
-    failure_code VARCHAR(128),
-    retry_count INTEGER NOT NULL DEFAULT 0,
-    CONSTRAINT ck_ops_notification_delivery_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT fk_ops_notification_delivery_message FOREIGN KEY (tenant_id, organization_id, message_id) REFERENCES ops_notification_message (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ops_notification_delivery_retry_count CHECK (retry_count >= 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ops_notification_delivery_user_message_app ON ops_notification_delivery (tenant_id, organization_id, message_id, user_id, app_id, delivery_channel);
-CREATE INDEX IF NOT EXISTS idx_ops_notification_delivery_user_read ON ops_notification_delivery (tenant_id, organization_id, user_id, app_id, read_at, created_at, id);
-CREATE INDEX IF NOT EXISTS idx_ops_notification_delivery_popup_seen ON ops_notification_delivery (tenant_id, organization_id, user_id, app_id, popup_seen_at, id);
-
-CREATE TABLE IF NOT EXISTS ops_notification_recipient (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    message_id BIGINT NOT NULL,
-    app_id VARCHAR(128),
-    recipient_type INTEGER NOT NULL,
-    recipient_value VARCHAR(256),
-    recipient_user_id BIGINT,
-    recipient_role_code VARCHAR(128),
-    CONSTRAINT ck_ops_notification_recipient_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_ops_notification_recipient_message FOREIGN KEY (tenant_id, organization_id, message_id) REFERENCES ops_notification_message (tenant_id, organization_id, id) ON DELETE RESTRICT
-);
-
-CREATE INDEX IF NOT EXISTS idx_ops_notification_recipient_message ON ops_notification_recipient (tenant_id, organization_id, message_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ops_notification_recipient_user ON ops_notification_recipient (tenant_id, organization_id, recipient_type, recipient_user_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ops_notification_recipient_role ON ops_notification_recipient (tenant_id, organization_id, recipient_type, recipient_role_code, status, id);

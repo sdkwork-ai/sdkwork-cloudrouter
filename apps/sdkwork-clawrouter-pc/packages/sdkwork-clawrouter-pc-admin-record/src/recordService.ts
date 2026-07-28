@@ -8,6 +8,7 @@ import {
   readApiRecord,
   readRequiredApiItems,
   readDecimalString,
+  readRequiredNonNegativeInt64String,
   readRequiredString,
   readRequiredNonNegativeNumber,
   type ApiRecord,
@@ -57,19 +58,33 @@ export interface LogRecord {
 
 export class RecordService {
   static async fetchLogs(filters: RecordLogFilters = {}): Promise<{ logs: LogRecord[]; total: number }> {
-    const result = await getClawRouterBackendSdkClient().system.records.list(toRecordLogQueryBody(filters));
+    const result = await getClawRouterBackendSdkClient().system.records.list(toRecordLogQueryParams(filters));
     ensureSdkworkApiSuccess(result, 'Failed to fetch backend logs');
     const data = readApiRecord(result);
     const logs = readRequiredApiItems(result, 'Failed to fetch backend logs', ['logs', 'items', 'records', 'list'])
       .map(normalizeLogRecord);
     return {
       logs,
-      total: readRequiredNonNegativeNumber(data, 'total', 'Backend log total is required'),
+      total: readRequiredPageTotal(data),
     };
   }
 }
 
-function toRecordLogQueryBody(filters: RecordLogFilters = {}): Record<string, string | number> {
+function readRequiredPageTotal(data: ApiRecord): number {
+  const pageInfo = readRequiredRecord(data.pageInfo, 'Backend log pageInfo is required');
+  const totalItems = readRequiredNonNegativeInt64String(
+    pageInfo,
+    'totalItems',
+    'Backend log pageInfo.totalItems is required',
+  );
+  const normalized = Number(totalItems);
+  if (!Number.isSafeInteger(normalized) || normalized < 0) {
+    throw new Error('Backend log pageInfo.totalItems exceeds the supported range');
+  }
+  return normalized;
+}
+
+function toRecordLogQueryParams(filters: RecordLogFilters = {}): Record<string, string | number> {
   const page = optionalPositiveInteger(filters.page, 'page');
   const pageSize = optionalBoundedPositiveInteger(filters.pageSize, 'pageSize', MAX_RECORD_LOG_PAGE_SIZE);
 

@@ -6,6 +6,4 @@ export interface AdminRecordPage {
   items: Record<string, unknown>[];
   /** pageInfo field on AdminRecordPage. */
   pageInfo: PageInfo;
-  /** total field on AdminRecordPage. */
-  total: number;
 }

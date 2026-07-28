@@ -113,13 +113,19 @@ class SchemaCompiler:
     other engine's baseline.
     """
 
-    def __init__(self, root: Path, registry_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        root: Path,
+        registry_path: Path | None = None,
+        table_prefixes: tuple[str, ...] | None = None,
+    ) -> None:
         self.root = Path(root).resolve()
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
             else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
         )
+        self.table_prefixes = table_prefixes
 
     def compile_postgres(self) -> str:
         return self._compile("postgres")
@@ -191,9 +197,11 @@ class SchemaCompiler:
         target.write_text(self._compile(dialect), encoding="utf-8")
         return target
 
-    def write_baseline(self, dialect: str) -> Path:
+    def write_baseline(self, dialect: str, output_path: Path | None = None) -> Path:
         target = (
-            self.root
+            Path(output_path)
+            if output_path is not None
+            else self.root
             / "database"
             / "ddl"
             / "baseline"
@@ -229,9 +237,15 @@ class SchemaCompiler:
 
         return SchemaCompileCheckResult(ok=True, messages=[])
 
-    def check_baseline(self, dialect: str) -> SchemaCompileCheckResult:
+    def check_baseline(
+        self,
+        dialect: str,
+        output_path: Path | None = None,
+    ) -> SchemaCompileCheckResult:
         target = (
-            self.root
+            Path(output_path)
+            if output_path is not None
+            else self.root
             / "database"
             / "ddl"
             / "baseline"
@@ -263,6 +277,8 @@ class SchemaCompiler:
             if not isinstance(table, dict) or table.get("generated_by_this_project") is False:
                 continue
             table_name = self._require_identifier(table.get("table"), "table")
+            if self.table_prefixes is not None and not table_name.startswith(self.table_prefixes):
+                continue
             if table_name in generated_tables:
                 raise SchemaCompileError(f"duplicate generated table: {table_name}")
             generated_tables[table_name] = table

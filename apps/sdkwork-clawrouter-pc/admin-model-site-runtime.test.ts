@@ -38,11 +38,11 @@ test("admin model site service is SDK-backed and uses confirmed route surface", 
 
   for (const token of [
     "export class SiteService",
-    "getClawRouterBackendSdkClient().sites.siteCatalog.list(",
+    "getClawRouterBackendSdkClient().sites.list(",
     "getClawRouterBackendSdkClient().sites.create(",
     "getClawRouterBackendSdkClient().sites.update(",
     "getClawRouterBackendSdkClient().sites.delete(",
-    "getClawRouterBackendSdkClient().sites.siteChannels.list(",
+    "getClawRouterBackendSdkClient().sites.channels.list(",
     "getClawRouterBackendSdkClient().sites.testConnection.create(",
     "getClawRouterBackendSdkClient().sites.healthCheck.create(",
     "export interface SiteItem",
@@ -50,6 +50,13 @@ test("admin model site service is SDK-backed and uses confirmed route surface", 
     "export interface SiteConnectionCheckResult",
   ]) {
     assert.ok(siteService.includes(token), `missing site service marker: ${token}`);
+  }
+
+  for (const forbidden of [
+    ".sites.siteCatalog.",
+    ".sites.siteChannels.",
+  ]) {
+    assert.equal(siteService.includes(forbidden), false, `unexpected retired site SDK token: ${forbidden}`);
   }
 
   for (const forbidden of [
@@ -96,7 +103,7 @@ test("admin model page exposes site management route and navigation markers", ()
 
   for (const token of [
     "export function SiteAdmin",
-    "SiteService.fetchSites()",
+    "SiteService.fetchSites({",
     "SiteService.createSite(",
     "SiteService.updateSite(",
     "SiteService.deleteSite(",
@@ -140,13 +147,15 @@ test("admin model page exposes site management route and navigation markers", ()
   }
 });
 
-test("admin model site page keeps the content viewport edge-to-edge", () => {
+test("admin pages share responsive content viewport padding", () => {
   const adminLayoutSource = readPortalFile("packages/sdkwork-clawrouter-pc-admin-shell/src/AdminLayout.tsx");
 
   assert.ok(
-    adminLayoutSource.includes('w-full max-w-none flex-1 flex-col overflow-hidden p-0'),
-    "admin right content wrapper should not add outer padding",
+    adminLayoutSource.includes('w-full max-w-none flex-1 flex-col overflow-hidden p-3 sm:p-4 xl:p-5'),
+    "admin right content wrapper should provide responsive visual breathing room",
   );
+  assert.ok(adminLayoutSource.includes("data-admin-content-viewport"));
+  assert.equal(adminLayoutSource.includes('overflow-hidden p-0'), false);
 });
 
 test("admin model site table fills the available admin viewport", () => {

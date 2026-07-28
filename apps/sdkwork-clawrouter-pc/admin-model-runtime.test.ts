@@ -374,15 +374,21 @@ test("admin model list summarizes prices and opens regional pricing popovers", (
     "utf8",
   );
 
-  assert.match(source, /const modelPriceColumnClassName = ['"][^'"]*min-w-\[[^\]]+\][^'"]*whitespace-nowrap[^'"]*['"]/);
+  assert.match(source, /const modelPriceColumnClassName = `\$\{modelTableHeaderCellClassName\} min-w-\[[^\]]+\] whitespace-nowrap`/);
   assert.match(source, /<th className=\{modelPriceColumnClassName\}>\{t\('admin\.model\.table\.price'\)\}<\/th>/);
   assert.match(source, /openPricePopoverModelId/);
   assert.match(source, /priceRegionByModelId/);
   assert.match(source, /const modelPriceSummaryButtonClassName = ['"][^'"]*whitespace-nowrap[^'"]*['"]/);
-  assert.match(source, /const modelPricePopoverClassName = ['"][^'"]*absolute[^'"]*z-\[/);
+  assert.match(source, /const modelPricePopoverClassName = ['"][^'"]*fixed[^'"]*z-\[2147483000\][^'"]*w-\[480px\][^'"]*bg-white[^'"]*opacity-100/);
+  assert.match(source, /createPortal\(/);
+  assert.match(source, /data-admin-model-price-popover/);
+  assert.match(source, /zIndex: PRICE_POPOVER_Z_INDEX/);
+  assert.match(source, /document\.addEventListener\('scroll', updatePosition, true\)/);
   assert.match(source, /getModelRegionPrices\(m\)/);
   assert.match(source, /selectedPriceRegionCode/);
-  assert.match(source, /setOpenPricePopoverModelId\(openPricePopoverModelId === m\.id \? null : m\.id\)/);
+  assert.match(source, /const isOpen = openPricePopoverModelId === m\.id/);
+  assert.match(source, /setOpenPricePopoverModelId\(isOpen \? null : m\.id\)/);
+  assert.match(source, /setPricePopoverAnchor\(isOpen \? null : event\.currentTarget\)/);
   assert.match(source, /t\('admin\.model\.pricing\.regionCount'/);
   assert.match(source, /t\('admin\.model\.pricing\.details'\)/);
   assert.match(source, /MODEL_PRICING_REGIONS\.find/);
@@ -390,6 +396,23 @@ test("admin model list summarizes prices and opens regional pricing popovers", (
   assert.doesNotMatch(source, /<div className=\{modelPricePillClassName\}>/);
   assert.match(i18nSource, /"admin\.model\.pricing\.regionCount"/);
   assert.match(i18nSource, /"admin\.model\.pricing\.details"/);
+
+  const catalogStyles = readFileSync(
+    resolve(PORTAL_ROOT, "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/adminCatalog.css"),
+    "utf8",
+  );
+  for (const expected of [
+    "[data-admin-model-price-popover]",
+    "z-index: 2147483000 !important",
+    "width: min(480px, calc(100vw - 2rem))",
+    "background-color: #ffffff !important",
+    "opacity: 1 !important",
+    "backdrop-filter: none",
+    "html.dark [data-admin-model-price-popover]",
+    "background-color: #1a1a1a !important",
+  ]) {
+    assert.ok(catalogStyles.includes(expected), `missing price popover catalog style: ${expected}`);
+  }
 });
 
 test("admin ai model create input does not reuse returned model view model", () => {
@@ -2214,6 +2237,40 @@ test("admin model table fills the available admin viewport", () => {
   ]) {
     assert.ok(source.includes(expected), `missing adaptive admin model table marker: ${expected}`);
   }
+});
+
+test("admin model vendor avatars and sticky table headers render in light and dark themes", () => {
+  const source = readFileSync(
+    resolve(PORTAL_ROOT, "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/index.tsx"),
+    "utf8",
+  );
+  const hostStyles = readFileSync(resolve(PORTAL_ROOT, "src/index.css"), "utf8");
+
+  for (const expected of [
+    "resolveVendorAvatarAppearance(v.color)",
+    "style={vendorAvatarAppearance.style}",
+    "backgroundColor: normalized",
+    "flex min-w-0 flex-1 items-center gap-3",
+    "flex shrink-0 items-center gap-2",
+    "data-admin-model-table-header",
+  ]) {
+    assert.ok(source.includes(expected), `missing model vendor theme marker: ${expected}`);
+  }
+
+  for (const expected of [
+    "[data-admin-model-table-card] table > thead > tr > th",
+    "html.dark [data-admin-model-table-card] table > thead > tr > th",
+    "[data-admin-model-table-header] > tr > th",
+    "html.dark [data-admin-model-table-header] > tr > th",
+    "background-color: #f1f5f9",
+    "background-color: #202020",
+    "color: #334155",
+    "color: #e2e8f0",
+  ]) {
+    assert.ok(hostStyles.includes(expected), `missing host model table theme rule: ${expected}`);
+  }
+
+  assert.match(source, /const modelTableHeaderCellClassName = "sticky top-0 z-10 px-6 py-4 font-semibold"/);
 });
 
 test("admin model right pane stays as a paginated table list", () => {

@@ -277,8 +277,8 @@ tables:
     family_code: string(64)
     model_id: int64
     model: string(256)
-    provider_code: string(64)
-    channel_id: int64
+    supplier_code: string(64)
+    account_id: int64
     provider_model: string(256)
     capability_code: string(64)
     platform_code: string(64)
@@ -382,8 +382,8 @@ tables:
     - organization_id
     - pricing_plan_id
     - model
-    - provider_code
-    - channel_id
+    - supplier_code
+    - account_id
     - billing_meter_code
     - status
     - priority

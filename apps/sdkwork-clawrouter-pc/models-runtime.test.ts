@@ -227,6 +227,28 @@ test("model catalog filter options derive unique sorted provider modality and ca
   assert.deepEqual(models[0].capabilities, ["Vision", "Function Calling"]);
 });
 
+test("model catalog filter options prefer the complete provider catalog over the current model page", () => {
+  const currentPage = [
+    catalogModel({ id: "openai/text", provider: "OpenAI" }),
+    catalogModel({ id: "anthropic/text", provider: "Anthropic" }),
+  ];
+
+  const options = deriveModelCatalogFilterOptions(
+    currentPage,
+    [],
+    ["OpenAI", "Anthropic", "Google", "Mistral", "Cohere", "DeepSeek"],
+  );
+
+  assert.deepEqual(options.providers, ["Anthropic", "Cohere", "DeepSeek", "Google", "Mistral", "OpenAI"]);
+});
+
+test("model catalog provider filters match catalog codes when display labels differ", () => {
+  const models = [catalogModel({ vendorCode: "mistral", provider: "Mistral" })];
+  const filters = catalogFilters({ selectedProviders: ["Mistral AI"] });
+
+  assert.deepEqual(filterModelsForCatalog(models, filters, ["mistral"]), models);
+});
+
 test("model catalog i18n label keys are normalized outside page rendering", () => {
   assert.equal(modelCatalogCategoryLabelKey("Open Source"), "models.category.opensource");
   assert.equal(modelCatalogCategoryLabelKey("  New  "), "models.category.new");
@@ -1329,6 +1351,40 @@ test("model service loads the runtime catalog through the generated app SDK", as
       assert.equal(models[0].pricing.cachedInput, 0.125);
       assert.equal(captured.every((request) => request.method === "GET"), true);
       assert.deepEqual(requestedUrls, ["/app/v3/api/ai/models"]);
+    },
+  );
+});
+
+test("model service loads the complete provider catalog through the generated app SDK", async () => {
+  await withAppSdkFetch(
+    (url) => {
+      const requestUrl = new URL(url, "http://localhost");
+      assert.equal(requestUrl.pathname, "/app/v3/api/ai/model_vendors");
+      return {
+        items: [
+          { code: "openai", label: "OpenAI", modelCount: 12 },
+          { code: "anthropic", label: "Anthropic", modelCount: 8 },
+          { code: "google", label: "Google", modelCount: 10 },
+          { code: "mistral", label: "Mistral AI", modelCount: 6 },
+          { code: "cohere", label: "Cohere", modelCount: 4 },
+          { code: "deepseek", label: "DeepSeek", modelCount: 5 },
+        ],
+      };
+    },
+    async (captured) => {
+      const providers = await ModelService.fetchModelProviders();
+
+      assert.deepEqual(providers, [
+        { code: "anthropic", label: "Anthropic", modelCount: 8 },
+        { code: "cohere", label: "Cohere", modelCount: 4 },
+        { code: "deepseek", label: "DeepSeek", modelCount: 5 },
+        { code: "google", label: "Google", modelCount: 10 },
+        { code: "mistral", label: "Mistral AI", modelCount: 6 },
+        { code: "openai", label: "OpenAI", modelCount: 12 },
+      ]);
+      assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
+        "GET /app/v3/api/ai/model_vendors",
+      ]);
     },
   );
 });

@@ -10,6 +10,8 @@ Specs: REQUIREMENTS_SPEC.md, DOCUMENTATION_SPEC.md
 
 This file is the PRD index. Detailed requirements live in the linked shards:
 
+- [PRD-UPSTREAM-SUPPLIER.md](PRD-UPSTREAM-SUPPLIER.md) - canonical upstream supplier, account, account-group, routing, credential, and settlement requirements
+
 - [PRD-00-design.md](PRD-00-design.md) — design rationale and capability surface
 - [PRD-01-prd-sdkwork-clawrouter.md](PRD-01-prd-sdkwork-clawrouter.md) — detailed product requirements
 

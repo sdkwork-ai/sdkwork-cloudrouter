@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 2,
+  "kind": "sdkwork.database.module",
+  "databaseRole": "authoritative-server",
+  "moduleId": "gateway-iam",
+  "serviceCode": "CLAW_ROUTER_GATEWAY_IAM",
+  "displayName": "Claw Router Gateway IAM Database",
+  "owner": "gateway-iam-service",
+  "engines": [
+    "postgres"
+  ],
+  "defaultEngine": "postgres",
+  "tablePrefix": "iam_gateway_",
+  "contractVersion": "0.3.0",
+  "baselineStrategy": "baseline-plus-migrations",
+  "baselineAnchorTable": "iam_gateway_api_key",
+  "modules": [],
+  "lifecycle": {
+    "autoMigrate": false,
+    "seedOnBoot": false,
+    "defaultSeedLocale": "zh-CN",
+    "defaultSeedProfile": "standard",
+    "supportedSeedLocales": [
+      "zh-CN",
+      "en-US",
+      "ja-JP",
+      "de-DE",
+      "fr-FR",
+      "ru-RU",
+      "ko-KR"
+    ],
+    "activeSeedLocales": [
+      "zh-CN"
+    ],
+    "driftCheckIntervalSec": 60
+  },
+  "paths": {
+    "contract": "contract/schema.yaml",
+    "migrations": "migrations",
+    "seeds": "seeds",
+    "driftPolicy": "drift/policy.yaml"
+  },
+  "spi": {
+    "provider": "default",
+    "hooks": []
+  },
+  "materializedTableCount": 4,
+  "materializedTables": [
+    "iam_gateway_access_policy",
+    "iam_gateway_api_key",
+    "iam_gateway_api_key_account_group",
+    "iam_gateway_risk_rule"
+  ]
+}

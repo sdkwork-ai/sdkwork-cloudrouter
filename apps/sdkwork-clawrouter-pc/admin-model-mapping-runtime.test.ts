@@ -163,6 +163,18 @@ test('admin model mapping page is reduced to tabs search add and table without r
     'mapping page should fill the admin viewport without creating document scroll',
   );
   assert.equal(mappingPageSource.includes('min-h-screen'), false, 'mapping page must not use min-h-screen inside AdminLayout');
+  for (const layoutMarker of [
+    'data-admin-model-mapping-toolbar',
+    'data-admin-model-mapping-scope-filter',
+    'data-admin-model-mapping-search',
+    'data-admin-model-mapping-primary-action',
+    'data-admin-model-mapping-table',
+    'aria-pressed={bindingFilter === tab.value}',
+    'sticky top-0 z-10',
+  ]) {
+    assert.ok(mappingPageSource.includes(layoutMarker), `missing mapping workspace layout marker: ${layoutMarker}`);
+  }
+  assert.equal(mappingPageSource.includes('rounded-2xl border border-slate-200'), false, 'mapping table should not nest a decorative card inside AdminTableShell');
 
   for (const forbidden of [
     'admin.model.mapping.priorityHint',

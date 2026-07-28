@@ -40,6 +40,12 @@ export interface ModelCatalogGroup {
   modelCount: number;
 }
 
+export interface ModelCatalogProvider {
+  code: string;
+  label: string;
+  modelCount: number;
+}
+
 export interface ModelCatalogPageInfo {
   total: number;
   page: number;
@@ -60,6 +66,13 @@ export class ModelService {
 
   static fetchModelCatalog(filters: ModelCatalogServiceFilters = {}): Promise<ModelCatalogResult> {
     return fetchModelCatalogResult(filters);
+  }
+
+  static async fetchModelProviders(): Promise<ModelCatalogProvider[]> {
+    const result = await getModelsAppSdkClient().ai.modelVendors.list();
+    return resolveRuntimeModelCatalogProviders(
+      readRequiredApiItems(result, 'Failed to fetch model providers'),
+    );
   }
 
   static async fetchModelByCatalogRouteId(routeId: string): Promise<Model | null> {
@@ -180,6 +193,32 @@ function resolveRuntimeModelCatalogGroups(records: readonly Record<string, unkno
     groups.set(key, { key: key as ModelGroupKey, label, modelCount });
   }
   return [...groups.values()];
+}
+
+function resolveRuntimeModelCatalogProviders(items: readonly unknown[]): ModelCatalogProvider[] {
+  const providers = new Map<string, ModelCatalogProvider>();
+  for (const item of items) {
+    if (!isRecord(item)) {
+      continue;
+    }
+    const code = (readString(item, 'code') || readString(item, 'vendorCode')).trim();
+    if (code.length === 0 || providers.has(code)) {
+      continue;
+    }
+    const label = (
+      readString(item, 'label')
+      || readString(item, 'vendor')
+      || readString(item, 'name')
+      || code
+    ).trim();
+    const modelCount = Math.max(0, Math.trunc(readNumber(item, 'modelCount', 0)));
+    providers.set(code, { code, label: label || code, modelCount });
+  }
+
+  return [...providers.values()].sort((first, second) => (
+    first.label.localeCompare(second.label, undefined, { sensitivity: 'base' })
+    || first.code.localeCompare(second.code)
+  ));
 }
 
 function normalizeQueryString(value: string | undefined): string | undefined {

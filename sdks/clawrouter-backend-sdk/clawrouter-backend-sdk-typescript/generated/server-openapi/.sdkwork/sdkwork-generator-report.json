@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "e879ba3a0f741f20d0f01ef73c9dc1bbc1a1fe62bd013144dad4ba44e392bbe6",
+  "changeFingerprint": "eac58030d21c7f930462907a4706f25da476da8638ed964bcbefcb678dc88c40",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -77,9 +77,12 @@
           "src/types/admin-service-node-page.ts",
           "src/types/admin-service-node-status-update-request.ts",
           "src/types/admin-service-node-update-request.ts",
+          "src/types/admin-site-channel-item.ts",
+          "src/types/admin-site-channel-list-response.ts",
           "src/types/admin-site-connection-check-result.ts",
           "src/types/admin-site-create-request.ts",
           "src/types/admin-site-item.ts",
+          "src/types/admin-site-list-response.ts",
           "src/types/admin-site-settings-response.ts",
           "src/types/admin-site-settings-update-request.ts",
           "src/types/admin-site-update-request.ts",
@@ -297,10 +300,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 238,
-    "models": 206,
+    "totalFiles": 241,
+    "models": 209,
     "apis": 9,
-    "types": 208
+    "types": 211
   },
   "warnings": [
     {
@@ -337,10 +340,6 @@
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/sites.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/storage.ts"
     },
     {
@@ -367,12 +366,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 112,
+    "writtenFiles": 115,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "e879ba3a0f741f20d0f01ef73c9dc1bbc1a1fe62bd013144dad4ba44e392bbe6",
+    "changeFingerprint": "eac58030d21c7f930462907a4706f25da476da8638ed964bcbefcb678dc88c40",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -431,9 +430,12 @@
         "src/types/admin-service-node-page.ts",
         "src/types/admin-service-node-status-update-request.ts",
         "src/types/admin-service-node-update-request.ts",
+        "src/types/admin-site-channel-item.ts",
+        "src/types/admin-site-channel-list-response.ts",
         "src/types/admin-site-connection-check-result.ts",
         "src/types/admin-site-create-request.ts",
         "src/types/admin-site-item.ts",
+        "src/types/admin-site-list-response.ts",
         "src/types/admin-site-settings-response.ts",
         "src/types/admin-site-settings-update-request.ts",
         "src/types/admin-site-update-request.ts",
@@ -560,9 +562,12 @@
             "src/types/admin-service-node-page.ts",
             "src/types/admin-service-node-status-update-request.ts",
             "src/types/admin-service-node-update-request.ts",
+            "src/types/admin-site-channel-item.ts",
+            "src/types/admin-site-channel-list-response.ts",
             "src/types/admin-site-connection-check-result.ts",
             "src/types/admin-site-create-request.ts",
             "src/types/admin-site-item.ts",
+            "src/types/admin-site-list-response.ts",
             "src/types/admin-site-settings-response.ts",
             "src/types/admin-site-settings-update-request.ts",
             "src/types/admin-site-update-request.ts",

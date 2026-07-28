@@ -128,7 +128,12 @@ const result = await client.recharges.orders.management.list();
 
 ```typescript
 // List sites
-const result = await client.sites.list();
+const params = {
+  q: 'q',
+  page: 2,
+  page_size: 3,
+};
+const result = await client.sites.list(params);
 ```
 
 ### storage

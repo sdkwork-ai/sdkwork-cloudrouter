@@ -23,6 +23,10 @@ export class HttpClient extends BaseHttpClient {
     super(config as any);
   }
 
+  private static normalizeCredential(value: unknown): string | undefined {
+    return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+  }
+
   private getInternalAuthConfig(): any {
     const self = this as any;
     self.authConfig = self.authConfig || {};
@@ -368,8 +372,8 @@ export class HttpClient extends BaseHttpClient {
   private applySdkworkAuthHeaders(headers?: Record<string, string>): Record<string, string> | undefined {
     const authConfig = this.getInternalAuthConfig();
     const tokenManager = authConfig.tokenManager;
-    const accessToken = tokenManager?.getAccessToken?.();
-    const authToken = tokenManager?.getAuthToken?.();
+    const accessToken = HttpClient.normalizeCredential(tokenManager?.getAccessToken?.());
+    const authToken = HttpClient.normalizeCredential(tokenManager?.getAuthToken?.());
     if (HttpClient.REQUIRES_SDKWORK_ACCESS_TOKEN
       && (typeof accessToken !== 'string' || accessToken.trim().length === 0)) {
       throw new Error('non-open-api request requires Access-Token before request dispatch');
@@ -378,11 +382,10 @@ export class HttpClient extends BaseHttpClient {
       return headers;
     }
 
-    return {
-      ...(headers ?? {}),
-      ...(accessToken ? { [HttpClient.ACCESS_TOKEN_HEADER]: accessToken } : {}),
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-    };
+    const authHeaders = buildAuthHeaders('dual-token', undefined, tokenManager);
+    return Object.keys(authHeaders).length > 0
+      ? { ...(headers ?? {}), ...authHeaders }
+      : headers;
   }
 
   private unwrapSdkworkV3Payload<T>(payload: unknown): T {

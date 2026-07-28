@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.prefix-registry",
+  "prefixes": [
+    {
+      "prefix": "iam_gateway_",
+      "owner": "gateway-iam-service",
+      "domain": "gateway-iam"
+    }
+  ]
+}

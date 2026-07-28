@@ -5,12 +5,17 @@
   "type": "module",
   "main": "./src/index.tsx",
   "scripts": {
+    "test": "vitest run src/siteService.test.ts --config ../../vite.config.ts --configLoader native --pool vmThreads",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@sdkwork/clawrouter-pc-admin-core": "workspace:*",
     "@sdkwork/clawroutes-pc-commons": "workspace:*",
     "@sdkwork/models-pc-admin-catalog": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public",

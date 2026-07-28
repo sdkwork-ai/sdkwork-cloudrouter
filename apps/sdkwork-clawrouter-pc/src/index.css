@@ -73,6 +73,22 @@
   --sdk-shadow-lg: 0 12px 28px rgb(15 23 42 / 0.12);
 }
 
+/* Target the host-stable table card as well as the catalog marker so theme
+   colors also apply before an external workspace module receives an HMR update. */
+[data-admin-model-table-card] table > thead > tr > th,
+[data-admin-model-table-header] > tr > th {
+  background-color: #f1f5f9;
+  color: #334155;
+  box-shadow: inset 0 -1px 0 #cbd5e1;
+}
+
+html.dark [data-admin-model-table-card] table > thead > tr > th,
+html.dark [data-admin-model-table-header] > tr > th {
+  background-color: #202020;
+  color: #e2e8f0;
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.1);
+}
+
 .claw-router-console-business-page[data-console-business-page='coupons'] > div > div,
 .claw-router-console-business-page[data-console-business-page='checkout'] > div > .relative,
 .claw-router-console-business-page[data-console-business-page='payment'] > div > .relative {

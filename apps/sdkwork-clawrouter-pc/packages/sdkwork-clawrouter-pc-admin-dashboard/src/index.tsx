@@ -106,14 +106,13 @@ const SUMMARY_CARD_COLORS = [
 type DashboardChartTab = 'modelDistribution' | 'userConsumption';
 
 export function DashboardAdmin() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [chartTab, setChartTab] = useState<DashboardChartTab>('modelDistribution');
   const [trendMetric, setTrendMetric] = useState<DashboardTrendMetric>('tokens');
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
 
   const [loading, setLoading] = useState(true);
   const [refreshRequest, setRefreshRequest] = useState(0);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [summaryCards, setSummaryCards] = useState<DashboardSummaryCard[]>([]);
   const [userConsumptionData, setUserConsumptionData] = useState<PieChartData[]>([]);
@@ -137,7 +136,6 @@ export function DashboardAdmin() {
         setTrafficData(data.traffic);
         setModelDistribution(data.modelDistribution);
         setRecentUsage(data.recentUsage);
-        setLastUpdatedAt(new Date());
       })
       .catch(error => {
         if (disposed) {
@@ -227,14 +225,6 @@ export function DashboardAdmin() {
   };
 
   const hasSnapshot = summaryCards.length > 0;
-  const updatedAtLabel = lastUpdatedAt
-    ? new Intl.DateTimeFormat(i18n.resolvedLanguage?.startsWith('zh') ? 'zh-CN' : 'en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      }).format(lastUpdatedAt)
-    : t('admin.dashboard.updated.never', '尚未更新');
-
   if (loading && !hasSnapshot) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center space-y-4">
@@ -265,28 +255,6 @@ export function DashboardAdmin() {
   return (
     <div className="w-full h-full min-h-0 overflow-y-auto custom-scrollbar">
       <div className="flex min-h-full w-full flex-col space-y-4 pb-8">
-
-      <div className="flex min-h-12 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2 dark:border-white/10 dark:bg-[#17191f]">
-        <div className="min-w-0">
-          <h1 className="text-base font-semibold text-slate-900 dark:text-white">
-            {t('admin.dashboard.title', '运营概览')}
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {t('admin.dashboard.updatedAt', '更新于 {{time}}', { time: updatedAtLabel })}
-          </p>
-        </div>
-        <button
-          aria-label={t('admin.dashboard.refresh', '刷新大盘数据')}
-          className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-wait disabled:opacity-60 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-          disabled={loading}
-          onClick={() => setRefreshRequest((request) => request + 1)}
-          title={t('admin.dashboard.refresh', '刷新大盘数据')}
-          type="button"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          {t('admin.dashboard.refreshAction', '刷新')}
-        </button>
-      </div>
 
       {errorMessage ? (
         <div className="mx-4 flex items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300" role="alert">

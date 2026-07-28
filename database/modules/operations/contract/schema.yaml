@@ -1,0 +1,2048 @@
+schema_version: 1
+kind: sdkwork.database.schema
+database_role: authoritative-server
+module_id: operations
+contract_version: 0.3.0
+owner_team: claw-router-platform
+compliance_level: L2
+engines:
+  - postgres
+table_prefix: ops_
+source_registry: docs/schema-registry/sdkwork-clawrouter.tables.yaml
+tables:
+  - name: ops_alert_event
+    domain: ops
+    profile: audit_event
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      request_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      trace_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      payload_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      retention_until:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      legal_hold:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      alert_no:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      severity:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      source:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      title:
+        type: string(200)
+        required: false
+        postgres_type: VARCHAR(200)
+        constraints: ''
+      message:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+      alert_status:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      first_seen_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_seen_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      resolved_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      resolved_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+    constraints:
+      - name: pk_ops_alert_event
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_alert_event_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ops_alert_event_no
+        type: unique
+        columns: &id001
+          - alert_no
+        where: null
+    indexes:
+      - name: uk_ops_alert_event_no
+        columns: *id001
+        unique: true
+        where: null
+      - name: idx_ops_alert_event_tenant_status_latest
+        columns:
+          - tenant_id
+          - organization_id
+          - status
+          - last_seen_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_alert_event_retention
+        columns:
+          - retention_until
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: indexed_append_only
+      retention:
+        online_retention: 12mo
+        archive_retention: 5y
+        grace_period: 24h
+      cleanup:
+        owner: clawrouter-ops-runtime
+        scope: platform_cross_tenant
+        authorization:
+          mode: service_identity
+          service: clawrouter-ops-runtime
+          audit_required: true
+        candidate_recheck:
+          required: true
+          operations:
+            - archive
+            - delete
+          key_columns:
+            - tenant_id
+            - organization_id
+            - id
+        batch_size: 1000
+        predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+        archive_before_delete: true
+        retry:
+          max_attempts: 5
+          backoff:
+            strategy: exponential
+            initial: 1s
+            maximum: 5m
+        monitoring:
+          metrics:
+            - cleanup_candidates
+            - cleanup_archived
+            - cleanup_deleted
+            - cleanup_skipped_legal_hold
+            - cleanup_failures
+          alerts:
+            - retention_lag
+            - retry_exhausted
+        dry_run:
+          supported: true
+          default: true
+    semantic_contracts: null
+  - name: ops_audit_log
+    domain: ops
+    profile: audit_event
+    compliance_level: L3
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      request_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      trace_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      operator_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      action:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      target_type:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      target_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      retention_until:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      legal_hold:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      operator_type:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      operator_name_snapshot:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      target_uuid:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      client_ip_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      user_agent_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      before_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      after_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      change_summary:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      risk_level:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      approval_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+    constraints:
+      - name: pk_ops_audit_log
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_audit_log_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+    indexes:
+      - name: idx_ops_audit_log_tenant_operator_created
+        columns:
+          - tenant_id
+          - organization_id
+          - operator_type
+          - operator_id
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_audit_log_tenant_target_created
+        columns:
+          - tenant_id
+          - organization_id
+          - target_type
+          - target_id
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_audit_log_request
+        columns:
+          - tenant_id
+          - organization_id
+          - request_id
+        unique: false
+        where: null
+      - name: idx_ops_audit_log_retention
+        columns:
+          - retention_until
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: indexed_append_only
+      retention:
+        online_retention: 12mo
+        archive_retention: 5y
+        grace_period: 24h
+      cleanup:
+        owner: clawrouter-ops-runtime
+        scope: platform_cross_tenant
+        authorization:
+          mode: service_identity
+          service: clawrouter-ops-runtime
+          audit_required: true
+        candidate_recheck:
+          required: true
+          operations:
+            - archive
+            - delete
+          key_columns:
+            - tenant_id
+            - organization_id
+            - id
+        batch_size: 1000
+        predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+        archive_before_delete: true
+        retry:
+          max_attempts: 5
+          backoff:
+            strategy: exponential
+            initial: 1s
+            maximum: 5m
+        monitoring:
+          metrics:
+            - cleanup_candidates
+            - cleanup_archived
+            - cleanup_deleted
+            - cleanup_skipped_legal_hold
+            - cleanup_failures
+          alerts:
+            - retention_lag
+            - retry_exhausted
+        dry_run:
+          supported: true
+          default: true
+    semantic_contracts: null
+  - name: ops_config_snapshot
+    domain: ops
+    profile: audit_event
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      request_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      trace_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      payload_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      retention_until:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      legal_hold:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      snapshot_no:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      config_scope:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      config_type:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      source_table:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      source_ids:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      config_payload:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      config_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      published_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      published_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      rollback_from_snapshot_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+    constraints:
+      - name: pk_ops_config_snapshot
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_config_snapshot_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ops_config_snapshot_no
+        type: unique
+        columns: &id002
+          - snapshot_no
+        where: null
+    indexes:
+      - name: uk_ops_config_snapshot_no
+        columns: *id002
+        unique: true
+        where: null
+      - name: idx_ops_config_snapshot_tenant_scope
+        columns:
+          - tenant_id
+          - organization_id
+          - config_scope
+          - config_type
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_config_snapshot_retention
+        columns:
+          - retention_until
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: indexed_append_only
+      retention:
+        online_retention: 12mo
+        archive_retention: 5y
+        grace_period: 24h
+      cleanup:
+        owner: clawrouter-ops-runtime
+        scope: platform_cross_tenant
+        authorization:
+          mode: service_identity
+          service: clawrouter-ops-runtime
+          audit_required: true
+        candidate_recheck:
+          required: true
+          operations:
+            - archive
+            - delete
+          key_columns:
+            - tenant_id
+            - organization_id
+            - id
+        batch_size: 1000
+        predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+        archive_before_delete: true
+        retry:
+          max_attempts: 5
+          backoff:
+            strategy: exponential
+            initial: 1s
+            maximum: 5m
+        monitoring:
+          metrics:
+            - cleanup_candidates
+            - cleanup_archived
+            - cleanup_deleted
+            - cleanup_skipped_legal_hold
+            - cleanup_failures
+          alerts:
+            - retention_lag
+            - retry_exhausted
+        dry_run:
+          supported: true
+          default: true
+    semantic_contracts: null
+  - name: ops_gateway_heartbeat
+    domain: ops
+    profile: operational_state
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      request_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      trace_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      payload_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      retention_until:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      legal_hold:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      instance_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      heartbeat_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      cpu_percent:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      memory_percent:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      disk_percent:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      network_in_bytes:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      network_out_bytes:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      active_connections:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      uptime_seconds:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      open_file_count:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      thread_count:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      payload:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+    constraints:
+      - name: pk_ops_gateway_heartbeat
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_gateway_heartbeat_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+    indexes:
+      - name: idx_ops_gateway_heartbeat_instance_status_time
+        columns:
+          - instance_id
+          - status
+          - heartbeat_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_gateway_heartbeat_retention
+        columns:
+          - retention_until
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: indexed_append_only
+      retention:
+        online_retention: 12mo
+        archive_retention: 5y
+        grace_period: 24h
+      cleanup:
+        owner: clawrouter-ops-runtime
+        scope: platform_cross_tenant
+        authorization:
+          mode: service_identity
+          service: clawrouter-ops-runtime
+          audit_required: true
+        candidate_recheck:
+          required: true
+          operations:
+            - archive
+            - delete
+          key_columns:
+            - tenant_id
+            - organization_id
+            - id
+        batch_size: 1000
+        predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+        archive_before_delete: true
+        retry:
+          max_attempts: 5
+          backoff:
+            strategy: exponential
+            initial: 1s
+            maximum: 5m
+        monitoring:
+          metrics:
+            - cleanup_candidates
+            - cleanup_archived
+            - cleanup_deleted
+            - cleanup_skipped_legal_hold
+            - cleanup_failures
+          alerts:
+            - retention_lag
+            - retry_exhausted
+        dry_run:
+          supported: true
+          default: true
+    semantic_contracts: null
+  - name: ops_gateway_instance
+    domain: ops
+    profile: operational_state
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      instance_code:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      deployment_mode:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      region:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      cell:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      version_name:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      host_name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      ip_address_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      ip_address_masked:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      node_name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      pod_name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      container_id_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      desktop_device_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      runtime_type:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      orchestrator:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      started_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_heartbeat_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      health_status:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      config_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+    constraints:
+      - name: pk_ops_gateway_instance
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_gateway_instance_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_ops_gateway_instance_code
+        type: unique
+        columns: &id003
+          - instance_code
+        where: null
+    indexes:
+      - name: uk_ops_gateway_instance_code
+        columns: *id003
+        unique: true
+        where: null
+      - name: idx_ops_gateway_instance_tenant_status_heartbeat
+        columns:
+          - tenant_id
+          - organization_id
+          - status
+          - deleted_at
+          - last_heartbeat_at
+          - updated_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ops_job_execution
+    domain: ops
+    profile: operational_state
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      request_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      trace_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      payload_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      retention_until:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      legal_hold:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      job_name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      job_type:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      trigger_type:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      started_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      ended_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      duration_ms:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      execution_status:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      processed_count:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      success_count:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      failure_count:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      failure_reason:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+      payload:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+    constraints:
+      - name: pk_ops_job_execution
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_job_execution_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+    indexes:
+      - name: idx_ops_job_execution_name_started
+        columns:
+          - job_name
+          - started_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_job_execution_status_started
+        columns:
+          - execution_status
+          - started_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_job_execution_model_ranking_scope_started
+        columns:
+          - tenant_id
+          - organization_id
+          - status
+          - job_type
+          - job_name
+          - started_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_job_execution_retention
+        columns:
+          - retention_until
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: indexed_append_only
+      retention:
+        online_retention: 12mo
+        archive_retention: 5y
+        grace_period: 24h
+      cleanup:
+        owner: clawrouter-ops-runtime
+        scope: platform_cross_tenant
+        authorization:
+          mode: service_identity
+          service: clawrouter-ops-runtime
+          audit_required: true
+        candidate_recheck:
+          required: true
+          operations:
+            - archive
+            - delete
+          key_columns:
+            - tenant_id
+            - organization_id
+            - id
+        batch_size: 1000
+        predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+        archive_before_delete: true
+        retry:
+          max_attempts: 5
+          backoff:
+            strategy: exponential
+            initial: 1s
+            maximum: 5m
+        monitoring:
+          metrics:
+            - cleanup_candidates
+            - cleanup_archived
+            - cleanup_deleted
+            - cleanup_skipped_legal_hold
+            - cleanup_failures
+          alerts:
+            - retention_lag
+            - retry_exhausted
+        dry_run:
+          supported: true
+          default: true
+    semantic_contracts:
+      model_ranking_refresh:
+        job_name: model_ranking_refresh
+        job_type:
+          code: 20
+          meaning: model ranking refresh
+        trigger_types:
+          scheduled: 1
+          manual: 2
+        execution_status:
+          running: 1
+          succeeded: 2
+          failed: 3
+          empty: 4
+          skipped: 5
+        payload_contract:
+          required_fields:
+            - rankScope
+            - snapshotDate
+            - snapshotPeriod
+            - windowStart
+            - windowEnd
+            - generatedCount
+            - sourceCount
+            - refreshIntervalSeconds
+            - cacheMaxAgeSeconds
+            - nextRefreshAt
+            - status
+            - attemptCount
+            - retryCount
+            - consecutiveFailureCount
+            - alertRecommended
+            - sourceTables
+          source_tables:
+            - ai_usage
+            - ai_model
+            - ai_model_rank_snapshot
+        runtime_contract:
+          scheduler_owner: sdkwork-clawrouter-standalone-gateway
+          startup_policy:
+            run_on_startup_default: true
+          timeout:
+            default_millis: 300000
+          retry:
+            max_retry_attempts_default: 1
+            max_retry_attempts_max: 5
+          concurrency_lock:
+            scope:
+              - worker_instance
+              - tenant_id
+              - organization_id
+              - rank_scope
+            overlap_behavior: audit_skipped
+          cache_invalidation:
+            invalidate_after_status:
+              - succeeded
+              - empty
+          delayed_alerting:
+            alert_after_consecutive_failures_default: 3
+  - name: ops_metric_snapshot
+    domain: ops
+    profile: read_model
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: false
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      source_type:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      source_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      source_version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      rebuild_version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      metric_scope:
+        type: enum_int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+      metric_name:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      metric_period:
+        type: enum_int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+      period_start:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+      period_end:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      dimension_key:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      dimension_value:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+      metric_value:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      metric_unit:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      payload:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+    constraints:
+      - name: pk_ops_metric_snapshot
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_metric_snapshot_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ops_metric_snapshot
+        type: unique
+        columns: &id004
+          - tenant_id
+          - organization_id
+          - metric_scope
+          - metric_name
+          - metric_period
+          - period_start
+          - dimension_key
+          - dimension_value
+        where: null
+      - name: ck_ops_metric_snapshot_period_interval
+        type: check
+        columns: []
+        expression: period_end IS NULL OR period_end > period_start
+    indexes:
+      - name: uk_ops_metric_snapshot
+        columns: *id004
+        unique: true
+        where: null
+    source_tables:
+      - ai_usage
+      - ai_request_trace
+      - ops_gateway_instance
+      - ops_gateway_heartbeat
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts:
+      projection_lineage:
+        watermark:
+          field: period_start
+          strategy: high_watermark
+        source_version:
+          field: source_version
+          strategy: max_source_version
+        algorithm_version: ops-metric-snapshot-v1
+        freshness:
+          target_seconds: 60
+          max_staleness_seconds: 300
+        rebuild:
+          strategy: full_recompute
+          owner: clawrouter-ops-runtime
+        aggregation_grain:
+          - tenant_id
+          - organization_id
+          - metric_scope
+          - metric_name
+          - metric_period
+          - period_start
+          - dimension_key
+          - dimension_value
+  - name: ops_notification_delivery
+    domain: ops
+    profile: user_entity
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      app_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT 'default'
+      message_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      delivery_channel:
+        type: enum_int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+      delivery_status:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      read_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      popup_seen_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      archived_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      delivered_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      failure_code:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      retry_count:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+    constraints:
+      - name: pk_ops_notification_delivery
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_notification_delivery_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ops_notification_delivery_user_message_app
+        type: unique
+        columns: &id005
+          - tenant_id
+          - organization_id
+          - message_id
+          - user_id
+          - app_id
+          - delivery_channel
+        where: null
+      - name: fk_ops_notification_delivery_message
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - message_id
+        references_table: ops_notification_message
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_ops_notification_delivery_retry_count
+        type: check
+        columns: []
+        expression: retry_count >= 0
+    indexes:
+      - name: uk_ops_notification_delivery_user_message_app
+        columns: *id005
+        unique: true
+        where: null
+      - name: idx_ops_notification_delivery_user_read
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - app_id
+          - read_at
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_notification_delivery_popup_seen
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - app_id
+          - popup_seen_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ops_notification_message
+    domain: ops
+    profile: operational_state
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      app_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      scope_type:
+        type: enum_int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      message_code:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      message_type:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      title:
+        type: string(200)
+        required: false
+        postgres_type: VARCHAR(200)
+        constraints: ''
+      summary:
+        type: string(512)
+        required: false
+        postgres_type: VARCHAR(512)
+        constraints: ''
+      content:
+        type: text
+        required: false
+        postgres_type: TEXT
+        constraints: ''
+      severity:
+        type: enum_int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      priority:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      show_as_popup:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
+      action_url:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+      published_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      expire_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_ops_notification_message
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_notification_message_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+    indexes:
+      - name: uk_ops_notification_message_scope_id
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_ops_notification_message_scope
+        columns:
+          - tenant_id
+          - organization_id
+          - app_id
+          - scope_type
+          - status
+          - published_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_notification_message_popup
+        columns:
+          - tenant_id
+          - organization_id
+          - show_as_popup
+          - published_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ops_notification_recipient
+    domain: ops
+    profile: relation_entity
+    compliance_level: L2
+    write_owner: clawrouter-ops-runtime
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      message_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      app_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      recipient_type:
+        type: enum_int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+      recipient_value:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      recipient_user_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      recipient_role_code:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+    constraints:
+      - name: pk_ops_notification_recipient
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ops_notification_recipient_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: fk_ops_notification_recipient_message
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - message_id
+        references_table: ops_notification_message
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+    indexes:
+      - name: idx_ops_notification_recipient_message
+        columns:
+          - tenant_id
+          - organization_id
+          - message_id
+          - status
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_notification_recipient_user
+        columns:
+          - tenant_id
+          - organization_id
+          - recipient_type
+          - recipient_user_id
+          - status
+          - id
+        unique: false
+        where: null
+      - name: idx_ops_notification_recipient_role
+        columns:
+          - tenant_id
+          - organization_id
+          - recipient_type
+          - recipient_role_code
+          - status
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null

@@ -25,7 +25,6 @@ rules:
     - "ai_routing_decision_log_default.*"
     - "ai_usage_default.*"
     - "ai_usage_default.*"
-    - "ai_usage_service_provider_edge_default.*"
     - "ops_audit_log_default.*"
     - "ops_gateway_heartbeat_default.*"
     - "iam_user_login_event_default.*"

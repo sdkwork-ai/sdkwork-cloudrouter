@@ -208,9 +208,14 @@ export function filterProvidersForCatalog(providers: string[], providerSearchQue
 export function deriveModelCatalogFilterOptions(
   models: Model[],
   configuredGroups: readonly ModelCatalogGroupOption[] = [],
+  configuredProviders: readonly string[] = [],
 ): ModelCatalogFilterOptions {
   return {
-    providers: uniqueSortedStrings(models.map((model) => model.provider)),
+    providers: uniqueSortedStrings(
+      configuredProviders.length > 0
+        ? configuredProviders
+        : models.map((model) => model.provider),
+    ),
     modalities: uniqueSortedStrings(models.map((model) => model.modality)),
     capabilities: uniqueSortedStrings(models.flatMap((model) => model.capabilities)),
     groups: configuredGroups.length > 0
@@ -408,7 +413,11 @@ export function resolveProviderShowMoreStateForCatalog(
   };
 }
 
-export function filterModelsForCatalog(models: Model[], filters: ModelCatalogFilters): Model[] {
+export function filterModelsForCatalog(
+  models: Model[],
+  filters: ModelCatalogFilters,
+  selectedProviderCodes: readonly string[] = [],
+): Model[] {
   const normalizedSearch = filters.searchQuery.trim().toLowerCase();
   const result = models.filter((model) => {
     const matchesSearch =
@@ -418,7 +427,9 @@ export function filterModelsForCatalog(models: Model[], filters: ModelCatalogFil
       model.description.toLowerCase().includes(normalizedSearch) ||
       model.capabilities.some((capability) => capability.toLowerCase().includes(normalizedSearch));
     const matchesProvider =
-      filters.selectedProviders.length === 0 || filters.selectedProviders.includes(model.provider);
+      filters.selectedProviders.length === 0
+      || filters.selectedProviders.includes(model.provider)
+      || selectedProviderCodes.includes(model.vendorCode);
     const matchesModality =
       filters.selectedModalities.length === 0 || filters.selectedModalities.includes(model.modality);
     const matchesCapability =

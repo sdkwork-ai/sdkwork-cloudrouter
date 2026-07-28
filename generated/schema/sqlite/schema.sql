@@ -1,295 +1,9 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: e488b562ba6285144585ad352ade6bca9b3c5699af75a79e591c61f24b391cfb.
+-- Registry SHA-256: 594fce7aecdb8ef95cfb678d13bbca1e6b4d731d82b0c32ec50a2445587f9a6e.
 -- Dialect: sqlite.
 -- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
-
-CREATE TABLE IF NOT EXISTS ai_channel (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version INTEGER NOT NULL DEFAULT 0,
-    deleted_at TEXT,
-    deleted_by INTEGER,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    provider_id INTEGER,
-    provider_code VARCHAR(64),
-    site_id INTEGER,
-    site_service_id INTEGER,
-    site_code VARCHAR(64),
-    site_service_code VARCHAR(64),
-    site_channel_role VARCHAR(32),
-    channel_code VARCHAR(64) NOT NULL,
-    channel_name VARCHAR(128) NOT NULL,
-    channel_type VARCHAR(32) NOT NULL,
-    protocol_code VARCHAR(64),
-    auth_type INTEGER,
-    credential_profile INTEGER,
-    external_channel_id VARCHAR(128),
-    base_url VARCHAR(512),
-    auth_config TEXT,
-    credential_ref VARCHAR(256),
-    credential_hash VARCHAR(128),
-    credential_version INTEGER,
-    credential_rotation_policy TEXT,
-    credential_rotation_strategy VARCHAR(64) NOT NULL DEFAULT 'default',
-    masked_label VARCHAR(128),
-    environment INTEGER,
-    region_code VARCHAR(64),
-    quota_unit INTEGER,
-    quota_limit TEXT,
-    quota_used TEXT,
-    upstream_balance_amount TEXT,
-    upstream_balance_currency VARCHAR(10),
-    last_balance_checked_at TEXT,
-    last_rotated_at TEXT,
-    next_rotate_at TEXT,
-    last_verified_at TEXT,
-    last_used_at TEXT,
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    rpm_limit INTEGER,
-    timeout_ms INTEGER,
-    retry_policy TEXT,
-    circuit_breaker_policy TEXT,
-    health_status INTEGER NOT NULL DEFAULT 1,
-    last_latency_ms INTEGER,
-    consecutive_error_count INTEGER,
-    proxy_id INTEGER,
-    risk_level INTEGER,
-    CONSTRAINT ck_ai_channel_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_channel_quota_limit_decimal CHECK (quota_limit IS NULL OR (typeof(quota_limit) = 'text' AND length(quota_limit) BETWEEN 1 AND 40 AND quota_limit NOT GLOB '*[^0-9.-]*' AND quota_limit GLOB '*[0-9]*' AND (instr(quota_limit, '-') = 0 OR (substr(quota_limit, 1, 1) = '-' AND instr(substr(quota_limit, 2), '-') = 0)) AND length(quota_limit) - length(replace(quota_limit, '.', '')) <= 1 AND substr(ltrim(quota_limit, '-'), 1, 1) <> '.' AND substr(quota_limit, -1, 1) <> '.' AND length(replace(replace(quota_limit, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(quota_limit, '.') = 0 THEN 0 ELSE length(quota_limit) - instr(quota_limit, '.') END <= 12 AND (length(ltrim(quota_limit, '-')) = 1 OR substr(ltrim(quota_limit, '-'), 1, 1) <> '0' OR substr(ltrim(quota_limit, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_channel_quota_used_decimal CHECK (quota_used IS NULL OR (typeof(quota_used) = 'text' AND length(quota_used) BETWEEN 1 AND 40 AND quota_used NOT GLOB '*[^0-9.-]*' AND quota_used GLOB '*[0-9]*' AND (instr(quota_used, '-') = 0 OR (substr(quota_used, 1, 1) = '-' AND instr(substr(quota_used, 2), '-') = 0)) AND length(quota_used) - length(replace(quota_used, '.', '')) <= 1 AND substr(ltrim(quota_used, '-'), 1, 1) <> '.' AND substr(quota_used, -1, 1) <> '.' AND length(replace(replace(quota_used, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(quota_used, '.') = 0 THEN 0 ELSE length(quota_used) - instr(quota_used, '.') END <= 12 AND (length(ltrim(quota_used, '-')) = 1 OR substr(ltrim(quota_used, '-'), 1, 1) <> '0' OR substr(ltrim(quota_used, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_channel_upstream_balance_amount_decimal CHECK (upstream_balance_amount IS NULL OR (typeof(upstream_balance_amount) = 'text' AND length(upstream_balance_amount) BETWEEN 1 AND 40 AND upstream_balance_amount NOT GLOB '*[^0-9.-]*' AND upstream_balance_amount GLOB '*[0-9]*' AND (instr(upstream_balance_amount, '-') = 0 OR (substr(upstream_balance_amount, 1, 1) = '-' AND instr(substr(upstream_balance_amount, 2), '-') = 0)) AND length(upstream_balance_amount) - length(replace(upstream_balance_amount, '.', '')) <= 1 AND substr(ltrim(upstream_balance_amount, '-'), 1, 1) <> '.' AND substr(upstream_balance_amount, -1, 1) <> '.' AND length(replace(replace(upstream_balance_amount, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(upstream_balance_amount, '.') = 0 THEN 0 ELSE length(upstream_balance_amount) - instr(upstream_balance_amount, '.') END <= 12 AND (length(ltrim(upstream_balance_amount, '-')) = 1 OR substr(ltrim(upstream_balance_amount, '-'), 1, 1) <> '0' OR substr(ltrim(upstream_balance_amount, '-'), 2, 1) = '.')))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_uuid ON ai_channel (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_tenant_code ON ai_channel (tenant_id, organization_id, channel_code);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_scope_id ON ai_channel (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_provider_type_status ON ai_channel (tenant_id, organization_id, provider_code, channel_type, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_health_status ON ai_channel (tenant_id, organization_id, status, health_status, priority, weight, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_site_status ON ai_channel (tenant_id, organization_id, site_id, status, health_status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_site_service_status ON ai_channel (tenant_id, organization_id, site_service_id, status, health_status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_site_code ON ai_channel (tenant_id, organization_id, site_code, site_service_code, status, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_credential (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version INTEGER NOT NULL DEFAULT 0,
-    deleted_at TEXT,
-    deleted_by INTEGER,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    channel_id INTEGER NOT NULL,
-    provider_code VARCHAR(64),
-    channel_code VARCHAR(64),
-    credential_name VARCHAR(128) NOT NULL,
-    base_url VARCHAR(512) NOT NULL,
-    auth_config TEXT NOT NULL DEFAULT '{}',
-    credential_ref VARCHAR(256) NOT NULL,
-    credential_hash VARCHAR(128) NOT NULL,
-    masked_label VARCHAR(128),
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    health_status INTEGER NOT NULL DEFAULT 1,
-    last_latency_ms INTEGER,
-    consecutive_error_count INTEGER NOT NULL DEFAULT 0,
-    last_verified_at TEXT,
-    last_used_at TEXT,
-    CONSTRAINT ck_ai_channel_credential_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_credential_uuid ON ai_channel_credential (uuid);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_credential_channel ON ai_channel_credential (tenant_id, organization_id, channel_id, status, priority, weight, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_credential_ref ON ai_channel_credential (tenant_id, organization_id, credential_ref);
-
-CREATE TABLE IF NOT EXISTS ai_channel_group (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version INTEGER NOT NULL DEFAULT 0,
-    deleted_at TEXT,
-    deleted_by INTEGER,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    group_code VARCHAR(64) NOT NULL,
-    group_name VARCHAR(128) NOT NULL,
-    description VARCHAR(512),
-    provider_code VARCHAR(64),
-    group_type VARCHAR(32),
-    routing_policy_id INTEGER,
-    quota_policy_id INTEGER,
-    rate_limit_policy_id INTEGER,
-    environment INTEGER,
-    pricing_plan_id INTEGER,
-    pricing_plan_code VARCHAR(64),
-    rate_multiplier TEXT,
-    price_reference_mode INTEGER,
-    official_price_multiplier TEXT,
-    billing_type INTEGER,
-    capacity_limit INTEGER,
-    allowed_origin TEXT,
-    CONSTRAINT ck_ai_channel_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_channel_group_rate_multiplier_decimal CHECK (rate_multiplier IS NULL OR (typeof(rate_multiplier) = 'text' AND length(rate_multiplier) BETWEEN 1 AND 40 AND rate_multiplier NOT GLOB '*[^0-9.-]*' AND rate_multiplier GLOB '*[0-9]*' AND (instr(rate_multiplier, '-') = 0 OR (substr(rate_multiplier, 1, 1) = '-' AND instr(substr(rate_multiplier, 2), '-') = 0)) AND length(rate_multiplier) - length(replace(rate_multiplier, '.', '')) <= 1 AND substr(ltrim(rate_multiplier, '-'), 1, 1) <> '.' AND substr(rate_multiplier, -1, 1) <> '.' AND length(replace(replace(rate_multiplier, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(rate_multiplier, '.') = 0 THEN 0 ELSE length(rate_multiplier) - instr(rate_multiplier, '.') END <= 12 AND (length(ltrim(rate_multiplier, '-')) = 1 OR substr(ltrim(rate_multiplier, '-'), 1, 1) <> '0' OR substr(ltrim(rate_multiplier, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_channel_group_official_price_multiplier_decimal CHECK (official_price_multiplier IS NULL OR (typeof(official_price_multiplier) = 'text' AND length(official_price_multiplier) BETWEEN 1 AND 40 AND official_price_multiplier NOT GLOB '*[^0-9.-]*' AND official_price_multiplier GLOB '*[0-9]*' AND (instr(official_price_multiplier, '-') = 0 OR (substr(official_price_multiplier, 1, 1) = '-' AND instr(substr(official_price_multiplier, 2), '-') = 0)) AND length(official_price_multiplier) - length(replace(official_price_multiplier, '.', '')) <= 1 AND substr(ltrim(official_price_multiplier, '-'), 1, 1) <> '.' AND substr(official_price_multiplier, -1, 1) <> '.' AND length(replace(replace(official_price_multiplier, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(official_price_multiplier, '.') = 0 THEN 0 ELSE length(official_price_multiplier) - instr(official_price_multiplier, '.') END <= 12 AND (length(ltrim(official_price_multiplier, '-')) = 1 OR substr(ltrim(official_price_multiplier, '-'), 1, 1) <> '0' OR substr(ltrim(official_price_multiplier, '-'), 2, 1) = '.')))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_uuid ON ai_channel_group (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_tenant_code ON ai_channel_group (tenant_id, organization_id, group_code);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_scope_id ON ai_channel_group (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_provider_status ON ai_channel_group (tenant_id, organization_id, provider_code, status, updated_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_tenant_status_updated ON ai_channel_group (tenant_id, organization_id, status, updated_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_pricing ON ai_channel_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_group_member (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version INTEGER NOT NULL DEFAULT 0,
-    deleted_at TEXT,
-    deleted_by INTEGER,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    channel_group_id INTEGER NOT NULL,
-    channel_id INTEGER NOT NULL,
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    enabled INTEGER NOT NULL DEFAULT TRUE,
-    effective_from TEXT,
-    effective_to TEXT,
-    CONSTRAINT ck_ai_channel_group_member_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_ai_channel_group_member_group FOREIGN KEY (tenant_id, organization_id, channel_group_id) REFERENCES ai_channel_group (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT fk_ai_channel_group_member_channel FOREIGN KEY (tenant_id, organization_id, channel_id) REFERENCES ai_channel (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_channel_group_member_non_negative_weighting CHECK (priority >= 0 AND weight >= 0),
-    CONSTRAINT ck_ai_channel_group_member_effective_interval CHECK (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_member_uuid ON ai_channel_group_member (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_member ON ai_channel_group_member (tenant_id, organization_id, channel_group_id, channel_id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_member_status ON ai_channel_group_member (tenant_id, organization_id, status, channel_group_id, priority, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_member_group ON ai_channel_group_member (tenant_id, organization_id, channel_group_id, status, priority, weight, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_member_channel ON ai_channel_group_member (tenant_id, organization_id, channel_id, status, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_group_metric_snapshot (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    source_type TEXT,
-    source_id INTEGER,
-    source_version INTEGER NOT NULL,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    rebuild_version INTEGER NOT NULL DEFAULT 0,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    channel_group_id INTEGER NOT NULL,
-    group_code VARCHAR(64),
-    provider_code VARCHAR(64),
-    channel_available_count INTEGER,
-    channel_total_count INTEGER,
-    capacity_used TEXT,
-    capacity_limit TEXT,
-    request_count_today INTEGER,
-    request_count_total INTEGER,
-    usage_amount_today TEXT,
-    usage_amount_total TEXT,
-    health_status INTEGER,
-    snapshot_at TEXT NOT NULL,
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_capacity_used_decimal CHECK (capacity_used IS NULL OR (typeof(capacity_used) = 'text' AND length(capacity_used) BETWEEN 1 AND 40 AND capacity_used NOT GLOB '*[^0-9.-]*' AND capacity_used GLOB '*[0-9]*' AND (instr(capacity_used, '-') = 0 OR (substr(capacity_used, 1, 1) = '-' AND instr(substr(capacity_used, 2), '-') = 0)) AND length(capacity_used) - length(replace(capacity_used, '.', '')) <= 1 AND substr(ltrim(capacity_used, '-'), 1, 1) <> '.' AND substr(capacity_used, -1, 1) <> '.' AND length(replace(replace(capacity_used, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(capacity_used, '.') = 0 THEN 0 ELSE length(capacity_used) - instr(capacity_used, '.') END <= 12 AND (length(ltrim(capacity_used, '-')) = 1 OR substr(ltrim(capacity_used, '-'), 1, 1) <> '0' OR substr(ltrim(capacity_used, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_capacity_limit_decimal CHECK (capacity_limit IS NULL OR (typeof(capacity_limit) = 'text' AND length(capacity_limit) BETWEEN 1 AND 40 AND capacity_limit NOT GLOB '*[^0-9.-]*' AND capacity_limit GLOB '*[0-9]*' AND (instr(capacity_limit, '-') = 0 OR (substr(capacity_limit, 1, 1) = '-' AND instr(substr(capacity_limit, 2), '-') = 0)) AND length(capacity_limit) - length(replace(capacity_limit, '.', '')) <= 1 AND substr(ltrim(capacity_limit, '-'), 1, 1) <> '.' AND substr(capacity_limit, -1, 1) <> '.' AND length(replace(replace(capacity_limit, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(capacity_limit, '.') = 0 THEN 0 ELSE length(capacity_limit) - instr(capacity_limit, '.') END <= 12 AND (length(ltrim(capacity_limit, '-')) = 1 OR substr(ltrim(capacity_limit, '-'), 1, 1) <> '0' OR substr(ltrim(capacity_limit, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_usage_amount_today_decimal CHECK (usage_amount_today IS NULL OR (typeof(usage_amount_today) = 'text' AND length(usage_amount_today) BETWEEN 1 AND 40 AND usage_amount_today NOT GLOB '*[^0-9.-]*' AND usage_amount_today GLOB '*[0-9]*' AND (instr(usage_amount_today, '-') = 0 OR (substr(usage_amount_today, 1, 1) = '-' AND instr(substr(usage_amount_today, 2), '-') = 0)) AND length(usage_amount_today) - length(replace(usage_amount_today, '.', '')) <= 1 AND substr(ltrim(usage_amount_today, '-'), 1, 1) <> '.' AND substr(usage_amount_today, -1, 1) <> '.' AND length(replace(replace(usage_amount_today, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(usage_amount_today, '.') = 0 THEN 0 ELSE length(usage_amount_today) - instr(usage_amount_today, '.') END <= 12 AND (length(ltrim(usage_amount_today, '-')) = 1 OR substr(ltrim(usage_amount_today, '-'), 1, 1) <> '0' OR substr(ltrim(usage_amount_today, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_usage_amount_total_decimal CHECK (usage_amount_total IS NULL OR (typeof(usage_amount_total) = 'text' AND length(usage_amount_total) BETWEEN 1 AND 40 AND usage_amount_total NOT GLOB '*[^0-9.-]*' AND usage_amount_total GLOB '*[0-9]*' AND (instr(usage_amount_total, '-') = 0 OR (substr(usage_amount_total, 1, 1) = '-' AND instr(substr(usage_amount_total, 2), '-') = 0)) AND length(usage_amount_total) - length(replace(usage_amount_total, '.', '')) <= 1 AND substr(ltrim(usage_amount_total, '-'), 1, 1) <> '.' AND substr(usage_amount_total, -1, 1) <> '.' AND length(replace(replace(usage_amount_total, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(usage_amount_total, '.') = 0 THEN 0 ELSE length(usage_amount_total) - instr(usage_amount_total, '.') END <= 12 AND (length(ltrim(usage_amount_total, '-')) = 1 OR substr(ltrim(usage_amount_total, '-'), 1, 1) <> '0' OR substr(ltrim(usage_amount_total, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_non_negative_counts CHECK ((channel_available_count IS NULL OR channel_available_count >= 0) AND (channel_total_count IS NULL OR channel_total_count >= 0) AND (request_count_today IS NULL OR request_count_today >= 0) AND (request_count_total IS NULL OR request_count_total >= 0)),
-    CONSTRAINT ck_ai_channel_group_metric_snapshot_non_negative_amounts CHECK ((capacity_used IS NULL OR capacity_used >= 0) AND (capacity_limit IS NULL OR capacity_limit >= 0) AND (usage_amount_today IS NULL OR usage_amount_today >= 0) AND (usage_amount_total IS NULL OR usage_amount_total >= 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_metric_snapshot_uuid ON ai_channel_group_metric_snapshot (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_metric_snapshot ON ai_channel_group_metric_snapshot (tenant_id, organization_id, channel_group_id, snapshot_at);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_metric_tenant_status ON ai_channel_group_metric_snapshot (tenant_id, organization_id, status, snapshot_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_metric_status ON ai_channel_group_metric_snapshot (tenant_id, organization_id, provider_code, health_status, snapshot_at, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_group_resource (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version INTEGER NOT NULL DEFAULT 0,
-    deleted_at TEXT,
-    deleted_by INTEGER,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    channel_group_id INTEGER NOT NULL,
-    resource_id INTEGER,
-    resource_code VARCHAR(192) NOT NULL DEFAULT '',
-    resource_group_id INTEGER,
-    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
-    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
-    priority INTEGER NOT NULL DEFAULT 100,
-    effective_from TEXT,
-    effective_to TEXT,
-    CONSTRAINT ck_ai_channel_group_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_resource_uuid ON ai_channel_group_resource (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_group_resource ON ai_channel_group_resource (tenant_id, organization_id, channel_group_id, resource_code, resource_group_code);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_resource_status ON ai_channel_group_resource (tenant_id, organization_id, status, channel_group_id, grant_type, priority, id);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_group_resource_lookup ON ai_channel_group_resource (tenant_id, organization_id, channel_group_id, status, grant_type, priority, id);
-
-CREATE TABLE IF NOT EXISTS ai_channel_resource (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version INTEGER NOT NULL DEFAULT 0,
-    deleted_at TEXT,
-    deleted_by INTEGER,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    channel_id INTEGER NOT NULL,
-    provider_code VARCHAR(64),
-    channel_code VARCHAR(64),
-    resource_id INTEGER,
-    resource_code VARCHAR(192) NOT NULL DEFAULT '',
-    resource_group_id INTEGER,
-    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
-    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
-    priority INTEGER NOT NULL DEFAULT 100,
-    weight INTEGER NOT NULL DEFAULT 100,
-    effective_from TEXT,
-    effective_to TEXT,
-    CONSTRAINT ck_ai_channel_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_resource_uuid ON ai_channel_resource (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_channel_resource ON ai_channel_resource (tenant_id, organization_id, channel_id, resource_code, resource_group_code);
-CREATE INDEX IF NOT EXISTS idx_ai_channel_resource_lookup ON ai_channel_resource (tenant_id, organization_id, status, channel_id, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_config_change_event (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -581,8 +295,8 @@ CREATE TABLE IF NOT EXISTS ai_pricing_rule (
     family_code VARCHAR(64),
     model_id INTEGER,
     model VARCHAR(256),
-    provider_code VARCHAR(64),
-    channel_id INTEGER,
+    supplier_code VARCHAR(64),
+    account_id INTEGER,
     provider_model VARCHAR(256),
     capability_code VARCHAR(64),
     platform_code VARCHAR(64),
@@ -634,7 +348,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_rule_uuid ON ai_pricing_rule (uu
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_rule_plan_code ON ai_pricing_rule (tenant_id, organization_id, pricing_plan_id, rule_code) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_rule_scope_id ON ai_pricing_rule (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_tenant_status_priority ON ai_pricing_rule (tenant_id, organization_id, status, priority, effective_from, id);
-CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_model_lookup ON ai_pricing_rule (tenant_id, organization_id, pricing_plan_id, model, provider_code, channel_id, billing_meter_code, status, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_model_lookup ON ai_pricing_rule (tenant_id, organization_id, pricing_plan_id, model, supplier_code, account_id, billing_meter_code, status, priority, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_meter_lookup ON ai_pricing_rule (tenant_id, organization_id, pricing_plan_id, billing_meter_code, match_type, status, priority, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_rule_reference ON ai_pricing_rule (tenant_id, organization_id, reference_price_side, reference_pricing_id, status, id);
 
@@ -704,42 +418,6 @@ CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_tenant_status_effective ON ai_pri
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_rule_range ON ai_pricing_tier (tenant_id, organization_id, pricing_rule_id, billing_meter_code, min_quantity, max_quantity, sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_model_pricing ON ai_pricing_tier (tenant_id, organization_id, model_pricing_id, price_item_type, sort_order, id);
 
-CREATE TABLE IF NOT EXISTS ai_provider (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version INTEGER NOT NULL DEFAULT 0,
-    deleted_at TEXT,
-    deleted_by INTEGER,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    provider_code VARCHAR(64) NOT NULL,
-    display_name VARCHAR(128) NOT NULL,
-    description VARCHAR(512),
-    icon_drive_uri VARCHAR(512),
-    icon_resource_snapshot TEXT,
-    color_token VARCHAR(64),
-    docs_url VARCHAR(512),
-    website_url VARCHAR(512),
-    default_vendor_code VARCHAR(64),
-    provider_type VARCHAR(32),
-    protocol_code VARCHAR(64),
-    base_url VARCHAR(512),
-    auth_type INTEGER,
-    resource_schema TEXT,
-    metadata_schema_version VARCHAR(32),
-    sort_order INTEGER,
-    CONSTRAINT ck_ai_provider_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_uuid ON ai_provider (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_tenant_code ON ai_provider (tenant_id, organization_id, provider_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_ai_provider_status_sort ON ai_provider (tenant_id, organization_id, status, sort_order, id);
-
 CREATE TABLE IF NOT EXISTS ai_provider_object_route (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
@@ -754,14 +432,14 @@ CREATE TABLE IF NOT EXISTS ai_provider_object_route (
     deleted_by INTEGER,
     metadata TEXT NOT NULL DEFAULT '{}',
     api_key_id INTEGER,
-    channel_group_id INTEGER,
+    account_group_id INTEGER,
     object_type VARCHAR(64) NOT NULL,
     object_id VARCHAR(256) NOT NULL,
     object_key_hash VARCHAR(128) NOT NULL,
     parent_object_type VARCHAR(64),
     parent_object_id VARCHAR(256),
-    provider_code VARCHAR(64),
-    channel_id INTEGER NOT NULL,
+    supplier_code VARCHAR(64),
+    account_id INTEGER NOT NULL,
     vendor_code VARCHAR(64),
     api_code VARCHAR(128),
     catalog_key VARCHAR(256),
@@ -777,7 +455,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_uuid ON ai_provide
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_object ON ai_provider_object_route (tenant_id, organization_id, object_type, object_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_fast ON ai_provider_object_route (tenant_id, organization_id, object_key_hash, status, id);
 CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_parent ON ai_provider_object_route (tenant_id, organization_id, parent_object_type, parent_object_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_channel ON ai_provider_object_route (tenant_id, organization_id, channel_group_id, channel_id, status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_account ON ai_provider_object_route (tenant_id, organization_id, account_group_id, account_id, status, id);
 CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_expiry ON ai_provider_object_route (tenant_id, organization_id, expires_at, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_quota_policy (
@@ -801,7 +479,7 @@ CREATE TABLE IF NOT EXISTS ai_quota_policy (
     subject_ref_masked VARCHAR(128),
     scope_type INTEGER,
     scope_id INTEGER,
-    channel_group_id INTEGER,
+    account_group_id INTEGER,
     model VARCHAR(256),
     quota_period INTEGER,
     quota_unit INTEGER,
@@ -823,7 +501,7 @@ CREATE TABLE IF NOT EXISTS ai_quota_policy (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_quota_policy_tenant_subject ON ai_quota_policy (tenant_id, organization_id, subject_type, subject_id, quota_period, quota_unit) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_subject_ref ON ai_quota_policy (tenant_id, organization_id, subject_type, subject_ref_hash, status);
-CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_model_channel_group ON ai_quota_policy (tenant_id, organization_id, model, channel_group_id, status);
+CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_model_account_group ON ai_quota_policy (tenant_id, organization_id, model, account_group_id, status);
 
 CREATE TABLE IF NOT EXISTS ai_request_trace (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -844,13 +522,13 @@ CREATE TABLE IF NOT EXISTS ai_request_trace (
     api_key_id INTEGER,
     legacy_api_key_id INTEGER,
     api_key_name_snapshot VARCHAR(128),
-    channel_group_id INTEGER,
-    channel_group_snapshot VARCHAR(128),
+    account_group_id INTEGER,
+    account_group_snapshot VARCHAR(128),
     owner_type INTEGER,
     owner_id INTEGER,
     owner_name_snapshot VARCHAR(128),
-    provider_id INTEGER,
-    channel_id INTEGER,
+    supplier_id INTEGER,
+    account_id INTEGER,
     channel_name_snapshot VARCHAR(128),
     requested_model VARCHAR(256),
     requested_model_catalog_key VARCHAR(256),
@@ -922,9 +600,9 @@ CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
     requested_model VARCHAR(256),
     resolved_model VARCHAR(256),
     capability INTEGER,
-    selected_provider_id INTEGER,
-    selected_channel_id INTEGER,
+    selected_supplier_id INTEGER,
     selected_account_id INTEGER,
+    selected_credential_id INTEGER,
     decision_mode INTEGER,
     decision_reason TEXT,
     candidate_snapshot TEXT,
@@ -1019,7 +697,7 @@ CREATE TABLE IF NOT EXISTS ai_routing_rule (
     priority INTEGER,
     match_expression TEXT,
     target_model VARCHAR(256),
-    candidate_channels TEXT,
+    candidate_account_groups TEXT,
     fallback_chain TEXT,
     constraints TEXT,
     rate_limit_policy_id INTEGER,
@@ -1034,7 +712,7 @@ CREATE TABLE IF NOT EXISTS ai_routing_rule (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_rule_profile_code ON ai_routing_rule (profile_id, rule_code) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_routing_rule_tenant_profile_priority ON ai_routing_rule (tenant_id, organization_id, profile_id, priority, status);
 
-CREATE TABLE IF NOT EXISTS ai_site (
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
@@ -1047,17 +725,19 @@ CREATE TABLE IF NOT EXISTS ai_site (
     deleted_at TEXT,
     deleted_by INTEGER,
     metadata TEXT NOT NULL DEFAULT '{}',
-    site_code VARCHAR(64) NOT NULL,
-    site_name VARCHAR(128) NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    supplier_name VARCHAR(128) NOT NULL,
     display_name VARCHAR(128) NOT NULL,
-    description VARCHAR(1024),
-    base_url VARCHAR(512),
-    website_url VARCHAR(512),
-    docs_url VARCHAR(512),
-    logo_drive_uri VARCHAR(512),
-    logo_resource_snapshot TEXT,
+    description VARCHAR(512),
+    icon_drive_uri VARCHAR(512),
+    icon_resource_snapshot TEXT,
     color_token VARCHAR(64),
-    site_type VARCHAR(32) NOT NULL DEFAULT 'relay',
+    docs_url VARCHAR(512),
+    website_url VARCHAR(512),
+    default_vendor_code VARCHAR(64),
+    supplier_type VARCHAR(32) NOT NULL DEFAULT 'official',
+    adapter_code VARCHAR(64) NOT NULL,
+    protocol_code VARCHAR(64) NOT NULL,
     owner_kind VARCHAR(32),
     region_code VARCHAR(64),
     environment INTEGER NOT NULL DEFAULT 1,
@@ -1066,16 +746,20 @@ CREATE TABLE IF NOT EXISTS ai_site (
     consecutive_error_count INTEGER NOT NULL DEFAULT 0,
     last_checked_at TEXT,
     last_sync_at TEXT,
+    metadata_schema_version VARCHAR(32),
     sort_order INTEGER NOT NULL DEFAULT 100,
-    CONSTRAINT ck_ai_site_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+    CONSTRAINT ck_ai_upstream_supplier_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_upstream_supplier_type CHECK (supplier_type IN ('official', 'relay')),
+    CONSTRAINT ck_ai_upstream_supplier_health_values CHECK ((last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_site_uuid ON ai_site (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_site_tenant_code ON ai_site (tenant_id, organization_id, site_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_ai_site_status_sort ON ai_site (tenant_id, organization_id, status, sort_order, id);
-CREATE INDEX IF NOT EXISTS idx_ai_site_health_status ON ai_site (tenant_id, organization_id, status, health_status, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_uuid ON ai_upstream_supplier (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_tenant_code ON ai_upstream_supplier (tenant_id, organization_id, supplier_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_scope_id ON ai_upstream_supplier (tenant_id, organization_id, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_status_sort ON ai_upstream_supplier (tenant_id, organization_id, status, sort_order, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_adapter_status ON ai_upstream_supplier (tenant_id, organization_id, adapter_code, protocol_code, status, id);
 
-CREATE TABLE IF NOT EXISTS ai_site_service (
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier_endpoint (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
@@ -1088,36 +772,347 @@ CREATE TABLE IF NOT EXISTS ai_site_service (
     deleted_at TEXT,
     deleted_by INTEGER,
     metadata TEXT NOT NULL DEFAULT '{}',
-    site_id INTEGER NOT NULL,
-    site_code VARCHAR(64) NOT NULL,
-    service_code VARCHAR(64) NOT NULL,
-    service_name VARCHAR(128) NOT NULL,
-    service_type VARCHAR(64) NOT NULL DEFAULT 'ai_model_relay',
+    supplier_id INTEGER NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    endpoint_code VARCHAR(64) NOT NULL,
+    endpoint_name VARCHAR(128) NOT NULL,
+    base_url VARCHAR(512) NOT NULL,
     protocol_code VARCHAR(64),
-    base_url VARCHAR(512),
-    auth_type INTEGER NOT NULL DEFAULT 1,
-    credential_profile INTEGER NOT NULL DEFAULT 1,
-    auth_config TEXT NOT NULL DEFAULT '{}',
-    credential_ref VARCHAR(512),
-    credential_hash VARCHAR(128),
-    masked_label VARCHAR(128),
-    credential_version INTEGER NOT NULL DEFAULT 1,
     region_code VARCHAR(64),
     environment INTEGER NOT NULL DEFAULT 1,
     health_status INTEGER NOT NULL DEFAULT 1,
     last_latency_ms INTEGER,
     consecutive_error_count INTEGER NOT NULL DEFAULT 0,
-    last_verified_at TEXT,
+    last_checked_at TEXT,
     last_sync_at TEXT,
-    sort_order INTEGER NOT NULL DEFAULT 100,
-    CONSTRAINT ck_ai_site_service_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+    priority INTEGER NOT NULL DEFAULT 100,
+    routing_weight INTEGER NOT NULL DEFAULT 100,
+    timeout_ms INTEGER,
+    CONSTRAINT ck_ai_upstream_supplier_endpoint_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_supplier_endpoint_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_supplier_endpoint_values CHECK (priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms > 0) AND (last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_site_service_uuid ON ai_site_service (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_site_service_site_code ON ai_site_service (tenant_id, organization_id, site_id, service_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_ai_site_service_site_status ON ai_site_service (tenant_id, organization_id, site_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_site_service_type_status ON ai_site_service (tenant_id, organization_id, service_type, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_site_service_health_status ON ai_site_service (tenant_id, organization_id, status, health_status, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_uuid ON ai_upstream_supplier_endpoint (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_tenant_code ON ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, endpoint_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_scope_id ON ai_upstream_supplier_endpoint (tenant_id, organization_id, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_supplier_status ON ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, status, priority, routing_weight, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_health_status ON ai_upstream_supplier_endpoint (tenant_id, organization_id, status, health_status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier_auth_method (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid TEXT NOT NULL,
+    tenant_id INTEGER NOT NULL DEFAULT 0,
+    organization_id INTEGER NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
+    deleted_by INTEGER,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    supplier_id INTEGER NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    auth_method_code VARCHAR(64) NOT NULL,
+    auth_method_name VARCHAR(128) NOT NULL,
+    auth_type VARCHAR(64) NOT NULL,
+    config_schema TEXT NOT NULL DEFAULT '{}',
+    authorization_url VARCHAR(512),
+    token_url VARCHAR(512),
+    scopes TEXT,
+    priority INTEGER NOT NULL DEFAULT 100,
+    CONSTRAINT ck_ai_upstream_supplier_auth_method_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_supplier_auth_method_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_supplier_auth_method_type CHECK (auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4', 'custom') AND priority >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_auth_method_uuid ON ai_upstream_supplier_auth_method (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_auth_method_supplier_code ON ai_upstream_supplier_auth_method (tenant_id, organization_id, supplier_id, auth_method_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_auth_method_supplier_status ON ai_upstream_supplier_auth_method (tenant_id, organization_id, supplier_id, status, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_auth_method_type_status ON ai_upstream_supplier_auth_method (tenant_id, organization_id, auth_type, status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid TEXT NOT NULL,
+    tenant_id INTEGER NOT NULL DEFAULT 0,
+    organization_id INTEGER NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
+    deleted_by INTEGER,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    supplier_id INTEGER NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    preferred_endpoint_id INTEGER,
+    account_code VARCHAR(64) NOT NULL,
+    account_name VARCHAR(128) NOT NULL,
+    account_type VARCHAR(32) NOT NULL DEFAULT 'standard',
+    auth_method_code VARCHAR(64) NOT NULL,
+    external_account_id VARCHAR(128),
+    credential_rotation_policy TEXT,
+    credential_rotation_strategy VARCHAR(64) NOT NULL DEFAULT 'default',
+    environment INTEGER,
+    region_code VARCHAR(64),
+    quota_unit INTEGER,
+    quota_limit TEXT,
+    quota_used TEXT,
+    upstream_balance_amount TEXT,
+    upstream_balance_currency VARCHAR(10),
+    contract_cost_multiplier TEXT NOT NULL DEFAULT 1,
+    last_balance_checked_at TEXT,
+    last_rotated_at TEXT,
+    next_rotate_at TEXT,
+    last_verified_at TEXT,
+    last_used_at TEXT,
+    rpm_limit INTEGER,
+    timeout_ms INTEGER,
+    retry_policy TEXT,
+    circuit_breaker_policy TEXT,
+    health_status INTEGER NOT NULL DEFAULT 1,
+    last_latency_ms INTEGER,
+    consecutive_error_count INTEGER,
+    proxy_id INTEGER,
+    risk_level INTEGER,
+    CONSTRAINT ck_ai_upstream_account_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_upstream_account_quota_limit_decimal CHECK (quota_limit IS NULL OR (typeof(quota_limit) = 'text' AND length(quota_limit) BETWEEN 1 AND 40 AND quota_limit NOT GLOB '*[^0-9.-]*' AND quota_limit GLOB '*[0-9]*' AND (instr(quota_limit, '-') = 0 OR (substr(quota_limit, 1, 1) = '-' AND instr(substr(quota_limit, 2), '-') = 0)) AND length(quota_limit) - length(replace(quota_limit, '.', '')) <= 1 AND substr(ltrim(quota_limit, '-'), 1, 1) <> '.' AND substr(quota_limit, -1, 1) <> '.' AND length(replace(replace(quota_limit, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(quota_limit, '.') = 0 THEN 0 ELSE length(quota_limit) - instr(quota_limit, '.') END <= 12 AND (length(ltrim(quota_limit, '-')) = 1 OR substr(ltrim(quota_limit, '-'), 1, 1) <> '0' OR substr(ltrim(quota_limit, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_quota_used_decimal CHECK (quota_used IS NULL OR (typeof(quota_used) = 'text' AND length(quota_used) BETWEEN 1 AND 40 AND quota_used NOT GLOB '*[^0-9.-]*' AND quota_used GLOB '*[0-9]*' AND (instr(quota_used, '-') = 0 OR (substr(quota_used, 1, 1) = '-' AND instr(substr(quota_used, 2), '-') = 0)) AND length(quota_used) - length(replace(quota_used, '.', '')) <= 1 AND substr(ltrim(quota_used, '-'), 1, 1) <> '.' AND substr(quota_used, -1, 1) <> '.' AND length(replace(replace(quota_used, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(quota_used, '.') = 0 THEN 0 ELSE length(quota_used) - instr(quota_used, '.') END <= 12 AND (length(ltrim(quota_used, '-')) = 1 OR substr(ltrim(quota_used, '-'), 1, 1) <> '0' OR substr(ltrim(quota_used, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_upstream_balance_amount_decimal CHECK (upstream_balance_amount IS NULL OR (typeof(upstream_balance_amount) = 'text' AND length(upstream_balance_amount) BETWEEN 1 AND 40 AND upstream_balance_amount NOT GLOB '*[^0-9.-]*' AND upstream_balance_amount GLOB '*[0-9]*' AND (instr(upstream_balance_amount, '-') = 0 OR (substr(upstream_balance_amount, 1, 1) = '-' AND instr(substr(upstream_balance_amount, 2), '-') = 0)) AND length(upstream_balance_amount) - length(replace(upstream_balance_amount, '.', '')) <= 1 AND substr(ltrim(upstream_balance_amount, '-'), 1, 1) <> '.' AND substr(upstream_balance_amount, -1, 1) <> '.' AND length(replace(replace(upstream_balance_amount, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(upstream_balance_amount, '.') = 0 THEN 0 ELSE length(upstream_balance_amount) - instr(upstream_balance_amount, '.') END <= 12 AND (length(ltrim(upstream_balance_amount, '-')) = 1 OR substr(ltrim(upstream_balance_amount, '-'), 1, 1) <> '0' OR substr(ltrim(upstream_balance_amount, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_contract_cost_multiplier_decimal CHECK (contract_cost_multiplier IS NULL OR (typeof(contract_cost_multiplier) = 'text' AND length(contract_cost_multiplier) BETWEEN 1 AND 40 AND contract_cost_multiplier NOT GLOB '*[^0-9.-]*' AND contract_cost_multiplier GLOB '*[0-9]*' AND (instr(contract_cost_multiplier, '-') = 0 OR (substr(contract_cost_multiplier, 1, 1) = '-' AND instr(substr(contract_cost_multiplier, 2), '-') = 0)) AND length(contract_cost_multiplier) - length(replace(contract_cost_multiplier, '.', '')) <= 1 AND substr(ltrim(contract_cost_multiplier, '-'), 1, 1) <> '.' AND substr(contract_cost_multiplier, -1, 1) <> '.' AND length(replace(replace(contract_cost_multiplier, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(contract_cost_multiplier, '.') = 0 THEN 0 ELSE length(contract_cost_multiplier) - instr(contract_cost_multiplier, '.') END <= 12 AND (length(ltrim(contract_cost_multiplier, '-')) = 1 OR substr(ltrim(contract_cost_multiplier, '-'), 1, 1) <> '0' OR substr(ltrim(contract_cost_multiplier, '-'), 2, 1) = '.'))),
+    CONSTRAINT fk_ai_upstream_account_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT fk_ai_upstream_account_preferred_endpoint FOREIGN KEY (tenant_id, organization_id, preferred_endpoint_id) REFERENCES ai_upstream_supplier_endpoint (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT fk_ai_upstream_account_auth_method FOREIGN KEY (tenant_id, organization_id, supplier_id, auth_method_code) REFERENCES ai_upstream_supplier_auth_method (tenant_id, organization_id, supplier_id, auth_method_code) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_financial_values CHECK (contract_cost_multiplier > 0 AND (quota_limit IS NULL OR quota_limit >= 0) AND (quota_used IS NULL OR quota_used >= 0) AND (upstream_balance_amount IS NULL OR upstream_balance_amount >= 0)),
+    CONSTRAINT ck_ai_upstream_account_health_values CHECK ((last_latency_ms IS NULL OR last_latency_ms >= 0) AND (consecutive_error_count IS NULL OR consecutive_error_count >= 0) AND (timeout_ms IS NULL OR timeout_ms > 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_uuid ON ai_upstream_account (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_tenant_code ON ai_upstream_account (tenant_id, organization_id, account_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_scope_id ON ai_upstream_account (tenant_id, organization_id, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_supplier_status ON ai_upstream_account (tenant_id, organization_id, supplier_id, status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_health_status ON ai_upstream_account (tenant_id, organization_id, status, health_status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_preferred_endpoint ON ai_upstream_account (tenant_id, organization_id, preferred_endpoint_id, status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_credential (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid TEXT NOT NULL,
+    tenant_id INTEGER NOT NULL DEFAULT 0,
+    organization_id INTEGER NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
+    deleted_by INTEGER,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    account_id INTEGER NOT NULL,
+    auth_method_code VARCHAR(64) NOT NULL,
+    credential_name VARCHAR(128) NOT NULL,
+    credential_ref VARCHAR(256) NOT NULL,
+    credential_hash VARCHAR(128) NOT NULL,
+    masked_label VARCHAR(128),
+    credential_version INTEGER NOT NULL DEFAULT 1,
+    priority INTEGER NOT NULL DEFAULT 100,
+    is_active INTEGER NOT NULL DEFAULT TRUE,
+    expires_at TEXT,
+    last_rotated_at TEXT,
+    last_verified_at TEXT,
+    last_used_at TEXT,
+    CONSTRAINT ck_ai_upstream_account_credential_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_account_credential_account FOREIGN KEY (tenant_id, organization_id, account_id) REFERENCES ai_upstream_account (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_credential_version CHECK (credential_version > 0 AND priority >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_credential_uuid ON ai_upstream_account_credential (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_credential_version ON ai_upstream_account_credential (tenant_id, organization_id, account_id, credential_version);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_credential_account ON ai_upstream_account_credential (tenant_id, organization_id, account_id, status, is_active, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_credential_ref ON ai_upstream_account_credential (tenant_id, organization_id, credential_ref);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid TEXT NOT NULL,
+    tenant_id INTEGER NOT NULL DEFAULT 0,
+    organization_id INTEGER NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
+    deleted_by INTEGER,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    group_code VARCHAR(64) NOT NULL,
+    group_name VARCHAR(128) NOT NULL,
+    description VARCHAR(512),
+    group_type VARCHAR(32) NOT NULL DEFAULT 'shared',
+    routing_strategy VARCHAR(32) NOT NULL DEFAULT 'weighted',
+    fallback_mode VARCHAR(32) NOT NULL DEFAULT 'sequential',
+    priority INTEGER NOT NULL DEFAULT 100,
+    routing_policy_id INTEGER,
+    quota_policy_id INTEGER,
+    rate_limit_policy_id INTEGER,
+    environment INTEGER,
+    pricing_plan_id INTEGER,
+    pricing_plan_code VARCHAR(64),
+    cost_multiplier TEXT NOT NULL DEFAULT 1,
+    sale_multiplier TEXT NOT NULL DEFAULT 1,
+    billing_type INTEGER,
+    capacity_limit INTEGER,
+    allowed_origin TEXT,
+    CONSTRAINT ck_ai_upstream_account_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_upstream_account_group_cost_multiplier_decimal CHECK (cost_multiplier IS NULL OR (typeof(cost_multiplier) = 'text' AND length(cost_multiplier) BETWEEN 1 AND 40 AND cost_multiplier NOT GLOB '*[^0-9.-]*' AND cost_multiplier GLOB '*[0-9]*' AND (instr(cost_multiplier, '-') = 0 OR (substr(cost_multiplier, 1, 1) = '-' AND instr(substr(cost_multiplier, 2), '-') = 0)) AND length(cost_multiplier) - length(replace(cost_multiplier, '.', '')) <= 1 AND substr(ltrim(cost_multiplier, '-'), 1, 1) <> '.' AND substr(cost_multiplier, -1, 1) <> '.' AND length(replace(replace(cost_multiplier, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(cost_multiplier, '.') = 0 THEN 0 ELSE length(cost_multiplier) - instr(cost_multiplier, '.') END <= 12 AND (length(ltrim(cost_multiplier, '-')) = 1 OR substr(ltrim(cost_multiplier, '-'), 1, 1) <> '0' OR substr(ltrim(cost_multiplier, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_group_sale_multiplier_decimal CHECK (sale_multiplier IS NULL OR (typeof(sale_multiplier) = 'text' AND length(sale_multiplier) BETWEEN 1 AND 40 AND sale_multiplier NOT GLOB '*[^0-9.-]*' AND sale_multiplier GLOB '*[0-9]*' AND (instr(sale_multiplier, '-') = 0 OR (substr(sale_multiplier, 1, 1) = '-' AND instr(substr(sale_multiplier, 2), '-') = 0)) AND length(sale_multiplier) - length(replace(sale_multiplier, '.', '')) <= 1 AND substr(ltrim(sale_multiplier, '-'), 1, 1) <> '.' AND substr(sale_multiplier, -1, 1) <> '.' AND length(replace(replace(sale_multiplier, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(sale_multiplier, '.') = 0 THEN 0 ELSE length(sale_multiplier) - instr(sale_multiplier, '.') END <= 12 AND (length(ltrim(sale_multiplier, '-')) = 1 OR substr(ltrim(sale_multiplier, '-'), 1, 1) <> '0' OR substr(ltrim(sale_multiplier, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_group_routing_strategy CHECK (routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'failover')),
+    CONSTRAINT ck_ai_upstream_account_group_fallback_mode CHECK (fallback_mode IN ('none', 'sequential', 'same_supplier', 'cross_supplier')),
+    CONSTRAINT ck_ai_upstream_account_group_financial_values CHECK (cost_multiplier > 0 AND sale_multiplier > 0 AND priority >= 0 AND (capacity_limit IS NULL OR capacity_limit >= 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_uuid ON ai_upstream_account_group (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_tenant_code ON ai_upstream_account_group (tenant_id, organization_id, group_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_scope_id ON ai_upstream_account_group (tenant_id, organization_id, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tenant_status_updated ON ai_upstream_account_group (tenant_id, organization_id, status, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_pricing ON ai_upstream_account_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_group_member (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid TEXT NOT NULL,
+    tenant_id INTEGER NOT NULL DEFAULT 0,
+    organization_id INTEGER NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
+    deleted_by INTEGER,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    account_group_id INTEGER NOT NULL,
+    account_id INTEGER NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 100,
+    routing_weight INTEGER NOT NULL DEFAULT 100,
+    cost_multiplier_override TEXT,
+    enabled INTEGER NOT NULL DEFAULT TRUE,
+    effective_from TEXT,
+    effective_to TEXT,
+    CONSTRAINT ck_ai_upstream_account_group_member_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_upstream_account_group_member_cost_multiplier_override_decimal CHECK (cost_multiplier_override IS NULL OR (typeof(cost_multiplier_override) = 'text' AND length(cost_multiplier_override) BETWEEN 1 AND 40 AND cost_multiplier_override NOT GLOB '*[^0-9.-]*' AND cost_multiplier_override GLOB '*[0-9]*' AND (instr(cost_multiplier_override, '-') = 0 OR (substr(cost_multiplier_override, 1, 1) = '-' AND instr(substr(cost_multiplier_override, 2), '-') = 0)) AND length(cost_multiplier_override) - length(replace(cost_multiplier_override, '.', '')) <= 1 AND substr(ltrim(cost_multiplier_override, '-'), 1, 1) <> '.' AND substr(cost_multiplier_override, -1, 1) <> '.' AND length(replace(replace(cost_multiplier_override, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(cost_multiplier_override, '.') = 0 THEN 0 ELSE length(cost_multiplier_override) - instr(cost_multiplier_override, '.') END <= 12 AND (length(ltrim(cost_multiplier_override, '-')) = 1 OR substr(ltrim(cost_multiplier_override, '-'), 1, 1) <> '0' OR substr(ltrim(cost_multiplier_override, '-'), 2, 1) = '.'))),
+    CONSTRAINT fk_ai_upstream_account_group_member_group FOREIGN KEY (tenant_id, organization_id, account_group_id) REFERENCES ai_upstream_account_group (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT fk_ai_upstream_account_group_member_account FOREIGN KEY (tenant_id, organization_id, account_id) REFERENCES ai_upstream_account (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_group_member_non_negative_weighting CHECK (priority >= 0 AND routing_weight >= 0 AND (cost_multiplier_override IS NULL OR cost_multiplier_override > 0)),
+    CONSTRAINT ck_ai_upstream_account_group_member_effective_interval CHECK (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_member_uuid ON ai_upstream_account_group_member (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_member ON ai_upstream_account_group_member (tenant_id, organization_id, account_group_id, account_id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_member_status ON ai_upstream_account_group_member (tenant_id, organization_id, status, account_group_id, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_member_group ON ai_upstream_account_group_member (tenant_id, organization_id, account_group_id, status, priority, routing_weight, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_member_account ON ai_upstream_account_group_member (tenant_id, organization_id, account_id, status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_group_metric_snapshot (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid TEXT NOT NULL,
+    tenant_id INTEGER NOT NULL DEFAULT 0,
+    organization_id INTEGER NOT NULL DEFAULT 0,
+    source_type TEXT,
+    source_id INTEGER,
+    source_version INTEGER NOT NULL,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    rebuild_version INTEGER NOT NULL DEFAULT 0,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    account_group_id INTEGER NOT NULL,
+    group_code VARCHAR(64),
+    account_available_count INTEGER,
+    account_total_count INTEGER,
+    capacity_used TEXT,
+    capacity_limit TEXT,
+    request_count_today INTEGER,
+    request_count_total INTEGER,
+    usage_amount_today TEXT,
+    usage_amount_total TEXT,
+    health_status INTEGER,
+    snapshot_at TEXT NOT NULL,
+    CONSTRAINT ck_ai_upstream_account_group_metric_snapshot_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_ai_upstream_account_group_metric_snapshot_capacity_used_decimal CHECK (capacity_used IS NULL OR (typeof(capacity_used) = 'text' AND length(capacity_used) BETWEEN 1 AND 40 AND capacity_used NOT GLOB '*[^0-9.-]*' AND capacity_used GLOB '*[0-9]*' AND (instr(capacity_used, '-') = 0 OR (substr(capacity_used, 1, 1) = '-' AND instr(substr(capacity_used, 2), '-') = 0)) AND length(capacity_used) - length(replace(capacity_used, '.', '')) <= 1 AND substr(ltrim(capacity_used, '-'), 1, 1) <> '.' AND substr(capacity_used, -1, 1) <> '.' AND length(replace(replace(capacity_used, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(capacity_used, '.') = 0 THEN 0 ELSE length(capacity_used) - instr(capacity_used, '.') END <= 12 AND (length(ltrim(capacity_used, '-')) = 1 OR substr(ltrim(capacity_used, '-'), 1, 1) <> '0' OR substr(ltrim(capacity_used, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_group_metric_snapshot_capacity_limit_decimal CHECK (capacity_limit IS NULL OR (typeof(capacity_limit) = 'text' AND length(capacity_limit) BETWEEN 1 AND 40 AND capacity_limit NOT GLOB '*[^0-9.-]*' AND capacity_limit GLOB '*[0-9]*' AND (instr(capacity_limit, '-') = 0 OR (substr(capacity_limit, 1, 1) = '-' AND instr(substr(capacity_limit, 2), '-') = 0)) AND length(capacity_limit) - length(replace(capacity_limit, '.', '')) <= 1 AND substr(ltrim(capacity_limit, '-'), 1, 1) <> '.' AND substr(capacity_limit, -1, 1) <> '.' AND length(replace(replace(capacity_limit, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(capacity_limit, '.') = 0 THEN 0 ELSE length(capacity_limit) - instr(capacity_limit, '.') END <= 12 AND (length(ltrim(capacity_limit, '-')) = 1 OR substr(ltrim(capacity_limit, '-'), 1, 1) <> '0' OR substr(ltrim(capacity_limit, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_group_metric_snapshot_usage_amount_today_decimal CHECK (usage_amount_today IS NULL OR (typeof(usage_amount_today) = 'text' AND length(usage_amount_today) BETWEEN 1 AND 40 AND usage_amount_today NOT GLOB '*[^0-9.-]*' AND usage_amount_today GLOB '*[0-9]*' AND (instr(usage_amount_today, '-') = 0 OR (substr(usage_amount_today, 1, 1) = '-' AND instr(substr(usage_amount_today, 2), '-') = 0)) AND length(usage_amount_today) - length(replace(usage_amount_today, '.', '')) <= 1 AND substr(ltrim(usage_amount_today, '-'), 1, 1) <> '.' AND substr(usage_amount_today, -1, 1) <> '.' AND length(replace(replace(usage_amount_today, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(usage_amount_today, '.') = 0 THEN 0 ELSE length(usage_amount_today) - instr(usage_amount_today, '.') END <= 12 AND (length(ltrim(usage_amount_today, '-')) = 1 OR substr(ltrim(usage_amount_today, '-'), 1, 1) <> '0' OR substr(ltrim(usage_amount_today, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_group_metric_snapshot_usage_amount_total_decimal CHECK (usage_amount_total IS NULL OR (typeof(usage_amount_total) = 'text' AND length(usage_amount_total) BETWEEN 1 AND 40 AND usage_amount_total NOT GLOB '*[^0-9.-]*' AND usage_amount_total GLOB '*[0-9]*' AND (instr(usage_amount_total, '-') = 0 OR (substr(usage_amount_total, 1, 1) = '-' AND instr(substr(usage_amount_total, 2), '-') = 0)) AND length(usage_amount_total) - length(replace(usage_amount_total, '.', '')) <= 1 AND substr(ltrim(usage_amount_total, '-'), 1, 1) <> '.' AND substr(usage_amount_total, -1, 1) <> '.' AND length(replace(replace(usage_amount_total, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(usage_amount_total, '.') = 0 THEN 0 ELSE length(usage_amount_total) - instr(usage_amount_total, '.') END <= 12 AND (length(ltrim(usage_amount_total, '-')) = 1 OR substr(ltrim(usage_amount_total, '-'), 1, 1) <> '0' OR substr(ltrim(usage_amount_total, '-'), 2, 1) = '.'))),
+    CONSTRAINT ck_ai_upstream_account_group_metric_snapshot_non_negative_counts CHECK ((account_available_count IS NULL OR account_available_count >= 0) AND (account_total_count IS NULL OR account_total_count >= 0) AND (request_count_today IS NULL OR request_count_today >= 0) AND (request_count_total IS NULL OR request_count_total >= 0)),
+    CONSTRAINT ck_ai_upstream_account_group_metric_snapshot_non_negative_amounts CHECK ((capacity_used IS NULL OR capacity_used >= 0) AND (capacity_limit IS NULL OR capacity_limit >= 0) AND (usage_amount_today IS NULL OR usage_amount_today >= 0) AND (usage_amount_total IS NULL OR usage_amount_total >= 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_metric_snapshot_uuid ON ai_upstream_account_group_metric_snapshot (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_metric_snapshot ON ai_upstream_account_group_metric_snapshot (tenant_id, organization_id, account_group_id, snapshot_at);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_metric_tenant_status ON ai_upstream_account_group_metric_snapshot (tenant_id, organization_id, status, snapshot_at, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_group_resource (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid TEXT NOT NULL,
+    tenant_id INTEGER NOT NULL DEFAULT 0,
+    organization_id INTEGER NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
+    deleted_by INTEGER,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    account_group_id INTEGER NOT NULL,
+    resource_id INTEGER,
+    resource_code VARCHAR(192) NOT NULL DEFAULT '',
+    resource_group_id INTEGER,
+    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
+    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
+    priority INTEGER NOT NULL DEFAULT 100,
+    effective_from TEXT,
+    effective_to TEXT,
+    CONSTRAINT ck_ai_upstream_account_group_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_account_group_resource_group FOREIGN KEY (tenant_id, organization_id, account_group_id) REFERENCES ai_upstream_account_group (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_account_group_resource_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_resource_uuid ON ai_upstream_account_group_resource (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_resource ON ai_upstream_account_group_resource (tenant_id, organization_id, account_group_id, resource_code, resource_group_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_resource_status ON ai_upstream_account_group_resource (tenant_id, organization_id, status, account_group_id, grant_type, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_resource_lookup ON ai_upstream_account_group_resource (tenant_id, organization_id, account_group_id, status, grant_type, priority, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier_resource (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid TEXT NOT NULL,
+    tenant_id INTEGER NOT NULL DEFAULT 0,
+    organization_id INTEGER NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
+    deleted_by INTEGER,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    supplier_id INTEGER NOT NULL,
+    supplier_code VARCHAR(64) NOT NULL,
+    resource_id INTEGER,
+    resource_code VARCHAR(192) NOT NULL DEFAULT '',
+    resource_group_id INTEGER,
+    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
+    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
+    priority INTEGER NOT NULL DEFAULT 100,
+    effective_from TEXT,
+    effective_to TEXT,
+    CONSTRAINT ck_ai_upstream_supplier_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_supplier_resource_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_upstream_supplier_resource_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_resource_uuid ON ai_upstream_supplier_resource (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_resource ON ai_upstream_supplier_resource (tenant_id, organization_id, supplier_id, resource_code, resource_group_code);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_resource_lookup ON ai_upstream_supplier_resource (tenant_id, organization_id, status, supplier_id, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_usage (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1138,8 +1133,8 @@ CREATE TABLE IF NOT EXISTS ai_usage (
     api_key_id INTEGER,
     legacy_api_key_id INTEGER,
     api_key_name_snapshot VARCHAR(128),
-    channel_group_id INTEGER,
-    channel_group_snapshot VARCHAR(128),
+    account_group_id INTEGER,
+    account_group_snapshot VARCHAR(128),
     owner_type INTEGER,
     owner_id INTEGER,
     owner_name_snapshot VARCHAR(128),
@@ -1148,8 +1143,8 @@ CREATE TABLE IF NOT EXISTS ai_usage (
     model VARCHAR(256),
     provider_native_model VARCHAR(256),
     region_code VARCHAR(64),
-    provider_id INTEGER,
-    channel_id INTEGER,
+    supplier_id INTEGER,
+    account_id INTEGER,
     modality INTEGER,
     usage_type INTEGER NOT NULL,
     billing_type INTEGER,
@@ -1220,61 +1215,6 @@ CREATE INDEX IF NOT EXISTS idx_ai_usage_meter_occurred ON ai_usage (tenant_id, o
 CREATE INDEX IF NOT EXISTS idx_ai_usage_settlement_status ON ai_usage (tenant_id, organization_id, settlement_status, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_usage_retention ON ai_usage (retention_until, id);
 
-CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid TEXT NOT NULL,
-    tenant_id INTEGER NOT NULL DEFAULT 0,
-    organization_id INTEGER NOT NULL DEFAULT 0,
-    user_id INTEGER,
-    request_id TEXT,
-    trace_id TEXT,
-    payload_hash TEXT,
-    idempotency_key TEXT,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    retention_until TEXT,
-    legal_hold INTEGER NOT NULL DEFAULT FALSE,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    usage_fact_id INTEGER NOT NULL,
-    edge_id INTEGER NOT NULL,
-    edge_depth INTEGER NOT NULL,
-    seller_provider_id INTEGER,
-    buyer_provider_id INTEGER,
-    amount_role VARCHAR(64) NOT NULL,
-    pricing_plan_id INTEGER,
-    pricing_rule_id INTEGER,
-    billing_meter_code VARCHAR(64),
-    token_kind VARCHAR(64),
-    billable_quantity TEXT NOT NULL,
-    unit_price TEXT,
-    unit_size TEXT,
-    charge_amount TEXT NOT NULL,
-    currency VARCHAR(10) NOT NULL,
-    fx_rate_snapshot TEXT,
-    settlement_currency VARCHAR(10),
-    converted_charge_amount TEXT,
-    seller_snapshot TEXT,
-    buyer_snapshot TEXT,
-    price_snapshot TEXT,
-    occurred_at TEXT NOT NULL,
-    settlement_status INTEGER,
-    CONSTRAINT ck_ai_usage_service_provider_edge_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT ck_ai_usage_service_provider_edge_billable_quantity_decimal CHECK (billable_quantity IS NULL OR (typeof(billable_quantity) = 'text' AND length(billable_quantity) BETWEEN 1 AND 40 AND billable_quantity NOT GLOB '*[^0-9.-]*' AND billable_quantity GLOB '*[0-9]*' AND (instr(billable_quantity, '-') = 0 OR (substr(billable_quantity, 1, 1) = '-' AND instr(substr(billable_quantity, 2), '-') = 0)) AND length(billable_quantity) - length(replace(billable_quantity, '.', '')) <= 1 AND substr(ltrim(billable_quantity, '-'), 1, 1) <> '.' AND substr(billable_quantity, -1, 1) <> '.' AND length(replace(replace(billable_quantity, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(billable_quantity, '.') = 0 THEN 0 ELSE length(billable_quantity) - instr(billable_quantity, '.') END <= 12 AND (length(ltrim(billable_quantity, '-')) = 1 OR substr(ltrim(billable_quantity, '-'), 1, 1) <> '0' OR substr(ltrim(billable_quantity, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_usage_service_provider_edge_unit_price_decimal CHECK (unit_price IS NULL OR (typeof(unit_price) = 'text' AND length(unit_price) BETWEEN 1 AND 40 AND unit_price NOT GLOB '*[^0-9.-]*' AND unit_price GLOB '*[0-9]*' AND (instr(unit_price, '-') = 0 OR (substr(unit_price, 1, 1) = '-' AND instr(substr(unit_price, 2), '-') = 0)) AND length(unit_price) - length(replace(unit_price, '.', '')) <= 1 AND substr(ltrim(unit_price, '-'), 1, 1) <> '.' AND substr(unit_price, -1, 1) <> '.' AND length(replace(replace(unit_price, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(unit_price, '.') = 0 THEN 0 ELSE length(unit_price) - instr(unit_price, '.') END <= 12 AND (length(ltrim(unit_price, '-')) = 1 OR substr(ltrim(unit_price, '-'), 1, 1) <> '0' OR substr(ltrim(unit_price, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_usage_service_provider_edge_unit_size_decimal CHECK (unit_size IS NULL OR (typeof(unit_size) = 'text' AND length(unit_size) BETWEEN 1 AND 40 AND unit_size NOT GLOB '*[^0-9.-]*' AND unit_size GLOB '*[0-9]*' AND (instr(unit_size, '-') = 0 OR (substr(unit_size, 1, 1) = '-' AND instr(substr(unit_size, 2), '-') = 0)) AND length(unit_size) - length(replace(unit_size, '.', '')) <= 1 AND substr(ltrim(unit_size, '-'), 1, 1) <> '.' AND substr(unit_size, -1, 1) <> '.' AND length(replace(replace(unit_size, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(unit_size, '.') = 0 THEN 0 ELSE length(unit_size) - instr(unit_size, '.') END <= 12 AND (length(ltrim(unit_size, '-')) = 1 OR substr(ltrim(unit_size, '-'), 1, 1) <> '0' OR substr(ltrim(unit_size, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_usage_service_provider_edge_charge_amount_decimal CHECK (charge_amount IS NULL OR (typeof(charge_amount) = 'text' AND length(charge_amount) BETWEEN 1 AND 40 AND charge_amount NOT GLOB '*[^0-9.-]*' AND charge_amount GLOB '*[0-9]*' AND (instr(charge_amount, '-') = 0 OR (substr(charge_amount, 1, 1) = '-' AND instr(substr(charge_amount, 2), '-') = 0)) AND length(charge_amount) - length(replace(charge_amount, '.', '')) <= 1 AND substr(ltrim(charge_amount, '-'), 1, 1) <> '.' AND substr(charge_amount, -1, 1) <> '.' AND length(replace(replace(charge_amount, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(charge_amount, '.') = 0 THEN 0 ELSE length(charge_amount) - instr(charge_amount, '.') END <= 12 AND (length(ltrim(charge_amount, '-')) = 1 OR substr(ltrim(charge_amount, '-'), 1, 1) <> '0' OR substr(ltrim(charge_amount, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_usage_service_provider_edge_fx_rate_snapshot_decimal CHECK (fx_rate_snapshot IS NULL OR (typeof(fx_rate_snapshot) = 'text' AND length(fx_rate_snapshot) BETWEEN 1 AND 40 AND fx_rate_snapshot NOT GLOB '*[^0-9.-]*' AND fx_rate_snapshot GLOB '*[0-9]*' AND (instr(fx_rate_snapshot, '-') = 0 OR (substr(fx_rate_snapshot, 1, 1) = '-' AND instr(substr(fx_rate_snapshot, 2), '-') = 0)) AND length(fx_rate_snapshot) - length(replace(fx_rate_snapshot, '.', '')) <= 1 AND substr(ltrim(fx_rate_snapshot, '-'), 1, 1) <> '.' AND substr(fx_rate_snapshot, -1, 1) <> '.' AND length(replace(replace(fx_rate_snapshot, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(fx_rate_snapshot, '.') = 0 THEN 0 ELSE length(fx_rate_snapshot) - instr(fx_rate_snapshot, '.') END <= 12 AND (length(ltrim(fx_rate_snapshot, '-')) = 1 OR substr(ltrim(fx_rate_snapshot, '-'), 1, 1) <> '0' OR substr(ltrim(fx_rate_snapshot, '-'), 2, 1) = '.'))),
-    CONSTRAINT ck_ai_usage_service_provider_edge_converted_charge_amount_decimal CHECK (converted_charge_amount IS NULL OR (typeof(converted_charge_amount) = 'text' AND length(converted_charge_amount) BETWEEN 1 AND 40 AND converted_charge_amount NOT GLOB '*[^0-9.-]*' AND converted_charge_amount GLOB '*[0-9]*' AND (instr(converted_charge_amount, '-') = 0 OR (substr(converted_charge_amount, 1, 1) = '-' AND instr(substr(converted_charge_amount, 2), '-') = 0)) AND length(converted_charge_amount) - length(replace(converted_charge_amount, '.', '')) <= 1 AND substr(ltrim(converted_charge_amount, '-'), 1, 1) <> '.' AND substr(converted_charge_amount, -1, 1) <> '.' AND length(replace(replace(converted_charge_amount, '-', ''), '.', '')) <= 38 AND CASE WHEN instr(converted_charge_amount, '.') = 0 THEN 0 ELSE length(converted_charge_amount) - instr(converted_charge_amount, '.') END <= 12 AND (length(ltrim(converted_charge_amount, '-')) = 1 OR substr(ltrim(converted_charge_amount, '-'), 1, 1) <> '0' OR substr(ltrim(converted_charge_amount, '-'), 2, 1) = '.'))),
-    CONSTRAINT fk_ai_usage_service_provider_edge_usage FOREIGN KEY (tenant_id, organization_id, usage_fact_id) REFERENCES ai_usage (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_usage_service_provider_edge_depth CHECK (edge_depth >= 0),
-    CONSTRAINT ck_ai_usage_service_provider_edge_amounts CHECK (billable_quantity >= 0 AND charge_amount >= 0 AND (converted_charge_amount IS NULL OR converted_charge_amount >= 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_service_provider_edge_usage_depth ON ai_usage_service_provider_edge (tenant_id, organization_id, usage_fact_id, edge_depth, amount_role);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_seller_time ON ai_usage_service_provider_edge (tenant_id, organization_id, seller_provider_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_buyer_time ON ai_usage_service_provider_edge (tenant_id, organization_id, buyer_provider_id, occurred_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_usage_service_provider_edge_retention ON ai_usage_service_provider_edge (retention_until, id);
-
 CREATE TABLE IF NOT EXISTS iam_gateway_access_policy (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
@@ -1330,7 +1270,7 @@ CREATE TABLE IF NOT EXISTS iam_gateway_api_key (
     owner_type INTEGER,
     owner_id INTEGER,
     legacy_api_key_id INTEGER,
-    channel_group_id INTEGER,
+    account_group_id INTEGER,
     name VARCHAR(128),
     key_prefix VARCHAR(32),
     key_display_masked VARCHAR(64),
@@ -1359,9 +1299,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_legacy ON iam_gateway_a
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_idempotency ON iam_gateway_api_key (tenant_id, idempotency_key) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_scope_id ON iam_gateway_api_key (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_tenant_user_status ON iam_gateway_api_key (tenant_id, organization_id, user_id, status, updated_at, id);
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_ai_channel_group_status ON iam_gateway_api_key (tenant_id, organization_id, channel_group_id, status, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_ai_account_group_status ON iam_gateway_api_key (tenant_id, organization_id, account_group_id, status, updated_at, id);
 
-CREATE TABLE IF NOT EXISTS iam_gateway_api_key_channel_group (
+CREATE TABLE IF NOT EXISTS iam_gateway_api_key_account_group (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid TEXT NOT NULL,
     tenant_id INTEGER NOT NULL DEFAULT 0,
@@ -1378,25 +1318,25 @@ CREATE TABLE IF NOT EXISTS iam_gateway_api_key_channel_group (
     owner_type INTEGER,
     owner_id INTEGER,
     api_key_id INTEGER NOT NULL DEFAULT 0,
-    channel_group_id INTEGER NOT NULL DEFAULT 0,
-    channel_group_code VARCHAR(64),
+    account_group_id INTEGER NOT NULL DEFAULT 0,
+    account_group_code VARCHAR(64),
     binding_role VARCHAR(32) NOT NULL DEFAULT 'route',
     routing_strategy VARCHAR(32) NOT NULL DEFAULT 'auto',
     priority INTEGER NOT NULL DEFAULT 100,
     weight INTEGER NOT NULL DEFAULT 100,
     effective_from TEXT,
     effective_to TEXT,
-    CONSTRAINT ck_iam_gateway_api_key_channel_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_iam_gateway_api_key_channel_group_api_key FOREIGN KEY (tenant_id, organization_id, api_key_id) REFERENCES iam_gateway_api_key (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_iam_gateway_api_key_channel_group_ids CHECK (api_key_id > 0 AND channel_group_id > 0),
-    CONSTRAINT ck_iam_gateway_api_key_channel_group_weighting CHECK (priority >= 0 AND weight >= 0),
-    CONSTRAINT ck_iam_gateway_api_key_channel_group_effective_interval CHECK (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
+    CONSTRAINT ck_iam_gateway_api_key_account_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_iam_gateway_api_key_account_group_api_key FOREIGN KEY (tenant_id, organization_id, api_key_id) REFERENCES iam_gateway_api_key (tenant_id, organization_id, id) ON DELETE RESTRICT,
+    CONSTRAINT ck_iam_gateway_api_key_account_group_ids CHECK (api_key_id > 0 AND account_group_id > 0),
+    CONSTRAINT ck_iam_gateway_api_key_account_group_weighting CHECK (priority >= 0 AND weight >= 0),
+    CONSTRAINT ck_iam_gateway_api_key_account_group_effective_interval CHECK (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_channel_group_uuid ON iam_gateway_api_key_channel_group (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_channel_group_binding ON iam_gateway_api_key_channel_group (tenant_id, organization_id, api_key_id, channel_group_id, binding_role) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_channel_group_active ON iam_gateway_api_key_channel_group (tenant_id, organization_id, api_key_id, status, priority, weight, id);
-CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_channel_group_group ON iam_gateway_api_key_channel_group (tenant_id, organization_id, channel_group_id, status, priority, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_account_group_uuid ON iam_gateway_api_key_account_group (uuid) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_account_group_binding ON iam_gateway_api_key_account_group (tenant_id, organization_id, api_key_id, account_group_id, binding_role) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_account_group_active ON iam_gateway_api_key_account_group (tenant_id, organization_id, api_key_id, status, priority, weight, id);
+CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_account_group_group ON iam_gateway_api_key_account_group (tenant_id, organization_id, account_group_id, status, priority, id);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_risk_rule (
     id BIGINT NOT NULL PRIMARY KEY,

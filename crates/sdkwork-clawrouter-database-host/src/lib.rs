@@ -2,13 +2,15 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use sdkwork_database_config::DatabaseConfig;
-use sdkwork_database_lifecycle::{lifecycle_options_from_env, LifecycleOrchestrator};
-use sdkwork_database_spi::{DatabaseAssetProvider, DatabaseManifest, DefaultDatabaseModule};
+use sdkwork_database_lifecycle::{
+    lifecycle_options_from_env, LifecycleOrchestrator, RegistryLifecycleOrchestrator,
+};
+use sdkwork_database_spi::{DatabaseModuleRegistry, DefaultDatabaseModule};
 use sdkwork_database_sqlx::{create_pool_from_config, DatabasePool};
 
 pub struct ClawRouterDatabaseHost {
     pool: DatabasePool,
-    module: Arc<DefaultDatabaseModule>,
+    modules: Vec<Arc<DefaultDatabaseModule>>,
 }
 
 impl ClawRouterDatabaseHost {
@@ -17,12 +19,35 @@ impl ClawRouterDatabaseHost {
     }
 
     pub fn module(&self) -> Arc<DefaultDatabaseModule> {
-        self.module.clone()
+        self.modules[0].clone()
     }
 
-    fn orchestrator(&self, applied_by: &str) -> LifecycleOrchestrator {
-        LifecycleOrchestrator::new(self.pool.clone(), self.module.clone())
-            .with_applied_by(applied_by)
+    pub fn modules(&self) -> &[Arc<DefaultDatabaseModule>] {
+        &self.modules
+    }
+
+    fn orchestrator(
+        &self,
+        module: Arc<DefaultDatabaseModule>,
+        applied_by: &str,
+    ) -> LifecycleOrchestrator {
+        LifecycleOrchestrator::new(self.pool.clone(), module).with_applied_by(applied_by)
+    }
+
+    fn registry_orchestrator(
+        &self,
+        applied_by: &str,
+    ) -> Result<RegistryLifecycleOrchestrator, String> {
+        let mut builder = DatabaseModuleRegistry::builder();
+        for module in &self.modules {
+            builder = builder
+                .register(module.as_ref().clone())
+                .map_err(|error| format!("register claw router database module failed: {error}"))?;
+        }
+        Ok(
+            RegistryLifecycleOrchestrator::new(self.pool.clone(), builder.build())
+                .with_applied_by(applied_by),
+        )
     }
 
     /// Applies the canonical baseline and all pending migrations.
@@ -31,23 +56,40 @@ impl ClawRouterDatabaseHost {
     /// use [`connect_claw_router_database`] unless its guarded development
     /// policy deliberately opts into migration.
     pub async fn migrate(&self, applied_by: &str) -> Result<usize, String> {
-        let orchestrator = self.orchestrator(applied_by);
-        orchestrator
-            .init()
+        for module in &self.modules {
+            self.orchestrator(module.clone(), applied_by)
+                .init()
+                .await
+                .map_err(|error| {
+                    format!(
+                        "claw router database module {} init failed: {error}",
+                        module.manifest().module_id
+                    )
+                })?;
+        }
+        self.registry_orchestrator(applied_by)?
+            .migrate_all()
             .await
-            .map_err(|error| format!("claw router database init failed: {error}"))?;
-        orchestrator
-            .migrate()
-            .await
-            .map_err(|error| format!("claw router database migrate failed: {error}"))
+            .map(|results| results.into_iter().map(|(_, count)| count).sum())
+            .map_err(|error| format!("claw router database migration failed: {error}"))
     }
 
     pub async fn plan_migrations(&self) -> Result<usize, String> {
-        self.orchestrator("sdkwork-clawrouter-plan")
-            .plan_migrations()
-            .await
-            .map(|migrations| migrations.len())
-            .map_err(|error| format!("claw router database migration plan failed: {error}"))
+        let mut count = 0usize;
+        for module in &self.modules {
+            count += self
+                .orchestrator(module.clone(), "sdkwork-clawrouter-plan")
+                .plan_migrations()
+                .await
+                .map_err(|error| {
+                    format!(
+                        "claw router database module {} migration plan failed: {error}",
+                        module.manifest().module_id
+                    )
+                })?
+                .len();
+        }
+        Ok(count)
     }
 }
 
@@ -56,13 +98,8 @@ impl ClawRouterDatabaseHost {
 /// seeding data.
 pub fn connect_claw_router_database(pool: DatabasePool) -> Result<ClawRouterDatabaseHost, String> {
     let app_root = resolve_app_root();
-    let module = Arc::new(
-        DefaultDatabaseModule::from_app_root(&app_root)
-            .map_err(|error| format!("load claw router database module failed: {error}"))?,
-    );
-    DatabaseManifest::from_file(module.manifest_path())
-        .map_err(|error| format!("read claw router database manifest failed: {error}"))?;
-    Ok(ClawRouterDatabaseHost { pool, module })
+    let modules = load_modules(&app_root)?;
+    Ok(ClawRouterDatabaseHost { pool, modules })
 }
 
 /// Runtime-safe bootstrap.
@@ -76,9 +113,7 @@ pub async fn bootstrap_claw_router_database(
     pool: DatabasePool,
 ) -> Result<ClawRouterDatabaseHost, String> {
     let host = connect_claw_router_database(pool)?;
-    let manifest = DatabaseManifest::from_file(host.module.manifest_path())
-        .map_err(|error| format!("read claw router database manifest failed: {error}"))?;
-    let options = lifecycle_options_from_env("CLAW_ROUTER", &manifest);
+    let options = lifecycle_options_from_env("CLAW_ROUTER", host.module().manifest());
     if options.auto_migrate {
         let environment = std::env::var("SDKWORK_CLAW_ROUTER_ENVIRONMENT").unwrap_or_default();
         if production_like_environment(&environment) {
@@ -122,6 +157,51 @@ fn resolve_app_root() -> PathBuf {
         })
 }
 
+fn load_modules(app_root: &std::path::Path) -> Result<Vec<Arc<DefaultDatabaseModule>>, String> {
+    let root = DefaultDatabaseModule::from_app_root(app_root)
+        .map_err(|error| format!("load claw router root database module failed: {error}"))?;
+    let declared_modules = root.manifest().modules.clone();
+    let mut modules = Vec::with_capacity(declared_modules.len() + 1);
+    modules.push(Arc::new(root));
+
+    for module_id in declared_modules {
+        if !valid_module_id(&module_id) {
+            return Err(format!(
+                "invalid claw router database module id in root manifest: {module_id}"
+            ));
+        }
+        if modules
+            .iter()
+            .any(|module| module.manifest().module_id == module_id)
+        {
+            return Err(format!(
+                "duplicate claw router database module id in root manifest: {module_id}"
+            ));
+        }
+
+        let module_root = app_root.join("database").join("modules").join(&module_id);
+        let module = DefaultDatabaseModule::from_module_root(&module_root).map_err(|error| {
+            format!("load claw router database module {module_id} failed: {error}")
+        })?;
+        if module.manifest().module_id != module_id {
+            return Err(format!(
+                "claw router database module directory {module_id} declares moduleId {}",
+                module.manifest().module_id
+            ));
+        }
+        modules.push(Arc::new(module));
+    }
+
+    Ok(modules)
+}
+
+fn valid_module_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'-' | b'_')
+        })
+}
+
 fn production_like_environment(value: &str) -> bool {
     matches!(
         value.trim().to_ascii_lowercase().as_str(),
@@ -134,57 +214,61 @@ mod tests {
     use super::*;
     use sdkwork_database_config::{DatabaseEngine, DeploymentMode};
 
-    async fn memory_pool() -> DatabasePool {
-        create_pool_from_config(DatabaseConfig {
-            engine: DatabaseEngine::Sqlite,
-            url: "sqlite::memory:".to_owned(),
-            max_connections: 1,
+    #[test]
+    fn loads_declared_modules_in_manifest_order() {
+        let modules = load_modules(&resolve_app_root()).expect("load database modules");
+        let module_ids = modules
+            .iter()
+            .map(|module| module.manifest().module_id.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(vec!["clawrouter", "gateway-iam", "operations"], module_ids);
+        assert!(modules.iter().all(|module| {
+            module.manifest().engines.as_slice() == ["postgres"]
+                && module.manifest().default_engine.as_deref() == Some("postgres")
+        }));
+    }
+
+    #[test]
+    fn module_ids_cannot_escape_the_modules_directory() {
+        assert!(valid_module_id("gateway-iam"));
+        assert!(!valid_module_id("../gateway-iam"));
+        assert!(!valid_module_id("GatewayIam"));
+        assert!(!valid_module_id(""));
+    }
+
+    #[tokio::test]
+    #[ignore = "requires SDKWORK_CLAW_ROUTER_TEST_DATABASE_URL pointing to disposable PostgreSQL"]
+    async fn postgres_registry_migrates_all_declared_modules() {
+        let database_url = std::env::var("SDKWORK_CLAW_ROUTER_TEST_DATABASE_URL")
+            .expect("SDKWORK_CLAW_ROUTER_TEST_DATABASE_URL");
+        let pool = create_pool_from_config(DatabaseConfig {
+            engine: DatabaseEngine::Postgres,
+            url: database_url,
+            max_connections: 4,
             mode: DeploymentMode::Standalone,
             ..DatabaseConfig::default()
         })
         .await
-        .expect("create in-memory database pool")
-    }
-
-    #[tokio::test]
-    async fn connect_is_side_effect_free() {
-        let pool = memory_pool().await;
-        let host = connect_claw_router_database(pool).expect("load database host");
-        let sqlite = host.pool().as_sqlite().expect("sqlite pool");
-
-        let table_count: i64 =
-            sqlx::query_scalar("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'")
-                .fetch_one(sqlite)
-                .await
-                .expect("inspect empty database");
-
-        assert_eq!(0, table_count);
-    }
-
-    #[tokio::test]
-    async fn explicit_migrate_materializes_schema_and_standard_history() {
-        let pool = memory_pool().await;
+        .expect("connect disposable PostgreSQL database");
         let host = connect_claw_router_database(pool).expect("load database host");
 
-        host.migrate("clawrouter-database-host-test")
+        host.migrate("clawrouter-database-host-postgres-test")
             .await
-            .expect("migrate database");
+            .expect("migrate all database modules");
 
-        let sqlite = host.pool().as_sqlite().expect("sqlite pool");
+        let postgres = host.pool().as_postgres().expect("PostgreSQL pool");
         for table in [
-            "ai_channel",
-            "ops_schema_migration_history",
-            "ops_seed_history",
-            "ops_database_installation_state",
+            "ai_upstream_supplier",
+            "iam_gateway_api_key",
+            "ops_gateway_instance",
         ] {
-            let present: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?",
-            )
-            .bind(table)
-            .fetch_one(sqlite)
-            .await
-            .expect("inspect migrated database");
-            assert_eq!(1, present, "missing {table}");
+            let present: bool = sqlx::query_scalar("SELECT to_regclass($1) IS NOT NULL")
+                .bind(table)
+                .fetch_one(postgres)
+                .await
+                .expect("inspect migrated table");
+            assert!(present, "missing {table}");
         }
     }
 

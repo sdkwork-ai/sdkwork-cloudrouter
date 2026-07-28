@@ -3993,7 +3993,56 @@
       "operation": "fetchLogs",
       "operation_id": "records.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "user",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "token",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "model",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_request_trace",
@@ -4126,7 +4175,31 @@
       "path_params": [
         "siteId"
       ],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_channel",
@@ -4136,11 +4209,91 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminSiteChannelListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminSiteChannelListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminSiteChannelItem",
+                "properties": {
+                  "channelCode": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "channelName": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "healthStatus": {
+                    "enum": [
+                      "unknown",
+                      "healthy",
+                      "degraded",
+                      "unhealthy"
+                    ],
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "siteChannelRole": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "siteCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "siteServiceCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "disabled"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "channelCode",
+                  "channelName",
+                  "providerCode",
+                  "siteCode",
+                  "siteServiceCode",
+                  "siteChannelRole",
+                  "healthStatus",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4167,7 +4320,40 @@
       "operation": "fetchSites",
       "operation_id": "sites.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_site",
@@ -4176,11 +4362,25 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminSiteListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminSiteListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/AdminSiteItem"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },

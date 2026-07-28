@@ -119,6 +119,14 @@ export class SystemRuntimeRegionApi {
 
 }
 
+export interface SystemRecordsListParams {
+  page?: number;
+  pageSize?: number;
+  user?: string;
+  token?: string;
+  model?: string;
+}
+
 export class SystemRecordsApi {
   private client: HttpClient;
 
@@ -128,8 +136,15 @@ export class SystemRecordsApi {
 
 
 /** List logs */
-  async list(requestOptions?: ApiRequestOptions): Promise<AdminRecordPage> {
-    return this.client.request<AdminRecordPage>(backendApiPath(`/system/records`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  async list(params?: SystemRecordsListParams, requestOptions?: ApiRequestOptions): Promise<AdminRecordPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'user', value: params?.user, style: 'form', explode: true, allowReserved: false },
+      { name: 'token', value: params?.token, style: 'form', explode: true, allowReserved: false },
+      { name: 'model', value: params?.model, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminRecordPage>(appendQueryString(backendApiPath(`/system/records`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

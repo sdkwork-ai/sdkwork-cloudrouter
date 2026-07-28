@@ -1,11 +1,15 @@
 import {
   ensureSdkworkApiSuccess,
   isRecord,
+  optionalBoundedPositiveInteger as optionalQueryPageSize,
+  optionalPositiveInteger as optionalQueryPage,
+  optionalText as optionalQueryText,
   readApiRecord,
   readNullableString,
   readNumber,
   readRequiredApiItems,
   readRequiredApiItem,
+  readRequiredNonNegativeInt64String,
   requiredSafePathSegment,
   readRequiredString,
   readString,
@@ -43,6 +47,31 @@ export interface SiteItem {
   sortOrder: number;
   status: 'active' | 'disabled';
 }
+
+type SitePageInfo = {
+  mode: 'offset';
+  page: number;
+  pageSize: number;
+  totalItems: string;
+  totalPages: number;
+  hasMore: boolean;
+};
+
+type SiteListPage = {
+  sites: SiteItem[];
+  pageInfo: SitePageInfo;
+};
+
+type SiteChannelListPage = {
+  channels: SiteChannelItem[];
+  pageInfo: SitePageInfo;
+};
+
+type SiteListFilters = {
+  q?: unknown;
+  page?: unknown;
+  pageSize?: unknown;
+};
 
 export interface SiteCreateInput {
   siteName: string;
@@ -82,10 +111,6 @@ export interface SiteUpdateInput {
   credentialRef?: string | null;
   maskedLabel?: string | null;
 }
-
-
-
-
 export interface SiteChannelItem {
   id: string;
   channelCode: string;
@@ -108,11 +133,14 @@ export interface SiteConnectionCheckResult {
 }
 
 export class SiteService {
-  static async fetchSites(q?: string): Promise<SiteItem[]> {
-    const result = await getClawRouterBackendSdkClient().sites.siteCatalog.list(q ? { q } : undefined);
+  static async fetchSites(filters: SiteListFilters = {}): Promise<SiteListPage> {
+    const result = await getClawRouterBackendSdkClient().sites.list(toSiteListQueryParams(filters));
     ensureSdkworkApiSuccess(result, 'Failed to fetch sites');
-    return readRequiredApiItems(result, 'Failed to fetch sites')
-      .map(normalizeSiteItem);
+    const data = readApiRecord(result);
+    return {
+      sites: readRequiredApiItems(result, 'Failed to fetch sites').map(normalizeSiteItem),
+      pageInfo: normalizeSitePageInfo(data.pageInfo, 'Site list page info is required'),
+    };
   }
 
   static async createSite(input: SiteCreateInput): Promise<SiteItem> {
@@ -135,16 +163,18 @@ export class SiteService {
     return true;
   }
 
-
-
-
-
-
-  static async fetchSiteChannels(siteId: string): Promise<SiteChannelItem[]> {
-    const result = await getClawRouterBackendSdkClient().sites.siteChannels.list(requiredSafePathSegment(siteId, 'siteId'));
+  static async fetchSiteChannels(siteId: string, filters: SiteListFilters = {}): Promise<SiteChannelListPage> {
+    const result = await getClawRouterBackendSdkClient().sites.channels.list(
+      requiredSafePathSegment(siteId, 'siteId'),
+      toSiteListQueryParams(filters),
+    );
     ensureSdkworkApiSuccess(result, 'Failed to fetch site channels');
-    return readRequiredApiItems(result, 'Failed to fetch site channels')
-      .map(normalizeSiteChannelItem);
+    const data = readApiRecord(result);
+    return {
+      channels: readRequiredApiItems(result, 'Failed to fetch site channels')
+        .map(normalizeSiteChannelItem),
+      pageInfo: normalizeSitePageInfo(data.pageInfo, 'Site channel list page info is required'),
+    };
   }
 
   static async testSiteConnection(siteId: string): Promise<SiteConnectionCheckResult> {
@@ -162,6 +192,72 @@ export class SiteService {
     ensureSdkworkApiSuccess(result, 'Failed to health check site');
     return normalizeSiteConnectionCheckResult(readApiRecord(result));
   }
+}
+
+function toSiteListQueryParams(filters: SiteListFilters): { q?: string; page?: number; pageSize?: number } {
+  const page = optionalQueryPage(filters.page, 'page') ?? 1;
+  const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', 200) ?? 20;
+  const q = optionalQueryText(filters.q, 'q', 128);
+  return {
+    ...(q ? { q } : {}),
+    page,
+    pageSize,
+  };
+}
+
+function normalizeSitePageInfo(value: unknown, message: string): SitePageInfo {
+  const pageInfo = readRequiredRecord(value, message);
+  const mode = readRequiredString(pageInfo, 'mode', `${message}: mode is required`);
+  if (mode !== 'offset') {
+    throw new Error(`${message}: unsupported mode ${mode}`);
+  }
+  const page = readRequiredPositiveInteger(pageInfo, 'page', `${message}: page is required`);
+  const pageSize = readRequiredPositiveInteger(pageInfo, 'pageSize', `${message}: pageSize is required`);
+  if (pageSize > 200) {
+    throw new Error(`${message}: pageSize must be at most 200`);
+  }
+  const totalPages = readRequiredNonNegativeInteger(
+    pageInfo,
+    'totalPages',
+    `${message}: totalPages is required`,
+  );
+  const totalItems = readRequiredNonNegativeInt64String(
+    pageInfo,
+    'totalItems',
+    `${message}: totalItems is required`,
+  );
+  const hasMoreValue = pageInfo.hasMore;
+  if (hasMoreValue !== undefined && typeof hasMoreValue !== 'boolean') {
+    throw new Error(`${message}: hasMore must be a boolean when provided`);
+  }
+  const derivedHasMore = page < totalPages;
+  if (typeof hasMoreValue === 'boolean' && hasMoreValue !== derivedHasMore) {
+    throw new Error(`${message}: hasMore must match page and totalPages`);
+  }
+  return {
+    mode,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    hasMore: hasMoreValue ?? derivedHasMore,
+  };
+}
+
+function readRequiredPositiveInteger(item: ApiRecord, key: string, message: string): number {
+  const value = readNumber(item, key, Number.NaN);
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new Error(message);
+  }
+  return value;
+}
+
+function readRequiredNonNegativeInteger(item: ApiRecord, key: string, message: string): number {
+  const value = readNumber(item, key, Number.NaN);
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error(message);
+  }
+  return value;
 }
 
 function readRequiredRecord(value: unknown, message: string): ApiRecord {
@@ -233,7 +329,6 @@ function readOptionalMediaResource(item: ApiRecord, key: string): MediaResource 
   return value as unknown as MediaResource;
 }
 
-
 function normalizeSiteChannelItem(value: unknown): SiteChannelItem {
   const item = readRequiredRecord(value, 'Site channel item must be an object');
   return {
@@ -297,8 +392,6 @@ function toSiteUpdateRequest(input: SiteUpdateInput): AdminSiteUpdateRequest {
     maskedLabel: input.maskedLabel ?? undefined,
   };
 }
-
-
 
 function readSiteType(item: ApiRecord): SiteItem['siteType'] {
   const value = readRequiredString(item, 'siteType', 'Site type is required');

@@ -29,14 +29,19 @@ class AdminRecordRuntimeStandardTest(unittest.TestCase):
         self.assertIn("mod admin_record;", product_api_mod)
         self.assertIn("admin_record_router_with_store", product_api_mod)
         self.assertIn("/backend/v3/api/system/records", admin_record_api)
-        self.assertIn("TrustedRequestSubject", admin_record_api)
+        self.assertIn("RequiredAdminSqlScopedSubject", admin_record_api)
         self.assertIn("AdminRecordStore", admin_record_api)
         self.assertIn("class SystemRecordsApi", backend_sdk)
         self.assertIn("backendApiPath(`/system/records`)", backend_sdk)
+        self.assertIn("export interface SystemRecordsListParams", backend_sdk)
+        self.assertIn("{ name: 'page_size', value: params?.pageSize", backend_sdk)
         self.assertIn(
-            "getClawRouterBackendSdkClient().system.records.list(toRecordLogQueryBody(filters))",
+            "getClawRouterBackendSdkClient().system.records.list(toRecordLogQueryParams(filters))",
             record_service,
         )
+        self.assertIn("readRequiredPageTotal(data)", record_service)
+        self.assertIn("pageInfo.totalItems", record_service)
+        self.assertNotIn("readRequiredNonNegativeNumber(data, 'total'", record_service)
 
     def test_admin_record_read_models_reject_missing_or_invalid_trace_latency(self) -> None:
         for relative in [

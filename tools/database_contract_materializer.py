@@ -45,7 +45,60 @@ COMMON_LOGICAL_TYPES = {
     "rebuild_version": "int64",
 }
 
-OWNED_PREFIXES = ("ai_", "iam_gateway_", "ops_")
+DATABASE_ROLE = "authoritative-server"
+DATABASE_ENGINE = "postgres"
+
+
+class IndentedSafeDumper(yaml.SafeDumper):
+    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
+        return super().increase_indent(flow, False)
+
+
+@dataclass(frozen=True)
+class DatabaseModuleSpec:
+    module_id: str
+    service_code: str
+    display_name: str
+    owner: str
+    table_prefix: str
+    baseline_anchor_table: str
+    baseline_file: str
+    relative_root: str
+
+
+ROOT_MODULE = DatabaseModuleSpec(
+    module_id="clawrouter",
+    service_code="CLAW_ROUTER",
+    display_name="Claw Router AI Database",
+    owner="claw-router-platform",
+    table_prefix="ai_",
+    baseline_anchor_table="ai_upstream_supplier",
+    baseline_file="0001_clawrouter_baseline.sql",
+    relative_root="database",
+)
+
+AUXILIARY_MODULES = (
+    DatabaseModuleSpec(
+        module_id="gateway-iam",
+        service_code="CLAW_ROUTER_GATEWAY_IAM",
+        display_name="Claw Router Gateway IAM Database",
+        owner="gateway-iam-service",
+        table_prefix="iam_gateway_",
+        baseline_anchor_table="iam_gateway_api_key",
+        baseline_file="0001_gateway_iam_baseline.sql",
+        relative_root="database/modules/gateway-iam",
+    ),
+    DatabaseModuleSpec(
+        module_id="operations",
+        service_code="CLAW_ROUTER_OPERATIONS",
+        display_name="Claw Router Operations Database",
+        owner="claw-router-platform",
+        table_prefix="ops_",
+        baseline_anchor_table="ops_gateway_instance",
+        baseline_file="0001_operations_baseline.sql",
+        relative_root="database/modules/operations",
+    ),
+)
 
 
 @dataclass(frozen=True)
@@ -59,14 +112,26 @@ class MaterializedDatabaseContract:
 class DatabaseContractMaterializer:
     """Materialize framework lifecycle contracts from the authored registry."""
 
-    def __init__(self, root: Path, registry_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        root: Path,
+        registry_path: Path | None = None,
+        module_spec: DatabaseModuleSpec = ROOT_MODULE,
+    ) -> None:
         self.root = Path(root).resolve()
         self.registry_path = (
             Path(registry_path).resolve()
             if registry_path is not None
             else self.root / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
         )
-        self.compiler = SchemaCompiler(self.root, self.registry_path)
+        self.module_spec = module_spec
+        self.module_root = self.root / Path(module_spec.relative_root)
+        self.compiler = SchemaCompiler(
+            self.root,
+            self.registry_path,
+            table_prefixes=(module_spec.table_prefix,),
+        )
+        self.composite_compiler = SchemaCompiler(self.root, self.registry_path)
 
     def render(self) -> MaterializedDatabaseContract:
         registry = load_schema_registry(self.registry_path)
@@ -86,6 +151,7 @@ class DatabaseContractMaterializer:
             if isinstance(table, dict)
             and isinstance(table.get("table"), str)
             and table.get("generated_by_this_project") is not False
+            and str(table["table"]).startswith(self.module_spec.table_prefix)
         ]
         tables.sort(key=lambda item: item["name"])
         table_names = [table["name"] for table in tables]
@@ -94,13 +160,13 @@ class DatabaseContractMaterializer:
         schema_contract = {
             "schema_version": 1,
             "kind": "sdkwork.database.schema",
-            "module_id": "clawrouter",
+            "database_role": DATABASE_ROLE,
+            "module_id": self.module_spec.module_id,
             "contract_version": contract_version,
-            "owner_team": "claw-router-platform",
+            "owner_team": self.module_spec.owner,
             "compliance_level": "L2",
-            "engines": ["postgres", "sqlite"],
-            "table_prefix": "ai_",
-            "table_prefixes": list(OWNED_PREFIXES),
+            "engines": [DATABASE_ENGINE],
+            "table_prefix": self.module_spec.table_prefix,
             "source_registry": self._relative_path(self.registry_path),
             "tables": tables,
         }
@@ -126,19 +192,28 @@ class DatabaseContractMaterializer:
             "prefixes": [
                 {
                     "prefix": prefix,
-                    "owner": "claw-router-platform",
-                    "domain": "clawrouter",
+                    "owner": self.module_spec.owner,
+                    "domain": self.module_spec.module_id,
                 }
-                for prefix in OWNED_PREFIXES
+                for prefix in (self.module_spec.table_prefix,)
             ],
         }
 
-        manifest_path = self.root / "database" / "database.manifest.json"
+        manifest_path = self.module_root / "database.manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["schemaVersion"] = 2
+        manifest["databaseRole"] = DATABASE_ROLE
+        manifest["moduleId"] = self.module_spec.module_id
+        manifest["serviceCode"] = self.module_spec.service_code
+        manifest["displayName"] = self.module_spec.display_name
+        manifest["owner"] = self.module_spec.owner
+        manifest["engines"] = [DATABASE_ENGINE]
+        manifest["defaultEngine"] = DATABASE_ENGINE
         manifest["contractVersion"] = contract_version
-        manifest.pop("tablePrefix", None)
-        manifest["tablePrefixes"] = list(OWNED_PREFIXES)
-        manifest["modules"] = []
+        manifest["tablePrefix"] = self.module_spec.table_prefix
+        manifest.pop("tablePrefixes", None)
+        manifest["baselineAnchorTable"] = self.module_spec.baseline_anchor_table
+        manifest["modules"] = self._available_auxiliary_module_ids()
         manifest.pop("composeDependencies", None)
         manifest["baselineStrategy"] = "baseline-plus-migrations"
         lifecycle = manifest.setdefault("lifecycle", {})
@@ -147,8 +222,9 @@ class DatabaseContractMaterializer:
         manifest["materializedTables"] = table_names
 
         return MaterializedDatabaseContract(
-            schema_yaml=yaml.safe_dump(
+            schema_yaml=yaml.dump(
                 schema_contract,
+                Dumper=IndentedSafeDumper,
                 allow_unicode=True,
                 sort_keys=False,
                 width=120,
@@ -159,8 +235,9 @@ class DatabaseContractMaterializer:
         )
 
     def materialize(self) -> list[Path]:
-        for dialect in ("postgres", "sqlite"):
-            self.compiler.materialize(dialect)
+        if self.module_spec == ROOT_MODULE:
+            self.composite_compiler.write_dialect(DATABASE_ENGINE)
+        self.compiler.write_baseline(DATABASE_ENGINE, self._baseline_path())
         rendered = self.render()
         outputs = self._outputs()
         payloads = (
@@ -172,13 +249,27 @@ class DatabaseContractMaterializer:
         for output, payload in zip(outputs, payloads, strict=True):
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(payload, encoding="utf-8")
-        return list(outputs)
+        materialized = list(outputs)
+        if self.module_spec == ROOT_MODULE:
+            for module_spec in AUXILIARY_MODULES:
+                module_manifest = self.root / module_spec.relative_root / "database.manifest.json"
+                if module_manifest.is_file():
+                    materialized.extend(
+                        DatabaseContractMaterializer(
+                            self.root,
+                            self.registry_path,
+                            module_spec,
+                        ).materialize()
+                    )
+        return materialized
 
     def check(self) -> list[str]:
         messages: list[str] = []
-        for dialect in ("postgres", "sqlite"):
-            messages.extend(self.compiler.check_dialect(dialect).messages)
-            messages.extend(self.compiler.check_baseline(dialect).messages)
+        if self.module_spec == ROOT_MODULE:
+            messages.extend(self.composite_compiler.check_dialect(DATABASE_ENGINE).messages)
+        messages.extend(
+            self.compiler.check_baseline(DATABASE_ENGINE, self._baseline_path()).messages
+        )
         rendered = self.render()
         payloads = (
             rendered.schema_yaml,
@@ -191,7 +282,36 @@ class DatabaseContractMaterializer:
                 messages.append(f"materialized database contract is missing: {output}")
             elif output.read_text(encoding="utf-8") != expected:
                 messages.append(f"materialized database contract is stale: {output}")
+        if self.module_spec == ROOT_MODULE:
+            for module_spec in AUXILIARY_MODULES:
+                module_manifest = self.root / module_spec.relative_root / "database.manifest.json"
+                if module_manifest.is_file():
+                    messages.extend(
+                        DatabaseContractMaterializer(
+                            self.root,
+                            self.registry_path,
+                            module_spec,
+                        ).check()
+                    )
         return messages
+
+    def _available_auxiliary_module_ids(self) -> list[str]:
+        if self.module_spec != ROOT_MODULE:
+            return []
+        return [
+            module_spec.module_id
+            for module_spec in AUXILIARY_MODULES
+            if (self.root / module_spec.relative_root / "database.manifest.json").is_file()
+        ]
+
+    def _baseline_path(self) -> Path:
+        return (
+            self.module_root
+            / "ddl"
+            / "baseline"
+            / DATABASE_ENGINE
+            / self.module_spec.baseline_file
+        )
 
     def _table_contract(
         self,
@@ -202,17 +322,14 @@ class DatabaseContractMaterializer:
         table_name = str(table["table"])
         logical_columns = self._logical_columns(table, common_groups)
         postgres_columns = self.compiler._collect_columns(table, common_groups, "postgres")
-        sqlite_columns = self.compiler._collect_columns(table, common_groups, "sqlite")
         policy = self.compiler.resolve_table_policy(table, profile_policies)
         columns: dict[str, Any] = {}
         for name, logical_type in logical_columns.items():
             postgres_column = postgres_columns[name]
-            sqlite_column = sqlite_columns[name]
             columns[name] = {
                 "type": logical_type,
                 "required": self._is_required(postgres_column.constraints),
                 "postgres_type": postgres_column.sql_type,
-                "sqlite_type": sqlite_column.sql_type,
                 "constraints": postgres_column.constraints,
             }
 
@@ -375,10 +492,10 @@ class DatabaseContractMaterializer:
 
     def _outputs(self) -> tuple[Path, Path, Path, Path]:
         return (
-            self.root / "database" / "contract" / "schema.yaml",
-            self.root / "database" / "contract" / "table-registry.json",
-            self.root / "database" / "contract" / "prefix-registry.json",
-            self.root / "database" / "database.manifest.json",
+            self.module_root / "contract" / "schema.yaml",
+            self.module_root / "contract" / "table-registry.json",
+            self.module_root / "contract" / "prefix-registry.json",
+            self.module_root / "database.manifest.json",
         )
 
 

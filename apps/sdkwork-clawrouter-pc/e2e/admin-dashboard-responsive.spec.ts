@@ -162,7 +162,7 @@ test.describe('Admin dashboard responsive shell', () => {
     await prepareAdminDashboard(page);
     await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByRole('heading', { name: 'Operations Overview' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Operations Overview' })).toHaveCount(0);
     await expect(page.locator('[data-admin-desktop-sidebar]')).toBeVisible();
     await expect(page.getByText('Points Consumed', { exact: true })).toBeVisible();
     await expect(page.getByText('184.72', { exact: true })).toBeVisible();
@@ -187,7 +187,7 @@ test.describe('Admin dashboard responsive shell', () => {
     await prepareAdminDashboard(page);
     await page.goto('/admin/dashboard', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByRole('heading', { name: 'Operations Overview' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Operations Overview' })).toHaveCount(0);
     await expect(page.locator('[data-admin-desktop-sidebar]')).toBeHidden();
     const summaryCards = page.locator('[data-admin-dashboard-summary-card]');
     await expect(summaryCards).toHaveCount(8);
