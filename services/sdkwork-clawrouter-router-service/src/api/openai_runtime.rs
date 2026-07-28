@@ -351,13 +351,15 @@ fn resolve_model_route(
             )
             .with_account_group_id(selection.group_id)
             .with_account_group_code(selection.group_code.as_str())
-            .with_site(
-                channel_metadata.as_ref().and_then(|route| route.supplier_id),
+            .with_supplier(
                 channel_metadata
                     .as_ref()
-                    .and_then(|route| route.supplier_code.as_deref()),
+                    .and_then(|route| route.supplier_id),
+                channel_metadata
+                    .as_ref()
+                    .map(|route| route.supplier_code.as_str()),
             )
-            .with_site_service(
+            .with_endpoint(
                 channel_metadata
                     .as_ref()
                     .and_then(|route| route.endpoint_id),

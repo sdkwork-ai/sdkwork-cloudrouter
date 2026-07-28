@@ -8,10 +8,10 @@ pub(crate) fn postgres_row_i64(row: &PgRow, column: &str) -> Result<i64, sqlx::E
 
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::rows::{
-    AiModelRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, GatewayAccessPolicyRow,
-    GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow, ModelPriceRow,
-    ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow, UpstreamAccountRouteRow, QuotaPolicyRow,
-    RoutingPolicyRow, RoutingRuleRow,
+    AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
+    ModelPriceRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow, RoutingPolicyRow,
+    RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
+    UpstreamAccountRouteRow,
 };
 
 pub async fn load_vendors(
@@ -64,41 +64,6 @@ pub async fn load_models(
     .await
 }
 
-pub async fn load_provider_routes(
-    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    sql: &'static str,
-    circuit_breaker_recovery_window_seconds: i64,
-) -> Result<Vec<ModelUpstreamRouteRow>, sqlx::Error> {
-    let mapper = map_query(sql, |row| {
-        Ok(ModelUpstreamRouteRow {
-            catalog_key: row.try_get("catalog_key")?,
-            model: row.try_get("model")?,
-            api_code: row.try_get("api_code")?,
-            region_code: row.try_get("region_code")?,
-            supplier_code: row.try_get("supplier_code")?,
-            account_id: row.try_get("account_id")?,
-            credential_id: row.try_get("credential_id")?,
-            credential_rotation: row.try_get("credential_rotation")?,
-            credential_priority: row.try_get("credential_priority")?,
-            credential_weight: row.try_get("credential_weight")?,
-            provider_model: row.try_get("provider_model")?,
-            base_url: row.try_get("base_url")?,
-            secret_ref: row.try_get("secret_ref")?,
-            auth_type: row.try_get("auth_type")?,
-            auth_config_json: row.try_get("auth_config_json")?,
-            timeout_ms: row.try_get("timeout_ms")?,
-            retry_policy_json: row.try_get("retry_policy_json")?,
-        })
-    });
-    sqlx::query(mapper.sql)
-        .bind(circuit_breaker_recovery_window_seconds)
-        .fetch_all(executor)
-        .await?
-        .into_iter()
-        .map(mapper.mapper)
-        .collect()
-}
-
 pub async fn load_upstream_account_routes(
     executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     sql: &'static str,
@@ -112,20 +77,25 @@ pub async fn load_upstream_account_routes(
             credential_rotation: row.try_get("credential_rotation")?,
             credential_priority: row.try_get("credential_priority")?,
             credential_weight: row.try_get("credential_weight")?,
+            contract_cost_multiplier: row.try_get("contract_cost_multiplier")?,
+            last_latency_ms: row.try_get("last_latency_ms")?,
             account_code: row.try_get("account_code")?,
             region_code: row.try_get("region_code")?,
             supplier_id: row.try_get("supplier_id")?,
-            supplier_code: row.try_get("supplier_code")?,
             endpoint_id: row.try_get("endpoint_id")?,
             endpoint_code: row.try_get("endpoint_code")?,
+            endpoint_priority: row.try_get("endpoint_priority")?,
+            endpoint_weight: row.try_get("endpoint_weight")?,
+            endpoint_health_status: row.try_get("endpoint_health_status")?,
             base_url: row.try_get("base_url")?,
             secret_ref: row.try_get("secret_ref")?,
+            secret_ciphertext: row.try_get("secret_ciphertext")?,
             auth_type: row.try_get("auth_type")?,
             auth_config_json: row.try_get("auth_config_json")?,
             timeout_ms: row.try_get("timeout_ms")?,
             retry_policy_json: row.try_get("retry_policy_json")?,
             account_group_bindings_json: row.try_get("account_group_bindings_json")?,
-            channel_health_status: row.try_get("channel_health_status")?,
+            account_health_status: row.try_get("account_health_status")?,
             credential_health_status: row.try_get("credential_health_status")?,
         })
     });
@@ -138,7 +108,11 @@ pub async fn load_upstream_account_routes(
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows
         .into_iter()
-        .filter(|row| row.channel_health_status == 1 && row.credential_health_status == 1)
+        .filter(|row| {
+            row.account_health_status == 1
+                && row.credential_health_status == 1
+                && row.endpoint_health_status == 1
+        })
         .collect())
 }
 
@@ -242,8 +216,11 @@ pub async fn load_upstream_account_groups(
             name: row.try_get("name")?,
             code: row.try_get("code")?,
             pricing_plan_code: row.try_get("pricing_plan_code")?,
-            rate_multiplier: row.try_get("rate_multiplier")?,
-            official_price_multiplier: row.try_get("official_price_multiplier")?,
+            routing_strategy: row.try_get("routing_strategy")?,
+            fallback_mode: row.try_get("fallback_mode")?,
+            priority: row.try_get("priority")?,
+            cost_multiplier: row.try_get("cost_multiplier")?,
+            sale_multiplier: row.try_get("sale_multiplier")?,
         })
     })
     .fetch(executor)
@@ -528,8 +505,11 @@ pub async fn load_paginated_upstream_account_groups(
             COALESCE(NULLIF(g.group_name, ''), g.group_code) AS name,
             g.group_code AS code,
             COALESCE(NULLIF(BTRIM(g.pricing_plan_code), ''), 'standard') AS pricing_plan_code,
-            g.rate_multiplier::text AS rate_multiplier,
-            g.official_price_multiplier::text AS official_price_multiplier,
+            g.routing_strategy,
+            g.fallback_mode,
+            g.priority,
+            g.cost_multiplier::text AS cost_multiplier,
+            g.sale_multiplier::text AS sale_multiplier,
             COUNT(*) OVER() AS total
         FROM ai_upstream_account_group g
         WHERE g.deleted_at IS NULL
@@ -554,7 +534,9 @@ pub async fn load_paginated_upstream_account_groups(
     .await
 }
 
-pub fn upstream_account_group_from_row(row: &PgRow) -> DomainResult<crate::domain::UpstreamAccountGroup> {
+pub fn upstream_account_group_from_row(
+    row: &PgRow,
+) -> DomainResult<crate::domain::UpstreamAccountGroup> {
     UpstreamAccountGroupRow {
         id: row.try_get("id").map_err(row_error)?,
         tenant_id: row.try_get("tenant_id").map_err(row_error)?,
@@ -562,10 +544,11 @@ pub fn upstream_account_group_from_row(row: &PgRow) -> DomainResult<crate::domai
         name: row.try_get("name").map_err(row_error)?,
         code: row.try_get("code").map_err(row_error)?,
         pricing_plan_code: row.try_get("pricing_plan_code").map_err(row_error)?,
-        rate_multiplier: row.try_get("rate_multiplier").map_err(row_error)?,
-        official_price_multiplier: row
-            .try_get("official_price_multiplier")
-            .map_err(row_error)?,
+        routing_strategy: row.try_get("routing_strategy").map_err(row_error)?,
+        fallback_mode: row.try_get("fallback_mode").map_err(row_error)?,
+        priority: row.try_get("priority").map_err(row_error)?,
+        cost_multiplier: row.try_get("cost_multiplier").map_err(row_error)?,
+        sale_multiplier: row.try_get("sale_multiplier").map_err(row_error)?,
     }
     .try_into_domain()
 }

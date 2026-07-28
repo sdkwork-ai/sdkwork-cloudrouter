@@ -18,8 +18,8 @@ use crate::infrastructure::sql::sqlite::row_mapping;
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
     ApiKeyManagementReadFuture, AppUpstreamAccountGroupListPage, GatewayApiKeyListPage,
-    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListAppUpstreamAccountGroupsQuery,
-    ListGatewayApiKeysQuery,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
+    ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery,
 };
 
 pub struct SqlitePricingCatalogLoader {
@@ -140,12 +140,15 @@ impl SqlitePricingCatalogLoader {
             )
             .await
             .map_err(|source| sqlite_query_error("LOAD_GATEWAY_RISK_RULES", source))?,
-            upstream_account_group_metric_snapshots: row_mapping::load_upstream_account_group_metric_snapshots(
-                &mut *tx,
-                queries::LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS,
-            )
-            .await
-            .map_err(|source| sqlite_query_error("LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS", source))?,
+            upstream_account_group_metric_snapshots:
+                row_mapping::load_upstream_account_group_metric_snapshots(
+                    &mut *tx,
+                    queries::LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS,
+                )
+                .await
+                .map_err(|source| {
+                    sqlite_query_error("LOAD_API_KEY_GROUP_METRIC_SNAPSHOTS", source)
+                })?,
             prices: database_rows.prices,
         };
         tx.commit()

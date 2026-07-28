@@ -1883,7 +1883,8 @@ fn runtime_gateway_error_is_route_snapshot_miss(message: &str) -> bool {
         && message.contains("route diagnostics:")
         && runtime_gateway_route_diagnostic_usize(message, "model_routes_loaded") == Some(0)
         && runtime_gateway_route_diagnostic_usize(message, "channel_routes_loaded") == Some(0)
-        && runtime_gateway_route_diagnostic_bool(message, "any_account_group_bindings") == Some(false)
+        && runtime_gateway_route_diagnostic_bool(message, "any_account_group_bindings")
+            == Some(false)
         && runtime_gateway_route_diagnostic_usize(message, "matching_group_bound_channels")
             == Some(0)
 }

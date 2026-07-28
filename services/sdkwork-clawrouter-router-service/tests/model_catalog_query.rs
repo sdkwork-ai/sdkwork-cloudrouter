@@ -2,8 +2,8 @@ use sdkwork_clawrouter_router_service::application::{
     ListModelCatalogQuery, ModelCatalogQueryService, PriceAvailability,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
+    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, UpstreamAccountGroup,
     UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -242,8 +242,20 @@ fn list_models_reads_backend_account_group_bindings_and_applies_catalog_filters(
     let mut catalog = catalog_for_model_list();
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter", 3001)
-            .with_resource_scoped_account_group_binding(10, 10, 100, Vec::<String>::new(), vec!["llm"])
-            .with_resource_scoped_account_group_binding(11, 20, 100, Vec::<String>::new(), vec!["tools"]),
+            .with_resource_scoped_account_group_binding(
+                10,
+                10,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            )
+            .with_resource_scoped_account_group_binding(
+                11,
+                20,
+                100,
+                Vec::<String>::new(),
+                vec!["tools"],
+            ),
     );
     let service = ModelCatalogQueryService::new(&catalog);
 
@@ -320,8 +332,20 @@ fn list_models_returns_complete_admin_group_catalog_independent_of_item_filters(
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter", 3001)
-            .with_resource_scoped_account_group_binding(10, 10, 100, Vec::<String>::new(), vec!["llm"])
-            .with_resource_scoped_account_group_binding(11, 20, 100, Vec::<String>::new(), vec!["tools"]),
+            .with_resource_scoped_account_group_binding(
+                10,
+                10,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            )
+            .with_resource_scoped_account_group_binding(
+                11,
+                20,
+                100,
+                Vec::<String>::new(),
+                vec!["tools"],
+            ),
     );
     let service = ModelCatalogQueryService::new(&catalog);
 

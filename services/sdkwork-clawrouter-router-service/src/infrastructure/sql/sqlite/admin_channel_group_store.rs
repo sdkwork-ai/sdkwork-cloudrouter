@@ -58,7 +58,8 @@ impl AdminChannelGroupStore for SqliteAdminChannelGroupStore {
                 command.subject.organization_id,
             )
             .await?;
-            let id = insert_upstream_account_group(&mut tx, &command, pricing_plan.as_ref()).await?;
+            let id =
+                insert_upstream_account_group(&mut tx, &command, pricing_plan.as_ref()).await?;
             if let Some((pricing_plan_id, pricing_plan_code)) = pricing_plan {
                 upsert_pricing_plan_binding(
                     &mut tx,

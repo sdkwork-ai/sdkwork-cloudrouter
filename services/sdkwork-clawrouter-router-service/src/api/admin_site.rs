@@ -152,7 +152,6 @@ struct SiteChannelResponse {
     account_code: String,
     channel_name: String,
     supplier_code: Option<String>,
-    supplier_code: Option<String>,
     endpoint_code: Option<String>,
     site_channel_role: Option<String>,
     health_status: String,
@@ -387,11 +386,15 @@ async fn site_connection_action(
         Ok(supplier_id) => supplier_id,
         Err(message) => return bad_request(message),
     };
-    let command =
-        match build_test_site_connection_command(state.clone(), subject, supplier_id, persist_health) {
-            Ok(command) => command,
-            Err(error) => return command_build_error_response(error),
-        };
+    let command = match build_test_site_connection_command(
+        state.clone(),
+        subject,
+        supplier_id,
+        persist_health,
+    ) {
+        Ok(command) => command,
+        Err(error) => return command_build_error_response(error),
+    };
     match state.store.test_site_connection(command).await {
         Ok(item) => Json(success_envelope(to_connection_response(item))).into_response(),
         Err(error) if error.is_not_found() => not_found_response(error.to_string()),
@@ -565,7 +568,6 @@ fn to_site_channel_response(item: AdminSiteChannelItem) -> SiteChannelResponse {
         id: item.id.to_string(),
         account_code: item.account_code,
         channel_name: item.channel_name,
-        supplier_code: item.supplier_code,
         supplier_code: item.supplier_code,
         endpoint_code: item.endpoint_code,
         site_channel_role: item.site_channel_role,

@@ -4,15 +4,16 @@ use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 
 use crate::application::ApiKeySecretCodec;
 use crate::domain::{
-    UpstreamAccountGroup, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
+    DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
+    UpstreamAccountGroup,
 };
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand, CreatedGatewayApiKey,
     DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
-    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore, UpdateGatewayApiKeyCommand,
-    UpdatedGatewayApiKey,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
+    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 
 const API_KEY_STATUS_REVOKED: i32 = 4;

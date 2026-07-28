@@ -12,8 +12,9 @@ use sdkwork_clawrouter_router_service::application::{
 };
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminUpstreamAccountGroupChannelBindingItem, AdminUpstreamAccountGroupCommandFuture, AdminUpstreamAccountGroupItem,
-    AdminUpstreamAccountGroupListPage, AdminUpstreamAccountGroupStore, CreateAdminUpstreamAccountGroupCommand,
+    AdminUpstreamAccountGroupChannelBindingItem, AdminUpstreamAccountGroupCommandFuture,
+    AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupListPage,
+    AdminUpstreamAccountGroupStore, CreateAdminUpstreamAccountGroupCommand,
     DeleteAdminUpstreamAccountGroupCommand, ListAdminUpstreamAccountGroupChannelBindingsQuery,
     ListAdminUpstreamAccountGroupsQuery, ReplaceAdminUpstreamAccountGroupChannelBindingsCommand,
     UpdateAdminUpstreamAccountGroupCommand,
@@ -24,10 +25,11 @@ use tower::ServiceExt;
 #[tokio::test]
 async fn admin_upstream_account_group_route_creates_lists_updates_and_soft_deletes_groups() {
     let store = Arc::new(TestUpstreamAccountGroupStore::default());
-    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
-        store.clone(),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+            store.clone(),
+            Arc::new(TestUuidGenerator),
+        );
     let expected_create_name = format!("{} standard", "\u{4e2d}\u{6587}");
 
     let create_response = router
@@ -195,10 +197,11 @@ async fn admin_upstream_account_group_route_lists_and_replaces_channel_bindings(
         ),
         channel_binding_item(3, 11, 3001, "OpenAI primary", "openai", 10, 50, "active"),
     ]));
-    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
-        store.clone(),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+            store.clone(),
+            Arc::new(TestUuidGenerator),
+        );
 
     let list_response = router
         .clone()
@@ -318,10 +321,11 @@ async fn admin_upstream_account_group_route_explain_reports_backend_config_readi
             ),
         ],
     ));
-    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
-        store,
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+            store,
+            Arc::new(TestUuidGenerator),
+        );
 
     let response = router
         .oneshot(
@@ -379,10 +383,11 @@ async fn admin_upstream_account_group_route_explain_reports_blocking_backend_con
         )],
         Vec::new(),
     ));
-    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
-        store,
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+            store,
+            Arc::new(TestUuidGenerator),
+        );
 
     let response = router
         .oneshot(
@@ -415,7 +420,8 @@ async fn admin_upstream_account_group_route_explain_reports_blocking_backend_con
 }
 
 #[tokio::test]
-async fn admin_upstream_account_group_route_invalidates_routing_cache_after_successful_binding_mutation() {
+async fn admin_upstream_account_group_route_invalidates_routing_cache_after_successful_binding_mutation(
+) {
     let store = Arc::new(TestUpstreamAccountGroupStore::with_bindings(vec![
         channel_binding_item(1, 10, 3001, "OpenAI primary", "openai", 10, 80, "active"),
     ]));
@@ -452,13 +458,16 @@ async fn admin_upstream_account_group_route_invalidates_routing_cache_after_succ
         )
         .await
         .unwrap();
-    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
-        Arc::new(AiRoutingCacheInvalidatingAdminUpstreamAccountGroupStore::new(
-            store,
-            manager.clone(),
-        )),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+            Arc::new(
+                AiRoutingCacheInvalidatingAdminUpstreamAccountGroupStore::new(
+                    store,
+                    manager.clone(),
+                ),
+            ),
+            Arc::new(TestUuidGenerator),
+        );
 
     let response = router
         .oneshot(
@@ -506,10 +515,11 @@ async fn admin_upstream_account_group_route_invalidates_routing_cache_after_succ
 
 #[tokio::test]
 async fn admin_upstream_account_group_route_rejects_missing_trusted_subject() {
-    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
-        Arc::new(TestUpstreamAccountGroupStore::default()),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+            Arc::new(TestUpstreamAccountGroupStore::default()),
+            Arc::new(TestUuidGenerator),
+        );
 
     let response = router
         .oneshot(
@@ -530,10 +540,11 @@ async fn admin_upstream_account_group_route_rejects_missing_trusted_subject() {
 #[tokio::test]
 async fn admin_upstream_account_group_route_rejects_invalid_multiplier_without_calling_store() {
     let store = Arc::new(TestUpstreamAccountGroupStore::default());
-    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
-        store.clone(),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+            store.clone(),
+            Arc::new(TestUuidGenerator),
+        );
 
     let response = router
         .oneshot(
@@ -562,10 +573,11 @@ async fn admin_upstream_account_group_route_rejects_invalid_multiplier_without_c
 
 #[tokio::test]
 async fn admin_upstream_account_group_route_does_not_expose_legacy_public_paths() {
-    let router = sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
-        Arc::new(TestUpstreamAccountGroupStore::default()),
-        Arc::new(TestUuidGenerator),
-    );
+    let router =
+        sdkwork_clawrouter_router_service::api::admin_upstream_account_group_router_with_store(
+            Arc::new(TestUpstreamAccountGroupStore::default()),
+            Arc::new(TestUuidGenerator),
+        );
     let legacy_group_segment = format!("{}{}", "access_", "groups");
     let legacy_paths = [
         format!("/backend/v3/api/router/{legacy_group_segment}"),
@@ -781,7 +793,8 @@ impl AdminUpstreamAccountGroupStore for TestUpstreamAccountGroupStore {
     fn list_channel_bindings<'a>(
         &'a self,
         query: ListAdminUpstreamAccountGroupChannelBindingsQuery,
-    ) -> AdminUpstreamAccountGroupCommandFuture<'a, Vec<AdminUpstreamAccountGroupChannelBindingItem>> {
+    ) -> AdminUpstreamAccountGroupCommandFuture<'a, Vec<AdminUpstreamAccountGroupChannelBindingItem>>
+    {
         Box::pin(async move {
             Ok(self
                 .bindings
@@ -802,7 +815,8 @@ impl AdminUpstreamAccountGroupStore for TestUpstreamAccountGroupStore {
     fn replace_channel_bindings<'a>(
         &'a self,
         command: ReplaceAdminUpstreamAccountGroupChannelBindingsCommand,
-    ) -> AdminUpstreamAccountGroupCommandFuture<'a, Vec<AdminUpstreamAccountGroupChannelBindingItem>> {
+    ) -> AdminUpstreamAccountGroupCommandFuture<'a, Vec<AdminUpstreamAccountGroupChannelBindingItem>>
+    {
         Box::pin(async move {
             self.commands
                 .lock()

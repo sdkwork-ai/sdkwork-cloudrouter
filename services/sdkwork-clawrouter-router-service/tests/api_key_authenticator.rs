@@ -2,7 +2,7 @@ use sdkwork_clawrouter_router_service::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    UpstreamAccountGroup, DecimalValue, DomainResult, GatewayApiKey, Money, PriceSide, PricingPlan,
+    DecimalValue, DomainResult, GatewayApiKey, Money, PriceSide, PricingPlan, UpstreamAccountGroup,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 

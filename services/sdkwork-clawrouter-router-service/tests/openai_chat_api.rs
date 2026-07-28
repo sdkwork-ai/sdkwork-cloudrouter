@@ -11,10 +11,10 @@ use sdkwork_clawrouter_router_service::api::{
 };
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelMappingBindingType,
-    ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money,
-    PriceSide, PricingPlan, ProviderAuthProfile, UpstreamAccountRoute, ProviderRetryPolicy,
-    RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule,
+    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelMappingBindingType, ModelMappingRule,
+    ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
+    PricingPlan, ProviderAuthProfile, ProviderRetryPolicy, RouteCandidate, RoutingCapability,
+    RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -662,7 +662,8 @@ async fn openai_chat_completions_accepts_base_catalog_key_for_region_scoped_pric
 }
 
 #[tokio::test]
-async fn openai_chat_completions_routes_each_upstream_account_group_to_its_configured_channel_route() {
+async fn openai_chat_completions_routes_each_upstream_account_group_to_its_configured_channel_route(
+) {
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let standard_key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
@@ -1011,7 +1012,13 @@ async fn openai_chat_completions_routes_catalog_model_through_channel_route_with
                 Some("http://account-pool.internal/openrouter-gpt55"),
                 Some("vault://providers/openrouter-gpt55/account/group-10"),
             )
-            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(
+                10,
+                1,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            ),
     );
     add_group_routing_policy(
         &mut catalog,
@@ -1107,7 +1114,13 @@ async fn openai_chat_completions_accepts_slash_native_model_and_sends_native_mod
                 Some("http://account-pool.internal/openrouter"),
                 Some("vault://providers/openrouter/account/group-10"),
             )
-            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(
+                10,
+                1,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            ),
     );
     add_group_routing_policy(
         &mut catalog,
@@ -1198,7 +1211,13 @@ async fn openai_chat_completions_routes_alibaba_regional_model_through_region_sc
                 Some("http://account-pool.internal/dashscope-cn"),
                 Some("vault://providers/dashscope/account/group-10"),
             )
-            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(
+                10,
+                1,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            ),
     );
     add_group_routing_policy(
         &mut catalog,
@@ -1294,7 +1313,13 @@ async fn openai_chat_completions_routes_group_bound_channel_route_without_explic
                 Some("http://account-pool.internal/dashscope-cn"),
                 Some("vault://providers/dashscope/account/group-10"),
             )
-            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(
+                10,
+                1,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            ),
     );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -1389,7 +1414,13 @@ async fn openai_chat_completions_routes_model_candidates_through_bound_group_cha
                 Some("http://account-pool.internal/openrouter-bound"),
                 Some("vault://providers/openrouter-bound/account/group-10"),
             )
-            .with_resource_scoped_account_group_binding(10, 1, 100, Vec::<String>::new(), vec!["llm"]),
+            .with_resource_scoped_account_group_binding(
+                10,
+                1,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            ),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(

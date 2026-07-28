@@ -6,6 +6,7 @@ use sdkwork_clawrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::PostgresAdminUpstreamStore;
+use sdkwork_clawrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sdkwork_clawrouter_router_service::ports::{
     AdminUpstreamAccountGroupMemberInput, AdminUpstreamListQuery, AdminUpstreamResourceInput,
     AdminUpstreamStore, AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
@@ -239,6 +240,75 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         .await
         .expect("replace account group resources");
 
+    let runtime_rows = sqlx::query(PricingCatalogSql::load_upstream_account_routes())
+        .bind(30_i64)
+        .fetch_all(&context.pool)
+        .await
+        .expect("load runtime upstream account routes");
+    assert_eq!(1, runtime_rows.len());
+    let runtime_row = &runtime_rows[0];
+    assert_eq!(
+        format!("managed://upstream-account-credential/{}", credential.id),
+        runtime_row
+            .try_get::<String, _>("secret_ref")
+            .expect("managed secret ref")
+    );
+    assert_eq!(
+        credential_ref,
+        runtime_row
+            .try_get::<String, _>("secret_ciphertext")
+            .expect("encrypted secret material")
+    );
+    assert_eq!(
+        10,
+        runtime_row.try_get::<i32, _>("endpoint_priority").unwrap()
+    );
+    assert_eq!(
+        100,
+        runtime_row.try_get::<i32, _>("endpoint_weight").unwrap()
+    );
+    let bindings: serde_json::Value = serde_json::from_str(
+        &runtime_row
+            .try_get::<String, _>("account_group_bindings_json")
+            .expect("account group bindings"),
+    )
+    .expect("parse account group bindings");
+    assert_eq!(
+        Some("model:gpt-4.1"),
+        bindings[0]["resourceEntitlements"][0]["resourceCode"].as_str()
+    );
+    assert_eq!(
+        Some("openai/gpt-4.1"),
+        bindings[0]["resourceEntitlements"][0]["catalogKey"].as_str()
+    );
+
+    sqlx::query(
+        "UPDATE ai_upstream_account_group_resource SET grant_type = 'deny' WHERE account_group_id = $1",
+    )
+    .bind(group.id)
+    .execute(&context.pool)
+    .await
+    .expect("deny group resource");
+    let denied_rows = sqlx::query(PricingCatalogSql::load_upstream_account_routes())
+        .bind(30_i64)
+        .fetch_all(&context.pool)
+        .await
+        .expect("load denied runtime upstream account routes");
+    let denied_bindings: serde_json::Value = serde_json::from_str(
+        &denied_rows[0]
+            .try_get::<String, _>("account_group_bindings_json")
+            .expect("denied account group bindings"),
+    )
+    .expect("parse denied account group bindings");
+    assert_eq!(
+        serde_json::json!(["__deny__"]),
+        denied_bindings[0]["apiScope"]
+    );
+    assert_eq!(
+        serde_json::json!([]),
+        denied_bindings[0]["resourceEntitlements"]
+    );
+
     let isolated = store
         .list_accounts(list_query(upstream_subject(999999, 0)))
         .await
@@ -363,6 +433,7 @@ impl PostgresTestContext {
         .execute(&pool)
         .await
         .expect("create Gateway IAM schema");
+        create_resource_catalog(&pool).await;
         Some(Self {
             pool,
             database_url,
@@ -386,6 +457,61 @@ impl PostgresTestContext {
         .expect("drop test schema");
         admin_pool.close().await;
     }
+}
+
+async fn create_resource_catalog(pool: &PgPool) {
+    sqlx::raw_sql(
+        r#"
+        CREATE TABLE ai_resource (
+            id BIGINT PRIMARY KEY,
+            tenant_id BIGINT NOT NULL,
+            organization_id BIGINT NOT NULL,
+            resource_code VARCHAR(128) NOT NULL,
+            resource_type VARCHAR(64) NOT NULL,
+            vendor_code VARCHAR(64),
+            modality_code VARCHAR(64),
+            api_code VARCHAR(128),
+            catalog_key VARCHAR(256),
+            model VARCHAR(256),
+            provider_native_model VARCHAR(256),
+            status INTEGER NOT NULL DEFAULT 1,
+            deleted_at TIMESTAMPTZ
+        );
+        CREATE TABLE ai_resource_group (
+            id BIGINT PRIMARY KEY,
+            tenant_id BIGINT NOT NULL,
+            organization_id BIGINT NOT NULL,
+            group_code VARCHAR(128) NOT NULL,
+            status INTEGER NOT NULL DEFAULT 1,
+            deleted_at TIMESTAMPTZ
+        );
+        CREATE TABLE ai_resource_group_item (
+            id BIGINT PRIMARY KEY,
+            tenant_id BIGINT NOT NULL,
+            organization_id BIGINT NOT NULL,
+            resource_group_id BIGINT NOT NULL,
+            resource_group_code VARCHAR(128) NOT NULL,
+            resource_id BIGINT,
+            resource_code VARCHAR(128),
+            child_resource_group_id BIGINT,
+            child_resource_group_code VARCHAR(128),
+            status INTEGER NOT NULL DEFAULT 1,
+            deleted_at TIMESTAMPTZ
+        );
+        INSERT INTO ai_resource (
+            id, tenant_id, organization_id, resource_code, resource_type,
+            vendor_code, modality_code, api_code, catalog_key, model,
+            provider_native_model, status
+        ) VALUES (
+            9101, 100001, 200001, 'model:gpt-4.1', 'model_api',
+            'openai', 'chat', 'openai.chat_completions', 'openai/gpt-4.1', 'gpt-4.1',
+            'gpt-4.1', 1
+        );
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("create resource catalog fixture");
 }
 
 fn quote_identifier(value: &str) -> String {

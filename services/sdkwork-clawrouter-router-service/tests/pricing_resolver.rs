@@ -2,8 +2,8 @@ use sdkwork_clawrouter_router_service::application::{
     PricingResolver, ResolveModelPriceQuery, ResolvedPriceSource,
 };
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
+    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, UpstreamAccountGroup,
     UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -595,7 +595,7 @@ fn explicit_plan_customer_price_overrides_official_reference_and_keeps_group_mul
         .with_region_code("global")
         .for_pricing_plan("standard"),
     );
-    catalog.update_group_rate_multiplier(10, DecimalValue::parse("0.900000").unwrap());
+    catalog.update_group_sale_multiplier(10, DecimalValue::parse("0.900000").unwrap());
     let resolver = PricingResolver::new(&catalog);
 
     let resolved = resolver
@@ -707,7 +707,7 @@ fn pricing_resolver_returns_domain_error_when_decimal_math_overflows() {
         .with_region_code("global")
         .for_pricing_plan("standard"),
     );
-    catalog.update_group_rate_multiplier(10, DecimalValue::parse("2.000000").unwrap());
+    catalog.update_group_sale_multiplier(10, DecimalValue::parse("2.000000").unwrap());
     let resolver = PricingResolver::new(&catalog);
 
     let error = resolver

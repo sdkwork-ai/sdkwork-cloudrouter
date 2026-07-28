@@ -920,7 +920,9 @@ async fn ensure_default_upstream_account_group(
     _source_uuid: &str,
     requested_at: &str,
 ) -> DomainResult<i64> {
-    if let Some(group_id) = find_default_upstream_account_group(tx, tenant_id, organization_id).await? {
+    if let Some(group_id) =
+        find_default_upstream_account_group(tx, tenant_id, organization_id).await?
+    {
         return Ok(group_id);
     }
 

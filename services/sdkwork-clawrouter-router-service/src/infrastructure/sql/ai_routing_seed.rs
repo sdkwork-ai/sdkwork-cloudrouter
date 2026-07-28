@@ -1230,7 +1230,9 @@ async fn import_sqlite_default_admin_upstream_account_groups(
         .bind(DEFAULT_IAM_ORGANIZATION_ID)
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
         .bind(ACTIVE_STATUS)
-        .bind(default_admin_upstream_account_group_metadata(catalog, *group))
+        .bind(default_admin_upstream_account_group_metadata(
+            catalog, *group,
+        ))
         .bind(group.group_code)
         .bind(group.group_name)
         .bind(format!(
@@ -1286,7 +1288,9 @@ async fn import_postgres_default_admin_upstream_account_groups(
         .bind(DEFAULT_IAM_ORGANIZATION_ID)
         .bind(DEFAULT_ADMIN_DATA_SCOPE)
         .bind(ACTIVE_STATUS)
-        .bind(default_admin_upstream_account_group_metadata(catalog, *group))
+        .bind(default_admin_upstream_account_group_metadata(
+            catalog, *group,
+        ))
         .bind(group.group_code)
         .bind(group.group_name)
         .bind(format!(
@@ -1401,17 +1405,23 @@ async fn import_sqlite_default_admin_upstream_account_group_member(
             deleted_by = NULL
         "#,
     )
-    .bind(stable_default_admin_upstream_account_group_member_uuid(&group))
+    .bind(stable_default_admin_upstream_account_group_member_uuid(
+        &group,
+    ))
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
     .bind(DEFAULT_ADMIN_DATA_SCOPE)
     .bind(ACTIVE_STATUS)
-    .bind(default_admin_upstream_account_group_member_metadata(catalog, group))
+    .bind(default_admin_upstream_account_group_member_metadata(
+        catalog, group,
+    ))
     .bind(account_group_id)
     .bind(account_id)
     .bind(group.priority)
     .bind(group.weight)
-    .bind(stable_default_admin_upstream_account_group_member_id(&group))
+    .bind(stable_default_admin_upstream_account_group_member_id(
+        &group,
+    ))
     .execute(&mut **tx)
     .await?;
     Ok(())
@@ -1442,17 +1452,23 @@ async fn import_postgres_default_admin_upstream_account_group_member(
             deleted_by = NULL
         "#,
     )
-    .bind(stable_default_admin_upstream_account_group_member_uuid(&group))
+    .bind(stable_default_admin_upstream_account_group_member_uuid(
+        &group,
+    ))
     .bind(DEFAULT_IAM_TENANT_ID)
     .bind(DEFAULT_IAM_ORGANIZATION_ID)
     .bind(DEFAULT_ADMIN_DATA_SCOPE)
     .bind(ACTIVE_STATUS)
-    .bind(default_admin_upstream_account_group_member_metadata(catalog, group))
+    .bind(default_admin_upstream_account_group_member_metadata(
+        catalog, group,
+    ))
     .bind(account_group_id)
     .bind(account_id)
     .bind(group.priority)
     .bind(group.weight)
-    .bind(stable_default_admin_upstream_account_group_member_id(&group))
+    .bind(stable_default_admin_upstream_account_group_member_id(
+        &group,
+    ))
     .execute(&mut **tx)
     .await?;
     Ok(())
@@ -2672,7 +2688,9 @@ fn stable_default_admin_channel_credential_id(channel: &DefaultAdminChannelSeed)
     )
 }
 
-fn stable_default_admin_upstream_account_group_uuid(group: &DefaultAdminUpstreamAccountGroupSeed) -> String {
+fn stable_default_admin_upstream_account_group_uuid(
+    group: &DefaultAdminUpstreamAccountGroupSeed,
+) -> String {
     stable_seed_uuid(
         "sdk-ai-channel-group",
         &[
@@ -2694,7 +2712,9 @@ fn stable_default_admin_account_group_id(group: &DefaultAdminUpstreamAccountGrou
     )
 }
 
-fn stable_default_admin_upstream_account_group_member_uuid(group: &DefaultAdminUpstreamAccountGroupSeed) -> String {
+fn stable_default_admin_upstream_account_group_member_uuid(
+    group: &DefaultAdminUpstreamAccountGroupSeed,
+) -> String {
     stable_seed_uuid(
         "sdk-ai-channel-group-member",
         &[
@@ -2706,7 +2726,9 @@ fn stable_default_admin_upstream_account_group_member_uuid(group: &DefaultAdminU
     )
 }
 
-fn stable_default_admin_upstream_account_group_member_id(group: &DefaultAdminUpstreamAccountGroupSeed) -> i64 {
+fn stable_default_admin_upstream_account_group_member_id(
+    group: &DefaultAdminUpstreamAccountGroupSeed,
+) -> i64 {
     stable_seed_id(
         "sdk-ai-channel-group-member-id",
         &[
@@ -2718,7 +2740,9 @@ fn stable_default_admin_upstream_account_group_member_id(group: &DefaultAdminUps
     )
 }
 
-fn stable_default_admin_channel_resource_uuid(group: &DefaultAdminUpstreamAccountGroupSeed) -> String {
+fn stable_default_admin_channel_resource_uuid(
+    group: &DefaultAdminUpstreamAccountGroupSeed,
+) -> String {
     stable_seed_uuid(
         "sdk-ai-channel-resource",
         &[
@@ -2756,7 +2780,9 @@ fn stable_default_admin_upstream_account_group_resource_uuid(
     )
 }
 
-fn stable_default_admin_upstream_account_group_resource_id(group: &DefaultAdminUpstreamAccountGroupSeed) -> i64 {
+fn stable_default_admin_upstream_account_group_resource_id(
+    group: &DefaultAdminUpstreamAccountGroupSeed,
+) -> i64 {
     stable_seed_id(
         "sdk-ai-channel-group-resource-id",
         &[

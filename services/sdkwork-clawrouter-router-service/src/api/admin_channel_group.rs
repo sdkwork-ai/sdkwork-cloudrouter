@@ -272,7 +272,8 @@ pub fn admin_channel_group_router_with_store(
         )
         .route(
             "/backend/v3/api/ai/upstream_account_groups/{channelGroupId}/channel_bindings",
-            get(fetch_upstream_account_group_channel_bindings).put(replace_upstream_account_group_channel_bindings),
+            get(fetch_upstream_account_group_channel_bindings)
+                .put(replace_upstream_account_group_channel_bindings),
         )
         .with_state(AdminChannelGroupState {
             store,
@@ -395,7 +396,10 @@ async fn fetch_upstream_account_group_route_explain(
             None => return not_found_response("channel group was not found"),
         },
         Err(error) => {
-            return upstream_account_group_system_response("channel group read model is unavailable", error);
+            return upstream_account_group_system_response(
+                "channel group read model is unavailable",
+                error,
+            );
         }
     };
 
@@ -404,9 +408,9 @@ async fn fetch_upstream_account_group_route_explain(
         .list_channel_bindings(ListAdminChannelGroupChannelBindingsQuery { subject, group_id })
         .await
     {
-        Ok(bindings) => Json(success_envelope(build_upstream_account_group_route_explain(
-            &group, &bindings,
-        )))
+        Ok(bindings) => Json(success_envelope(
+            build_upstream_account_group_route_explain(&group, &bindings),
+        ))
         .into_response(),
         Err(error) => upstream_account_group_system_response(
             "channel group channel binding read model is unavailable",
@@ -482,9 +486,10 @@ async fn create_upstream_account_group(
             },
         ),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            upstream_account_group_system_response("channel group command store is unavailable", error)
-        }
+        Err(error) => upstream_account_group_system_response(
+            "channel group command store is unavailable",
+            error,
+        ),
     }
 }
 
@@ -520,9 +525,10 @@ async fn update_upstream_account_group(
         .into_response(),
         Ok(None) => not_found_response("channel group was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            upstream_account_group_system_response("channel group command store is unavailable", error)
-        }
+        Err(error) => upstream_account_group_system_response(
+            "channel group command store is unavailable",
+            error,
+        ),
     }
 }
 
@@ -546,9 +552,10 @@ async fn delete_upstream_account_group(
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("channel group was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            upstream_account_group_system_response("channel group command store is unavailable", error)
-        }
+        Err(error) => upstream_account_group_system_response(
+            "channel group command store is unavailable",
+            error,
+        ),
     }
 }
 
@@ -1268,7 +1275,9 @@ fn generate_entity_uuid(
 
 fn request_id_error(error: RequestIdError) -> UpstreamAccountGroupCommandBuildError {
     match error {
-        RequestIdError::Invalid(message) => UpstreamAccountGroupCommandBuildError::BadRequest(message),
+        RequestIdError::Invalid(message) => {
+            UpstreamAccountGroupCommandBuildError::BadRequest(message)
+        }
         RequestIdError::System(message) => {
             UpstreamAccountGroupCommandBuildError::System(DomainError::new(message))
         }

@@ -1,12 +1,12 @@
 use crate::domain::{
     ensure_canonical_model_catalog_key, provider_native_model_id, AiModel, AiModelPublicMetadata,
-    BillingMeter, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, DecimalValue, DomainError,
-    DomainResult, GatewayAccessPolicy, GatewayApiKey, GatewayApiKeyAccountGroupBinding,
-    GatewayRiskRule, ModelMappingBindingType, ModelMappingRule, ModelPrice, ModelUpstreamRoute,
-    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderAuthProfile,
-    UpstreamAccountGroupBinding, UpstreamAccountRoute, ProviderRetryPolicy, QuotaPolicy,
-    RouteCandidate, RoutingCapability, RoutingFallbackMode, RoutingPolicy, RoutingPolicyScope,
-    RoutingRule,
+    BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
+    GatewayApiKeyAccountGroupBinding, GatewayRiskRule, ModelMappingBindingType, ModelMappingRule,
+    ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
+    PricingPlan, ProviderAuthProfile, ProviderRetryPolicy, QuotaPolicy, RouteCandidate,
+    RoutingCapability, RoutingFallbackMode, RoutingPolicy, RoutingPolicyScope, RoutingRule,
+    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot,
+    UpstreamAccountRoute, UpstreamResourceEntitlement,
 };
 
 pub struct ModelVendorRow {
@@ -140,20 +140,25 @@ pub struct UpstreamAccountRouteRow {
     pub credential_rotation: String,
     pub credential_priority: i32,
     pub credential_weight: i32,
+    pub contract_cost_multiplier: String,
+    pub last_latency_ms: Option<i64>,
     pub account_code: Option<String>,
     pub region_code: String,
-    pub supplier_id: Option<i64>,
-    pub supplier_code: Option<String>,
+    pub supplier_id: i64,
     pub endpoint_id: Option<i64>,
     pub endpoint_code: Option<String>,
+    pub endpoint_priority: i32,
+    pub endpoint_weight: i32,
+    pub endpoint_health_status: i32,
     pub base_url: Option<String>,
     pub secret_ref: Option<String>,
+    pub secret_ciphertext: Option<String>,
     pub auth_type: Option<String>,
     pub auth_config_json: Option<String>,
     pub timeout_ms: Option<i64>,
     pub retry_policy_json: Option<String>,
     pub account_group_bindings_json: String,
-    pub channel_health_status: i32,
+    pub account_health_status: i32,
     pub credential_health_status: i32,
 }
 
@@ -225,6 +230,15 @@ impl UpstreamAccountRouteRow {
             self.auth_type.as_deref(),
             self.auth_config_json.as_deref(),
         )?;
+        let last_latency_ms = self
+            .last_latency_ms
+            .map(u64::try_from)
+            .transpose()
+            .map_err(|error| {
+                DomainError::new(format!(
+                    "ai_upstream_account.last_latency_ms must be non-negative: {error}"
+                ))
+            })?;
 
         Ok(UpstreamAccountRoute {
             supplier_code: self.supplier_code,
@@ -233,21 +247,25 @@ impl UpstreamAccountRouteRow {
             credential_rotation: normalized_credential_rotation(self.credential_rotation),
             credential_priority: self.credential_priority,
             credential_weight: self.credential_weight.max(0),
+            contract_cost_multiplier: DecimalValue::parse(&self.contract_cost_multiplier)?,
+            last_latency_ms,
             account_code: self.account_code.filter(|value| !value.trim().is_empty()),
             region_code: normalized_region_code(self.region_code),
-            supplier_id: self.supplier_id,
-            supplier_code: self.supplier_code.filter(|value| !value.trim().is_empty()),
+            supplier_id: (self.supplier_id > 0).then_some(self.supplier_id),
             endpoint_id: self.endpoint_id,
-            endpoint_code: self
-                .endpoint_code
-                .filter(|value| !value.trim().is_empty()),
+            endpoint_code: self.endpoint_code.filter(|value| !value.trim().is_empty()),
+            endpoint_priority: self.endpoint_priority.max(0),
+            endpoint_weight: self.endpoint_weight.max(0),
+            endpoint_health_status: self.endpoint_health_status,
             base_url: self.base_url,
             secret_ref: self.secret_ref,
             auth_profile,
             timeout_ms,
             retry_policy,
-            account_group_bindings: parse_provider_upstream_account_group_bindings(&self.account_group_bindings_json)?,
-            channel_health_status: self.channel_health_status,
+            account_group_bindings: parse_provider_upstream_account_group_bindings(
+                &self.account_group_bindings_json,
+            )?,
+            account_health_status: self.account_health_status,
             credential_health_status: self.credential_health_status,
         })
     }
@@ -598,8 +616,11 @@ pub struct UpstreamAccountGroupRow {
     pub name: String,
     pub code: String,
     pub pricing_plan_code: String,
-    pub rate_multiplier: String,
-    pub official_price_multiplier: String,
+    pub routing_strategy: String,
+    pub fallback_mode: String,
+    pub priority: i32,
+    pub cost_multiplier: String,
+    pub sale_multiplier: String,
 }
 
 pub struct GatewayAccessPolicyRow {
@@ -718,8 +739,15 @@ impl UpstreamAccountGroupRow {
             },
             code: self.code,
             pricing_plan_code: self.pricing_plan_code,
-            rate_multiplier: DecimalValue::parse(&self.rate_multiplier)?,
-            official_price_multiplier: DecimalValue::parse(&self.official_price_multiplier)?,
+            routing_strategy: crate::domain::UpstreamAccountRoutingStrategy::from_code(
+                &self.routing_strategy,
+            )?,
+            fallback_mode: crate::domain::UpstreamAccountFallbackMode::from_code(
+                &self.fallback_mode,
+            )?,
+            priority: self.priority.max(0),
+            cost_multiplier: DecimalValue::parse(&self.cost_multiplier)?,
+            sale_multiplier: DecimalValue::parse(&self.sale_multiplier)?,
         })
     }
 }
@@ -846,18 +874,17 @@ fn parse_upstream_account_route_group_binding(
             "route candidate group bindings[{index}] must be a json object"
         )));
     };
-    let group_id = object
-        .get("groupId")
-        .or_else(|| object.get("group_id"))
+    let account_group_id = object
+        .get("accountGroupId")
         .and_then(serde_json::Value::as_i64)
         .ok_or_else(|| {
             DomainError::new(format!(
-                "route candidate group bindings[{index}] must contain integer groupId"
+                "route candidate group bindings[{index}] must contain integer accountGroupId"
             ))
         })?;
-    if group_id <= 0 {
+    if account_group_id <= 0 {
         return Err(DomainError::new(format!(
-            "route candidate group bindings[{index}].groupId must be positive"
+            "route candidate group bindings[{index}].accountGroupId must be positive"
         )));
     }
     let priority = object
@@ -884,13 +911,89 @@ fn parse_upstream_account_route_group_binding(
         .unwrap_or(100);
     let api_scope = parse_binding_string_array(&object, "apiScope", "api_scope", index)?;
     let capabilities = parse_binding_string_array(&object, "capabilities", "capabilities", index)?;
-    Ok(UpstreamAccountGroupBinding::new_resource_scoped(
-        group_id,
+    let resource_entitlements = parse_resource_entitlements(&object, index)?;
+    let cost_multiplier_override = object
+        .get("costMultiplierOverride")
+        .and_then(serde_json::Value::as_str)
+        .map(DecimalValue::parse)
+        .transpose()?;
+    let mut binding = UpstreamAccountGroupBinding::new_resource_scoped(
+        account_group_id,
         priority,
         weight,
         api_scope,
         capabilities,
-    ))
+    )
+    .with_cost_multiplier_override(cost_multiplier_override);
+    if let Some(resource_entitlements) = resource_entitlements {
+        binding = binding.with_resource_entitlements(resource_entitlements);
+    }
+    Ok(binding)
+}
+
+fn parse_resource_entitlements(
+    object: &serde_json::Map<String, serde_json::Value>,
+    binding_index: usize,
+) -> DomainResult<Option<Vec<UpstreamResourceEntitlement>>> {
+    let Some(value) = object
+        .get("resourceEntitlements")
+        .or_else(|| object.get("resource_entitlements"))
+    else {
+        return Ok(None);
+    };
+    let serde_json::Value::Array(items) = value else {
+        return Err(DomainError::new(format!(
+            "route candidate group bindings[{binding_index}].resourceEntitlements must be a json array"
+        )));
+    };
+
+    items
+        .iter()
+        .enumerate()
+        .map(|(resource_index, value)| {
+            let serde_json::Value::Object(resource) = value else {
+                return Err(DomainError::new(format!(
+                    "route candidate group bindings[{binding_index}].resourceEntitlements[{resource_index}] must be a json object"
+                )));
+            };
+            let required_text = |camel_key: &str, snake_key: &str| {
+                resource
+                    .get(camel_key)
+                    .or_else(|| resource.get(snake_key))
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_owned)
+                    .ok_or_else(|| {
+                        DomainError::new(format!(
+                            "route candidate group bindings[{binding_index}].resourceEntitlements[{resource_index}].{camel_key} is required"
+                        ))
+                    })
+            };
+            let optional_text = |camel_key: &str, snake_key: &str| {
+                resource
+                    .get(camel_key)
+                    .or_else(|| resource.get(snake_key))
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_owned)
+            };
+            let mut entitlement = UpstreamResourceEntitlement::new(
+                required_text("resourceCode", "resource_code")?,
+                required_text("resourceType", "resource_type")?,
+            );
+            entitlement.vendor_code = optional_text("vendorCode", "vendor_code");
+            entitlement.modality_code = optional_text("modalityCode", "modality_code");
+            entitlement.api_code = optional_text("apiCode", "api_code");
+            entitlement.catalog_key = optional_text("catalogKey", "catalog_key");
+            entitlement.model = optional_text("model", "model");
+            entitlement.provider_native_model =
+                optional_text("providerNativeModel", "provider_native_model");
+            Ok(entitlement)
+        })
+        .collect::<DomainResult<Vec<_>>>()
+        .map(Some)
 }
 
 fn parse_binding_string_array(
@@ -940,18 +1043,18 @@ fn parse_route_candidate(
         )));
     };
 
-    let account_id = object
-        .get("account_id")
-        .or_else(|| object.get("channelId"))
+    let account_group_id = object
+        .get("account_group_id")
+        .or_else(|| object.get("accountGroupId"))
         .and_then(serde_json::Value::as_i64)
         .ok_or_else(|| {
             DomainError::new(format!(
-                "{field_name}[{index}] must contain integer account_id"
+                "{field_name}[{index}] must contain integer account_group_id"
             ))
         })?;
-    if account_id <= 0 {
+    if account_group_id <= 0 {
         return Err(DomainError::new(format!(
-            "{field_name}[{index}].account_id must be positive"
+            "{field_name}[{index}].account_group_id must be positive"
         )));
     }
 
@@ -974,7 +1077,7 @@ fn parse_route_candidate(
         .map(str::to_owned);
 
     Ok(RouteCandidate {
-        account_id,
+        account_group_id,
         weight,
         region_code,
     })

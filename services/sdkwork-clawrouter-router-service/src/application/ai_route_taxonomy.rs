@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 use crate::domain::{
     AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy, BillingMeter,
-    UpstreamAccountRoute, RoutingCapability,
+    RoutingCapability, UpstreamAccountRoute,
 };
 use crate::ports::PricingCatalog;
 
@@ -67,7 +67,10 @@ impl AiRoutingIndex {
                 } else {
                     for api_scope in &binding.api_scope {
                         by_group_api
-                            .entry((binding.account_group_id, normalize_api_scope_value(api_scope)))
+                            .entry((
+                                binding.account_group_id,
+                                normalize_api_scope_value(api_scope),
+                            ))
                             .or_default()
                             .push(index);
                     }

@@ -606,7 +606,6 @@ fn site_channel_from_row(row: sqlx::postgres::PgRow) -> DomainResult<AdminSiteCh
         account_code: row.try_get("account_code").map_err(row_error)?,
         channel_name: row.try_get("channel_name").map_err(row_error)?,
         supplier_code: optional_string_cell(&row, "supplier_code"),
-        supplier_code: optional_string_cell(&row, "supplier_code"),
         endpoint_code: optional_string_cell(&row, "endpoint_code"),
         site_channel_role: optional_string_cell(&row, "site_channel_role"),
         health_status: health_status_label(optional_i32_cell(&row, "health_status").unwrap_or(1)),

@@ -3,7 +3,7 @@ use sdkwork_clawrouter_router_service::application::{
 };
 use sdkwork_clawrouter_router_service::domain::{
     AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy, BillingMeter,
-    UpstreamAccountRoute, RoutingCapability,
+    RoutingCapability, UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 

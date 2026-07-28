@@ -4121,7 +4121,9 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         api_keys
     }
 
-    fn list_upstream_account_groups(&self) -> Vec<sdkwork_clawrouter_router_service::domain::UpstreamAccountGroup> {
+    fn list_upstream_account_groups(
+        &self,
+    ) -> Vec<sdkwork_clawrouter_router_service::domain::UpstreamAccountGroup> {
         vec![
             sdkwork_clawrouter_router_service::domain::UpstreamAccountGroup::new(
                 10,

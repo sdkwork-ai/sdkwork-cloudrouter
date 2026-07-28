@@ -132,7 +132,7 @@ pub fn trusted_request_subject_from_admin_scope(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::app_sql_subject::SqlScopedSubject;
+    use crate::api::app_sql_subject::{SqlScopedSubject, APP_USER_OPERATOR_TYPE};
 
     #[test]
     fn admin_scope_maps_from_app_sql_scope() {

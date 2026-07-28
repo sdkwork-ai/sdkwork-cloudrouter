@@ -5,7 +5,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use sdkwork_clawrouter_router_service::domain::{
-    UpstreamAccountGroup, DecimalValue, DomainResult, GatewayApiKey, QuotaPolicy,
+    DecimalValue, DomainResult, GatewayApiKey, QuotaPolicy, UpstreamAccountGroup,
 };
 use sdkwork_clawrouter_router_service::ports::{
     ApiKeyCommandStoreFuture, ApiKeyManagementReadFuture, AppUpstreamAccountGroupListPage,
@@ -164,7 +164,11 @@ async fn app_upstream_account_group_list_returns_owner_groups_with_display_names
     );
 
     let response = router
-        .oneshot(signed_request("GET", "/app/v3/api/ai/upstream_account_groups", ""))
+        .oneshot(signed_request(
+            "GET",
+            "/app/v3/api/ai/upstream_account_groups",
+            "",
+        ))
         .await
         .unwrap();
 

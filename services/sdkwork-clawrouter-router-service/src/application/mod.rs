@@ -24,6 +24,7 @@ mod paypal_payment_adapter;
 mod provider_route_selector;
 mod runtime_stream_bus;
 mod stripe_payment_adapter;
+mod upstream_account_route_planner;
 mod usage_settlement_config;
 mod usage_settlement_worker;
 mod wechat_pay_adapter;
@@ -157,8 +158,8 @@ pub use paypal_payment_adapter::{
 };
 pub use provider_route_selector::{
     ProviderRouteSelectionError, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
-    SelectUpstreamAccountRouteQuery, SelectProviderRouteQuery, SelectedUpstreamAccountRoute,
-    SelectedProviderRoute, SelectedProviderRoutePlan,
+    SelectProviderRouteQuery, SelectUpstreamAccountRouteQuery, SelectedProviderRoute,
+    SelectedProviderRoutePlan, SelectedUpstreamAccountRoute,
 };
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{

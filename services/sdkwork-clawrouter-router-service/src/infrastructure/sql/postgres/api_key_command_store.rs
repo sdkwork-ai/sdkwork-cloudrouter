@@ -4,15 +4,16 @@ use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::application::ApiKeySecretCodec;
 use crate::domain::{
-    UpstreamAccountGroup, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
+    DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
+    UpstreamAccountGroup,
 };
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand, CreatedGatewayApiKey,
     DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
-    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore, UpdateGatewayApiKeyCommand,
-    UpdatedGatewayApiKey,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
+    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 
 const API_KEY_STATUS_REVOKED: i32 = 4;
@@ -228,7 +229,9 @@ async fn find_pricing_plan_id(
     .map_err(|error| store_error("failed to load default channel group pricing plan", error))
 }
 
-fn upstream_account_group_from_row(row: sqlx::postgres::PgRow) -> DomainResult<UpstreamAccountGroup> {
+fn upstream_account_group_from_row(
+    row: sqlx::postgres::PgRow,
+) -> DomainResult<UpstreamAccountGroup> {
     Ok(UpstreamAccountGroup::new_scoped(
         row.try_get::<i64, _>("id").map_err(row_error)?,
         row.try_get::<i64, _>("tenant_id").map_err(row_error)?,

@@ -46,7 +46,6 @@ pub struct AdminSiteChannelItem {
     pub account_code: String,
     pub channel_name: String,
     pub supplier_code: Option<String>,
-    pub supplier_code: Option<String>,
     pub endpoint_code: Option<String>,
     pub site_channel_role: Option<String>,
     pub health_status: String,

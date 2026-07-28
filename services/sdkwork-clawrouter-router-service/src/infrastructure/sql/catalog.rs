@@ -1,17 +1,17 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::domain::{
-    AiModel, BillingMeter, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, DecimalValue, DomainResult,
-    GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule, ModelMappingRule, ModelPrice,
-    ModelUpstreamRoute, ModelVendorDefinition, Money, PriceSide, PricingPlan, UpstreamAccountRoute,
-    QuotaPolicy, ResolveModelMappingContext, RoutingPolicy, RoutingRule,
+    AiModel, BillingMeter, DecimalValue, DomainResult, GatewayAccessPolicy, GatewayApiKey,
+    GatewayRiskRule, ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendorDefinition,
+    Money, PriceSide, PricingPlan, QuotaPolicy, ResolveModelMappingContext, RoutingPolicy,
+    RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
 };
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
-    AiModelRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, GatewayAccessPolicyRow,
-    GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow, ModelPriceRow,
-    ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow, UpstreamAccountRouteRow, QuotaPolicyRow,
-    RoutingPolicyRow, RoutingRuleRow,
+    AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
+    ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow,
+    RoutingPolicyRow, RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow,
+    UpstreamAccountGroupRow, UpstreamAccountRouteRow,
 };
 use crate::ports::PricingCatalog;
 use std::sync::{Arc, RwLock};
@@ -147,7 +147,10 @@ impl SqlPricingCatalogSnapshot {
             routing_rules: map_rows(rows.routing_rules, RoutingRuleRow::try_into_domain)?,
             model_mappings: map_rows(rows.model_mappings, ModelMappingRuleRow::try_into_domain)?,
             pricing_plans,
-            upstream_account_groups: map_rows(rows.upstream_account_groups, UpstreamAccountGroupRow::try_into_domain)?,
+            upstream_account_groups: map_rows(
+                rows.upstream_account_groups,
+                UpstreamAccountGroupRow::try_into_domain,
+            )?,
             api_keys: map_rows(rows.api_keys, GatewayApiKeyRow::try_into_domain)?,
             access_policies: map_rows(
                 rows.access_policies,
@@ -477,7 +480,8 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
     }
 
     fn find_upstream_account_group(&self, group_id: i64) -> Option<UpstreamAccountGroup> {
-        self.current_snapshot().find_upstream_account_group(group_id)
+        self.current_snapshot()
+            .find_upstream_account_group(group_id)
     }
 
     fn find_access_policy(&self, policy_id: i64) -> Option<GatewayAccessPolicy> {
@@ -531,7 +535,11 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
             .resolve_model_mapping(source_model, context)
     }
 
-    fn find_model_upstream_route(&self, model: &str, supplier_code: &str) -> Option<ModelUpstreamRoute> {
+    fn find_model_upstream_route(
+        &self,
+        model: &str,
+        supplier_code: &str,
+    ) -> Option<ModelUpstreamRoute> {
         self.current_snapshot()
             .find_model_upstream_route(model, supplier_code)
     }
@@ -732,7 +740,11 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         resolve_model_mapping_from_rules(&self.model_mappings, source_model, context)
     }
 
-    fn find_model_upstream_route(&self, model: &str, supplier_code: &str) -> Option<ModelUpstreamRoute> {
+    fn find_model_upstream_route(
+        &self,
+        model: &str,
+        supplier_code: &str,
+    ) -> Option<ModelUpstreamRoute> {
         self.provider_routes_by_key
             .get(model.trim())
             .and_then(|routes| {

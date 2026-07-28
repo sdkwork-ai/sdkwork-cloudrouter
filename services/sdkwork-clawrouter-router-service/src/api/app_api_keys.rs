@@ -18,13 +18,15 @@ use crate::api::response::{
 };
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{
-    UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, DecimalValue, DomainError, GatewayAccessPolicy,
-    GatewayApiKey, QuotaPolicy,
+    DecimalValue, DomainError, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
+    UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
 };
 use crate::ports::{
-    CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand, EnsureDefaultUpstreamAccountGroupCommand,
-    GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
-    ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery, PricingCatalog, UpdateGatewayApiKeyCommand,
+    CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
+    ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery, PricingCatalog,
+    UpdateGatewayApiKeyCommand,
 };
 
 const DEFAULT_CHANNEL_GROUP: &str = "default";
@@ -184,7 +186,10 @@ pub fn app_api_key_router_with_read_store_and_command_store(
 ) -> Router {
     Router::new()
         .route("/app/v3/api/iam/api_keys", get(fetch_keys).post(create_key))
-        .route("/app/v3/api/ai/upstream_account_groups", get(fetch_key_groups))
+        .route(
+            "/app/v3/api/ai/upstream_account_groups",
+            get(fetch_key_groups),
+        )
         .route(
             "/app/v3/api/iam/api_keys/{api_key_id}",
             patch(update_key).delete(delete_key),
@@ -273,7 +278,11 @@ async fn fetch_key_groups(
             return problem_from_wire_code("4001", message).into_response();
         }
     };
-    match state.read_store.list_app_upstream_account_groups(list_query).await {
+    match state
+        .read_store
+        .list_app_upstream_account_groups(list_query)
+        .await
+    {
         Ok(page) => json_success_list_response(
             None,
             page.items.into_iter().map(to_group_response).collect(),
@@ -402,7 +411,9 @@ async fn create_key_inner(
     let mut response_snapshot = snapshot.clone();
     let group = resolve_group(&snapshot, &request, subject, &state).await?;
     if snapshot.find_upstream_account_group(group.id).is_none() {
-        response_snapshot.upstream_account_groups.push(group.clone());
+        response_snapshot
+            .upstream_account_groups
+            .push(group.clone());
     }
     let name = normalize_name(request.name.as_deref())?;
     let quota_limit = normalize_quota_limit(&request)?;
@@ -636,7 +647,9 @@ fn list_response(snapshot: &GatewayApiKeyManagementSnapshot) -> AppApiKeyListRes
     AppApiKeyListResponse { items, groups }
 }
 
-fn group_list_response(snapshot: &GatewayApiKeyManagementSnapshot) -> AppUpstreamAccountGroupListResponse {
+fn group_list_response(
+    snapshot: &GatewayApiKeyManagementSnapshot,
+) -> AppUpstreamAccountGroupListResponse {
     let items = snapshot
         .upstream_account_groups
         .clone()
@@ -683,7 +696,8 @@ fn to_item_response_with_used_quota(
     let quota_policy = api_key
         .quota_policy_id
         .and_then(|policy_id| snapshot.find_quota_policy(policy_id));
-    let metric_snapshot = snapshot.find_latest_upstream_account_group_metric_snapshot(api_key.default_account_group_id);
+    let metric_snapshot = snapshot
+        .find_latest_upstream_account_group_metric_snapshot(api_key.default_account_group_id);
     let masked_key = api_key.masked_key();
 
     AppApiKeyItemResponse {
@@ -713,7 +727,7 @@ fn to_group_response(group: UpstreamAccountGroup) -> AppUpstreamAccountGroupResp
         id: group.id.to_string(),
         name: group.display_name(),
         code: group.code,
-        rate: Some(format!("{}x", group.rate_multiplier.to_fixed_string(2))),
+        rate: Some(format!("{}x", group.sale_multiplier.to_fixed_string(2))),
     }
 }
 
@@ -730,7 +744,7 @@ fn group_name(group: Option<&UpstreamAccountGroup>) -> String {
 }
 
 fn group_rate(group: Option<&UpstreamAccountGroup>) -> Option<String> {
-    group.map(|group| format!("{}x", group.rate_multiplier.to_fixed_string(2)))
+    group.map(|group| format!("{}x", group.sale_multiplier.to_fixed_string(2)))
 }
 
 fn quota_limit(
@@ -787,7 +801,11 @@ async fn resolve_group(
 ) -> Result<UpstreamAccountGroup, AppApiKeyCreateError> {
     if let Some(group_id) = request.account_group_id {
         return snapshot
-            .find_upstream_account_group_for_subject(group_id, subject.tenant_id, subject.organization_id)
+            .find_upstream_account_group_for_subject(
+                group_id,
+                subject.tenant_id,
+                subject.organization_id,
+            )
             .ok_or_else(|| {
                 AppApiKeyCreateError::BadRequest("channel group is not available".to_owned())
             });
@@ -814,8 +832,8 @@ async fn resolve_group(
         ));
     }
 
-    if let Some(group) =
-        snapshot.single_upstream_account_group_for_subject(subject.tenant_id, subject.organization_id)
+    if let Some(group) = snapshot
+        .single_upstream_account_group_for_subject(subject.tenant_id, subject.organization_id)
     {
         return Ok(group);
     }
@@ -829,7 +847,11 @@ fn resolve_update_group(
 ) -> Result<Option<UpstreamAccountGroup>, AppApiKeyCreateError> {
     if let Some(group_id) = request.account_group_id {
         return snapshot
-            .find_upstream_account_group_for_subject(group_id, subject.tenant_id, subject.organization_id)
+            .find_upstream_account_group_for_subject(
+                group_id,
+                subject.tenant_id,
+                subject.organization_id,
+            )
             .map(Some)
             .ok_or_else(|| {
                 AppApiKeyCreateError::BadRequest("channel group is not available".to_owned())

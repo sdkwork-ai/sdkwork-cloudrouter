@@ -5,7 +5,9 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use common::InternalTrustedSubjectHeaders;
-use sdkwork_clawrouter_router_service::domain::{UpstreamAccountGroup, DecimalValue, GatewayApiKey};
+use sdkwork_clawrouter_router_service::domain::{
+    DecimalValue, GatewayApiKey, UpstreamAccountGroup,
+};
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use tower::ServiceExt;
 

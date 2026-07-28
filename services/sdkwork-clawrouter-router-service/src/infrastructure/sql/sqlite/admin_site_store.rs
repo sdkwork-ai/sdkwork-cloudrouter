@@ -525,7 +525,6 @@ fn site_channel_from_row(row: sqlx::sqlite::SqliteRow) -> AdminSiteChannelItem {
         account_code: row.get("account_code"),
         channel_name: row.get("channel_name"),
         supplier_code: row.try_get("supplier_code").ok(),
-        supplier_code: row.try_get("supplier_code").ok(),
         endpoint_code: row.try_get("endpoint_code").ok(),
         site_channel_role: row.try_get("site_channel_role").ok(),
         health_status: health_status_label(row.get::<i32, _>("health_status")),

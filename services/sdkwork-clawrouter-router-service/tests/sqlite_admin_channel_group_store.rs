@@ -1,7 +1,8 @@
 use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::SqliteAdminUpstreamAccountGroupStore;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminUpstreamAccountGroupChannelBindingInput, AdminUpstreamAccountGroupStore, AdminUpstreamAccountGroupSubject,
-    CreateAdminUpstreamAccountGroupCommand, ListAdminUpstreamAccountGroupChannelBindingsQuery,
+    AdminUpstreamAccountGroupChannelBindingInput, AdminUpstreamAccountGroupStore,
+    AdminUpstreamAccountGroupSubject, CreateAdminUpstreamAccountGroupCommand,
+    ListAdminUpstreamAccountGroupChannelBindingsQuery,
     ReplaceAdminUpstreamAccountGroupChannelBindingsCommand, UpdateAdminUpstreamAccountGroupCommand,
 };
 use sdkwork_clawrouter_router_service_test_support::schema_sqlite_pool;
@@ -93,7 +94,8 @@ async fn sqlite_admin_upstream_account_group_store_allows_one_channel_in_multipl
 }
 
 #[tokio::test]
-async fn sqlite_admin_upstream_account_group_store_prefers_resource_group_for_group_backed_resource_code() {
+async fn sqlite_admin_upstream_account_group_store_prefers_resource_group_for_group_backed_resource_code(
+) {
     let pool = schema_sqlite_pool().await;
     seed_upstream_account_group_channel_fixture(&pool).await;
     let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());
@@ -388,7 +390,8 @@ async fn sqlite_admin_upstream_account_group_store_creates_and_updates_direct_re
 }
 
 #[tokio::test]
-async fn sqlite_admin_upstream_account_group_store_syncs_relationship_status_when_group_status_changes() {
+async fn sqlite_admin_upstream_account_group_store_syncs_relationship_status_when_group_status_changes(
+) {
     let pool = schema_sqlite_pool().await;
     seed_upstream_account_group_channel_fixture(&pool).await;
     let store = SqliteAdminUpstreamAccountGroupStore::new(pool.clone());

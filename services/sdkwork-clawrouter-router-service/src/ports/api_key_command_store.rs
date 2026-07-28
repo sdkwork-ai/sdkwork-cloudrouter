@@ -2,7 +2,8 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::domain::{
-    UpstreamAccountGroup, DecimalValue, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
+    DecimalValue, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
+    UpstreamAccountGroup,
 };
 
 pub type ApiKeyCommandStoreFuture<'a, T> =

@@ -12,9 +12,10 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     PricingCatalogRows, RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshot,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::rows::{
-    AiModelRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, GatewayAccessPolicyRow,
-    GatewayApiKeyRow, ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow,
-    PricingPlanRow, UpstreamAccountRouteRow, QuotaPolicyRow, RoutingPolicyRow, RoutingRuleRow,
+    AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, ModelMappingRuleRow, ModelPriceRow,
+    ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow, RoutingPolicyRow,
+    RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
+    UpstreamAccountRouteRow,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sdkwork_clawrouter_router_service::ports::PricingCatalog;
@@ -507,9 +508,9 @@ fn snapshot_load_queries_are_parameterless_and_cover_every_catalog_row_set() {
         "API key snapshot query must keep iam_gateway_api_key.account_group_id as the default route group"
     );
     assert!(
-        PricingCatalogSql::load_api_keys().contains("iam_gateway_api_key_upstream_account_group")
+        PricingCatalogSql::load_api_keys().contains("iam_gateway_api_key_account_group")
             && PricingCatalogSql::load_api_keys().contains("account_group_bindings_json"),
-        "API key snapshot query must load explicit multi-group route bindings from iam_gateway_api_key_upstream_account_group"
+        "API key snapshot query must load explicit multi-group route bindings from iam_gateway_api_key_account_group"
     );
     assert!(
         PricingCatalogSql::load_upstream_account_groups().contains("ai_upstream_account_group"),
@@ -1049,7 +1050,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     assert_eq!(ProviderAuthType::Bearer, route.auth_profile.auth_type);
     assert_eq!(None, route.auth_profile.name);
 
-    let channel_route = UpstreamAccountRouteRow {
+    let account_route = UpstreamAccountRouteRow {
         supplier_code: "openrouter".to_owned(),
         account_id: 3001,
         credential_id: Some(300101),
@@ -1058,12 +1059,15 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
         credential_weight: 100,
         account_code: Some("openrouter-main".to_owned()),
         region_code: "cn".to_owned(),
-        supplier_id: Some(4001),
-        supplier_code: Some("cn-site".to_owned()),
+        supplier_id: 4001,
         endpoint_id: Some(4101),
         endpoint_code: Some("cn-chat".to_owned()),
+        endpoint_priority: 5,
+        endpoint_weight: 90,
+        endpoint_health_status: 1,
         base_url: Some("http://provider-proxy.internal/openrouter".to_owned()),
         secret_ref: Some("vault://providers/openrouter/account/main".to_owned()),
+        secret_ciphertext: None,
         auth_type: Some("header".to_owned()),
         auth_config_json: Some(r#"{"name":"x-api-key"}"#.to_owned()),
         timeout_ms: Some(30_000),
@@ -1072,54 +1076,56 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
                 .to_owned(),
         ),
         account_group_bindings_json: r#"[{"groupId":10,"priority":7,"weight":80,"apiScope":["openai.chat_completions"],"capabilities":["llm"]}]"#.to_owned(),
-        channel_health_status: 1,
+        account_health_status: 1,
         credential_health_status: 1,
     }
     .try_into_domain()
     .unwrap();
-    assert_eq!("openrouter", channel_route.supplier_code);
-    assert_eq!(3001, channel_route.account_id);
+    assert_eq!("openrouter", account_route.supplier_code);
+    assert_eq!(3001, account_route.account_id);
     assert_eq!(
         Some("openrouter-main"),
-        channel_route.account_code.as_deref()
+        account_route.account_code.as_deref()
     );
-    assert_eq!("cn", channel_route.region_code);
-    assert_eq!(Some(4001), channel_route.supplier_id);
-    assert_eq!(Some("cn-site"), channel_route.supplier_code.as_deref());
-    assert_eq!(Some(4101), channel_route.endpoint_id);
-    assert_eq!(Some("cn-chat"), channel_route.endpoint_code.as_deref());
+    assert_eq!("cn", account_route.region_code);
+    assert_eq!(Some(4001), account_route.supplier_id);
+    assert_eq!(Some(4101), account_route.endpoint_id);
+    assert_eq!(Some("cn-chat"), account_route.endpoint_code.as_deref());
+    assert_eq!(5, account_route.endpoint_priority);
+    assert_eq!(90, account_route.endpoint_weight);
+    assert_eq!(1, account_route.endpoint_health_status);
     assert_eq!(
         Some("http://provider-proxy.internal/openrouter"),
-        channel_route.base_url.as_deref()
+        account_route.base_url.as_deref()
     );
     assert_eq!(
         Some("vault://providers/openrouter/account/main"),
-        channel_route.secret_ref.as_deref()
+        account_route.secret_ref.as_deref()
     );
-    assert_eq!(Some(30_000), channel_route.timeout_ms);
+    assert_eq!(Some(30_000), account_route.timeout_ms);
     assert_eq!(
         Some(ProviderRetryPolicy::new(3, vec![429, 500, 503], 25).unwrap()),
-        channel_route.retry_policy
+        account_route.retry_policy
     );
     assert_eq!(
         ProviderAuthType::Header,
-        channel_route.auth_profile.auth_type
+        account_route.auth_profile.auth_type
     );
     assert_eq!(
         Some("x-api-key"),
-        channel_route.auth_profile.name.as_deref()
+        account_route.auth_profile.name.as_deref()
     );
-    assert_eq!(1, channel_route.account_group_bindings.len());
-    assert_eq!(10, channel_route.account_group_bindings[0].group_id);
-    assert_eq!(7, channel_route.account_group_bindings[0].priority);
-    assert_eq!(80, channel_route.account_group_bindings[0].weight);
+    assert_eq!(1, account_route.account_group_bindings.len());
+    assert_eq!(10, account_route.account_group_bindings[0].account_group_id);
+    assert_eq!(7, account_route.account_group_bindings[0].priority);
+    assert_eq!(80, account_route.account_group_bindings[0].weight);
     assert_eq!(
         vec!["openai.chat_completions".to_owned()],
-        channel_route.account_group_bindings[0].api_scope
+        account_route.account_group_bindings[0].api_scope
     );
     assert_eq!(
         vec!["llm".to_owned()],
-        channel_route.account_group_bindings[0].capabilities
+        account_route.account_group_bindings[0].capabilities
     );
 
     let api_key = GatewayApiKeyRow {
@@ -1144,8 +1150,11 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
     .into_domain();
     assert_eq!(10, api_key.default_account_group_id);
     assert_eq!(2, api_key.account_group_bindings.len());
-    assert_eq!(20, api_key.account_group_bindings[0].group_id);
-    assert_eq!("premium-group", api_key.account_group_bindings[0].group_code);
+    assert_eq!(20, api_key.account_group_bindings[0].account_group_id);
+    assert_eq!(
+        "premium-group",
+        api_key.account_group_bindings[0].account_group_code
+    );
     assert_eq!("route", api_key.account_group_bindings[0].binding_role);
     assert_eq!("auto", api_key.account_group_bindings[0].routing_strategy);
     assert_eq!(1, api_key.account_group_bindings[0].priority);
@@ -1523,7 +1532,10 @@ fn sql_catalog_snapshot_implements_pricing_catalog_from_database_rows() {
 
     let policies = snapshot.list_routing_policies();
     assert_eq!(1, policies.len());
-    assert_eq!(RoutingPolicyScope::UpstreamAccountGroup, policies[0].policy_scope);
+    assert_eq!(
+        RoutingPolicyScope::UpstreamAccountGroup,
+        policies[0].policy_scope
+    );
     assert_eq!(Some(10), policies[0].subject_id);
 
     let rules = snapshot.list_routing_rules(9101);
@@ -1794,7 +1806,10 @@ fn sql_catalog_snapshot_resolves_normalized_model_mapping_bindings() {
         )
         .expect("channel-group mapping must resolve from normalized binding rows");
 
-    assert_eq!(ModelMappingBindingType::UpstreamAccountGroup, resolved.binding_type);
+    assert_eq!(
+        ModelMappingBindingType::UpstreamAccountGroup,
+        resolved.binding_type
+    );
     assert_eq!("openai/gpt-4o-mini", resolved.effective_catalog_key());
     assert_eq!(
         Some("openrouter/group-fast"),
@@ -2022,12 +2037,15 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 credential_weight: 100,
                 account_code: Some("openrouter-main".to_owned()),
                 region_code: "global".to_owned(),
-                supplier_id: None,
-                supplier_code: None,
+                supplier_id: 4001,
                 endpoint_id: None,
                 endpoint_code: None,
+                endpoint_priority: 100,
+                endpoint_weight: 100,
+                endpoint_health_status: 1,
                 base_url: Some("http://provider-proxy.internal/openrouter".to_owned()),
                 secret_ref: Some("vault://providers/openrouter/account/main".to_owned()),
+                secret_ciphertext: None,
                 auth_type: Some("bearer".to_owned()),
                 auth_config_json: Some("{}".to_owned()),
                 timeout_ms: Some(30_000),
@@ -2036,7 +2054,7 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                         .to_owned(),
                 ),
                 account_group_bindings_json: "[]".to_owned(),
-                channel_health_status: 1,
+                account_health_status: 1,
                 credential_health_status: 1,
             },
             UpstreamAccountRouteRow {
@@ -2048,18 +2066,21 @@ fn priced_catalog_rows() -> PricingCatalogRows {
                 credential_weight: 100,
                 account_code: Some("azure-main".to_owned()),
                 region_code: "global".to_owned(),
-                supplier_id: None,
-                supplier_code: None,
+                supplier_id: 5001,
                 endpoint_id: None,
                 endpoint_code: None,
+                endpoint_priority: 100,
+                endpoint_weight: 100,
+                endpoint_health_status: 1,
                 base_url: Some("http://provider-proxy.internal/azure".to_owned()),
                 secret_ref: Some("vault://providers/azure/account/main".to_owned()),
+                secret_ciphertext: None,
                 auth_type: Some("azure_openai".to_owned()),
                 auth_config_json: Some("{}".to_owned()),
                 timeout_ms: None,
                 retry_policy_json: None,
                 account_group_bindings_json: "[]".to_owned(),
-                channel_health_status: 1,
+                account_health_status: 1,
                 credential_health_status: 1,
             },
         ],

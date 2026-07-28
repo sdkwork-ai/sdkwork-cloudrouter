@@ -1,8 +1,9 @@
 use crate::domain::{
-    AiModel, BillingMeter, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, GatewayAccessPolicy,
-    GatewayApiKey, GatewayRiskRule, ModelMappingBindingType, ModelMappingRule, ModelPrice,
-    ModelUpstreamRoute, ModelVendorDefinition, PriceSide, PricingPlan, UpstreamAccountRoute,
-    QuotaPolicy, ResolveModelMappingContext, RoutingPolicy, RoutingRule,
+    AiModel, BillingMeter, GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule,
+    ModelMappingBindingType, ModelMappingRule, ModelPrice, ModelUpstreamRoute,
+    ModelVendorDefinition, PriceSide, PricingPlan, QuotaPolicy, ResolveModelMappingContext,
+    RoutingPolicy, RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
+    UpstreamAccountRoute,
 };
 use crate::ports::PricingCatalog;
 
@@ -64,7 +65,7 @@ impl InMemoryPricingCatalog {
         self.upstream_account_groups.push(group);
     }
 
-    pub fn update_group_rate_multiplier(
+    pub fn update_group_sale_multiplier(
         &mut self,
         group_id: i64,
         multiplier: crate::domain::DecimalValue,
@@ -74,7 +75,7 @@ impl InMemoryPricingCatalog {
             .iter_mut()
             .find(|group| group.id == group_id)
         {
-            group.rate_multiplier = multiplier;
+            group.sale_multiplier = multiplier;
         }
     }
 
@@ -95,7 +96,10 @@ impl InMemoryPricingCatalog {
         self.gateway_risk_rules.push(rule);
     }
 
-    pub fn add_upstream_account_group_metric_snapshot(&mut self, snapshot: UpstreamAccountGroupMetricSnapshot) {
+    pub fn add_upstream_account_group_metric_snapshot(
+        &mut self,
+        snapshot: UpstreamAccountGroupMetricSnapshot,
+    ) {
         self.upstream_account_group_metric_snapshots.push(snapshot);
     }
 
@@ -111,6 +115,8 @@ fn same_upstream_account_route_identity(
     left.supplier_code == right.supplier_code
         && left.account_id == right.account_id
         && left.credential_id == right.credential_id
+        && left.endpoint_id == right.endpoint_id
+        && left.base_url == right.base_url
         && normalized_region_code(&left.region_code)
             .eq_ignore_ascii_case(&normalized_region_code(&right.region_code))
 }
@@ -281,7 +287,11 @@ impl PricingCatalog for InMemoryPricingCatalog {
         resolve_model_mapping_from_rules(&self.model_mappings, source_model, context)
     }
 
-    fn find_model_upstream_route(&self, model: &str, supplier_code: &str) -> Option<ModelUpstreamRoute> {
+    fn find_model_upstream_route(
+        &self,
+        model: &str,
+        supplier_code: &str,
+    ) -> Option<ModelUpstreamRoute> {
         self.provider_routes
             .iter()
             .find(|route| {
@@ -318,13 +328,12 @@ pub(crate) fn resolve_model_mapping_from_rules(
     context: &ResolveModelMappingContext,
 ) -> Option<ModelMappingRule> {
     [
-        ModelMappingBindingType::ProviderAccount,
-        ModelMappingBindingType::Channel,
+        ModelMappingBindingType::UpstreamAccount,
         ModelMappingBindingType::UpstreamAccountGroup,
+        ModelMappingBindingType::SupplierEndpoint,
+        ModelMappingBindingType::UpstreamSupplier,
         ModelMappingBindingType::Vendor,
         ModelMappingBindingType::Global,
-        ModelMappingBindingType::Site,
-        ModelMappingBindingType::SiteService,
     ]
     .into_iter()
     .find_map(|binding_type| {
@@ -352,13 +361,7 @@ fn model_mapping_rule_matches(
         return false;
     }
     match binding_type {
-        ModelMappingBindingType::ProviderAccount => binding_id_or_code_matches(
-            context.provider_account_id,
-            context.provider_account_code.as_deref(),
-            rule.binding_id,
-            rule.binding_code.as_deref(),
-        ),
-        ModelMappingBindingType::Channel => binding_id_or_code_matches(
+        ModelMappingBindingType::UpstreamAccount => binding_id_or_code_matches(
             context.account_id,
             context.account_code.as_deref(),
             rule.binding_id,
@@ -370,22 +373,22 @@ fn model_mapping_rule_matches(
             rule.binding_id,
             rule.binding_code.as_deref(),
         ),
-        ModelMappingBindingType::Vendor => {
-            binding_code_matches(context.vendor_code.as_deref(), rule.binding_code.as_deref())
-        }
-        ModelMappingBindingType::Global => true,
-        ModelMappingBindingType::Site => binding_id_or_code_matches(
+        ModelMappingBindingType::UpstreamSupplier => binding_id_or_code_matches(
             context.supplier_id,
             context.supplier_code.as_deref(),
             rule.binding_id,
             rule.binding_code.as_deref(),
         ),
-        ModelMappingBindingType::SiteService => binding_id_or_code_matches(
+        ModelMappingBindingType::SupplierEndpoint => binding_id_or_code_matches(
             context.endpoint_id,
             context.endpoint_code.as_deref(),
             rule.binding_id,
             rule.binding_code.as_deref(),
         ),
+        ModelMappingBindingType::Vendor => {
+            binding_code_matches(context.vendor_code.as_deref(), rule.binding_code.as_deref())
+        }
+        ModelMappingBindingType::Global => true,
     }
 }
 

@@ -2,8 +2,8 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::domain::{
-    UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, DomainResult, GatewayAccessPolicy, GatewayApiKey,
-    QuotaPolicy,
+    DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy, UpstreamAccountGroup,
+    UpstreamAccountGroupMetricSnapshot,
 };
 use crate::ports::PricingCatalog;
 
@@ -253,7 +253,11 @@ impl GatewayApiKeyManagementSnapshot {
     }
 }
 
-fn group_matches_subject(group: &UpstreamAccountGroup, tenant_id: i64, organization_id: i64) -> bool {
+fn group_matches_subject(
+    group: &UpstreamAccountGroup,
+    tenant_id: i64,
+    organization_id: i64,
+) -> bool {
     (group.tenant_id == 0 || group.tenant_id == tenant_id)
         && (group.organization_id == 0 || group.organization_id == organization_id)
 }
@@ -324,7 +328,8 @@ where
 {
     let mut snapshots = Vec::new();
     for group in groups {
-        if let Some(snapshot) = catalog.find_latest_upstream_account_group_metric_snapshot(group.id) {
+        if let Some(snapshot) = catalog.find_latest_upstream_account_group_metric_snapshot(group.id)
+        {
             snapshots.push(snapshot);
         }
     }

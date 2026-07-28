@@ -17,8 +17,8 @@ use crate::infrastructure::sql::rows::GatewayApiKeyRow;
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
     ApiKeyManagementReadFuture, AppUpstreamAccountGroupListPage, GatewayApiKeyListPage,
-    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListAppUpstreamAccountGroupsQuery,
-    ListGatewayApiKeysQuery,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
+    ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery,
 };
 
 pub struct PostgresPricingCatalogLoader {
@@ -78,12 +78,10 @@ impl PostgresPricingCatalogLoader {
         let rows = PricingCatalogRows {
             vendors: database_rows.vendors,
             models: database_rows.models,
-            provider_routes: row_mapping::load_provider_routes(
-                &mut *tx,
-                PricingCatalogSql::load_provider_routes(),
-                self.circuit_breaker_recovery_window_seconds,
-            )
-            .await?,
+            // Model routes are derived from the effective resource entitlements carried by
+            // upstream account routes. Keeping a second SQL authority here would allow the two
+            // snapshots to disagree and would reintroduce the retired channel tables.
+            provider_routes: Vec::new(),
             upstream_account_routes: row_mapping::load_upstream_account_routes(
                 &mut *tx,
                 PricingCatalogSql::load_upstream_account_routes(),
@@ -131,16 +129,16 @@ impl PostgresPricingCatalogLoader {
                 PricingCatalogSql::load_gateway_risk_rules(),
             )
             .await?,
-            upstream_account_group_metric_snapshots: row_mapping::load_upstream_account_group_metric_snapshots(
-                &mut *tx,
-                PricingCatalogSql::load_upstream_account_group_metric_snapshots(),
-            )
-            .await?,
+            upstream_account_group_metric_snapshots:
+                row_mapping::load_upstream_account_group_metric_snapshots(
+                    &mut *tx,
+                    PricingCatalogSql::load_upstream_account_group_metric_snapshots(),
+                )
+                .await?,
             prices: database_rows.prices,
         };
         tx.commit().await.map_err(PostgresCatalogLoadError::from)?;
         let managed_provider_secrets = managed_provider_secrets_from_rows(
-            &rows.provider_routes,
             &rows.upstream_account_routes,
             self.api_key_secret_codec.as_deref(),
         )?;
@@ -205,28 +203,19 @@ fn default_circuit_breaker_recovery_window_seconds() -> i64 {
 }
 
 fn managed_provider_secrets_from_rows(
-    provider_routes: &[crate::infrastructure::sql::rows::ModelUpstreamRouteRow],
     upstream_account_routes: &[crate::infrastructure::sql::rows::UpstreamAccountRouteRow],
     api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
 ) -> DomainResult<BTreeMap<String, String>> {
     let mut secrets = BTreeMap::new();
-    for (secret_ref, auth_config_json) in provider_routes
-        .iter()
-        .filter_map(|row| {
-            row.secret_ref
-                .as_deref()
-                .zip(row.auth_config_json.as_deref())
-        })
-        .chain(upstream_account_routes.iter().filter_map(|row| {
-            row.secret_ref
-                .as_deref()
-                .zip(row.auth_config_json.as_deref())
-        }))
-    {
+    for (secret_ref, ciphertext) in upstream_account_routes.iter().filter_map(|row| {
+        row.secret_ref
+            .as_deref()
+            .zip(row.secret_ciphertext.as_deref())
+    }) {
         collect_managed_provider_secret(
             &mut secrets,
             secret_ref,
-            auth_config_json,
+            ciphertext,
             api_key_secret_codec,
         )?;
     }
@@ -236,41 +225,19 @@ fn managed_provider_secrets_from_rows(
 fn collect_managed_provider_secret(
     secrets: &mut BTreeMap<String, String>,
     secret_ref: &str,
-    auth_config_json: &str,
+    ciphertext: &str,
     api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
 ) -> DomainResult<()> {
-    let Some(ciphertext) = managed_provider_secret_ciphertext(auth_config_json)? else {
-        return Ok(());
-    };
     let Some(api_key_secret_codec) = api_key_secret_codec else {
         return Err(DomainError::new(
-            "managed provider account secret requires an encrypted secret codec",
+            "upstream account credential requires an encrypted secret codec",
         ));
     };
     secrets.insert(
         secret_ref.trim().to_owned(),
-        api_key_secret_codec.decode_secret(&ciphertext)?,
+        api_key_secret_codec.decode_secret(ciphertext)?,
     );
     Ok(())
-}
-
-fn managed_provider_secret_ciphertext(auth_config_json: &str) -> DomainResult<Option<String>> {
-    let auth_config_json = auth_config_json.trim();
-    if auth_config_json.is_empty() {
-        return Ok(None);
-    }
-    let value: serde_json::Value = serde_json::from_str(auth_config_json).map_err(|error| {
-        DomainError::new(format!(
-            "integration_provider_account.auth_config must be valid JSON: {error}"
-        ))
-    })?;
-    Ok(value
-        .get("secretMaterialCiphertext")
-        .or_else(|| value.get("providerSecretCiphertext"))
-        .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_owned))
 }
 
 impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
@@ -397,4 +364,53 @@ fn decode_api_key_row_copyable_key(
     };
     let copyable_key = api_key_secret_codec.decode_secret(copyable_key_ciphertext)?;
     Ok(row.with_copyable_key(Some(copyable_key)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::managed_provider_secrets_from_rows;
+    use crate::application::ApiKeySecretCodec;
+    use crate::infrastructure::crypto::RingAeadApiKeySecretCodec;
+    use crate::infrastructure::sql::rows::UpstreamAccountRouteRow;
+
+    #[test]
+    fn managed_upstream_credentials_are_decrypted_only_at_the_loader_boundary() {
+        let codec = RingAeadApiKeySecretCodec::new("test-upstream-credential-pepper").unwrap();
+        let ciphertext = codec.encode_secret("sk-sensitive-upstream-secret").unwrap();
+        let rows = vec![UpstreamAccountRouteRow {
+            supplier_code: "openai".to_owned(),
+            account_id: 11,
+            credential_id: Some(12),
+            credential_rotation: "default".to_owned(),
+            credential_priority: 10,
+            credential_weight: 100,
+            account_code: Some("primary".to_owned()),
+            region_code: "global".to_owned(),
+            supplier_id: 13,
+            endpoint_id: Some(14),
+            endpoint_code: Some("global".to_owned()),
+            endpoint_priority: 10,
+            endpoint_weight: 100,
+            endpoint_health_status: 1,
+            base_url: Some("https://api.openai.com/v1".to_owned()),
+            secret_ref: Some("managed://upstream-account-credential/12".to_owned()),
+            secret_ciphertext: Some(ciphertext.clone()),
+            auth_type: Some("api_key".to_owned()),
+            auth_config_json: Some("{}".to_owned()),
+            timeout_ms: Some(30_000),
+            retry_policy_json: None,
+            account_group_bindings_json: "[]".to_owned(),
+            account_health_status: 1,
+            credential_health_status: 1,
+        }];
+
+        let secrets = managed_provider_secrets_from_rows(&rows, Some(&codec)).unwrap();
+
+        assert_eq!(
+            Some(&"sk-sensitive-upstream-secret".to_owned()),
+            secrets.get("managed://upstream-account-credential/12")
+        );
+        assert!(!secrets.contains_key(&ciphertext));
+        assert!(managed_provider_secrets_from_rows(&rows, None).is_err());
+    }
 }

@@ -115,7 +115,10 @@ async fn sqlite_loader_builds_pricing_catalog_snapshot_from_schema_tables() {
     assert_eq!("sk-test********ABCD", api_key.key_display_masked);
     assert_eq!(1, api_key.account_group_bindings.len());
     assert_eq!(10, api_key.account_group_bindings[0].group_id);
-    assert_eq!("standard-group", api_key.account_group_bindings[0].group_code);
+    assert_eq!(
+        "standard-group",
+        api_key.account_group_bindings[0].group_code
+    );
     let policy = snapshot
         .find_access_policy(api_key.policy_id.unwrap())
         .unwrap();
@@ -214,13 +217,19 @@ async fn sqlite_loader_loads_explicit_api_key_upstream_account_group_bindings() 
     assert_eq!(10, api_key.default_account_group_id);
     assert_eq!(2, api_key.account_group_bindings.len());
     assert_eq!(20, api_key.account_group_bindings[0].group_id);
-    assert_eq!("premium-group", api_key.account_group_bindings[0].group_code);
+    assert_eq!(
+        "premium-group",
+        api_key.account_group_bindings[0].group_code
+    );
     assert_eq!("route", api_key.account_group_bindings[0].binding_role);
     assert_eq!("auto", api_key.account_group_bindings[0].routing_strategy);
     assert_eq!(1, api_key.account_group_bindings[0].priority);
     assert_eq!(100, api_key.account_group_bindings[0].weight);
     assert_eq!(10, api_key.account_group_bindings[1].group_id);
-    assert_eq!("standard-group", api_key.account_group_bindings[1].group_code);
+    assert_eq!(
+        "standard-group",
+        api_key.account_group_bindings[1].group_code
+    );
 }
 
 #[tokio::test]
@@ -375,7 +384,10 @@ async fn sqlite_loader_does_not_match_distinct_model_resources_only_by_shared_ap
         .expect("channel route row should still load for a configured group member");
 
     assert_eq!(1, channel_route.account_group_bindings.len());
-    assert_eq!(vec!["__deny__"], channel_route.account_group_bindings[0].api_scope);
+    assert_eq!(
+        vec!["__deny__"],
+        channel_route.account_group_bindings[0].api_scope
+    );
     assert_eq!(
         vec!["__deny__"],
         channel_route.account_group_bindings[0].capabilities
@@ -711,7 +723,8 @@ async fn sqlite_loader_redacts_copyable_key_material_when_secret_codec_is_absent
 }
 
 #[tokio::test]
-async fn sqlite_loader_defaults_empty_upstream_account_group_pricing_plan_for_runtime_billing_subject() {
+async fn sqlite_loader_defaults_empty_upstream_account_group_pricing_plan_for_runtime_billing_subject(
+) {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect("sqlite::memory:")
@@ -1166,7 +1179,10 @@ async fn sqlite_loader_requires_channel_resource_binding_for_model_routes() {
         .find(|route| route.supplier_code == "openrouter")
         .expect("group membership may still load an account-pool row for diagnostics");
     assert_eq!(1, channel_route.account_group_bindings.len());
-    assert_eq!(vec!["__deny__"], channel_route.account_group_bindings[0].api_scope);
+    assert_eq!(
+        vec!["__deny__"],
+        channel_route.account_group_bindings[0].api_scope
+    );
     assert_eq!(
         vec!["__deny__"],
         channel_route.account_group_bindings[0].capabilities
