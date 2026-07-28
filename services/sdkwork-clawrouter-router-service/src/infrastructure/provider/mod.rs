@@ -15,10 +15,9 @@ pub use openai_compatible_relay::{
     OpenAiCompatibleEmbeddingsRelay, OpenAiCompatibleResponsesRelay, ProviderRelayHttpPoolConfig,
     SecretRefOpenAiCompatibleChatCompletionRelay,
     SecretRefOpenAiCompatibleChatCompletionStreamRelay, SecretRefOpenAiCompatibleEmbeddingsRelay,
-    SecretRefOpenAiCompatibleProviderHealthProbe, SecretRefOpenAiCompatibleResponsesRelay,
-    UpstreamProviderEndpoint, DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS,
-    DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
-    DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
+    SecretRefOpenAiCompatibleResponsesRelay, UpstreamProviderEndpoint,
+    UpstreamProviderVerification, DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+    DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS, DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
 };
 pub use provider_secret_map_resolver::{
     ProviderSecretMapResolver, RefreshableProviderSecretMapResolver,

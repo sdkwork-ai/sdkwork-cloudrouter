@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { OpenAiEmbeddingList, OpenAiEmbeddingsRequest } from '../types';
 
@@ -13,8 +13,8 @@ export class EmbeddingsApi {
 
 
 /** Create embeddings */
-  async create(body: OpenAiEmbeddingsRequest): Promise<OpenAiEmbeddingList> {
-    return this.client.post<OpenAiEmbeddingList>(aiApiPath(`/embeddings`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiEmbeddingsRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiEmbeddingList> {
+    return this.client.request<OpenAiEmbeddingList>(aiApiPath(`/embeddings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

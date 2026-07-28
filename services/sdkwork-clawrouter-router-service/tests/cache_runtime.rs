@@ -7,8 +7,8 @@ use sdkwork_clawrouter_router_service::application::{
     CacheInstanceSpec, CacheNamespacePolicy, CacheOperationOutcome, CacheProviderKind,
     CacheRuntime, CacheRuntimeTarget, LocalCacheBackend, RuntimeCacheManager,
     DEFAULT_REDIS_CONNECTION_PROFILE_NAME, ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
-    ROUTING_DISABLED_CHANNEL_CACHE_NAMESPACE, ROUTING_IDEMPOTENCY_CACHE_NAMESPACE,
-    ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE, ROUTING_SNAPSHOT_CACHE_NAMESPACE,
+    ROUTING_DISABLED_UPSTREAM_ACCOUNT_CACHE_NAMESPACE, ROUTING_IDEMPOTENCY_CACHE_NAMESPACE,
+    ROUTING_SNAPSHOT_CACHE_NAMESPACE, ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
 };
 use sdkwork_clawrouter_router_service::domain::{DomainError, DomainResult};
 
@@ -108,10 +108,10 @@ async fn default_cache_runtime_declares_ai_routing_namespaces_for_multilevel_cac
             .collect::<Vec<_>>();
         for namespace in [
             ROUTING_SNAPSHOT_CACHE_NAMESPACE,
-            ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE,
+            ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
             ROUTING_IDEMPOTENCY_CACHE_NAMESPACE,
             ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
-            ROUTING_DISABLED_CHANNEL_CACHE_NAMESPACE,
+            ROUTING_DISABLED_UPSTREAM_ACCOUNT_CACHE_NAMESPACE,
         ] {
             assert!(
                 namespaces.contains(&namespace),
@@ -122,7 +122,7 @@ async fn default_cache_runtime_declares_ai_routing_namespaces_for_multilevel_cac
         let sticky_policy = runtime
             .namespace_policies
             .iter()
-            .find(|policy| policy.namespace == ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE)
+            .find(|policy| policy.namespace == ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE)
             .unwrap();
         assert_eq!("coordination_critical", sticky_policy.consistency);
         assert_eq!("origin_fallback", sticky_policy.failure_mode);

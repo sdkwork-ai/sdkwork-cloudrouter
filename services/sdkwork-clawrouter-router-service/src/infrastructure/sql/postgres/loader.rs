@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 
 use crate::application::ApiKeySecretCodec;
 use crate::domain::{
@@ -16,9 +16,8 @@ use crate::infrastructure::sql::routing_config_change::AI_ROUTING_CONFIG_SCOPE;
 use crate::infrastructure::sql::rows::GatewayApiKeyRow;
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
-    ApiKeyManagementReadFuture, AppUpstreamAccountGroupListPage, GatewayApiKeyListPage,
-    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
-    ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery,
+    ApiKeyManagementReadFuture, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
+    GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
 };
 
 pub struct PostgresPricingCatalogLoader {
@@ -299,42 +298,6 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
             })
         })
     }
-
-    fn list_app_upstream_account_groups<'a>(
-        &'a self,
-        query: ListAppUpstreamAccountGroupsQuery,
-    ) -> ApiKeyManagementReadFuture<'a, AppUpstreamAccountGroupListPage> {
-        Box::pin(async move {
-            let search = query
-                .q
-                .as_ref()
-                .map(|value| format!("%{}%", value.to_lowercase()));
-            let rows = row_mapping::load_paginated_upstream_account_groups(
-                &self.pool,
-                query.tenant_id,
-                query.organization_id,
-                search.as_deref(),
-                query.page_size,
-                query.offset,
-            )
-            .await
-            .map_err(sqlx_load_error)?;
-            let total = rows
-                .first()
-                .and_then(|row| row.try_get::<i64, _>("total").ok())
-                .unwrap_or(0);
-            let items = rows
-                .into_iter()
-                .map(|row| row_mapping::upstream_account_group_from_row(&row))
-                .collect::<DomainResult<Vec<_>>>()?;
-            Ok(AppUpstreamAccountGroupListPage {
-                items,
-                total,
-                page_no: query.page_no,
-                page_size: query.page_size,
-            })
-        })
-    }
 }
 
 fn postgres_load_error(error: PostgresCatalogLoadError) -> DomainError {
@@ -384,6 +347,8 @@ mod tests {
             credential_rotation: "default".to_owned(),
             credential_priority: 10,
             credential_weight: 100,
+            contract_cost_multiplier: "1".to_owned(),
+            last_latency_ms: None,
             account_code: Some("primary".to_owned()),
             region_code: "global".to_owned(),
             supplier_id: 13,
@@ -396,7 +361,8 @@ mod tests {
             secret_ref: Some("managed://upstream-account-credential/12".to_owned()),
             secret_ciphertext: Some(ciphertext.clone()),
             auth_type: Some("api_key".to_owned()),
-            auth_config_json: Some("{}".to_owned()),
+            runtime_auth_config_json: r#"{"credentialTransport":"bearer","defaultHeaders":{}}"#
+                .to_owned(),
             timeout_ms: Some(30_000),
             retry_policy_json: None,
             account_group_bindings_json: "[]".to_owned(),

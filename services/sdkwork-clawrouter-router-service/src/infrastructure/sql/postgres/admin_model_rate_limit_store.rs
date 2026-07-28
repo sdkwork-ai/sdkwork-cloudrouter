@@ -16,7 +16,7 @@ const MODEL_RATE_LIMIT_TARGET_TYPE: i32 = 45;
 const CONFIG_SCOPE_ROUTER: i32 = 10;
 const CONFIG_TYPE_MODEL_RATE_LIMIT: i32 = MODEL_RATE_LIMIT_TARGET_TYPE;
 const MODEL_RATE_LIMIT_SUBJECT_TYPE: i32 = 4;
-const CHANNEL_GROUP_SCOPE_TYPE: i32 = 3;
+const ACCOUNT_GROUP_SCOPE_TYPE: i32 = 3;
 const MINUTE_PERIOD: i32 = 2;
 const REQUEST_QUOTA_UNIT: i32 = 1;
 
@@ -68,7 +68,7 @@ impl AdminModelRateLimitStore for PostgresAdminModelRateLimitStore {
                     "action": "create_model_rate_limit",
                     "modelRateLimitId": policy_id,
                     "groupId": group.id,
-                    "channelGroup": group_label(&group),
+                    "accountGroup": group_label(&group),
                     "model": &command.model,
                     "rpm": command.rpm,
                     "tpm": command.tpm
@@ -89,7 +89,7 @@ impl AdminModelRateLimitStore for PostgresAdminModelRateLimitStore {
                     "action": "create_model_rate_limit",
                     "modelRateLimitId": policy_id,
                     "groupId": group.id,
-                    "channelGroup": group_label(&group),
+                    "accountGroup": group_label(&group),
                     "model": &command.model,
                     "rpm": command.rpm,
                     "tpm": command.tpm
@@ -209,11 +209,11 @@ async fn find_upstream_account_group(
     )
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
-    .bind(&command.upstream_account_group)
-    .bind(&command.upstream_account_group)
+    .bind(&command.account_group)
+    .bind(&command.account_group)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
-    .bind(&command.upstream_account_group)
+    .bind(&command.account_group)
     .fetch_optional(&mut **tx)
     .await
     .map_err(|error| store_error("failed to find channel group for model rate limit", error))?;
@@ -303,7 +303,7 @@ async fn insert_quota_policy(
     .bind(subject_id)
     .bind(subject_ref_hash)
     .bind(subject_ref_masked(command, group))
-    .bind(CHANNEL_GROUP_SCOPE_TYPE)
+    .bind(ACCOUNT_GROUP_SCOPE_TYPE)
     .bind(group.id)
     .bind(group.id)
     .bind(&command.model)
@@ -369,7 +369,7 @@ async fn update_quota_policy(
     .bind(subject_id)
     .bind(subject_ref_hash)
     .bind(subject_ref_masked(command, group))
-    .bind(CHANNEL_GROUP_SCOPE_TYPE)
+    .bind(ACCOUNT_GROUP_SCOPE_TYPE)
     .bind(group.id)
     .bind(group.id)
     .bind(&command.model)
@@ -503,8 +503,8 @@ fn model_rate_limit_select_sql(predicate: &str) -> String {
             q.tenant_id,
             q.organization_id,
             COALESCE(q.model, '') AS model,
-            COALESCE(NULLIF(g.group_code, ''), NULLIF(g.group_name, ''), q.subject_ref_masked, '') AS upstream_account_group,
-            COALESCE(g.group_name, '') AS upstream_account_group_name,
+            COALESCE(NULLIF(g.group_code, ''), NULLIF(g.group_name, ''), q.subject_ref_masked, '') AS account_group,
+            COALESCE(g.group_name, '') AS account_group_name,
             q.group_id,
             q.requests_per_minute AS rpm,
             q.tokens_per_minute AS tpm,
@@ -527,10 +527,10 @@ fn item_from_row(row: sqlx::postgres::PgRow) -> DomainResult<AdminModelRateLimit
         tenant_id: row.try_get("tenant_id").map_err(row_error)?,
         organization_id: row.try_get("organization_id").map_err(row_error)?,
         model: row.try_get("model").map_err(row_error)?,
-        upstream_account_group: row.try_get("upstream_account_group").map_err(row_error)?,
+        account_group: row.try_get("account_group").map_err(row_error)?,
         account_group_id: required_integer_cell(&row, "group_id")?,
-        upstream_account_group_name: row
-            .try_get("upstream_account_group_name")
+        account_group_name: row
+            .try_get("account_group_name")
             .map_err(row_error)?,
         rpm: required_integer_cell(&row, "rpm")?,
         tpm: required_integer_cell(&row, "tpm")?,
@@ -558,7 +558,7 @@ fn policy_metadata(command: &CreateAdminModelRateLimitCommand, group: &GroupIden
         "managedBy": "admin_model_rate_limit",
         "policyCode": &command.policy_code,
         "groupId": group.id,
-        "channelGroup": group_label(group),
+        "accountGroup": group_label(group),
         "model": &command.model,
         "rpm": command.rpm,
         "tpm": command.tpm

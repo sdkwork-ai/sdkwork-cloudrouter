@@ -35,11 +35,11 @@ routes are safe until that ownership and migration gap is closed.
 
 This module is in **initialization state** for greenfield deployments:
 
-1. **Baseline** — `database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql` contains the full DDL snapshot.
-2. **Migrations** — `database/migrations/{engine}/` contains paired incremental changes after the folded baseline. Migration `0002_ai_request_trace_gateway_attribution` adds immutable gateway attribution, normalizes `ai_request_trace.error_type`, and adds retention/operations indexes.
-3. **Drift** — run `pnpm db:drift:check` before release.
+1. **Baseline** - `database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql` contains the complete pre-release DDL snapshot.
+2. **Migrations** - `database/migrations/{engine}/` is intentionally empty until the first post-baseline schema change. Pre-release provider, site, channel, and channel-group upgrade scripts have been folded into the canonical baseline and removed.
+3. **Drift** - run `pnpm db:drift:check` before release.
 
-Migration `0002` is conditionally reversible: rollback refuses to discard non-empty gateway attribution snapshots. Production recovery should prefer a reviewed forward fix after data has been written.
+Fresh installations must start from the generated PostgreSQL baseline. Historical pre-release schemas are not supported installation or rollback targets.
 
 ## Commands
 

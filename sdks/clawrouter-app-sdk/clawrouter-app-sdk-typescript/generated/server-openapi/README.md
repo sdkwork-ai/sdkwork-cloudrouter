@@ -27,7 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.ai.channelGroups.list();
+const result = await client.ai.gateway.traces.list();
 ```
 
 ## Authentication
@@ -67,8 +67,8 @@ const client = new SdkworkAppClient({
 ### ai
 
 ```typescript
-// List groups
-const result = await client.ai.channelGroups.list();
+// List traces
+const result = await client.ai.gateway.traces.list();
 ```
 
 ### chat
@@ -119,7 +119,7 @@ const result = await client.system.site.runtime.list();
 import { SdkworkAppClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/clawrouter-app-sdk';
 
 try {
-  const result = await client.ai.channelGroups.list();
+  const result = await client.ai.gateway.traces.list();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

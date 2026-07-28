@@ -24,12 +24,11 @@ use crate::domain::{
 use crate::ports::{
     CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
-    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot,
-    ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery, PricingCatalog,
-    UpdateGatewayApiKeyCommand,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
+    PricingCatalog, UpdateGatewayApiKeyCommand,
 };
 
-const DEFAULT_CHANNEL_GROUP: &str = "default";
+const DEFAULT_ACCOUNT_GROUP: &str = "default";
 
 #[derive(Debug, Default, Deserialize)]
 struct AppApiKeyListQueryRequest {
@@ -37,7 +36,7 @@ struct AppApiKeyListQueryRequest {
     page_size: Option<i64>,
     q: Option<String>,
 }
-const DEFAULT_CHANNEL_GROUP_NAME: &str = "Default";
+const DEFAULT_ACCOUNT_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
 const UNRESTRICTED_MODALITIES: [&str; 5] = ["text", "image", "video", "audio", "music"];
 const HASH_ALG_HMAC_SHA256: &str = "HMAC_SHA256";
@@ -83,12 +82,6 @@ struct AppApiKeyListResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct AppUpstreamAccountGroupListResponse {
-    items: Vec<AppUpstreamAccountGroupResponse>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct AppApiKeyCreateResponse {
     item: AppApiKeyItemResponse,
     raw_key: String,
@@ -113,10 +106,8 @@ struct AppApiKeyItemResponse {
     id: String,
     name: String,
     masked_key: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    copyable_key: Option<String>,
-    upstream_account_group: String,
-    upstream_account_group_name: String,
+    account_group: String,
+    account_group_name: String,
     rate: Option<String>,
     quota: String,
     used_quota: String,
@@ -141,7 +132,7 @@ struct AppUpstreamAccountGroupResponse {
 #[serde(rename_all = "camelCase")]
 struct AppApiKeyCreateRequest {
     name: Option<String>,
-    upstream_account_group: Option<String>,
+    account_group: Option<String>,
     account_group_id: Option<i64>,
     quota: Option<String>,
     is_unlimited_quota: Option<bool>,
@@ -155,7 +146,7 @@ struct AppApiKeyCreateRequest {
 #[serde(rename_all = "camelCase")]
 struct AppApiKeyUpdateRequest {
     name: Option<String>,
-    upstream_account_group: Option<String>,
+    account_group: Option<String>,
     account_group_id: Option<i64>,
     quota: Option<String>,
     is_unlimited_quota: Option<bool>,
@@ -171,10 +162,6 @@ where
 {
     Router::new()
         .route("/app/v3/api/iam/api_keys", get(fetch_catalog_keys::<C>))
-        .route(
-            "/app/v3/api/ai/upstream_account_groups",
-            get(fetch_catalog_key_groups::<C>),
-        )
         .with_state(ReadOnlyAppApiKeyState { catalog })
 }
 
@@ -186,10 +173,6 @@ pub fn app_api_key_router_with_read_store_and_command_store(
 ) -> Router {
     Router::new()
         .route("/app/v3/api/iam/api_keys", get(fetch_keys).post(create_key))
-        .route(
-            "/app/v3/api/ai/upstream_account_groups",
-            get(fetch_key_groups),
-        )
         .route(
             "/app/v3/api/iam/api_keys/{api_key_id}",
             patch(update_key).delete(delete_key),
@@ -208,16 +191,6 @@ where
 {
     let snapshot = GatewayApiKeyManagementSnapshot::from_pricing_catalog(state.catalog.as_ref());
     Json(success_envelope(public_catalog_list_response(&snapshot)))
-}
-
-async fn fetch_catalog_key_groups<C>(
-    State(state): State<ReadOnlyAppApiKeyState<C>>,
-) -> impl IntoResponse
-where
-    C: PricingCatalog + Send + Sync + 'static,
-{
-    let snapshot = GatewayApiKeyManagementSnapshot::from_pricing_catalog(state.catalog.as_ref());
-    Json(success_envelope(group_list_response(&snapshot)))
 }
 
 async fn fetch_keys(
@@ -267,35 +240,6 @@ async fn fetch_keys(
     }
 }
 
-async fn fetch_key_groups(
-    State(state): State<AppApiKeyState>,
-    RequiredAppSqlScopedSubject(scope): RequiredAppSqlScopedSubject,
-    Query(request): Query<AppApiKeyListQueryRequest>,
-) -> Response {
-    let list_query = match build_upstream_account_group_list_query(scope, request) {
-        Ok(query) => query,
-        Err(message) => {
-            return problem_from_wire_code("4001", message).into_response();
-        }
-    };
-    match state
-        .read_store
-        .list_app_upstream_account_groups(list_query)
-        .await
-    {
-        Ok(page) => json_success_list_response(
-            None,
-            page.items.into_iter().map(to_group_response).collect(),
-            offset_page_info(page.page_no, page.page_size, page.total),
-        ),
-        Err(error) => problem_from_wire_code(
-            "5000",
-            format!("channel group read model is unavailable: {error}"),
-        )
-        .into_response(),
-    }
-}
-
 fn build_api_key_list_query(
     scope: SqlScopedSubject,
     request: AppApiKeyListQueryRequest,
@@ -305,21 +249,6 @@ fn build_api_key_list_query(
         tenant_id: scope.tenant_id,
         organization_id: scope.organization_id,
         user_id: scope.user_id,
-        page_no: pagination.page_no,
-        page_size: pagination.page_size,
-        offset: pagination.offset,
-        q: normalize_list_search_query(request.q, "q")?,
-    })
-}
-
-fn build_upstream_account_group_list_query(
-    scope: SqlScopedSubject,
-    request: AppApiKeyListQueryRequest,
-) -> Result<ListAppUpstreamAccountGroupsQuery, String> {
-    let pagination = parse_offset_list_query(request.page, request.page_size)?;
-    Ok(ListAppUpstreamAccountGroupsQuery {
-        tenant_id: scope.tenant_id,
-        organization_id: scope.organization_id,
         page_no: pagination.page_no,
         page_size: pagination.page_size,
         offset: pagination.offset,
@@ -647,27 +576,10 @@ fn list_response(snapshot: &GatewayApiKeyManagementSnapshot) -> AppApiKeyListRes
     AppApiKeyListResponse { items, groups }
 }
 
-fn group_list_response(
-    snapshot: &GatewayApiKeyManagementSnapshot,
-) -> AppUpstreamAccountGroupListResponse {
-    let items = snapshot
-        .upstream_account_groups
-        .clone()
-        .into_iter()
-        .map(to_group_response)
-        .collect();
-
-    AppUpstreamAccountGroupListResponse { items }
-}
-
 fn public_catalog_list_response(
     snapshot: &GatewayApiKeyManagementSnapshot,
 ) -> AppApiKeyListResponse {
-    let mut response = list_response(snapshot);
-    for item in &mut response.items {
-        item.copyable_key = None;
-    }
-    response
+    list_response(snapshot)
 }
 
 fn to_item_response(
@@ -704,9 +616,8 @@ fn to_item_response_with_used_quota(
         id: api_key.id.to_string(),
         name: api_key.display_name(),
         masked_key,
-        copyable_key: api_key.copyable_key.clone(),
-        upstream_account_group: group_code(group.as_ref()),
-        upstream_account_group_name: group_name(group.as_ref()),
+        account_group: group_code(group.as_ref()),
+        account_group_name: group_name(group.as_ref()),
         rate: group_rate(group.as_ref()),
         quota: quota_limit(quota_policy.as_ref(), metric_snapshot.as_ref()),
         used_quota: used_quota_override.unwrap_or_else(|| used_quota(metric_snapshot.as_ref())),
@@ -807,12 +718,12 @@ async fn resolve_group(
                 subject.organization_id,
             )
             .ok_or_else(|| {
-                AppApiKeyCreateError::BadRequest("channel group is not available".to_owned())
+                AppApiKeyCreateError::BadRequest("account group is not available".to_owned())
             });
     }
 
     if let Some(group_code) = request
-        .upstream_account_group
+        .account_group
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
@@ -824,11 +735,11 @@ async fn resolve_group(
         ) {
             return Ok(group);
         }
-        if group_code == DEFAULT_CHANNEL_GROUP {
+        if group_code == DEFAULT_ACCOUNT_GROUP {
             return ensure_default_group(snapshot, subject, state).await;
         }
         return Err(AppApiKeyCreateError::BadRequest(
-            "channel group is not available".to_owned(),
+            "account group is not available".to_owned(),
         ));
     }
 
@@ -854,12 +765,12 @@ fn resolve_update_group(
             )
             .map(Some)
             .ok_or_else(|| {
-                AppApiKeyCreateError::BadRequest("channel group is not available".to_owned())
+                AppApiKeyCreateError::BadRequest("account group is not available".to_owned())
             });
     }
 
     let Some(group_code) = request
-        .upstream_account_group
+        .account_group
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
@@ -875,7 +786,7 @@ fn resolve_update_group(
         )
         .map(Some)
         .ok_or_else(|| {
-            AppApiKeyCreateError::BadRequest("channel group is not available".to_owned())
+            AppApiKeyCreateError::BadRequest("account group is not available".to_owned())
         })
 }
 
@@ -895,8 +806,8 @@ async fn ensure_default_group(
                 .map_err(system_error)?,
             tenant_id: subject.tenant_id,
             organization_id: subject.organization_id,
-            code: DEFAULT_CHANNEL_GROUP.to_owned(),
-            name: DEFAULT_CHANNEL_GROUP_NAME.to_owned(),
+            code: DEFAULT_ACCOUNT_GROUP.to_owned(),
+            name: DEFAULT_ACCOUNT_GROUP_NAME.to_owned(),
             pricing_plan_code,
             rate_multiplier: DecimalValue::ONE,
             official_price_multiplier: DecimalValue::ONE,
@@ -904,9 +815,9 @@ async fn ensure_default_group(
         })
         .await
         .map_err(store_error)?;
-    if !group.code.eq(DEFAULT_CHANNEL_GROUP) {
+    if !group.code.eq(DEFAULT_ACCOUNT_GROUP) {
         return Err(AppApiKeyCreateError::System(
-            "default channel group command returned unexpected group".to_owned(),
+            "default account group command returned unexpected group".to_owned(),
         ));
     }
     Ok(group)
@@ -1280,9 +1191,6 @@ fn merge_updated_api_key_defaults(
     }
     if updated.key_hash.is_empty() {
         updated.key_hash = existing.key_hash;
-    }
-    if updated.copyable_key.is_none() {
-        updated.copyable_key = existing.copyable_key;
     }
     if updated.created_at.is_empty() {
         updated.created_at = existing.created_at;

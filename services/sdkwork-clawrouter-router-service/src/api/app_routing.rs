@@ -29,13 +29,13 @@ struct AppRoutingListQueryRequest {
 struct EmptyAppRoutingReadStore;
 
 impl AppRoutingReadStore for EmptyAppRoutingReadStore {
-    fn load_routing_channels<'a>(
+    fn load_routing_account_groups<'a>(
         &'a self,
         _subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
-    ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingChannelListPage> {
+    ) -> crate::ports::AppRoutingReadFuture<'a, crate::ports::AppRoutingAccountGroupListPage> {
         Box::pin(async move {
-            Ok(crate::ports::AppRoutingChannelListPage {
+            Ok(crate::ports::AppRoutingAccountGroupListPage {
                 items: Vec::new(),
                 total: 0,
                 page_no: query.page_no,
@@ -98,8 +98,8 @@ fn app_routing_router_with_state(
 ) -> Router {
     Router::new()
         .route(
-            "/app/v3/api/ai/routing/channels",
-            get(fetch_routing_channels),
+            "/app/v3/api/ai/routing/account_groups",
+            get(fetch_routing_account_groups),
         )
         .route(
             "/app/v3/api/ai/routing/api_keys",
@@ -116,7 +116,7 @@ fn app_routing_router_with_state(
         })
 }
 
-async fn fetch_routing_channels(
+async fn fetch_routing_account_groups(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
     Query(request): Query<AppRoutingListQueryRequest>,
@@ -132,7 +132,11 @@ async fn fetch_routing_channels(
         Err(message) => return bad_request(message),
     };
 
-    match state.read_store.load_routing_channels(subject, query).await {
+    match state
+        .read_store
+        .load_routing_account_groups(subject, query)
+        .await
+    {
         Ok(page) => json_success_list_response(
             None,
             page.items,

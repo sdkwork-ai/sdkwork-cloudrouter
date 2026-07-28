@@ -696,7 +696,7 @@ tables:
           - id
         unique: false
         where: null
-      - name: idx_ai_model_mapping_rule_binding_channel_group_lookup
+      - name: idx_ai_model_mapping_rule_binding_account_group_lookup
         columns:
           - tenant_id
           - organization_id
@@ -2311,236 +2311,6 @@ tables:
     projection_policy: null
     lifecycle: null
     semantic_contracts: null
-  - name: ai_provider_object_route
-    domain: ai
-    profile: runtime_binding
-    compliance_level: L2
-    write_owner: ai-routing-service
-    system_of_record: true
-    tenant_scope: tenant_with_global_fallback
-    soft_delete_policy: active_unique
-    columns:
-      id:
-        type: int64
-        required: true
-        postgres_type: BIGINT
-        constraints: NOT NULL PRIMARY KEY
-      uuid:
-        type: string(64)
-        required: true
-        postgres_type: VARCHAR(64)
-        constraints: NOT NULL
-      tenant_id:
-        type: int64
-        required: true
-        postgres_type: BIGINT
-        constraints: NOT NULL DEFAULT 0
-      organization_id:
-        type: int64
-        required: true
-        postgres_type: BIGINT
-        constraints: NOT NULL DEFAULT 0
-      data_scope:
-        type: int32
-        required: true
-        postgres_type: INTEGER
-        constraints: NOT NULL DEFAULT 0
-      status:
-        type: int32
-        required: true
-        postgres_type: INTEGER
-        constraints: NOT NULL DEFAULT 1
-      created_at:
-        type: instant
-        required: true
-        postgres_type: TIMESTAMPTZ
-        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
-      updated_at:
-        type: instant
-        required: true
-        postgres_type: TIMESTAMPTZ
-        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
-      version:
-        type: int64
-        required: true
-        postgres_type: BIGINT
-        constraints: NOT NULL DEFAULT 0
-      deleted_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
-      deleted_by:
-        type: int64
-        required: false
-        postgres_type: BIGINT
-        constraints: ''
-      metadata:
-        type: json
-        required: true
-        postgres_type: JSONB
-        constraints: NOT NULL DEFAULT '{}'::jsonb
-      api_key_id:
-        type: int64
-        required: false
-        postgres_type: BIGINT
-        constraints: ''
-      account_group_id:
-        type: int64
-        required: false
-        postgres_type: BIGINT
-        constraints: ''
-      object_type:
-        type: string(64)
-        required: true
-        postgres_type: VARCHAR(64)
-        constraints: NOT NULL
-      object_id:
-        type: string(256)
-        required: true
-        postgres_type: VARCHAR(256)
-        constraints: NOT NULL
-      object_key_hash:
-        type: string(128)
-        required: true
-        postgres_type: VARCHAR(128)
-        constraints: NOT NULL
-      parent_object_type:
-        type: string(64)
-        required: false
-        postgres_type: VARCHAR(64)
-        constraints: ''
-      parent_object_id:
-        type: string(256)
-        required: false
-        postgres_type: VARCHAR(256)
-        constraints: ''
-      supplier_code:
-        type: string(64)
-        required: false
-        postgres_type: VARCHAR(64)
-        constraints: ''
-      account_id:
-        type: int64
-        required: true
-        postgres_type: BIGINT
-        constraints: NOT NULL
-      vendor_code:
-        type: string(64)
-        required: false
-        postgres_type: VARCHAR(64)
-        constraints: ''
-      api_code:
-        type: string(128)
-        required: false
-        postgres_type: VARCHAR(128)
-        constraints: ''
-      catalog_key:
-        type: string(256)
-        required: false
-        postgres_type: VARCHAR(256)
-        constraints: ''
-      provider_model:
-        type: string(256)
-        required: false
-        postgres_type: VARCHAR(256)
-        constraints: ''
-      region_code:
-        type: string(64)
-        required: false
-        postgres_type: VARCHAR(64)
-        constraints: ''
-      sticky_scope:
-        type: string(64)
-        required: false
-        postgres_type: VARCHAR(64)
-        constraints: ''
-      expires_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
-      last_seen_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
-    constraints:
-      - name: pk_ai_provider_object_route
-        type: primary_key
-        columns:
-          - id
-      - name: ck_ai_provider_object_route_tenant_scope
-        type: check
-        columns:
-          - tenant_id
-          - organization_id
-        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
-      - name: uk_ai_provider_object_route_uuid
-        type: unique
-        columns: &id018
-          - uuid
-        where: null
-      - name: uk_ai_provider_object_route_object
-        type: unique
-        columns: &id019
-          - tenant_id
-          - organization_id
-          - object_type
-          - object_id
-        where: null
-    indexes:
-      - name: uk_ai_provider_object_route_uuid
-        columns: *id018
-        unique: true
-        where: deleted_at IS NULL
-      - name: uk_ai_provider_object_route_object
-        columns: *id019
-        unique: true
-        where: deleted_at IS NULL
-      - name: idx_ai_provider_object_route_fast
-        columns:
-          - tenant_id
-          - organization_id
-          - object_key_hash
-          - status
-          - id
-        unique: false
-        where: null
-      - name: idx_ai_provider_object_route_parent
-        columns:
-          - tenant_id
-          - organization_id
-          - parent_object_type
-          - parent_object_id
-          - status
-          - id
-        unique: false
-        where: null
-      - name: idx_ai_provider_object_route_account
-        columns:
-          - tenant_id
-          - organization_id
-          - account_group_id
-          - account_id
-          - status
-          - id
-        unique: false
-        where: null
-      - name: idx_ai_provider_object_route_expiry
-        columns:
-          - tenant_id
-          - organization_id
-          - expires_at
-          - status
-          - id
-        unique: false
-        where: null
-    source_tables: []
-    source_refs: []
-    projection_policy: null
-    lifecycle: null
-    semantic_contracts: null
   - name: ai_quota_policy
     domain: ai
     profile: quota_policy
@@ -2738,7 +2508,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_quota_policy_tenant_subject
         type: unique
-        columns: &id020
+        columns: &id018
           - tenant_id
           - organization_id
           - subject_type
@@ -2748,7 +2518,7 @@ tables:
         where: null
     indexes:
       - name: uk_ai_quota_policy_tenant_subject
-        columns: *id020
+        columns: *id018
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_quota_policy_subject_ref
@@ -3096,7 +2866,7 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_request_trace_request_attempt
         type: unique
-        columns: &id021
+        columns: &id019
           - tenant_id
           - organization_id
           - request_id
@@ -3118,7 +2888,7 @@ tables:
           >= 0) AND (total_tokens IS NULL OR total_tokens >= 0)
     indexes:
       - name: uk_ai_request_trace_request_attempt
-        columns: *id021
+        columns: *id019
         unique: true
         where: null
       - name: idx_ai_request_trace_tenant_trace
@@ -3386,14 +3156,14 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_routing_decision_log_request
         type: unique
-        columns: &id022
+        columns: &id020
           - tenant_id
           - organization_id
           - request_id
         where: null
     indexes:
       - name: uk_ai_routing_decision_log_request
-        columns: *id022
+        columns: *id020
         unique: true
         where: null
       - name: idx_ai_routing_decision_tenant_model_created
@@ -3596,7 +3366,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_routing_policy_tenant_code
         type: unique
-        columns: &id023
+        columns: &id021
           - tenant_id
           - organization_id
           - policy_code
@@ -3607,7 +3377,7 @@ tables:
         expression: (slo_latency_ms IS NULL OR slo_latency_ms >= 0) AND (cost_ceiling IS NULL OR cost_ceiling >= 0)
     indexes:
       - name: uk_ai_routing_policy_tenant_code
-        columns: *id023
+        columns: *id021
         unique: true
         where: null
       - name: uk_ai_routing_policy_scope_id
@@ -3749,7 +3519,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_routing_profile_policy_version
         type: unique
-        columns: &id024
+        columns: &id022
           - policy_id
           - profile_version
         where: null
@@ -3771,7 +3541,7 @@ tables:
         expression: profile_version > 0
     indexes:
       - name: uk_ai_routing_profile_policy_version
-        columns: *id024
+        columns: *id022
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_routing_profile_scope_id
@@ -3923,7 +3693,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_routing_rule_profile_code
         type: unique
-        columns: &id025
+        columns: &id023
           - profile_id
           - rule_code
         where: null
@@ -3949,7 +3719,7 @@ tables:
         expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_ai_routing_rule_profile_code
-        columns: *id025
+        columns: *id023
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_routing_rule_tenant_profile_priority
@@ -4140,16 +3910,6 @@ tables:
         required: false
         postgres_type: TIMESTAMPTZ
         constraints: ''
-      last_verified_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
-      last_used_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
       rpm_limit:
         type: int64
         required: false
@@ -4169,21 +3929,6 @@ tables:
         type: json
         required: false
         postgres_type: JSONB
-        constraints: ''
-      health_status:
-        type: int32
-        required: true
-        postgres_type: INTEGER
-        constraints: NOT NULL DEFAULT 1
-      last_latency_ms:
-        type: int32
-        required: false
-        postgres_type: INTEGER
-        constraints: ''
-      consecutive_error_count:
-        type: int64
-        required: false
-        postgres_type: BIGINT
         constraints: ''
       proxy_id:
         type: int64
@@ -4208,12 +3953,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_uuid
         type: unique
-        columns: &id026
+        columns: &id024
           - uuid
         where: null
       - name: uk_ai_upstream_account_tenant_code
         type: unique
-        columns: &id027
+        columns: &id025
           - tenant_id
           - organization_id
           - account_code
@@ -4265,18 +4010,17 @@ tables:
         columns: []
         expression: contract_cost_multiplier > 0 AND (quota_limit IS NULL OR quota_limit >= 0) AND (quota_used IS NULL OR
           quota_used >= 0) AND (upstream_balance_amount IS NULL OR upstream_balance_amount >= 0)
-      - name: ck_ai_upstream_account_health_values
+      - name: ck_ai_upstream_account_timeout
         type: check
         columns: []
-        expression: (last_latency_ms IS NULL OR last_latency_ms >= 0) AND (consecutive_error_count IS NULL OR consecutive_error_count
-          >= 0) AND (timeout_ms IS NULL OR timeout_ms > 0)
+        expression: timeout_ms IS NULL OR timeout_ms > 0
     indexes:
       - name: uk_ai_upstream_account_uuid
-        columns: *id026
+        columns: *id024
         unique: true
         where: null
       - name: uk_ai_upstream_account_tenant_code
-        columns: *id027
+        columns: *id025
         unique: true
         where: null
       - name: uk_ai_upstream_account_scope_id
@@ -4300,15 +4044,6 @@ tables:
           - organization_id
           - supplier_id
           - status
-          - id
-        unique: false
-        where: null
-      - name: idx_ai_upstream_account_health_status
-        columns:
-          - tenant_id
-          - organization_id
-          - status
-          - health_status
           - id
         unique: false
         where: null
@@ -4473,12 +4208,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_credential_uuid
         type: unique
-        columns: &id028
+        columns: &id026
           - uuid
         where: null
       - name: uk_ai_upstream_account_credential_version
         type: unique
-        columns: &id029
+        columns: &id027
           - tenant_id
           - organization_id
           - account_id
@@ -4504,11 +4239,11 @@ tables:
         expression: credential_version > 0 AND priority >= 0
     indexes:
       - name: uk_ai_upstream_account_credential_uuid
-        columns: *id028
+        columns: *id026
         unique: true
         where: null
       - name: uk_ai_upstream_account_credential_version
-        columns: *id029
+        columns: *id027
         unique: true
         where: null
       - name: idx_ai_upstream_account_credential_account
@@ -4699,12 +4434,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_uuid
         type: unique
-        columns: &id030
+        columns: &id028
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_tenant_code
         type: unique
-        columns: &id031
+        columns: &id029
           - tenant_id
           - organization_id
           - group_code
@@ -4724,11 +4459,11 @@ tables:
           >= 0)
     indexes:
       - name: uk_ai_upstream_account_group_uuid
-        columns: *id030
+        columns: *id028
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_tenant_code
-        columns: *id031
+        columns: *id029
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_scope_id
@@ -4884,12 +4619,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_member_uuid
         type: unique
-        columns: &id032
+        columns: &id030
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_member
         type: unique
-        columns: &id033
+        columns: &id031
           - tenant_id
           - organization_id
           - account_group_id
@@ -4930,11 +4665,11 @@ tables:
         expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_ai_upstream_account_group_member_uuid
-        columns: *id032
+        columns: *id030
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_member
-        columns: *id033
+        columns: *id031
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_member_status
@@ -5114,12 +4849,12 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_upstream_account_group_metric_snapshot_uuid
         type: unique
-        columns: &id034
+        columns: &id032
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_metric_snapshot
         type: unique
-        columns: &id035
+        columns: &id033
           - tenant_id
           - organization_id
           - account_group_id
@@ -5139,11 +4874,11 @@ tables:
           0)
     indexes:
       - name: uk_ai_upstream_account_group_metric_snapshot_uuid
-        columns: *id034
+        columns: *id032
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_metric_snapshot
-        columns: *id035
+        columns: *id033
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_metric_tenant_status
@@ -5310,12 +5045,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_resource_uuid
         type: unique
-        columns: &id036
+        columns: &id034
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_resource
         type: unique
-        columns: &id037
+        columns: &id035
           - tenant_id
           - organization_id
           - account_group_id
@@ -5341,11 +5076,11 @@ tables:
           IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
     indexes:
       - name: uk_ai_upstream_account_group_resource_uuid
-        columns: *id036
+        columns: *id034
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_resource
-        columns: *id037
+        columns: *id035
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_resource_status
@@ -5367,6 +5102,373 @@ tables:
           - status
           - grant_type
           - priority
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_upstream_account_health_state
+    domain: ai
+    profile: operational_state
+    compliance_level: L2
+    write_owner: ai-routing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      account_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      health_status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      last_latency_ms:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      consecutive_error_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      last_verified_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_used_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_success_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_failure_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_ai_upstream_account_health_state
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_upstream_account_health_state_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_ai_upstream_account_health_state_scope
+        type: unique
+        columns: &id036
+          - tenant_id
+          - organization_id
+          - account_id
+        where: null
+      - name: fk_ai_upstream_account_health_state_account
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - account_id
+        references_table: ai_upstream_account
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: CASCADE
+      - name: ck_ai_upstream_account_health_state_identity
+        type: check
+        columns: []
+        expression: id = account_id
+      - name: ck_ai_upstream_account_health_state_values
+        type: check
+        columns: []
+        expression: health_status IN (0, 1, 2) AND (last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count
+          >= 0
+    indexes:
+      - name: uk_ai_upstream_account_health_state_scope
+        columns: *id036
+        unique: true
+        where: null
+      - name: idx_ai_upstream_account_health_state_health
+        columns:
+          - tenant_id
+          - organization_id
+          - health_status
+          - updated_at
+          - account_id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: overwrite_state
+      concurrency: atomic_upsert
+      cleanup:
+        strategy: foreign_key_cascade
+        parent_table: ai_upstream_account
+    semantic_contracts: null
+  - name: ai_upstream_object_route
+    domain: ai
+    profile: runtime_binding
+    compliance_level: L2
+    write_owner: ai-routing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      api_key_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      account_group_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      object_type:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      object_id:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+      object_key_hash:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      parent_object_type:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      parent_object_id:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      supplier_code:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      account_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      vendor_code:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      api_code:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      catalog_key:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      provider_model:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      region_code:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      sticky_scope:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      expires_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_seen_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_ai_upstream_object_route
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_upstream_object_route_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_ai_upstream_object_route_uuid
+        type: unique
+        columns: &id037
+          - uuid
+        where: null
+      - name: uk_ai_upstream_object_route_object
+        type: unique
+        columns: &id038
+          - tenant_id
+          - organization_id
+          - object_type
+          - object_id
+        where: null
+    indexes:
+      - name: uk_ai_upstream_object_route_uuid
+        columns: *id037
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_ai_upstream_object_route_object
+        columns: *id038
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_ai_upstream_object_route_fast
+        columns:
+          - tenant_id
+          - organization_id
+          - object_key_hash
+          - status
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_upstream_object_route_parent
+        columns:
+          - tenant_id
+          - organization_id
+          - parent_object_type
+          - parent_object_id
+          - status
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_upstream_object_route_account
+        columns:
+          - tenant_id
+          - organization_id
+          - account_group_id
+          - account_id
+          - status
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_upstream_object_route_expiry
+        columns:
+          - tenant_id
+          - organization_id
+          - expires_at
+          - status
           - id
         unique: false
         where: null
@@ -5524,31 +5626,6 @@ tables:
         required: true
         postgres_type: INTEGER
         constraints: NOT NULL DEFAULT 1
-      health_status:
-        type: int32
-        required: true
-        postgres_type: INTEGER
-        constraints: NOT NULL DEFAULT 1
-      last_latency_ms:
-        type: int32
-        required: false
-        postgres_type: INTEGER
-        constraints: ''
-      consecutive_error_count:
-        type: int64
-        required: true
-        postgres_type: BIGINT
-        constraints: NOT NULL DEFAULT 0
-      last_checked_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
-      last_sync_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
       metadata_schema_version:
         type: string(32)
         required: false
@@ -5572,12 +5649,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_uuid
         type: unique
-        columns: &id038
+        columns: &id039
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_tenant_code
         type: unique
-        columns: &id039
+        columns: &id040
           - tenant_id
           - organization_id
           - supplier_code
@@ -5586,17 +5663,13 @@ tables:
         type: check
         columns: []
         expression: supplier_type IN ('official', 'relay')
-      - name: ck_ai_upstream_supplier_health_values
-        type: check
-        columns: []
-        expression: (last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0
     indexes:
       - name: uk_ai_upstream_supplier_uuid
-        columns: *id038
+        columns: *id039
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_tenant_code
-        columns: *id039
+        columns: *id040
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_scope_id
@@ -5737,6 +5810,11 @@ tables:
         required: true
         postgres_type: JSONB
         constraints: NOT NULL DEFAULT '{}'::jsonb
+      runtime_auth_config:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL
       authorization_url:
         type: string(512)
         required: false
@@ -5770,12 +5848,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_auth_method_uuid
         type: unique
-        columns: &id040
+        columns: &id041
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_auth_method_supplier_code
         type: unique
-        columns: &id041
+        columns: &id042
           - tenant_id
           - organization_id
           - supplier_id
@@ -5800,13 +5878,17 @@ tables:
         columns: []
         expression: auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4',
           'custom') AND priority >= 0
+      - name: ck_ai_upstream_supplier_auth_method_runtime_auth_config
+        type: check
+        columns: []
+        expression: jsonb_typeof(runtime_auth_config) = 'object'
     indexes:
       - name: uk_ai_upstream_supplier_auth_method_uuid
-        columns: *id040
+        columns: *id041
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_auth_method_supplier_code
-        columns: *id041
+        columns: *id042
         unique: true
         where: null
       - name: idx_ai_upstream_supplier_auth_method_supplier_status
@@ -5942,31 +6024,6 @@ tables:
         required: true
         postgres_type: INTEGER
         constraints: NOT NULL DEFAULT 1
-      health_status:
-        type: int32
-        required: true
-        postgres_type: INTEGER
-        constraints: NOT NULL DEFAULT 1
-      last_latency_ms:
-        type: int32
-        required: false
-        postgres_type: INTEGER
-        constraints: ''
-      consecutive_error_count:
-        type: int64
-        required: true
-        postgres_type: BIGINT
-        constraints: NOT NULL DEFAULT 0
-      last_checked_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
-      last_sync_at:
-        type: instant
-        required: false
-        postgres_type: TIMESTAMPTZ
-        constraints: ''
       priority:
         type: int32
         required: true
@@ -5995,12 +6052,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_endpoint_uuid
         type: unique
-        columns: &id042
+        columns: &id043
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_endpoint_tenant_code
         type: unique
-        columns: &id043
+        columns: &id044
           - tenant_id
           - organization_id
           - supplier_id
@@ -6023,15 +6080,14 @@ tables:
       - name: ck_ai_upstream_supplier_endpoint_values
         type: check
         columns: []
-        expression: priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms > 0) AND (last_latency_ms
-          IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0
+        expression: priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms > 0)
     indexes:
       - name: uk_ai_upstream_supplier_endpoint_uuid
-        columns: *id042
+        columns: *id043
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_endpoint_tenant_code
-        columns: *id043
+        columns: *id044
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_endpoint_scope_id
@@ -6053,19 +6109,149 @@ tables:
           - id
         unique: false
         where: null
-      - name: idx_ai_upstream_supplier_endpoint_health_status
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_upstream_supplier_endpoint_health_state
+    domain: ai
+    profile: operational_state
+    compliance_level: L2
+    write_owner: ai-routing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      supplier_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      endpoint_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      health_status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      last_latency_ms:
+        type: int32
+        required: false
+        postgres_type: INTEGER
+        constraints: ''
+      consecutive_error_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      last_checked_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_success_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      last_failure_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_ai_upstream_supplier_endpoint_health_state
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_upstream_supplier_endpoint_health_state_tenant_scope
+        type: check
         columns:
           - tenant_id
           - organization_id
-          - status
-          - health_status
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_ai_upstream_supplier_endpoint_health_state_scope
+        type: unique
+        columns: &id045
+          - tenant_id
+          - organization_id
+          - endpoint_id
+        where: null
+      - name: fk_ai_upstream_supplier_endpoint_health_state_endpoint
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - supplier_id
+          - endpoint_id
+        references_table: ai_upstream_supplier_endpoint
+        references_columns:
+          - tenant_id
+          - organization_id
+          - supplier_id
           - id
+        on_delete: CASCADE
+      - name: ck_ai_upstream_supplier_endpoint_health_state_identity
+        type: check
+        columns: []
+        expression: id = endpoint_id
+      - name: ck_ai_upstream_supplier_endpoint_health_state_values
+        type: check
+        columns: []
+        expression: health_status IN (0, 1, 2) AND (last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count
+          >= 0
+    indexes:
+      - name: uk_ai_upstream_supplier_endpoint_health_state_scope
+        columns: *id045
+        unique: true
+        where: null
+      - name: idx_ai_upstream_supplier_endpoint_health_state_health
+        columns:
+          - tenant_id
+          - organization_id
+          - health_status
+          - updated_at
+          - endpoint_id
         unique: false
         where: null
     source_tables: []
     source_refs: []
     projection_policy: null
-    lifecycle: null
+    lifecycle:
+      storage_strategy: overwrite_state
+      concurrency: atomic_upsert
+      cleanup:
+        strategy: foreign_key_cascade
+        parent_table: ai_upstream_supplier_endpoint
     semantic_contracts: null
   - name: ai_upstream_supplier_resource
     domain: ai
@@ -6199,12 +6385,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_resource_uuid
         type: unique
-        columns: &id044
+        columns: &id046
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_resource
         type: unique
-        columns: &id045
+        columns: &id047
           - tenant_id
           - organization_id
           - supplier_id
@@ -6232,11 +6418,11 @@ tables:
           IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
     indexes:
       - name: uk_ai_upstream_supplier_resource_uuid
-        columns: *id044
+        columns: *id046
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_resource
-        columns: *id045
+        columns: *id047
         unique: true
         where: null
       - name: idx_ai_upstream_supplier_resource_lookup
@@ -6632,21 +6818,21 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_usage_scope_id
         type: unique
-        columns: &id046
+        columns: &id048
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_ai_usage_idempotency
         type: unique
-        columns: &id047
+        columns: &id049
           - tenant_id
           - organization_id
           - idempotency_key
         where: null
       - name: uk_ai_usage_request
         type: unique
-        columns: &id048
+        columns: &id050
           - tenant_id
           - organization_id
           - request_id
@@ -6672,15 +6858,15 @@ tables:
         expression: length(trim(currency)) BETWEEN 3 AND 10
     indexes:
       - name: uk_ai_usage_scope_id
-        columns: *id046
+        columns: *id048
         unique: true
         where: null
       - name: uk_ai_usage_idempotency
-        columns: *id047
+        columns: *id049
         unique: true
         where: null
       - name: uk_ai_usage_request
-        columns: *id048
+        columns: *id050
         unique: true
         where: null
       - name: idx_ai_usage_tenant_owner_occurred

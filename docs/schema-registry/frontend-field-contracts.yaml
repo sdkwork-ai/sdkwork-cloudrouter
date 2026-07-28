@@ -1,39 +1,1396 @@
 schema:
   name: sdkwork-clawrouter-frontend-field-contracts
-  version: 0.1.0
+  version: 0.2.0
   source: tools/hydrate_frontend_contract_relay_surfaces.py
 frontend_operations:
 - route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
-  operation: fetchGroups
-  operation_id: channelGroups.list
+  source: services/sdkwork-clawrouter-router-service/src/api/app_routing.rs
+  operation: listRoutingAccountGroups
+  operation_id: routing.accountGroups.list
   kind: read
   api_surface: app
   api_method: GET
-  api_path: /app/v3/api/ai/channel_groups
+  api_path: /app/v3/api/ai/routing/account_groups
+  sdk_domain: ai
   read_sources:
-  - ai_channel_group
-  - ai_channel_group_metric_snapshot
-  - ai_pricing_plan
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
+  - ai_upstream_account
+  - ai_upstream_supplier
   response_schema:
-    name: AppChannelGroupListResponse
+    name: AppRoutingAccountGroupListResponse
+    type: object
+    additionalProperties: false
     required: [items, pageInfo]
     properties:
       items:
         type: array
         items:
-          name: AppChannelGroup
+          name: AppRoutingAccountGroup
           type: object
           additionalProperties: false
-          required: [id, code, name, rate]
+          required: [id, groupCode, groupName, groupType, routingStrategy, fallbackMode, costMultiplier, saleMultiplier, accountCount, availableAccountCount, resourceCodes, resourceGroupCodes, status]
           properties:
-            id: { type: string, minLength: 1, maxLength: 128 }
-            code: { type: string, minLength: 1, maxLength: 128 }
-            name: { type: string, minLength: 1, maxLength: 128 }
-            rate: { type: string, nullable: true, maxLength: 64 }
+            id: { type: string, maxLength: 32 }
+            groupCode: { type: string, maxLength: 128 }
+            groupName: { type: string, maxLength: 200 }
+            groupType: { type: string, maxLength: 32 }
+            routingStrategy: { type: string, maxLength: 64 }
+            fallbackMode: { type: string, maxLength: 64 }
+            costMultiplier: { type: string, maxLength: 64 }
+            saleMultiplier: { type: string, maxLength: 64 }
+            accountCount: { type: string, maxLength: 32 }
+            availableAccountCount: { type: string, maxLength: 32 }
+            resourceCodes:
+              type: array
+              items: { type: string, maxLength: 128 }
+            resourceGroupCodes:
+              type: array
+              items: { type: string, maxLength: 128 }
+            status: { type: integer, format: int32 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 256 }
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: listUpstreamSuppliers
+  operation_id: upstreamSuppliers.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_suppliers
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  response_schema:
+    name: UpstreamSupplierListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamSupplier
+          type: object
+          additionalProperties: false
+          required: [id, uuid, supplierCode, supplierName, displayName, description, supplierType, adapterCode, protocolCode, websiteUrl, docsUrl, regionCode, environment, healthStatus, sortOrder, status, version, updatedAt]
+          properties:
+            id: { type: string, maxLength: 32 }
+            uuid: { type: string, maxLength: 64 }
+            supplierCode: { type: string, maxLength: 128 }
+            supplierName: { type: string, maxLength: 200 }
+            displayName: { type: string, maxLength: 200 }
+            description: { type: string, maxLength: 4000, nullable: true }
+            supplierType: { type: string, enum: [official, relay] }
+            adapterCode: { type: string, maxLength: 128 }
+            protocolCode: { type: string, maxLength: 128 }
+            websiteUrl: { type: string, maxLength: 2048, nullable: true }
+            docsUrl: { type: string, maxLength: 2048, nullable: true }
+            regionCode: { type: string, maxLength: 128, nullable: true }
+            environment: { type: integer, format: int32 }
+            healthStatus: { type: integer, format: int32 }
+            sortOrder: { type: integer, format: int32, minimum: 0 }
+            status: { type: integer, format: int32 }
+            version: { type: string, maxLength: 32 }
+            updatedAt: { type: string, format: date-time }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 256 }
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: createUpstreamSupplier
+  operation_id: upstreamSuppliers.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/ai/upstream_suppliers
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  response_schema:
+    name: UpstreamSupplierItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamSupplier'
+  request_schema:
+    name: CreateUpstreamSupplierRequest
+    type: object
+    additionalProperties: false
+    required: [supplierCode, supplierName, supplierType, adapterCode, protocolCode]
+    properties:
+      supplierCode: { type: string, maxLength: 128 }
+      supplierName: { type: string, maxLength: 200 }
+      displayName: { type: string, maxLength: 200, nullable: true }
+      description: { type: string, maxLength: 4000, nullable: true }
+      supplierType: { type: string, enum: [official, relay] }
+      adapterCode: { type: string, maxLength: 128 }
+      protocolCode: { type: string, maxLength: 128 }
+      websiteUrl: { type: string, maxLength: 2048, nullable: true }
+      docsUrl: { type: string, maxLength: 2048, nullable: true }
+      regionCode: { type: string, maxLength: 128, nullable: true }
+      environment: { type: integer, format: int32, nullable: true }
+      sortOrder: { type: integer, format: int32, minimum: 0, nullable: true }
+      status: { type: integer, format: int32, nullable: true }
+  write_tables:
+  - ai_upstream_supplier
+  - ops_audit_log
+  - ops_config_snapshot
+  idempotency_required: true
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: getUpstreamSupplier
+  operation_id: upstreamSuppliers.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  response_schema:
+    name: UpstreamSupplierItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamSupplier'
+  query_parameters: []
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: updateUpstreamSupplier
+  operation_id: upstreamSuppliers.update
+  if_match_required: true
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  response_schema:
+    name: UpstreamSupplierItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamSupplier'
+  request_schema:
+    name: UpdateUpstreamSupplierRequest
+    type: object
+    additionalProperties: false
+    required: []
+    properties:
+      supplierName: { type: string, maxLength: 200 }
+      displayName: { type: string, maxLength: 200, nullable: true }
+      description: { type: string, maxLength: 4000, nullable: true }
+      supplierType: { type: string, enum: [official, relay] }
+      adapterCode: { type: string, maxLength: 128 }
+      protocolCode: { type: string, maxLength: 128 }
+      websiteUrl: { type: string, maxLength: 2048, nullable: true }
+      docsUrl: { type: string, maxLength: 2048, nullable: true }
+      regionCode: { type: string, maxLength: 128, nullable: true }
+      environment: { type: integer, format: int32, nullable: true }
+      sortOrder: { type: integer, format: int32, minimum: 0, nullable: true }
+      status: { type: integer, format: int32, nullable: true }
+  write_tables:
+  - ai_upstream_supplier
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: deleteUpstreamSupplier
+  operation_id: upstreamSuppliers.delete
+  if_match_required: true
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ai_upstream_supplier
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: listUpstreamSupplierEndpoints
+  operation_id: upstreamSuppliers.endpoints.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/endpoints
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_endpoint
+  response_schema:
+    name: UpstreamSupplierEndpointListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamSupplierEndpoint
+          type: object
+          additionalProperties: false
+          required: [id, endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, healthStatus, status]
+          properties:
+            id: { type: string, maxLength: 32 }
+            endpointCode: { type: string, maxLength: 128 }
+            endpointName: { type: string, maxLength: 200 }
+            baseUrl: { type: string, maxLength: 2048 }
+            protocolCode: { type: string, maxLength: 128, nullable: true }
+            regionCode: { type: string, maxLength: 128, nullable: true }
+            environment: { type: integer, format: int32 }
+            priority: { type: integer, format: int32, minimum: 0 }
+            routingWeight: { type: integer, format: int32, minimum: 0 }
+            timeoutMs: { type: integer, format: int32, minimum: 1, nullable: true }
+            healthStatus: { type: integer, format: int32 }
+            status: { type: integer, format: int32 }
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: updateUpstreamSupplierEndpoints
+  operation_id: upstreamSuppliers.endpoints.update
+  if_match_required: true
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/endpoints
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_endpoint
+  response_schema:
+    name: UpstreamSupplierEndpointCollectionResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        name: UpstreamSupplierEndpointCollection
+        type: object
+        additionalProperties: false
+        required: [items]
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/UpstreamSupplierEndpoint'
+  request_schema:
+    name: ReplaceUpstreamSupplierEndpointsRequest
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamSupplierEndpointInput
+          type: object
+          additionalProperties: false
+          required: [endpointCode, endpointName, baseUrl]
+          properties:
+            endpointCode: { type: string, maxLength: 128 }
+            endpointName: { type: string, maxLength: 200 }
+            baseUrl: { type: string, maxLength: 2048 }
+            protocolCode: { type: string, maxLength: 128, nullable: true }
+            regionCode: { type: string, maxLength: 128, nullable: true }
+            environment: { type: integer, format: int32, nullable: true }
+            priority: { type: integer, format: int32, minimum: 0, nullable: true }
+            routingWeight: { type: integer, format: int32, minimum: 0, nullable: true }
+            timeoutMs: { type: integer, format: int32, minimum: 1, nullable: true }
+            status: { type: integer, format: int32, nullable: true }
+        maxItems: 200
+  write_tables:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_endpoint
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: listUpstreamSupplierAuthMethods
+  operation_id: upstreamSuppliers.authMethods.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/auth_methods
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_auth_method
+  response_schema:
+    name: UpstreamSupplierAuthMethodListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamSupplierAuthMethod
+          type: object
+          additionalProperties: false
+          required: [id, authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, authorizationUrl, tokenUrl, scopes, priority, status]
+          properties:
+            id: { type: string, maxLength: 32 }
+            authMethodCode: { type: string, maxLength: 128 }
+            authMethodName: { type: string, maxLength: 200 }
+            authType: { type: string, enum: [api_key, bearer_token, oauth2_client_credentials, oauth2_authorization_code, aws_sigv4, custom] }
+            configSchema: { type: object, additionalProperties: true }
+            runtimeAuthConfig:
+              type: object
+              additionalProperties: false
+              required: [credentialTransport]
+              properties:
+                credentialTransport: { type: string, enum: [bearer, header, query, provider_adapter] }
+                credentialParameter: { type: string, maxLength: 128, nullable: true }
+                defaultHeaders:
+                  type: object
+                  additionalProperties: { type: string, maxLength: 2048 }
+                adapterScheme: { type: string, maxLength: 64, nullable: true }
+                adapterOptions: { type: object, additionalProperties: true, nullable: true }
+            authorizationUrl: { type: string, maxLength: 2048, nullable: true }
+            tokenUrl: { type: string, maxLength: 2048, nullable: true }
+            scopes:
+              type: array
+              items: { type: string, maxLength: 256 }
+              nullable: true
+            priority: { type: integer, format: int32, minimum: 0 }
+            status: { type: integer, format: int32 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters: []
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: updateUpstreamSupplierAuthMethods
+  operation_id: upstreamSuppliers.authMethods.update
+  if_match_required: true
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/auth_methods
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_auth_method
+  response_schema:
+    name: UpstreamSupplierAuthMethodCollectionResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        name: UpstreamSupplierAuthMethodCollection
+        type: object
+        additionalProperties: false
+        required: [items]
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/UpstreamSupplierAuthMethod'
+  request_schema:
+    name: ReplaceUpstreamSupplierAuthMethodsRequest
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamSupplierAuthMethodInput
+          type: object
+          additionalProperties: false
+          required: [authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig]
+          properties:
+            authMethodCode: { type: string, maxLength: 128 }
+            authMethodName: { type: string, maxLength: 200 }
+            authType: { type: string, enum: [api_key, bearer_token, oauth2_client_credentials, oauth2_authorization_code, aws_sigv4, custom] }
+            configSchema: { type: object, additionalProperties: true }
+            runtimeAuthConfig:
+              type: object
+              additionalProperties: false
+              required: [credentialTransport]
+              properties:
+                credentialTransport: { type: string, enum: [bearer, header, query, provider_adapter] }
+                credentialParameter: { type: string, maxLength: 128, nullable: true }
+                defaultHeaders:
+                  type: object
+                  additionalProperties: { type: string, maxLength: 2048 }
+                adapterScheme: { type: string, maxLength: 64, nullable: true }
+                adapterOptions: { type: object, additionalProperties: true, nullable: true }
+            authorizationUrl: { type: string, maxLength: 2048, nullable: true }
+            tokenUrl: { type: string, maxLength: 2048, nullable: true }
+            scopes:
+              type: array
+              items: { type: string, maxLength: 256 }
+              nullable: true
+            priority: { type: integer, format: int32, minimum: 0, nullable: true }
+            status: { type: integer, format: int32, nullable: true }
+        maxItems: 200
+  write_tables:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_auth_method
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: listUpstreamSupplierResources
+  operation_id: upstreamSuppliers.resources.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/resources
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_resource
+  - ai_resource
+  - ai_resource_group
+  response_schema:
+    name: UpstreamSupplierResourceListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamResourceEntitlement
+          type: object
+          additionalProperties: false
+          required: [id, resourceCode, resourceGroupCode, grantType, priority, status]
+          properties:
+            id: { type: string, maxLength: 32 }
+            resourceCode: { type: string, maxLength: 128 }
+            resourceGroupCode: { type: string, maxLength: 128 }
+            grantType: { type: string, enum: [allow, deny] }
+            priority: { type: integer, format: int32, minimum: 0 }
+            status: { type: integer, format: int32 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters: []
+- route: /admin/upstream/suppliers
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+  operation: updateUpstreamSupplierResources
+  operation_id: upstreamSuppliers.resources.update
+  if_match_required: true
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/resources
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_resource
+  - ai_resource
+  - ai_resource_group
+  response_schema:
+    name: UpstreamSupplierResourceCollectionResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        name: UpstreamSupplierResourceCollection
+        type: object
+        additionalProperties: false
+        required: [items]
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/UpstreamResourceEntitlement'
+  request_schema:
+    name: ReplaceUpstreamSupplierResourcesRequest
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamResourceEntitlementInput
+          type: object
+          additionalProperties: false
+          required: []
+          properties:
+            resourceCode: { type: string, maxLength: 128, nullable: true }
+            resourceGroupCode: { type: string, maxLength: 128, nullable: true }
+            grantType: { type: string, nullable: true, enum: [allow, deny] }
+            priority: { type: integer, format: int32, minimum: 0, nullable: true }
+            status: { type: integer, format: int32, nullable: true }
+        maxItems: 200
+  write_tables:
+  - ai_upstream_supplier
+  - ai_upstream_supplier_resource
+  - ai_resource
+  - ai_resource_group
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: listUpstreamAccounts
+  operation_id: upstreamAccounts.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_accounts
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  response_schema:
+    name: UpstreamAccountListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamAccount
+          type: object
+          additionalProperties: false
+          required: [id, uuid, supplierId, supplierCode, preferredEndpointId, accountCode, accountName, accountType, authMethodCode, externalAccountId, environment, regionCode, quotaLimit, quotaUsed, upstreamBalanceAmount, upstreamBalanceCurrency,
+            contractCostMultiplier, rpmLimit, timeoutMs, healthStatus, status, version, updatedAt]
+          properties:
+            id: { type: string, maxLength: 32 }
+            uuid: { type: string, maxLength: 64 }
+            supplierId: { type: string, maxLength: 32 }
+            supplierCode: { type: string, maxLength: 128 }
+            preferredEndpointId: { type: string, maxLength: 32, nullable: true }
+            accountCode: { type: string, maxLength: 128 }
+            accountName: { type: string, maxLength: 200 }
+            accountType: { type: string, maxLength: 32 }
+            authMethodCode: { type: string, maxLength: 128 }
+            externalAccountId: { type: string, maxLength: 128, nullable: true }
+            environment: { type: integer, format: int32, nullable: true }
+            regionCode: { type: string, maxLength: 128, nullable: true }
+            quotaLimit: { type: string, maxLength: 64, nullable: true }
+            quotaUsed: { type: string, maxLength: 64, nullable: true }
+            upstreamBalanceAmount: { type: string, maxLength: 64, nullable: true }
+            upstreamBalanceCurrency: { type: string, maxLength: 10, nullable: true }
+            contractCostMultiplier: { type: string, maxLength: 64 }
+            rpmLimit: { type: string, maxLength: 32, nullable: true }
+            timeoutMs: { type: integer, format: int32, minimum: 1, nullable: true }
+            healthStatus: { type: integer, format: int32 }
+            status: { type: integer, format: int32 }
+            version: { type: string, maxLength: 32 }
+            updatedAt: { type: string, format: date-time }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 256 }
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: createUpstreamAccount
+  operation_id: upstreamAccounts.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/ai/upstream_accounts
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  response_schema:
+    name: UpstreamAccountItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamAccount'
+  request_schema:
+    name: CreateUpstreamAccountRequest
+    type: object
+    additionalProperties: false
+    required: [supplierId, accountCode, accountName, authMethodCode]
+    properties:
+      supplierId: { type: string, maxLength: 32 }
+      preferredEndpointId: { type: string, maxLength: 32, nullable: true }
+      accountCode: { type: string, maxLength: 128 }
+      accountName: { type: string, maxLength: 200 }
+      accountType: { type: string, maxLength: 32, nullable: true }
+      authMethodCode: { type: string, maxLength: 128 }
+      externalAccountId: { type: string, maxLength: 128, nullable: true }
+      environment: { type: integer, format: int32, nullable: true }
+      regionCode: { type: string, maxLength: 128, nullable: true }
+      quotaLimit: { type: string, maxLength: 64, nullable: true }
+      upstreamBalanceCurrency: { type: string, maxLength: 10, nullable: true }
+      contractCostMultiplier: { type: string, maxLength: 64, nullable: true }
+      rpmLimit: { type: string, maxLength: 32, nullable: true }
+      timeoutMs: { type: integer, format: int32, minimum: 1, nullable: true }
+      status: { type: integer, format: int32, nullable: true }
+  write_tables:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  - ops_audit_log
+  - ops_config_snapshot
+  idempotency_required: true
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: getUpstreamAccount
+  operation_id: upstreamAccounts.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_accounts/{accountId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  response_schema:
+    name: UpstreamAccountItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamAccount'
+  query_parameters: []
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: updateUpstreamAccount
+  operation_id: upstreamAccounts.update
+  if_match_required: true
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/ai/upstream_accounts/{accountId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  response_schema:
+    name: UpstreamAccountItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamAccount'
+  request_schema:
+    name: UpdateUpstreamAccountRequest
+    type: object
+    additionalProperties: false
+    required: []
+    properties:
+      supplierId: { type: string, maxLength: 32 }
+      preferredEndpointId: { type: string, maxLength: 32, nullable: true }
+      accountName: { type: string, maxLength: 200 }
+      accountType: { type: string, maxLength: 32, nullable: true }
+      authMethodCode: { type: string, maxLength: 128 }
+      externalAccountId: { type: string, maxLength: 128, nullable: true }
+      environment: { type: integer, format: int32, nullable: true }
+      regionCode: { type: string, maxLength: 128, nullable: true }
+      quotaLimit: { type: string, maxLength: 64, nullable: true }
+      upstreamBalanceCurrency: { type: string, maxLength: 10, nullable: true }
+      contractCostMultiplier: { type: string, maxLength: 64, nullable: true }
+      rpmLimit: { type: string, maxLength: 32, nullable: true }
+      timeoutMs: { type: integer, format: int32, minimum: 1, nullable: true }
+      status: { type: integer, format: int32, nullable: true }
+  write_tables:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: deleteUpstreamAccount
+  operation_id: upstreamAccounts.delete
+  if_match_required: true
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/ai/upstream_accounts/{accountId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  - ai_upstream_account
+  - ai_upstream_account_credential
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: listUpstreamAccountCredentials
+  operation_id: upstreamAccounts.credentials.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_accounts/{accountId}/credentials
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account
+  - ai_upstream_account_credential
+  response_schema:
+    name: UpstreamAccountCredentialListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamAccountCredential
+          type: object
+          additionalProperties: false
+          required: [id, authMethodCode, credentialName, maskedLabel, credentialVersion, priority, isActive, expiresAt, lastRotatedAt, lastVerifiedAt, lastUsedAt, status]
+          properties:
+            id: { type: string, maxLength: 32 }
+            authMethodCode: { type: string, maxLength: 128 }
+            credentialName: { type: string, maxLength: 200 }
+            maskedLabel: { type: string, maxLength: 256, nullable: true }
+            credentialVersion: { type: string, maxLength: 32 }
+            priority: { type: integer, format: int32, minimum: 0 }
+            isActive: { type: boolean }
+            expiresAt: { type: string, format: date-time, nullable: true }
+            lastRotatedAt: { type: string, format: date-time, nullable: true }
+            lastVerifiedAt: { type: string, format: date-time, nullable: true }
+            lastUsedAt: { type: string, format: date-time, nullable: true }
+            status: { type: integer, format: int32 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 256 }
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: createUpstreamAccountCredential
+  operation_id: upstreamAccounts.credentials.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/ai/upstream_accounts/{accountId}/credentials
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account
+  - ai_upstream_account_credential
+  response_schema:
+    name: UpstreamAccountCredentialCreatedResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        name: UpstreamAccountCredentialCreated
+        type: object
+        additionalProperties: false
+        required: [id, authMethodCode, credentialName, maskedLabel, credentialVersion, priority, isActive, expiresAt, lastRotatedAt, lastVerifiedAt, lastUsedAt, status, rawSecret]
+        properties:
+          id: { type: string, maxLength: 32 }
+          authMethodCode: { type: string, maxLength: 128 }
+          credentialName: { type: string, maxLength: 200 }
+          maskedLabel: { type: string, maxLength: 256, nullable: true }
+          credentialVersion: { type: string, maxLength: 32 }
+          priority: { type: integer, format: int32, minimum: 0 }
+          isActive: { type: boolean }
+          expiresAt: { type: string, format: date-time, nullable: true }
+          lastRotatedAt: { type: string, format: date-time, nullable: true }
+          lastVerifiedAt: { type: string, format: date-time, nullable: true }
+          lastUsedAt: { type: string, format: date-time, nullable: true }
+          status: { type: integer, format: int32 }
+          rawSecret:
+            type: string
+            minLength: 1
+            maxLength: 65536
+            description: One-time plaintext credential returned only by this create response.
+  request_schema:
+    name: CreateUpstreamAccountCredentialRequest
+    type: object
+    additionalProperties: false
+    required: [credentialName, secret]
+    properties:
+      credentialName: { type: string, maxLength: 200 }
+      secret:
+        type: string
+        minLength: 1
+        maxLength: 65536
+        writeOnly: true
+      priority: { type: integer, format: int32, minimum: 0, nullable: true }
+      expiresAt: { type: string, format: date-time, nullable: true }
+  write_tables:
+  - ai_upstream_account
+  - ai_upstream_account_credential
+  - ops_audit_log
+  - ops_config_snapshot
+  idempotency_required: true
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: deleteUpstreamAccountCredential
+  operation_id: upstreamAccounts.credentials.delete
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account
+  - ai_upstream_account_credential
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ai_upstream_account
+  - ai_upstream_account_credential
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/accounts
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+  operation: verifyUpstreamAccount
+  operation_id: upstreamAccounts.verify
+  kind: action
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/ai/upstream_accounts/{accountId}/verify
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_supplier
+  - ai_upstream_account
+  - ai_upstream_supplier_endpoint
+  - ai_upstream_supplier_auth_method
+  - ai_upstream_account_credential
+  response_schema:
+    name: UpstreamAccountVerificationResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        name: UpstreamAccountVerification
+        type: object
+        additionalProperties: false
+        required: [accountId, supplierCode, endpointId, credentialId, success, statusCode, latencyMs, verifiedAt, message]
+        properties:
+          accountId: { type: string, maxLength: 32 }
+          supplierCode: { type: string, maxLength: 128 }
+          endpointId: { type: string, maxLength: 32 }
+          credentialId: { type: string, maxLength: 32 }
+          success: { type: boolean }
+          statusCode: { type: integer, format: int32, nullable: true }
+          latencyMs: { type: string, maxLength: 32 }
+          verifiedAt: { type: string, format: date-time }
+          message: { type: string, maxLength: 512 }
+  request_schema:
+    name: VerifyUpstreamAccountRequest
+    type: object
+    additionalProperties: false
+    required: []
+    properties:
+      endpointId: { type: string, maxLength: 32, nullable: true }
+      credentialId: { type: string, maxLength: 32, nullable: true }
+      timeoutMs: { type: integer, format: int32, minimum: 100, nullable: true }
+  write_tables:
+  - ai_upstream_account
+  - ai_upstream_supplier_endpoint
+  - ai_upstream_account_credential
+  - ops_audit_log
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: listUpstreamAccountGroups
+  operation_id: upstreamAccountGroups.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_account_groups
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  response_schema:
+    name: UpstreamAccountGroupListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamAccountGroup
+          type: object
+          additionalProperties: false
+          required: [id, uuid, groupCode, groupName, description, groupType, routingStrategy, fallbackMode, priority, costMultiplier, saleMultiplier, environment, status, version, updatedAt]
+          properties:
+            id: { type: string, maxLength: 32 }
+            uuid: { type: string, maxLength: 64 }
+            groupCode: { type: string, maxLength: 128 }
+            groupName: { type: string, maxLength: 200 }
+            description: { type: string, maxLength: 4000, nullable: true }
+            groupType: { type: string, maxLength: 32 }
+            routingStrategy: { type: string, enum: [weighted, round_robin, least_latency, least_cost, failover] }
+            fallbackMode: { type: string, enum: [none, sequential, same_supplier, cross_supplier] }
+            priority: { type: integer, format: int32, minimum: 0 }
+            costMultiplier: { type: string, maxLength: 64 }
+            saleMultiplier: { type: string, maxLength: 64 }
+            environment: { type: integer, format: int32, nullable: true }
+            status: { type: integer, format: int32 }
+            version: { type: string, maxLength: 32 }
+            updatedAt: { type: string, format: date-time }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 256 }
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: createUpstreamAccountGroup
+  operation_id: upstreamAccountGroups.create
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/ai/upstream_account_groups
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  response_schema:
+    name: UpstreamAccountGroupItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamAccountGroup'
+  request_schema:
+    name: CreateUpstreamAccountGroupRequest
+    type: object
+    additionalProperties: false
+    required: [groupCode, groupName]
+    properties:
+      groupCode: { type: string, maxLength: 128 }
+      groupName: { type: string, maxLength: 200 }
+      description: { type: string, maxLength: 4000, nullable: true }
+      groupType: { type: string, maxLength: 32, nullable: true }
+      routingStrategy: { type: string, nullable: true, enum: [weighted, round_robin, least_latency, least_cost, failover] }
+      fallbackMode: { type: string, nullable: true, enum: [none, sequential, same_supplier, cross_supplier] }
+      priority: { type: integer, format: int32, minimum: 0, nullable: true }
+      costMultiplier: { type: string, maxLength: 64, nullable: true }
+      saleMultiplier: { type: string, maxLength: 64, nullable: true }
+      environment: { type: integer, format: int32, nullable: true }
+      status: { type: integer, format: int32, nullable: true }
+  write_tables:
+  - ai_upstream_account_group
+  - ops_audit_log
+  - ops_config_snapshot
+  idempotency_required: true
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: getUpstreamAccountGroup
+  operation_id: upstreamAccountGroups.retrieve
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  response_schema:
+    name: UpstreamAccountGroupItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamAccountGroup'
+  query_parameters: []
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: updateUpstreamAccountGroup
+  operation_id: upstreamAccountGroups.update
+  if_match_required: true
+  kind: update
+  api_surface: backend
+  api_method: PATCH
+  api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  response_schema:
+    name: UpstreamAccountGroupItemResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        $ref: '#/components/schemas/UpstreamAccountGroup'
+  request_schema:
+    name: UpdateUpstreamAccountGroupRequest
+    type: object
+    additionalProperties: false
+    required: []
+    properties:
+      groupName: { type: string, maxLength: 200 }
+      description: { type: string, maxLength: 4000, nullable: true }
+      groupType: { type: string, maxLength: 32, nullable: true }
+      routingStrategy: { type: string, nullable: true, enum: [weighted, round_robin, least_latency, least_cost, failover] }
+      fallbackMode: { type: string, nullable: true, enum: [none, sequential, same_supplier, cross_supplier] }
+      priority: { type: integer, format: int32, minimum: 0, nullable: true }
+      costMultiplier: { type: string, maxLength: 64, nullable: true }
+      saleMultiplier: { type: string, maxLength: 64, nullable: true }
+      environment: { type: integer, format: int32, nullable: true }
+      status: { type: integer, format: int32, nullable: true }
+  write_tables:
+  - ai_upstream_account_group
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: deleteUpstreamAccountGroup
+  operation_id: upstreamAccountGroups.delete
+  if_match_required: true
+  kind: delete
+  api_surface: backend
+  api_method: DELETE
+  api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  response_schema:
+    name: NoData
+    properties: {}
+  write_tables:
+  - ai_upstream_account_group
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: listUpstreamAccountGroupMembers
+  operation_id: upstreamAccountGroups.members.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/members
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account
+  response_schema:
+    name: UpstreamAccountGroupMemberListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamAccountGroupMember
+          type: object
+          additionalProperties: false
+          required: [id, accountId, accountCode, accountName, priority, routingWeight, costMultiplierOverride, enabled, status]
+          properties:
+            id: { type: string, maxLength: 32 }
+            accountId: { type: string, maxLength: 32 }
+            accountCode: { type: string, maxLength: 128 }
+            accountName: { type: string, maxLength: 200 }
+            priority: { type: integer, format: int32, minimum: 0 }
+            routingWeight: { type: integer, format: int32, minimum: 0 }
+            costMultiplierOverride: { type: string, maxLength: 64, nullable: true }
+            enabled: { type: boolean }
+            status: { type: integer, format: int32 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters: []
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: updateUpstreamAccountGroupMembers
+  operation_id: upstreamAccountGroups.members.update
+  if_match_required: true
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/members
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account
+  response_schema:
+    name: UpstreamAccountGroupMemberCollectionResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        name: UpstreamAccountGroupMemberCollection
+        type: object
+        additionalProperties: false
+        required: [items]
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/UpstreamAccountGroupMember'
+  request_schema:
+    name: ReplaceUpstreamAccountGroupMembersRequest
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamAccountGroupMemberInput
+          type: object
+          additionalProperties: false
+          required: [accountId]
+          properties:
+            accountId: { type: string, maxLength: 32 }
+            priority: { type: integer, format: int32, minimum: 0, nullable: true }
+            routingWeight: { type: integer, format: int32, minimum: 0, nullable: true }
+            costMultiplierOverride: { type: string, maxLength: 64, nullable: true }
+            enabled: { type: boolean, nullable: true }
+            status: { type: integer, format: int32, nullable: true }
+        maxItems: 200
+  write_tables:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: listUpstreamAccountGroupResources
+  operation_id: upstreamAccountGroups.resources.list
+  kind: read
+  api_surface: backend
+  api_method: GET
+  api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_resource
+  - ai_resource
+  - ai_resource_group
+  response_schema:
+    name: UpstreamAccountGroupResourceListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamResourceEntitlement
+          type: object
+          additionalProperties: false
+          required: [id, resourceCode, resourceGroupCode, grantType, priority, status]
+          properties:
+            id: { type: string, maxLength: 32 }
+            resourceCode: { type: string, maxLength: 128 }
+            resourceGroupCode: { type: string, maxLength: 128 }
+            grantType: { type: string, enum: [allow, deny] }
+            priority: { type: integer, format: int32, minimum: 0 }
+            status: { type: integer, format: int32 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters: []
+- route: /admin/upstream/account-groups
+  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+  operation: updateUpstreamAccountGroupResources
+  operation_id: upstreamAccountGroups.resources.update
+  if_match_required: true
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_resource
+  - ai_resource
+  - ai_resource_group
+  response_schema:
+    name: UpstreamAccountGroupResourceCollectionResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        name: UpstreamAccountGroupResourceCollection
+        type: object
+        additionalProperties: false
+        required: [items]
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/UpstreamResourceEntitlement'
+  request_schema:
+    name: ReplaceUpstreamAccountGroupResourcesRequest
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          name: UpstreamResourceEntitlementInput
+          type: object
+          additionalProperties: false
+          required: []
+          properties:
+            resourceCode: { type: string, maxLength: 128, nullable: true }
+            resourceGroupCode: { type: string, maxLength: 128, nullable: true }
+            grantType: { type: string, nullable: true, enum: [allow, deny] }
+            priority: { type: integer, format: int32, minimum: 0, nullable: true }
+            status: { type: integer, format: int32, nullable: true }
+        maxItems: 200
+  write_tables:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_resource
+  - ai_resource
+  - ai_resource_group
+  - ops_audit_log
+  - ops_config_snapshot
+- route: /admin/upstream/account-groups
+  source: services/sdkwork-clawrouter-router-service/src/api/admin_route_explain.rs
+  operation: explainUpstreamAccountGroupRoute
+  operation_id: upstreamAccountGroups.explain
+  kind: action
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account
+  - ai_upstream_account_group
+  - ai_upstream_account_group_resource
+  - ai_resource
+  - ai_resource_group
+  - iam_gateway_api_key
+  - ai_upstream_object_route
+  - ai_routing_policy
+  - ai_routing_rule
+  response_schema:
+    name: UpstreamAccountGroupRouteExplanationResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item:
+        name: UpstreamAccountGroupRouteExplanation
+        type: object
+        additionalProperties: false
+        required: [source, ready, resourceCode, catalogKey, model, apiCode, capability, billingMeter, apiKeyId, accountGroupId, groupCode, pricingPlanCode, candidateCount, selectedCandidates, blockedReasons, warnings, policyId, ruleId, policySnapshotVersion]
+        properties:
+          source: { type: string, maxLength: 64 }
+          ready: { type: boolean }
+          resourceCode: { type: string, maxLength: 128 }
+          catalogKey: { type: string, maxLength: 256, nullable: true }
+          model: { type: string, maxLength: 256, nullable: true }
+          apiCode: { type: string, maxLength: 128 }
+          capability: { type: string, maxLength: 64 }
+          billingMeter: { type: string, maxLength: 128 }
+          apiKeyId: { type: string, maxLength: 32 }
+          accountGroupId: { type: string, maxLength: 32 }
+          groupCode: { type: string, maxLength: 128 }
+          pricingPlanCode: { type: string, maxLength: 128 }
+          candidateCount: { type: integer, format: int32, minimum: 0 }
+          selectedCandidates:
+            type: array
+            items:
+              name: UpstreamRouteExplainCandidate
+              type: object
+              additionalProperties: false
+              required: [kind, supplierCode, accountId, accountGroupId, accountGroupCode, pricingPlanCode, policyId, ruleId, apiCode, catalogKey, requestedModel, providerModel, regionCode, timeoutMs]
+              properties:
+                kind: { type: string, maxLength: 32 }
+                supplierCode: { type: string, maxLength: 128 }
+                accountId: { type: string, maxLength: 32 }
+                accountGroupId: { type: string, maxLength: 32 }
+                accountGroupCode: { type: string, maxLength: 128 }
+                pricingPlanCode: { type: string, maxLength: 128 }
+                policyId: { type: string, maxLength: 32, nullable: true }
+                ruleId: { type: string, maxLength: 32, nullable: true }
+                apiCode: { type: string, maxLength: 128 }
+                catalogKey: { type: string, maxLength: 256, nullable: true }
+                requestedModel: { type: string, maxLength: 256, nullable: true }
+                providerModel: { type: string, maxLength: 256, nullable: true }
+                regionCode: { type: string, maxLength: 128 }
+                timeoutMs: { type: string, maxLength: 32, nullable: true }
+          blockedReasons:
+            type: array
+            items:
+              name: UpstreamRouteExplainIssue
+              type: object
+              additionalProperties: false
+              required: [code, severity, message]
+              properties:
+                code: { type: string, maxLength: 128 }
+                severity: { type: string, enum: [blocking, warning] }
+                message: { type: string, maxLength: 1024 }
+          warnings:
+            type: array
+            items:
+              $ref: '#/components/schemas/UpstreamRouteExplainIssue'
+          policyId: { type: string, maxLength: 32, nullable: true }
+          ruleId: { type: string, maxLength: 32, nullable: true }
+          policySnapshotVersion: { type: string, maxLength: 128 }
+  request_schema:
+    name: ExplainUpstreamAccountGroupRouteRequest
+    type: object
+    additionalProperties: false
+    required: [apiKeyId, resourceCode]
+    properties:
+      apiKeyId: { type: string, maxLength: 32 }
+      resourceCode: { type: string, maxLength: 128 }
+      catalogKey: { type: string, maxLength: 256, nullable: true }
+      model: { type: string, maxLength: 256, nullable: true }
+      apiCode: { type: string, maxLength: 128, nullable: true }
+      capability: { type: string, maxLength: 64, nullable: true }
+      billingMeter: { type: string, maxLength: 128, nullable: true }
+      routeKey: { type: string, maxLength: 128, nullable: true }
 - route: /console/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-dashboard/src/dashboardService.ts
   operation: fetchDashboardOverview
@@ -933,8 +2290,8 @@ frontend_operations:
   api_path: /app/v3/api/iam/api_keys
   read_sources:
   - iam_gateway_api_key
-  - ai_channel_group
-  - ai_channel_group_metric_snapshot
+  - ai_upstream_account_group
+  - ai_upstream_account_group_metric_snapshot
   - iam_gateway_access_policy
   - ai_quota_policy
   - ai_model_pricing
@@ -949,22 +2306,17 @@ frontend_operations:
           name: AppApiKeyItem
           type: object
           additionalProperties: false
-          required: [id, name, maskedKey, channelGroup, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+          required: [id, name, maskedKey, accountGroup, accountGroupName, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
           properties:
             id: { type: string, minLength: 1, maxLength: 128 }
             name: { type: string, minLength: 1, maxLength: 128 }
             maskedKey: { type: string, minLength: 1, maxLength: 256 }
-            copyableKey:
-              type: string
-              minLength: 1
-              maxLength: 256
-              description: Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.
-            channelGroup: { type: string, minLength: 1, maxLength: 128 }
-            channelGroupName:
+            accountGroup: { type: string, minLength: 1, maxLength: 128 }
+            accountGroupName:
               type: string
               minLength: 1
               maxLength: 128
-              description: Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.
+              description: Display name snapshot for the bound upstream account group.
             rate: { type: string, nullable: true, maxLength: 64 }
             quota: { type: string, minLength: 1, maxLength: 64 }
             usedQuota: { type: string, minLength: 1, maxLength: 64 }
@@ -978,7 +2330,7 @@ frontend_operations:
             defaultForRuntime:
               type: boolean
               description: Whether this key is the current console default for backend runtime API key selection.
-          description: API key metadata with masked key material and authenticated owner copyable key material.
+          description: API key metadata. Secret material is never returned by list operations.
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters:
@@ -997,27 +2349,27 @@ frontend_operations:
   api_path: /app/v3/api/iam/api_keys
   idempotency_required: true
   read_sources:
-  - ai_channel_group
+  - ai_upstream_account_group
   write_tables:
-  - ai_channel_group
+  - ai_upstream_account_group
   - iam_gateway_api_key
   - iam_gateway_access_policy
   - ai_quota_policy
   - ops_audit_log
   request_schema:
     name: CreateApiKeyRequest
-    required: [name, channelGroup, quota, isUnlimitedQuota, modalities, ipLimit, expires]
+    required: [name, accountGroup, quota, isUnlimitedQuota, modalities, ipLimit, expires]
     properties:
       name:
         type: string
         minLength: 1
         maxLength: 128
         description: API key display name.
-      channelGroup:
+      accountGroup:
         type: string
         minLength: 1
         maxLength: 64
-        description: API key channel group code.
+        description: Upstream account group code authorized for this API key.
       quota:
         type: string
         format: decimal
@@ -1049,22 +2401,17 @@ frontend_operations:
         name: AppApiKeyItem
         type: object
         additionalProperties: false
-        required: [id, name, maskedKey, channelGroup, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+        required: [id, name, maskedKey, accountGroup, accountGroupName, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
         properties:
           id: { type: string, minLength: 1, maxLength: 128 }
           name: { type: string, minLength: 1, maxLength: 128 }
           maskedKey: { type: string, minLength: 1, maxLength: 256 }
-          copyableKey:
-            type: string
-            minLength: 1
-            maxLength: 256
-            description: Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.
-          channelGroup: { type: string, minLength: 1, maxLength: 128 }
-          channelGroupName:
+          accountGroup: { type: string, minLength: 1, maxLength: 128 }
+          accountGroupName:
             type: string
             minLength: 1
             maxLength: 128
-            description: Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.
+            description: Display name snapshot for the bound upstream account group.
           rate: { type: string, nullable: true, maxLength: 64 }
           quota: { type: string, minLength: 1, maxLength: 64 }
           usedQuota: { type: string, minLength: 1, maxLength: 64 }
@@ -1078,11 +2425,11 @@ frontend_operations:
           defaultForRuntime:
             type: boolean
             description: Whether this key is the current console default for backend runtime API key selection.
-        description: Created API key metadata. Authenticated owner management responses include copyableKey matching rawKey.
+        description: Created API key metadata without reusable secret material.
       rawKey:
         type: string
         minLength: 1
-        description: Full raw API key secret returned by create responses. Authenticated owner management list and update responses also expose this value as item.copyableKey for console copy actions.
+        description: Full raw API key secret returned exactly once by the create operation.
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: updateKey
@@ -1093,7 +2440,7 @@ frontend_operations:
   api_path: /app/v3/api/iam/api_keys/{apiKeyId}
   read_sources:
   - iam_gateway_api_key
-  - ai_channel_group
+  - ai_upstream_account_group
   - iam_gateway_access_policy
   - ai_quota_policy
   write_tables:
@@ -1112,11 +2459,11 @@ frontend_operations:
         minLength: 1
         maxLength: 128
         description: API key display name.
-      channelGroup:
+      accountGroup:
         type: string
         minLength: 1
         maxLength: 64
-        description: API key channel group code to bind to this key.
+        description: Upstream account group code to bind to this key.
       quota:
         type: string
         format: decimal
@@ -1148,22 +2495,17 @@ frontend_operations:
         name: AppApiKeyItem
         type: object
         additionalProperties: false
-        required: [id, name, maskedKey, channelGroup, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
+        required: [id, name, maskedKey, accountGroup, accountGroupName, quota, usedQuota, modalities, ipLimit, created, expires, status, defaultForRuntime]
         properties:
           id: { type: string, minLength: 1, maxLength: 128 }
           name: { type: string, minLength: 1, maxLength: 128 }
           maskedKey: { type: string, minLength: 1, maxLength: 256 }
-          copyableKey:
-            type: string
-            minLength: 1
-            maxLength: 256
-            description: Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.
-          channelGroup: { type: string, minLength: 1, maxLength: 128 }
-          channelGroupName:
+          accountGroup: { type: string, minLength: 1, maxLength: 128 }
+          accountGroupName:
             type: string
             minLength: 1
             maxLength: 128
-            description: Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.
+            description: Display name snapshot for the bound upstream account group.
           rate: { type: string, nullable: true, maxLength: 64 }
           quota: { type: string, minLength: 1, maxLength: 64 }
           usedQuota: { type: string, minLength: 1, maxLength: 64 }
@@ -1177,7 +2519,7 @@ frontend_operations:
           defaultForRuntime:
             type: boolean
             description: Whether this key is the current console default for backend runtime API key selection.
-        description: Updated API key metadata. Authenticated owner management responses include copyableKey for console copy actions.
+        description: Updated API key metadata. Secret material is never returned by update operations.
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: deleteKey
@@ -1948,144 +3290,6 @@ frontend_operations:
     properties: {}
   query_parameters: []
   operation_scope: app_shell
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: fetchGroups
-  operation_id: ai.channel.groups.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/channel_groups
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  - ai_channel_group_metric_snapshot
-  - ai_pricing_plan
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: addGroup
-  operation_id: ai.channel.groups.post
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/ai/channel_groups
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  - ai_pricing_plan
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_channel_group
-  - ai_channel_group_resource
-  - ai_pricing_plan_binding
-  - ops_audit_log
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: deleteGroup
-  operation_id: ai.channel.groups.byId.delete
-  kind: delete
-  api_surface: backend
-  api_method: DELETE
-  api_path: /backend/v3/api/ai/channel_groups/{channelGroupId}
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  response_schema:
-    name: NoData
-    properties: {}
-  write_tables:
-  - ai_channel_group
-  - ai_pricing_plan_binding
-  - ops_audit_log
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: updateGroup
-  operation_id: ai.channel.groups.byId.patch
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/ai/channel_groups/{channelGroupId}
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  - ai_pricing_plan
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_channel_group
-  - ai_channel_group_resource
-  - ai_pricing_plan_binding
-  - ops_audit_log
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: fetchGroupChannelBindings
-  operation_id: ai.channel.groups.byId.channel.bindings.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/channel_groups/{channelGroupId}/channel_bindings
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_channel
-  - ai_channel_group_resource
-  - ai_provider
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: replaceGroupChannelBindings
-  operation_id: ai.channel.groups.byId.channel.bindings.put
-  kind: update
-  api_surface: backend
-  api_method: PUT
-  api_path: /backend/v3/api/ai/channel_groups/{channelGroupId}/channel_bindings
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_channel
-  - ai_channel_group_resource
-  - ai_provider
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_channel_group_member
-  - ops_audit_log
-  - ops_config_snapshot
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: fetchGroupRouteExplain
-  operation_id: ai.channel.groups.byId.route.explain.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/channel_groups/{channelGroupId}/route_explain
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_channel_group_resource
-  - ai_channel
-  - ai_provider
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
 - route: /admin/model/mappings
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchModelOptionsCatalog
@@ -2915,227 +4119,6 @@ frontend_operations:
   - ai_resource
   - ai_resource_group_item
   - ops_audit_log
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: fetchRuntimeRouteExplain
-  operation_id: ai.route.explain.post
-  kind: action
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/ai/route_explain
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_pricing_plan
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
-  operation_scope: app_shell
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: fetchChannels
-  operation_id: integration.channels.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/integration/channels
-  sdk_domain: integration
-  read_sources:
-  - ai_provider
-  - ai_channel
-  - ai_channel_credential
-  - ai_channel_resource
-  - integration_provider_health_snapshot
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: fetchAssignableChannels
-  operation_id: integration.channels.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/integration/channels
-  sdk_domain: integration
-  read_sources:
-  - ai_provider
-  - ai_channel
-  - ai_channel
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: addChannel
-  operation_id: integration.channels.post
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/integration/channels
-  sdk_domain: integration
-  read_sources:
-  - ai_provider
-  - ai_channel
-  - ai_channel_credential
-  - ai_channel_resource
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_channel
-  - ai_channel_credential
-  - ai_channel_resource
-  - ops_config_snapshot
-  - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: updateChannel
-  operation_id: integration.channels.put
-  kind: update
-  api_surface: backend
-  api_method: PUT
-  api_path: /backend/v3/api/integration/channels
-  sdk_domain: integration
-  read_sources:
-  - ai_provider
-  - ai_channel
-  - ai_channel_credential
-  - ai_channel_resource
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_channel
-  - ai_channel_credential
-  - ai_channel_resource
-  - ops_config_snapshot
-  - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: deleteChannel
-  operation_id: integration.channels.byId.delete
-  kind: delete
-  api_surface: backend
-  api_method: DELETE
-  api_path: /backend/v3/api/integration/channels/{channelId}
-  sdk_domain: integration
-  read_sources:
-  - ai_channel
-  - ai_channel_resource
-  - ai_channel_resource
-  response_schema:
-    name: NoData
-    properties: {}
-  write_tables:
-  - ai_channel
-  - ai_channel_resource
-  - ops_config_snapshot
-  - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: testChannel
-  operation_id: integration.channels.byId.verify.post
-  kind: action
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/integration/channels/{channelId}/verify
-  sdk_domain: integration
-  read_sources:
-  - ai_channel
-  - ai_channel_resource
-  - ai_channel
-  - ai_channel_resource
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_channel
-  - ai_channel
-  - integration_provider_health_snapshot
-  - ops_config_snapshot
-  - ops_audit_log
-- route: /admin/channel
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs
-  operation: fetchProviderSecrets
-  operation_id: providerSecrets.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/integration/provider_secrets
-  sdk_domain: integration
-  read_sources:
-  - integration_provider_account
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-- route: /admin/channel
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs
-  operation: addProviderSecret
-  operation_id: providerSecrets.create
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/integration/provider_secrets
-  sdk_domain: integration
-  read_sources:
-  - integration_provider_account
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - integration_provider_account
-  - ops_config_snapshot
-  - ops_audit_log
-- route: /admin/channel
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs
-  operation: updateProviderSecret
-  operation_id: providerSecrets.update
-  kind: update
-  api_surface: backend
-  api_method: PUT
-  api_path: /backend/v3/api/integration/provider_secrets
-  sdk_domain: integration
-  read_sources:
-  - integration_provider_account
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - integration_provider_account
-  - ops_config_snapshot
-  - ops_audit_log
-- route: /admin/channel
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs
-  operation: deleteProviderSecret
-  operation_id: providerSecrets.delete
-  kind: delete
-  api_surface: backend
-  api_method: DELETE
-  api_path: /backend/v3/api/integration/provider_secrets/{secretId}
-  sdk_domain: integration
-  read_sources:
-  - integration_provider_account
-  response_schema:
-    name: NoData
-    properties: {}
-  write_tables:
-  - integration_provider_account
-  - ops_config_snapshot
-  - ops_audit_log
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchFirewalls
@@ -3232,173 +4215,6 @@ frontend_operations:
     name: NoData
     properties: {}
   query_parameters: []
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  operation: fetchSites
-  operation_id: sites.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/sites
-  sdk_domain: sites
-  read_sources:
-  - ai_site
-  - ai_site_service
-  response_schema:
-    name: AdminSiteListResponse
-    required: [items, pageInfo]
-    properties:
-      items:
-        type: array
-        items:
-          $ref: '#/components/schemas/AdminSiteItem'
-      pageInfo:
-        $ref: '#/components/schemas/PageInfo'
-  query_parameters:
-  - name: q
-    schema: { type: string, maxLength: 128 }
-  - name: page
-    schema: { type: integer, format: int32, minimum: 1, default: 1 }
-  - name: page_size
-    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  operation: createSite
-  operation_id: sites.post
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/sites
-  sdk_domain: sites
-  read_sources:
-  - ai_site
-  - ai_site_service
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_site
-  - ai_site_service
-  - ops_audit_log
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  operation: deleteSite
-  operation_id: sites.byId.delete
-  kind: delete
-  api_surface: backend
-  api_method: DELETE
-  api_path: /backend/v3/api/sites/{siteId}
-  sdk_domain: sites
-  read_sources:
-  - ai_site
-  - ai_site_service
-  response_schema:
-    name: NoData
-    properties: {}
-  write_tables:
-  - ai_site
-  - ai_site_service
-  - ops_audit_log
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  operation: updateSite
-  operation_id: sites.byId.patch
-  kind: update
-  api_surface: backend
-  api_method: PATCH
-  api_path: /backend/v3/api/sites/{siteId}
-  sdk_domain: sites
-  read_sources:
-  - ai_site
-  - ai_site_service
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_site
-  - ai_site_service
-  - ops_audit_log
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  operation: fetchSiteChannels
-  operation_id: sites.channels.list
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/sites/{siteId}/channels
-  sdk_domain: sites
-  read_sources:
-  - ai_channel
-  - ai_site
-  - ai_site_service
-  response_schema:
-    name: AdminSiteChannelListResponse
-    required: [items, pageInfo]
-    properties:
-      items:
-        type: array
-        items:
-          name: AdminSiteChannelItem
-          type: object
-          additionalProperties: false
-          required: [id, channelCode, channelName, providerCode, siteCode, siteServiceCode, siteChannelRole, healthStatus, status]
-          properties:
-            id: { type: string, minLength: 1, maxLength: 128 }
-            channelCode: { type: string, minLength: 1, maxLength: 128 }
-            channelName: { type: string, minLength: 1, maxLength: 128 }
-            providerCode: { type: string, nullable: true, maxLength: 128 }
-            siteCode: { type: string, nullable: true, maxLength: 128 }
-            siteServiceCode: { type: string, nullable: true, maxLength: 128 }
-            siteChannelRole: { type: string, nullable: true, maxLength: 128 }
-            healthStatus: { type: string, enum: [unknown, healthy, degraded, unhealthy] }
-            status: { type: string, enum: [active, disabled] }
-      pageInfo:
-        $ref: '#/components/schemas/PageInfo'
-  query_parameters:
-  - name: page
-    schema: { type: integer, format: int32, minimum: 1, default: 1 }
-  - name: page_size
-    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  operation: healthCheckSite
-  operation_id: sites.byId.health.check.post
-  kind: action
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/sites/{siteId}/health_check
-  sdk_domain: sites
-  read_sources:
-  - ai_site
-  - ai_site_service
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_site
-  - ai_site_service
-  - ops_audit_log
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  operation: testSiteConnection
-  operation_id: sites.byId.test.connection.post
-  kind: action
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/sites/{siteId}/test_connection
-  sdk_domain: sites
-  read_sources:
-  - ai_site
-  - ai_site_service
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ops_audit_log
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
   operation: fetchOverview
@@ -3699,7 +4515,7 @@ frontend_operations:
   sdk_domain: system
   read_sources:
   - ai_quota_policy
-  - ai_channel_group
+  - ai_upstream_account_group
   response_schema:
     name: NoData
     properties: {}
@@ -3715,7 +4531,7 @@ frontend_operations:
   sdk_domain: system
   read_sources:
   - ai_quota_policy
-  - ai_channel_group
+  - ai_upstream_account_group
   response_schema:
     name: NoData
     properties: {}

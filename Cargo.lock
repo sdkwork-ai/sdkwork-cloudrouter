@@ -2580,41 +2580,30 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "axum",
- "hex",
- "hmac",
  "sdkwork-claw-config",
  "sdkwork-claw-http",
- "sha2",
- "sqlx",
- "tokio",
 ]
 
 [[package]]
 name = "sdkwork-clawrouter-admin-analytics-repository-sqlx"
 version = "0.3.0"
 dependencies = [
- "anyhow",
- "sdkwork-claw-test-support",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-service",
  "sdkwork-utils-rust",
  "serde",
  "sqlx",
- "tokio",
 ]
 
 [[package]]
 name = "sdkwork-clawrouter-admin-dashboard-repository-sqlx"
 version = "0.3.0"
 dependencies = [
- "anyhow",
- "sdkwork-claw-test-support",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-service",
  "sdkwork-utils-rust",
  "serde",
  "sqlx",
- "tokio",
 ]
 
 [[package]]
@@ -2640,39 +2629,9 @@ dependencies = [
 name = "sdkwork-clawrouter-admin-monitor-repository-sqlx"
 version = "0.3.0"
 dependencies = [
- "anyhow",
- "sdkwork-claw-test-support",
  "sdkwork-database-sqlx",
  "serde",
  "sqlx",
- "tokio",
-]
-
-[[package]]
-name = "sdkwork-clawrouter-app-gateway-traces-repository-sqlx"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "sdkwork-claw-test-support",
- "sdkwork-database-sqlx",
- "sdkwork-utils-rust",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
-]
-
-[[package]]
-name = "sdkwork-clawrouter-app-providers-repository-sqlx"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "sdkwork-claw-test-support",
- "sdkwork-database-sqlx",
- "sdkwork-models-catalog-service",
- "serde",
- "sqlx",
- "tokio",
 ]
 
 [[package]]
@@ -2761,8 +2720,6 @@ dependencies = [
  "sdkwork-clawrouter-admin-analytics-repository-sqlx",
  "sdkwork-clawrouter-admin-dashboard-repository-sqlx",
  "sdkwork-clawrouter-admin-monitor-repository-sqlx",
- "sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
- "sdkwork-clawrouter-app-providers-repository-sqlx",
  "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
  "sdkwork-commerce-promotion-repository-sqlx",
@@ -2802,14 +2759,11 @@ dependencies = [
 name = "sdkwork-clawrouter-settlements-dashboard-repository-sqlx"
 version = "0.3.0"
 dependencies = [
- "anyhow",
- "sdkwork-claw-test-support",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-service",
  "serde",
  "serde_json",
  "sqlx",
- "tokio",
 ]
 
 [[package]]
@@ -3550,7 +3504,6 @@ dependencies = [
  "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
  "sdkwork-content-documents-sdk-reference",
- "sdkwork-database-config",
  "sdkwork-database-lifecycle",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
@@ -3575,7 +3528,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
- "tower",
  "tracing",
 ]
 

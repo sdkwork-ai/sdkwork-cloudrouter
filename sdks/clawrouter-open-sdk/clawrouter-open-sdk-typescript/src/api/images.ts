@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { OpenAiImageEditRequest, OpenAiImageGenerationRequest, OpenAiImageList, OpenAiImageVariationRequest } from '../types';
 
@@ -13,8 +13,8 @@ export class ImagesVariationsApi {
 
 
 /** Create image variation */
-  async create(body: OpenAiImageVariationRequest): Promise<OpenAiImageList> {
-    return this.client.post<OpenAiImageList>(aiApiPath(`/images/variations`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiImageVariationRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiImageList> {
+    return this.client.request<OpenAiImageList>(aiApiPath(`/images/variations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -27,8 +27,8 @@ export class ImagesGenerationsApi {
 
 
 /** Create image */
-  async create(body: OpenAiImageGenerationRequest): Promise<OpenAiImageList> {
-    return this.client.post<OpenAiImageList>(aiApiPath(`/images/generations`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiImageGenerationRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiImageList> {
+    return this.client.request<OpenAiImageList>(aiApiPath(`/images/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -41,8 +41,8 @@ export class ImagesEditsApi {
 
 
 /** Create image edit */
-  async create(body: OpenAiImageEditRequest): Promise<OpenAiImageList> {
-    return this.client.post<OpenAiImageList>(aiApiPath(`/images/edits`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiImageEditRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiImageList> {
+    return this.client.request<OpenAiImageList>(aiApiPath(`/images/edits`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

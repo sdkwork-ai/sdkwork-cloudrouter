@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
-    generated_uuid, item_response, list_query, list_response, no_content_response, not_found,
+    idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
     optional_text, parse_id, parse_if_match, problem, requested_at, required_text, subject,
     ListQuery, UpstreamState, MAX_NESTED_ITEMS,
 };
@@ -24,6 +24,7 @@ const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
 const MAX_DESCRIPTION_LENGTH: usize = 4_000;
 const MAX_URL_LENGTH: usize = 2_048;
+const SUPPLIER_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_001;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -94,6 +95,7 @@ struct AuthMethodRequestItem {
     auth_method_name: String,
     auth_type: String,
     config_schema: serde_json::Value,
+    runtime_auth_config: serde_json::Value,
     authorization_url: Option<String>,
     token_url: Option<String>,
     scopes: Option<serde_json::Value>,
@@ -165,6 +167,7 @@ struct AuthMethodResponse {
     auth_method_name: String,
     auth_type: String,
     config_schema: serde_json::Value,
+    runtime_auth_config: serde_json::Value,
     authorization_url: Option<String>,
     token_url: Option<String>,
     scopes: Option<serde_json::Value>,
@@ -190,21 +193,21 @@ pub(super) fn routes() -> Router<UpstreamState> {
             get(list_suppliers).post(create_supplier),
         )
         .route(
-            "/backend/v3/api/ai/upstream_suppliers/{supplier_id}",
+            "/backend/v3/api/ai/upstream_suppliers/{supplierId}",
             get(get_supplier)
                 .patch(update_supplier)
                 .delete(delete_supplier),
         )
         .route(
-            "/backend/v3/api/ai/upstream_suppliers/{supplier_id}/endpoints",
+            "/backend/v3/api/ai/upstream_suppliers/{supplierId}/endpoints",
             get(list_endpoints).put(replace_endpoints),
         )
         .route(
-            "/backend/v3/api/ai/upstream_suppliers/{supplier_id}/auth_methods",
+            "/backend/v3/api/ai/upstream_suppliers/{supplierId}/auth_methods",
             get(list_auth_methods).put(replace_auth_methods),
         )
         .route(
-            "/backend/v3/api/ai/upstream_suppliers/{supplier_id}/resources",
+            "/backend/v3/api/ai/upstream_suppliers/{supplierId}/resources",
             get(list_resources).put(replace_resources),
         )
 }
@@ -250,13 +253,19 @@ async fn get_supplier(
 async fn create_supplier(
     State(state): State<UpstreamState>,
     RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    headers: HeaderMap,
     payload: Result<Json<SupplierCreateRequest>, JsonRejection>,
 ) -> Response {
+    let scoped = subject(scoped);
+    let uuid = match idempotency_uuid(&headers, &scoped, SUPPLIER_CREATE_IDEMPOTENCY_SCOPE) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
     let payload = match decode_json(payload) {
         Ok(payload) => payload,
         Err(response) => return response,
     };
-    let command = match create_command(subject(scoped), payload) {
+    let command = match create_command(scoped, uuid, payload) {
         Ok(command) => command,
         Err(response) => return response,
     };
@@ -503,6 +512,7 @@ async fn replace_resources(
 
 fn create_command(
     subject: sdkwork_clawrouter_router_service::ports::AdminUpstreamSubject,
+    uuid: String,
     request: SupplierCreateRequest,
 ) -> Result<SaveAdminUpstreamSupplierCommand, Response> {
     let supplier_name = required_text(request.supplier_name, "supplierName", MAX_NAME_LENGTH)?;
@@ -510,7 +520,7 @@ fn create_command(
         subject,
         supplier_id: None,
         expected_version: None,
-        uuid: generated_uuid(),
+        uuid,
         supplier_code: required_text(request.supplier_code, "supplierCode", MAX_CODE_LENGTH)?,
         display_name: request
             .display_name
@@ -633,6 +643,12 @@ fn auth_method_inputs(
                     "configSchema must be a JSON object",
                 ));
             }
+            if !item.runtime_auth_config.is_object() {
+                return Err(problem(
+                    SdkWorkResultCode::InvalidParameter,
+                    "runtimeAuthConfig must be a JSON object",
+                ));
+            }
             if item.scopes.as_ref().is_some_and(|value| !value.is_array()) {
                 return Err(problem(
                     SdkWorkResultCode::InvalidParameter,
@@ -652,6 +668,7 @@ fn auth_method_inputs(
                 )?,
                 auth_type: auth_type(item.auth_type)?,
                 config_schema: item.config_schema,
+                runtime_auth_config: item.runtime_auth_config,
                 authorization_url: optional_text(
                     item.authorization_url,
                     "authorizationUrl",
@@ -828,6 +845,7 @@ impl From<AdminUpstreamSupplierAuthMethodItem> for AuthMethodResponse {
             auth_method_name: item.auth_method_name,
             auth_type: item.auth_type,
             config_schema: item.config_schema,
+            runtime_auth_config: item.runtime_auth_config,
             authorization_url: item.authorization_url,
             token_url: item.token_url,
             scopes: item.scopes,

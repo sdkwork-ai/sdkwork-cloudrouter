@@ -522,6 +522,8 @@ class ApiContractManifestGenerator:
                 messages.append(f"api contract {key} openapi_exposed must be boolean")
             if "idempotency_required" in entry and not isinstance(entry.get("idempotency_required"), bool):
                 messages.append(f"api contract {key} idempotency_required must be boolean")
+            if "if_match_required" in entry and not isinstance(entry.get("if_match_required"), bool):
+                messages.append(f"api contract {key} if_match_required must be boolean")
             if "rate_limit_tier" in entry:
                 rate_limit_tier = self._normalize_rate_limit_tier(entry.get("rate_limit_tier"))
                 if rate_limit_tier not in self.VALID_RATE_LIMIT_TIERS:
@@ -617,6 +619,10 @@ class ApiContractManifestGenerator:
                     else:
                         operation_ids[operation_id_key] = key
                 method = api_method.upper() if isinstance(api_method, str) else ""
+                if entry.get("if_match_required") is True and method not in {"PUT", "PATCH", "DELETE"}:
+                    messages.append(
+                        f"api contract {key} if_match_required is only valid for PUT, PATCH, or DELETE operations"
+                    )
                 if method == "GET" and "query_parameters" not in entry:
                     messages.append(
                         f"api contract {key} GET operations must explicitly declare query_parameters, "
@@ -712,6 +718,7 @@ class ApiContractManifestGenerator:
             "sdk_domain": sdk_domain,
             "openapi_exposed": entry.get("openapi_exposed", True) is not False,
             "idempotency_required": bool(entry.get("idempotency_required")),
+            "if_match_required": bool(entry.get("if_match_required")),
             "request_id_header": bool(entry.get("request_id_header")),
             "request_body_required": entry.get("request_body_required"),
             "read_sources": read_sources,

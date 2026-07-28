@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: d31176846b6286be19312d25d82363a993e17c74c9e34d5d668dee531a55bf71.
+-- Registry SHA-256: 9657825ca3d039a8f72ef1cdcef6a5e9d411fc6901be769fa1c7b6e579dc0cf2.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -118,7 +118,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_model_mapping_rule_binding_uuid ON ai_mo
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_model_mapping_rule_binding_target ON ai_model_mapping_rule_binding (tenant_id, organization_id, rule_id, binding_type, binding_id, binding_code) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_binding_rule_lookup ON ai_model_mapping_rule_binding (tenant_id, organization_id, rule_id, status, enabled, sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_binding_target_lookup ON ai_model_mapping_rule_binding (tenant_id, organization_id, binding_type, binding_id, binding_code, status, enabled, id);
-CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_binding_channel_group_lookup ON ai_model_mapping_rule_binding (tenant_id, organization_id, binding_type, binding_code, status, enabled, id);
+CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_binding_account_group_lookup ON ai_model_mapping_rule_binding (tenant_id, organization_id, binding_type, binding_code, status, enabled, id);
 CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_binding_vendor_lookup ON ai_model_mapping_rule_binding (tenant_id, organization_id, binding_type, binding_code, status, enabled, id);
 CREATE INDEX IF NOT EXISTS idx_ai_model_mapping_rule_binding_global_lookup ON ai_model_mapping_rule_binding (tenant_id, organization_id, binding_type, status, enabled, id);
 
@@ -393,46 +393,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_tier_rule_code ON ai_pricing_tie
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_tenant_status_effective ON ai_pricing_tier (tenant_id, organization_id, status, effective_from, sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_rule_range ON ai_pricing_tier (tenant_id, organization_id, pricing_rule_id, billing_meter_code, min_quantity, max_quantity, sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_ai_pricing_tier_model_pricing ON ai_pricing_tier (tenant_id, organization_id, model_pricing_id, price_item_type, sort_order, id);
-
-CREATE TABLE IF NOT EXISTS ai_provider_object_route (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    api_key_id BIGINT,
-    account_group_id BIGINT,
-    object_type VARCHAR(64) NOT NULL,
-    object_id VARCHAR(256) NOT NULL,
-    object_key_hash VARCHAR(128) NOT NULL,
-    parent_object_type VARCHAR(64),
-    parent_object_id VARCHAR(256),
-    supplier_code VARCHAR(64),
-    account_id BIGINT NOT NULL,
-    vendor_code VARCHAR(64),
-    api_code VARCHAR(128),
-    catalog_key VARCHAR(256),
-    provider_model VARCHAR(256),
-    region_code VARCHAR(64),
-    sticky_scope VARCHAR(64),
-    expires_at TIMESTAMPTZ,
-    last_seen_at TIMESTAMPTZ,
-    CONSTRAINT ck_ai_provider_object_route_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_uuid ON ai_provider_object_route (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_object ON ai_provider_object_route (tenant_id, organization_id, object_type, object_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_fast ON ai_provider_object_route (tenant_id, organization_id, object_key_hash, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_parent ON ai_provider_object_route (tenant_id, organization_id, parent_object_type, parent_object_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_account ON ai_provider_object_route (tenant_id, organization_id, account_group_id, account_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_provider_object_route_expiry ON ai_provider_object_route (tenant_id, organization_id, expires_at, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_quota_policy (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -712,16 +672,10 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier (
     owner_kind VARCHAR(32),
     region_code VARCHAR(64),
     environment INTEGER NOT NULL DEFAULT 1,
-    health_status INTEGER NOT NULL DEFAULT 1,
-    last_latency_ms INTEGER,
-    consecutive_error_count BIGINT NOT NULL DEFAULT 0,
-    last_checked_at TIMESTAMPTZ,
-    last_sync_at TIMESTAMPTZ,
     metadata_schema_version VARCHAR(32),
     sort_order INTEGER NOT NULL DEFAULT 100,
     CONSTRAINT ck_ai_upstream_supplier_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_upstream_supplier_type CHECK (supplier_type IN ('official', 'relay')),
-    CONSTRAINT ck_ai_upstream_supplier_health_values CHECK ((last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0)
+    CONSTRAINT ck_ai_upstream_supplier_type CHECK (supplier_type IN ('official', 'relay'))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_uuid ON ai_upstream_supplier (uuid);
@@ -752,24 +706,18 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier_endpoint (
     protocol_code VARCHAR(64),
     region_code VARCHAR(64),
     environment INTEGER NOT NULL DEFAULT 1,
-    health_status INTEGER NOT NULL DEFAULT 1,
-    last_latency_ms INTEGER,
-    consecutive_error_count BIGINT NOT NULL DEFAULT 0,
-    last_checked_at TIMESTAMPTZ,
-    last_sync_at TIMESTAMPTZ,
     priority INTEGER NOT NULL DEFAULT 100,
     routing_weight INTEGER NOT NULL DEFAULT 100,
     timeout_ms INTEGER,
     CONSTRAINT ck_ai_upstream_supplier_endpoint_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
     CONSTRAINT fk_ai_upstream_supplier_endpoint_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id, supplier_code) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id, supplier_code) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_upstream_supplier_endpoint_values CHECK (priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms > 0) AND (last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0)
+    CONSTRAINT ck_ai_upstream_supplier_endpoint_values CHECK (priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms > 0))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_uuid ON ai_upstream_supplier_endpoint (uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_tenant_code ON ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, endpoint_code);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_scope_id ON ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_supplier_status ON ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, status, priority, routing_weight, id);
-CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_health_status ON ai_upstream_supplier_endpoint (tenant_id, organization_id, status, health_status, id);
 
 CREATE TABLE IF NOT EXISTS ai_upstream_supplier_auth_method (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -790,13 +738,15 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier_auth_method (
     auth_method_name VARCHAR(128) NOT NULL,
     auth_type VARCHAR(64) NOT NULL,
     config_schema JSONB NOT NULL DEFAULT '{}'::jsonb,
+    runtime_auth_config JSONB NOT NULL,
     authorization_url VARCHAR(512),
     token_url VARCHAR(512),
     scopes JSONB,
     priority INTEGER NOT NULL DEFAULT 100,
     CONSTRAINT ck_ai_upstream_supplier_auth_method_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
     CONSTRAINT fk_ai_upstream_supplier_auth_method_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id, supplier_code) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id, supplier_code) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_upstream_supplier_auth_method_type CHECK (auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4', 'custom') AND priority >= 0)
+    CONSTRAINT ck_ai_upstream_supplier_auth_method_type CHECK (auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4', 'custom') AND priority >= 0),
+    CONSTRAINT ck_ai_upstream_supplier_auth_method_runtime_auth_config CHECK (jsonb_typeof(runtime_auth_config) = 'object')
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_auth_method_uuid ON ai_upstream_supplier_auth_method (uuid);
@@ -838,15 +788,10 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account (
     last_balance_checked_at TIMESTAMPTZ,
     last_rotated_at TIMESTAMPTZ,
     next_rotate_at TIMESTAMPTZ,
-    last_verified_at TIMESTAMPTZ,
-    last_used_at TIMESTAMPTZ,
     rpm_limit BIGINT,
     timeout_ms INTEGER,
     retry_policy JSONB,
     circuit_breaker_policy JSONB,
-    health_status INTEGER NOT NULL DEFAULT 1,
-    last_latency_ms INTEGER,
-    consecutive_error_count BIGINT,
     proxy_id BIGINT,
     risk_level INTEGER,
     CONSTRAINT ck_ai_upstream_account_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
@@ -854,7 +799,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account (
     CONSTRAINT fk_ai_upstream_account_preferred_endpoint FOREIGN KEY (tenant_id, organization_id, supplier_id, preferred_endpoint_id) REFERENCES ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, id) ON DELETE RESTRICT,
     CONSTRAINT fk_ai_upstream_account_auth_method FOREIGN KEY (tenant_id, organization_id, supplier_id, auth_method_code) REFERENCES ai_upstream_supplier_auth_method (tenant_id, organization_id, supplier_id, auth_method_code) ON DELETE RESTRICT,
     CONSTRAINT ck_ai_upstream_account_financial_values CHECK (contract_cost_multiplier > 0 AND (quota_limit IS NULL OR quota_limit >= 0) AND (quota_used IS NULL OR quota_used >= 0) AND (upstream_balance_amount IS NULL OR upstream_balance_amount >= 0)),
-    CONSTRAINT ck_ai_upstream_account_health_values CHECK ((last_latency_ms IS NULL OR last_latency_ms >= 0) AND (consecutive_error_count IS NULL OR consecutive_error_count >= 0) AND (timeout_ms IS NULL OR timeout_ms > 0))
+    CONSTRAINT ck_ai_upstream_account_timeout CHECK (timeout_ms IS NULL OR timeout_ms > 0)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_uuid ON ai_upstream_account (uuid);
@@ -862,7 +807,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_tenant_code ON ai_upstr
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_scope_id ON ai_upstream_account (tenant_id, organization_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_scope_auth_method ON ai_upstream_account (tenant_id, organization_id, id, auth_method_code);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_supplier_status ON ai_upstream_account (tenant_id, organization_id, supplier_id, status, id);
-CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_health_status ON ai_upstream_account (tenant_id, organization_id, status, health_status, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_preferred_endpoint ON ai_upstream_account (tenant_id, organization_id, preferred_endpoint_id, status, id);
 
 CREATE TABLE IF NOT EXISTS ai_upstream_account_credential (
@@ -1042,6 +986,92 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_resource_uuid ON 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_resource ON ai_upstream_account_group_resource (tenant_id, organization_id, account_group_id, resource_code, resource_group_code);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_resource_status ON ai_upstream_account_group_resource (tenant_id, organization_id, status, account_group_id, grant_type, priority, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_resource_lookup ON ai_upstream_account_group_resource (tenant_id, organization_id, account_group_id, status, grant_type, priority, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_account_health_state (
+    id BIGINT NOT NULL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    account_id BIGINT NOT NULL,
+    health_status INTEGER NOT NULL DEFAULT 0,
+    last_latency_ms INTEGER,
+    consecutive_error_count BIGINT NOT NULL DEFAULT 0,
+    last_verified_at TIMESTAMPTZ,
+    last_used_at TIMESTAMPTZ,
+    last_success_at TIMESTAMPTZ,
+    last_failure_at TIMESTAMPTZ,
+    CONSTRAINT ck_ai_upstream_account_health_state_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_account_health_state_account FOREIGN KEY (tenant_id, organization_id, account_id) REFERENCES ai_upstream_account (tenant_id, organization_id, id) ON DELETE CASCADE,
+    CONSTRAINT ck_ai_upstream_account_health_state_identity CHECK (id = account_id),
+    CONSTRAINT ck_ai_upstream_account_health_state_values CHECK (health_status IN (0, 1, 2) AND (last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_health_state_scope ON ai_upstream_account_health_state (tenant_id, organization_id, account_id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_health_state_health ON ai_upstream_account_health_state (tenant_id, organization_id, health_status, updated_at, account_id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_object_route (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    api_key_id BIGINT,
+    account_group_id BIGINT,
+    object_type VARCHAR(64) NOT NULL,
+    object_id VARCHAR(256) NOT NULL,
+    object_key_hash VARCHAR(128) NOT NULL,
+    parent_object_type VARCHAR(64),
+    parent_object_id VARCHAR(256),
+    supplier_code VARCHAR(64),
+    account_id BIGINT NOT NULL,
+    vendor_code VARCHAR(64),
+    api_code VARCHAR(128),
+    catalog_key VARCHAR(256),
+    provider_model VARCHAR(256),
+    region_code VARCHAR(64),
+    sticky_scope VARCHAR(64),
+    expires_at TIMESTAMPTZ,
+    last_seen_at TIMESTAMPTZ,
+    CONSTRAINT ck_ai_upstream_object_route_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_object_route_uuid ON ai_upstream_object_route (uuid) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_object_route_object ON ai_upstream_object_route (tenant_id, organization_id, object_type, object_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_object_route_fast ON ai_upstream_object_route (tenant_id, organization_id, object_key_hash, status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_object_route_parent ON ai_upstream_object_route (tenant_id, organization_id, parent_object_type, parent_object_id, status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_object_route_account ON ai_upstream_object_route (tenant_id, organization_id, account_group_id, account_id, status, id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_object_route_expiry ON ai_upstream_object_route (tenant_id, organization_id, expires_at, status, id);
+
+CREATE TABLE IF NOT EXISTS ai_upstream_supplier_endpoint_health_state (
+    id BIGINT NOT NULL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    supplier_id BIGINT NOT NULL,
+    endpoint_id BIGINT NOT NULL,
+    health_status INTEGER NOT NULL DEFAULT 0,
+    last_latency_ms INTEGER,
+    consecutive_error_count BIGINT NOT NULL DEFAULT 0,
+    last_checked_at TIMESTAMPTZ,
+    last_success_at TIMESTAMPTZ,
+    last_failure_at TIMESTAMPTZ,
+    CONSTRAINT ck_ai_upstream_supplier_endpoint_health_state_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_upstream_supplier_endpoint_health_state_endpoint FOREIGN KEY (tenant_id, organization_id, supplier_id, endpoint_id) REFERENCES ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, id) ON DELETE CASCADE,
+    CONSTRAINT ck_ai_upstream_supplier_endpoint_health_state_identity CHECK (id = endpoint_id),
+    CONSTRAINT ck_ai_upstream_supplier_endpoint_health_state_values CHECK (health_status IN (0, 1, 2) AND (last_latency_ms IS NULL OR last_latency_ms >= 0) AND consecutive_error_count >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_health_state_scope ON ai_upstream_supplier_endpoint_health_state (tenant_id, organization_id, endpoint_id);
+CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_health_state_health ON ai_upstream_supplier_endpoint_health_state (tenant_id, organization_id, health_status, updated_at, endpoint_id);
 
 CREATE TABLE IF NOT EXISTS ai_upstream_supplier_resource (
     id BIGINT NOT NULL PRIMARY KEY,

@@ -25,7 +25,7 @@ const MAX_MODEL_LEN: usize = 128;
 const MAX_GROUP_LEN: usize = 128;
 const MIN_LIMIT_VALUE: i64 = 1;
 const MAX_LIMIT_VALUE: i64 = 1_000_000_000;
-const CHANNEL_GROUP_NOT_FOUND: &str = "channel group was not found";
+const ACCOUNT_GROUP_NOT_FOUND: &str = "account group was not found";
 
 #[derive(Clone)]
 struct AdminModelRateLimitState {
@@ -44,7 +44,7 @@ struct AdminModelRateLimitListQueryRequest {
 #[serde(rename_all = "camelCase")]
 struct AdminModelRateLimitCreateRequest {
     model: Option<String>,
-    upstream_account_group: Option<String>,
+    account_group: Option<String>,
     rpm: Option<i64>,
     tpm: Option<i64>,
 }
@@ -52,7 +52,7 @@ struct AdminModelRateLimitCreateRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NormalizedCreateRequest {
     model: String,
-    upstream_account_group: String,
+    account_group: String,
     rpm: i64,
     tpm: i64,
 }
@@ -73,9 +73,9 @@ struct AdminModelRateLimitItemEnvelope {
 struct AdminModelRateLimitItemResponse {
     id: String,
     model: String,
-    upstream_account_group: String,
+    account_group: String,
     account_group_id: String,
-    upstream_account_group_name: String,
+    account_group_name: String,
     rpm: i64,
     tpm: i64,
     status: String,
@@ -163,8 +163,8 @@ async fn create_model_rate_limit(
             },
         ),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) if error.to_string().contains(CHANNEL_GROUP_NOT_FOUND) => {
-            bad_request("channelGroup must identify an existing ai channel group".to_owned())
+        Err(error) if error.to_string().contains(ACCOUNT_GROUP_NOT_FOUND) => {
+            bad_request("accountGroup must identify an existing upstream account group".to_owned())
         }
         Err(error) => {
             model_rate_limit_system_response("model rate limit command store is unavailable", error)
@@ -188,7 +188,7 @@ fn normalize_create_request(
 ) -> Result<NormalizedCreateRequest, String> {
     Ok(NormalizedCreateRequest {
         model: normalize_model(request.model.as_deref())?,
-        upstream_account_group: normalize_group(request.upstream_account_group.as_deref())?,
+        account_group: normalize_group(request.account_group.as_deref())?,
         rpm: normalize_limit_value(request.rpm, "rpm")?,
         tpm: normalize_limit_value(request.tpm, "tpm")?,
     })
@@ -216,15 +216,15 @@ fn normalize_model(value: Option<&str>) -> Result<String, String> {
 fn normalize_group(value: Option<&str>) -> Result<String, String> {
     let value = value.unwrap_or("").trim();
     if value.is_empty() {
-        return Err("channelGroup is required".to_owned());
+        return Err("accountGroup is required".to_owned());
     }
     if value.chars().count() > MAX_GROUP_LEN {
         return Err(format!(
-            "channelGroup must be at most {MAX_GROUP_LEN} characters"
+            "accountGroup must be at most {MAX_GROUP_LEN} characters"
         ));
     }
     if value.chars().any(char::is_control) {
-        return Err("channelGroup must not contain control characters".to_owned());
+        return Err("accountGroup must not contain control characters".to_owned());
     }
     Ok(value.to_owned())
 }
@@ -254,7 +254,7 @@ fn build_create_command(
         config_snapshot_uuid: generate_entity_uuid(&state)?,
         policy_code,
         model: request.model,
-        upstream_account_group: request.upstream_account_group,
+        account_group: request.account_group,
         rpm: request.rpm,
         tpm: request.tpm,
         request_id: generate_server_request_id().map_err(request_id_error)?,
@@ -284,9 +284,9 @@ fn to_item_response(item: AdminModelRateLimitItem) -> AdminModelRateLimitItemRes
     AdminModelRateLimitItemResponse {
         id: item.id.to_string(),
         model: item.model,
-        upstream_account_group: item.upstream_account_group,
+        account_group: item.account_group,
         account_group_id: item.account_group_id.to_string(),
-        upstream_account_group_name: item.upstream_account_group_name,
+        account_group_name: item.account_group_name,
         rpm: item.rpm,
         tpm: item.tpm,
         status: item.status,

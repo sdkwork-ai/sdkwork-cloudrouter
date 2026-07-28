@@ -52,21 +52,16 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresCatalogLoadError, PostgresGatewayUsageRecorder, PostgresPricingCatalogLoader,
     PostgresUsageSettlementStore,
 };
-use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
-    SqlCatalogLoadError, SqliteGatewayUsageRecorder, SqlitePricingCatalogLoader,
-    SqliteUsageSettlementStore,
-};
 use sdkwork_clawrouter_router_service::infrastructure::{
-    RedisGatewayAccountingRetryQueue, SqliteGatewayAccountingRetryQueue,
+    InMemoryGatewayAccountingRetryQueue, RedisGatewayAccountingRetryQueue,
 };
 use sdkwork_clawrouter_router_service::ports::{
     ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
     GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
-    GatewayUsageRecorder, PricingCatalog, ProviderHealthProbe, ProviderSecretResolver,
-    ResponsesRelay, StickyRouteStore, UsageSettlementStore,
+    GatewayUsageRecorder, PricingCatalog, ProviderSecretResolver, ResponsesRelay, StickyRouteStore,
+    UsageSettlementStore,
 };
-use sqlx::sqlite::SqlitePool;
 use sqlx::PgPool;
 use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
@@ -439,7 +434,7 @@ const CATALOG_REFRESH_FALLBACK_TICKS: u64 = 12;
 
 use sdkwork_database_sqlx::DatabasePool;
 
-/// Histogram for catalog refresh duration, labelled by backend (`sqlite`/`postgres`).
+/// Histogram for catalog refresh duration, labelled by backend.
 ///
 /// M-1: surfaces slow refreshes that keep the previous snapshot pinned for too
 /// long and multiply database load. Alert on p95 > refresh interval.
@@ -462,7 +457,7 @@ fn catalog_refresh_duration_seconds() -> prometheus::HistogramVec {
         .clone()
 }
 
-/// Counter for catalog refresh failures, labelled by backend (`sqlite`/`postgres`).
+/// Counter for catalog refresh failures, labelled by backend.
 ///
 /// M-1/M-6: a rising failure rate means the gateway is serving a stale pricing
 /// snapshot. Alert on any increase.
@@ -499,7 +494,6 @@ struct AllInOneRuntimeContext {
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
     provider_runtime_config: ProviderRelayRuntimeConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
     cache_manager: RuntimeCacheManager,
     request_limits_config: RequestLimitsConfig,
     models_catalog_root: Option<String>,
@@ -1001,6 +995,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
     deployment_mode: DeploymentMode,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Result<Router, GatewayRouterError> {
+    require_postgres_server_database(&config)?;
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
     let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
@@ -1016,97 +1011,8 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
             .await
             .map_err(GatewayRouterError::Config)?,
     };
-    match config.engine {
-        DatabaseEngine::Sqlite => {
-            let database_pool =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool(
-                    &config,
-                )
-                .await
-                .map_err(gateway_sqlite_pool_error)?;
-            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
-            let pool = database_pool.as_sqlite().cloned().ok_or_else(|| {
-                GatewayRouterError::Config("expected SQLite database pool".to_owned())
-            })?;
-            if startup_install_mode.should_ensure() {
-                DatabaseInstaller::for_sqlite(pool.clone())
-                    .with_env_options()?
-                    .ensure_bootstrap_data()
-                    .await?;
-            }
-            let snapshot = SqlitePricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            )
-            .with_circuit_breaker_recovery_window_seconds(
-                provider_runtime.circuit_breaker_recovery_window_seconds,
-            )
-            .load_snapshot()
-            .await?;
-            log_gateway_runtime_catalog_snapshot_summary("sqlite", "startup", snapshot.summary());
-            let provider_secret_resolver = openai_runtime_relay_secret_resolver(
-                provider_secret_map_config.clone(),
-                snapshot.managed_provider_secrets(),
-            );
-            let catalog = Arc::new(RefreshableSqlPricingCatalog::new(snapshot));
-            let usage_settlement_wakeup =
-                maybe_spawn_sqlite_usage_settlement_worker(&pool, usage_settlement_worker_config)
-                    .await?;
-            let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
-                Arc::new(SqliteGatewayUsageRecorder::new_with_attribution(
-                    pool.clone(),
-                    gateway_trace_attribution(),
-                )),
-                usage_settlement_wakeup,
-            );
-            let (usage_recorder, accounting_retry_health) =
-                wrap_usage_recorder_with_durable_accounting_retry(
-                    primary_usage_recorder,
-                    gateway_trace_attribution(),
-                    runtime_toml,
-                )
-                .await?;
-            spawn_sqlite_catalog_refresh_worker(
-                &pool,
-                Arc::clone(&catalog),
-                provider_secret_resolver.clone(),
-                api_key_secret_codec.clone(),
-                provider_runtime.catalog_refresh_interval,
-                provider_runtime.circuit_breaker_recovery_window_seconds,
-            );
-            let invocation_sticky: Option<Arc<dyn StickyRouteStore>> = Some(Arc::new(
-                InvocationStickyObjectRouteStore::sqlite(pool.clone()),
-            ));
-            let readiness_check =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::sqlite_runtime_readiness_check(
-                    pool.clone(),
-                    runtime_toml,
-                    usage_settlement_worker_config,
-                );
-            let readiness_check =
-                combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
-            router_with_database_runtime_routes(
-                router_with_database_status_and_passthrough_placeholder(
-                    Some(&config),
-                    provider_secret_resolver.is_none() && provider_passthrough_config.is_none(),
-                    readiness_check,
-                    Some(deployment_mode),
-                ),
-                catalog,
-                api_key_hasher,
-                provider_secret_resolver.clone(),
-                invocation_sticky,
-                Some(usage_recorder),
-                provider_passthrough_config,
-                provider_adapter_config.clone(),
-                provider_runtime,
-                query_string_api_key_policy,
-                runtime_toml,
-                request_limits_config,
-            )
-        }
-        DatabaseEngine::Postgres => {
-            let database_pool =
+    {
+        let database_pool =
                 sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool(
                     &config,
                 )
@@ -1116,87 +1022,87 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                         sqlx::Error::Configuration(error.to_string().into()),
                     ))
                 })?;
-            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
-            let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
-                GatewayRouterError::Config("expected PostgreSQL database pool".to_owned())
-            })?;
-            if startup_install_mode.should_ensure() {
-                DatabaseInstaller::for_postgres(pool.clone())
-                    .with_env_options()?
-                    .ensure_bootstrap_data()
-                    .await?;
-            }
-            let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            )
-            .with_circuit_breaker_recovery_window_seconds(
-                provider_runtime.circuit_breaker_recovery_window_seconds,
-            )
-            .load_snapshot()
-            .await?;
-            log_gateway_runtime_catalog_snapshot_summary("postgres", "startup", snapshot.summary());
-            let provider_secret_resolver = openai_runtime_relay_secret_resolver(
-                provider_secret_map_config.clone(),
-                snapshot.managed_provider_secrets(),
-            );
-            let catalog = Arc::new(RefreshableSqlPricingCatalog::new(snapshot));
-            let usage_settlement_wakeup =
-                maybe_spawn_postgres_usage_settlement_worker(&pool, usage_settlement_worker_config)
-                    .await?;
-            let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
-                Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
-                    pool.clone(),
-                    gateway_trace_attribution(),
-                )),
-                usage_settlement_wakeup,
-            );
-            let (usage_recorder, accounting_retry_health) =
-                wrap_usage_recorder_with_durable_accounting_retry(
-                    primary_usage_recorder,
-                    gateway_trace_attribution(),
-                    runtime_toml,
-                )
+        prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+        let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
+            GatewayRouterError::Config("expected PostgreSQL database pool".to_owned())
+        })?;
+        if startup_install_mode.should_ensure() {
+            DatabaseInstaller::for_postgres(pool.clone())
+                .with_env_options()?
+                .ensure_bootstrap_data()
                 .await?;
-            spawn_postgres_catalog_refresh_worker(
-                &pool,
-                Arc::clone(&catalog),
-                provider_secret_resolver.clone(),
-                api_key_secret_codec.clone(),
-                provider_runtime.catalog_refresh_interval,
-                provider_runtime.circuit_breaker_recovery_window_seconds,
-            );
-            let invocation_sticky: Option<Arc<dyn StickyRouteStore>> = Some(Arc::new(
-                InvocationStickyObjectRouteStore::postgres(pool.clone()),
-            ));
-            let readiness_check =
+        }
+        let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
+            pool.clone(),
+            api_key_secret_codec.clone(),
+        )
+        .with_circuit_breaker_recovery_window_seconds(
+            provider_runtime.circuit_breaker_recovery_window_seconds,
+        )
+        .load_snapshot()
+        .await?;
+        log_gateway_runtime_catalog_snapshot_summary("postgres", "startup", snapshot.summary());
+        let provider_secret_resolver = openai_runtime_relay_secret_resolver(
+            provider_secret_map_config.clone(),
+            snapshot.managed_provider_secrets(),
+        );
+        let catalog = Arc::new(RefreshableSqlPricingCatalog::new(snapshot));
+        let usage_settlement_wakeup =
+            maybe_spawn_postgres_usage_settlement_worker(&pool, usage_settlement_worker_config)
+                .await?;
+        let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
+            Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
+                pool.clone(),
+                gateway_trace_attribution(),
+            )),
+            usage_settlement_wakeup,
+        );
+        let (usage_recorder, accounting_retry_health) =
+            wrap_usage_recorder_with_durable_accounting_retry(
+                primary_usage_recorder,
+                gateway_trace_attribution(),
+                runtime_toml,
+                deployment_mode,
+            )
+            .await?;
+        spawn_postgres_catalog_refresh_worker(
+            &pool,
+            Arc::clone(&catalog),
+            provider_secret_resolver.clone(),
+            api_key_secret_codec.clone(),
+            provider_runtime.catalog_refresh_interval,
+            provider_runtime.circuit_breaker_recovery_window_seconds,
+        );
+        let invocation_sticky: Option<Arc<dyn StickyRouteStore>> = Some(Arc::new(
+            InvocationStickyObjectRouteStore::postgres(pool.clone()),
+        ));
+        let readiness_check =
                 sdkwork_clawrouter_router_service::infrastructure::sql::pool::postgres_runtime_readiness_check(
                     pool.clone(),
                     runtime_toml,
                     usage_settlement_worker_config,
                 );
-            let readiness_check =
-                combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
-            router_with_database_runtime_routes(
-                router_with_database_status_and_passthrough_placeholder(
-                    Some(&config),
-                    provider_secret_resolver.is_none() && provider_passthrough_config.is_none(),
-                    readiness_check,
-                    Some(deployment_mode),
-                ),
-                catalog,
-                api_key_hasher,
-                provider_secret_resolver.clone(),
-                invocation_sticky,
-                Some(usage_recorder),
-                provider_passthrough_config,
-                provider_adapter_config.clone(),
-                provider_runtime,
-                query_string_api_key_policy,
-                runtime_toml,
-                request_limits_config,
-            )
-        }
+        let readiness_check =
+            combine_accounting_retry_readiness(readiness_check, accounting_retry_health);
+        router_with_database_runtime_routes(
+            router_with_database_status_and_passthrough_placeholder(
+                Some(&config),
+                provider_secret_resolver.is_none() && provider_passthrough_config.is_none(),
+                readiness_check,
+                Some(deployment_mode),
+            ),
+            catalog,
+            api_key_hasher,
+            provider_secret_resolver.clone(),
+            invocation_sticky,
+            Some(usage_recorder),
+            provider_passthrough_config,
+            provider_adapter_config.clone(),
+            provider_runtime,
+            query_string_api_key_policy,
+            runtime_toml,
+            request_limits_config,
+        )
     }
 }
 
@@ -1326,93 +1232,51 @@ async fn finalize_all_in_one_route_surfaces(
 pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeInProcessUpstreams> {
     let context = all_in_one_runtime_context_from_env().await?;
     let gateway_router = build_gateway_router_from_all_in_one_context(&context).await?;
-    let (backend_router, app_router) = match &context.database_pool {
-        DatabasePool::Sqlite(pool, _) => {
-            let backend_router =
-                sdkwork_routes_clawrouter_backend_api::router_with_sqlite_shared_runtime(
-                    context.database_config.clone(),
-                    pool.clone(),
-                    Arc::clone(&context.catalog),
-                    context.api_key_security_config.clone(),
-                    context.trusted_subject_config.clone(),
-                    context.app_session_config.clone(),
-                    Arc::clone(&context.provider_health_probe),
-                    context.deployment_mode,
-                    context.cache_manager.clone(),
-                    Arc::clone(&context.database_installer),
-                    context.request_limits_config.clone(),
-                    context.models_catalog_root.clone(),
-                )
-                .map_err(anyhow::Error::new)?;
-            let app_router = sdkwork_routes_clawrouter_app_api::router_with_sqlite_shared_runtime(
-                context.database_config.clone(),
-                pool.clone(),
-                Arc::clone(&context.catalog),
-                context.api_key_security_config.clone(),
-                context.trusted_subject_config.clone(),
-                context.app_session_config.clone(),
-                context.payment_webhook_config.clone(),
-                Arc::clone(&context.provider_health_probe),
-                context.deployment_mode,
-                context.request_limits_config.clone(),
-                Arc::clone(&context.app_runtime_gateway_client),
-                Arc::clone(&context.app_runtime_stream_bus),
-                context.model_ranking_refresh_worker_config.clone(),
-            )
-            .await
-            .map_err(anyhow::Error::new)?;
-            finalize_all_in_one_route_surfaces(
-                &context.database_config,
-                &context.database_pool,
-                backend_router,
-                app_router,
-            )
-            .await
-        }
-        DatabasePool::Postgres(pool, _) => {
-            let backend_router =
-                sdkwork_routes_clawrouter_backend_api::router_with_postgres_shared_runtime(
-                    context.database_config.clone(),
-                    pool.clone(),
-                    Arc::clone(&context.catalog),
-                    context.api_key_security_config.clone(),
-                    context.trusted_subject_config.clone(),
-                    context.app_session_config.clone(),
-                    Arc::clone(&context.provider_health_probe),
-                    context.deployment_mode,
-                    context.cache_manager.clone(),
-                    Arc::clone(&context.database_installer),
-                    context.request_limits_config.clone(),
-                    context.models_catalog_root.clone(),
-                )
-                .map_err(anyhow::Error::new)?;
-            let app_router =
-                sdkwork_routes_clawrouter_app_api::router_with_postgres_shared_runtime(
-                    context.database_config.clone(),
-                    pool.clone(),
-                    Arc::clone(&context.catalog),
-                    context.api_key_security_config.clone(),
-                    context.trusted_subject_config.clone(),
-                    context.app_session_config.clone(),
-                    context.payment_webhook_config.clone(),
-                    Arc::clone(&context.provider_health_probe),
-                    context.deployment_mode,
-                    context.request_limits_config.clone(),
-                    Arc::clone(&context.app_runtime_gateway_client),
-                    Arc::clone(&context.app_runtime_stream_bus),
-                    context.model_ranking_refresh_worker_config.clone(),
-                )
-                .await
-                .map_err(anyhow::Error::new)?;
-            finalize_all_in_one_route_surfaces(
-                &context.database_config,
-                &context.database_pool,
-                backend_router,
-                app_router,
-            )
-            .await
-        }
-    };
+    let pool = context
+        .database_pool
+        .as_postgres()
+        .cloned()
+        .ok_or_else(|| {
+            anyhow::Error::msg("all-in-one runtime requires a PostgreSQL database pool")
+        })?;
+    let backend_router =
+        sdkwork_routes_clawrouter_backend_api::router_with_postgres_shared_runtime(
+            context.database_config.clone(),
+            pool.clone(),
+            Arc::clone(&context.catalog),
+            context.api_key_security_config.clone(),
+            context.trusted_subject_config.clone(),
+            context.app_session_config.clone(),
+            context.deployment_mode,
+            context.cache_manager.clone(),
+            Arc::clone(&context.database_installer),
+            context.request_limits_config.clone(),
+            context.models_catalog_root.clone(),
+        )
+        .map_err(anyhow::Error::new)?;
+    let app_router = sdkwork_routes_clawrouter_app_api::router_with_postgres_shared_runtime(
+        context.database_config.clone(),
+        pool,
+        Arc::clone(&context.catalog),
+        context.api_key_security_config.clone(),
+        context.trusted_subject_config.clone(),
+        context.app_session_config.clone(),
+        context.payment_webhook_config.clone(),
+        context.deployment_mode,
+        context.request_limits_config.clone(),
+        Arc::clone(&context.app_runtime_gateway_client),
+        Arc::clone(&context.app_runtime_stream_bus),
+        context.model_ranking_refresh_worker_config.clone(),
+    )
+    .await
+    .map_err(anyhow::Error::new)?;
+    let (backend_router, app_router) = finalize_all_in_one_route_surfaces(
+        &context.database_config,
+        &context.database_pool,
+        backend_router,
+        app_router,
+    )
+    .await;
     Ok(EdgeInProcessUpstreams::new(
         gateway_router,
         backend_router,
@@ -1438,6 +1302,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                 DatabaseConfig::startup_help_text(profile)
             ))
         })?;
+    require_postgres_server_database(&database_config).map_err(anyhow::Error::new)?;
     sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&database_config);
     let api_key_security_config = require_api_key_security_config(
         ApiKeySecurityConfig::from_env_or_runtime_toml(runtime_toml_ref)
@@ -1487,12 +1352,6 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         provider_adapter_config_from_env_or_runtime_toml(runtime_toml_ref)
             .await
             .map_err(anyhow::Error::msg)?;
-    let provider_health_probe =
-        sdkwork_routes_clawrouter_backend_api::shared_provider_health_probe_from_runtime_toml(
-            provider_secret_map_config.clone(),
-            runtime_toml_ref,
-        )
-        .map_err(anyhow::Error::new)?;
     let cache_manager =
         sdkwork_routes_clawrouter_backend_api::shared_cache_manager_from_runtime_toml(
             runtime_toml_ref,
@@ -1532,100 +1391,8 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
     let api_key_secret_codec =
         api_key_secret_codec_from_config(&api_key_security_config).map_err(anyhow::Error::new)?;
 
-    match database_config.engine {
-        DatabaseEngine::Sqlite => {
-            let sqlite_pool_max_connections =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::effective_sqlite_runtime_pool_max_connections(
-                    &database_config.url,
-                    database_config.max_connections,
-                );
-            if sqlite_pool_max_connections > database_config.max_connections {
-                tracing::warn!(
-                    configured_max_connections = database_config.max_connections,
-                    effective_max_connections = sqlite_pool_max_connections,
-                    "SQLite runtime database pool max_connections was raised to protect all-in-one background tasks"
-                );
-            }
-            let database_pool =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_claw_sqlite_runtime_database_pool(
-                    &database_config,
-                )
-                .await
-                .map_err(|error| anyhow::Error::new(gateway_sqlite_pool_error(error)))?;
-            prepare_claw_router_database_lifecycle(database_pool.clone())
-                .await
-                .map_err(anyhow::Error::new)?;
-            let pool = database_pool.as_sqlite().cloned().ok_or_else(|| {
-                anyhow::Error::new(GatewayRouterError::Sqlite(SqlCatalogLoadError::Database(
-                    sqlx::Error::Configuration("expected sqlite database pool".into()),
-                )))
-            })?;
-            let database_installer = Arc::new(
-                DatabaseInstaller::for_sqlite(pool.clone())
-                    .with_env_options()
-                    .map_err(anyhow::Error::new)?,
-            );
-            if startup_install_mode.should_ensure() {
-                database_installer
-                    .ensure_bootstrap_data()
-                    .await
-                    .map_err(anyhow::Error::new)?;
-            }
-            let snapshot = SqlitePricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            )
-            .with_circuit_breaker_recovery_window_seconds(
-                provider_runtime.circuit_breaker_recovery_window_seconds,
-            )
-            .load_snapshot()
-            .await
-            .map_err(anyhow::Error::new)?;
-            log_gateway_runtime_catalog_snapshot_summary("sqlite", "startup", snapshot.summary());
-            let provider_secret_resolver = openai_runtime_relay_secret_resolver(
-                provider_secret_map_config.clone(),
-                snapshot.managed_provider_secrets(),
-            );
-            let catalog = Arc::new(RefreshableSqlPricingCatalog::new(snapshot));
-            let usage_settlement_wakeup =
-                maybe_spawn_sqlite_usage_settlement_worker(&pool, usage_settlement_worker_config)
-                    .await
-                    .map_err(anyhow::Error::new)?;
-            spawn_sqlite_catalog_refresh_worker(
-                &pool,
-                Arc::clone(&catalog),
-                provider_secret_resolver.clone(),
-                api_key_secret_codec,
-                shared_catalog_refresh_interval,
-                provider_runtime.circuit_breaker_recovery_window_seconds,
-            );
-            Ok(AllInOneRuntimeContext {
-                database_config,
-                database_pool,
-                database_installer,
-                catalog,
-                api_key_security_config,
-                provider_relay_config,
-                provider_adapter_config,
-                provider_secret_resolver,
-                trusted_subject_config,
-                app_session_config,
-                payment_webhook_config,
-                provider_runtime_config: provider_runtime,
-                provider_health_probe,
-                cache_manager,
-                request_limits_config,
-                models_catalog_root,
-                deployment_mode,
-                query_string_api_key_policy,
-                app_runtime_gateway_client,
-                app_runtime_stream_bus,
-                model_ranking_refresh_worker_config,
-                usage_settlement_wakeup,
-            })
-        }
-        DatabaseEngine::Postgres => {
-            let database_pool =
+    {
+        let database_pool =
                 sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool(
                     &database_config,
                 )
@@ -1637,80 +1404,78 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                         )),
                     ))
                 })?;
-            prepare_claw_router_database_lifecycle(database_pool.clone())
-                .await
-                .map_err(anyhow::Error::new)?;
-            let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
-                anyhow::Error::new(GatewayRouterError::Postgres(
-                    PostgresCatalogLoadError::Database(sqlx::Error::Configuration(
-                        "expected postgres database pool".into(),
-                    )),
-                ))
-            })?;
-            let database_installer = Arc::new(
-                DatabaseInstaller::for_postgres(pool.clone())
-                    .with_env_options()
-                    .map_err(anyhow::Error::new)?,
-            );
-            if startup_install_mode.should_ensure() {
-                database_installer
-                    .ensure_bootstrap_data()
-                    .await
-                    .map_err(anyhow::Error::new)?;
-            }
-            let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            )
-            .with_circuit_breaker_recovery_window_seconds(
-                provider_runtime.circuit_breaker_recovery_window_seconds,
-            )
-            .load_snapshot()
+        prepare_claw_router_database_lifecycle(database_pool.clone())
             .await
             .map_err(anyhow::Error::new)?;
-            log_gateway_runtime_catalog_snapshot_summary("postgres", "startup", snapshot.summary());
-            let provider_secret_resolver = openai_runtime_relay_secret_resolver(
-                provider_secret_map_config.clone(),
-                snapshot.managed_provider_secrets(),
-            );
-            let catalog = Arc::new(RefreshableSqlPricingCatalog::new(snapshot));
-            let usage_settlement_wakeup =
-                maybe_spawn_postgres_usage_settlement_worker(&pool, usage_settlement_worker_config)
-                    .await
-                    .map_err(anyhow::Error::new)?;
-            spawn_postgres_catalog_refresh_worker(
-                &pool,
-                Arc::clone(&catalog),
-                provider_secret_resolver.clone(),
-                api_key_secret_codec,
-                shared_catalog_refresh_interval,
-                provider_runtime.circuit_breaker_recovery_window_seconds,
-            );
-            Ok(AllInOneRuntimeContext {
-                database_config,
-                database_pool,
-                database_installer,
-                catalog,
-                api_key_security_config,
-                provider_relay_config,
-                provider_adapter_config,
-                provider_secret_resolver,
-                trusted_subject_config,
-                app_session_config,
-                payment_webhook_config,
-                provider_runtime_config: provider_runtime,
-                provider_health_probe,
-                cache_manager,
-                request_limits_config,
-                models_catalog_root,
-                deployment_mode,
-                query_string_api_key_policy,
-                app_runtime_gateway_client,
-                app_runtime_stream_bus,
-                model_ranking_refresh_worker_config,
-                usage_settlement_wakeup,
-            })
+        let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
+            anyhow::Error::new(GatewayRouterError::Postgres(
+                PostgresCatalogLoadError::Database(sqlx::Error::Configuration(
+                    "expected postgres database pool".into(),
+                )),
+            ))
+        })?;
+        let database_installer = Arc::new(
+            DatabaseInstaller::for_postgres(pool.clone())
+                .with_env_options()
+                .map_err(anyhow::Error::new)?,
+        );
+        if startup_install_mode.should_ensure() {
+            database_installer
+                .ensure_bootstrap_data()
+                .await
+                .map_err(anyhow::Error::new)?;
         }
+        let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
+            pool.clone(),
+            api_key_secret_codec.clone(),
+        )
+        .with_circuit_breaker_recovery_window_seconds(
+            provider_runtime.circuit_breaker_recovery_window_seconds,
+        )
+        .load_snapshot()
+        .await
+        .map_err(anyhow::Error::new)?;
+        log_gateway_runtime_catalog_snapshot_summary("postgres", "startup", snapshot.summary());
+        let provider_secret_resolver = openai_runtime_relay_secret_resolver(
+            provider_secret_map_config.clone(),
+            snapshot.managed_provider_secrets(),
+        );
+        let catalog = Arc::new(RefreshableSqlPricingCatalog::new(snapshot));
+        let usage_settlement_wakeup =
+            maybe_spawn_postgres_usage_settlement_worker(&pool, usage_settlement_worker_config)
+                .await
+                .map_err(anyhow::Error::new)?;
+        spawn_postgres_catalog_refresh_worker(
+            &pool,
+            Arc::clone(&catalog),
+            provider_secret_resolver.clone(),
+            api_key_secret_codec,
+            shared_catalog_refresh_interval,
+            provider_runtime.circuit_breaker_recovery_window_seconds,
+        );
+        Ok(AllInOneRuntimeContext {
+            database_config,
+            database_pool,
+            database_installer,
+            catalog,
+            api_key_security_config,
+            provider_relay_config,
+            provider_adapter_config,
+            provider_secret_resolver,
+            trusted_subject_config,
+            app_session_config,
+            payment_webhook_config,
+            provider_runtime_config: provider_runtime,
+            cache_manager,
+            request_limits_config,
+            models_catalog_root,
+            deployment_mode,
+            query_string_api_key_policy,
+            app_runtime_gateway_client,
+            app_runtime_stream_bus,
+            model_ranking_refresh_worker_config,
+            usage_settlement_wakeup,
+        })
     }
 }
 
@@ -1719,20 +1484,18 @@ async fn build_gateway_router_from_all_in_one_context(
 ) -> anyhow::Result<Router> {
     let api_key_hasher =
         build_api_key_hasher(&context.api_key_security_config).map_err(anyhow::Error::new)?;
-    let usage_recorder: UsageRecorder = match &context.database_pool {
-        DatabasePool::Sqlite(pool, _) => {
-            Arc::new(SqliteGatewayUsageRecorder::new_with_attribution(
-                pool.clone(),
-                gateway_trace_attribution(),
-            ))
-        }
-        DatabasePool::Postgres(pool, _) => {
-            Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
-                pool.clone(),
-                gateway_trace_attribution(),
-            ))
-        }
-    };
+    let pool = context
+        .database_pool
+        .as_postgres()
+        .cloned()
+        .ok_or_else(|| {
+            anyhow::Error::msg("all-in-one runtime requires a PostgreSQL database pool")
+        })?;
+    let usage_recorder: UsageRecorder =
+        Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
+            pool.clone(),
+            gateway_trace_attribution(),
+        ));
     let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
         usage_recorder,
         context.usage_settlement_wakeup.clone(),
@@ -1744,13 +1507,13 @@ async fn build_gateway_router_from_all_in_one_context(
             primary_usage_recorder,
             gateway_trace_attribution(),
             runtime_toml.as_ref(),
+            context.deployment_mode,
         )
         .await
         .map_err(anyhow::Error::new)?;
     let settlement_config = resolve_usage_settlement_worker_config(runtime_toml.as_ref());
-    let readiness_check =
-        sdkwork_clawrouter_router_service::infrastructure::sql::pool::runtime_readiness_check(
-            context.database_pool.clone(),
+    let readiness_check = sdkwork_clawrouter_router_service::infrastructure::sql::pool::postgres_runtime_readiness_check(
+            pool.clone(),
             runtime_toml.as_ref(),
             settlement_config,
         );
@@ -1767,9 +1530,7 @@ async fn build_gateway_router_from_all_in_one_context(
         Arc::clone(&context.catalog),
         api_key_hasher,
         context.provider_secret_resolver.clone(),
-        Some(sticky_store_from_shared_database_pool(
-            &context.database_pool,
-        )),
+        Some(Arc::new(InvocationStickyObjectRouteStore::postgres(pool))),
         Some(usage_recorder),
         context.provider_relay_config.clone(),
         context.provider_adapter_config.clone(),
@@ -1781,12 +1542,6 @@ async fn build_gateway_router_from_all_in_one_context(
     .map_err(anyhow::Error::new)
 }
 
-fn gateway_sqlite_pool_error(error: impl std::fmt::Display) -> GatewayRouterError {
-    GatewayRouterError::Sqlite(SqlCatalogLoadError::Database(sqlx::Error::Configuration(
-        error.to_string().into(),
-    )))
-}
-
 fn validate_runtime_snowflake_node_id_configuration(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<DeploymentMode, GatewayRouterError> {
@@ -1796,6 +1551,15 @@ fn validate_runtime_snowflake_node_id_configuration(
     .map_err(|error| GatewayRouterError::Config(error.to_string()))
 }
 
+fn require_postgres_server_database(config: &DatabaseConfig) -> Result<(), GatewayRouterError> {
+    if matches!(config.engine, DatabaseEngine::Postgres) {
+        return Ok(());
+    }
+    Err(GatewayRouterError::Config(
+        "Claw Router server runtime requires PostgreSQL; SQLite is client-local only".to_owned(),
+    ))
+}
+
 async fn prepare_claw_router_database_lifecycle(
     pool: DatabasePool,
 ) -> Result<(), GatewayRouterError> {
@@ -1803,17 +1567,6 @@ async fn prepare_claw_router_database_lifecycle(
         GatewayRouterError::Installer(DatabaseInstallError::InvalidState(error))
     })?;
     Ok(())
-}
-
-fn sticky_store_from_shared_database_pool(pool: &DatabasePool) -> Arc<dyn StickyRouteStore> {
-    match pool {
-        DatabasePool::Sqlite(pool, _) => {
-            Arc::new(InvocationStickyObjectRouteStore::sqlite(pool.clone()))
-        }
-        DatabasePool::Postgres(pool, _) => {
-            Arc::new(InvocationStickyObjectRouteStore::postgres(pool.clone()))
-        }
-    }
 }
 
 fn database_config_from_env_for_startup(
@@ -1835,29 +1588,6 @@ fn database_config_from_env_for_startup(
         return Ok(Some(config.clone()));
     }
     Ok(None)
-}
-
-async fn maybe_spawn_sqlite_usage_settlement_worker(
-    pool: &SqlitePool,
-    config: UsageSettlementWorkerConfig,
-) -> Result<Option<Arc<Notify>>, GatewayRouterError> {
-    let config = config.normalized();
-    if !config.enabled {
-        return Ok(None);
-    }
-    if !sdkwork_clawrouter_router_service::infrastructure::sql::pool::sqlite_usage_settlement_schema_ready(pool)
-        .await
-        .map_err(|error| GatewayRouterError::Sqlite(SqlCatalogLoadError::Database(error)))?
-    {
-        tracing::warn!(
-            "usage settlement worker is enabled but SQLite settlement schema is incomplete"
-        );
-        return Ok(None);
-    }
-    let store: SettlementStore = Arc::new(SqliteUsageSettlementStore::new(pool.clone()));
-    let usage_settlement_wakeup = Arc::new(Notify::new());
-    spawn_usage_settlement_worker(store, config, Some(Arc::clone(&usage_settlement_wakeup)));
-    Ok(Some(usage_settlement_wakeup))
 }
 
 async fn maybe_spawn_postgres_usage_settlement_worker(
@@ -1900,6 +1630,7 @@ async fn wrap_usage_recorder_with_durable_accounting_retry(
     primary: UsageRecorder,
     attribution: GatewayTraceAttribution,
     runtime_toml: Option<&RuntimeTomlConfig>,
+    deployment_mode: DeploymentMode,
 ) -> Result<(UsageRecorder, GatewayAccountingRetryHealth), GatewayRouterError> {
     let retry_queue: AccountingRetryQueue = if let Some(redis_config) =
         sdkwork_claw_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
@@ -1912,24 +1643,16 @@ async fn wrap_usage_recorder_with_durable_accounting_retry(
             )
             .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
         )
+    } else if deployment_mode == DeploymentMode::Desktop {
+        tracing::warn!(
+            "Redis is not configured; desktop accounting retries are in-memory and are lost on process restart"
+        );
+        Arc::new(InMemoryGatewayAccountingRetryQueue::default())
     } else {
-        let profile = RuntimeConfigProfile::from_env_or_runtime_toml(runtime_toml)
-            .map_err(GatewayRouterError::Config)?;
-        let location = DatabaseConfig::runtime_config_location_from_env(profile);
-        std::fs::create_dir_all(&location.data_directory).map_err(|error| {
-            GatewayRouterError::Config(format!(
-                "create durable accounting retry data directory {} failed: {error}",
-                location.data_directory.display()
-            ))
-        })?;
-        let queue_path = location
-            .data_directory
-            .join("gateway-accounting-retry.sqlite3");
-        Arc::new(
-            SqliteGatewayAccountingRetryQueue::connect(&queue_path)
-                .await
-                .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
-        )
+        return Err(GatewayRouterError::Config(format!(
+            "Redis is required for durable gateway accounting retries in {} deployments",
+            deployment_mode.as_str()
+        )));
     };
 
     let health = GatewayAccountingRetryHealth::default();
@@ -2037,71 +1760,6 @@ fn spawn_usage_settlement_worker(
             }
         }
         tracing::info!("usage settlement worker stopped");
-    })
-}
-
-fn spawn_sqlite_catalog_refresh_worker(
-    pool: &SqlitePool,
-    catalog: Arc<RefreshableSqlPricingCatalog>,
-    provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
-    api_key_secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>,
-    interval: Duration,
-    circuit_breaker_recovery_window_seconds: u64,
-) -> tokio::task::JoinHandle<()> {
-    let pool = pool.clone();
-    let mut shutdown_rx = sdkwork_claw_http::subscribe_shutdown_signal();
-    tokio::spawn(async move {
-        let mut refresh_state = CatalogRefreshDecisionState::default();
-        loop {
-            tokio::select! {
-                _ = shutdown_rx.recv() => break,
-                _ = sleep(interval) => {}
-            }
-            let loader = SqlitePricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            )
-            .with_circuit_breaker_recovery_window_seconds(circuit_breaker_recovery_window_seconds);
-            let observed_version = match loader.load_routing_config_version().await {
-                Ok(version) => Some(version),
-                Err(error) => {
-                    tracing::warn!(
-                        error = %error,
-                        "SQLite OpenAI runtime catalog version probe failed; attempting full refresh"
-                    );
-                    None
-                }
-            };
-            if !catalog_refresh_snapshot_due(refresh_state, observed_version) {
-                refresh_state = refresh_state.after_catalog_refresh_skip(observed_version);
-                continue;
-            }
-            let refresh_started_at = std::time::Instant::now();
-            match loader.load_snapshot().await {
-                Ok(snapshot) => {
-                    let summary = snapshot.summary();
-                    if let Some(resolver) = provider_secret_resolver.as_ref() {
-                        resolver.replace_managed_secrets(snapshot.managed_provider_secrets());
-                    }
-                    catalog.replace_snapshot(snapshot);
-                    log_gateway_runtime_catalog_snapshot_summary("sqlite", "refresh", summary);
-                    refresh_state = refresh_state.after_catalog_refresh_success(observed_version);
-                }
-                Err(error) => {
-                    catalog_refresh_failures_total()
-                        .with_label_values(&["sqlite"])
-                        .inc();
-                    tracing::warn!(
-                        error = %error,
-                        "SQLite OpenAI runtime catalog refresh failed; keeping previous snapshot"
-                    );
-                }
-            }
-            catalog_refresh_duration_seconds()
-                .with_label_values(&["sqlite"])
-                .observe(refresh_started_at.elapsed().as_secs_f64());
-        }
-        tracing::info!("sqlite catalog refresh worker stopped");
     })
 }
 
@@ -2868,7 +2526,6 @@ fn seconds_ceil_from_millis(millis: u64) -> u64 {
 pub enum GatewayRouterError {
     Config(String),
     Installer(DatabaseInstallError),
-    Sqlite(SqlCatalogLoadError),
     Postgres(PostgresCatalogLoadError),
 }
 
@@ -2877,19 +2534,12 @@ impl std::fmt::Display for GatewayRouterError {
         match self {
             Self::Config(error) => write!(f, "{error}"),
             Self::Installer(error) => write!(f, "{error}"),
-            Self::Sqlite(error) => write!(f, "{error}"),
             Self::Postgres(error) => write!(f, "{error}"),
         }
     }
 }
 
 impl std::error::Error for GatewayRouterError {}
-
-impl From<SqlCatalogLoadError> for GatewayRouterError {
-    fn from(value: SqlCatalogLoadError) -> Self {
-        Self::Sqlite(value)
-    }
-}
 
 impl From<DatabaseInstallError> for GatewayRouterError {
     fn from(value: DatabaseInstallError) -> Self {
@@ -2906,6 +2556,19 @@ impl From<PostgresCatalogLoadError> for GatewayRouterError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn server_runtime_rejects_sqlite_before_database_initialization() {
+        let config = DatabaseConfig::from_url("sqlite::memory:").expect("SQLite client config");
+
+        let error = require_postgres_server_database(&config)
+            .expect_err("the server runtime must reject client-local SQLite");
+
+        assert_eq!(
+            "Claw Router server runtime requires PostgreSQL; SQLite is client-local only",
+            error.to_string()
+        );
+    }
 
     #[test]
     fn invocation_response_budget_rejects_zero_runtime_config() {
@@ -3024,34 +2687,6 @@ gateway_invocation_body_max_bytes = 37
                 ticks_since_full_refresh: 0,
             },
             state.after_catalog_refresh_success(None)
-        );
-    }
-
-    #[test]
-    fn gateway_runtime_sqlite_pool_options_raise_file_database_max_connections_and_set_acquire_timeout(
-    ) {
-        use sdkwork_clawrouter_router_service::infrastructure::sql::pool::{
-            effective_sqlite_runtime_pool_max_connections, SQLITE_POOL_ACQUIRE_TIMEOUT_SECONDS,
-            SQLITE_RUNTIME_MIN_POOL_CONNECTIONS,
-        };
-
-        assert_eq!(
-            SQLITE_RUNTIME_MIN_POOL_CONNECTIONS,
-            effective_sqlite_runtime_pool_max_connections(
-                "sqlite://D:/tmp/sdkwork-clawrouter.db",
-                1
-            )
-        );
-        assert_eq!(10, SQLITE_POOL_ACQUIRE_TIMEOUT_SECONDS);
-    }
-
-    #[test]
-    fn gateway_runtime_sqlite_pool_options_preserve_in_memory_configured_max_connections() {
-        use sdkwork_clawrouter_router_service::infrastructure::sql::pool::effective_sqlite_runtime_pool_max_connections;
-
-        assert_eq!(
-            1,
-            effective_sqlite_runtime_pool_max_connections("sqlite::memory:", 1)
         );
     }
 

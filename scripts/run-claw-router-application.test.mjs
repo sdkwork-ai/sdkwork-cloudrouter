@@ -269,16 +269,10 @@ test('root package exposes pnpm application entrypoints', () => {
   );
   assert.equal(
     rootPackage.scripts['admin:reset:dev'],
-    'node scripts/reset-admin-account.mjs --mode dev',
-  );
-  assert.equal(
-    rootPackage.scripts['admin:reset:dev:sqlite'],
-    'node scripts/reset-admin-account.mjs --mode dev',
-  );
-  assert.equal(
-    rootPackage.scripts['admin:reset:dev:postgres'],
     'node scripts/reset-admin-account.mjs --mode dev --dev-env-file .env.postgres',
   );
+  assert.equal(rootPackage.scripts['admin:reset:dev:sqlite'], undefined);
+  assert.equal(rootPackage.scripts['admin:reset:dev:postgres'], undefined);
   assert.equal(
     rootPackage.scripts['admin:reset:release'],
     'node scripts/reset-admin-account.mjs --mode release',
@@ -642,7 +636,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
   assert.equal(smoke.profile, 'smoke');
   assert.equal(smoke.steps.length, 2);
   assert.equal(smoke.steps[0].args.includes('sdkwork-claw-test-support'), true);
-  assert.equal(smoke.steps[1].args.includes('sqlite_product_model_route'), true);
+  assert.equal(smoke.steps[1].args.includes('product_model_route'), true);
 
   const explicitBuildJobs = module.buildRustTestPlan(module.parseArgs(['gateway', '--build-jobs', '6']), {
     env: { CARGO_BUILD_JOBS: '1' },
@@ -656,7 +650,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
   });
   assert.equal(adminApi.profile, 'admin-api');
   assert.equal(
-    adminApi.steps.some((step) => step.args.includes('database_config_router')),
+    adminApi.steps.some((step) => step.args.includes('messaging_route')),
     true,
   );
   assert.deepEqual(adminApi.steps.at(-1).args.slice(-2), ['--test-threads', '4']);
@@ -668,7 +662,7 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
   assert.equal(appApi.profile, 'app-api');
   assert.equal(appApi.steps[0].env.CARGO_TARGET_DIR, 'target-rust-tests/daily');
   assert.equal(
-    appApi.steps.some((step) => step.args.includes('database_config_router')),
+    appApi.steps.some((step) => step.args.includes('api_query_contract')),
     true,
   );
   assert.equal(appApi.steps[0].args.includes('sdkwork-clawrouter-standalone-gateway'), true);
@@ -678,7 +672,10 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     platform: 'linux',
   });
   assert.equal(gateway.profile, 'gateway');
-  assert.equal(gateway.steps.some((step) => step.args.includes('provider_passthrough_route')), true);
+  assert.equal(
+    gateway.steps.some((step) => step.args.includes('provider_adapter_passthrough_streaming')),
+    true,
+  );
   assert.equal(gateway.steps.some((step) => step.args.includes('edge_server')), true);
 
   const productRelay = module.buildRustTestPlan(module.parseArgs(['product-relay']), {
@@ -847,105 +844,8 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
     autoMixedServiceChange.steps.some((step) => step.args.includes('postgres_app_runtime_sql_contract')),
     true,
   );
-  assert.equal(autoMixedServiceChange.steps.some((step) => step.args.includes('sqlite_app_runtime_store')), true);
-
-  const autoProductInstalledSqliteHelperChange = module.buildRustTestPlan(
-    module.parseArgs([
-      'auto',
-      '--changed-file',
-      'crates/sdkwork-clawrouter-router-service-test-support/src/lib.rs',
-    ]),
-    {
-      env: {},
-      platform: 'linux',
-      cwd: workspaceRoot,
-    },
-  );
-  assert.equal(autoProductInstalledSqliteHelperChange.resolvedProfile, 'auto-targets');
   assert.equal(
-    autoProductInstalledSqliteHelperChange.steps.some((step) => step.args.includes('sqlite_admin_channel_group_store')),
-    true,
-  );
-  assert.equal(
-    autoProductInstalledSqliteHelperChange.steps.some((step) => step.args.includes('sqlite_admin_channel_store')),
-    true,
-  );
-  assert.equal(
-    autoProductInstalledSqliteHelperChange.steps.some((step) => step.args.includes('app_runtime_api')),
-    false,
-  );
-
-  const autoProductSchemaFixtureChange = module.buildRustTestPlan(
-    module.parseArgs([
-      'auto',
-      '--changed-file',
-      'crates/sdkwork-clawrouter-router-service-test-support/src/schema.rs',
-    ]),
-    {
-      env: {},
-      platform: 'linux',
-      cwd: workspaceRoot,
-    },
-  );
-  assert.equal(autoProductSchemaFixtureChange.resolvedProfile, 'auto-targets');
-  assert.equal(
-    autoProductSchemaFixtureChange.steps.some((step) => step.args.includes('sqlite_admin_channel_group_store')),
-    true,
-  );
-  assert.equal(
-    autoProductSchemaFixtureChange.steps.some((step) => step.args.includes('sqlite_app_store_installed_seed')),
-    false,
-  );
-  assert.equal(
-    autoProductSchemaFixtureChange.steps.some((step) => step.args.includes('database_installer')),
-    false,
-  );
-
-  const autoProductRepairFixtureChange = module.buildRustTestPlan(
-    module.parseArgs([
-      'auto',
-      '--changed-file',
-      'crates/sdkwork-clawrouter-router-service-test-support/src/repair.rs',
-    ]),
-    {
-      env: {},
-      platform: 'linux',
-      cwd: workspaceRoot,
-    },
-  );
-  assert.equal(autoProductRepairFixtureChange.resolvedProfile, 'auto-targets');
-  assert.equal(
-    autoProductRepairFixtureChange.steps.some((step) => step.args.includes('database_installer')),
-    true,
-  );
-  assert.equal(
-    autoProductRepairFixtureChange.steps.some((step) => step.args.includes('sqlite_admin_channel_group_store')),
-    false,
-  );
-
-  const autoProductInstalledFixtureChange = module.buildRustTestPlan(
-    module.parseArgs([
-      'auto',
-      '--changed-file',
-      'crates/sdkwork-clawrouter-router-service-test-support/src/installed.rs',
-    ]),
-    {
-      env: {},
-      platform: 'linux',
-      cwd: workspaceRoot,
-    },
-  );
-  assert.equal(autoProductInstalledFixtureChange.resolvedProfile, 'auto-targets');
-  assert.equal(
-    autoProductInstalledFixtureChange.steps.some((step) => step.args.includes('database_installer')),
-    false,
-  );
-  assert.equal(
-    autoProductInstalledFixtureChange.steps.some((step) => step.args.includes('database_installer_installed')),
-    true,
-  );
-  assert.equal(
-    autoProductInstalledFixtureChange.steps.some((step) => step.args.includes('sqlite_admin_channel_group_store')),
+    autoMixedServiceChange.steps.some((step) => step.args.includes('sqlite_app_runtime_store')),
     false,
   );
 
@@ -963,16 +863,12 @@ test('rust test runner exposes isolated daily-maintenance profiles', async () =>
   );
   assert.equal(autoProductCommonModuleChange.resolvedProfile, 'auto-targets');
   assert.equal(
-    autoProductCommonModuleChange.steps.some((step) => step.args.includes('admin_channel_group_api')),
+    autoProductCommonModuleChange.steps.some((step) => step.args.includes('admin_ai_resource_api')),
     true,
   );
   assert.equal(
     autoProductCommonModuleChange.steps.some((step) => step.args.includes('app_runtime_api')),
     true,
-  );
-  assert.equal(
-    autoProductCommonModuleChange.steps.some((step) => step.args.includes('sqlite_admin_channel_group_store')),
-    false,
   );
 
   assert.deepEqual(module.parseArgs(['auto', '--staged']), {
@@ -1211,7 +1107,7 @@ test('rust target measurement plan covers known slow integration surfaces', asyn
     plan.steps.some(
       (step) =>
         step.packageName === 'sdkwork-clawrouter-admin-gateway' &&
-        step.testTarget === 'database_config_router',
+        step.testTarget === 'messaging_route',
     ),
     true,
   );
@@ -1219,7 +1115,7 @@ test('rust target measurement plan covers known slow integration surfaces', asyn
     plan.steps.some(
       (step) =>
         step.packageName === 'sdkwork-clawrouter-edge-runtime' &&
-        step.testTarget === 'provider_passthrough_route',
+        step.testTarget === 'provider_adapter_passthrough_streaming',
     ),
     true,
   );
@@ -2857,7 +2753,7 @@ test('claw router workspace provides Redis host and port defaults for server dev
   }
 });
 
-test('admin reset wrapper maps dev mode to the local SQLite database without exposing password args', async () => {
+test('admin reset wrapper rejects a client-local SQLite database override', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-admin-account.mjs')).href
   );
@@ -2867,39 +2763,13 @@ test('admin reset wrapper maps dev mode to the local SQLite database without exp
     'dev',
     '--password',
     'Admin-Dev-Reset-Password-2026!',
+    '--database-url',
+    'sqlite://target/dev/clawrouter.sqlite',
   ]);
-  const plan = module.createResetAdminPlan({
-    settings,
-    workspaceRoot,
-    platform: 'linux',
-    env: {},
-  });
-
-  assert.equal(plan.mode, 'dev');
-  assert.equal(plan.steps.length, 1);
-  const [step] = plan.steps;
-  assert.equal(step.name, 'reset-admin');
-  assert.equal(step.command, 'cargo');
-  assert.deepEqual(step.args, [
-    'run',
-    '-p',
-    'sdkwork-claw-installer',
-    '--',
-    'reset-admin',
-    '--username',
-    'admin',
-    '--display-name',
-    'Administrator',
-    '--email',
-    'admin@sdkwork.com',
-  ]);
-  assert.equal(step.args.includes('Admin-Dev-Reset-Password-2026!'), false);
-  assert.equal(step.env.SDKWORK_CLAW_ADMIN_RESET_PASSWORD, 'Admin-Dev-Reset-Password-2026!');
-  assert.equal(step.env.SDKWORK_CLAW_DATABASE_URL, 'sqlite://target/dev/clawrouter.sqlite');
-  assert.equal(step.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '1');
-  assert.equal(step.env.SDKWORK_CLAW_DEPLOYMENT_MODE, 'server');
-  assert.equal(step.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT, 'development');
-  assert.equal(step.env.SDKWORK_CLAW_INSTALL_SEED_PROFILE, 'commercial');
+  assert.throws(
+    () => module.createResetAdminPlan({ settings, workspaceRoot, platform: 'linux', env: {} }),
+    /admin reset requires PostgreSQL because server data is authoritative/u,
+  );
 });
 
 test('admin reset wrapper maps postgres dev mode through the configured env file', async () => {
@@ -3000,7 +2870,7 @@ test('admin reset wrapper maps release mode through production runtime config an
     '--config-file',
     configFile,
     '--database-url',
-    `sqlite://${slashPath(path.join(fixtureRoot, 'release.sqlite'))}`,
+    'postgresql://sdkwork:secret@db.internal:5432/sdkwork_claw_router?sslmode=require',
     '--password',
     'Admin-Release-Reset-Password-2026!',
   ]);
@@ -3034,7 +2904,10 @@ test('admin reset wrapper maps release mode through production runtime config an
   assert.equal(step.env.SDKWORK_CLAW_ADMIN_RESET_PASSWORD, 'Admin-Release-Reset-Password-2026!');
   assert.equal(step.env.SDKWORK_CLAW_CONFIG_FILE, configFile);
   assert.equal(step.env.SDKWORK_CLAW_DEPLOYMENT_MODE, 'server');
-  assert.equal(step.env.SDKWORK_CLAW_DATABASE_URL, `sqlite://${slashPath(path.join(fixtureRoot, 'release.sqlite'))}`);
+  assert.equal(
+    step.env.SDKWORK_CLAW_DATABASE_URL,
+    'postgresql://sdkwork:secret@db.internal:5432/sdkwork_claw_router?sslmode=require',
+  );
   assert.equal(existsSync(configFile), false);
   rmSync(fixtureRoot, { recursive: true, force: true });
 });
@@ -3200,7 +3073,7 @@ test('database management example config documents structured PostgreSQL fields'
   assert.match(content, new RegExp(`^username = "${defaultProdPostgresUsername.replaceAll('+', '\\+')}"$`, 'mu'));
   assert.match(content, /^password_file = "\.\/database.secret"$/mu);
   assert.match(content, /^max_connections = 16$/mu);
-  assert.match(content, /\[database_sqlite_example\]/u);
+  assert.doesNotMatch(content, /sqlite/iu);
 });
 
 test('claw router workspace rejects obsolete portal dev bind option', async () => {
@@ -6802,9 +6675,9 @@ test('ci verification plan extends precommit with rust format and admin api inte
   assert.ok(labels.includes('admin agents runtime tests'));
   assert.ok(labels.includes('admin skill runtime tests'));
   assert.ok(labels.includes('rust format for frequently touched packages'));
-  assert.ok(labels.includes('admin api sqlite integration tests'));
+  assert.ok(labels.includes('admin api integration tests'));
   assert.ok(labels.indexOf('rust format for frequently touched packages') > labels.indexOf('staged Rust auto tests'));
-  assert.ok(labels.indexOf('admin api sqlite integration tests') > labels.indexOf('rust format for frequently touched packages'));
+  assert.ok(labels.indexOf('admin api integration tests') > labels.indexOf('rust format for frequently touched packages'));
   assert.equal(
     commandLines.at(-1),
     `${module.pnpmCommand()} --dir apps/sdkwork-clawrouter-pc typecheck`,

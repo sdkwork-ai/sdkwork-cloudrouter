@@ -5,8 +5,8 @@ use sqlx::{PgPool, Postgres, Transaction};
 use url::Url;
 
 use super::shared::{
-    column, conflict, ensure_bounded_collection, generated_uuid, store_error, DEFAULT_DATA_SCOPE,
-    MAX_NESTED_ITEMS,
+    column, conflict, ensure_bounded_collection, generated_uuid, record_routing_change,
+    store_error, DEFAULT_DATA_SCOPE, MAX_NESTED_ITEMS,
 };
 use super::supplier;
 use crate::domain::{DomainError, DomainResult};
@@ -16,8 +16,11 @@ use crate::ports::{
 };
 
 const ENDPOINT_COLUMNS: &str = r#"
-    id, endpoint_code, endpoint_name, base_url, protocol_code, region_code,
-    environment, priority, routing_weight, timeout_ms, health_status, status
+    endpoint.id, endpoint.endpoint_code, endpoint.endpoint_name, endpoint.base_url,
+    endpoint.protocol_code, endpoint.region_code, endpoint.environment,
+    endpoint.priority, endpoint.routing_weight, endpoint.timeout_ms,
+    COALESCE(endpoint_health.health_status, 0) AS health_status,
+    endpoint.status
 "#;
 
 pub(super) async fn list(
@@ -28,10 +31,14 @@ pub(super) async fn list(
     let sql = format!(
         r#"
         SELECT {ENDPOINT_COLUMNS}
-        FROM ai_upstream_supplier_endpoint
-        WHERE tenant_id = $1 AND organization_id = $2
-          AND supplier_id = $3 AND deleted_at IS NULL
-        ORDER BY priority ASC, routing_weight DESC, id ASC
+        FROM ai_upstream_supplier_endpoint endpoint
+        LEFT JOIN ai_upstream_supplier_endpoint_health_state endpoint_health
+          ON endpoint_health.tenant_id = endpoint.tenant_id
+         AND endpoint_health.organization_id = endpoint.organization_id
+         AND endpoint_health.endpoint_id = endpoint.id
+        WHERE endpoint.tenant_id = $1 AND endpoint.organization_id = $2
+          AND endpoint.supplier_id = $3 AND endpoint.deleted_at IS NULL
+        ORDER BY endpoint.priority ASC, endpoint.routing_weight DESC, endpoint.id ASC
         LIMIT {MAX_NESTED_ITEMS}
         "#
     );
@@ -68,19 +75,19 @@ pub(super) async fn replace(
 
     for item in &items {
         let endpoint_id = next_claw_runtime_id("upstream supplier endpoint")?;
-        sqlx::query(
+        let persisted_endpoint_id = sqlx::query_scalar::<_, i64>(
             r#"
             INSERT INTO ai_upstream_supplier_endpoint (
                 id, uuid, tenant_id, organization_id, data_scope, status,
                 created_at, updated_at, version, metadata,
                 supplier_id, supplier_code, endpoint_code, endpoint_name, base_url,
-                protocol_code, region_code, environment, health_status,
+                protocol_code, region_code, environment,
                 priority, routing_weight, timeout_ms
             ) VALUES (
                 $1, $2, $3, $4, $5, $6,
                 $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
                 $8, $9, $10, $11, $12,
-                $13, $14, $15, 1,
+                $13, $14, $15,
                 $16, $17, $18
             )
             ON CONFLICT (tenant_id, organization_id, supplier_id, endpoint_code)
@@ -98,6 +105,7 @@ pub(super) async fn replace(
                 deleted_by = NULL,
                 version = ai_upstream_supplier_endpoint.version + 1,
                 updated_at = EXCLUDED.updated_at
+            RETURNING id
             "#,
         )
         .bind(endpoint_id)
@@ -118,9 +126,34 @@ pub(super) async fn replace(
         .bind(item.priority)
         .bind(item.routing_weight)
         .bind(item.timeout_ms)
-        .execute(&mut *tx)
+        .fetch_one(&mut *tx)
         .await
         .map_err(|error| store_error("failed to upsert upstream supplier endpoint", error))?;
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier_endpoint_health_state (
+                id, tenant_id, organization_id, created_at, updated_at,
+                supplier_id, endpoint_id, health_status, consecutive_error_count
+            ) VALUES ($1, $2, $3, $4::timestamptz, $4::timestamptz, $5, $1, 0, 0)
+            ON CONFLICT (tenant_id, organization_id, endpoint_id)
+            DO UPDATE SET
+                health_status = 0,
+                last_latency_ms = NULL,
+                consecutive_error_count = 0,
+                last_checked_at = NULL,
+                last_success_at = NULL,
+                last_failure_at = NULL,
+                updated_at = EXCLUDED.updated_at
+            "#,
+        )
+        .bind(persisted_endpoint_id)
+        .bind(subject.tenant_id)
+        .bind(subject.organization_id)
+        .bind(&requested_at)
+        .bind(supplier_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|error| store_error("failed to reset upstream endpoint health", error))?;
     }
 
     retire_omitted(
@@ -140,6 +173,16 @@ pub(super) async fn replace(
     )
     .await?;
     let result = list_in_transaction(&mut tx, &subject, supplier_id).await?;
+    record_routing_change(
+        &mut tx,
+        &subject,
+        &requested_at,
+        "upstream_supplier",
+        supplier_id,
+        "replace_upstream_supplier_endpoints",
+        serde_json::json!({"endpointCount": result.len()}),
+    )
+    .await?;
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit upstream endpoint replacement", error))?;
@@ -224,10 +267,14 @@ async fn list_in_transaction(
     let sql = format!(
         r#"
         SELECT {ENDPOINT_COLUMNS}
-        FROM ai_upstream_supplier_endpoint
-        WHERE tenant_id = $1 AND organization_id = $2
-          AND supplier_id = $3 AND deleted_at IS NULL
-        ORDER BY priority ASC, routing_weight DESC, id ASC
+        FROM ai_upstream_supplier_endpoint endpoint
+        LEFT JOIN ai_upstream_supplier_endpoint_health_state endpoint_health
+          ON endpoint_health.tenant_id = endpoint.tenant_id
+         AND endpoint_health.organization_id = endpoint.organization_id
+         AND endpoint_health.endpoint_id = endpoint.id
+        WHERE endpoint.tenant_id = $1 AND endpoint.organization_id = $2
+          AND endpoint.supplier_id = $3 AND endpoint.deleted_at IS NULL
+        ORDER BY endpoint.priority ASC, endpoint.routing_weight DESC, endpoint.id ASC
         LIMIT {MAX_NESTED_ITEMS}
         "#
     );

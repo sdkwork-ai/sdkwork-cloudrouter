@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { DeleteResult, OpenAiRun, OpenAiRunList, OpenAiRunStep, OpenAiRunStepList, OpenAiRunSubmitToolOutputsRequest, OpenAiRunUpdateRequest, OpenAiThread, OpenAiThreadAndRunCreateRequest, OpenAiThreadCreateRequest, OpenAiThreadMessage, OpenAiThreadMessageCreateRequest, OpenAiThreadMessageList, OpenAiThreadMessageUpdateRequest, OpenAiThreadUpdateRequest } from '../types';
 
@@ -20,34 +20,34 @@ export class ThreadsMessagesApi {
 
 
 /** List thread messages */
-  async list(threadId: string, params?: ThreadsMessagesListParams): Promise<OpenAiThreadMessageList> {
+  async list(threadId: string, params?: ThreadsMessagesListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiThreadMessageList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiThreadMessageList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages`), query));
+    return this.client.request<OpenAiThreadMessageList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create thread message */
-  async create(threadId: string, body: OpenAiThreadMessageCreateRequest): Promise<OpenAiThreadMessage> {
-    return this.client.post<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages`), body, undefined, undefined, 'application/json');
+  async create(threadId: string, body: OpenAiThreadMessageCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiThreadMessage> {
+    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete thread message */
-  async delete(threadId: string, messageId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`));
+  async delete(threadId: string, messageId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve thread message */
-  async retrieve(threadId: string, messageId: string): Promise<OpenAiThreadMessage> {
-    return this.client.get<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`));
+  async retrieve(threadId: string, messageId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiThreadMessage> {
+    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Modify thread message */
-  async update(threadId: string, messageId: string, body: OpenAiThreadMessageUpdateRequest): Promise<OpenAiThreadMessage> {
-    return this.client.post<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(threadId: string, messageId: string, body: OpenAiThreadMessageUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiThreadMessage> {
+    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -67,19 +67,19 @@ export class ThreadsRunsStepsApi {
 
 
 /** List run steps */
-  async list(threadId: string, runId: string, params?: ThreadsRunsStepsListParams): Promise<OpenAiRunStepList> {
+  async list(threadId: string, runId: string, params?: ThreadsRunsStepsListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiRunStepList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiRunStepList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/steps`), query));
+    return this.client.request<OpenAiRunStepList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/steps`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Retrieve run step */
-  async retrieve(threadId: string, runId: string, stepId: string): Promise<OpenAiRunStep> {
-    return this.client.get<OpenAiRunStep>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/steps/${serializePathParameter(stepId, { name: 'step_id', style: 'simple', explode: false })}`));
+  async retrieve(threadId: string, runId: string, stepId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiRunStep> {
+    return this.client.request<OpenAiRunStep>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/steps/${serializePathParameter(stepId, { name: 'step_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -101,39 +101,39 @@ export class ThreadsRunsApi {
 
 
 /** Create thread and run */
-  async create(body: OpenAiThreadAndRunCreateRequest): Promise<OpenAiRun> {
-    return this.client.post<OpenAiRun>(aiApiPath(`/threads/runs`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiThreadAndRunCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/runs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** List thread runs */
-  async list(threadId: string, params?: ThreadsRunsListParams): Promise<OpenAiRunList> {
+  async list(threadId: string, params?: ThreadsRunsListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiRunList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiRunList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs`), query));
+    return this.client.request<OpenAiRunList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Retrieve thread run */
-  async retrieve(threadId: string, runId: string): Promise<OpenAiRun> {
-    return this.client.get<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}`));
+  async retrieve(threadId: string, runId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Modify thread run */
-  async update(threadId: string, runId: string, body: OpenAiRunUpdateRequest): Promise<OpenAiRun> {
-    return this.client.post<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(threadId: string, runId: string, body: OpenAiRunUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Cancel thread run */
-  async cancel(threadId: string, runId: string): Promise<OpenAiRun> {
-    return this.client.post<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/cancel`));
+  async cancel(threadId: string, runId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 
 /** Submit run tool outputs */
-  async submitToolOutputs(threadId: string, runId: string, body: OpenAiRunSubmitToolOutputsRequest): Promise<OpenAiRun> {
-    return this.client.post<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/submit_tool_outputs`), body, undefined, undefined, 'application/json');
+  async submitToolOutputs(threadId: string, runId: string, body: OpenAiRunSubmitToolOutputsRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/submit_tool_outputs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -150,23 +150,23 @@ export class ThreadsApi {
 
 
 /** Create thread */
-  async create(body: OpenAiThreadCreateRequest): Promise<OpenAiThread> {
-    return this.client.post<OpenAiThread>(aiApiPath(`/threads`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiThreadCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiThread> {
+    return this.client.request<OpenAiThread>(aiApiPath(`/threads`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete thread */
-  async delete(threadId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`));
+  async delete(threadId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve thread */
-  async retrieve(threadId: string): Promise<OpenAiThread> {
-    return this.client.get<OpenAiThread>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`));
+  async retrieve(threadId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiThread> {
+    return this.client.request<OpenAiThread>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Modify thread */
-  async update(threadId: string, body: OpenAiThreadUpdateRequest): Promise<OpenAiThread> {
-    return this.client.post<OpenAiThread>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(threadId: string, body: OpenAiThreadUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiThread> {
+    return this.client.request<OpenAiThread>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

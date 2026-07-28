@@ -7,6 +7,7 @@ mod supplier;
 mod supplier_auth;
 mod supplier_endpoint;
 mod supplier_resource;
+mod verifier;
 
 use std::sync::Arc;
 
@@ -24,6 +25,8 @@ use crate::ports::{
     CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
     SaveAdminUpstreamAccountGroupCommand, SaveAdminUpstreamSupplierCommand,
 };
+
+pub use verifier::PostgresAdminUpstreamAccountVerifier;
 
 #[derive(Clone)]
 pub struct PostgresAdminUpstreamStore {

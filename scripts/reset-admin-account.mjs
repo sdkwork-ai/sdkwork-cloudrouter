@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +18,6 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
-const DEFAULT_DEV_DATABASE_RELATIVE_PATH = path.join('target', 'dev', 'clawrouter.sqlite');
 const DEFAULT_ADMIN_USERNAME = 'admin';
 const DEFAULT_ADMIN_DISPLAY_NAME = 'Administrator';
 const DEFAULT_ADMIN_EMAIL = 'admin@sdkwork.com';
@@ -28,20 +26,12 @@ function cargoCommand(platform = process.platform) {
   return platform === 'win32' ? 'cargo.exe' : 'cargo';
 }
 
-function toPortablePath(value) {
-  return String(value ?? '').replaceAll('\\', '/');
-}
-
 function requireValue(argv, index, flag) {
   const value = argv[index + 1];
   if (!value || value.startsWith('--')) {
     throw new Error(`${flag} requires a value`);
   }
   return value;
-}
-
-function devDatabaseUrl(root = workspaceRoot) {
-  return `sqlite://${toPortablePath(DEFAULT_DEV_DATABASE_RELATIVE_PATH)}`;
 }
 
 export function parseResetAdminArgs(argv = []) {
@@ -160,11 +150,10 @@ function installerArgs(settings) {
   ];
 }
 
-function devResetEnv(settings, env, root, { write = true } = {}) {
+function devResetEnv(settings, env, root) {
   // Match `pnpm dev` behavior: when no explicit dev-env-file is provided, auto-detect
   // `.env.postgres` (or `.env.postgres.example`) from the workspace root. This keeps
   // reset-admin pointed at the same database the dev server bootstrapped IAM into.
-  // `--database-url sqlite://...` (used by admin:reset:dev:sqlite) still overrides the URL.
   const devEnvFile = settings.devEnvFile ?? resolveDefaultDevEnvFilePath(root);
   const devEnv = {
     ...env,
@@ -178,18 +167,15 @@ function devResetEnv(settings, env, root, { write = true } = {}) {
         ? { SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS: settings.databaseMaxConnections }
         : {}),
     },
-    defaultDatabase: 'none',
+    defaultDatabase: 'postgresql',
   });
-  const databaseUrl = resolvedDatabase.databaseUrl ?? devDatabaseUrl(root);
+  if (resolvedDatabase.kind !== 'postgresql') {
+    throw new Error('admin reset requires PostgreSQL because server data is authoritative');
+  }
+  const databaseUrl = resolvedDatabase.databaseUrl;
   const databaseMaxConnections = settings.databaseMaxConnections
     ?? resolvedDatabase.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS
-    ?? devEnv.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS
-    ?? (String(databaseUrl).trim().toLowerCase().startsWith('sqlite:') ? '1' : null);
-  if (write && databaseUrl === devDatabaseUrl(root)) {
-    mkdirSync(path.dirname(path.join(root, DEFAULT_DEV_DATABASE_RELATIVE_PATH)), {
-      recursive: true,
-    });
-  }
+    ?? devEnv.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS;
   return {
     ...devEnv,
     ...resolvedDatabase.env,
@@ -242,7 +228,7 @@ export function createResetAdminPlan({
       SDKWORK_CLAW_INSTALL_SEED_PROFILE: env.SDKWORK_CLAW_INSTALL_SEED_PROFILE ?? 'commercial',
     };
   } else {
-    stepEnv = devResetEnv(settings, env, root, { write: writeRuntimeConfig });
+    stepEnv = devResetEnv(settings, env, root);
   }
 
   stepEnv = {
@@ -273,22 +259,20 @@ function printHelp() {
 Reset the Claw Router admin account password through the installer database layer.
 
 Options:
-  --mode <dev|release>          dev uses target/dev/clawrouter.sqlite unless a database env/url is provided; release uses runtime config
+  --mode <dev|release>          dev uses .env.postgres; release uses PostgreSQL runtime config
   --username <username>         Admin username (default admin)
   --display-name <name>         Admin display name (default Administrator)
   --email <email>               Admin email identity (default admin@sdkwork.com)
   --password <password>         New admin password; may also be set with SDKWORK_CLAW_ADMIN_RESET_PASSWORD
   --config-file <path>          Release runtime TOML path
-  --dev-env-file <path>         Dev dotenv file such as .env.postgres
-  --database-url <url>          Database override
+  --dev-env-file <path>         Dev PostgreSQL dotenv file such as .env.postgres
+  --database-url <url>          PostgreSQL database override
   --database-max-connections <n>
   --dry-run                     Print the command without executing it
   -h, --help                    Show this help
 
 Examples:
   pnpm admin:reset:dev -- --password "Admin-Dev-Password-2026!"
-  pnpm admin:reset:dev:sqlite -- --password "Admin-Dev-Password-2026!"
-  pnpm admin:reset:dev:postgres -- --password "Admin-Dev-Password-2026!"
   pnpm admin:reset:release -- --password "Admin-Release-Password-2026!"
   SDKWORK_CLAW_ADMIN_RESET_PASSWORD="Admin-Release-Password-2026!" pnpm admin:reset:release
 `);

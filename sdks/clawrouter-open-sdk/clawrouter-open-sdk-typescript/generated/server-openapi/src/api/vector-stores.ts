@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { DeleteResult, OpenAiVectorStore, OpenAiVectorStoreCreateRequest, OpenAiVectorStoreFile, OpenAiVectorStoreFileBatch, OpenAiVectorStoreFileBatchCreateRequest, OpenAiVectorStoreFileCreateRequest, OpenAiVectorStoreFileList, OpenAiVectorStoreFileUpdateRequest, OpenAiVectorStoreList, OpenAiVectorStoreSearchRequest, OpenAiVectorStoreSearchResponse, OpenAiVectorStoreUpdateRequest } from '../types';
 
@@ -20,34 +20,34 @@ export class VectorStoresFilesApi {
 
 
 /** List vector store files */
-  async list(vectorStoreId: string, params?: VectorStoresFilesListParams): Promise<OpenAiVectorStoreFileList> {
+  async list(vectorStoreId: string, params?: VectorStoresFilesListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFileList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiVectorStoreFileList>(appendQueryString(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files`), query));
+    return this.client.request<OpenAiVectorStoreFileList>(appendQueryString(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create vector store file */
-  async create(vectorStoreId: string, body: OpenAiVectorStoreFileCreateRequest): Promise<OpenAiVectorStoreFile> {
-    return this.client.post<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files`), body, undefined, undefined, 'application/json');
+  async create(vectorStoreId: string, body: OpenAiVectorStoreFileCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFile> {
+    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete vector store file */
-  async delete(vectorStoreId: string, fileId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`));
+  async delete(vectorStoreId: string, fileId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve vector store file */
-  async retrieve(vectorStoreId: string, fileId: string): Promise<OpenAiVectorStoreFile> {
-    return this.client.get<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`));
+  async retrieve(vectorStoreId: string, fileId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFile> {
+    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Modify vector store file */
-  async update(vectorStoreId: string, fileId: string, body: OpenAiVectorStoreFileUpdateRequest): Promise<OpenAiVectorStoreFile> {
-    return this.client.post<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(vectorStoreId: string, fileId: string, body: OpenAiVectorStoreFileUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFile> {
+    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -67,29 +67,29 @@ export class VectorStoresFileBatchesApi {
 
 
 /** Create vector store file batch */
-  async create(vectorStoreId: string, body: OpenAiVectorStoreFileBatchCreateRequest): Promise<OpenAiVectorStoreFileBatch> {
-    return this.client.post<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches`), body, undefined, undefined, 'application/json');
+  async create(vectorStoreId: string, body: OpenAiVectorStoreFileBatchCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFileBatch> {
+    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Retrieve vector store file batch */
-  async retrieve(vectorStoreId: string, batchId: string): Promise<OpenAiVectorStoreFileBatch> {
-    return this.client.get<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`));
+  async retrieve(vectorStoreId: string, batchId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFileBatch> {
+    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Cancel vector store file batch */
-  async cancel(vectorStoreId: string, batchId: string): Promise<OpenAiVectorStoreFileBatch> {
-    return this.client.post<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`));
+  async cancel(vectorStoreId: string, batchId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFileBatch> {
+    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 
 /** List vector store file batch files */
-  async listFiles(vectorStoreId: string, batchId: string, params?: VectorStoresFileBatchesListFilesParams): Promise<OpenAiVectorStoreFileList> {
+  async listFiles(vectorStoreId: string, batchId: string, params?: VectorStoresFileBatchesListFilesParams, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFileList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiVectorStoreFileList>(appendQueryString(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/files`), query));
+    return this.client.request<OpenAiVectorStoreFileList>(appendQueryString(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -113,39 +113,39 @@ export class VectorStoresApi {
 
 
 /** List vector stores */
-  async list(params?: VectorStoresListParams): Promise<OpenAiVectorStoreList> {
+  async list(params?: VectorStoresListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiVectorStoreList>(appendQueryString(aiApiPath(`/vector_stores`), query));
+    return this.client.request<OpenAiVectorStoreList>(appendQueryString(aiApiPath(`/vector_stores`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create vector store */
-  async create(body: OpenAiVectorStoreCreateRequest): Promise<OpenAiVectorStore> {
-    return this.client.post<OpenAiVectorStore>(aiApiPath(`/vector_stores`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiVectorStoreCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStore> {
+    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete vector store */
-  async delete(vectorStoreId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`));
+  async delete(vectorStoreId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve vector store */
-  async retrieve(vectorStoreId: string): Promise<OpenAiVectorStore> {
-    return this.client.get<OpenAiVectorStore>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`));
+  async retrieve(vectorStoreId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStore> {
+    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Modify vector store */
-  async update(vectorStoreId: string, body: OpenAiVectorStoreUpdateRequest): Promise<OpenAiVectorStore> {
-    return this.client.post<OpenAiVectorStore>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(vectorStoreId: string, body: OpenAiVectorStoreUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStore> {
+    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Search vector store */
-  async search(vectorStoreId: string, body: OpenAiVectorStoreSearchRequest): Promise<OpenAiVectorStoreSearchResponse> {
-    return this.client.post<OpenAiVectorStoreSearchResponse>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/search`), body, undefined, undefined, 'application/json');
+  async search(vectorStoreId: string, body: OpenAiVectorStoreSearchRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreSearchResponse> {
+    return this.client.request<OpenAiVectorStoreSearchResponse>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/search`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { DeleteResult, OpenAiResponse, OpenAiResponseCompactRequest, OpenAiResponseInputItemList, OpenAiResponseInputTokenCount, OpenAiResponseInputTokenCountRequest, OpenAiResponsesRequest } from '../types';
 
@@ -21,7 +21,7 @@ export class ResponsesInputItemsApi {
 
 
 /** List response input items */
-  async list(responseId: string, params?: ResponsesInputItemsListParams): Promise<OpenAiResponseInputItemList> {
+  async list(responseId: string, params?: ResponsesInputItemsListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiResponseInputItemList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
@@ -29,7 +29,7 @@ export class ResponsesInputItemsApi {
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
       { name: 'include[]', value: params?.include, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiResponseInputItemList>(appendQueryString(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}/input_items`), query));
+    return this.client.request<OpenAiResponseInputItemList>(appendQueryString(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}/input_items`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -42,8 +42,8 @@ export class ResponsesInputTokensApi {
 
 
 /** Count response input tokens */
-  async create(body: OpenAiResponseInputTokenCountRequest): Promise<OpenAiResponseInputTokenCount> {
-    return this.client.post<OpenAiResponseInputTokenCount>(aiApiPath(`/responses/input_tokens`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiResponseInputTokenCountRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiResponseInputTokenCount> {
+    return this.client.request<OpenAiResponseInputTokenCount>(aiApiPath(`/responses/input_tokens`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -64,31 +64,31 @@ export class ResponsesApi {
 
 
 /** Create response */
-  async create(body: OpenAiResponsesRequest): Promise<OpenAiResponse> {
-    return this.client.post<OpenAiResponse>(aiApiPath(`/responses`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiResponsesRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiResponse> {
+    return this.client.request<OpenAiResponse>(aiApiPath(`/responses`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Compact response */
-  async compact(body: OpenAiResponseCompactRequest): Promise<OpenAiResponse> {
-    return this.client.post<OpenAiResponse>(aiApiPath(`/responses/compact`), body, undefined, undefined, 'application/json');
+  async compact(body: OpenAiResponseCompactRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiResponse> {
+    return this.client.request<OpenAiResponse>(aiApiPath(`/responses/compact`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete response */
-  async delete(responseId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}`));
+  async delete(responseId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve response */
-  async retrieve(responseId: string, params?: ResponsesRetrieveParams): Promise<OpenAiResponse> {
+  async retrieve(responseId: string, params?: ResponsesRetrieveParams, requestOptions?: ApiRequestOptions): Promise<OpenAiResponse> {
     const query = buildQueryString([
       { name: 'include[]', value: params?.include, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiResponse>(appendQueryString(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}`), query));
+    return this.client.request<OpenAiResponse>(appendQueryString(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Cancel response */
-  async cancel(responseId: string): Promise<OpenAiResponse> {
-    return this.client.post<OpenAiResponse>(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}/cancel`));
+  async cancel(responseId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiResponse> {
+    return this.client.request<OpenAiResponse>(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 

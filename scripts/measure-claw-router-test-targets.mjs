@@ -5,10 +5,10 @@ import path from 'node:path';
 import process from 'node:process';
 
 const DEFAULT_TARGETS = Object.freeze([
-  ['sdkwork-clawrouter-admin-gateway', 'database_config_router'],
-  ['sdkwork-clawrouter-standalone-gateway', 'database_config_router'],
-  ['sdkwork-clawrouter-edge-runtime', 'database_config_router'],
-  ['sdkwork-clawrouter-edge-runtime', 'provider_passthrough_route'],
+  ['sdkwork-clawrouter-admin-gateway', 'messaging_route'],
+  ['sdkwork-clawrouter-standalone-gateway', 'api_query_contract'],
+  ['sdkwork-clawrouter-edge-runtime', 'invocation_router'],
+  ['sdkwork-clawrouter-edge-runtime', 'provider_adapter_passthrough_streaming'],
   ['sdkwork-clawrouter-edge-runtime', 'edge_server'],
   ['sdkwork-clawrouter-edge-runtime', 'provider_adapter_invocation'],
   ['sdkwork-clawrouter-router-service', 'openai_compatible_http_relay'],
@@ -18,8 +18,8 @@ const DEFAULT_TARGETS = Object.freeze([
   ['sdkwork-clawrouter-router-service', 'openai_chat_adapter_api'],
   ['sdkwork-clawrouter-router-service', 'openai_embeddings_adapter_api'],
   ['sdkwork-clawrouter-router-service', 'openai_responses_adapter_api'],
-  ['sdkwork-clawrouter-router-service', 'sqlite_pricing_catalog_loader'],
-  ['sdkwork-claw-installer', 'installer_cli'],
+  ['sdkwork-clawrouter-router-service', 'postgres_pricing_catalog_loader'],
+  ['sdkwork-clawrouter-edge-runtime', 'database_installer_startup'],
 ]);
 
 function printHelp() {

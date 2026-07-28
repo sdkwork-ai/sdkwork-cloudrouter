@@ -39,9 +39,7 @@ members = [
     "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx",
     "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx",
     "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx",
-    "crates/sdkwork-clawrouter-app-providers-repository-sqlx",
     "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
-    "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx",
 ]
 default-members = [
     "crates/sdkwork-claw-contract",
@@ -148,9 +146,7 @@ sdkwork-claw-observability = { path = "crates/sdkwork-claw-observability" }
 sdkwork-clawrouter-admin-monitor-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-monitor-repository-sqlx" }
 sdkwork-clawrouter-admin-dashboard-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-dashboard-repository-sqlx" }
 sdkwork-clawrouter-admin-analytics-repository-sqlx = { path = "crates/sdkwork-clawrouter-admin-analytics-repository-sqlx" }
-sdkwork-clawrouter-app-providers-repository-sqlx = { path = "crates/sdkwork-clawrouter-app-providers-repository-sqlx" }
 sdkwork-clawrouter-settlements-dashboard-repository-sqlx = { path = "crates/sdkwork-clawrouter-settlements-dashboard-repository-sqlx" }
-sdkwork-clawrouter-app-gateway-traces-repository-sqlx = { path = "crates/sdkwork-clawrouter-app-gateway-traces-repository-sqlx" }
 sdkwork-claw-test-support = { path = "crates/sdkwork-claw-test-support" }
 sdkwork-clawrouter-router-service = { path = "services/sdkwork-clawrouter-router-service" }
 sdkwork-clawrouter-standalone-gateway = { path = "services/sdkwork-clawrouter-standalone-gateway" }

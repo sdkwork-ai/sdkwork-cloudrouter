@@ -48,10 +48,10 @@
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
         "cargoDependency": "sdkwork_routes_account_app_api",
-        "embeddedExecutableExport": "sdkwork_routes_account_app_api::app_account_wallet_router_with_sqlite_pool",
+        "embeddedExecutableExport": "sdkwork_routes_account_app_api::app_account_wallet_router_with_postgres_pool",
         "coverageEvidence": [
           "src/commerce_runtime.rs",
-          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "src/routes.rs",
           "../../../sdkwork-account/apis/app-api/account/account-app-api.openapi.json"
         ]
       },
@@ -66,7 +66,7 @@
         "embeddedExecutableExport": "sdkwork_routes_payment_app_api::routes::build_payment_app_router",
         "coverageEvidence": [
           "src/commerce_runtime.rs",
-          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "src/routes.rs",
           "../../../sdkwork-payment/apis/app-api/payment/sdkwork-payment-app-api.openapi.yaml"
         ]
       },
@@ -78,10 +78,10 @@
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
         "cargoDependency": "sdkwork_routes_promotion_app_api",
-        "embeddedExecutableExport": "sdkwork_routes_promotion_app_api::app_promotion_router_with_sqlite_pool",
+        "embeddedExecutableExport": "sdkwork_routes_promotion_app_api::app_promotion_router_with_postgres_pool",
         "coverageEvidence": [
           "src/commerce_runtime.rs",
-          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "src/routes.rs",
           "../../../sdkwork-promotion/apis/app-api/promotion/sdkwork-promotion-app-api.openapi.json"
         ]
       },
@@ -93,10 +93,10 @@
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
         "cargoDependency": "sdkwork_routes_membership_app_api",
-        "embeddedExecutableExport": "sdkwork_routes_membership_app_api::app_membership_router_with_sqlite_pool",
+        "embeddedExecutableExport": "sdkwork_routes_membership_app_api::app_membership_router_with_postgres_pool",
         "coverageEvidence": [
           "src/commerce_runtime.rs",
-          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "src/routes.rs",
           "../../../sdkwork-membership/apis/app-api/membership/membership-app-api.openapi.json"
         ]
       },
@@ -111,7 +111,7 @@
         "embeddedExecutableExport": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool",
         "coverageEvidence": [
           "src/commerce_runtime.rs",
-          "../sdkwork-clawrouter-edge-runtime/tests/edge_server_sqlite_smoke.rs",
+          "src/routes.rs",
           "../../../sdkwork-order/crates/sdkwork-api-order-assembly/assembly-manifest.json",
           "../../../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
         ]

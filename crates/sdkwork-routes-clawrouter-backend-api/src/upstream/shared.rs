@@ -7,7 +7,8 @@ use axum::Json;
 use sdkwork_clawrouter_router_service::api::admin_sql_subject::SqlScopedAdminSubject;
 use sdkwork_clawrouter_router_service::domain::{DecimalValue, DomainError};
 use sdkwork_clawrouter_router_service::ports::{
-    AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamStore, AdminUpstreamSubject,
+    AdminUpstreamAccountVerificationError, AdminUpstreamAccountVerifier, AdminUpstreamListQuery,
+    AdminUpstreamPage, AdminUpstreamStore, AdminUpstreamSubject,
 };
 use sdkwork_utils_rust::{
     format_datetime, now, sha256_hash, uuid, PageInfo, PageMode, SdkWorkApiResponse,
@@ -17,13 +18,15 @@ use serde::{Deserialize, Serialize};
 
 pub(super) const MAX_NESTED_ITEMS: usize = 200;
 const MAX_SEARCH_LENGTH: usize = 256;
-const MAX_IDEMPOTENCY_KEY_LENGTH: usize = 256;
+const MAX_IDEMPOTENCY_KEY_LENGTH: usize = 128;
 
 pub(super) type UpstreamStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
+pub(super) type UpstreamVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;
 
 #[derive(Clone)]
 pub(super) struct UpstreamState {
     pub store: UpstreamStore,
+    pub verifier: UpstreamVerifier,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -136,7 +139,7 @@ pub(super) fn idempotency_uuid(
     let key = headers.get("idempotency-key").ok_or_else(|| {
         problem(
             SdkWorkResultCode::PreconditionRequired,
-            "Idempotency-Key is required when creating an account credential",
+            "Idempotency-Key is required for this create operation",
         )
     })?;
     let key = key.to_str().map_err(|_| {
@@ -171,10 +174,6 @@ pub(super) fn idempotency_uuid(
         &digest[16..20],
         &digest[20..32]
     ))
-}
-
-pub(super) fn generated_uuid() -> String {
-    uuid()
 }
 
 pub(super) fn requested_at() -> String {
@@ -334,6 +333,19 @@ pub(super) fn domain_error(error: DomainError) -> Response {
     )
 }
 
+pub(super) fn verification_error(error: AdminUpstreamAccountVerificationError) -> Response {
+    let code = match error {
+        AdminUpstreamAccountVerificationError::TargetNotFound => SdkWorkResultCode::NotFound,
+        AdminUpstreamAccountVerificationError::UnsupportedProtocol
+        | AdminUpstreamAccountVerificationError::UnsupportedAuthType
+        | AdminUpstreamAccountVerificationError::InvalidConfiguration => {
+            SdkWorkResultCode::UnprocessableEntity
+        }
+        AdminUpstreamAccountVerificationError::Internal => SdkWorkResultCode::InternalError,
+    };
+    problem(code, error.to_string())
+}
+
 pub(super) fn not_found(entity: &str) -> Response {
     problem(
         SdkWorkResultCode::NotFound,
@@ -389,5 +401,33 @@ mod tests {
         let first = idempotency_uuid(&headers, &subject, 40).unwrap();
         assert_eq!(first, idempotency_uuid(&headers, &subject, 40).unwrap());
         assert_ne!(first, idempotency_uuid(&headers, &subject, 41).unwrap());
+    }
+
+    #[test]
+    fn verification_errors_map_to_stable_problem_statuses() {
+        for (error, status) in [
+            (
+                AdminUpstreamAccountVerificationError::TargetNotFound,
+                StatusCode::NOT_FOUND,
+            ),
+            (
+                AdminUpstreamAccountVerificationError::UnsupportedProtocol,
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ),
+            (
+                AdminUpstreamAccountVerificationError::UnsupportedAuthType,
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ),
+            (
+                AdminUpstreamAccountVerificationError::InvalidConfiguration,
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ),
+            (
+                AdminUpstreamAccountVerificationError::Internal,
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+        ] {
+            assert_eq!(status, verification_error(error).status());
+        }
     }
 }

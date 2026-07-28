@@ -2,6 +2,8 @@
 
 Versioned incremental migrations for post-baseline schema changes.
 
+The directory is intentionally empty for the current pre-release baseline. Do not add migrations that translate retired provider, site, channel, channel-group, or SQLite server schemas; update the source registry and rematerialize the baseline until the first production release is cut.
+
 ## Naming
 
 Add SQL files using `{version}_{name}.up.sql` and optional `{version}_{name}.down.sql`.

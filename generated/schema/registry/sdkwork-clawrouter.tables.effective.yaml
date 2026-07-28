@@ -111,6 +111,12 @@ schema_registry:
     - deleted_at
     - deleted_by
     - metadata
+    operational_state:
+    - id
+    - tenant_id
+    - organization_id
+    - created_at
+    - updated_at
     runtime_coordination_event:
     - id
     - uuid
@@ -197,41 +203,42 @@ description: Claw Router Schema Registry. Machine-readable source of truth for C
 modules:
   ai-routing:
     owner: claw-router-platform
-    description: AI routing, channel, provider, policy, site, quota, and runtime coordination
-      tables.
+    description: AI routing, upstream supplier, upstream account, account-group, policy,
+      quota, and runtime coordination tables.
     compliance_level: L2
-    tables_count: 21
+    tables_count: 23
     tables:
-    - ai_channel
-    - ai_channel_credential
-    - ai_channel_group
-    - ai_channel_group_member
-    - ai_channel_group_metric_snapshot
-    - ai_channel_group_resource
-    - ai_channel_resource
+    - ai_upstream_account
+    - ai_upstream_account_health_state
+    - ai_upstream_account_credential
+    - ai_upstream_account_group
+    - ai_upstream_account_group_member
+    - ai_upstream_account_group_metric_snapshot
+    - ai_upstream_account_group_resource
+    - ai_upstream_supplier_resource
     - ai_config_version
     - ai_config_change_event
     - ai_model_mapping_rule
     - ai_model_mapping_rule_binding
     - ai_model_mapping_rule_item
-    - ai_provider
-    - ai_provider_object_route
+    - ai_upstream_supplier
+    - ai_upstream_object_route
     - ai_quota_policy
     - ai_routing_decision_log
     - ai_routing_policy
     - ai_routing_profile
     - ai_routing_rule
-    - ai_site
-    - ai_site_service
+    - ai_upstream_supplier_endpoint
+    - ai_upstream_supplier_endpoint_health_state
+    - ai_upstream_supplier_auth_method
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ai-metering:
     owner: claw-router-platform
-    description: AI usage facts, service-provider usage edges, and request traces.
+    description: AI usage facts and request traces.
     compliance_level: L3
-    tables_count: 3
+    tables_count: 2
     tables:
     - ai_usage
-    - ai_usage_service_provider_edge
     - ai_request_trace
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ai-pricing:
@@ -248,14 +255,14 @@ modules:
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   iam-gateway:
     owner: claw-router-platform
-    description: Gateway-owned IAM API key, access policy, channel-group binding,
+    description: Gateway-owned IAM API key, access policy, account-group binding,
       and risk rule tables used by Claw Router runtime.
     compliance_level: L2
     tables_count: 4
     tables:
     - iam_gateway_access_policy
     - iam_gateway_api_key
-    - iam_gateway_api_key_channel_group
+    - iam_gateway_api_key_account_group
     - iam_gateway_risk_rule
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
   ops-runtime:
@@ -299,17 +306,17 @@ data_flow:
     - ops-runtime本地表提供可分页的监控、通知和审计读模型
     - ops_metric_snapshot、ops_job_execution、ops_audit_log写入（claw-router本地）
 statistics:
-  claw_router_local_tables: 43
+  claw_router_local_tables: 45
   composed_dependency_tables: 19
-  total_tables: 62
+  total_tables: 64
   table_prefix_distribution:
-    ai_: 48
+    ai_: 50
     iam_: 4
     ops_: 10
   module_distribution:
     claw-router: 43
     sdkwork-models: 19
-    ai-routing: 21
+    ai-routing: 23
     ai-metering: 3
     ai-pricing: 5
     iam-gateway: 4
@@ -320,7 +327,7 @@ compliance:
   security_tables:
   - iam_gateway_access_policy
   - iam_gateway_api_key
-  - iam_gateway_api_key_channel_group
+  - iam_gateway_api_key_account_group
   - iam_gateway_risk_rule
   audit_tables:
   - ai_request_trace
@@ -476,586 +483,6 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
-- table: ai_channel
-  domain: ai
-  profile: credential_ref
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: credential_ref
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    provider_id: int64
-    provider_code: string(64)
-    site_id: int64
-    site_service_id: int64
-    site_code: string(64)
-    site_service_code: string(64)
-    site_channel_role: string(32)
-    channel_code:
-      type: string(64)
-      constraints: NOT NULL
-    channel_name:
-      type: string(128)
-      constraints: NOT NULL
-    channel_type:
-      type: string(32)
-      constraints: NOT NULL
-    protocol_code: string(64)
-    auth_type: int32
-    credential_profile: int32
-    external_channel_id: string(128)
-    base_url: string(512)
-    auth_config: json
-    credential_ref: string(256)
-    credential_hash: string(128)
-    credential_version: int64
-    credential_rotation_policy: json
-    credential_rotation_strategy:
-      type: string(64)
-      constraints: NOT NULL DEFAULT 'default'
-    masked_label: string(128)
-    environment: int32
-    region_code: string(64)
-    quota_unit: int32
-    quota_limit: decimal
-    quota_used: decimal
-    upstream_balance_amount: decimal
-    upstream_balance_currency: string(10)
-    last_balance_checked_at: instant
-    last_rotated_at: instant
-    next_rotate_at: instant
-    last_verified_at: instant
-    last_used_at: instant
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    weight:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    rpm_limit: int64
-    timeout_ms: int32
-    retry_policy: json
-    circuit_breaker_policy: json
-    health_status:
-      type: int32
-      constraints: NOT NULL DEFAULT 1
-    last_latency_ms: int32
-    consecutive_error_count: int64
-    proxy_id: int64
-    risk_level: int32
-  unique_constraints:
-  - name: uk_ai_channel_uuid
-    columns:
-    - uuid
-  - name: uk_ai_channel_tenant_code
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_code
-  indexes:
-  - name: uk_ai_channel_scope_id
-    unique: true
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: idx_ai_channel_provider_type_status
-    columns:
-    - tenant_id
-    - organization_id
-    - provider_code
-    - channel_type
-    - status
-    - id
-  - name: idx_ai_channel_health_status
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - health_status
-    - priority
-    - weight
-    - id
-  - name: idx_ai_channel_site_status
-    columns:
-    - tenant_id
-    - organization_id
-    - site_id
-    - status
-    - health_status
-    - id
-  - name: idx_ai_channel_site_service_status
-    columns:
-    - tenant_id
-    - organization_id
-    - site_service_id
-    - status
-    - health_status
-    - id
-  - name: idx_ai_channel_site_code
-    columns:
-    - tenant_id
-    - organization_id
-    - site_code
-    - site_service_code
-    - status
-    - id
-  imported: false
-- table: ai_channel_credential
-  domain: ai
-  profile: credential_ref
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: credential_ref
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    channel_id:
-      type: int64
-      constraints: NOT NULL
-    provider_code: string(64)
-    channel_code: string(64)
-    credential_name:
-      type: string(128)
-      constraints: NOT NULL
-    base_url:
-      type: string(512)
-      constraints: NOT NULL
-    auth_config:
-      type: json
-      constraints: NOT NULL DEFAULT '{}'::jsonb
-    credential_ref:
-      type: string(256)
-      constraints: NOT NULL
-    credential_hash:
-      type: string(128)
-      constraints: NOT NULL
-    masked_label: string(128)
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    weight:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    health_status:
-      type: int32
-      constraints: NOT NULL DEFAULT 1
-    last_latency_ms: int32
-    consecutive_error_count:
-      type: int64
-      constraints: NOT NULL DEFAULT 0
-    last_verified_at: instant
-    last_used_at: instant
-  unique_constraints:
-  - name: uk_ai_channel_credential_uuid
-    columns:
-    - uuid
-  indexes:
-  - name: idx_ai_channel_credential_channel
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_id
-    - status
-    - priority
-    - weight
-    - id
-  - name: idx_ai_channel_credential_ref
-    columns:
-    - tenant_id
-    - organization_id
-    - credential_ref
-  imported: false
-- table: ai_channel_group
-  domain: ai
-  profile: tenant_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: tenant_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    group_code:
-      type: string(64)
-      constraints: NOT NULL
-    group_name:
-      type: string(128)
-      constraints: NOT NULL
-    description: string(512)
-    provider_code: string(64)
-    group_type: string(32)
-    routing_policy_id: int64
-    quota_policy_id: int64
-    rate_limit_policy_id: int64
-    environment: int32
-    pricing_plan_id: int64
-    pricing_plan_code: string(64)
-    rate_multiplier: decimal
-    price_reference_mode: int32
-    official_price_multiplier: decimal
-    billing_type: int32
-    capacity_limit: int64
-    allowed_origin: json
-  unique_constraints:
-  - name: uk_ai_channel_group_uuid
-    columns:
-    - uuid
-  - name: uk_ai_channel_group_tenant_code
-    columns:
-    - tenant_id
-    - organization_id
-    - group_code
-  indexes:
-  - name: uk_ai_channel_group_scope_id
-    unique: true
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: idx_ai_channel_group_provider_status
-    columns:
-    - tenant_id
-    - organization_id
-    - provider_code
-    - status
-    - updated_at
-    - id
-  - name: idx_ai_channel_group_tenant_status_updated
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - updated_at
-    - id
-  - name: idx_ai_channel_group_pricing
-    columns:
-    - tenant_id
-    - organization_id
-    - pricing_plan_id
-    - status
-    - updated_at
-    - id
-  imported: false
-- table: ai_channel_group_member
-  domain: ai
-  profile: relation_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: relation_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    channel_group_id:
-      type: int64
-      constraints: NOT NULL
-    channel_id:
-      type: int64
-      constraints: NOT NULL
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    weight:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    enabled:
-      type: bool
-      constraints: NOT NULL DEFAULT TRUE
-    effective_from: instant
-    effective_to: instant
-  unique_constraints:
-  - name: uk_ai_channel_group_member_uuid
-    columns:
-    - uuid
-  - name: uk_ai_channel_group_member
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_group_id
-    - channel_id
-  foreign_keys:
-  - name: fk_ai_channel_group_member_group
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_group_id
-    references_table: ai_channel_group
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    on_delete: RESTRICT
-  - name: fk_ai_channel_group_member_channel
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_id
-    references_table: ai_channel
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    on_delete: RESTRICT
-  check_constraints:
-  - name: ck_ai_channel_group_member_non_negative_weighting
-    expression: priority >= 0 AND weight >= 0
-  - name: ck_ai_channel_group_member_effective_interval
-    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
-  indexes:
-  - name: idx_ai_channel_group_member_status
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - channel_group_id
-    - priority
-    - id
-  - name: idx_ai_channel_group_member_group
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_group_id
-    - status
-    - priority
-    - weight
-    - id
-  - name: idx_ai_channel_group_member_channel
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_id
-    - status
-    - id
-  imported: false
-- table: ai_channel_group_metric_snapshot
-  domain: ai
-  profile: projection
-  compliance_level: L2
-  system_of_record: false
-  write_owner: ai-routing-service
-  common_columns: projection
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    channel_group_id: int64
-    group_code: string(64)
-    provider_code: string(64)
-    channel_available_count: int64
-    channel_total_count: int64
-    capacity_used: decimal
-    capacity_limit: decimal
-    request_count_today: int64
-    request_count_total: int64
-    usage_amount_today: decimal
-    usage_amount_total: decimal
-    health_status: int32
-    snapshot_at: instant
-  required_columns:
-  - channel_group_id
-  - snapshot_at
-  - source_version
-  source_tables:
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_channel
-  - ai_usage
-  unique_constraints:
-  - name: uk_ai_channel_group_metric_snapshot_uuid
-    columns:
-    - uuid
-  - name: uk_ai_channel_group_metric_snapshot
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_group_id
-    - snapshot_at
-  check_constraints:
-  - name: ck_ai_channel_group_metric_snapshot_non_negative_counts
-    expression: (channel_available_count IS NULL OR channel_available_count >= 0)
-      AND (channel_total_count IS NULL OR channel_total_count >= 0) AND (request_count_today
-      IS NULL OR request_count_today >= 0) AND (request_count_total IS NULL OR request_count_total
-      >= 0)
-  - name: ck_ai_channel_group_metric_snapshot_non_negative_amounts
-    expression: (capacity_used IS NULL OR capacity_used >= 0) AND (capacity_limit
-      IS NULL OR capacity_limit >= 0) AND (usage_amount_today IS NULL OR usage_amount_today
-      >= 0) AND (usage_amount_total IS NULL OR usage_amount_total >= 0)
-  indexes:
-  - name: idx_ai_channel_group_metric_tenant_status
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - snapshot_at
-    - id
-  - name: idx_ai_channel_group_metric_status
-    columns:
-    - tenant_id
-    - organization_id
-    - provider_code
-    - health_status
-    - snapshot_at
-    - id
-  semantic_contracts:
-    projection_lineage:
-      watermark:
-        field: snapshot_at
-        strategy: high_watermark
-      source_version:
-        field: source_version
-        strategy: max_source_version
-      algorithm_version: channel-group-metric-v1
-      freshness:
-        target_seconds: 300
-        max_staleness_seconds: 900
-      rebuild:
-        strategy: full_recompute
-        owner: ai-routing-service
-      aggregation_grain:
-      - tenant_id
-      - organization_id
-      - channel_group_id
-      - snapshot_at
-  imported: false
-- table: ai_channel_group_resource
-  domain: ai
-  profile: relation_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: relation_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    channel_group_id:
-      type: int64
-      constraints: NOT NULL
-    resource_id: int64
-    resource_code:
-      type: string(192)
-      constraints: NOT NULL DEFAULT ''
-    resource_group_id: int64
-    resource_group_code:
-      type: string(128)
-      constraints: NOT NULL DEFAULT ''
-    grant_type:
-      type: string(32)
-      constraints: NOT NULL DEFAULT 'allow'
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    effective_from: instant
-    effective_to: instant
-  unique_constraints:
-  - name: uk_ai_channel_group_resource_uuid
-    columns:
-    - uuid
-  - name: uk_ai_channel_group_resource
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_group_id
-    - resource_code
-    - resource_group_code
-  indexes:
-  - name: idx_ai_channel_group_resource_status
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - channel_group_id
-    - grant_type
-    - priority
-    - id
-  - name: idx_ai_channel_group_resource_lookup
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_group_id
-    - status
-    - grant_type
-    - priority
-    - id
-  imported: false
-- table: ai_channel_resource
-  domain: ai
-  profile: relation_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: relation_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    channel_id:
-      type: int64
-      constraints: NOT NULL
-    provider_code: string(64)
-    channel_code: string(64)
-    resource_id: int64
-    resource_code:
-      type: string(192)
-      constraints: NOT NULL DEFAULT ''
-    resource_group_id: int64
-    resource_group_code:
-      type: string(128)
-      constraints: NOT NULL DEFAULT ''
-    grant_type:
-      type: string(32)
-      constraints: NOT NULL DEFAULT 'allow'
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    weight:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    effective_from: instant
-    effective_to: instant
-  unique_constraints:
-  - name: uk_ai_channel_resource_uuid
-    columns:
-    - uuid
-  - name: uk_ai_channel_resource
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_id
-    - resource_code
-    - resource_group_code
-  indexes:
-  - name: idx_ai_channel_resource_lookup
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - channel_id
-    - grant_type
-    - priority
-    - id
-  imported: false
 - table: ai_config_change_event
   domain: ai
   profile: runtime_coordination_event
@@ -1992,7 +1419,7 @@ tables:
     - status
     - enabled
     - id
-  - name: idx_ai_model_mapping_rule_binding_channel_group_lookup
+  - name: idx_ai_model_mapping_rule_binding_account_group_lookup
     columns:
     - tenant_id
     - organization_id
@@ -2825,8 +2252,8 @@ tables:
     family_code: string(64)
     model_id: int64
     model: string(256)
-    provider_code: string(64)
-    channel_id: int64
+    supplier_code: string(64)
+    account_id: int64
     provider_model: string(256)
     capability_code: string(64)
     platform_code: string(64)
@@ -2929,8 +2356,8 @@ tables:
     - organization_id
     - pricing_plan_id
     - model
-    - provider_code
-    - channel_id
+    - supplier_code
+    - account_id
     - billing_meter_code
     - status
     - priority
@@ -3073,135 +2500,6 @@ tables:
     - sort_order
     - id
   imported: false
-- table: ai_provider
-  domain: ai
-  profile: credential_ref
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: credential_ref
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    provider_code:
-      type: string(64)
-      constraints: NOT NULL
-    display_name:
-      type: string(128)
-      constraints: NOT NULL
-    description: string(512)
-    icon_drive_uri: string(512)
-    icon_resource_snapshot: json
-    color_token: string(64)
-    docs_url: string(512)
-    website_url: string(512)
-    default_vendor_code: string(64)
-    provider_type: string(32)
-    protocol_code: string(64)
-    base_url: string(512)
-    auth_type: int32
-    resource_schema: json
-    metadata_schema_version: string(32)
-    sort_order: int32
-  unique_constraints:
-  - name: uk_ai_provider_uuid
-    columns:
-    - uuid
-  - name: uk_ai_provider_tenant_code
-    columns:
-    - tenant_id
-    - organization_id
-    - provider_code
-  indexes:
-  - name: idx_ai_provider_status_sort
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - sort_order
-    - id
-  imported: false
-- table: ai_provider_object_route
-  domain: ai
-  profile: runtime_binding
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: runtime_binding
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    api_key_id: int64
-    channel_group_id: int64
-    object_type:
-      type: string(64)
-      constraints: NOT NULL
-    object_id:
-      type: string(256)
-      constraints: NOT NULL
-    object_key_hash:
-      type: string(128)
-      constraints: NOT NULL
-    parent_object_type: string(64)
-    parent_object_id: string(256)
-    provider_code: string(64)
-    channel_id:
-      type: int64
-      constraints: NOT NULL
-    vendor_code: string(64)
-    api_code: string(128)
-    catalog_key: string(256)
-    provider_model: string(256)
-    region_code: string(64)
-    sticky_scope: string(64)
-    expires_at: instant
-    last_seen_at: instant
-  unique_constraints:
-  - name: uk_ai_provider_object_route_uuid
-    columns:
-    - uuid
-  - name: uk_ai_provider_object_route_object
-    columns:
-    - tenant_id
-    - organization_id
-    - object_type
-    - object_id
-  indexes:
-  - name: idx_ai_provider_object_route_fast
-    columns:
-    - tenant_id
-    - organization_id
-    - object_key_hash
-    - status
-    - id
-  - name: idx_ai_provider_object_route_parent
-    columns:
-    - tenant_id
-    - organization_id
-    - parent_object_type
-    - parent_object_id
-    - status
-    - id
-  - name: idx_ai_provider_object_route_channel
-    columns:
-    - tenant_id
-    - organization_id
-    - channel_group_id
-    - channel_id
-    - status
-    - id
-  - name: idx_ai_provider_object_route_expiry
-    columns:
-    - tenant_id
-    - organization_id
-    - expires_at
-    - status
-    - id
-  imported: false
 - table: ai_quota_policy
   domain: ai
   profile: quota_policy
@@ -3222,7 +2520,7 @@ tables:
     subject_ref_masked: string(128)
     scope_type: int32
     scope_id: int64
-    channel_group_id: int64
+    account_group_id: int64
     model: string(256)
     quota_period: int32
     quota_unit: int32
@@ -3254,12 +2552,12 @@ tables:
     - subject_type
     - subject_ref_hash
     - status
-  - name: idx_ai_quota_policy_model_channel_group
+  - name: idx_ai_quota_policy_model_account_group
     columns:
     - tenant_id
     - organization_id
     - model
-    - channel_group_id
+    - account_group_id
     - status
   imported: false
 - table: ai_request_trace
@@ -3279,14 +2577,14 @@ tables:
     api_key_id: int64
     legacy_api_key_id: int64
     api_key_name_snapshot: string(128)
-    channel_group_id: int64
-    channel_group_snapshot: string(128)
+    account_group_id: int64
+    account_group_snapshot: string(128)
     owner_type: int32
     owner_id: int64
     owner_name_snapshot: string(128)
-    provider_id: int64
-    channel_id: int64
-    channel_name_snapshot: string(128)
+    supplier_id: int64
+    account_id: int64
+    account_name_snapshot: string(128)
     requested_model: string(256)
     requested_model_catalog_key: string(256)
     provider_model: string(256)
@@ -3646,9 +2944,9 @@ tables:
     requested_model: string(256)
     resolved_model: string(256)
     capability: int32
-    selected_provider_id: int64
-    selected_channel_id: int64
+    selected_supplier_id: int64
     selected_account_id: int64
+    selected_credential_id: int64
     decision_mode: int32
     decision_reason: json
     candidate_snapshot: json
@@ -3831,7 +3129,7 @@ tables:
     priority: int32
     match_expression: json
     target_model: string(256)
-    candidate_channels: json
+    candidate_account_groups: json
     fallback_chain: json
     constraints: json
     rate_limit_policy_id: int64
@@ -3871,9 +3169,151 @@ tables:
     - priority
     - status
   imported: false
-- table: ai_site
+- table: ai_upstream_account
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    supplier_id:
+      type: int64
+      constraints: NOT NULL
+    supplier_code:
+      type: string(64)
+      constraints: NOT NULL
+    preferred_endpoint_id: int64
+    account_code:
+      type: string(64)
+      constraints: NOT NULL
+    account_name:
+      type: string(128)
+      constraints: NOT NULL
+    account_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'standard'
+    auth_method_code:
+      type: string(64)
+      constraints: NOT NULL
+    external_account_id: string(128)
+    credential_rotation_policy: json
+    credential_rotation_strategy:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'default'
+    environment: int32
+    region_code: string(64)
+    quota_unit: int32
+    quota_limit: decimal
+    quota_used: decimal
+    upstream_balance_amount: decimal
+    upstream_balance_currency: string(10)
+    contract_cost_multiplier:
+      type: decimal
+      constraints: NOT NULL DEFAULT 1
+    last_balance_checked_at: instant
+    last_rotated_at: instant
+    next_rotate_at: instant
+    rpm_limit: int64
+    timeout_ms: int32
+    retry_policy: json
+    circuit_breaker_policy: json
+    proxy_id: int64
+    risk_level: int32
+  unique_constraints:
+  - name: uk_ai_upstream_account_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_account_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - account_code
+  foreign_keys:
+  - name: fk_ai_upstream_account_supplier
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - supplier_code
+    references_table: ai_upstream_supplier
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    - supplier_code
+    on_delete: RESTRICT
+  - name: fk_ai_upstream_account_preferred_endpoint
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - preferred_endpoint_id
+    references_table: ai_upstream_supplier_endpoint
+    references_columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - id
+    on_delete: RESTRICT
+  - name: fk_ai_upstream_account_auth_method
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - auth_method_code
+    references_table: ai_upstream_supplier_auth_method
+    references_columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - auth_method_code
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_account_financial_values
+    expression: contract_cost_multiplier > 0 AND (quota_limit IS NULL OR quota_limit
+      >= 0) AND (quota_used IS NULL OR quota_used >= 0) AND (upstream_balance_amount
+      IS NULL OR upstream_balance_amount >= 0)
+  - name: ck_ai_upstream_account_timeout
+    expression: timeout_ms IS NULL OR timeout_ms > 0
+  indexes:
+  - name: uk_ai_upstream_account_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+  - name: uk_ai_upstream_account_scope_auth_method
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+    - auth_method_code
+  - name: idx_ai_upstream_account_supplier_status
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - status
+    - id
+  - name: idx_ai_upstream_account_preferred_endpoint
+    columns:
+    - tenant_id
+    - organization_id
+    - preferred_endpoint_id
+    - status
+    - id
+  imported: false
+- table: ai_upstream_account_credential
   domain: ai
   profile: credential_ref
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
@@ -3883,158 +3323,968 @@ tables:
   - backend
   - worker
   columns:
-    site_code:
+    account_id:
+      type: int64
+      constraints: NOT NULL
+    auth_method_code:
       type: string(64)
       constraints: NOT NULL
-    site_name:
+    credential_name:
+      type: string(128)
+      constraints: NOT NULL
+    credential_ref:
+      type: text
+      constraints: NOT NULL
+    credential_hash:
+      type: string(128)
+      constraints: NOT NULL
+    masked_label: string(128)
+    credential_version:
+      type: int64
+      constraints: NOT NULL DEFAULT 1
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    is_active:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+    expires_at: instant
+    last_rotated_at: instant
+    last_verified_at: instant
+    last_used_at: instant
+  unique_constraints:
+  - name: uk_ai_upstream_account_credential_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_account_credential_version
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    - credential_version
+  foreign_keys:
+  - name: fk_ai_upstream_account_credential_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    - auth_method_code
+    references_table: ai_upstream_account
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    - auth_method_code
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_account_credential_version
+    expression: credential_version > 0 AND priority >= 0
+  indexes:
+  - name: idx_ai_upstream_account_credential_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    - status
+    - is_active
+    - priority
+    - id
+  imported: false
+- table: ai_upstream_account_group
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    group_code:
+      type: string(64)
+      constraints: NOT NULL
+    group_name:
+      type: string(128)
+      constraints: NOT NULL
+    description: string(512)
+    group_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'shared'
+    routing_strategy:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'weighted'
+    fallback_mode:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'sequential'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    routing_policy_id: int64
+    quota_policy_id: int64
+    rate_limit_policy_id: int64
+    environment: int32
+    pricing_plan_id: int64
+    pricing_plan_code: string(64)
+    cost_multiplier:
+      type: decimal
+      constraints: NOT NULL DEFAULT 1
+    sale_multiplier:
+      type: decimal
+      constraints: NOT NULL DEFAULT 1
+    billing_type: int32
+    capacity_limit: int64
+    allowed_origin: json
+  unique_constraints:
+  - name: uk_ai_upstream_account_group_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_account_group_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - group_code
+  check_constraints:
+  - name: ck_ai_upstream_account_group_routing_strategy
+    expression: routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost',
+      'failover')
+  - name: ck_ai_upstream_account_group_fallback_mode
+    expression: fallback_mode IN ('none', 'sequential', 'same_supplier', 'cross_supplier')
+  - name: ck_ai_upstream_account_group_financial_values
+    expression: cost_multiplier > 0 AND sale_multiplier > 0 AND priority >= 0 AND
+      (capacity_limit IS NULL OR capacity_limit >= 0)
+  indexes:
+  - name: uk_ai_upstream_account_group_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+  - name: idx_ai_upstream_account_group_tenant_status_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - updated_at
+    - id
+  - name: idx_ai_upstream_account_group_pricing
+    columns:
+    - tenant_id
+    - organization_id
+    - pricing_plan_id
+    - status
+    - updated_at
+    - id
+  imported: false
+- table: ai_upstream_account_group_member
+  domain: ai
+  profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    account_group_id:
+      type: int64
+      constraints: NOT NULL
+    account_id:
+      type: int64
+      constraints: NOT NULL
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    routing_weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    cost_multiplier_override: decimal
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_upstream_account_group_member_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_account_group_member
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    - account_id
+  foreign_keys:
+  - name: fk_ai_upstream_account_group_member_group
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    references_table: ai_upstream_account_group
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  - name: fk_ai_upstream_account_group_member_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    references_table: ai_upstream_account
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_account_group_member_non_negative_weighting
+    expression: priority >= 0 AND routing_weight >= 0 AND (cost_multiplier_override
+      IS NULL OR cost_multiplier_override > 0)
+  - name: ck_ai_upstream_account_group_member_effective_interval
+    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
+  indexes:
+  - name: idx_ai_upstream_account_group_member_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - account_group_id
+    - priority
+    - id
+  - name: idx_ai_upstream_account_group_member_group
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    - status
+    - priority
+    - routing_weight
+    - id
+  - name: idx_ai_upstream_account_group_member_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    - status
+    - id
+  imported: false
+- table: ai_upstream_account_group_metric_snapshot
+  domain: ai
+  profile: projection
+  compliance_level: L2
+  system_of_record: false
+  write_owner: ai-routing-service
+  common_columns: projection
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    account_group_id: int64
+    group_code: string(64)
+    account_available_count: int64
+    account_total_count: int64
+    capacity_used: decimal
+    capacity_limit: decimal
+    request_count_today: int64
+    request_count_total: int64
+    usage_amount_today: decimal
+    usage_amount_total: decimal
+    health_status: int32
+    snapshot_at: instant
+  required_columns:
+  - account_group_id
+  - snapshot_at
+  - source_version
+  source_tables:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account
+  - ai_usage
+  unique_constraints:
+  - name: uk_ai_upstream_account_group_metric_snapshot_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_account_group_metric_snapshot
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    - snapshot_at
+  check_constraints:
+  - name: ck_ai_upstream_account_group_metric_counts
+    expression: (account_available_count IS NULL OR account_available_count >= 0)
+      AND (account_total_count IS NULL OR account_total_count >= 0) AND (request_count_today
+      IS NULL OR request_count_today >= 0) AND (request_count_total IS NULL OR request_count_total
+      >= 0)
+  - name: ck_ai_upstream_account_group_metric_amounts
+    expression: (capacity_used IS NULL OR capacity_used >= 0) AND (capacity_limit
+      IS NULL OR capacity_limit >= 0) AND (usage_amount_today IS NULL OR usage_amount_today
+      >= 0) AND (usage_amount_total IS NULL OR usage_amount_total >= 0)
+  indexes:
+  - name: idx_ai_upstream_account_group_metric_tenant_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - snapshot_at
+    - id
+  semantic_contracts:
+    projection_lineage:
+      watermark:
+        field: snapshot_at
+        strategy: high_watermark
+      source_version:
+        field: source_version
+        strategy: max_source_version
+      algorithm_version: upstream-account-group-metric-v1
+      freshness:
+        target_seconds: 300
+        max_staleness_seconds: 900
+      rebuild:
+        strategy: full_recompute
+        owner: ai-routing-service
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - account_group_id
+      - snapshot_at
+  imported: false
+- table: ai_upstream_account_group_resource
+  domain: ai
+  profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    account_group_id:
+      type: int64
+      constraints: NOT NULL
+    resource_id: int64
+    resource_code:
+      type: string(192)
+      constraints: NOT NULL DEFAULT ''
+    resource_group_id: int64
+    resource_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    grant_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'allow'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_upstream_account_group_resource_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_account_group_resource
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    - resource_code
+    - resource_group_code
+  foreign_keys:
+  - name: fk_ai_upstream_account_group_resource_group
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    references_table: ai_upstream_account_group
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_account_group_resource_target
+    expression: (NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code,
+      '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to
+      IS NULL OR effective_from IS NULL OR effective_to > effective_from)
+  indexes:
+  - name: idx_ai_upstream_account_group_resource_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - account_group_id
+    - grant_type
+    - priority
+    - id
+  - name: idx_ai_upstream_account_group_resource_lookup
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    - status
+    - grant_type
+    - priority
+    - id
+  imported: false
+- table: ai_upstream_account_health_state
+  domain: ai
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: operational_state
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    account_id:
+      type: int64
+      constraints: NOT NULL
+    health_status:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_verified_at: instant
+    last_used_at: instant
+    last_success_at: instant
+    last_failure_at: instant
+  unique_constraints:
+  - name: uk_ai_upstream_account_health_state_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+  foreign_keys:
+  - name: fk_ai_upstream_account_health_state_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    references_table: ai_upstream_account
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_upstream_account_health_state_identity
+    expression: id = account_id
+  - name: ck_ai_upstream_account_health_state_values
+    expression: health_status IN (0, 1, 2) AND (last_latency_ms IS NULL OR last_latency_ms
+      >= 0) AND consecutive_error_count >= 0
+  indexes:
+  - name: idx_ai_upstream_account_health_state_health
+    columns:
+    - tenant_id
+    - organization_id
+    - health_status
+    - updated_at
+    - account_id
+  lifecycle:
+    storage_strategy: overwrite_state
+    concurrency: atomic_upsert
+    cleanup:
+      strategy: foreign_key_cascade
+      parent_table: ai_upstream_account
+  imported: false
+- table: ai_upstream_object_route
+  domain: ai
+  profile: runtime_binding
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: runtime_binding
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    api_key_id: int64
+    account_group_id: int64
+    object_type:
+      type: string(64)
+      constraints: NOT NULL
+    object_id:
+      type: string(256)
+      constraints: NOT NULL
+    object_key_hash:
+      type: string(128)
+      constraints: NOT NULL
+    parent_object_type: string(64)
+    parent_object_id: string(256)
+    supplier_code: string(64)
+    account_id:
+      type: int64
+      constraints: NOT NULL
+    vendor_code: string(64)
+    api_code: string(128)
+    catalog_key: string(256)
+    provider_model: string(256)
+    region_code: string(64)
+    sticky_scope: string(64)
+    expires_at: instant
+    last_seen_at: instant
+  unique_constraints:
+  - name: uk_ai_upstream_object_route_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_object_route_object
+    columns:
+    - tenant_id
+    - organization_id
+    - object_type
+    - object_id
+  indexes:
+  - name: idx_ai_upstream_object_route_fast
+    columns:
+    - tenant_id
+    - organization_id
+    - object_key_hash
+    - status
+    - id
+  - name: idx_ai_upstream_object_route_parent
+    columns:
+    - tenant_id
+    - organization_id
+    - parent_object_type
+    - parent_object_id
+    - status
+    - id
+  - name: idx_ai_upstream_object_route_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    - account_id
+    - status
+    - id
+  - name: idx_ai_upstream_object_route_expiry
+    columns:
+    - tenant_id
+    - organization_id
+    - expires_at
+    - status
+    - id
+  imported: false
+- table: ai_upstream_supplier
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    supplier_code:
+      type: string(64)
+      constraints: NOT NULL
+    supplier_name:
       type: string(128)
       constraints: NOT NULL
     display_name:
       type: string(128)
       constraints: NOT NULL
-    description: string(1024)
-    base_url: string(512)
-    website_url: string(512)
-    docs_url: string(512)
-    logo_drive_uri: string(512)
-    logo_resource_snapshot: json
+    description: string(512)
+    icon_drive_uri: string(512)
+    icon_resource_snapshot: json
     color_token: string(64)
-    site_type:
+    docs_url: string(512)
+    website_url: string(512)
+    default_vendor_code: string(64)
+    supplier_type:
       type: string(32)
-      constraints: NOT NULL DEFAULT 'relay'
+      constraints: NOT NULL DEFAULT 'official'
+    adapter_code:
+      type: string(64)
+      constraints: NOT NULL
+    protocol_code:
+      type: string(64)
+      constraints: NOT NULL
     owner_kind: string(32)
     region_code: string(64)
     environment:
       type: int32
       constraints: NOT NULL DEFAULT 1
-    health_status:
-      type: int32
-      constraints: NOT NULL DEFAULT 1
-    last_latency_ms: int32
-    consecutive_error_count:
-      type: int64
-      constraints: NOT NULL DEFAULT 0
-    last_checked_at: instant
-    last_sync_at: instant
+    metadata_schema_version: string(32)
     sort_order:
       type: int32
       constraints: NOT NULL DEFAULT 100
   unique_constraints:
-  - name: uk_ai_site_uuid
+  - name: uk_ai_upstream_supplier_uuid
     columns:
     - uuid
-  - name: uk_ai_site_tenant_code
+  - name: uk_ai_upstream_supplier_tenant_code
     columns:
     - tenant_id
     - organization_id
-    - site_code
+    - supplier_code
+  check_constraints:
+  - name: ck_ai_upstream_supplier_type
+    expression: supplier_type IN ('official', 'relay')
   indexes:
-  - name: idx_ai_site_status_sort
+  - name: uk_ai_upstream_supplier_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+  - name: uk_ai_upstream_supplier_scope_identity
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+    - supplier_code
+  - name: idx_ai_upstream_supplier_status_sort
     columns:
     - tenant_id
     - organization_id
     - status
     - sort_order
     - id
-  - name: idx_ai_site_health_status
+  - name: idx_ai_upstream_supplier_adapter_status
     columns:
     - tenant_id
     - organization_id
+    - adapter_code
+    - protocol_code
     - status
-    - health_status
     - id
   imported: false
-- table: ai_site_service
+- table: ai_upstream_supplier_auth_method
   domain: ai
-  profile: credential_ref
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
-  common_columns: credential_ref
+  common_columns: tenant_entity
   api_surfaces:
   - app
   - backend
   - worker
   columns:
-    site_id:
+    supplier_id:
       type: int64
       constraints: NOT NULL
-    site_code:
+    supplier_code:
       type: string(64)
       constraints: NOT NULL
-    service_code:
+    auth_method_code:
       type: string(64)
       constraints: NOT NULL
-    service_name:
+    auth_method_name:
       type: string(128)
       constraints: NOT NULL
-    service_type:
-      type: string(64)
-      constraints: NOT NULL DEFAULT 'ai_model_relay'
-    protocol_code: string(64)
-    base_url: string(512)
     auth_type:
-      type: int32
-      constraints: NOT NULL DEFAULT 1
-    credential_profile:
-      type: int32
-      constraints: NOT NULL DEFAULT 1
-    auth_config:
+      type: string(64)
+      constraints: NOT NULL
+    config_schema:
       type: json
       constraints: NOT NULL DEFAULT '{}'::jsonb
-    credential_ref: string(512)
-    credential_hash: string(128)
-    masked_label: string(128)
-    credential_version:
+    runtime_auth_config:
+      type: json
+      constraints: NOT NULL
+    authorization_url: string(512)
+    token_url: string(512)
+    scopes: json
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+  unique_constraints:
+  - name: uk_ai_upstream_supplier_auth_method_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_supplier_auth_method_supplier_code
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - auth_method_code
+  foreign_keys:
+  - name: fk_ai_upstream_supplier_auth_method_supplier
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - supplier_code
+    references_table: ai_upstream_supplier
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    - supplier_code
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_supplier_auth_method_type
+    expression: auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials',
+      'oauth2_authorization_code', 'aws_sigv4', 'custom') AND priority >= 0
+  - name: ck_ai_upstream_supplier_auth_method_runtime_auth_config
+    expression: jsonb_typeof(runtime_auth_config) = 'object'
+  indexes:
+  - name: idx_ai_upstream_supplier_auth_method_supplier_status
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - status
+    - priority
+    - id
+  - name: idx_ai_upstream_supplier_auth_method_type_status
+    columns:
+    - tenant_id
+    - organization_id
+    - auth_type
+    - status
+    - id
+  imported: false
+- table: ai_upstream_supplier_endpoint
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    supplier_id:
       type: int64
-      constraints: NOT NULL DEFAULT 1
+      constraints: NOT NULL
+    supplier_code:
+      type: string(64)
+      constraints: NOT NULL
+    endpoint_code:
+      type: string(64)
+      constraints: NOT NULL
+    endpoint_name:
+      type: string(128)
+      constraints: NOT NULL
+    base_url:
+      type: string(512)
+      constraints: NOT NULL
+    protocol_code: string(64)
     region_code: string(64)
     environment:
       type: int32
       constraints: NOT NULL DEFAULT 1
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    routing_weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    timeout_ms: int32
+  unique_constraints:
+  - name: uk_ai_upstream_supplier_endpoint_uuid
+    columns:
+    - uuid
+  - name: uk_ai_upstream_supplier_endpoint_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - endpoint_code
+  foreign_keys:
+  - name: fk_ai_upstream_supplier_endpoint_supplier
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - supplier_code
+    references_table: ai_upstream_supplier
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    - supplier_code
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_supplier_endpoint_values
+    expression: priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms
+      > 0)
+  indexes:
+  - name: uk_ai_upstream_supplier_endpoint_scope_id
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - id
+  - name: idx_ai_upstream_supplier_endpoint_supplier_status
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - status
+    - priority
+    - routing_weight
+    - id
+  imported: false
+- table: ai_upstream_supplier_endpoint_health_state
+  domain: ai
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: operational_state
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    supplier_id:
+      type: int64
+      constraints: NOT NULL
+    endpoint_id:
+      type: int64
+      constraints: NOT NULL
     health_status:
       type: int32
-      constraints: NOT NULL DEFAULT 1
+      constraints: NOT NULL DEFAULT 0
     last_latency_ms: int32
     consecutive_error_count:
       type: int64
       constraints: NOT NULL DEFAULT 0
-    last_verified_at: instant
-    last_sync_at: instant
-    sort_order:
+    last_checked_at: instant
+    last_success_at: instant
+    last_failure_at: instant
+  unique_constraints:
+  - name: uk_ai_upstream_supplier_endpoint_health_state_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - endpoint_id
+  foreign_keys:
+  - name: fk_ai_upstream_supplier_endpoint_health_state_endpoint
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - endpoint_id
+    references_table: ai_upstream_supplier_endpoint
+    references_columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_upstream_supplier_endpoint_health_state_identity
+    expression: id = endpoint_id
+  - name: ck_ai_upstream_supplier_endpoint_health_state_values
+    expression: health_status IN (0, 1, 2) AND (last_latency_ms IS NULL OR last_latency_ms
+      >= 0) AND consecutive_error_count >= 0
+  indexes:
+  - name: idx_ai_upstream_supplier_endpoint_health_state_health
+    columns:
+    - tenant_id
+    - organization_id
+    - health_status
+    - updated_at
+    - endpoint_id
+  lifecycle:
+    storage_strategy: overwrite_state
+    concurrency: atomic_upsert
+    cleanup:
+      strategy: foreign_key_cascade
+      parent_table: ai_upstream_supplier_endpoint
+  imported: false
+- table: ai_upstream_supplier_resource
+  domain: ai
+  profile: relation_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: relation_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    supplier_id:
+      type: int64
+      constraints: NOT NULL
+    supplier_code:
+      type: string(64)
+      constraints: NOT NULL
+    resource_id: int64
+    resource_code:
+      type: string(192)
+      constraints: NOT NULL DEFAULT ''
+    resource_group_id: int64
+    resource_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    grant_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'allow'
+    priority:
       type: int32
       constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
   unique_constraints:
-  - name: uk_ai_site_service_uuid
+  - name: uk_ai_upstream_supplier_resource_uuid
     columns:
     - uuid
-  - name: uk_ai_site_service_site_code
+  - name: uk_ai_upstream_supplier_resource
     columns:
     - tenant_id
     - organization_id
-    - site_id
-    - service_code
+    - supplier_id
+    - resource_code
+    - resource_group_code
+  foreign_keys:
+  - name: fk_ai_upstream_supplier_resource_supplier
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - supplier_code
+    references_table: ai_upstream_supplier
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    - supplier_code
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_upstream_supplier_resource_target
+    expression: (NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code,
+      '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to
+      IS NULL OR effective_from IS NULL OR effective_to > effective_from)
   indexes:
-  - name: idx_ai_site_service_site_status
-    columns:
-    - tenant_id
-    - organization_id
-    - site_id
-    - status
-    - id
-  - name: idx_ai_site_service_type_status
-    columns:
-    - tenant_id
-    - organization_id
-    - service_type
-    - status
-    - id
-  - name: idx_ai_site_service_health_status
+  - name: idx_ai_upstream_supplier_resource_lookup
     columns:
     - tenant_id
     - organization_id
     - status
-    - health_status
+    - supplier_id
+    - grant_type
+    - priority
     - id
   imported: false
 - table: ai_usage
@@ -4053,8 +4303,8 @@ tables:
     api_key_id: int64
     legacy_api_key_id: int64
     api_key_name_snapshot: string(128)
-    channel_group_id: int64
-    channel_group_snapshot: string(128)
+    account_group_id: int64
+    account_group_snapshot: string(128)
     owner_type: int32
     owner_id: int64
     owner_name_snapshot: string(128)
@@ -4065,8 +4315,8 @@ tables:
     model: string(256)
     provider_native_model: string(256)
     region_code: string(64)
-    provider_id: int64
-    channel_id: int64
+    supplier_id: int64
+    account_id: int64
     modality: int32
     usage_type: int32
     billing_type: int32
@@ -4252,145 +4502,6 @@ tables:
       - organization_id
       - catalog_key
   imported: false
-- table: ai_usage_service_provider_edge
-  domain: ai
-  profile: ledger_source_fact
-  compliance_level: L2
-  system_of_record: true
-  write_owner: router-service
-  common_columns: ledger_source_fact
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    usage_fact_id:
-      type: int64
-      constraints: NOT NULL
-    edge_id:
-      type: int64
-      constraints: NOT NULL
-    edge_depth: int32
-    seller_provider_id: int64
-    buyer_provider_id: int64
-    amount_role: string(64)
-    pricing_plan_id: int64
-    pricing_rule_id: int64
-    billing_meter_code: string(64)
-    token_kind: string(64)
-    billable_quantity: decimal
-    unit_price: decimal
-    unit_size: decimal
-    charge_amount: decimal
-    currency: string(10)
-    fx_rate_snapshot: decimal
-    settlement_currency: string(10)
-    converted_charge_amount: decimal
-    seller_snapshot: json
-    buyer_snapshot: json
-    price_snapshot: json
-    occurred_at: instant
-    settlement_status: int32
-  required_columns:
-  - usage_fact_id
-  - edge_id
-  - edge_depth
-  - amount_role
-  - billable_quantity
-  - charge_amount
-  - currency
-  - occurred_at
-  unique_constraints:
-  - name: uk_ai_usage_service_provider_edge_usage_depth
-    columns:
-    - tenant_id
-    - organization_id
-    - usage_fact_id
-    - edge_depth
-    - amount_role
-  foreign_keys:
-  - name: fk_ai_usage_service_provider_edge_usage
-    columns:
-    - tenant_id
-    - organization_id
-    - usage_fact_id
-    references_table: ai_usage
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    on_delete: RESTRICT
-  check_constraints:
-  - name: ck_ai_usage_service_provider_edge_depth
-    expression: edge_depth >= 0
-  - name: ck_ai_usage_service_provider_edge_amounts
-    expression: billable_quantity >= 0 AND charge_amount >= 0 AND (converted_charge_amount
-      IS NULL OR converted_charge_amount >= 0)
-  indexes:
-  - name: idx_ai_usage_service_provider_edge_seller_time
-    columns:
-    - tenant_id
-    - organization_id
-    - seller_provider_id
-    - occurred_at
-    - id
-  - name: idx_ai_usage_service_provider_edge_buyer_time
-    columns:
-    - tenant_id
-    - organization_id
-    - buyer_provider_id
-    - occurred_at
-    - id
-  - name: idx_ai_usage_service_provider_edge_retention
-    columns:
-    - retention_until
-    - id
-  lifecycle:
-    storage_strategy: indexed_append_only
-    retention:
-      online_retention: 12mo
-      archive_retention: 5y
-      grace_period: 24h
-    cleanup:
-      owner: router-service
-      scope: platform_cross_tenant
-      authorization:
-        mode: service_identity
-        service: router-service
-        audit_required: true
-      candidate_recheck:
-        required: true
-        operations:
-        - archive
-        - delete
-        key_columns:
-        - tenant_id
-        - organization_id
-        - id
-      batch_size: 1000
-      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
-        = false
-      archive_before_delete: true
-      retry:
-        max_attempts: 5
-        backoff:
-          strategy: exponential
-          initial: 1s
-          maximum: 5m
-      monitoring:
-        metrics:
-        - cleanup_candidates
-        - cleanup_archived
-        - cleanup_deleted
-        - cleanup_skipped_legal_hold
-        - cleanup_failures
-        alerts:
-        - retention_lag
-        - retry_exhausted
-      dry_run:
-        supported: true
-        default: true
-  imported: false
 - table: ai_vendor_api_endpoint
   domain: ai
   profile: relation_entity
@@ -4558,7 +4669,7 @@ tables:
     owner_type: int32
     owner_id: int64
     legacy_api_key_id: int64
-    channel_group_id: int64
+    account_group_id: int64
     name: string(128)
     key_prefix: string(32)
     key_display_masked: string(64)
@@ -4607,16 +4718,16 @@ tables:
     - status
     - updated_at
     - id
-  - name: idx_iam_gateway_api_key_ai_channel_group_status
+  - name: idx_iam_gateway_api_key_ai_account_group_status
     columns:
     - tenant_id
     - organization_id
-    - channel_group_id
+    - account_group_id
     - status
     - updated_at
     - id
   imported: false
-- table: iam_gateway_api_key_channel_group
+- table: iam_gateway_api_key_account_group
   domain: iam_gateway
   profile: tenant_entity
   compliance_level: L2
@@ -4636,10 +4747,10 @@ tables:
     api_key_id:
       type: int64
       constraints: NOT NULL DEFAULT 0
-    channel_group_id:
+    account_group_id:
       type: int64
       constraints: NOT NULL DEFAULT 0
-    channel_group_code: string(64)
+    account_group_code: string(64)
     binding_role:
       type: string(32)
       constraints: NOT NULL DEFAULT 'route'
@@ -4656,24 +4767,24 @@ tables:
     effective_to: instant
   required_columns:
   - api_key_id
-  - channel_group_id
+  - account_group_id
   - binding_role
   - routing_strategy
   - priority
   - weight
   unique_constraints:
-  - name: uk_iam_gateway_api_key_channel_group_uuid
+  - name: uk_iam_gateway_api_key_account_group_uuid
     columns:
     - uuid
-  - name: uk_iam_gateway_api_key_channel_group_binding
+  - name: uk_iam_gateway_api_key_account_group_binding
     columns:
     - tenant_id
     - organization_id
     - api_key_id
-    - channel_group_id
+    - account_group_id
     - binding_role
   foreign_keys:
-  - name: fk_iam_gateway_api_key_channel_group_api_key
+  - name: fk_iam_gateway_api_key_account_group_api_key
     columns:
     - tenant_id
     - organization_id
@@ -4685,14 +4796,14 @@ tables:
     - id
     on_delete: RESTRICT
   check_constraints:
-  - name: ck_iam_gateway_api_key_channel_group_ids
-    expression: api_key_id > 0 AND channel_group_id > 0
-  - name: ck_iam_gateway_api_key_channel_group_weighting
+  - name: ck_iam_gateway_api_key_account_group_ids
+    expression: api_key_id > 0 AND account_group_id > 0
+  - name: ck_iam_gateway_api_key_account_group_weighting
     expression: priority >= 0 AND weight >= 0
-  - name: ck_iam_gateway_api_key_channel_group_effective_interval
+  - name: ck_iam_gateway_api_key_account_group_effective_interval
     expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
   indexes:
-  - name: idx_iam_gateway_api_key_channel_group_active
+  - name: idx_iam_gateway_api_key_account_group_active
     columns:
     - tenant_id
     - organization_id
@@ -4701,11 +4812,11 @@ tables:
     - priority
     - weight
     - id
-  - name: idx_iam_gateway_api_key_channel_group_group
+  - name: idx_iam_gateway_api_key_account_group_group
     columns:
     - tenant_id
     - organization_id
-    - channel_group_id
+    - account_group_id
     - status
     - priority
     - id

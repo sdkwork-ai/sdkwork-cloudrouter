@@ -6,16 +6,18 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::rows::{
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::PricingCatalogSql;
 
-const CANONICAL_UPSTREAM_TABLES: [&str; 9] = [
+const CANONICAL_UPSTREAM_TABLES: [&str; 11] = [
     "ai_upstream_supplier",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_auth_method",
     "ai_upstream_supplier_resource",
     "ai_upstream_account",
+    "ai_upstream_account_health_state",
     "ai_upstream_account_credential",
     "ai_upstream_account_group",
     "ai_upstream_account_group_member",
     "ai_upstream_account_group_resource",
+    "ai_upstream_supplier_endpoint_health_state",
 ];
 
 const RETIRED_UPSTREAM_TABLES: [&str; 10] = [
@@ -63,7 +65,7 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
     }
     for projection in [
         "c.contract_cost_multiplier::text AS contract_cost_multiplier",
-        "c.last_latency_ms",
+        "account_health.last_latency_ms",
         "e.id AS endpoint_id",
         "e.base_url",
         "cc.id AS credential_id",
@@ -273,7 +275,8 @@ fn upstream_account_route_rows_preserve_endpoint_credential_and_group_identity()
         secret_ref: Some("managed://upstream-account-credential/7001".to_owned()),
         secret_ciphertext: Some("encrypted-value".to_owned()),
         auth_type: Some("api_key".to_owned()),
-        auth_config_json: Some("{}".to_owned()),
+        runtime_auth_config_json:
+            r#"{"credentialTransport":"bearer","defaultHeaders":{}}"#.to_owned(),
         timeout_ms: Some(30_000),
         retry_policy_json: Some(
             r#"{"max_attempts":2,"retryable_status_codes":[429,503],"backoff_ms":25}"#

@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { KlingVideoGenerationRequest, KlingVideoGenerationTask } from '../types';
 
@@ -13,13 +13,13 @@ export class VideosKlingV1VideosGenerationsApi {
 
 
 /** Kling video generation */
-  async create(body: KlingVideoGenerationRequest): Promise<KlingVideoGenerationTask> {
-    return this.client.post<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations`), body, undefined, undefined, 'application/json');
+  async create(body: KlingVideoGenerationRequest, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
+    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Kling retrieve video generation */
-  async retrieve(taskId: string): Promise<KlingVideoGenerationTask> {
-    return this.client.get<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`));
+  async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
+    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

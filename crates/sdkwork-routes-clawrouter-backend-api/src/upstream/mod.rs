@@ -5,12 +5,15 @@ mod supplier;
 
 use axum::Router;
 
-use self::shared::{UpstreamState, UpstreamStore};
+use self::shared::{UpstreamState, UpstreamStore, UpstreamVerifier};
 
-pub(crate) fn admin_upstream_router_with_store(store: UpstreamStore) -> Router {
+pub(crate) fn admin_upstream_router_with_store(
+    store: UpstreamStore,
+    verifier: UpstreamVerifier,
+) -> Router {
     Router::new()
         .merge(supplier::routes())
         .merge(account::routes())
         .merge(account_group::routes())
-        .with_state(UpstreamState { store })
+        .with_state(UpstreamState { store, verifier })
 }

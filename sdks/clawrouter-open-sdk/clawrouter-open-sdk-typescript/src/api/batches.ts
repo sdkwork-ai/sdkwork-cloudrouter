@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { OpenAiBatch, OpenAiBatchCreateRequest, OpenAiBatchList } from '../types';
 
@@ -20,29 +20,29 @@ export class BatchesApi {
 
 
 /** List batches */
-  async list(params?: BatchesListParams): Promise<OpenAiBatchList> {
+  async list(params?: BatchesListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiBatchList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiBatchList>(appendQueryString(aiApiPath(`/batches`), query));
+    return this.client.request<OpenAiBatchList>(appendQueryString(aiApiPath(`/batches`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create batch */
-  async create(body: OpenAiBatchCreateRequest): Promise<OpenAiBatch> {
-    return this.client.post<OpenAiBatch>(aiApiPath(`/batches`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiBatchCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiBatch> {
+    return this.client.request<OpenAiBatch>(aiApiPath(`/batches`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Retrieve batch */
-  async retrieve(batchId: string): Promise<OpenAiBatch> {
-    return this.client.get<OpenAiBatch>(aiApiPath(`/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`));
+  async retrieve(batchId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiBatch> {
+    return this.client.request<OpenAiBatch>(aiApiPath(`/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Cancel batch */
-  async cancel(batchId: string): Promise<OpenAiBatch> {
-    return this.client.post<OpenAiBatch>(aiApiPath(`/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`));
+  async cancel(batchId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiBatch> {
+    return this.client.request<OpenAiBatch>(aiApiPath(`/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 }
 

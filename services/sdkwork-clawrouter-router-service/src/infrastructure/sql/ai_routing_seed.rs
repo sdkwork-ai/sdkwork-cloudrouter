@@ -24,7 +24,6 @@ const RELAY_PROVIDER_GROUPS_JSON: &str =
 
 const ACTIVE_STATUS: i32 = 1;
 const DISABLED_STATUS: i32 = 0;
-const HEALTHY_STATUS: i32 = 1;
 const SYSTEM_TENANT_ID: i64 = 0;
 const SYSTEM_ORGANIZATION_ID: i64 = 0;
 const SYSTEM_DATA_SCOPE: i32 = 1;
@@ -717,13 +716,11 @@ async fn import_postgres_default_admin_upstream_topology(
             INSERT INTO ai_upstream_supplier (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
                 supplier_code, supplier_name, display_name, supplier_type,
-                adapter_code, protocol_code, environment, health_status,
-                consecutive_error_count, sort_order
+                adapter_code, protocol_code, environment, sort_order
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
                 $7, $8, $8, $9,
-                $10, $11, 1, $12,
-                0, $13
+                $10, $11, 1, $12
             )
             ON CONFLICT (tenant_id, organization_id, supplier_code) DO UPDATE SET
                 supplier_name = EXCLUDED.supplier_name,
@@ -732,7 +729,6 @@ async fn import_postgres_default_admin_upstream_topology(
                 adapter_code = EXCLUDED.adapter_code,
                 protocol_code = EXCLUDED.protocol_code,
                 environment = EXCLUDED.environment,
-                health_status = EXCLUDED.health_status,
                 sort_order = EXCLUDED.sort_order,
                 status = EXCLUDED.status,
                 metadata = EXCLUDED.metadata,
@@ -758,7 +754,6 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(account.supplier_type)
         .bind(account.adapter_code)
         .bind(account.protocol_code)
-        .bind(HEALTHY_STATUS)
         .bind(account.priority)
         .execute(&mut **tx)
         .await?;
@@ -768,13 +763,11 @@ async fn import_postgres_default_admin_upstream_topology(
             INSERT INTO ai_upstream_supplier_endpoint (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
                 supplier_id, supplier_code, endpoint_code, endpoint_name, base_url,
-                protocol_code, environment, health_status, consecutive_error_count,
-                priority, routing_weight
+                protocol_code, environment, priority, routing_weight
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
                 $7, $8, $9, $10, $11,
-                $12, 1, $13, 0,
-                $14, $15
+                $12, 1, $13, $14
             )
             ON CONFLICT (tenant_id, organization_id, supplier_id, endpoint_code) DO UPDATE SET
                 endpoint_name = EXCLUDED.endpoint_name,
@@ -809,9 +802,24 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(account.endpoint_name)
         .bind(account.base_url)
         .bind(account.protocol_code)
-        .bind(HEALTHY_STATUS)
         .bind(account.priority)
         .bind(account.routing_weight)
+        .execute(&mut **tx)
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier_endpoint_health_state (
+                id, tenant_id, organization_id, supplier_id, endpoint_id,
+                health_status, consecutive_error_count
+            ) VALUES ($1, $2, $3, $4, $1, 0, 0)
+            ON CONFLICT (tenant_id, organization_id, endpoint_id) DO NOTHING
+            "#,
+        )
+        .bind(endpoint_id)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(supplier_id)
         .execute(&mut **tx)
         .await?;
 
@@ -820,16 +828,18 @@ async fn import_postgres_default_admin_upstream_topology(
             INSERT INTO ai_upstream_supplier_auth_method (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
                 supplier_id, supplier_code, auth_method_code, auth_method_name,
-                auth_type, config_schema, priority
+                auth_type, config_schema, runtime_auth_config, priority
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
                 $7, $8, $9, 'API Key',
-                'api_key', '{"type":"object","required":["apiKey"],"properties":{"apiKey":{"type":"string","writeOnly":true}}}'::jsonb, $10
+                'api_key', '{"type":"object","required":["apiKey"],"properties":{"apiKey":{"type":"string","writeOnly":true}}}'::jsonb,
+                '{"credentialTransport":"bearer","defaultHeaders":{}}'::jsonb, $10
             )
             ON CONFLICT (tenant_id, organization_id, supplier_id, auth_method_code) DO UPDATE SET
                 auth_method_name = EXCLUDED.auth_method_name,
                 auth_type = EXCLUDED.auth_type,
                 config_schema = EXCLUDED.config_schema,
+                runtime_auth_config = EXCLUDED.runtime_auth_config,
                 priority = EXCLUDED.priority,
                 status = EXCLUDED.status,
                 metadata = EXCLUDED.metadata,
@@ -865,13 +875,13 @@ async fn import_postgres_default_admin_upstream_topology(
                 supplier_id, supplier_code, preferred_endpoint_id,
                 account_code, account_name, account_type, auth_method_code,
                 credential_rotation_strategy, environment,
-                contract_cost_multiplier, health_status, consecutive_error_count
+                contract_cost_multiplier
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7::jsonb,
                 $8, $9, $10,
                 $11, $12, $13, $14,
                 'default', 1,
-                1.000000000000, $15, 0
+                1.000000000000
             )
             ON CONFLICT (tenant_id, organization_id, account_code) DO UPDATE SET
                 supplier_id = EXCLUDED.supplier_id,
@@ -908,7 +918,21 @@ async fn import_postgres_default_admin_upstream_topology(
         .bind(account.account_name)
         .bind(account.account_type)
         .bind(account.auth_method_code)
-        .bind(HEALTHY_STATUS)
+        .execute(&mut **tx)
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_account_health_state (
+                id, tenant_id, organization_id, account_id,
+                health_status, consecutive_error_count
+            ) VALUES ($1, $2, $3, $1, 0, 0)
+            ON CONFLICT (tenant_id, organization_id, account_id) DO NOTHING
+            "#,
+        )
+        .bind(account_id)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
         .execute(&mut **tx)
         .await?;
 

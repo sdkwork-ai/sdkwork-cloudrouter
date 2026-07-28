@@ -781,6 +781,8 @@ class ClawRouterOpenApiGenerator:
         parameters = [self._path_parameter(param) for param in path_params]
         if bool(operation.get("idempotency_required")):
             parameters.extend(self._idempotency_parameters())
+        if bool(operation.get("if_match_required")):
+            parameters.extend(self._if_match_parameters())
         parameters.extend(self._operation_query_parameters(operation, method))
 
         spec: dict[str, Any] = {
@@ -800,6 +802,8 @@ class ClawRouterOpenApiGenerator:
         spec["security"] = self._operation_security(operation_id, surface=surface)
         if bool(operation.get("idempotency_required")):
             spec["x-sdkwork-idempotent"] = True
+        if bool(operation.get("if_match_required")):
+            spec["x-sdkwork-conditional-write"] = True
         rate_limit_tier = self._string(operation.get("rate_limit_tier"))
         if rate_limit_tier:
             spec["x-sdkwork-rate-limit-tier"] = rate_limit_tier
@@ -936,8 +940,19 @@ class ClawRouterOpenApiGenerator:
                 "name": "Idempotency-Key",
                 "in": "header",
                 "required": True,
-                "schema": {"type": "string", "maxLength": 128},
+                "schema": {"type": "string", "minLength": 1, "maxLength": 128},
                 "description": "Required stable idempotency key for this write operation.",
+            },
+        ]
+
+    def _if_match_parameters(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "name": "If-Match",
+                "in": "header",
+                "required": True,
+                "schema": {"type": "string", "maxLength": 128},
+                "description": "Required entity version precondition for this conditional write.",
             },
         ]
 

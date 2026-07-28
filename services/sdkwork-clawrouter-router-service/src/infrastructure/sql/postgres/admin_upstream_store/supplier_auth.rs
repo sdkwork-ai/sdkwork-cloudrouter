@@ -5,18 +5,18 @@ use sqlx::{PgPool, Postgres, Transaction};
 use url::Url;
 
 use super::shared::{
-    column, conflict, ensure_bounded_collection, generated_uuid, store_error, DEFAULT_DATA_SCOPE,
-    MAX_NESTED_ITEMS,
+    column, conflict, ensure_bounded_collection, generated_uuid, record_routing_change,
+    store_error, DEFAULT_DATA_SCOPE, MAX_NESTED_ITEMS,
 };
 use super::supplier;
-use crate::domain::{DomainError, DomainResult};
+use crate::domain::{canonical_upstream_runtime_auth_config, DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
     AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
 };
 
 const AUTH_COLUMNS: &str = r#"
-    id, auth_method_code, auth_method_name, auth_type, config_schema,
+    id, auth_method_code, auth_method_name, auth_type, config_schema, runtime_auth_config,
     authorization_url, token_url, scopes, priority, status
 "#;
 
@@ -74,18 +74,20 @@ pub(super) async fn replace(
                 id, uuid, tenant_id, organization_id, data_scope, status,
                 created_at, updated_at, version, metadata,
                 supplier_id, supplier_code, auth_method_code, auth_method_name,
-                auth_type, config_schema, authorization_url, token_url, scopes, priority
+                auth_type, config_schema, runtime_auth_config,
+                authorization_url, token_url, scopes, priority
             ) VALUES (
                 $1, $2, $3, $4, $5, $6,
                 $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
                 $8, $9, $10, $11,
-                $12, $13::jsonb, $14, $15, $16::jsonb, $17
+                $12, $13::jsonb, $14::jsonb, $15, $16, $17::jsonb, $18
             )
             ON CONFLICT (tenant_id, organization_id, supplier_id, auth_method_code)
             DO UPDATE SET
                 auth_method_name = EXCLUDED.auth_method_name,
                 auth_type = EXCLUDED.auth_type,
                 config_schema = EXCLUDED.config_schema,
+                runtime_auth_config = EXCLUDED.runtime_auth_config,
                 authorization_url = EXCLUDED.authorization_url,
                 token_url = EXCLUDED.token_url,
                 scopes = EXCLUDED.scopes,
@@ -110,6 +112,10 @@ pub(super) async fn replace(
         .bind(item.auth_method_name.trim())
         .bind(item.auth_type.trim())
         .bind(item.config_schema.to_string())
+        .bind(
+            canonical_upstream_runtime_auth_config(&item.auth_type, &item.runtime_auth_config)?
+                .to_string(),
+        )
         .bind(item.authorization_url.as_deref().map(str::trim))
         .bind(item.token_url.as_deref().map(str::trim))
         .bind(item.scopes.as_ref().map(serde_json::Value::to_string))
@@ -129,6 +135,16 @@ pub(super) async fn replace(
     )
     .await?;
     let result = list_in_transaction(&mut tx, &subject, supplier_id).await?;
+    record_routing_change(
+        &mut tx,
+        &subject,
+        &requested_at,
+        "upstream_supplier",
+        supplier_id,
+        "replace_upstream_supplier_auth_methods",
+        serde_json::json!({"authMethodCount": result.len()}),
+    )
+    .await?;
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit upstream auth replacement", error))?;
@@ -249,6 +265,7 @@ fn validate_inputs(items: &[AdminUpstreamSupplierAuthMethodInput]) -> DomainResu
         if !item.config_schema.is_object() {
             return Err(DomainError::new("configSchema must be a JSON object"));
         }
+        canonical_upstream_runtime_auth_config(&item.auth_type, &item.runtime_auth_config)?;
         if item.scopes.as_ref().is_some_and(|value| !value.is_array()) {
             return Err(DomainError::new("scopes must be a JSON array"));
         }
@@ -320,6 +337,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierAuthMethodItem> {
             &row,
             "config_schema",
             "failed to map upstream auth method config schema",
+        )?,
+        runtime_auth_config: column(
+            &row,
+            "runtime_auth_config",
+            "failed to map upstream auth method runtime auth config",
         )?,
         authorization_url: column(
             &row,

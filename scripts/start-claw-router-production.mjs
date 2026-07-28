@@ -848,6 +848,12 @@ function determineRuntimeConfigBlockingIssue({
   if (deploymentMode !== 'server') {
     return null;
   }
+  if (databaseEngine !== 'postgresql') {
+    return {
+      code: 'database_configuration_required',
+      message: `server runtime config ${configFile} requires PostgreSQL; SQLite is client-local only`,
+    };
+  }
   if (configSnapshot?.password && configSnapshot?.passwordFile) {
     return {
       code: 'database_configuration_required',
@@ -856,15 +862,12 @@ function determineRuntimeConfigBlockingIssue({
   }
   if (explicitDatabaseUrl) {
     const explicitEngine = runtimeConfigEngineForUrl(explicitDatabaseUrl);
-    if (explicitEngine === 'sqlite') {
-      return null;
-    }
     if (explicitEngine === 'postgresql' && !runtimeConfigPostgresUrlUsesPlaceholder(explicitDatabaseUrl)) {
       return null;
     }
     return {
       code: 'database_configuration_required',
-      message: `runtime database override for ${configFile} must be SQLite or a non-placeholder PostgreSQL URL`,
+      message: `server runtime database override for ${configFile} must be a non-placeholder PostgreSQL URL`,
     };
   }
   if (databaseEngine === 'postgresql' && runtimeConfigPostgresUrlUsesPlaceholder(databaseUrl)) {

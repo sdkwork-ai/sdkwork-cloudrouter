@@ -15,8 +15,8 @@ const SETTLEMENT_PENDING: i64 = 0;
 const UPSERT_TRACE: &str = r#"
 INSERT INTO ai_request_trace
     (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, status, attempt_no,
-     api_key_id, api_key_name_snapshot, account_group_id, upstream_account_group_snapshot,
-     owner_type, owner_id, account_id, channel_name_snapshot, requested_model,
+     api_key_id, api_key_name_snapshot, account_group_id, account_group_snapshot,
+     owner_type, owner_id, account_id, account_name_snapshot, requested_model,
      requested_model_catalog_key, provider_model, provider_native_model,
      gateway_instance_id, gateway_instance_code_snapshot, gateway_region_code_snapshot,
      gateway_node_name_snapshot,
@@ -34,11 +34,11 @@ ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     api_key_id = excluded.api_key_id,
     api_key_name_snapshot = excluded.api_key_name_snapshot,
     account_group_id = excluded.account_group_id,
-    upstream_account_group_snapshot = excluded.upstream_account_group_snapshot,
+    account_group_snapshot = excluded.account_group_snapshot,
     owner_type = excluded.owner_type,
     owner_id = excluded.owner_id,
     account_id = excluded.account_id,
-    channel_name_snapshot = excluded.channel_name_snapshot,
+    account_name_snapshot = excluded.account_name_snapshot,
     requested_model = excluded.requested_model,
     requested_model_catalog_key = excluded.requested_model_catalog_key,
     provider_model = excluded.provider_model,
@@ -268,7 +268,7 @@ async fn upsert_trace(
     command: &GatewayRequestTraceCommand,
     context: &GatewayAccountingRecordContext,
 ) -> Result<(), DomainError> {
-    let metadata = trace_metadata_json();
+    let metadata = trace_metadata_json(command);
     let attribution = &context.attribution;
     sqlx::query(UPSERT_TRACE)
         .bind(next_claw_runtime_id("ai_request_trace")?)
@@ -285,7 +285,7 @@ async fn upsert_trace(
         .bind(OWNER_TYPE_USER)
         .bind(command.user_id)
         .bind(command.account_id)
-        .bind(&command.supplier_code)
+        .bind(Option::<&str>::None)
         .bind(&command.requested_model)
         .bind(&command.requested_model_catalog_key)
         .bind(&command.provider_model)
@@ -414,10 +414,10 @@ fn usage_idempotency_key(command: &GatewayUsageRecordCommand) -> String {
     )
 }
 
-fn trace_metadata_json() -> String {
+fn trace_metadata_json(command: &GatewayRequestTraceCommand) -> String {
     // User-Agent is sensitive telemetry. Keep only the separately hashed value
-    // in user_agent_hash and leave the extension metadata object empty.
-    "{}".to_owned()
+    // in user_agent_hash. Supplier code is non-secret routing attribution.
+    serde_json::json!({ "supplierCode": command.supplier_code }).to_string()
 }
 
 fn current_epoch_millis() -> i64 {

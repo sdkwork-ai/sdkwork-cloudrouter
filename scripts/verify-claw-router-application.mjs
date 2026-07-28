@@ -485,12 +485,12 @@ function buildCiVerificationPlan(env = process.env, settings = {}) {
     '-p',
     'sdkwork-clawrouter-admin-gateway',
     '--test',
-    'sqlite_product_model_route',
+    'product_model_route',
     '--test',
-    'product_center_routes',
+    'messaging_route',
   ];
   plan.push({
-    label: 'admin api sqlite integration tests',
+    label: 'admin api integration tests',
     command: 'cargo',
     args: runtimeRustArgs,
     env: rustEnv,

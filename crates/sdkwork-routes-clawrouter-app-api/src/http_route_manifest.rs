@@ -4,175 +4,175 @@ use sdkwork_web_contract::{HttpMethod, HttpRoute};
 use sdkwork_web_core::HttpRouteManifest;
 
 const HTTP_ROUTES: &[HttpRoute] = &[
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/auth/sessions",
         "auth",
         "sessions.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/auth/sessions/login_context_selection",
         "auth",
         "sessions.loginContextSelection.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/auth/sessions/organization_selection",
         "auth",
         "sessions.organizationSelection.create",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/auth/sessions/current",
         "auth",
         "sessions.current.retrieve",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Patch,
         "/app/v3/api/auth/sessions/current",
         "auth",
         "sessions.current.update",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Delete,
         "/app/v3/api/auth/sessions/current",
         "auth",
         "sessions.current.delete",
     ),
-    HttpRoute::public(
+    HttpRoute::refresh_token(
         HttpMethod::Post,
         "/app/v3/api/auth/sessions/refresh",
         "auth",
         "sessions.refresh",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/auth/password_reset_requests",
         "auth",
         "passwordResetRequests.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/auth/password_resets",
         "auth",
         "passwordResets.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/auth/registrations",
         "auth",
         "registrations.create",
     ),
-    HttpRoute::public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Get,
         "/app/v3/api/oauth/providers",
         "oauth",
-        "oauth.providers.list",
+        "providers.list",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/oauth/authorization_urls",
         "oauth",
-        "oauth.authorizationUrls.create",
+        "authorizationUrls.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::public(
         HttpMethod::Post,
         "/app/v3/api/oauth/device_authorizations",
         "oauth",
-        "oauth.deviceAuthorizations.create",
+        "deviceAuthorizations.create",
     ),
     HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}",
         "oauth",
-        "oauth.deviceAuthorizations.retrieve",
+        "deviceAuthorizations.retrieve",
     ),
-    HttpRoute::public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/scans",
         "oauth",
-        "oauth.deviceAuthorizations.scans.create",
+        "deviceAuthorizations.scans.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/password_completions",
         "oauth",
-        "oauth.deviceAuthorizations.passwordCompletions.create",
+        "deviceAuthorizations.passwordCompletions.create",
     ),
     HttpRoute::public(
         HttpMethod::Post,
         "/app/v3/api/oauth/device_authorizations/{deviceAuthorizationId}/session_exchanges",
         "oauth",
-        "oauth.deviceAuthorizations.sessionExchanges.create",
+        "deviceAuthorizations.sessionExchanges.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Get,
         "/app/v3/api/oauth/callbacks/{providerCode}",
         "oauth",
-        "oauth.callbacks.retrieve",
+        "callbacks.retrieve",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/oauth/callbacks/{providerCode}",
         "oauth",
-        "oauth.callbacks.create",
+        "callbacks.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/oauth/mini_program_sessions",
         "oauth",
-        "oauth.miniProgramSessions.create",
+        "miniProgramSessions.create",
     ),
-    HttpRoute::credential_entry_public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Post,
         "/app/v3/api/oauth/sessions",
         "oauth",
-        "oauth.sessions.create",
+        "sessions.create",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/oauth/account_links",
         "oauth",
-        "oauth.accountLinks.list",
+        "accountLinks.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Delete,
         "/app/v3/api/oauth/account_links/{accountLinkId}",
         "oauth",
-        "oauth.accountLinks.delete",
+        "accountLinks.delete",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/oauth/grants",
         "oauth",
-        "oauth.grants.list",
+        "grants.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Delete,
         "/app/v3/api/oauth/grants/{grantId}",
         "oauth",
-        "oauth.grants.delete",
+        "grants.delete",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
         "/app/v3/api/oauth/authorizations/{authorizationStateId}/completions",
         "oauth",
-        "oauth.authorizations.completions.create",
+        "authorizations.completions.create",
     ),
-    HttpRoute::public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Get,
         "/app/v3/api/system/iam/runtime",
         "system",
         "iam.runtime.retrieve",
     ),
-    HttpRoute::public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Get,
         "/app/v3/api/system/iam/verification_policy",
         "system",
         "iam.verificationPolicy.retrieve",
     ),
-    HttpRoute::public(
+    HttpRoute::credential_entry_bootstrap(
         HttpMethod::Get,
         "/app/v3/api/system/iam/account_binding_policy",
         "system",
@@ -393,12 +393,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/app/v3/api/ai/upstream_account_groups",
-        "ai",
-        "channelGroups.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/app/v3/api/ai/dashboard/overview",
         "ai",
         "dashboard.overview.retrieve",
@@ -426,6 +420,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/ai/generations/workspace",
         "ai",
         "generations.workspace.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/ai/routing/account_groups",
+        "ai",
+        "routing.accountGroups.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -674,12 +674,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "orders.list",
     ),
     HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/orders",
-        "orders",
-        "orders.create",
-    ),
-    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/orders/{orderId}",
         "orders",
@@ -696,12 +690,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/orders/{orderId}/payments",
         "payments",
         "payments.orderPayments.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/orders/{orderId}/cancel",
-        "orders",
-        "orders.cancel",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -849,6 +837,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
+        "/app/v3/api/orders/coupon_redemptions",
+        "orders",
+        "orders.couponRedemptions.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
         "/app/v3/api/memberships/orders",
         "memberships",
         "memberships.orders.create",
@@ -920,7 +914,7 @@ mod tests {
                 method,
                 path,
                 &WebRequestContextProfile::default(),
-                Some(&manifest),
+                Some(manifest),
             ),
             "{method} {path} must resolve as a public path",
         );

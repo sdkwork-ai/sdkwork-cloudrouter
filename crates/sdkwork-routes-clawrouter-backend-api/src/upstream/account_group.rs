@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
-    generated_uuid, item_response, list_query, list_response, no_content_response, not_found,
+    idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
     optional_text, parse_id, parse_if_match, positive_decimal, problem, requested_at,
     required_text, subject, ListQuery, UpstreamState, MAX_NESTED_ITEMS,
 };
@@ -24,6 +24,7 @@ use super::supplier::ResourceResponse;
 const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
 const MAX_DESCRIPTION_LENGTH: usize = 4_000;
+const ACCOUNT_GROUP_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_003;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -130,15 +131,15 @@ pub(super) fn routes() -> Router<UpstreamState> {
             get(list_groups).post(create_group),
         )
         .route(
-            "/backend/v3/api/ai/upstream_account_groups/{account_group_id}",
+            "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}",
             get(get_group).patch(update_group).delete(delete_group),
         )
         .route(
-            "/backend/v3/api/ai/upstream_account_groups/{account_group_id}/members",
+            "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/members",
             get(list_members).put(replace_members),
         )
         .route(
-            "/backend/v3/api/ai/upstream_account_groups/{account_group_id}/resources",
+            "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources",
             get(list_resources).put(replace_resources),
         )
 }
@@ -192,13 +193,19 @@ async fn get_group(
 async fn create_group(
     State(state): State<UpstreamState>,
     RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    headers: HeaderMap,
     payload: Result<Json<AccountGroupCreateRequest>, JsonRejection>,
 ) -> Response {
+    let scoped = subject(scoped);
+    let uuid = match idempotency_uuid(&headers, &scoped, ACCOUNT_GROUP_CREATE_IDEMPOTENCY_SCOPE) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
     let payload = match decode_json(payload) {
         Ok(value) => value,
         Err(response) => return response,
     };
-    let command = match create_command(subject(scoped), payload) {
+    let command = match create_command(scoped, uuid, payload) {
         Ok(value) => value,
         Err(response) => return response,
     };
@@ -386,13 +393,14 @@ async fn replace_resources(
 
 fn create_command(
     subject: sdkwork_clawrouter_router_service::ports::AdminUpstreamSubject,
+    uuid: String,
     request: AccountGroupCreateRequest,
 ) -> Result<SaveAdminUpstreamAccountGroupCommand, Response> {
     Ok(SaveAdminUpstreamAccountGroupCommand {
         subject,
         account_group_id: None,
         expected_version: None,
-        uuid: generated_uuid(),
+        uuid,
         group_code: required_text(request.group_code, "groupCode", MAX_CODE_LENGTH)?,
         group_name: required_text(request.group_name, "groupName", MAX_NAME_LENGTH)?,
         description: optional_text(request.description, "description", MAX_DESCRIPTION_LENGTH)?,

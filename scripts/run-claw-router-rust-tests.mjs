@@ -346,9 +346,7 @@ function inferredAutoTargetsFromSourceFile(changedFile, cwd = process.cwd()) {
     `${stem}_router`,
     `${stem}_store`,
     `${stem}_sql_contract`,
-    `sqlite_${stem}`,
     `postgres_${stem}`,
-    `sqlite_${stem}_sql_contract`,
     `postgres_${stem}_sql_contract`,
     `secret_ref_${stem}`,
   ]);
@@ -389,40 +387,9 @@ function inferredAutoTargetsFromSharedTestHelper(changedFile, cwd = process.cwd(
   return selectedTargets;
 }
 
-function inferredAutoTargetsFromProductTestSupportCrate(changedFile, cwd = process.cwd()) {
-  const normalized = normalizePathForMatching(changedFile);
-  if (!normalized.startsWith('crates/sdkwork-clawrouter-router-service-test-support/src/')) {
-    return null;
-  }
-  const productTestSupportSymbolsByFile = Object.freeze({
-    'installed.rs': ['installed_sqlite_pool'],
-    'repair.rs': ['repair_sqlite_pool'],
-    'schema.rs': ['schema_sqlite_pool'],
-  });
-  const changedFileName = normalized.split('/').at(-1);
-  const requiredSymbols = productTestSupportSymbolsByFile[changedFileName] ?? null;
-  const selectedTargets = packageTestFiles('sdkwork-clawrouter-router-service', cwd)
-    .filter(({ filePath }) => {
-      const source = readFileSync(filePath, 'utf8');
-      if (!source.includes('sdkwork_clawrouter_router_service_test_support::')) {
-        return false;
-      }
-      if (!requiredSymbols) {
-        return true;
-      }
-      return requiredSymbols.some((symbol) => source.includes(symbol));
-    })
-    .map(({ testTarget }) => ({ packageName: 'sdkwork-clawrouter-router-service', testTarget }));
-  if (selectedTargets.length === 0) {
-    return null;
-  }
-  return selectedTargets;
-}
-
 function autoTargetsFromChangedFile(changedFile, cwd = process.cwd()) {
   return exactAutoTargetsFromChangedTestFile(changedFile)
     ?? inferredAutoTargetsFromSourceFile(changedFile, cwd)
-    ?? inferredAutoTargetsFromProductTestSupportCrate(changedFile, cwd)
     ?? inferredAutoTargetsFromSharedTestHelper(changedFile, cwd);
 }
 
@@ -508,14 +475,14 @@ function buildQuickSteps(env, settings) {
       settings,
     ),
     cargoStep(
-      'sqlite product model route smoke',
+      'admin product model route smoke',
       [
         'test',
         '-p',
         'sdkwork-clawrouter-admin-gateway',
         '--test',
-        'sqlite_product_model_route',
-        'sqlite_product_catalog_route_serves_real_backend_model_list',
+        'product_model_route',
+        'injected_product_catalog_route_overrides_manifest_fallback',
       ],
       env,
       settings,
@@ -526,20 +493,20 @@ function buildQuickSteps(env, settings) {
 function buildSmokeSteps(env, settings) {
   return [
     cargoStep(
-      'shared test fixture smoke',
-      ['test', '-p', 'sdkwork-claw-test-support', '--lib', 'seeded_sqlite_catalog_reopens_pool_for_real_route_tests'],
+      'shared security test fixture smoke',
+      ['test', '-p', 'sdkwork-claw-test-support', '--lib', 'standard_runtime_subject_helpers_create_verifiable_tokens_and_signatures'],
       env,
       settings,
     ),
     cargoStep(
-      'admin api sqlite product model route smoke',
+      'admin api product model route smoke',
       [
         'test',
         '-p',
         'sdkwork-clawrouter-admin-gateway',
         '--test',
-        'sqlite_product_model_route',
-        'sqlite_product_catalog_route_serves_real_backend_model_list',
+        'product_model_route',
+        'injected_product_catalog_route_overrides_manifest_fallback',
       ],
       env,
       settings,
@@ -557,26 +524,14 @@ function buildAdminApiSteps(env, settings) {
       settings,
     ),
     cargoStep(
-      'admin api database router integration tests',
-      ['test', '-p', 'sdkwork-clawrouter-admin-gateway', '--test', 'database_config_router'],
-      env,
-      settings,
-    ),
-    cargoStep(
-      'admin api installation status tests',
-      ['test', '-p', 'sdkwork-clawrouter-admin-gateway', '--test', 'installation_status_route'],
+      'admin api messaging route integration tests',
+      ['test', '-p', 'sdkwork-clawrouter-admin-gateway', '--test', 'messaging_route'],
       env,
       settings,
     ),
     cargoStep(
       'admin api product model route tests',
       ['test', '-p', 'sdkwork-clawrouter-admin-gateway', '--test', 'product_model_route'],
-      env,
-      settings,
-    ),
-    cargoStep(
-      'admin api sqlite product model route tests',
-      ['test', '-p', 'sdkwork-clawrouter-admin-gateway', '--test', 'sqlite_product_model_route'],
       env,
       settings,
     ),
@@ -593,20 +548,14 @@ function buildAppApiSteps(env, settings) {
       settings,
     ),
     cargoStep(
-      'app api database router integration tests',
-      ['test', '-p', 'sdkwork-clawrouter-standalone-gateway', '--test', 'database_config_router'],
+      'app api query contract tests',
+      ['test', '-p', 'sdkwork-clawrouter-standalone-gateway', '--test', 'api_query_contract'],
       env,
       settings,
     ),
     cargoStep(
       'app api session route tests',
       ['test', '-p', 'sdkwork-clawrouter-standalone-gateway', '--test', 'app_session_route'],
-      env,
-      settings,
-    ),
-    cargoStep(
-      'app api model ranking route tests',
-      ['test', '-p', 'sdkwork-clawrouter-standalone-gateway', '--test', 'model_rankings_route'],
       env,
       settings,
     ),
@@ -623,20 +572,20 @@ function buildGatewaySteps(env, settings) {
       settings,
     ),
     cargoStep(
-      'gateway database router integration tests',
-      ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'database_config_router'],
-      env,
-      settings,
-    ),
-    cargoStep(
-      'gateway provider passthrough route tests',
-      ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'provider_passthrough_route'],
+      'gateway invocation router tests',
+      ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'invocation_router'],
       env,
       settings,
     ),
     cargoStep(
       'gateway provider adapter invocation tests',
       ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'provider_adapter_invocation'],
+      env,
+      settings,
+    ),
+    cargoStep(
+      'gateway provider adapter streaming tests',
+      ['test', '-p', 'sdkwork-clawrouter-edge-runtime', '--test', 'provider_adapter_passthrough_streaming'],
       env,
       settings,
     ),

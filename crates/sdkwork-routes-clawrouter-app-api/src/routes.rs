@@ -5,8 +5,8 @@ use crate::{manifest, paths};
 use axum::Router;
 use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    PaymentWebhookConfig, ProviderSecretMapConfig, RedisConfig, RequestLimitsConfig,
-    RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
+    PaymentWebhookConfig, RedisConfig, RequestLimitsConfig, RuntimeConfigProfile,
+    RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
@@ -19,37 +19,21 @@ use sdkwork_clawrouter_router_service::application::{
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
 };
-use sdkwork_clawrouter_router_service::infrastructure::provider::{
-    ProviderSecretMapResolver, SecretRefOpenAiCompatibleProviderHealthProbe,
-    DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS,
-};
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
     DatabaseInstallError, DatabaseInstaller,
 };
-use sdkwork_clawrouter_router_service::infrastructure::sql::pool::{
-    connect_standard_database_pool, effective_sqlite_runtime_pool_max_connections,
-};
+use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
-    PostgresAdminTransactionCenterStore, PostgresAppChatStore, PostgresAppGatewayTracesReadStore,
-    PostgresAppNotificationStore, PostgresAppProvidersReadStore,
-    PostgresAppRoutingChannelCommandStore, PostgresAppRoutingReadStore,
-    PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore, PostgresCatalogLoadError,
-    PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
-    PostgresModelRankingRefreshStore, PostgresModelRankingsReadStore, PostgresPaymentCallbackStore,
+    PostgresAdminTransactionCenterStore, PostgresAppChatStore, PostgresAppNotificationStore,
+    PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
+    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
+    PostgresGatewayApiKeyCommandStore, PostgresModelRankingRefreshStore,
+    PostgresModelRankingsReadStore, PostgresPaymentCallbackStore,
     PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
     PostgresSettlementsDashboardReadStore, PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
-};
-use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
-    SqlCatalogLoadError, SqliteAdminTransactionCenterStore, SqliteAppChatStore,
-    SqliteAppGatewayTracesReadStore, SqliteAppNotificationStore, SqliteAppProvidersReadStore,
-    SqliteAppRoutingChannelCommandStore, SqliteAppRoutingReadStore, SqliteAppRoutingStrategyStore,
-    SqliteAppRuntimeStore, SqliteDashboardOverviewReadStore, SqliteGatewayApiKeyCommandStore,
-    SqliteModelRankingRefreshStore, SqliteModelRankingsReadStore, SqlitePaymentCallbackStore,
-    SqlitePaymentIntentRuntimeStore, SqlitePricingCatalogLoader, SqliteSettingsStore,
-    SqliteSettlementsDashboardReadStore, SqliteSiteSettingsStore, SqliteUsageLogsReadStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::{
     AppRuntimeGatewayHttpClient, OsApiKeySecretGenerator, RedisRuntimeStreamBus,
@@ -58,20 +42,19 @@ use sdkwork_clawrouter_router_service::ports::AdminTransactionCenterSubject;
 use sdkwork_clawrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use sdkwork_clawrouter_router_service::ports::{
-    AppChatStore, AppGatewayTracesReadStore, AppNotificationStore, AppProvidersReadStore,
-    AppRoutingChannelCommandStore, AppRoutingReadStore, AppRoutingStrategyStore, AppRuntimeStore,
-    DashboardOverviewReadStore, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
-    ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus, ModelRankingRefreshStore,
-    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, PaymentCallbackStore,
-    ProviderHealthProbe, SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore,
-    UnconfiguredProviderHealthProbe, UsageLogsReadStore,
+    AppChatStore, AppNotificationStore, AppRoutingReadStore, AppRoutingStrategyStore,
+    AppRuntimeStore, DashboardOverviewReadStore, GatewayApiKeyCommandStore,
+    GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus,
+    ModelRankingRefreshStore, ModelRankingsCacheInvalidation, ModelRankingsReadModelStore,
+    PaymentCallbackStore, SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore,
+    UsageLogsReadStore,
 };
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_routes_models_catalog_app_api::{
     app_model_catalog_router, app_model_rankings_router, app_model_rankings_router_with_read_store,
 };
-use sqlx::{PgPool, SqlitePool};
+use sqlx::PgPool;
 use tokio::time::sleep;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -112,26 +95,6 @@ fn app_api_key_runtime_deps_for_postgres(
     })
 }
 
-fn app_api_key_runtime_deps_for_sqlite(
-    pool: SqlitePool,
-    api_key_security_config: &ApiKeySecurityConfig,
-    api_key_secret_codec: ApiKeyCodec,
-) -> Result<AppApiKeyRuntimeDeps, ProductCatalogRouterError> {
-    let api_key_hasher = HmacSha256ApiKeySecretHasher::new(api_key_security_config.pepper_secret())
-        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
-    Ok(AppApiKeyRuntimeDeps {
-        read_store: Arc::new(SqlitePricingCatalogLoader::with_api_key_secret_codec(
-            pool.clone(),
-            api_key_secret_codec.clone(),
-        )),
-        command_store: Arc::new(SqliteGatewayApiKeyCommandStore::new(
-            pool,
-            api_key_secret_codec,
-        )),
-        api_key_hasher: Arc::new(api_key_hasher),
-    })
-}
-type AppGatewayTracesStore = Arc<dyn AppGatewayTracesReadStore + Send + Sync>;
 type AppNotificationRuntimeStore = Arc<dyn AppNotificationStore + Send + Sync>;
 type AppChatRuntimeStore = Arc<dyn AppChatStore + Send + Sync>;
 type AppRuntimeRuntimeStore = Arc<dyn AppRuntimeStore + Send + Sync>;
@@ -140,8 +103,6 @@ type AppRuntimeChatStreamRelay = Arc<dyn ChatCompletionStreamRelay + Send + Sync
 type AppRuntimeGatewayRuntimeClient =
     Arc<dyn sdkwork_clawrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync>;
 type AppRuntimeStreamBus = Arc<dyn RuntimeStreamBus + Send + Sync>;
-type AppProvidersStore = Arc<dyn AppProvidersReadStore + Send + Sync>;
-type AppRoutingChannelCommandRuntimeStore = Arc<dyn AppRoutingChannelCommandStore + Send + Sync>;
 type AppRoutingStore = Arc<dyn AppRoutingReadStore + Send + Sync>;
 type AppRoutingStrategyRuntimeStore = Arc<dyn AppRoutingStrategyStore + Send + Sync>;
 type AppSiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
@@ -152,7 +113,6 @@ type PaymentIntentAggregateRuntimeStore = Arc<dyn PaymentAggregateRuntimeStore>;
 type SettlementsDashboardStore = Arc<dyn SettlementsDashboardReadStore + Send + Sync>;
 type SettingsRuntimeStore = Arc<dyn SettingsStore + Send + Sync>;
 type UsageLogsStore = Arc<dyn UsageLogsReadStore + Send + Sync>;
-type ProviderHealthProbeRuntime = Arc<dyn ProviderHealthProbe + Send + Sync>;
 type ModelRankingRefreshRuntimeStore = Arc<dyn ModelRankingRefreshStore + Send + Sync>;
 type ModelRankingsRuntimeStore = Arc<dyn ModelRankingsReadModelStore + Send + Sync>;
 
@@ -187,14 +147,11 @@ pub fn router() -> Router {
         .merge(sdkwork_clawrouter_router_service::api::app_settlements_dashboard_router())
         .merge(sdkwork_clawrouter_router_service::api::app_settings_router())
         .merge(sdkwork_clawrouter_router_service::api::app_usage_logs_router())
-        .merge(sdkwork_clawrouter_router_service::api::app_gateway_traces_router())
         .merge(sdkwork_clawrouter_router_service::api::app_notification_router())
         .merge(sdkwork_clawrouter_router_service::api::app_chat_router())
         .merge(sdkwork_clawrouter_router_service::api::app_runtime_router())
-        .merge(sdkwork_clawrouter_router_service::api::app_providers_router())
         .merge(sdkwork_clawrouter_router_service::api::app_routing_router())
         .merge(sdkwork_clawrouter_router_service::api::app_routing_strategy_router())
-        .merge(sdkwork_clawrouter_router_service::api::app_routing_channel_command_router())
 }
 
 fn router_with_database_status(
@@ -302,14 +259,11 @@ where
         .merge(sdkwork_clawrouter_router_service::api::app_settlements_dashboard_router())
         .merge(sdkwork_clawrouter_router_service::api::app_settings_router())
         .merge(sdkwork_clawrouter_router_service::api::app_usage_logs_router())
-        .merge(sdkwork_clawrouter_router_service::api::app_gateway_traces_router())
         .merge(sdkwork_clawrouter_router_service::api::app_notification_router())
         .merge(sdkwork_clawrouter_router_service::api::app_chat_router())
         .merge(sdkwork_clawrouter_router_service::api::app_runtime_router())
-        .merge(sdkwork_clawrouter_router_service::api::app_providers_router())
         .merge(sdkwork_clawrouter_router_service::api::app_routing_router())
         .merge(sdkwork_clawrouter_router_service::api::app_routing_strategy_router())
-        .merge(sdkwork_clawrouter_router_service::api::app_routing_channel_command_router())
         .merge(app_model_catalog_router(Arc::clone(&catalog)))
 }
 
@@ -350,7 +304,6 @@ fn router_with_runtime_stores_and_database_status(
     settlements_dashboard_read_store: Option<SettlementsDashboardStore>,
     settings_store: Option<SettingsRuntimeStore>,
     usage_logs_read_store: Option<UsageLogsStore>,
-    app_gateway_traces_read_store: Option<AppGatewayTracesStore>,
     app_notification_store: Option<AppNotificationRuntimeStore>,
     app_chat_store: Option<AppChatRuntimeStore>,
     app_runtime_store: Option<AppRuntimeRuntimeStore>,
@@ -358,10 +311,8 @@ fn router_with_runtime_stores_and_database_status(
     app_runtime_chat_stream_relay: Option<AppRuntimeChatStreamRelay>,
     app_runtime_gateway_client: Option<AppRuntimeGatewayRuntimeClient>,
     app_runtime_stream_bus: Option<AppRuntimeStreamBus>,
-    app_providers_read_store: Option<AppProvidersStore>,
     app_routing_read_store: Option<AppRoutingStore>,
     app_routing_strategy_store: Option<AppRoutingStrategyRuntimeStore>,
-    app_routing_channel_command_store: Option<AppRoutingChannelCommandRuntimeStore>,
     model_catalog_router: Option<Router>,
     config: Option<&DatabaseConfig>,
     request_limits_config: RequestLimitsConfig,
@@ -429,16 +380,6 @@ fn router_with_runtime_stores_and_database_status(
             subject_boundary_config.clone(),
         ),
         None => router.merge(sdkwork_clawrouter_router_service::api::app_usage_logs_router()),
-    };
-    router = match app_gateway_traces_read_store {
-        Some(read_store) => sdkwork_claw_http::merge_web_framework_scoped_app_read_router(
-            router,
-            sdkwork_clawrouter_router_service::api::app_gateway_traces_router_with_read_store(
-                read_store,
-            ),
-            subject_boundary_config.clone(),
-        ),
-        None => router.merge(sdkwork_clawrouter_router_service::api::app_gateway_traces_router()),
     };
     router = match app_notification_store {
         Some(store) => sdkwork_claw_http::merge_web_framework_scoped_app_router(
@@ -509,16 +450,6 @@ fn router_with_runtime_stores_and_database_status(
         }
         None => router.merge(sdkwork_clawrouter_router_service::api::app_runtime_router()),
     };
-    router = match app_providers_read_store {
-        Some(read_store) => sdkwork_claw_http::merge_web_framework_scoped_app_router(
-            router,
-            sdkwork_clawrouter_router_service::api::app_providers_router_with_read_store(
-                read_store,
-            ),
-            subject_boundary_config.clone(),
-        ),
-        None => router.merge(sdkwork_clawrouter_router_service::api::app_providers_router()),
-    };
     router = match app_routing_read_store {
         Some(read_store) => sdkwork_claw_http::merge_web_framework_scoped_app_router(
             router,
@@ -537,18 +468,6 @@ fn router_with_runtime_stores_and_database_status(
             subject_boundary_config.clone(),
         ),
         None => router.merge(sdkwork_clawrouter_router_service::api::app_routing_strategy_router()),
-    };
-    router = match app_routing_channel_command_store {
-        Some(store) => sdkwork_claw_http::merge_web_framework_scoped_app_router(
-            router,
-            sdkwork_clawrouter_router_service::api::app_routing_channel_command_router_with_store(
-                store,
-                Arc::new(OsApiKeySecretGenerator),
-            ),
-            subject_boundary_config.clone(),
-        ),
-        None => router
-            .merge(sdkwork_clawrouter_router_service::api::app_routing_channel_command_router()),
     };
     if let Some(api_key_runtime) = api_key_runtime {
         router = sdkwork_claw_http::merge_web_framework_scoped_app_router(
@@ -584,155 +503,6 @@ fn router_with_runtime_stores_and_database_status(
     merge_app_sdk_reference_router(router)
 }
 
-pub async fn router_with_sqlite_product_catalog(
-    pool: SqlitePool,
-    database_config: DatabaseConfig,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_sqlite_product_catalog_runtime(
-        pool,
-        database_config,
-        api_key_security_config,
-        trusted_subject_config,
-        app_session_config,
-        payment_webhook_config,
-        Arc::new(UnconfiguredProviderHealthProbe),
-        true,
-    )
-    .await
-}
-
-/// Builds only the Claw Router-owned app runtime around an existing SQLite
-/// pool, with an explicitly injected provider health probe.
-///
-/// Federated commerce capabilities are intentionally excluded so embedded
-/// runtimes and focused integration tests do not bootstrap schemas owned by
-/// other SDKWork applications.
-pub async fn router_with_sqlite_core_runtime_and_provider_health_probe(
-    pool: SqlitePool,
-    database_config: DatabaseConfig,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_sqlite_product_catalog_runtime(
-        pool,
-        database_config,
-        api_key_security_config,
-        trusted_subject_config,
-        app_session_config,
-        payment_webhook_config,
-        provider_health_probe,
-        false,
-    )
-    .await
-}
-
-async fn router_with_sqlite_product_catalog_runtime(
-    pool: SqlitePool,
-    database_config: DatabaseConfig,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
-    include_federated_capabilities: bool,
-) -> Result<Router, ProductCatalogRouterError> {
-    let deployment_mode = DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?;
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
-    let read_store = Arc::new(SqlitePricingCatalogLoader::with_api_key_secret_codec(
-        pool.clone(),
-        api_key_secret_codec.clone(),
-    ));
-    let model_catalog_snapshot = read_store.load_snapshot().await?;
-    let model_rankings_store =
-        model_rankings_service(Arc::new(SqliteModelRankingsReadStore::new(pool.clone())));
-    let model_catalog_router = app_model_catalog_router(Arc::new(model_catalog_snapshot)).merge(
-        app_model_rankings_router_with_subject_boundary(
-            model_rankings_store,
-            &trusted_subject_config,
-            &app_session_config,
-        ),
-    );
-    let payment_callback_store = Arc::new(SqlitePaymentCallbackStore::new(pool.clone()));
-    let payment_intent_runtime_store = Arc::new(SqlitePaymentIntentRuntimeStore::new(pool.clone()));
-    let payment_provider_registry = bootstrap_sqlite_payment_provider_registry(&pool).await;
-    let dashboard_read_store = Arc::new(SqliteDashboardOverviewReadStore::new(pool.clone()));
-    let settlements_dashboard_read_store =
-        Arc::new(SqliteSettlementsDashboardReadStore::new(pool.clone()));
-    let settings_store = Arc::new(SqliteSettingsStore::new(pool.clone()));
-    let usage_logs_read_store = Arc::new(SqliteUsageLogsReadStore::new(pool.clone()));
-    let app_gateway_traces_read_store =
-        Arc::new(SqliteAppGatewayTracesReadStore::new(pool.clone()));
-    let app_notification_store = Arc::new(SqliteAppNotificationStore::new(pool.clone()));
-    let app_chat_store = Arc::new(SqliteAppChatStore::new(pool.clone()));
-    let app_runtime_store = Arc::new(SqliteAppRuntimeStore::new(pool.clone()));
-    let app_providers_read_store = Arc::new(SqliteAppProvidersReadStore::new(pool.clone()));
-    let app_routing_read_store = Arc::new(SqliteAppRoutingReadStore::with_api_key_secret_codec(
-        pool.clone(),
-        api_key_secret_codec.clone(),
-    ));
-    let app_routing_strategy_store = Arc::new(SqliteAppRoutingStrategyStore::new(pool.clone()));
-    let app_routing_channel_command_store = Arc::new(
-        SqliteAppRoutingChannelCommandStore::with_provider_health_probe(
-            pool.clone(),
-            provider_health_probe,
-        ),
-    );
-    let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
-    let app_site_settings_store = Arc::new(SqliteSiteSettingsStore::new(pool.clone()));
-    let api_key_runtime = Some(app_api_key_runtime_deps_for_sqlite(
-        pool.clone(),
-        &api_key_security_config,
-        api_key_secret_codec.clone(),
-    )?);
-    let subject_boundary_config =
-        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
-    let federated_database_config = include_federated_capabilities.then_some(&database_config);
-    finalize_product_router_with_federated_capabilities(
-        router_with_runtime_stores_and_database_status(
-            Some(app_site_settings_store),
-            entity_uuid_generator,
-            trusted_subject_config,
-            app_session_config,
-            Some(payment_webhook_config),
-            Some(payment_callback_store),
-            Some(payment_intent_runtime_store),
-            payment_provider_registry,
-            Some(dashboard_read_store),
-            Some(settlements_dashboard_read_store),
-            Some(settings_store),
-            Some(usage_logs_read_store),
-            Some(app_gateway_traces_read_store),
-            Some(app_notification_store),
-            Some(app_chat_store),
-            Some(app_runtime_store),
-            None,
-            None,
-            None,
-            None,
-            Some(app_providers_read_store),
-            Some(app_routing_read_store),
-            Some(app_routing_strategy_store),
-            Some(app_routing_channel_command_store),
-            Some(model_catalog_router),
-            Some(&database_config),
-            RequestLimitsConfig::default(),
-            None,
-            api_key_runtime,
-            deployment_mode,
-        ),
-        subject_boundary_config,
-        federated_database_config,
-    )
-    .await
-}
-
 pub async fn router_with_postgres_product_catalog(
     pool: PgPool,
     database_config: DatabaseConfig,
@@ -766,19 +536,14 @@ pub async fn router_with_postgres_product_catalog(
         Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
     let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
-    let app_gateway_traces_read_store =
-        Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
-    let app_providers_read_store = Arc::new(PostgresAppProvidersReadStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::with_api_key_secret_codec(
         pool.clone(),
         api_key_secret_codec.clone(),
     ));
     let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
-    let app_routing_channel_command_store =
-        Arc::new(PostgresAppRoutingChannelCommandStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
@@ -802,7 +567,6 @@ pub async fn router_with_postgres_product_catalog(
             Some(settlements_dashboard_read_store),
             Some(settings_store),
             Some(usage_logs_read_store),
-            Some(app_gateway_traces_read_store),
             Some(app_notification_store),
             Some(app_chat_store),
             Some(app_runtime_store),
@@ -810,10 +574,8 @@ pub async fn router_with_postgres_product_catalog(
             None,
             None,
             None,
-            Some(app_providers_read_store),
             Some(app_routing_read_store),
             Some(app_routing_strategy_store),
-            Some(app_routing_channel_command_store),
             Some(model_catalog_router),
             Some(&database_config),
             RequestLimitsConfig::default(),
@@ -827,111 +589,6 @@ pub async fn router_with_postgres_product_catalog(
     .await
 }
 
-pub async fn router_with_sqlite_shared_runtime(
-    config: DatabaseConfig,
-    pool: SqlitePool,
-    catalog: Arc<RefreshableSqlPricingCatalog>,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
-    deployment_mode: DeploymentMode,
-    request_limits_config: RequestLimitsConfig,
-    app_runtime_gateway_client: Arc<
-        dyn sdkwork_clawrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync,
-    >,
-    app_runtime_stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
-    model_ranking_refresh_worker_config: ModelRankingRefreshWorkerConfig,
-) -> Result<Router, ProductCatalogRouterError> {
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
-    let model_rankings_store =
-        model_rankings_service(Arc::new(SqliteModelRankingsReadStore::new(pool.clone())));
-    maybe_spawn_sqlite_model_ranking_refresh_worker(
-        &pool,
-        model_ranking_refresh_worker_config,
-        Some(Arc::clone(&model_rankings_store)),
-    )
-    .await?;
-    let model_catalog_router = app_model_catalog_router(Arc::clone(&catalog)).merge(
-        app_model_rankings_router_with_subject_boundary(
-            model_rankings_store,
-            &trusted_subject_config,
-            &app_session_config,
-        ),
-    );
-    let payment_callback_store = Arc::new(SqlitePaymentCallbackStore::new(pool.clone()));
-    let payment_intent_runtime_store = Arc::new(SqlitePaymentIntentRuntimeStore::new(pool.clone()));
-    let payment_provider_registry = bootstrap_sqlite_payment_provider_registry(&pool).await;
-    let dashboard_read_store = Arc::new(SqliteDashboardOverviewReadStore::new(pool.clone()));
-    let settlements_dashboard_read_store =
-        Arc::new(SqliteSettlementsDashboardReadStore::new(pool.clone()));
-    let settings_store = Arc::new(SqliteSettingsStore::new(pool.clone()));
-    let usage_logs_read_store = Arc::new(SqliteUsageLogsReadStore::new(pool.clone()));
-    let app_gateway_traces_read_store =
-        Arc::new(SqliteAppGatewayTracesReadStore::new(pool.clone()));
-    let app_notification_store = Arc::new(SqliteAppNotificationStore::new(pool.clone()));
-    let app_chat_store = Arc::new(SqliteAppChatStore::new(pool.clone()));
-    let app_runtime_store = Arc::new(SqliteAppRuntimeStore::new(pool.clone()));
-    let app_providers_read_store = Arc::new(SqliteAppProvidersReadStore::new(pool.clone()));
-    let app_routing_read_store = Arc::new(SqliteAppRoutingReadStore::with_api_key_secret_codec(
-        pool.clone(),
-        api_key_secret_codec.clone(),
-    ));
-    let app_routing_strategy_store = Arc::new(SqliteAppRoutingStrategyStore::new(pool.clone()));
-    let app_routing_channel_command_store = Arc::new(
-        SqliteAppRoutingChannelCommandStore::with_provider_health_probe(
-            pool.clone(),
-            provider_health_probe,
-        ),
-    );
-    let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
-    let api_key_runtime = Some(app_api_key_runtime_deps_for_sqlite(
-        pool.clone(),
-        &api_key_security_config,
-        api_key_secret_codec.clone(),
-    )?);
-    let subject_boundary_config =
-        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
-    finalize_product_router_with_federated_capabilities(
-        router_with_runtime_stores_and_database_status(
-            Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
-            entity_uuid_generator,
-            trusted_subject_config,
-            app_session_config,
-            Some(payment_webhook_config),
-            Some(payment_callback_store),
-            Some(payment_intent_runtime_store),
-            payment_provider_registry,
-            Some(dashboard_read_store),
-            Some(settlements_dashboard_read_store),
-            Some(settings_store),
-            Some(usage_logs_read_store),
-            Some(app_gateway_traces_read_store),
-            Some(app_notification_store),
-            Some(app_chat_store),
-            Some(app_runtime_store),
-            Some(catalog),
-            None,
-            Some(app_runtime_gateway_client),
-            Some(app_runtime_stream_bus),
-            Some(app_providers_read_store),
-            Some(app_routing_read_store),
-            Some(app_routing_strategy_store),
-            Some(app_routing_channel_command_store),
-            Some(model_catalog_router),
-            Some(&config),
-            request_limits_config,
-            None,
-            api_key_runtime,
-            deployment_mode,
-        ),
-        subject_boundary_config,
-        Some(&config),
-    )
-    .await
-}
-
 pub async fn router_with_postgres_shared_runtime(
     config: DatabaseConfig,
     pool: PgPool,
@@ -940,7 +597,6 @@ pub async fn router_with_postgres_shared_runtime(
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
     deployment_mode: DeploymentMode,
     request_limits_config: RequestLimitsConfig,
     app_runtime_gateway_client: Arc<
@@ -974,23 +630,14 @@ pub async fn router_with_postgres_shared_runtime(
         Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
     let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
-    let app_gateway_traces_read_store =
-        Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
-    let app_providers_read_store = Arc::new(PostgresAppProvidersReadStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::with_api_key_secret_codec(
         pool.clone(),
         api_key_secret_codec.clone(),
     ));
     let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
-    let app_routing_channel_command_store = Arc::new(
-        PostgresAppRoutingChannelCommandStore::with_provider_health_probe(
-            pool.clone(),
-            provider_health_probe,
-        ),
-    );
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
@@ -1013,7 +660,6 @@ pub async fn router_with_postgres_shared_runtime(
             Some(settlements_dashboard_read_store),
             Some(settings_store),
             Some(usage_logs_read_store),
-            Some(app_gateway_traces_read_store),
             Some(app_notification_store),
             Some(app_chat_store),
             Some(app_runtime_store),
@@ -1021,10 +667,8 @@ pub async fn router_with_postgres_shared_runtime(
             None,
             Some(app_runtime_gateway_client),
             Some(app_runtime_stream_bus),
-            Some(app_providers_read_store),
             Some(app_routing_read_store),
             Some(app_routing_strategy_store),
-            Some(app_routing_channel_command_store),
             Some(model_catalog_router),
             Some(&config),
             request_limits_config,
@@ -1053,15 +697,12 @@ pub async fn router_with_database_config(
     let payment_webhook_config = require_payment_webhook_config(
         PaymentWebhookConfig::from_env().map_err(ProductCatalogRouterError::Config)?,
     )?;
-    let provider_secret_map_config =
-        ProviderSecretMapConfig::from_env().map_err(ProductCatalogRouterError::Config)?;
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
+    router_with_database_config_api_key_trusted_subject_app_session(
         config,
         api_key_security_config,
         trusted_subject_config,
         app_session_config,
         payment_webhook_config,
-        provider_secret_map_config,
         DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?,
     )
     .await
@@ -1074,13 +715,12 @@ pub async fn router_with_database_config_api_key_trusted_subject_and_app_session
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
+    router_with_database_config_api_key_trusted_subject_app_session(
         config,
         api_key_security_config,
         trusted_subject_config,
         app_session_config,
         payment_webhook_config,
-        None,
         DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?,
     )
     .await
@@ -1094,150 +734,47 @@ pub async fn router_with_database_config_api_key_trusted_subject_app_session_dep
     payment_webhook_config: PaymentWebhookConfig,
     deployment_mode: DeploymentMode,
 ) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
+    router_with_database_config_api_key_trusted_subject_app_session(
         config,
         api_key_security_config,
         trusted_subject_config,
         app_session_config,
         payment_webhook_config,
-        None,
         deployment_mode,
     )
     .await
 }
 
-pub async fn router_with_database_config_api_key_trusted_subject_app_session_and_provider_secret_map_config(
+async fn router_with_database_config_api_key_trusted_subject_app_session(
     config: DatabaseConfig,
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
-    provider_secret_map_config: ProviderSecretMapConfig,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
-        config,
-        api_key_security_config,
-        trusted_subject_config,
-        app_session_config,
-        payment_webhook_config,
-        Some(provider_secret_map_config),
-        DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?,
-    )
-    .await
-}
-
-pub async fn router_with_database_config_api_key_trusted_subject_app_session_provider_secret_map_and_deployment_mode_config(
-    config: DatabaseConfig,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-    provider_secret_map_config: ProviderSecretMapConfig,
     deployment_mode: DeploymentMode,
 ) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
+    router_with_database_config_api_key_trusted_subject_app_session_and_startup_install_mode(
         config,
         api_key_security_config,
         trusted_subject_config,
         app_session_config,
         payment_webhook_config,
-        Some(provider_secret_map_config),
-        deployment_mode,
-    )
-    .await
-}
-
-/// Builds the app gateway with an explicitly supplied health probe.
-///
-/// Production entry points resolve provider secrets and use the hardened
-/// HTTPS/SSRF-protected relay.  Tests can inject a deterministic probe here to
-/// verify routing-channel persistence without introducing a network bypass.
-pub async fn router_with_database_config_api_key_trusted_subject_app_session_provider_health_probe_deployment_mode_and_startup_install_mode(
-    config: DatabaseConfig,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
-    deployment_mode: DeploymentMode,
-    startup_install_mode: StartupInstallMode,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
-        config,
-        api_key_security_config,
-        trusted_subject_config,
-        app_session_config,
-        payment_webhook_config,
-        None,
-        deployment_mode,
-        startup_install_mode,
-        None,
-        Some(provider_health_probe),
-    )
-    .await
-}
-
-async fn router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
-    config: DatabaseConfig,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
-    deployment_mode: DeploymentMode,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
-        config,
-        api_key_security_config,
-        trusted_subject_config,
-        app_session_config,
-        payment_webhook_config,
-        provider_secret_map_config,
         deployment_mode,
         StartupInstallMode::Ensure,
         None,
-        None,
     )
     .await
 }
 
-async fn router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode(
+async fn router_with_database_config_api_key_trusted_subject_app_session_and_startup_install_mode(
     config: DatabaseConfig,
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
     deployment_mode: DeploymentMode,
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
-        config,
-        api_key_security_config,
-        trusted_subject_config,
-        app_session_config,
-        payment_webhook_config,
-        provider_secret_map_config,
-        deployment_mode,
-        startup_install_mode,
-        runtime_toml,
-        None,
-    )
-    .await
-}
-
-async fn router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
-    config: DatabaseConfig,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    payment_webhook_config: PaymentWebhookConfig,
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
-    deployment_mode: DeploymentMode,
-    startup_install_mode: StartupInstallMode,
-    runtime_toml: Option<&RuntimeTomlConfig>,
-    provider_health_probe_override: Option<ProviderHealthProbeRuntime>,
 ) -> Result<Router, ProductCatalogRouterError> {
     sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
     let subject_boundary_config =
@@ -1252,295 +789,129 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_opt
     let app_runtime_catalog_refresh_interval =
         app_runtime_catalog_refresh_interval_from_env_or_toml(runtime_toml)
             .map_err(ProductCatalogRouterError::Config)?;
-    let provider_health_probe = match provider_health_probe_override {
-        Some(provider_health_probe) => provider_health_probe,
-        None => build_provider_health_probe(provider_secret_map_config, runtime_toml)?,
-    };
-    match config.engine {
-        DatabaseEngine::Sqlite => {
-            let sqlite_pool_max_connections =
-                effective_sqlite_runtime_pool_max_connections(&config.url, config.max_connections);
-            if sqlite_pool_max_connections > config.max_connections {
-                tracing::warn!(
-                    configured_max_connections = config.max_connections,
-                    effective_max_connections = sqlite_pool_max_connections,
-                    "SQLite runtime database pool max_connections was raised to protect app runtime streams and background refresh tasks"
-                );
-            }
-            let database_pool = connect_standard_database_pool(&config)
-                .await
-                .map_err(|error| {
-                    ProductCatalogRouterError::Sqlite(SqlCatalogLoadError::Database(
-                        sqlx::Error::Configuration(error.to_string().into()),
-                    ))
-                })?;
-            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
-            let pool = database_pool.as_sqlite().cloned().ok_or_else(|| {
-                ProductCatalogRouterError::Config("expected SQLite database pool".to_owned())
-            })?;
-            if startup_install_mode.should_ensure() {
-                DatabaseInstaller::for_sqlite(pool.clone())
-                    .with_env_options()?
-                    .ensure_bootstrap_data()
-                    .await?;
-            }
-            let read_store = Arc::new(SqlitePricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            ));
-            let model_catalog_snapshot = read_store.load_snapshot().await?;
-            log_app_runtime_catalog_snapshot_summary(
-                "sqlite",
-                "startup",
-                model_catalog_snapshot.summary(),
-            );
-            let app_runtime_execution_catalog =
-                Arc::new(RefreshableSqlPricingCatalog::new(model_catalog_snapshot));
-            spawn_sqlite_app_runtime_catalog_refresh_worker(
-                &pool,
-                Arc::clone(&app_runtime_execution_catalog),
-                api_key_secret_codec.clone(),
-                app_runtime_catalog_refresh_interval,
-            );
-            let model_rankings_store =
-                model_rankings_service(Arc::new(SqliteModelRankingsReadStore::new(pool.clone())));
-            maybe_spawn_sqlite_model_ranking_refresh_worker(
-                &pool,
-                model_ranking_refresh_worker_config_from_env_or_toml(runtime_toml)
-                    .map_err(ProductCatalogRouterError::Config)?,
-                Some(Arc::clone(&model_rankings_store)),
-            )
-            .await?;
-            let model_catalog_router = app_model_catalog_router(Arc::clone(
-                &app_runtime_execution_catalog,
+    if !matches!(config.engine, DatabaseEngine::Postgres) {
+        return Err(ProductCatalogRouterError::Config(
+            "Claw Router server runtime requires PostgreSQL; SQLite is client-local only"
+                .to_owned(),
+        ));
+    }
+    let database_pool = connect_standard_database_pool(&config)
+        .await
+        .map_err(|error| {
+            ProductCatalogRouterError::Postgres(PostgresCatalogLoadError::Database(
+                sqlx::Error::Configuration(error.to_string().into()),
             ))
-            .merge(app_model_rankings_router_with_subject_boundary(
-                model_rankings_store,
-                &trusted_subject_config,
-                &app_session_config,
-            ));
-            let payment_callback_store = Arc::new(SqlitePaymentCallbackStore::new(pool.clone()));
-            let payment_intent_runtime_store =
-                Arc::new(SqlitePaymentIntentRuntimeStore::new(pool.clone()));
-            let payment_provider_registry = bootstrap_sqlite_payment_provider_registry(&pool).await;
-            let dashboard_read_store =
-                Arc::new(SqliteDashboardOverviewReadStore::new(pool.clone()));
-            let settlements_dashboard_read_store =
-                Arc::new(SqliteSettlementsDashboardReadStore::new(pool.clone()));
-            let settings_store = Arc::new(SqliteSettingsStore::new(pool.clone()));
-            let usage_logs_read_store = Arc::new(SqliteUsageLogsReadStore::new(pool.clone()));
-            let app_gateway_traces_read_store =
-                Arc::new(SqliteAppGatewayTracesReadStore::new(pool.clone()));
-            let app_notification_store = Arc::new(SqliteAppNotificationStore::new(pool.clone()));
-            let app_chat_store = Arc::new(SqliteAppChatStore::new(pool.clone()));
-            let app_runtime_store = Arc::new(SqliteAppRuntimeStore::new(pool.clone()));
-            let app_providers_read_store = Arc::new(SqliteAppProvidersReadStore::new(pool.clone()));
-            let app_routing_read_store =
-                Arc::new(SqliteAppRoutingReadStore::with_api_key_secret_codec(
-                    pool.clone(),
-                    api_key_secret_codec.clone(),
-                ));
-            let app_routing_strategy_store =
-                Arc::new(SqliteAppRoutingStrategyStore::new(pool.clone()));
-            let app_routing_channel_command_store = Arc::new(
-                SqliteAppRoutingChannelCommandStore::with_provider_health_probe(
-                    pool.clone(),
-                    provider_health_probe.clone(),
-                ),
-            );
-            let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
-            let api_key_runtime = Some(app_api_key_runtime_deps_for_sqlite(
-                pool.clone(),
-                &api_key_security_config,
-                api_key_secret_codec.clone(),
-            )?);
-            let usage_settlement_worker_config =
-                sdkwork_clawrouter_router_service::application::resolve_usage_settlement_worker_config(
-                    runtime_toml,
-                );
-            let readiness_check =
-                sdkwork_clawrouter_router_service::infrastructure::sql::pool::sqlite_runtime_readiness_check(
-                    pool.clone(),
-                    runtime_toml,
-                    usage_settlement_worker_config,
-                );
-            finalize_product_router_with_federated_capabilities(
-                router_with_runtime_stores_and_database_status(
-                    Some(Arc::new(SqliteSiteSettingsStore::new(pool.clone()))),
-                    entity_uuid_generator,
-                    trusted_subject_config,
-                    app_session_config,
-                    Some(payment_webhook_config),
-                    Some(payment_callback_store),
-                    Some(payment_intent_runtime_store),
-                    payment_provider_registry,
-                    Some(dashboard_read_store),
-                    Some(settlements_dashboard_read_store),
-                    Some(settings_store),
-                    Some(usage_logs_read_store),
-                    Some(app_gateway_traces_read_store),
-                    Some(app_notification_store),
-                    Some(app_chat_store),
-                    Some(app_runtime_store),
-                    Some(app_runtime_execution_catalog),
-                    None,
-                    Some(Arc::clone(&app_runtime_gateway_client)),
-                    Some(Arc::clone(&app_runtime_stream_bus)),
-                    Some(app_providers_read_store),
-                    Some(app_routing_read_store),
-                    Some(app_routing_strategy_store),
-                    Some(app_routing_channel_command_store),
-                    Some(model_catalog_router),
-                    Some(&config),
-                    request_limits_config,
-                    readiness_check,
-                    api_key_runtime,
-                    deployment_mode,
-                ),
-                subject_boundary_config.clone(),
-                Some(&config),
-            )
-            .await
-        }
-        DatabaseEngine::Postgres => {
-            let database_pool = connect_standard_database_pool(&config)
-                .await
-                .map_err(|error| {
-                    ProductCatalogRouterError::Postgres(PostgresCatalogLoadError::Database(
-                        sqlx::Error::Configuration(error.to_string().into()),
-                    ))
-                })?;
-            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
-            let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
-                ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
-            })?;
-            if startup_install_mode.should_ensure() {
-                DatabaseInstaller::for_postgres(pool.clone())
-                    .with_env_options()?
-                    .ensure_bootstrap_data()
-                    .await?;
-            }
-            let read_store = Arc::new(PostgresPricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            ));
-            let model_catalog_snapshot = read_store.load_snapshot().await?;
-            log_app_runtime_catalog_snapshot_summary(
-                "postgres",
-                "startup",
-                model_catalog_snapshot.summary(),
-            );
-            let app_runtime_execution_catalog =
-                Arc::new(RefreshableSqlPricingCatalog::new(model_catalog_snapshot));
-            spawn_postgres_app_runtime_catalog_refresh_worker(
-                &pool,
-                Arc::clone(&app_runtime_execution_catalog),
-                api_key_secret_codec.clone(),
-                app_runtime_catalog_refresh_interval,
-            );
-            let model_rankings_store =
-                model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
-            maybe_spawn_postgres_model_ranking_refresh_worker(
-                &pool,
-                model_ranking_refresh_worker_config_from_env_or_toml(runtime_toml)
-                    .map_err(ProductCatalogRouterError::Config)?,
-                Some(Arc::clone(&model_rankings_store)),
-            )
+        })?;
+    prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+    let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
+        ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
+    })?;
+    if startup_install_mode.should_ensure() {
+        DatabaseInstaller::for_postgres(pool.clone())
+            .with_env_options()?
+            .ensure_bootstrap_data()
             .await?;
-            let model_catalog_router = app_model_catalog_router(Arc::clone(
-                &app_runtime_execution_catalog,
-            ))
-            .merge(app_model_rankings_router_with_subject_boundary(
-                model_rankings_store,
-                &trusted_subject_config,
-                &app_session_config,
-            ));
-            let payment_callback_store = Arc::new(PostgresPaymentCallbackStore::new(pool.clone()));
-            let payment_intent_runtime_store =
-                Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
-            let payment_provider_registry =
-                bootstrap_postgres_payment_provider_registry(&pool).await;
-            let dashboard_read_store =
-                Arc::new(PostgresDashboardOverviewReadStore::new(pool.clone()));
-            let settlements_dashboard_read_store =
-                Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
-            let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
-            let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
-            let app_gateway_traces_read_store =
-                Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
-            let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
-            let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
-            let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
-            let app_providers_read_store =
-                Arc::new(PostgresAppProvidersReadStore::new(pool.clone()));
-            let app_routing_read_store =
-                Arc::new(PostgresAppRoutingReadStore::with_api_key_secret_codec(
-                    pool.clone(),
-                    api_key_secret_codec.clone(),
-                ));
-            let app_routing_strategy_store =
-                Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
-            let app_routing_channel_command_store = Arc::new(
-                PostgresAppRoutingChannelCommandStore::with_provider_health_probe(
-                    pool.clone(),
-                    provider_health_probe,
-                ),
-            );
-            let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
-            let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
-                pool.clone(),
-                &api_key_security_config,
-                api_key_secret_codec.clone(),
-            )?);
-            let usage_settlement_worker_config =
-                sdkwork_clawrouter_router_service::application::resolve_usage_settlement_worker_config(
-                    runtime_toml,
-                );
-            let readiness_check =
+    }
+    let read_store = Arc::new(PostgresPricingCatalogLoader::with_api_key_secret_codec(
+        pool.clone(),
+        api_key_secret_codec.clone(),
+    ));
+    let model_catalog_snapshot = read_store.load_snapshot().await?;
+    log_app_runtime_catalog_snapshot_summary(
+        "postgres",
+        "startup",
+        model_catalog_snapshot.summary(),
+    );
+    let app_runtime_execution_catalog =
+        Arc::new(RefreshableSqlPricingCatalog::new(model_catalog_snapshot));
+    spawn_postgres_app_runtime_catalog_refresh_worker(
+        &pool,
+        Arc::clone(&app_runtime_execution_catalog),
+        api_key_secret_codec.clone(),
+        app_runtime_catalog_refresh_interval,
+    );
+    let model_rankings_store =
+        model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
+    maybe_spawn_postgres_model_ranking_refresh_worker(
+        &pool,
+        model_ranking_refresh_worker_config_from_env_or_toml(runtime_toml)
+            .map_err(ProductCatalogRouterError::Config)?,
+        Some(Arc::clone(&model_rankings_store)),
+    )
+    .await?;
+    let model_catalog_router = app_model_catalog_router(Arc::clone(&app_runtime_execution_catalog))
+        .merge(app_model_rankings_router_with_subject_boundary(
+            model_rankings_store,
+            &trusted_subject_config,
+            &app_session_config,
+        ));
+    let payment_callback_store = Arc::new(PostgresPaymentCallbackStore::new(pool.clone()));
+    let payment_intent_runtime_store =
+        Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
+    let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
+    let dashboard_read_store = Arc::new(PostgresDashboardOverviewReadStore::new(pool.clone()));
+    let settlements_dashboard_read_store =
+        Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
+    let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
+    let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
+    let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
+    let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
+    let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
+    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::with_api_key_secret_codec(
+        pool.clone(),
+        api_key_secret_codec.clone(),
+    ));
+    let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
+    let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
+    let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
+        pool.clone(),
+        &api_key_security_config,
+        api_key_secret_codec.clone(),
+    )?);
+    let usage_settlement_worker_config =
+        sdkwork_clawrouter_router_service::application::resolve_usage_settlement_worker_config(
+            runtime_toml,
+        );
+    let readiness_check =
                 sdkwork_clawrouter_router_service::infrastructure::sql::pool::postgres_runtime_readiness_check(
                     pool.clone(),
                     runtime_toml,
                     usage_settlement_worker_config,
                 );
-            finalize_product_router_with_federated_capabilities(
-                router_with_runtime_stores_and_database_status(
-                    Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
-                    entity_uuid_generator,
-                    trusted_subject_config,
-                    app_session_config,
-                    Some(payment_webhook_config),
-                    Some(payment_callback_store),
-                    Some(payment_intent_runtime_store),
-                    payment_provider_registry,
-                    Some(dashboard_read_store),
-                    Some(settlements_dashboard_read_store),
-                    Some(settings_store),
-                    Some(usage_logs_read_store),
-                    Some(app_gateway_traces_read_store),
-                    Some(app_notification_store),
-                    Some(app_chat_store),
-                    Some(app_runtime_store),
-                    Some(app_runtime_execution_catalog),
-                    None,
-                    Some(Arc::clone(&app_runtime_gateway_client)),
-                    Some(Arc::clone(&app_runtime_stream_bus)),
-                    Some(app_providers_read_store),
-                    Some(app_routing_read_store),
-                    Some(app_routing_strategy_store),
-                    Some(app_routing_channel_command_store),
-                    Some(model_catalog_router),
-                    Some(&config),
-                    request_limits_config,
-                    readiness_check,
-                    api_key_runtime,
-                    deployment_mode,
-                ),
-                subject_boundary_config,
-                Some(&config),
-            )
-            .await
-        }
-    }
+    finalize_product_router_with_federated_capabilities(
+        router_with_runtime_stores_and_database_status(
+            Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+            entity_uuid_generator,
+            trusted_subject_config,
+            app_session_config,
+            Some(payment_webhook_config),
+            Some(payment_callback_store),
+            Some(payment_intent_runtime_store),
+            payment_provider_registry,
+            Some(dashboard_read_store),
+            Some(settlements_dashboard_read_store),
+            Some(settings_store),
+            Some(usage_logs_read_store),
+            Some(app_notification_store),
+            Some(app_chat_store),
+            Some(app_runtime_store),
+            Some(app_runtime_execution_catalog),
+            None,
+            Some(Arc::clone(&app_runtime_gateway_client)),
+            Some(Arc::clone(&app_runtime_stream_bus)),
+            Some(app_routing_read_store),
+            Some(app_routing_strategy_store),
+            Some(model_catalog_router),
+            Some(&config),
+            request_limits_config,
+            readiness_check,
+            api_key_runtime,
+            deployment_mode,
+        ),
+        subject_boundary_config,
+        Some(&config),
+    )
+    .await
 }
 
 pub async fn router_with_optional_database_config(
@@ -1579,27 +950,24 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
     let payment_webhook_config =
         PaymentWebhookConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
             .map_err(ProductCatalogRouterError::Config)?;
-    let provider_secret_map_config =
-        ProviderSecretMapConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
-            .map_err(ProductCatalogRouterError::Config)?;
     ensure_server_safe_deployment_mode(deployment_mode, runtime_toml.as_ref())?;
     sdkwork_claw_config::ensure_server_production_redis_config(
         deployment_mode,
         runtime_toml.as_ref(),
     )
     .map_err(ProductCatalogRouterError::Config)?;
-    let router = router_with_database_config_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode(
-        config.clone(),
-        require_api_key_security_config(api_key_security_config)?,
-        require_trusted_subject_config(trusted_subject_config)?,
-        require_app_session_config(app_session_config)?,
-        require_payment_webhook_config(payment_webhook_config)?,
-        provider_secret_map_config,
-        deployment_mode,
-        startup_install_mode,
-        runtime_toml.as_ref(),
-    )
-    .await?;
+    let router =
+        router_with_database_config_api_key_trusted_subject_app_session_and_startup_install_mode(
+            config.clone(),
+            require_api_key_security_config(api_key_security_config)?,
+            require_trusted_subject_config(trusted_subject_config)?,
+            require_app_session_config(app_session_config)?,
+            require_payment_webhook_config(payment_webhook_config)?,
+            deployment_mode,
+            startup_install_mode,
+            runtime_toml.as_ref(),
+        )
+        .await?;
     Ok(
         crate::web_bootstrap::maybe_wrap_router_with_web_framework_and_database_config(
             router, &config,
@@ -1645,41 +1013,6 @@ fn api_key_secret_codec_from_config(
         RingAeadApiKeySecretCodec::new(config.pepper_secret())
             .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?,
     ))
-}
-
-fn build_provider_health_probe(
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
-    runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Result<ProviderHealthProbeRuntime, ProductCatalogRouterError> {
-    let health_probe_timeout = provider_health_probe_timeout_from_env_or_toml(runtime_toml)
-        .map_err(ProductCatalogRouterError::Config)?;
-    match provider_secret_map_config {
-        Some(config) => {
-            let resolver = Arc::new(ProviderSecretMapResolver::from_config(config));
-            Ok(Arc::new(
-                SecretRefOpenAiCompatibleProviderHealthProbe::with_response_timeout(
-                    resolver,
-                    health_probe_timeout,
-                ),
-            ))
-        }
-        None => Ok(Arc::new(UnconfiguredProviderHealthProbe)),
-    }
-}
-
-fn provider_health_probe_timeout_from_env_or_toml(
-    runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Result<Duration, String> {
-    const HEALTH_PROBE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_HEALTH_PROBE_TIMEOUT_MILLIS";
-    let timeout_millis = sdkwork_claw_config::runtime::config_u64(
-        HEALTH_PROBE_TIMEOUT,
-        runtime_toml.and_then(|config| config.provider_relay.runtime.health_probe_timeout_millis),
-    )?
-    .unwrap_or(DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS);
-    if timeout_millis == 0 {
-        return Err(format!("{HEALTH_PROBE_TIMEOUT} must be a positive integer"));
-    }
-    Ok(Duration::from_millis(timeout_millis))
 }
 
 fn build_app_runtime_gateway_client(
@@ -1805,53 +1138,6 @@ pub fn shared_runtime_catalog_refresh_interval_from_toml(
     app_runtime_catalog_refresh_interval_from_env_or_toml(runtime_toml)
 }
 
-fn should_skip_sqlite_catalog_refresh(pool_size: u32, num_idle: usize) -> bool {
-    pool_size > 0 && num_idle == 0
-}
-
-fn spawn_sqlite_app_runtime_catalog_refresh_worker(
-    pool: &SqlitePool,
-    catalog: Arc<RefreshableSqlPricingCatalog>,
-    api_key_secret_codec: ApiKeyCodec,
-    interval: Duration,
-) -> tokio::task::JoinHandle<()> {
-    let pool = pool.clone();
-    tokio::spawn(async move {
-        loop {
-            sleep(interval).await;
-            let pool_size = pool.size();
-            let num_idle = pool.num_idle();
-            if should_skip_sqlite_catalog_refresh(pool_size, num_idle) {
-                tracing::debug!(
-                    pool_size,
-                    num_idle,
-                    "SQLite app runtime catalog refresh skipped because the database pool has no idle connections"
-                );
-                continue;
-            }
-            match SqlitePricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            )
-            .load_snapshot()
-            .await
-            {
-                Ok(snapshot) => {
-                    let summary = snapshot.summary();
-                    catalog.replace_snapshot(snapshot);
-                    log_app_runtime_catalog_snapshot_summary("sqlite", "refresh", summary);
-                }
-                Err(error) => {
-                    tracing::warn!(
-                        error = %error,
-                        "SQLite app runtime catalog refresh failed; keeping previous snapshot"
-                    );
-                }
-            }
-        }
-    })
-}
-
 fn spawn_postgres_app_runtime_catalog_refresh_worker(
     pool: &PgPool,
     catalog: Arc<RefreshableSqlPricingCatalog>,
@@ -1901,7 +1187,8 @@ fn log_app_runtime_catalog_snapshot_summary(
             callable_model_upstream_routes = summary.callable_model_upstream_routes,
             upstream_account_routes = summary.upstream_account_routes,
             callable_upstream_account_routes = summary.callable_upstream_account_routes,
-            provider_upstream_account_group_bindings = summary.provider_upstream_account_group_bindings,
+            provider_upstream_account_group_bindings =
+                summary.provider_upstream_account_group_bindings,
             routing_policies = summary.routing_policies,
             routing_rules = summary.routing_rules,
             pricing_plans = summary.pricing_plans,
@@ -1922,7 +1209,8 @@ fn log_app_runtime_catalog_snapshot_summary(
             callable_model_upstream_routes = summary.callable_model_upstream_routes,
             upstream_account_routes = summary.upstream_account_routes,
             callable_upstream_account_routes = summary.callable_upstream_account_routes,
-            provider_upstream_account_group_bindings = summary.provider_upstream_account_group_bindings,
+            provider_upstream_account_group_bindings =
+                summary.provider_upstream_account_group_bindings,
             routing_policies = summary.routing_policies,
             routing_rules = summary.routing_rules,
             pricing_plans = summary.pricing_plans,
@@ -1948,32 +1236,6 @@ fn app_model_rankings_router_with_subject_boundary(
         app_model_rankings_router_with_read_store(read_store),
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone()),
     )
-}
-
-async fn maybe_spawn_sqlite_model_ranking_refresh_worker(
-    pool: &SqlitePool,
-    config: ModelRankingRefreshWorkerConfig,
-    cache_invalidator: Option<ModelRankingsRuntimeStore>,
-) -> Result<(), ProductCatalogRouterError> {
-    let config = config.normalized();
-    if !config.enabled {
-        return Ok(());
-    }
-    if !sqlite_model_ranking_schema_ready(pool)
-        .await
-        .map_err(|error| ProductCatalogRouterError::Sqlite(SqlCatalogLoadError::Database(error)))?
-    {
-        tracing::warn!(
-            "model ranking refresh worker is enabled but SQLite ranking schema is incomplete"
-        );
-        return Ok(());
-    }
-    spawn_model_ranking_refresh_worker(
-        Arc::new(SqliteModelRankingRefreshStore::new(pool.clone())),
-        config,
-        cache_invalidator,
-    );
-    Ok(())
 }
 
 async fn maybe_spawn_postgres_model_ranking_refresh_worker(
@@ -2052,60 +1314,6 @@ fn should_invalidate_model_ranking_cache(outcome: &ModelRankingRefreshOutcome) -
     )
 }
 
-async fn sqlite_model_ranking_schema_ready(pool: &SqlitePool) -> Result<bool, sqlx::Error> {
-    let table_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM sqlite_master
-        WHERE type = 'table'
-          AND name IN ('ai_model', 'ai_usage', 'ai_model_rank_snapshot', 'ops_job_execution')
-        "#,
-    )
-    .fetch_one(pool)
-    .await?;
-    let model_column_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM pragma_table_info('ai_model')
-        WHERE name IN ('catalog_key', 'vendor_code', 'capability', 'rank_score')
-        "#,
-    )
-    .fetch_one(pool)
-    .await?;
-    let usage_column_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM pragma_table_info('ai_usage')
-        WHERE name IN ('catalog_key', 'request_count', 'total_tokens', 'customer_charge_amount', 'occurred_at')
-        "#,
-    )
-    .fetch_one(pool)
-    .await?;
-    let snapshot_column_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM pragma_table_info('ai_model_rank_snapshot')
-        WHERE name IN ('metadata', 'snapshot_date', 'snapshot_period', 'rank_scope', 'catalog_key', 'rank_no')
-        "#,
-    )
-    .fetch_one(pool)
-    .await?;
-    let job_column_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM pragma_table_info('ops_job_execution')
-        WHERE name IN ('job_name', 'started_at', 'ended_at', 'duration_ms', 'execution_status', 'payload')
-        "#,
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(table_count == 4
-        && model_column_count == 4
-        && usage_column_count == 5
-        && snapshot_column_count == 6
-        && job_column_count == 6)
-}
-
 async fn postgres_model_ranking_schema_ready(pool: &PgPool) -> Result<bool, sqlx::Error> {
     let table_count: i64 = sqlx::query_scalar(
         r#"
@@ -2180,17 +1388,6 @@ fn platform_transaction_center_subject() -> AdminTransactionCenterSubject {
         operator_id: 0,
         operator_type: 1,
     }
-}
-
-async fn bootstrap_sqlite_payment_provider_registry(pool: &SqlitePool) -> PaymentProviderRegistry {
-    let store = SqliteAdminTransactionCenterStore::new(pool.clone());
-    bootstrap_payment_provider_registry(
-        &store,
-        None,
-        platform_transaction_center_subject(),
-        payment_runtime_environment(),
-    )
-    .await
 }
 
 async fn bootstrap_postgres_payment_provider_registry(pool: &PgPool) -> PaymentProviderRegistry {
@@ -2450,7 +1647,6 @@ async fn prepare_claw_router_database_lifecycle(
 pub enum ProductCatalogRouterError {
     Config(String),
     Installer(DatabaseInstallError),
-    Sqlite(SqlCatalogLoadError),
     Postgres(PostgresCatalogLoadError),
 }
 
@@ -2459,19 +1655,12 @@ impl std::fmt::Display for ProductCatalogRouterError {
         match self {
             Self::Config(error) => write!(formatter, "{error}"),
             Self::Installer(error) => write!(formatter, "{error}"),
-            Self::Sqlite(error) => write!(formatter, "{error}"),
             Self::Postgres(error) => write!(formatter, "{error}"),
         }
     }
 }
 
 impl std::error::Error for ProductCatalogRouterError {}
-
-impl From<SqlCatalogLoadError> for ProductCatalogRouterError {
-    fn from(value: SqlCatalogLoadError) -> Self {
-        Self::Sqlite(value)
-    }
-}
 
 impl From<DatabaseInstallError> for ProductCatalogRouterError {
     fn from(value: DatabaseInstallError) -> Self {
@@ -2512,62 +1701,14 @@ mod tests {
         allow_implicit_in_memory_runtime_stream_bus, allow_in_memory_runtime_stream_bus_fallback,
         app_runtime_catalog_refresh_interval_from_env_or_toml,
         model_ranking_refresh_worker_config_from_env, router_from_env,
-        should_invalidate_model_ranking_cache, should_skip_sqlite_catalog_refresh,
-        sqlite_model_ranking_schema_ready,
+        should_invalidate_model_ranking_cache,
     };
     use sdkwork_claw_config::DeploymentMode;
-    use sdkwork_clawrouter_router_service::infrastructure::sql::pool::effective_sqlite_runtime_pool_max_connections;
     use sdkwork_clawrouter_router_service::ports::{
         ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus,
     };
-    use sqlx::sqlite::SqlitePoolOptions;
     use std::sync::{Mutex, OnceLock};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
-    #[tokio::test]
-    async fn sqlite_model_ranking_schema_ready_requires_ops_job_execution_for_audit_history() {
-        let pool = SqlitePoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .unwrap();
-        create_minimal_ranking_tables_without_job_audit(&pool).await;
-
-        assert!(
-            !sqlite_model_ranking_schema_ready(&pool).await.unwrap(),
-            "ranking refresh worker must not start when ops_job_execution audit history is unavailable"
-        );
-    }
-
-    #[tokio::test]
-    async fn sqlite_model_ranking_schema_ready_accepts_global_model_schema_without_region_code() {
-        let pool = SqlitePoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .unwrap();
-        create_minimal_ranking_tables_without_job_audit(&pool).await;
-        sqlx::query(
-            r#"
-            CREATE TABLE ops_job_execution (
-                job_name TEXT,
-                started_at TEXT,
-                ended_at TEXT,
-                duration_ms INTEGER,
-                execution_status TEXT,
-                payload TEXT
-            )
-            "#,
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
-
-        assert!(
-            sqlite_model_ranking_schema_ready(&pool).await.unwrap(),
-            "ranking refresh readiness must not require ai_model.region_code"
-        );
-    }
 
     #[test]
     fn app_runtime_stream_bus_in_memory_fallback_is_disallowed_for_cluster_deployments() {
@@ -2599,36 +1740,6 @@ mod tests {
         assert!(!allow_implicit_in_memory_runtime_stream_bus(
             DeploymentMode::Kubernetes
         ));
-    }
-
-    #[test]
-    fn sqlite_runtime_pool_raises_file_backed_single_connection_configs() {
-        assert_eq!(
-            8,
-            effective_sqlite_runtime_pool_max_connections(
-                "sqlite://C:/Users/Ada/.sdkwork/router/data/clawrouter.sqlite",
-                1,
-            )
-        );
-        assert_eq!(
-            16,
-            effective_sqlite_runtime_pool_max_connections(
-                "sqlite:///var/lib/sdkwork/router/clawrouter.sqlite",
-                16,
-            )
-        );
-        assert_eq!(
-            1,
-            effective_sqlite_runtime_pool_max_connections("sqlite::memory:", 1)
-        );
-    }
-
-    #[test]
-    fn sqlite_catalog_refresh_skips_when_existing_pool_has_no_idle_connections() {
-        assert!(should_skip_sqlite_catalog_refresh(1, 0));
-        assert!(should_skip_sqlite_catalog_refresh(8, 0));
-        assert!(!should_skip_sqlite_catalog_refresh(0, 0));
-        assert!(!should_skip_sqlite_catalog_refresh(8, 1));
     }
 
     #[test]
@@ -2690,68 +1801,6 @@ mod tests {
         for name in names {
             std::env::remove_var(name);
         }
-    }
-
-    #[tokio::test(flavor = "current_thread")]
-    async fn router_from_env_initializes_zero_config_desktop_sqlite() {
-        let _guard = env_guard().lock().unwrap();
-        let saved_database_url = std::env::var("SDKWORK_CLAW_DATABASE_URL").ok();
-        let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
-        let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
-        let saved_snowflake_node_id = std::env::var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID").ok();
-        let saved_api_key_pepper = std::env::var("SDKWORK_CLAW_API_KEY_PEPPER").ok();
-        let saved_trusted_subject_secret =
-            std::env::var("SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET").ok();
-        let saved_app_session_secret = std::env::var("SDKWORK_CLAW_APP_SESSION_SECRET").ok();
-        let saved_payment_webhook_secret =
-            std::env::var("SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET").ok();
-        let config_path = unique_runtime_config_path();
-        std::env::remove_var("SDKWORK_CLAW_DATABASE_URL");
-        std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "desktop");
-        std::env::set_var("SDKWORK_CLAW_CONFIG_FILE", &config_path);
-        std::env::remove_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID");
-        std::env::set_var(
-            "SDKWORK_CLAW_API_KEY_PEPPER",
-            "0123456789abcdef0123456789abcdef",
-        );
-        std::env::set_var(
-            "SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET",
-            "trusted-subject-secret-0123456789",
-        );
-        std::env::set_var(
-            "SDKWORK_CLAW_APP_SESSION_SECRET",
-            "app-session-secret-0123456789abcd",
-        );
-        std::env::set_var(
-            "SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET",
-            "payment-webhook-secret-0123456789abcdef",
-        );
-
-        let router_result = router_from_env().await;
-
-        restore_env_var("SDKWORK_CLAW_DATABASE_URL", saved_database_url);
-        restore_env_var("SDKWORK_CLAW_DEPLOYMENT_MODE", saved_deployment_mode);
-        restore_env_var("SDKWORK_CLAW_CONFIG_FILE", saved_config_file);
-        restore_env_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
-        restore_env_var("SDKWORK_CLAW_API_KEY_PEPPER", saved_api_key_pepper);
-        restore_env_var(
-            "SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET",
-            saved_trusted_subject_secret,
-        );
-        restore_env_var("SDKWORK_CLAW_APP_SESSION_SECRET", saved_app_session_secret);
-        restore_env_var(
-            "SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET",
-            saved_payment_webhook_secret,
-        );
-
-        let router = router_result
-            .expect("app-api desktop startup should initialize local SQLite by default");
-        drop(router);
-        assert!(config_path.exists());
-        let generated_config = std::fs::read_to_string(config_path).unwrap();
-        assert!(generated_config.contains("engine = \"sqlite\""));
-        assert!(generated_config.contains("deployment_mode = \"desktop\""));
-        assert!(generated_config.contains("clawrouter.sqlite"));
     }
 
     #[tokio::test(flavor = "current_thread")]
@@ -2890,51 +1939,6 @@ mod tests {
                 ..ModelRankingRefreshOutcome::default()
             }
         ));
-    }
-
-    async fn create_minimal_ranking_tables_without_job_audit(pool: &sqlx::SqlitePool) {
-        sqlx::query(
-            r#"
-            CREATE TABLE ai_model (
-                catalog_key TEXT,
-                vendor_code TEXT,
-                capability INTEGER,
-                rank_score REAL
-            )
-            "#,
-        )
-        .execute(pool)
-        .await
-        .unwrap();
-        sqlx::query(
-            r#"
-            CREATE TABLE ai_usage (
-                catalog_key TEXT,
-                request_count INTEGER,
-                total_tokens INTEGER,
-                customer_charge_amount REAL,
-                occurred_at TEXT
-            )
-            "#,
-        )
-        .execute(pool)
-        .await
-        .unwrap();
-        sqlx::query(
-            r#"
-            CREATE TABLE ai_model_rank_snapshot (
-                metadata TEXT,
-                snapshot_date TEXT,
-                snapshot_period INTEGER,
-                rank_scope TEXT,
-                catalog_key TEXT,
-                rank_no INTEGER
-            )
-            "#,
-        )
-        .execute(pool)
-        .await
-        .unwrap();
     }
 
     fn env_guard() -> &'static Mutex<()> {

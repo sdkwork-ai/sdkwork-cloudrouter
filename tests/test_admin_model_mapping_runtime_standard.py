@@ -127,7 +127,7 @@ class AdminModelMappingRuntimeStandardTest(unittest.TestCase):
         for index_name in [
             "idx_ai_model_mapping_rule_binding_rule_lookup",
             "idx_ai_model_mapping_rule_binding_target_lookup",
-            "idx_ai_model_mapping_rule_binding_channel_group_lookup",
+            "idx_ai_model_mapping_rule_binding_account_group_lookup",
             "idx_ai_model_mapping_rule_binding_vendor_lookup",
             "idx_ai_model_mapping_rule_binding_global_lookup",
         ]:

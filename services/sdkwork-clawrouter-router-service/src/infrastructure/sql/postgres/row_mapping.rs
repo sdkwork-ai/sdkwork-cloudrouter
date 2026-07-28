@@ -6,7 +6,6 @@ pub(crate) fn postgres_row_i64(row: &PgRow, column: &str) -> Result<i64, sqlx::E
         .or_else(|_| row.try_get::<i32, _>(column).map(i64::from))
 }
 
-use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::rows::{
     AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
     ModelPriceRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow, RoutingPolicyRow,
@@ -91,7 +90,7 @@ pub async fn load_upstream_account_routes(
             secret_ref: row.try_get("secret_ref")?,
             secret_ciphertext: row.try_get("secret_ciphertext")?,
             auth_type: row.try_get("auth_type")?,
-            auth_config_json: row.try_get("auth_config_json")?,
+            runtime_auth_config_json: row.try_get("runtime_auth_config_json")?,
             timeout_ms: row.try_get("timeout_ms")?,
             retry_policy_json: row.try_get("retry_policy_json")?,
             account_group_bindings_json: row.try_get("account_group_bindings_json")?,
@@ -486,73 +485,4 @@ pub async fn count_api_keys_paginated(
         .bind(search)
         .fetch_one(pool)
         .await
-}
-
-pub async fn load_paginated_upstream_account_groups(
-    pool: &sqlx::PgPool,
-    tenant_id: i64,
-    organization_id: i64,
-    search: Option<&str>,
-    page_size: i64,
-    offset: i64,
-) -> Result<Vec<PgRow>, sqlx::Error> {
-    sqlx::query(
-        r#"
-        SELECT
-            g.id,
-            COALESCE(g.tenant_id, 0) AS tenant_id,
-            COALESCE(g.organization_id, 0) AS organization_id,
-            COALESCE(NULLIF(g.group_name, ''), g.group_code) AS name,
-            g.group_code AS code,
-            COALESCE(NULLIF(BTRIM(g.pricing_plan_code), ''), 'standard') AS pricing_plan_code,
-            g.routing_strategy,
-            g.fallback_mode,
-            g.priority,
-            g.cost_multiplier::text AS cost_multiplier,
-            g.sale_multiplier::text AS sale_multiplier,
-            COUNT(*) OVER() AS total
-        FROM ai_upstream_account_group g
-        WHERE g.deleted_at IS NULL
-          AND g.status = 1
-          AND (g.tenant_id = $1 OR g.tenant_id = 0)
-          AND (g.organization_id = $2 OR g.organization_id = 0)
-          AND (
-              $3 IS NULL
-              OR LOWER(COALESCE(g.group_name, g.group_code, '')) LIKE $3
-              OR LOWER(COALESCE(g.group_code, '')) LIKE $3
-          )
-        ORDER BY g.updated_at DESC NULLS LAST, g.id DESC
-        LIMIT $4 OFFSET $5
-        "#,
-    )
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(search)
-    .bind(page_size)
-    .bind(offset)
-    .fetch_all(pool)
-    .await
-}
-
-pub fn upstream_account_group_from_row(
-    row: &PgRow,
-) -> DomainResult<crate::domain::UpstreamAccountGroup> {
-    UpstreamAccountGroupRow {
-        id: row.try_get("id").map_err(row_error)?,
-        tenant_id: row.try_get("tenant_id").map_err(row_error)?,
-        organization_id: row.try_get("organization_id").map_err(row_error)?,
-        name: row.try_get("name").map_err(row_error)?,
-        code: row.try_get("code").map_err(row_error)?,
-        pricing_plan_code: row.try_get("pricing_plan_code").map_err(row_error)?,
-        routing_strategy: row.try_get("routing_strategy").map_err(row_error)?,
-        fallback_mode: row.try_get("fallback_mode").map_err(row_error)?,
-        priority: row.try_get("priority").map_err(row_error)?,
-        cost_multiplier: row.try_get("cost_multiplier").map_err(row_error)?,
-        sale_multiplier: row.try_get("sale_multiplier").map_err(row_error)?,
-    }
-    .try_into_domain()
-}
-
-fn row_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(error.to_string())
 }

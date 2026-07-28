@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { AnthropicDeleteResponse, AnthropicFile, AnthropicFileListResponse, AnthropicFileUploadMultipartRequest } from '../types';
 
@@ -19,33 +19,33 @@ export class FilesAnthropicV1FilesApi {
 
 
 /** Anthropic list files */
-  async list(params?: FilesAnthropicV1FilesListParams): Promise<AnthropicFileListResponse> {
+  async list(params?: FilesAnthropicV1FilesListParams, requestOptions?: ApiRequestOptions): Promise<AnthropicFileListResponse> {
     const query = buildQueryString([
       { name: 'before_id', value: params?.beforeId, style: 'form', explode: true, allowReserved: false },
       { name: 'after_id', value: params?.afterId, style: 'form', explode: true, allowReserved: false },
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<AnthropicFileListResponse>(appendQueryString(aiApiPath(`/anthropic/v1/files`), query));
+    return this.client.request<AnthropicFileListResponse>(appendQueryString(aiApiPath(`/anthropic/v1/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Anthropic upload file */
-  async create(body: AnthropicFileUploadMultipartRequest): Promise<AnthropicFile> {
-    return this.client.post<AnthropicFile>(aiApiPath(`/anthropic/v1/files`), body, undefined, undefined, 'multipart/form-data');
+  async create(body: AnthropicFileUploadMultipartRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicFile> {
+    return this.client.request<AnthropicFile>(aiApiPath(`/anthropic/v1/files`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'multipart/form-data' });
   }
 
 /** Anthropic delete file */
-  async delete(fileId: string): Promise<AnthropicDeleteResponse> {
-    return this.client.delete<AnthropicDeleteResponse>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`));
+  async delete(fileId: string, requestOptions?: ApiRequestOptions): Promise<AnthropicDeleteResponse> {
+    return this.client.request<AnthropicDeleteResponse>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Anthropic retrieve file */
-  async retrieve(fileId: string): Promise<AnthropicFile> {
-    return this.client.get<AnthropicFile>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`));
+  async retrieve(fileId: string, requestOptions?: ApiRequestOptions): Promise<AnthropicFile> {
+    return this.client.request<AnthropicFile>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Anthropic retrieve file content */
-  async content(fileId: string): Promise<Blob> {
-    return this.client.get<Blob>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}/content`));
+  async content(fileId: string, requestOptions?: ApiRequestOptions): Promise<Blob> {
+    return this.client.request<Blob>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}/content`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

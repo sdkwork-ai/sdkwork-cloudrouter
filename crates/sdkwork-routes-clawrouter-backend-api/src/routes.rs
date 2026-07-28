@@ -11,24 +11,19 @@ use axum::response::Response;
 use axum::Router;
 use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    ProviderSecretMapConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig,
-    StartupInstallMode, TrustedSubjectConfig,
+    RedisConfig, RequestLimitsConfig, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
 };
 use sdkwork_claw_http::TrustedRequestSubject;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, default_service_cache_manager,
     AiRoutingCacheInvalidatingAdminAiResourceStore, AiRoutingCacheInvalidatingAdminModelStore,
-    ApiKeySecretCodec, ApiKeySecretHasher, ModelRankingsService, RedisCacheBackend,
-    RuntimeCacheManager, DEFAULT_CACHE_KEY_PREFIX, DEFAULT_REDIS_CONNECTION_PROFILE_NAME,
-    DEFAULT_SERVICE_CACHE_INSTANCE_NAME,
+    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretCodec, ApiKeySecretHasher,
+    ModelRankingsService, RedisCacheBackend, RuntimeCacheManager, DEFAULT_CACHE_KEY_PREFIX,
+    DEFAULT_REDIS_CONNECTION_PROFILE_NAME, DEFAULT_SERVICE_CACHE_INSTANCE_NAME,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
-};
-use sdkwork_clawrouter_router_service::infrastructure::provider::{
-    ProviderSecretMapResolver, SecretRefOpenAiCompatibleProviderHealthProbe,
-    DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::RefreshableSqlPricingCatalog;
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
@@ -42,19 +37,9 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminInventoryStore, PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore,
     PostgresAdminMcpStore, PostgresAdminModelRateLimitStore, PostgresAdminMonitorReadStore,
     PostgresAdminRecordStore, PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
-    PostgresAdminTransactionCenterStore, PostgresAdminUpstreamStore, PostgresCatalogLoadError,
-    PostgresGatewayApiKeyCommandStore, PostgresPricingCatalogLoader,
-    PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
-};
-use sdkwork_clawrouter_router_service::infrastructure::sql::sqlite::{
-    SqlCatalogLoadError, SqliteAdminAnalyticsReadStore, SqliteAdminAnnouncementStore,
-    SqliteAdminApiKeyRateLimitStore, SqliteAdminAuthSettingsStore, SqliteAdminCatalogStore,
-    SqliteAdminDashboardReadStore, SqliteAdminFinanceStore, SqliteAdminFirewallRuleStore,
-    SqliteAdminInventoryStore, SqliteAdminIpRateLimitStore, SqliteAdminMarketingStore,
-    SqliteAdminMcpStore, SqliteAdminModelRateLimitStore, SqliteAdminMonitorReadStore,
-    SqliteAdminRecordStore, SqliteAdminServiceNodeStore, SqliteAdminStorageStore,
-    SqliteAdminTransactionCenterStore, SqliteGatewayApiKeyCommandStore, SqlitePricingCatalogLoader,
-    SqliteRuntimeRegionSettingsStore, SqliteSiteSettingsStore,
+    PostgresAdminTransactionCenterStore, PostgresAdminUpstreamAccountVerifier,
+    PostgresAdminUpstreamStore, PostgresCatalogLoadError, PostgresGatewayApiKeyCommandStore,
+    PostgresPricingCatalogLoader, PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::OsApiKeySecretGenerator;
 use sdkwork_clawrouter_router_service::ports::{
@@ -62,18 +47,16 @@ use sdkwork_clawrouter_router_service::ports::{
     AdminAuthSettingsStore, AdminCatalogStore, AdminDashboardReadStore, AdminFinanceStore,
     AdminFirewallRuleStore, AdminInventoryStore, AdminIpRateLimitStore, AdminMarketingStore,
     AdminMcpStore, AdminModelRateLimitStore, AdminMonitorReadStore, AdminRecordStore,
-    AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore, AdminUpstreamStore,
-    GatewayApiKeyCommandStore, ModelRankingRefreshStore, ModelRankingsReadModelStore,
-    PricingCatalog, ProviderHealthProbe, RuntimeRegionSettingsStore, SiteSettingsStore,
-    UnconfiguredProviderHealthProbe,
+    AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
+    AdminUpstreamAccountVerifier, AdminUpstreamStore, GatewayApiKeyCommandStore,
+    ModelRankingRefreshStore, ModelRankingsReadModelStore, PricingCatalog,
+    RuntimeRegionSettingsStore, SiteSettingsStore,
 };
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
     PostgresAdminAiResourceStore as CatalogPostgresAdminAiResourceStore,
     PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
     PostgresModelRankingsReadStore,
-    SqliteAdminAiResourceStore as CatalogSqliteAdminAiResourceStore, SqliteModelCatalogAdminStore,
-    SqliteModelRankingRefreshStore, SqliteModelRankingsReadStore,
 };
 use sdkwork_models_contract_service::{AdminAiResourceStore, ModelCatalogAdminStore};
 use sdkwork_routes_models_catalog_backend_api::{
@@ -84,7 +67,7 @@ use sdkwork_routes_models_catalog_backend_api::{
 };
 use sdkwork_web_axum::problem_response_for_request;
 use sdkwork_web_core::{WebFrameworkError, WebRequestContext};
-use sqlx::{PgPool, SqlitePool};
+use sqlx::PgPool;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RouterApiRouteModule {
@@ -106,6 +89,7 @@ type SiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type RuntimeRegionSettingsRuntimeStore = Arc<dyn RuntimeRegionSettingsStore + Send + Sync>;
 type AdminAiResourceRuntimeStore = Arc<dyn AdminAiResourceStore + Send + Sync>;
 type AdminUpstreamRuntimeStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
+type AdminUpstreamRuntimeVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;
 type AdminIpRateLimitRuntimeStore = Arc<dyn AdminIpRateLimitStore + Send + Sync>;
 type AdminFirewallRuleRuntimeStore = Arc<dyn AdminFirewallRuleStore + Send + Sync>;
 type AdminApiKeyRateLimitRuntimeStore = Arc<dyn AdminApiKeyRateLimitStore + Send + Sync>;
@@ -123,7 +107,6 @@ type AdminMonitorRuntimeReadStore = Arc<dyn AdminMonitorReadStore + Send + Sync>
 type AdminRecordRuntimeStore = Arc<dyn AdminRecordStore + Send + Sync>;
 type ModelRankingsRuntimeStore = Arc<dyn ModelRankingsReadModelStore + Send + Sync>;
 type ModelRankingRefreshRuntimeStore = Arc<dyn ModelRankingRefreshStore + Send + Sync>;
-type ProviderHealthProbeRuntime = Arc<dyn ProviderHealthProbe + Send + Sync>;
 type DatabaseInstallerRuntime = Arc<DatabaseInstaller>;
 type CacheManagerRuntime = RuntimeCacheManager;
 
@@ -146,10 +129,7 @@ pub async fn build_sdkwork_claw_router_backend_api_router_from_env(
 }
 
 #[derive(Clone)]
-enum AdminAccessChecker {
-    Sqlite(SqlitePool),
-    Postgres(PgPool),
-}
+struct AdminAccessChecker(PgPool);
 
 #[derive(Clone)]
 struct AdminSubjectBoundaryConfig {
@@ -171,6 +151,7 @@ struct AdminRouterRuntime<'a> {
     runtime_region_settings_store: Option<RuntimeRegionSettingsRuntimeStore>,
     ai_resource_store: Option<AdminAiResourceRuntimeStore>,
     upstream_store: Option<AdminUpstreamRuntimeStore>,
+    upstream_verifier: Option<AdminUpstreamRuntimeVerifier>,
     ip_rate_limit_store: Option<AdminIpRateLimitRuntimeStore>,
     firewall_rule_store: Option<AdminFirewallRuleRuntimeStore>,
     api_key_rate_limit_store: Option<AdminApiKeyRateLimitRuntimeStore>,
@@ -307,6 +288,7 @@ where
         runtime_region_settings_store,
         ai_resource_store,
         upstream_store,
+        upstream_verifier,
         ip_rate_limit_store,
         firewall_rule_store,
         api_key_rate_limit_store,
@@ -507,9 +489,11 @@ where
             ));
         }
         if let Some(store) = upstream_store {
+            let verifier = upstream_verifier
+                .expect("upstream verifier must be configured with the upstream store");
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
-                crate::upstream::admin_upstream_router_with_store(store),
+                crate::upstream::admin_upstream_router_with_store(store, verifier),
             ));
         }
         if let Some(store) = ip_rate_limit_store {
@@ -645,36 +629,16 @@ fn ai_routing_cache_invalidating_ai_resource_store(
     }
 }
 
-const SEEDED_SQLITE_TEST_TRUSTED_SUBJECT_SECRET: &str = "trusted-subject-secret-0123456789abcdef";
-const SEEDED_SQLITE_TEST_APP_SESSION_SECRET: &str = "app-session-secret-0123456789abcdef012";
-
-pub async fn router_with_sqlite_product_catalog(
-    pool: SqlitePool,
-) -> Result<Router, SqlCatalogLoadError> {
-    let snapshot = SqlitePricingCatalogLoader::new(pool.clone())
-        .load_snapshot()
-        .await?;
-    let catalog_store: AdminCatalogRuntimeStore =
-        Arc::new(SqliteAdminCatalogStore::new(pool.clone()));
-    let inventory_store: AdminInventoryRuntimeStore =
-        Arc::new(SqliteAdminInventoryStore::new(pool.clone()));
-    let trusted_subject_config =
-        TrustedSubjectConfig::from_signing_secret(SEEDED_SQLITE_TEST_TRUSTED_SUBJECT_SECRET)
-            .expect("seeded sqlite trusted subject config must be valid");
-    let app_session_config =
-        AppSessionConfig::from_signing_secret(SEEDED_SQLITE_TEST_APP_SESSION_SECRET)
-            .expect("seeded sqlite app session config must be valid");
-    Ok(router_with_product_catalog_and_runtime(
-        Arc::new(snapshot),
-        AdminRouterRuntime {
-            catalog_store: Some(catalog_store),
-            inventory_store: Some(inventory_store),
-            trusted_subject_config: Some(trusted_subject_config),
-            app_session_config: Some(app_session_config),
-            admin_access_checker: Some(AdminAccessChecker::Sqlite(pool)),
-            ..AdminRouterRuntime::default()
-        },
-    ))
+fn ai_routing_cache_invalidating_upstream_store(
+    store: AdminUpstreamRuntimeStore,
+    cache_manager: Option<RuntimeCacheManager>,
+) -> AdminUpstreamRuntimeStore {
+    match cache_manager {
+        Some(manager) => Arc::new(AiRoutingCacheInvalidatingAdminUpstreamStore::new(
+            store, manager,
+        )),
+        None => store,
+    }
 }
 
 pub async fn router_with_postgres_product_catalog(
@@ -697,117 +661,6 @@ pub async fn router_with_postgres_product_catalog(
     ))
 }
 
-pub fn router_with_sqlite_shared_runtime(
-    config: DatabaseConfig,
-    pool: SqlitePool,
-    catalog: Arc<RefreshableSqlPricingCatalog>,
-    api_key_security_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
-    deployment_mode: DeploymentMode,
-    cache_manager: RuntimeCacheManager,
-    database_installer: Arc<DatabaseInstaller>,
-    request_limits_config: RequestLimitsConfig,
-    models_catalog_root: Option<String>,
-) -> Result<Router, ProductCatalogRouterError> {
-    let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
-    let announcement_store: AdminAnnouncementRuntimeStore =
-        Arc::new(SqliteAdminAnnouncementStore::new(pool.clone()));
-    let auth_settings_store: AdminAuthSettingsRuntimeStore =
-        Arc::new(SqliteAdminAuthSettingsStore::new(pool.clone()));
-    let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
-        SqliteGatewayApiKeyCommandStore::new(pool.clone(), api_key_secret_codec.clone()),
-    );
-    let catalog_store: AdminCatalogRuntimeStore =
-        Arc::new(SqliteAdminCatalogStore::new(pool.clone()));
-    let inventory_store: AdminInventoryRuntimeStore =
-        Arc::new(SqliteAdminInventoryStore::new(pool.clone()));
-    let site_settings_store: SiteSettingsRuntimeStore =
-        Arc::new(SqliteSiteSettingsStore::new(pool.clone()));
-    let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
-        Arc::new(SqliteRuntimeRegionSettingsStore::new(pool.clone()));
-    let ai_resource_store: AdminAiResourceRuntimeStore =
-        Arc::new(CatalogSqliteAdminAiResourceStore::new(pool.clone()));
-    let ip_rate_limit_store: AdminIpRateLimitRuntimeStore =
-        Arc::new(SqliteAdminIpRateLimitStore::new(pool.clone()));
-    let firewall_rule_store: AdminFirewallRuleRuntimeStore =
-        Arc::new(SqliteAdminFirewallRuleStore::new(pool.clone()));
-    let api_key_rate_limit_store: AdminApiKeyRateLimitRuntimeStore =
-        Arc::new(SqliteAdminApiKeyRateLimitStore::new(pool.clone()));
-    let model_rate_limit_store: AdminModelRateLimitRuntimeStore =
-        Arc::new(SqliteAdminModelRateLimitStore::new(pool.clone()));
-    let model_store: AdminModelRuntimeStore = Arc::new(
-        SqliteModelCatalogAdminStore::with_models_catalog_root(pool.clone(), models_catalog_root),
-    );
-    let finance_store: AdminFinanceRuntimeStore =
-        Arc::new(SqliteAdminFinanceStore::new(pool.clone()));
-    let marketing_store: AdminMarketingRuntimeStore =
-        Arc::new(SqliteAdminMarketingStore::new(pool.clone()));
-    let mcp_store: AdminMcpRuntimeStore = Arc::new(SqliteAdminMcpStore::new(pool.clone()));
-    let service_node_store: AdminServiceNodeRuntimeStore =
-        Arc::new(SqliteAdminServiceNodeStore::new(pool.clone()));
-    let storage_store: Option<AdminStorageRuntimeStore> =
-        Some(Arc::new(SqliteAdminStorageStore::new(pool.clone())));
-    let transaction_center_store: AdminTransactionCenterRuntimeStore =
-        Arc::new(SqliteAdminTransactionCenterStore::new(pool.clone()));
-    let dashboard_read_store: AdminDashboardRuntimeReadStore =
-        Arc::new(SqliteAdminDashboardReadStore::new(pool.clone()));
-    let analytics_read_store: AdminAnalyticsRuntimeReadStore =
-        Arc::new(SqliteAdminAnalyticsReadStore::new(pool.clone()));
-    let monitor_read_store: AdminMonitorRuntimeReadStore =
-        Arc::new(SqliteAdminMonitorReadStore::new(pool.clone()));
-    let record_store: AdminRecordRuntimeStore = Arc::new(SqliteAdminRecordStore::new(pool.clone()));
-    let model_rankings_store: ModelRankingsRuntimeStore =
-        model_rankings_service(Arc::new(SqliteModelRankingsReadStore::new(pool.clone())));
-    let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
-        Arc::new(SqliteModelRankingRefreshStore::new(pool.clone()));
-    let admin_access_checker = AdminAccessChecker::Sqlite(pool.clone());
-
-    Ok(router_with_product_catalog_and_runtime(
-        catalog,
-        AdminRouterRuntime {
-            database_config: Some(&config),
-            deployment_mode: Some(deployment_mode),
-            api_key_hasher: Some(api_key_hasher),
-            announcement_store: Some(announcement_store),
-            auth_settings_store: Some(auth_settings_store),
-            api_key_command_store: Some(api_key_command_store),
-            catalog_store: Some(catalog_store),
-            inventory_store: Some(inventory_store),
-            site_settings_store: Some(site_settings_store),
-            runtime_region_settings_store: Some(runtime_region_settings_store),
-            ai_resource_store: Some(ai_resource_store),
-            upstream_store: None,
-            ip_rate_limit_store: Some(ip_rate_limit_store),
-            firewall_rule_store: Some(firewall_rule_store),
-            api_key_rate_limit_store: Some(api_key_rate_limit_store),
-            model_rate_limit_store: Some(model_rate_limit_store),
-            model_store: Some(model_store),
-            finance_store: Some(finance_store),
-            marketing_store: Some(marketing_store),
-            mcp_store: Some(mcp_store),
-            service_node_store: Some(service_node_store),
-            storage_store,
-            transaction_center_store: Some(transaction_center_store),
-            dashboard_read_store: Some(dashboard_read_store),
-            analytics_read_store: Some(analytics_read_store),
-            monitor_read_store: Some(monitor_read_store),
-            record_store: Some(record_store),
-            model_rankings_store: Some(model_rankings_store),
-            model_ranking_refresh_store: Some(model_ranking_refresh_store),
-            cache_manager: Some(cache_manager),
-            database_installer: Some(database_installer),
-            trusted_subject_config: Some(trusted_subject_config),
-            app_session_config: Some(app_session_config),
-            admin_access_checker: Some(admin_access_checker),
-            request_limits_config,
-            readiness_check: None,
-        },
-    ))
-}
-
 pub fn router_with_postgres_shared_runtime(
     config: DatabaseConfig,
     pool: PgPool,
@@ -815,7 +668,6 @@ pub fn router_with_postgres_shared_runtime(
     api_key_security_config: ApiKeySecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
     deployment_mode: DeploymentMode,
     cache_manager: RuntimeCacheManager,
     database_installer: Arc<DatabaseInstaller>,
@@ -846,6 +698,11 @@ pub fn router_with_postgres_shared_runtime(
         api_key_secret_codec.clone(),
         api_key_hasher.clone(),
     ));
+    let upstream_store =
+        ai_routing_cache_invalidating_upstream_store(upstream_store, Some(cache_manager.clone()));
+    let upstream_verifier: AdminUpstreamRuntimeVerifier = Arc::new(
+        PostgresAdminUpstreamAccountVerifier::new(pool.clone(), api_key_secret_codec.clone()),
+    );
     let ip_rate_limit_store: AdminIpRateLimitRuntimeStore =
         Arc::new(PostgresAdminIpRateLimitStore::new(pool.clone()));
     let firewall_rule_store: AdminFirewallRuleRuntimeStore =
@@ -880,7 +737,7 @@ pub fn router_with_postgres_shared_runtime(
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
     let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
         Arc::new(PostgresModelRankingRefreshStore::new(pool.clone()));
-    let admin_access_checker = AdminAccessChecker::Postgres(pool.clone());
+    let admin_access_checker = AdminAccessChecker(pool.clone());
 
     Ok(router_with_product_catalog_and_runtime(
         catalog,
@@ -897,6 +754,7 @@ pub fn router_with_postgres_shared_runtime(
             runtime_region_settings_store: Some(runtime_region_settings_store),
             ai_resource_store: Some(ai_resource_store),
             upstream_store: Some(upstream_store),
+            upstream_verifier: Some(upstream_verifier),
             ip_rate_limit_store: Some(ip_rate_limit_store),
             firewall_rule_store: Some(firewall_rule_store),
             api_key_rate_limit_store: Some(api_key_rate_limit_store),
@@ -937,14 +795,11 @@ pub async fn router_with_database_config(
     let app_session_config = require_app_session_config(
         AppSessionConfig::from_env().map_err(ProductCatalogRouterError::Config)?,
     )?;
-    let provider_secret_map_config =
-        ProviderSecretMapConfig::from_env().map_err(ProductCatalogRouterError::Config)?;
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
+    router_with_database_api_key_trusted_subject_app_session(
         config,
         Some(api_key_config),
         Some(trusted_subject_config),
         Some(app_session_config),
-        provider_secret_map_config,
     )
     .await
 }
@@ -955,12 +810,11 @@ pub async fn router_with_database_and_api_key_config(
     trusted_subject_config: Option<TrustedSubjectConfig>,
     app_session_config: Option<AppSessionConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
+    router_with_database_api_key_trusted_subject_app_session(
         config,
         api_key_config,
         trusted_subject_config,
         app_session_config,
-        None,
     )
     .await
 }
@@ -972,133 +826,41 @@ pub async fn router_with_database_and_api_key_config_and_startup_install_mode(
     app_session_config: Option<AppSessionConfig>,
     startup_install_mode: StartupInstallMode,
 ) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode(
+    router_with_database_api_key_trusted_subject_app_session_and_startup_install_mode(
         config,
         api_key_config,
         trusted_subject_config,
         app_session_config,
-        None,
         startup_install_mode,
         None,
     )
     .await
 }
 
-pub async fn router_with_database_api_key_trusted_subject_app_session_and_provider_secret_map_config(
-    config: DatabaseConfig,
-    api_key_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    provider_secret_map_config: ProviderSecretMapConfig,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
-        config,
-        Some(api_key_config),
-        Some(trusted_subject_config),
-        Some(app_session_config),
-        Some(provider_secret_map_config),
-    )
-    .await
-}
-
-pub async fn router_with_database_api_key_trusted_subject_app_session_provider_secret_map_config_and_startup_install_mode(
-    config: DatabaseConfig,
-    api_key_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    provider_secret_map_config: ProviderSecretMapConfig,
-    startup_install_mode: StartupInstallMode,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode(
-        config,
-        Some(api_key_config),
-        Some(trusted_subject_config),
-        Some(app_session_config),
-        Some(provider_secret_map_config),
-        startup_install_mode,
-        None,
-    )
-    .await
-}
-
-/// Builds the admin gateway with an explicitly supplied health probe.
-///
-/// The production entry points construct the probe from the provider secret
-/// map.  Keeping this dependency injectable lets framework/integration tests
-/// exercise the complete channel command path without weakening the relay's
-/// HTTPS and SSRF protections.
-pub async fn router_with_database_api_key_trusted_subject_app_session_provider_health_probe_and_startup_install_mode(
-    config: DatabaseConfig,
-    api_key_config: ApiKeySecurityConfig,
-    trusted_subject_config: TrustedSubjectConfig,
-    app_session_config: AppSessionConfig,
-    provider_health_probe: Arc<dyn ProviderHealthProbe + Send + Sync>,
-    startup_install_mode: StartupInstallMode,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
-        config,
-        Some(api_key_config),
-        Some(trusted_subject_config),
-        Some(app_session_config),
-        None,
-        startup_install_mode,
-        None,
-        Some(provider_health_probe),
-    )
-    .await
-}
-
-async fn router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config(
+async fn router_with_database_api_key_trusted_subject_app_session(
     config: DatabaseConfig,
     api_key_config: Option<ApiKeySecurityConfig>,
     trusted_subject_config: Option<TrustedSubjectConfig>,
     app_session_config: Option<AppSessionConfig>,
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
+    router_with_database_api_key_trusted_subject_app_session_and_startup_install_mode(
         config,
         api_key_config,
         trusted_subject_config,
         app_session_config,
-        provider_secret_map_config,
         StartupInstallMode::Ensure,
         None,
-        None,
     )
     .await
 }
 
-async fn router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode(
+async fn router_with_database_api_key_trusted_subject_app_session_and_startup_install_mode(
     config: DatabaseConfig,
     api_key_config: Option<ApiKeySecurityConfig>,
     trusted_subject_config: Option<TrustedSubjectConfig>,
     app_session_config: Option<AppSessionConfig>,
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Result<Router, ProductCatalogRouterError> {
-    router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
-        config,
-        api_key_config,
-        trusted_subject_config,
-        app_session_config,
-        provider_secret_map_config,
-        startup_install_mode,
-        runtime_toml,
-        None,
-    )
-    .await
-}
-
-async fn router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode_with_probe(
-    config: DatabaseConfig,
-    api_key_config: Option<ApiKeySecurityConfig>,
-    trusted_subject_config: Option<TrustedSubjectConfig>,
-    app_session_config: Option<AppSessionConfig>,
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
-    startup_install_mode: StartupInstallMode,
-    runtime_toml: Option<&RuntimeTomlConfig>,
-    provider_health_probe_override: Option<ProviderHealthProbeRuntime>,
 ) -> Result<Router, ProductCatalogRouterError> {
     sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
@@ -1111,222 +873,99 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
     let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
     let trusted_subject_config = require_trusted_subject_config(trusted_subject_config)?;
     let app_session_config = require_app_session_config(app_session_config)?;
-    let provider_health_probe = match provider_health_probe_override {
-        Some(provider_health_probe) => provider_health_probe,
-        None => build_provider_health_probe(provider_secret_map_config, runtime_toml)?,
-    };
-    match config.engine {
-        DatabaseEngine::Sqlite => {
-            let database_pool = connect_standard_database_pool(&config)
-                .await
-                .map_err(|error| {
-                    ProductCatalogRouterError::Sqlite(SqlCatalogLoadError::Database(
-                        sqlx::Error::Configuration(error.to_string().into()),
-                    ))
-                })?;
-            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
-            let pool = database_pool.as_sqlite().cloned().ok_or_else(|| {
-                ProductCatalogRouterError::Config("expected SQLite database pool".to_owned())
-            })?;
-            let database_installer =
-                Arc::new(DatabaseInstaller::for_sqlite(pool.clone()).with_env_options()?);
-            if startup_install_mode.should_ensure() {
-                database_installer.ensure_bootstrap_data().await?;
-            }
-            let snapshot = SqlitePricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            )
-            .load_snapshot()
-            .await?;
-            let announcement_store: AdminAnnouncementRuntimeStore =
-                Arc::new(SqliteAdminAnnouncementStore::new(pool.clone()));
-            let auth_settings_store: AdminAuthSettingsRuntimeStore =
-                Arc::new(SqliteAdminAuthSettingsStore::new(pool.clone()));
-            let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
-                SqliteGatewayApiKeyCommandStore::new(pool.clone(), api_key_secret_codec.clone()),
-            );
-            let catalog_store: AdminCatalogRuntimeStore =
-                Arc::new(SqliteAdminCatalogStore::new(pool.clone()));
-            let inventory_store: AdminInventoryRuntimeStore =
-                Arc::new(SqliteAdminInventoryStore::new(pool.clone()));
-            let site_settings_store: SiteSettingsRuntimeStore =
-                Arc::new(SqliteSiteSettingsStore::new(pool.clone()));
-            let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
-                Arc::new(SqliteRuntimeRegionSettingsStore::new(pool.clone()));
-            let ai_resource_store: AdminAiResourceRuntimeStore =
-                Arc::new(CatalogSqliteAdminAiResourceStore::new(pool.clone()));
-            let ip_rate_limit_store: AdminIpRateLimitRuntimeStore =
-                Arc::new(SqliteAdminIpRateLimitStore::new(pool.clone()));
-            let firewall_rule_store: AdminFirewallRuleRuntimeStore =
-                Arc::new(SqliteAdminFirewallRuleStore::new(pool.clone()));
-            let api_key_rate_limit_store: AdminApiKeyRateLimitRuntimeStore =
-                Arc::new(SqliteAdminApiKeyRateLimitStore::new(pool.clone()));
-            let model_rate_limit_store: AdminModelRateLimitRuntimeStore =
-                Arc::new(SqliteAdminModelRateLimitStore::new(pool.clone()));
-            let model_store: AdminModelRuntimeStore =
-                Arc::new(SqliteModelCatalogAdminStore::with_models_catalog_root(
-                    pool.clone(),
-                    configured_models_catalog_root(runtime_toml),
-                ));
-            let finance_store: AdminFinanceRuntimeStore =
-                Arc::new(SqliteAdminFinanceStore::new(pool.clone()));
-            let marketing_store: AdminMarketingRuntimeStore =
-                Arc::new(SqliteAdminMarketingStore::new(pool.clone()));
-            let mcp_store: AdminMcpRuntimeStore = Arc::new(SqliteAdminMcpStore::new(pool.clone()));
-            let service_node_store: AdminServiceNodeRuntimeStore =
-                Arc::new(SqliteAdminServiceNodeStore::new(pool.clone()));
-            let storage_store: Option<AdminStorageRuntimeStore> =
-                Some(Arc::new(SqliteAdminStorageStore::new(pool.clone())));
-            let transaction_center_store: AdminTransactionCenterRuntimeStore =
-                Arc::new(SqliteAdminTransactionCenterStore::new(pool.clone()));
-            let dashboard_read_store: AdminDashboardRuntimeReadStore =
-                Arc::new(SqliteAdminDashboardReadStore::new(pool.clone()));
-            let analytics_read_store: AdminAnalyticsRuntimeReadStore =
-                Arc::new(SqliteAdminAnalyticsReadStore::new(pool.clone()));
-            let monitor_read_store: AdminMonitorRuntimeReadStore =
-                Arc::new(SqliteAdminMonitorReadStore::new(pool.clone()));
-            let record_store: AdminRecordRuntimeStore =
-                Arc::new(SqliteAdminRecordStore::new(pool.clone()));
-            let model_rankings_store: ModelRankingsRuntimeStore =
-                model_rankings_service(Arc::new(SqliteModelRankingsReadStore::new(pool.clone())));
-            let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
-                Arc::new(SqliteModelRankingRefreshStore::new(pool.clone()));
-            let admin_access_checker = AdminAccessChecker::Sqlite(pool.clone());
-            Ok(router_with_product_catalog_and_runtime(
-                Arc::new(snapshot),
-                AdminRouterRuntime {
-                    database_config: Some(&config),
-                    deployment_mode: Some(deployment_mode),
-                    api_key_hasher: Some(Arc::clone(&api_key_hasher)),
-                            announcement_store: Some(announcement_store),
-                            auth_settings_store: Some(auth_settings_store),
-                    api_key_command_store: Some(api_key_command_store),
-                    catalog_store: Some(catalog_store),
-                    inventory_store: Some(inventory_store),
-                    site_settings_store: Some(site_settings_store),
-                    runtime_region_settings_store: Some(runtime_region_settings_store),
-                    ai_resource_store: Some(ai_resource_store),
-                    upstream_store: None,
-                    ip_rate_limit_store: Some(ip_rate_limit_store),
-                    firewall_rule_store: Some(firewall_rule_store),
-                    api_key_rate_limit_store: Some(api_key_rate_limit_store),
-                    model_rate_limit_store: Some(model_rate_limit_store),
-                    model_store: Some(model_store),
-                    finance_store: Some(finance_store),
-                    marketing_store: Some(marketing_store),
-                    mcp_store: Some(mcp_store),
-                    service_node_store: Some(service_node_store),
-                    storage_store,
-                    transaction_center_store: Some(transaction_center_store),
-                    dashboard_read_store: Some(dashboard_read_store),
-                    analytics_read_store: Some(analytics_read_store),
-                    monitor_read_store: Some(monitor_read_store),
-                    record_store: Some(record_store),
-                            model_rankings_store: Some(model_rankings_store),
-                    model_ranking_refresh_store: Some(model_ranking_refresh_store),
-                    cache_manager: Some(cache_manager.clone()),
-                    database_installer: Some(Arc::clone(&database_installer)),
-                    trusted_subject_config: Some(trusted_subject_config),
-                    app_session_config: Some(app_session_config),
-                    admin_access_checker: Some(admin_access_checker),
-                    request_limits_config,
-                    readiness_check:
-                        sdkwork_clawrouter_router_service::infrastructure::sql::pool::sqlite_runtime_readiness_check(
-                            pool.clone(),
-                            runtime_toml,
-                            sdkwork_clawrouter_router_service::application::resolve_usage_settlement_worker_config(
-                                runtime_toml,
-                            ),
-                        ),
-                },
+    if !matches!(config.engine, DatabaseEngine::Postgres) {
+        return Err(ProductCatalogRouterError::Config(
+            "Claw Router server runtime requires PostgreSQL; SQLite is client-local only"
+                .to_owned(),
+        ));
+    }
+    let database_pool = connect_standard_database_pool(&config)
+        .await
+        .map_err(|error| {
+            ProductCatalogRouterError::Postgres(PostgresCatalogLoadError::Database(
+                sqlx::Error::Configuration(error.to_string().into()),
             ))
-        }
-        DatabaseEngine::Postgres => {
-            let database_pool = connect_standard_database_pool(&config)
-                .await
-                .map_err(|error| {
-                    ProductCatalogRouterError::Postgres(PostgresCatalogLoadError::Database(
-                        sqlx::Error::Configuration(error.to_string().into()),
-                    ))
-                })?;
-            prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
-            let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
-                ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
-            })?;
-            let database_installer =
-                Arc::new(DatabaseInstaller::for_postgres(pool.clone()).with_env_options()?);
-            if startup_install_mode.should_ensure() {
-                database_installer.ensure_bootstrap_data().await?;
-            }
-            let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
-                pool.clone(),
-                api_key_secret_codec.clone(),
-            )
-            .load_snapshot()
-            .await?;
-            let announcement_store: AdminAnnouncementRuntimeStore =
-                Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
-            let auth_settings_store: AdminAuthSettingsRuntimeStore =
-                Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
-            let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
-                PostgresGatewayApiKeyCommandStore::new(pool.clone(), api_key_secret_codec.clone()),
-            );
-            let catalog_store: AdminCatalogRuntimeStore =
-                Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
-            let inventory_store: AdminInventoryRuntimeStore =
-                Arc::new(PostgresAdminInventoryStore::new(pool.clone()));
-            let site_settings_store: SiteSettingsRuntimeStore =
-                Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
-            let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
-                Arc::new(PostgresRuntimeRegionSettingsStore::new(pool.clone()));
-            let ai_resource_store: AdminAiResourceRuntimeStore =
-                Arc::new(CatalogPostgresAdminAiResourceStore::new(pool.clone()));
-            let upstream_store: AdminUpstreamRuntimeStore =
-                Arc::new(PostgresAdminUpstreamStore::new(
-                    pool.clone(),
-                    api_key_secret_codec.clone(),
-                    api_key_hasher.clone(),
-                ));
-            let ip_rate_limit_store: AdminIpRateLimitRuntimeStore =
-                Arc::new(PostgresAdminIpRateLimitStore::new(pool.clone()));
-            let firewall_rule_store: AdminFirewallRuleRuntimeStore =
-                Arc::new(PostgresAdminFirewallRuleStore::new(pool.clone()));
-            let api_key_rate_limit_store: AdminApiKeyRateLimitRuntimeStore =
-                Arc::new(PostgresAdminApiKeyRateLimitStore::new(pool.clone()));
-            let model_rate_limit_store: AdminModelRateLimitRuntimeStore =
-                Arc::new(PostgresAdminModelRateLimitStore::new(pool.clone()));
-            let model_store: AdminModelRuntimeStore =
-                Arc::new(PostgresModelCatalogAdminStore::with_models_catalog_root(
-                    pool.clone(),
-                    configured_models_catalog_root(runtime_toml),
-                ));
-            let finance_store: AdminFinanceRuntimeStore =
-                Arc::new(PostgresAdminFinanceStore::new(pool.clone()));
-            let marketing_store: AdminMarketingRuntimeStore =
-                Arc::new(PostgresAdminMarketingStore::new(pool.clone()));
-            let mcp_store: AdminMcpRuntimeStore =
-                Arc::new(PostgresAdminMcpStore::new(pool.clone()));
-            let service_node_store: AdminServiceNodeRuntimeStore =
-                Arc::new(PostgresAdminServiceNodeStore::new(pool.clone()));
-            let storage_store: Option<AdminStorageRuntimeStore> =
-                Some(Arc::new(PostgresAdminStorageStore::new(pool.clone())));
-            let transaction_center_store: AdminTransactionCenterRuntimeStore =
-                Arc::new(PostgresAdminTransactionCenterStore::new(pool.clone()));
-            let dashboard_read_store: AdminDashboardRuntimeReadStore =
-                Arc::new(PostgresAdminDashboardReadStore::new(pool.clone()));
-            let analytics_read_store: AdminAnalyticsRuntimeReadStore =
-                Arc::new(PostgresAdminAnalyticsReadStore::new(pool.clone()));
-            let monitor_read_store: AdminMonitorRuntimeReadStore =
-                Arc::new(PostgresAdminMonitorReadStore::new(pool.clone()));
-            let record_store: AdminRecordRuntimeStore =
-                Arc::new(PostgresAdminRecordStore::new(pool.clone()));
-            let model_rankings_store: ModelRankingsRuntimeStore =
-                model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
-            let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
-                Arc::new(PostgresModelRankingRefreshStore::new(pool.clone()));
-            let admin_access_checker = AdminAccessChecker::Postgres(pool.clone());
-            Ok(router_with_product_catalog_and_runtime(
+        })?;
+    prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+    let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
+        ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
+    })?;
+    let database_installer =
+        Arc::new(DatabaseInstaller::for_postgres(pool.clone()).with_env_options()?);
+    if startup_install_mode.should_ensure() {
+        database_installer.ensure_bootstrap_data().await?;
+    }
+    let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
+        pool.clone(),
+        api_key_secret_codec.clone(),
+    )
+    .load_snapshot()
+    .await?;
+    let announcement_store: AdminAnnouncementRuntimeStore =
+        Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
+    let auth_settings_store: AdminAuthSettingsRuntimeStore =
+        Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
+    let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
+        PostgresGatewayApiKeyCommandStore::new(pool.clone(), api_key_secret_codec.clone()),
+    );
+    let catalog_store: AdminCatalogRuntimeStore =
+        Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
+    let inventory_store: AdminInventoryRuntimeStore =
+        Arc::new(PostgresAdminInventoryStore::new(pool.clone()));
+    let site_settings_store: SiteSettingsRuntimeStore =
+        Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
+    let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
+        Arc::new(PostgresRuntimeRegionSettingsStore::new(pool.clone()));
+    let ai_resource_store: AdminAiResourceRuntimeStore =
+        Arc::new(CatalogPostgresAdminAiResourceStore::new(pool.clone()));
+    let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
+        pool.clone(),
+        api_key_secret_codec.clone(),
+        api_key_hasher.clone(),
+    ));
+    let upstream_store =
+        ai_routing_cache_invalidating_upstream_store(upstream_store, Some(cache_manager.clone()));
+    let upstream_verifier: AdminUpstreamRuntimeVerifier = Arc::new(
+        PostgresAdminUpstreamAccountVerifier::new(pool.clone(), api_key_secret_codec.clone()),
+    );
+    let ip_rate_limit_store: AdminIpRateLimitRuntimeStore =
+        Arc::new(PostgresAdminIpRateLimitStore::new(pool.clone()));
+    let firewall_rule_store: AdminFirewallRuleRuntimeStore =
+        Arc::new(PostgresAdminFirewallRuleStore::new(pool.clone()));
+    let api_key_rate_limit_store: AdminApiKeyRateLimitRuntimeStore =
+        Arc::new(PostgresAdminApiKeyRateLimitStore::new(pool.clone()));
+    let model_rate_limit_store: AdminModelRateLimitRuntimeStore =
+        Arc::new(PostgresAdminModelRateLimitStore::new(pool.clone()));
+    let model_store: AdminModelRuntimeStore =
+        Arc::new(PostgresModelCatalogAdminStore::with_models_catalog_root(
+            pool.clone(),
+            configured_models_catalog_root(runtime_toml),
+        ));
+    let finance_store: AdminFinanceRuntimeStore =
+        Arc::new(PostgresAdminFinanceStore::new(pool.clone()));
+    let marketing_store: AdminMarketingRuntimeStore =
+        Arc::new(PostgresAdminMarketingStore::new(pool.clone()));
+    let mcp_store: AdminMcpRuntimeStore = Arc::new(PostgresAdminMcpStore::new(pool.clone()));
+    let service_node_store: AdminServiceNodeRuntimeStore =
+        Arc::new(PostgresAdminServiceNodeStore::new(pool.clone()));
+    let storage_store: Option<AdminStorageRuntimeStore> =
+        Some(Arc::new(PostgresAdminStorageStore::new(pool.clone())));
+    let transaction_center_store: AdminTransactionCenterRuntimeStore =
+        Arc::new(PostgresAdminTransactionCenterStore::new(pool.clone()));
+    let dashboard_read_store: AdminDashboardRuntimeReadStore =
+        Arc::new(PostgresAdminDashboardReadStore::new(pool.clone()));
+    let analytics_read_store: AdminAnalyticsRuntimeReadStore =
+        Arc::new(PostgresAdminAnalyticsReadStore::new(pool.clone()));
+    let monitor_read_store: AdminMonitorRuntimeReadStore =
+        Arc::new(PostgresAdminMonitorReadStore::new(pool.clone()));
+    let record_store: AdminRecordRuntimeStore =
+        Arc::new(PostgresAdminRecordStore::new(pool.clone()));
+    let model_rankings_store: ModelRankingsRuntimeStore =
+        model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
+    let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
+        Arc::new(PostgresModelRankingRefreshStore::new(pool.clone()));
+    let admin_access_checker = AdminAccessChecker(pool.clone());
+    Ok(router_with_product_catalog_and_runtime(
                 Arc::new(snapshot),
                 AdminRouterRuntime {
                     database_config: Some(&config),
@@ -1341,6 +980,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
                     runtime_region_settings_store: Some(runtime_region_settings_store),
                     ai_resource_store: Some(ai_resource_store),
                     upstream_store: Some(upstream_store),
+                    upstream_verifier: Some(upstream_verifier),
                     ip_rate_limit_store: Some(ip_rate_limit_store),
                     firewall_rule_store: Some(firewall_rule_store),
                     api_key_rate_limit_store: Some(api_key_rate_limit_store),
@@ -1374,8 +1014,6 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_optional_p
                         ),
                 },
             ))
-        }
-    }
 }
 
 pub async fn router_with_optional_database_config(
@@ -1410,9 +1048,6 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
             .map_err(ProductCatalogRouterError::Config)?;
     let app_session_config = AppSessionConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
         .map_err(ProductCatalogRouterError::Config)?;
-    let provider_secret_map_config =
-        ProviderSecretMapConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
-            .map_err(ProductCatalogRouterError::Config)?;
     sdkwork_claw_config::ensure_server_production_redis_config(
         deployment_mode,
         runtime_toml.as_ref(),
@@ -1420,16 +1055,16 @@ pub async fn router_from_env() -> Result<Router, ProductCatalogRouterError> {
     .map_err(ProductCatalogRouterError::Config)?;
     let router = match config {
         Some(config) => {
-            let built = router_with_database_api_key_trusted_subject_app_session_and_optional_provider_secret_map_config_and_startup_install_mode(
-                config.clone(),
-                Some(require_api_key_security_config(api_key_config)?),
-                Some(require_trusted_subject_config(trusted_subject_config)?),
-                Some(require_app_session_config(app_session_config)?),
-                provider_secret_map_config,
-                startup_install_mode,
-                runtime_toml.as_ref(),
-            )
-            .await?;
+            let built =
+                router_with_database_api_key_trusted_subject_app_session_and_startup_install_mode(
+                    config.clone(),
+                    Some(require_api_key_security_config(api_key_config)?),
+                    Some(require_trusted_subject_config(trusted_subject_config)?),
+                    Some(require_app_session_config(app_session_config)?),
+                    startup_install_mode,
+                    runtime_toml.as_ref(),
+                )
+                .await?;
             return Ok(
                 crate::web_bootstrap::maybe_wrap_router_with_web_framework_and_database_config(
                     built, &config,
@@ -1534,48 +1169,6 @@ fn api_key_secret_codec_from_config(
         RingAeadApiKeySecretCodec::new(config.pepper_secret())
             .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?,
     ))
-}
-
-fn build_provider_health_probe(
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
-    runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Result<ProviderHealthProbeRuntime, ProductCatalogRouterError> {
-    let health_probe_timeout = provider_health_probe_timeout_from_env_or_toml(runtime_toml)
-        .map_err(ProductCatalogRouterError::Config)?;
-    match provider_secret_map_config {
-        Some(config) => {
-            let resolver = Arc::new(ProviderSecretMapResolver::from_config(config));
-            Ok(Arc::new(
-                SecretRefOpenAiCompatibleProviderHealthProbe::with_response_timeout(
-                    resolver,
-                    health_probe_timeout,
-                ),
-            ))
-        }
-        None => Ok(Arc::new(UnconfiguredProviderHealthProbe)),
-    }
-}
-
-pub fn shared_provider_health_probe_from_runtime_toml(
-    provider_secret_map_config: Option<ProviderSecretMapConfig>,
-    runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Result<Arc<dyn ProviderHealthProbe + Send + Sync>, ProductCatalogRouterError> {
-    build_provider_health_probe(provider_secret_map_config, runtime_toml)
-}
-
-fn provider_health_probe_timeout_from_env_or_toml(
-    runtime_toml: Option<&RuntimeTomlConfig>,
-) -> Result<Duration, String> {
-    const HEALTH_PROBE_TIMEOUT: &str = "SDKWORK_CLAW_PROVIDER_HEALTH_PROBE_TIMEOUT_MILLIS";
-    let timeout_millis = sdkwork_claw_config::runtime::config_u64(
-        HEALTH_PROBE_TIMEOUT,
-        runtime_toml.and_then(|config| config.provider_relay.runtime.health_probe_timeout_millis),
-    )?
-    .unwrap_or(DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS);
-    if timeout_millis == 0 {
-        return Err(format!("{HEALTH_PROBE_TIMEOUT} must be a positive integer"));
-    }
-    Ok(Duration::from_millis(timeout_millis))
 }
 
 fn model_rankings_service(read_store: ModelRankingsRuntimeStore) -> ModelRankingsRuntimeStore {
@@ -1695,34 +1288,8 @@ fn resolve_admin_request_subject(
 
 impl AdminAccessChecker {
     async fn has_admin_access(&self, subject: TrustedRequestSubject) -> Result<bool, sqlx::Error> {
-        match self {
-            Self::Sqlite(pool) => has_sqlite_admin_access(pool, subject).await,
-            Self::Postgres(pool) => has_postgres_admin_access(pool, subject).await,
-        }
+        has_postgres_admin_access(&self.0, subject).await
     }
-}
-
-async fn has_sqlite_admin_access(
-    pool: &SqlitePool,
-    subject: TrustedRequestSubject,
-) -> Result<bool, sqlx::Error> {
-    let count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM iam_organization_membership
-        WHERE tenant_id = ?
-          AND organization_id = ?
-          AND user_id = ?
-          AND status = 'active'
-          AND LOWER(COALESCE(membership_kind, '')) IN ('admin', 'owner')
-        "#,
-    )
-    .bind(subject.tenant_id.to_string())
-    .bind(subject.organization_id.to_string())
-    .bind(subject.user_id.to_string())
-    .fetch_one(pool)
-    .await?;
-    Ok(count > 0)
 }
 
 async fn has_postgres_admin_access(
@@ -1813,7 +1380,6 @@ async fn prepare_claw_router_database_lifecycle(
 pub enum ProductCatalogRouterError {
     Config(String),
     Installer(DatabaseInstallError),
-    Sqlite(SqlCatalogLoadError),
     Postgres(PostgresCatalogLoadError),
 }
 
@@ -1822,19 +1388,12 @@ impl std::fmt::Display for ProductCatalogRouterError {
         match self {
             Self::Config(error) => write!(f, "{error}"),
             Self::Installer(error) => write!(f, "{error}"),
-            Self::Sqlite(error) => write!(f, "{error}"),
             Self::Postgres(error) => write!(f, "{error}"),
         }
     }
 }
 
 impl std::error::Error for ProductCatalogRouterError {}
-
-impl From<SqlCatalogLoadError> for ProductCatalogRouterError {
-    fn from(value: SqlCatalogLoadError) -> Self {
-        Self::Sqlite(value)
-    }
-}
 
 impl From<DatabaseInstallError> for ProductCatalogRouterError {
     fn from(value: DatabaseInstallError) -> Self {
@@ -1872,18 +1431,16 @@ pub async fn serve_with_runtime_config(
 #[cfg(test)]
 mod tests {
     use super::{
-        admin_forbidden_response, has_sqlite_admin_access, has_web_framework_admin_access,
+        admin_forbidden_response, has_web_framework_admin_access,
         is_commerce_dependency_contract_path, router_from_env, router_without_database,
     };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use sdkwork_claw_config::DeploymentMode;
-    use sdkwork_claw_http::TrustedRequestSubject;
     use sdkwork_web_core::{
         ServerRequestId, WebApiSurface, WebAuthLevel, WebAuthMode, WebDeploymentMode,
         WebEnvironment, WebLoginScope, WebRequestContext, WebRequestPrincipal, WebTransportFacts,
     };
-    use sqlx::sqlite::SqlitePoolOptions;
     use std::sync::{Mutex, OnceLock};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -1923,73 +1480,6 @@ mod tests {
             .is_some_and(|value| !value.is_empty()));
         assert!(payload.get("msg").is_none());
         assert!(payload.get("data").is_none());
-    }
-
-    #[tokio::test]
-    async fn canonical_owner_and_admin_memberships_have_admin_access() {
-        let pool = SqlitePoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .unwrap();
-        sqlx::query(
-            r#"
-            CREATE TABLE iam_organization_membership (
-                tenant_id TEXT NOT NULL,
-                organization_id TEXT NOT NULL,
-                user_id TEXT NOT NULL,
-                membership_kind TEXT,
-                status TEXT NOT NULL
-            )
-            "#,
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
-
-        for (user_id, membership_kind, status) in [
-            (1_i64, "owner", "active"),
-            (2, "admin", "active"),
-            (3, "member", "active"),
-            (4, "owner", "inactive"),
-        ] {
-            sqlx::query(
-                r#"
-                INSERT INTO iam_organization_membership (
-                    tenant_id,
-                    organization_id,
-                    user_id,
-                    membership_kind,
-                    status
-                ) VALUES (?, ?, ?, ?, ?)
-                "#,
-            )
-            .bind("100001")
-            .bind("100002")
-            .bind(user_id.to_string())
-            .bind(membership_kind)
-            .bind(status)
-            .execute(&pool)
-            .await
-            .unwrap();
-        }
-
-        for user_id in [1_i64, 2] {
-            assert!(
-                has_sqlite_admin_access(&pool, trusted_subject(user_id))
-                    .await
-                    .unwrap(),
-                "active {user_id} membership must retain admin access"
-            );
-        }
-        for user_id in [3_i64, 4, 5] {
-            assert!(
-                !has_sqlite_admin_access(&pool, trusted_subject(user_id))
-                    .await
-                    .unwrap(),
-                "ordinary, inactive, and missing memberships must remain forbidden"
-            );
-        }
     }
 
     #[test]
@@ -2055,16 +1545,6 @@ mod tests {
         }
     }
 
-    fn trusted_subject(user_id: i64) -> TrustedRequestSubject {
-        TrustedRequestSubject {
-            tenant_id: 100001,
-            organization_id: 100002,
-            user_id,
-            operator_id: user_id,
-            operator_type: 1,
-        }
-    }
-
     #[tokio::test]
     async fn no_database_router_health_uses_explicit_deployment_mode() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -2109,59 +1589,6 @@ mod tests {
             response.contains("\"database\":{\"configured\":false"),
             "{response}"
         );
-    }
-
-    #[tokio::test(flavor = "current_thread")]
-    async fn router_from_env_initializes_zero_config_desktop_sqlite() {
-        let _guard = env_guard().lock().unwrap();
-        let saved_database_url = std::env::var("SDKWORK_CLAW_DATABASE_URL").ok();
-        let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
-        let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
-        let saved_snowflake_node_id = std::env::var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID").ok();
-        let saved_api_key_pepper = std::env::var("SDKWORK_CLAW_API_KEY_PEPPER").ok();
-        let saved_trusted_subject_secret =
-            std::env::var("SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET").ok();
-        let saved_app_session_secret = std::env::var("SDKWORK_CLAW_APP_SESSION_SECRET").ok();
-        let config_path = unique_runtime_config_path();
-        std::env::remove_var("SDKWORK_CLAW_DATABASE_URL");
-        std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "desktop");
-        std::env::set_var("SDKWORK_CLAW_CONFIG_FILE", &config_path);
-        std::env::remove_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID");
-        std::env::set_var(
-            "SDKWORK_CLAW_API_KEY_PEPPER",
-            "0123456789abcdef0123456789abcdef",
-        );
-        std::env::set_var(
-            "SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET",
-            "trusted-subject-secret-0123456789",
-        );
-        std::env::set_var(
-            "SDKWORK_CLAW_APP_SESSION_SECRET",
-            "app-session-secret-0123456789abcd",
-        );
-
-        let router_result = router_from_env().await;
-
-        restore_env_var("SDKWORK_CLAW_DATABASE_URL", saved_database_url);
-        restore_env_var("SDKWORK_CLAW_DEPLOYMENT_MODE", saved_deployment_mode);
-        restore_env_var("SDKWORK_CLAW_CONFIG_FILE", saved_config_file);
-        restore_env_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
-        restore_env_var("SDKWORK_CLAW_API_KEY_PEPPER", saved_api_key_pepper);
-        restore_env_var(
-            "SDKWORK_CLAW_TRUSTED_SUBJECT_SECRET",
-            saved_trusted_subject_secret,
-        );
-        restore_env_var("SDKWORK_CLAW_APP_SESSION_SECRET", saved_app_session_secret);
-
-        let router = router_result
-            .expect("admin-api desktop startup should initialize local SQLite by default");
-
-        drop(router);
-        assert!(config_path.exists());
-        let generated_config = std::fs::read_to_string(config_path).unwrap();
-        assert!(generated_config.contains("engine = \"sqlite\""));
-        assert!(generated_config.contains("deployment_mode = \"desktop\""));
-        assert!(generated_config.contains("clawrouter.sqlite"));
     }
 
     #[tokio::test(flavor = "current_thread")]

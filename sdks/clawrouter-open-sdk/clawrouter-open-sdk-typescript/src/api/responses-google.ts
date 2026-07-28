@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { GoogleCachedContent, GoogleCachedContentCreateRequest, GoogleCachedContentListResponse, GoogleEmptyResponse } from '../types';
 
@@ -18,27 +18,27 @@ export class ResponsesGoogleV1betaCachedContentsApi {
 
 
 /** Google Gemini list cached contents */
-  async list(params?: ResponsesGoogleV1betaCachedContentsListParams): Promise<GoogleCachedContentListResponse> {
+  async list(params?: ResponsesGoogleV1betaCachedContentsListParams, requestOptions?: ApiRequestOptions): Promise<GoogleCachedContentListResponse> {
     const query = buildQueryString([
       { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<GoogleCachedContentListResponse>(appendQueryString(aiApiPath(`/google/v1beta/cachedContents`), query));
+    return this.client.request<GoogleCachedContentListResponse>(appendQueryString(aiApiPath(`/google/v1beta/cachedContents`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Google Gemini create cached content */
-  async create(body: GoogleCachedContentCreateRequest): Promise<GoogleCachedContent> {
-    return this.client.post<GoogleCachedContent>(aiApiPath(`/google/v1beta/cachedContents`), body, undefined, undefined, 'application/json');
+  async create(body: GoogleCachedContentCreateRequest, requestOptions?: ApiRequestOptions): Promise<GoogleCachedContent> {
+    return this.client.request<GoogleCachedContent>(aiApiPath(`/google/v1beta/cachedContents`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Google Gemini cached content */
-  async delete(cachedContentId: string): Promise<GoogleEmptyResponse> {
-    return this.client.delete<GoogleEmptyResponse>(aiApiPath(`/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, { name: 'cached_content_id', style: 'simple', explode: false })}`));
+  async delete(cachedContentId: string, requestOptions?: ApiRequestOptions): Promise<GoogleEmptyResponse> {
+    return this.client.request<GoogleEmptyResponse>(aiApiPath(`/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, { name: 'cached_content_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Google Gemini retrieve cached content */
-  async retrieve(cachedContentId: string): Promise<GoogleCachedContent> {
-    return this.client.get<GoogleCachedContent>(aiApiPath(`/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, { name: 'cached_content_id', style: 'simple', explode: false })}`));
+  async retrieve(cachedContentId: string, requestOptions?: ApiRequestOptions): Promise<GoogleCachedContent> {
+    return this.client.request<GoogleCachedContent>(aiApiPath(`/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, { name: 'cached_content_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

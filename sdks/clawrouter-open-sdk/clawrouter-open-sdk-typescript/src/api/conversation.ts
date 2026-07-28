@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { DeleteResult, OpenAiConversation, OpenAiConversationCreateRequest, OpenAiConversationItem, OpenAiConversationItemCreateRequest, OpenAiConversationItemList, OpenAiConversationList, OpenAiConversationUpdateRequest } from '../types';
 
@@ -20,29 +20,29 @@ export class ConversationItemsApi {
 
 
 /** List conversation items */
-  async list(conversationId: string, params?: ConversationItemsListParams): Promise<OpenAiConversationItemList> {
+  async list(conversationId: string, params?: ConversationItemsListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiConversationItemList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiConversationItemList>(appendQueryString(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items`), query));
+    return this.client.request<OpenAiConversationItemList>(appendQueryString(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create conversation item */
-  async create(conversationId: string, body: OpenAiConversationItemCreateRequest): Promise<OpenAiConversationItem> {
-    return this.client.post<OpenAiConversationItem>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items`), body, undefined, undefined, 'application/json');
+  async create(conversationId: string, body: OpenAiConversationItemCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiConversationItem> {
+    return this.client.request<OpenAiConversationItem>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete conversation item */
-  async delete(conversationId: string, itemId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'item_id', style: 'simple', explode: false })}`));
+  async delete(conversationId: string, itemId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'item_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve conversation item */
-  async retrieve(conversationId: string, itemId: string): Promise<OpenAiConversationItem> {
-    return this.client.get<OpenAiConversationItem>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'item_id', style: 'simple', explode: false })}`));
+  async retrieve(conversationId: string, itemId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiConversationItem> {
+    return this.client.request<OpenAiConversationItem>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'item_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -64,34 +64,34 @@ export class ConversationApi {
 
 
 /** List conversations */
-  async list(params?: ConversationListParams): Promise<OpenAiConversationList> {
+  async list(params?: ConversationListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiConversationList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiConversationList>(appendQueryString(aiApiPath(`/conversations`), query));
+    return this.client.request<OpenAiConversationList>(appendQueryString(aiApiPath(`/conversations`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create conversation */
-  async create(body: OpenAiConversationCreateRequest): Promise<OpenAiConversation> {
-    return this.client.post<OpenAiConversation>(aiApiPath(`/conversations`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiConversationCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiConversation> {
+    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete conversation */
-  async delete(conversationId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`));
+  async delete(conversationId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve conversation */
-  async retrieve(conversationId: string): Promise<OpenAiConversation> {
-    return this.client.get<OpenAiConversation>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`));
+  async retrieve(conversationId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiConversation> {
+    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Modify conversation */
-  async update(conversationId: string, body: OpenAiConversationUpdateRequest): Promise<OpenAiConversation> {
-    return this.client.post<OpenAiConversation>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(conversationId: string, body: OpenAiConversationUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiConversation> {
+    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

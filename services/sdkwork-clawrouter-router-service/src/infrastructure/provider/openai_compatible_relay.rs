@@ -11,8 +11,7 @@ use sdkwork_claw_config::ProviderRelayHttpPoolSectionConfig;
 use sdkwork_claw_security::redact_url;
 use serde_json::Value;
 use std::net::{IpAddr, ToSocketAddrs};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use crate::domain::{
     provider_native_model_id, DomainError, DomainResult, ProviderAuthProfile, ProviderAuthType,
@@ -22,10 +21,8 @@ use crate::ports::{
     ChatCompletionRelay, ChatCompletionRelayFuture, ChatCompletionRelayRequest,
     ChatCompletionRelayResponse, ChatCompletionStreamRelay, ChatCompletionStreamRelayFuture,
     ChatCompletionStreamRelayResponse, EmbeddingsRelay, EmbeddingsRelayFuture,
-    EmbeddingsRelayRequest, EmbeddingsRelayResponse, ProviderHealthProbe,
-    ProviderHealthProbeFuture, ProviderHealthProbeOutcome, ProviderHealthProbeRequest,
-    ProviderSecretResolver, ResponsesRelay, ResponsesRelayFuture, ResponsesRelayRequest,
-    ResponsesRelayResponse,
+    EmbeddingsRelayRequest, EmbeddingsRelayResponse, ProviderSecretResolver, ResponsesRelay,
+    ResponsesRelayFuture, ResponsesRelayRequest, ResponsesRelayResponse,
 };
 
 type RequestBody = Full<Bytes>;
@@ -38,16 +35,13 @@ type ProviderClient = Client<ProviderConnector, RequestBody>;
 pub const DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS: u64 = 60_000;
 /// Default streaming (SSE) provider response timeout (120 seconds).
 pub const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS: u64 = 120_000;
-pub const DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS: u64 = 10_000;
 /// Default cap on a non-streaming provider response body (64 MiB).
 pub const DEFAULT_PROVIDER_RESPONSE_MAX_BYTES: u64 = 64 * 1024 * 1024;
+const UPSTREAM_VERIFICATION_RESPONSE_MAX_BYTES: usize = 1024 * 1024;
 const DEFAULT_PROVIDER_RESPONSE_TIMEOUT: Duration =
     Duration::from_millis(DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS);
 const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT: Duration =
     Duration::from_millis(DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS);
-const DEFAULT_HEALTH_PROBE_TIMEOUT: Duration =
-    Duration::from_millis(DEFAULT_HEALTH_PROBE_TIMEOUT_MILLIS);
-const MAX_HEALTH_PROBE_ERROR_MESSAGE_LEN: usize = 512;
 
 /// Resolved HTTP connection-pool configuration for upstream provider clients.
 ///
@@ -228,6 +222,56 @@ impl UpstreamProviderEndpoint {
         self.openai_uri("/v1/embeddings")
     }
 
+    fn models_uri(&self) -> DomainResult<Uri> {
+        self.openai_uri("/v1/models")
+    }
+
+    pub async fn verify_models(
+        &self,
+        response_timeout: Duration,
+    ) -> DomainResult<UpstreamProviderVerification> {
+        let runtime = ProviderRelayRuntime::new(response_timeout);
+        let uri = self.models_uri()?;
+        let request = self
+            .apply_auth_headers(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(self.authenticated_uri(uri.clone())?),
+            )?
+            .body(Full::new(Bytes::new()))
+            .map_err(|error| {
+                DomainError::new(format!(
+                    "failed to build upstream provider verification request: {error}"
+                ))
+            })?;
+        let started_at = std::time::Instant::now();
+        let response = send_provider_request(&runtime, request).await?;
+        let latency_ms = u64::try_from(started_at.elapsed().as_millis()).unwrap_or(u64::MAX);
+        let status_code = response.status().as_u16();
+        let bytes = tokio::time::timeout(
+            response_timeout,
+            Limited::new(
+                response.into_body(),
+                UPSTREAM_VERIFICATION_RESPONSE_MAX_BYTES,
+            )
+            .collect(),
+        )
+        .await
+        .map_err(|_| DomainError::new("upstream provider verification body timed out"))?
+        .map_err(|error| {
+            DomainError::new(format!(
+                "upstream provider verification body failed (limit 1048576 bytes): {error}"
+            ))
+        })?
+        .to_bytes();
+        let body = serde_json::from_slice::<Value>(&bytes).ok();
+        Ok(upstream_verification_outcome(
+            status_code,
+            latency_ms,
+            body.as_ref(),
+        ))
+    }
+
     fn openai_uri(&self, path: &str) -> DomainResult<Uri> {
         let path = if self.includes_openai_v1_prefix {
             path.strip_prefix("/v1").unwrap_or(path)
@@ -281,6 +325,48 @@ impl UpstreamProviderEndpoint {
             .as_deref()
             .ok_or_else(|| DomainError::new("provider account query auth name is required"))?;
         append_query_pair(uri, name, &self.bearer_token)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpstreamProviderVerification {
+    pub success: bool,
+    pub status_code: u16,
+    pub latency_ms: u64,
+    pub message: String,
+}
+
+fn upstream_verification_outcome(
+    status_code: u16,
+    latency_ms: u64,
+    body: Option<&Value>,
+) -> UpstreamProviderVerification {
+    let valid_catalog = body
+        .and_then(|value| value.get("data"))
+        .is_some_and(Value::is_array);
+    let success = (200..300).contains(&status_code) && valid_catalog;
+    let message = if success {
+        "upstream authentication and model catalog verified".to_owned()
+    } else if (200..300).contains(&status_code) {
+        "upstream provider returned an invalid model catalog".to_owned()
+    } else {
+        safe_verification_status_message(status_code).to_owned()
+    };
+    UpstreamProviderVerification {
+        success,
+        status_code,
+        latency_ms,
+        message,
+    }
+}
+
+fn safe_verification_status_message(status_code: u16) -> &'static str {
+    match status_code {
+        401 | 403 => "upstream provider rejected the configured credential",
+        408 | 504 => "upstream provider verification timed out",
+        429 => "upstream provider rate limited the verification request",
+        500..=599 => "upstream provider is unavailable",
+        _ => "upstream provider rejected the verification request",
     }
 }
 
@@ -994,175 +1080,6 @@ impl SecretRefOpenAiCompatibleEmbeddingsRelay {
     }
 }
 
-#[derive(Clone)]
-pub struct SecretRefOpenAiCompatibleProviderHealthProbe {
-    secret_resolver: Arc<dyn ProviderSecretResolver + Send + Sync>,
-    runtime: ProviderRelayRuntime,
-}
-
-impl SecretRefOpenAiCompatibleProviderHealthProbe {
-    pub fn new(secret_resolver: Arc<dyn ProviderSecretResolver + Send + Sync>) -> Self {
-        Self {
-            secret_resolver,
-            runtime: ProviderRelayRuntime::new(DEFAULT_HEALTH_PROBE_TIMEOUT),
-        }
-    }
-
-    pub fn with_response_timeout(
-        secret_resolver: Arc<dyn ProviderSecretResolver + Send + Sync>,
-        response_timeout: Duration,
-    ) -> Self {
-        Self {
-            secret_resolver,
-            runtime: ProviderRelayRuntime::new(response_timeout),
-        }
-    }
-}
-
-impl ProviderHealthProbe for SecretRefOpenAiCompatibleProviderHealthProbe {
-    fn probe_provider_health<'a>(
-        &'a self,
-        request: ProviderHealthProbeRequest,
-    ) -> ProviderHealthProbeFuture<'a> {
-        Box::pin(async move {
-            let started_at = Instant::now();
-            let endpoint = match request
-                .provider_secret_value
-                .clone()
-                .map(Ok)
-                .unwrap_or_else(|| {
-                    self.secret_resolver
-                        .resolve_secret_value(&request.provider_secret_ref)
-                })
-                .and_then(|bearer_token| {
-                    UpstreamProviderEndpoint::new(&request.provider_base_url, bearer_token)
-                }) {
-                Ok(endpoint) => endpoint,
-                Err(error) => {
-                    return Ok(ProviderHealthProbeOutcome::failure(
-                        elapsed_millis(started_at),
-                        None,
-                        "provider_health_probe_config_invalid",
-                        masked_health_probe_error(error.to_string()),
-                    ));
-                }
-            };
-            let runtime = self.runtime.for_request(request.provider_timeout_ms);
-            let provider_model = provider_native_model_id(&request.provider_model);
-            if provider_model.is_empty() {
-                return Ok(ProviderHealthProbeOutcome::failure(
-                    elapsed_millis(started_at),
-                    None,
-                    "provider_health_probe_config_invalid",
-                    "provider health probe model is required",
-                ));
-            }
-            let body = serde_json::json!({
-                "model": provider_model,
-                "messages": [{"role": "user", "content": "ping"}],
-                "max_tokens": 1,
-                "stream": false
-            });
-            let http_request = match Request::builder()
-                .method(Method::POST)
-                .uri(endpoint.chat_completions_uri()?)
-                .header(CONTENT_TYPE, "application/json")
-                .header(AUTHORIZATION, endpoint.authorization_value())
-                .body(Full::new(Bytes::from(body.to_string())))
-            {
-                Ok(request) => request,
-                Err(error) => {
-                    return Ok(ProviderHealthProbeOutcome::failure(
-                        elapsed_millis(started_at),
-                        None,
-                        "provider_health_probe_request_invalid",
-                        masked_health_probe_error(format!(
-                            "failed to build upstream health probe request: {error}"
-                        )),
-                    ));
-                }
-            };
-
-            let response = match send_provider_request(&runtime, http_request).await {
-                Ok(response) => response,
-                Err(error) => {
-                    return Ok(ProviderHealthProbeOutcome::failure(
-                        elapsed_millis(started_at),
-                        None,
-                        "provider_health_probe_request_failed",
-                        masked_health_probe_error(error.to_string()),
-                    ));
-                }
-            };
-            let status_code = response.status().as_u16();
-            let collected = tokio::time::timeout(
-                runtime.response_timeout,
-                Limited::new(
-                    response.into_body(),
-                    usize::try_from(runtime.response_max_bytes).unwrap_or(usize::MAX),
-                )
-                .collect(),
-            )
-            .await;
-            let bytes = match collected {
-                Ok(Ok(body)) => body.to_bytes(),
-                Ok(Err(error)) => {
-                    return Ok(ProviderHealthProbeOutcome::failure(
-                        elapsed_millis(started_at),
-                        Some(i32::from(status_code)),
-                        "provider_health_probe_body_failed",
-                        masked_health_probe_error(format!(
-                            "upstream health probe body failed: {error}"
-                        )),
-                    ));
-                }
-                Err(_) => {
-                    return Ok(ProviderHealthProbeOutcome::failure(
-                        elapsed_millis(started_at),
-                        Some(i32::from(status_code)),
-                        "provider_health_probe_body_timeout",
-                        "upstream health probe body timed out",
-                    ));
-                }
-            };
-            let parsed_body = serde_json::from_slice::<Value>(&bytes);
-            if !(200..300).contains(&status_code) {
-                return Ok(ProviderHealthProbeOutcome::failure(
-                    elapsed_millis(started_at),
-                    Some(i32::from(status_code)),
-                    format!("upstream_http_{status_code}"),
-                    masked_health_probe_error(format!(
-                        "upstream health probe returned HTTP {status_code}: {}",
-                        provider_error_message(parsed_body.as_ref().ok())
-                    )),
-                ));
-            }
-            match parsed_body {
-                Ok(body) if body.get("choices").is_some() || body.get("id").is_some() => {
-                    Ok(ProviderHealthProbeOutcome::success(
-                        elapsed_millis(started_at),
-                        i32::from(status_code),
-                    ))
-                }
-                Ok(_) => Ok(ProviderHealthProbeOutcome::failure(
-                    elapsed_millis(started_at),
-                    Some(i32::from(status_code)),
-                    "provider_health_probe_invalid_response",
-                    "upstream health probe returned JSON without OpenAI-compatible completion fields",
-                )),
-                Err(error) => Ok(ProviderHealthProbeOutcome::failure(
-                    elapsed_millis(started_at),
-                    Some(i32::from(status_code)),
-                    "provider_health_probe_invalid_json",
-                    masked_health_probe_error(format!(
-                        "upstream health probe returned invalid JSON: {error}"
-                    )),
-                )),
-            }
-        })
-    }
-}
-
 impl ResponsesRelay for SecretRefOpenAiCompatibleResponsesRelay {
     fn create_response<'a>(&'a self, request: ResponsesRelayRequest) -> ResponsesRelayFuture<'a> {
         Box::pin(async move {
@@ -1519,58 +1436,6 @@ fn build_provider_client(pool_config: ProviderRelayHttpPoolConfig) -> ProviderCl
         .build(connector)
 }
 
-fn elapsed_millis(started_at: Instant) -> i64 {
-    started_at.elapsed().as_millis().clamp(1, i64::MAX as u128) as i64
-}
-
-fn provider_error_message(body: Option<&Value>) -> String {
-    let Some(body) = body else {
-        return "provider returned non-JSON error body".to_owned();
-    };
-    body.pointer("/error/message")
-        .and_then(Value::as_str)
-        .or_else(|| body.pointer("/error/code").and_then(Value::as_str))
-        .or_else(|| body.get("message").and_then(Value::as_str))
-        .unwrap_or("provider returned an error")
-        .to_owned()
-}
-
-fn masked_health_probe_error(message: impl AsRef<str>) -> String {
-    let mut masked = String::with_capacity(
-        message
-            .as_ref()
-            .len()
-            .min(MAX_HEALTH_PROBE_ERROR_MESSAGE_LEN),
-    );
-    for token in message.as_ref().split_whitespace() {
-        let normalized = token.trim_matches(|ch: char| {
-            matches!(
-                ch,
-                '"' | '\'' | ',' | ';' | ':' | ')' | '(' | '[' | ']' | '{' | '}'
-            )
-        });
-        if normalized.starts_with("sk-")
-            || normalized.starts_with("Bearer")
-            || normalized.starts_with("vault://")
-        {
-            if !masked.is_empty() {
-                masked.push(' ');
-            }
-            masked.push_str("[REDACTED]");
-        } else {
-            if !masked.is_empty() {
-                masked.push(' ');
-            }
-            masked.push_str(token);
-        }
-        if masked.len() >= MAX_HEALTH_PROBE_ERROR_MESSAGE_LEN {
-            masked.truncate(MAX_HEALTH_PROBE_ERROR_MESSAGE_LEN);
-            break;
-        }
-    }
-    masked
-}
-
 fn upstream_request_body(body: Value, request_label: &str) -> DomainResult<Value> {
     body.as_object().ok_or_else(|| {
         DomainError::new(format!(
@@ -1717,5 +1582,47 @@ mod tests {
         // Plain HTTP upstreams are rejected before SSRF resolution.
         let error = endpoint_for("http://127.0.0.1/v1").unwrap_err();
         assert!(error.to_string().contains("absolute https"));
+    }
+
+    #[test]
+    fn verification_accepts_a_valid_openai_model_catalog() {
+        let body = serde_json::json!({"data": [{"id": "gpt-5"}]});
+        let outcome = upstream_verification_outcome(200, 12, Some(&body));
+
+        assert!(outcome.success);
+        assert_eq!(200, outcome.status_code);
+        assert_eq!(12, outcome.latency_ms);
+    }
+
+    #[test]
+    fn verification_rejects_a_malformed_success_payload() {
+        let body = serde_json::json!({"data": {"id": "not-an-array"}});
+        let outcome = upstream_verification_outcome(200, 12, Some(&body));
+
+        assert!(!outcome.success);
+        assert_eq!(
+            "upstream provider returned an invalid model catalog",
+            outcome.message
+        );
+    }
+
+    #[test]
+    fn verification_does_not_forward_upstream_error_text() {
+        let body = serde_json::json!({
+            "error": {"message": "credential sk-production-secret was rejected"}
+        });
+        let outcome = upstream_verification_outcome(401, 12, Some(&body));
+
+        assert!(!outcome.success);
+        assert_eq!(
+            "upstream provider rejected the configured credential",
+            outcome.message
+        );
+        assert!(!outcome.message.contains("sk-production-secret"));
+    }
+
+    #[test]
+    fn verification_response_body_is_capped_at_one_mebibyte() {
+        assert_eq!(1024 * 1024, UPSTREAM_VERIFICATION_RESPONSE_MAX_BYTES);
     }
 }

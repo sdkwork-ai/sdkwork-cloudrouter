@@ -40,7 +40,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "9843321e6e0ace05c9b37053b397301532db4a7529e11b797feeed4e3e04d07d"
+      "sha256": "093ce855297d1b68825601d46447c9d7947bf16b4842f961792834697ef39200"
     },
     {
       "path": "README.md",
@@ -52,15 +52,15 @@
     },
     {
       "path": "src/api/assistants.ts",
-      "sha256": "357ce3b981f22a24c8231dd881343cbd1db93540eb57383455ff3fe90f64b877"
+      "sha256": "008e2c2c4c99f70371c927d96e6eadf070eb761110aeba01e66252d645f53f4a"
     },
     {
       "path": "src/api/audio-suno.ts",
-      "sha256": "fccaa5832e005a833f5aa6a3322db5cbd60442c7d7c86f49060c2bd09d910863"
+      "sha256": "66812d5e54c51b343cd2edf0e7f0508b3ba135bc0e946a7ecfeca41ad7d161e8"
     },
     {
       "path": "src/api/audio.ts",
-      "sha256": "5ea41a0ba34b96443cf87708f4f0b84a171244377884a2405cd1a42efeb5c7ce"
+      "sha256": "115254eb0eb82611de97b7ba6ddf755ac940a31544729baf80695f8ed7ad364b"
     },
     {
       "path": "src/api/base.ts",
@@ -68,71 +68,71 @@
     },
     {
       "path": "src/api/batches-anthropic.ts",
-      "sha256": "b15d0418af70b9b8509b422ee638e1380154be784bbfa2cbcc529a94308b0897"
+      "sha256": "d22c726de8620e01925bf9b131b46ed6a153602150b4a4a1bcada7cc121bad4c"
     },
     {
       "path": "src/api/batches.ts",
-      "sha256": "17ff130db8d3506964cd86f4a204b469403ad4558b5a648933f161f4514730cb"
+      "sha256": "6cff467e8f7b661da686b0d06f13ca1e74ef1535e270c39a9c22c82cead67b94"
     },
     {
       "path": "src/api/chat-anthropic.ts",
-      "sha256": "c89e4f0a5591261d5a31c90529a671eba4b22da81903364810037b545a9de1d7"
+      "sha256": "00acfe443bc37f1a881573362f50bbd9ffad27920c0dd6cf2c31ea4376dc3ef8"
     },
     {
       "path": "src/api/chat-google.ts",
-      "sha256": "cf406bc82d52b1e3b1792dfc025e8a41a3a143dbbc980b5378330535cebda521"
+      "sha256": "5f02f45c6a2873997828fcc5f376265f15072e5312cccdfb45e2ef65e14b9e74"
     },
     {
       "path": "src/api/chat.ts",
-      "sha256": "4b2b15b6a7695fb58fa89d6634f6a0600d0dae864c86fc30fc5e6b25dd4fbc6d"
+      "sha256": "da8c3b67eced5aae1e788637574796b259e493157d7228705c7677b722753d3d"
     },
     {
       "path": "src/api/completion.ts",
-      "sha256": "02f1a6ec3f28369ed31acebf81ece4ffd23048671fd368b1f60c4ede05ed94ca"
+      "sha256": "af9c8d62ccb3d1a8cec24651c77861cf0979dff97c6d9170489b73bb78d1354c"
     },
     {
       "path": "src/api/container.ts",
-      "sha256": "ceb38521bef3851afddad153a8f642589a128470e6c9244c9f8a498a96d590c6"
+      "sha256": "e426f9c22c074e69d636f93559ede5f31421ff99c752b8fe0742b1c4bce01dce"
     },
     {
       "path": "src/api/conversation.ts",
-      "sha256": "c2bf88d3db50d8523ff0185e7e5c9c2c02d527c013b79b5f11240812c4a66dda"
+      "sha256": "a69415636949dc8bc885dab4d6dde55cdb988fb8a343e294ddf9290044e892e6"
     },
     {
       "path": "src/api/embeddings-google.ts",
-      "sha256": "e0489fe5853ad7806a9abf11373086b14143d5840bb94dcc06e19d4269911594"
+      "sha256": "097e744ee21a6fdfd4237bb4e8a12140e9ae331d988f2d1f706816b940287cff"
     },
     {
       "path": "src/api/embeddings.ts",
-      "sha256": "6faeb3aa9ca7e5d2155c98114409bd240d8b639c24e19d6db9c3f01b4a8d3529"
+      "sha256": "b15b4fd1a95dee1ad5432610b363d41dc5776141ec134e539f09da6529953420"
     },
     {
       "path": "src/api/files-anthropic.ts",
-      "sha256": "4c540e019aa7bc93f03779bea0b29d004b1ddff0f10901b07e57c8cca5a3d60f"
+      "sha256": "eaf43d37bbf98915d6105676680a3e5618defe97df1eae721050acaede9a63d3"
     },
     {
       "path": "src/api/files-google.ts",
-      "sha256": "bf69f678d3a850cf18e3e5065c0381732337258555e183ac5a755b6d729afa2b"
+      "sha256": "32222a1b4261700c99bb498bd8d165ec70f7916961ab3c2cd215456e659862b1"
     },
     {
       "path": "src/api/files.ts",
-      "sha256": "d354c5fa8f45117f7e36569c9d651c50dd0cd4a8123bccf6b2fd23dd65955127"
+      "sha256": "bdb7f0a519a7ce8e74c30335fa1ea540c4d1f282203bcbb459a3d41f69ae6d7f"
     },
     {
       "path": "src/api/images-midjourney.ts",
-      "sha256": "87e7a0775eb2662e3f12d592153169724c4d6cdbc85cca52e5636d001954b757"
+      "sha256": "ad44f93242611806a193ad4b0a88ea6f9421f7d22a752825c43fd57889145ab5"
     },
     {
       "path": "src/api/images-nano-banana.ts",
-      "sha256": "1149c7954eef1936774baa0e20ba0e6aaa310de59e49cc67049114056c91cd82"
+      "sha256": "0fbc2631566398c25bf178db5f38b46c41ea930e9536308504b5fbbbe794fa14"
     },
     {
       "path": "src/api/images-vidu.ts",
-      "sha256": "2270e761ab9bd753686e73c1b7cb422293efe3c2522dc25678da71b5545a127b"
+      "sha256": "8c63de8516469a64c729fc75264233ff40a8f1d7544f550a509ea22e50bee126"
     },
     {
       "path": "src/api/images.ts",
-      "sha256": "78f927b171d1adca89df10b9cb8a2a590a22c90fd0f45104f374658b3df24f33"
+      "sha256": "6f959a48c98fb326c2d5a4d8b7efd866cda02e7e1bdb1f8bb4c75800262dde52"
     },
     {
       "path": "src/api/index.ts",
@@ -140,11 +140,11 @@
     },
     {
       "path": "src/api/models.ts",
-      "sha256": "08d8c0430f69403dc009b2b363e7355e961774824dd6240f10552e736df68756"
+      "sha256": "f6557cffc9a017a15e53b83213163d6c47c129f48af35553c811666d55e72d23"
     },
     {
       "path": "src/api/moderations.ts",
-      "sha256": "f9641e9dd9c7e778768c369cf205b57fc777562d9c96564a2498d7375b4dec47"
+      "sha256": "761b05cb814f9b8c548d71b919bde0b267185577b88f333a2198ba2f45bec8d7"
     },
     {
       "path": "src/api/paths.ts",
@@ -152,43 +152,43 @@
     },
     {
       "path": "src/api/realtime.ts",
-      "sha256": "bef7604c04638f69f93386e585afc61e6806e08177e48a257bc38985028cc17e"
+      "sha256": "153fd7640216096418e60558aa748f7e1ffba91ad0c048e44eb8e16466223990"
     },
     {
       "path": "src/api/responses-google.ts",
-      "sha256": "30de624e0dc2b424065f72bff1a5e7d8e0a4a09cdb96071c2e888b53561de328"
+      "sha256": "5e22b3dcaccd56ec61d92ad953ec6e730e44e797da97efc0f6b2d1fb716be99d"
     },
     {
       "path": "src/api/responses.ts",
-      "sha256": "6fc64a1360f9c936a9f048900f8a01528ebd75d5dbc4386ab19cc66b013109e8"
+      "sha256": "26bbae93c65c12b024a1f75749e447ccc2cb4ce26424061067ae5fdbfa64a213"
     },
     {
       "path": "src/api/threads.ts",
-      "sha256": "d21a9ebad43c8fae1fa374bd3557ba0e36350d8d12a5069e67fd2e64bbb87e49"
+      "sha256": "5740373f8f96c35557d9f79361bd9661ccfa294f302546c73d0c708f6e869dcd"
     },
     {
       "path": "src/api/uploads.ts",
-      "sha256": "b57ea45a19fed9b39126c071c5adb0cff0ccddfd581ce37b6c7df1c5dd754cb1"
+      "sha256": "3c685c574eefd608b4815c606afc24d9c162fc3deb97c50ec9301cd2f23fc20f"
     },
     {
       "path": "src/api/vector-stores.ts",
-      "sha256": "7c789196d77d768ddb6badbcd3060d0f374a807303ec9061b8509dd0ad804ddb"
+      "sha256": "8bc504abb6978ea07db7a01a7aedbe7957e74166f659e34dda4cc34e2b734181"
     },
     {
       "path": "src/api/video.ts",
-      "sha256": "d54de9bfc05b2f9323687eae88720b01b2e0dd2e80b35741def98fda58026693"
+      "sha256": "1ab894180c05442953541242d91730da68836490dfce2b07003ca3277bf100c3"
     },
     {
       "path": "src/api/videos-kling.ts",
-      "sha256": "5d6b8bdcfca95397bb18f5509144c00e584e98cd1a2e52c26942720c0e6f40f1"
+      "sha256": "eae6d51cffb8b99e2cb6be57b867da8eecdb543b39494989c74a1113a63676a3"
     },
     {
       "path": "src/api/videos-vidu.ts",
-      "sha256": "95c7115454fbb4532dc83da89f209879f4dfbe48f7927c0ed1becef262009123"
+      "sha256": "f1273946164f8c27db96eae4265e7c5785c1579aeb52379f2ecf42ebfd7576d1"
     },
     {
       "path": "src/api/videos-volcengine.ts",
-      "sha256": "a051e535e5b5bcf7c3c2b44588ab25396adaa5f65a2baac5d4ab2b804d8cf0be"
+      "sha256": "db8829fec9a517fa08039b517d786fa30f7e7f5ba5864d67d91c90f9a0729784"
     },
     {
       "path": "src/auth/index.ts",
@@ -196,7 +196,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "0dee397e21078852e6660072728365a583424f09b21bc372f0c3e1d53c65eea6"
+      "sha256": "d5381100ce48a63107c8b44a460d0d08026608bf61744e8c62ce3bf2e697143e"
     },
     {
       "path": "src/http/index.ts",
@@ -264,7 +264,7 @@
     },
     {
       "path": "src/types/anthropic-message-batch.ts",
-      "sha256": "2bac8c425c794348ddd02c6cbcfff973be4d3dfb522c0f1a141a8b10ee95a79a"
+      "sha256": "1c69e05e58c4a39a83ea6130e7e892d2b3837c6d1f1b657f5dec8550a2194c31"
     },
     {
       "path": "src/types/anthropic-message-create-request.ts",

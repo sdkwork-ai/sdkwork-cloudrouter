@@ -1235,58 +1235,47 @@ class SdkworkStandardAlignmentGuardian:
                     )
                 )
 
-        gateway_runtime = self.root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs"
-        gateway_text = gateway_runtime.read_text(encoding="utf-8") if gateway_runtime.exists() else ""
-        if "connect_claw_sqlite_runtime" in gateway_text:
-            checks.append(
-                AlignmentCheck(
-                    id="database-gateway-sqlite-poolbuilder",
-                    category="database",
-                    severity="blocking",
-                    status="pass",
-                    message="gateway sqlite pool creation routes through sdkwork-database PoolBuilder helpers",
-                    remediation="",
-                )
+        server_runtime_files = [
+            self.root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
+            self.root / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs",
+            self.root / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "commerce_runtime.rs",
+            self.root / "crates" / "sdkwork-routes-clawrouter-backend-api" / "src" / "routes.rs",
+        ]
+        forbidden_sqlite_runtime_tokens = (
+            "DatabaseEngine::Sqlite",
+            "DatabasePool::Sqlite",
+            "SqlitePool",
+            "router_with_sqlite",
+            "connect_claw_sqlite",
+            "for_sqlite",
+            "as_sqlite",
+        )
+        sqlite_runtime_violations = []
+        for runtime_file in server_runtime_files:
+            if not runtime_file.exists():
+                continue
+            runtime_text = runtime_file.read_text(encoding="utf-8").split("#[cfg(test)]")[0]
+            if any(token in runtime_text for token in forbidden_sqlite_runtime_tokens):
+                sqlite_runtime_violations.append(runtime_file.relative_to(self.root).as_posix())
+        checks.append(
+            AlignmentCheck(
+                id="database-server-runtime-postgres-only",
+                category="database",
+                severity="blocking",
+                status="fail" if sqlite_runtime_violations else "pass",
+                message=(
+                    "server runtime files still expose SQLite database paths: "
+                    + ", ".join(sqlite_runtime_violations)
+                    if sqlite_runtime_violations
+                    else "gateway, app API, and backend API server runtimes are PostgreSQL-only"
+                ),
+                remediation=(
+                    "remove SQLite pools, branches, constructors, and executable exports from server runtime code"
+                    if sqlite_runtime_violations
+                    else ""
+                ),
             )
-        elif "SqlitePoolOptions::new" in gateway_text:
-            checks.append(
-                AlignmentCheck(
-                    id="database-gateway-sqlite-poolbuilder",
-                    category="database",
-                    severity="warning",
-                    status="fail",
-                    message="gateway still creates sqlite pools with raw SqlitePoolOptions",
-                    remediation="use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_claw_sqlite_runtime_pool",
-                )
-            )
-
-        for route_crate in self.HTTP_ROUTE_CRATES:
-            routes_rs = self.root / route_crate / "src" / "routes.rs"
-            routes_text = routes_rs.read_text(encoding="utf-8") if routes_rs.exists() else ""
-            uses_pool_helper = "connect_claw_sqlite_runtime_pool" in routes_text
-            uses_raw_sqlite_pool = "SqlitePoolOptions::new" in routes_text.split("#[cfg(test)]")[0]
-            if uses_pool_helper and not uses_raw_sqlite_pool:
-                checks.append(
-                    AlignmentCheck(
-                        id=f"database-route-sqlite-pool-{route_crate}",
-                        category="database",
-                        severity="blocking",
-                        status="pass",
-                        message=f"{route_crate} sqlite startup pools use sdkwork-database PoolBuilder helpers",
-                        remediation="",
-                    )
-                )
-            else:
-                checks.append(
-                    AlignmentCheck(
-                        id=f"database-route-sqlite-pool-{route_crate}",
-                        category="database",
-                        severity="blocking",
-                        status="fail",
-                        message=f"{route_crate} must route sqlite pool creation through connect_claw_sqlite_runtime_pool",
-                        remediation="replace raw SqlitePoolOptions in router startup paths with product pool helpers",
-                    )
-                )
+        )
 
         return checks
 

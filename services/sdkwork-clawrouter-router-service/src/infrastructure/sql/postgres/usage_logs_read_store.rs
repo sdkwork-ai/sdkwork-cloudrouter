@@ -64,7 +64,7 @@ SELECT
     COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_id,
     CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS started_at,
     COALESCE(NULLIF(t.api_key_name_snapshot, ''), '-') AS api_key_name_snapshot,
-    COALESCE(NULLIF(g.group_name, ''), NULLIF(t.upstream_account_group_snapshot, ''), '-') AS upstream_account_group_display_name,
+    COALESCE(NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name,
     COALESCE(
         u.modality,
         CASE
@@ -135,7 +135,7 @@ WHERE (
     $6::text IS NULL
     OR lower(COALESCE(t.request_id, '')) LIKE $6
     OR lower(COALESCE(t.api_key_name_snapshot, '')) LIKE $6
-    OR lower(COALESCE(t.upstream_account_group_snapshot, '')) LIKE $6
+    OR lower(COALESCE(t.account_group_snapshot, '')) LIKE $6
     OR lower(COALESCE(g.group_name, '')) LIKE $6
     OR lower(COALESCE(t.requested_model, '')) LIKE $6
     OR lower(COALESCE(t.requested_model_catalog_key, '')) LIKE $6
@@ -215,7 +215,7 @@ WHERE (
     $6::text IS NULL
     OR lower(COALESCE(t.request_id, '')) LIKE $6
     OR lower(COALESCE(t.api_key_name_snapshot, '')) LIKE $6
-    OR lower(COALESCE(t.upstream_account_group_snapshot, '')) LIKE $6
+    OR lower(COALESCE(t.account_group_snapshot, '')) LIKE $6
     OR lower(COALESCE(g.group_name, '')) LIKE $6
     OR lower(COALESCE(t.requested_model, '')) LIKE $6
     OR lower(COALESCE(t.requested_model_catalog_key, '')) LIKE $6
@@ -548,7 +548,7 @@ mod tests {
         }
         assert!(
             LOAD_USAGE_LOGS.contains(
-                "COALESCE(NULLIF(g.group_name, ''), NULLIF(t.upstream_account_group_snapshot, ''), '-') AS upstream_account_group_display_name"
+                "COALESCE(NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name"
             ),
             "usage logs Postgres SQL must project the maintained channel group name with snapshot fallback"
         );

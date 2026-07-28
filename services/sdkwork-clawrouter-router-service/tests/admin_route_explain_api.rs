@@ -39,19 +39,19 @@ fn catalog() -> InMemoryPricingCatalog {
 }
 
 fn explain_request(api_key_id: i64, account_group_id: Option<i64>) -> Request<Body> {
-    let mut payload = serde_json::json!({
+    let payload = serde_json::json!({
         "apiKeyId": api_key_id.to_string(),
         "resourceCode": "api.openai.files",
         "apiCode": "openai.files",
         "capability": "network",
         "billingMeter": "api_request"
     });
-    if let Some(account_group_id) = account_group_id {
-        payload["channelGroupId"] = serde_json::Value::String(account_group_id.to_string());
-    }
+    let account_group_id = account_group_id.unwrap_or(10);
     Request::builder()
         .method("POST")
-        .uri("/backend/v3/api/ai/route_explain")
+        .uri(format!(
+            "/backend/v3/api/ai/upstream_account_groups/{account_group_id}/route_explain"
+        ))
         .header("content-type", "application/json")
         .internal_trusted_subject(100001, 7, 31)
         .body(Body::from(payload.to_string()))
@@ -73,7 +73,7 @@ async fn route_explain_requires_a_typed_admin_subject() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/ai/route_explain")
+                .uri("/backend/v3/api/ai/upstream_account_groups/10/route_explain")
                 .header("content-type", "application/json")
                 .body(Body::from(
                     r#"{"apiKeyId":"100","resourceCode":"api.openai.files"}"#,
@@ -112,7 +112,10 @@ async fn route_explain_response_omits_credential_metadata() {
     let response = router.oneshot(explain_request(100, None)).await.unwrap();
 
     assert_eq!(StatusCode::OK, response.status());
-    let serialized = payload(response).await.to_string();
+    let body = payload(response).await;
+    assert_eq!("runtime_selector", body["data"]["item"]["source"]);
+    assert!(body["data"]["item"]["ready"].as_bool().is_some());
+    let serialized = body.to_string();
     assert!(!serialized.contains("credentialId"));
     assert!(!serialized.contains("credentialRotation"));
 }

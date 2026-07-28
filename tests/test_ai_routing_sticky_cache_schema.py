@@ -18,7 +18,7 @@ class AiRoutingStickyCacheSchemaTest(unittest.TestCase):
     def test_ai_routing_sticky_cache_tables_are_registered(self) -> None:
         tables = _registry_tables()
         expected = {
-            "ai_provider_object_route",
+            "ai_upstream_object_route",
             "ai_config_version",
             "ai_config_change_event",
         }
@@ -26,18 +26,18 @@ class AiRoutingStickyCacheSchemaTest(unittest.TestCase):
         self.assertNotIn("ai_resource_route_profile", tables)
         self.assertNotIn("ai_route_idempotency", tables)
 
-        object_route = tables["ai_provider_object_route"]
+        object_route = tables["ai_upstream_object_route"]
         self.assertIs(object_route["system_of_record"], True)
         self.assertIn("object_key_hash", object_route["columns"])
         self.assertIn("expires_at", object_route["columns"])
         self.assertTrue(
-            any(index["name"] == "idx_ai_provider_object_route_fast" for index in object_route["indexes"])
+            any(index["name"] == "idx_ai_upstream_object_route_fast" for index in object_route["indexes"])
         )
 
     def test_ai_routing_sticky_cache_tables_are_in_generated_postgres_schema(self) -> None:
         schema = GENERATED_SCHEMA_PATH.read_text(encoding="utf-8")
         for table in [
-            "ai_provider_object_route",
+            "ai_upstream_object_route",
             "ai_config_version",
             "ai_config_change_event",
         ]:
@@ -47,7 +47,7 @@ class AiRoutingStickyCacheSchemaTest(unittest.TestCase):
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_resource_route_profile", schema)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_route_idempotency", schema)
 
-        self.assertIn("idx_ai_provider_object_route_fast", schema)
+        self.assertIn("idx_ai_upstream_object_route_fast", schema)
         self.assertIn("idx_ai_config_change_event_pending", schema)
 
 

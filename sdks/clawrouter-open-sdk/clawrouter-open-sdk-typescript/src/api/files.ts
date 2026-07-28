@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { DeleteResult, OpenAiFile, OpenAiFileList, OpenAiFileUploadRequest } from '../types';
 
@@ -20,34 +20,34 @@ export class FilesApi {
 
 
 /** List files */
-  async list(params?: FilesListParams): Promise<OpenAiFileList> {
+  async list(params?: FilesListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiFileList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiFileList>(appendQueryString(aiApiPath(`/files`), query));
+    return this.client.request<OpenAiFileList>(appendQueryString(aiApiPath(`/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Upload file */
-  async create(body: OpenAiFileUploadRequest): Promise<OpenAiFile> {
-    return this.client.post<OpenAiFile>(aiApiPath(`/files`), body, undefined, undefined, 'multipart/form-data');
+  async create(body: OpenAiFileUploadRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiFile> {
+    return this.client.request<OpenAiFile>(aiApiPath(`/files`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'multipart/form-data' });
   }
 
 /** Delete file */
-  async delete(fileId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`));
+  async delete(fileId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve file */
-  async retrieve(fileId: string): Promise<OpenAiFile> {
-    return this.client.get<OpenAiFile>(aiApiPath(`/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`));
+  async retrieve(fileId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiFile> {
+    return this.client.request<OpenAiFile>(aiApiPath(`/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Retrieve file content */
-  async content(fileId: string): Promise<Blob> {
-    return this.client.get<Blob>(aiApiPath(`/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}/content`));
+  async content(fileId: string, requestOptions?: ApiRequestOptions): Promise<Blob> {
+    return this.client.request<Blob>(aiApiPath(`/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}/content`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

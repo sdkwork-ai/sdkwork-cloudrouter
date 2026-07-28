@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { OpenAiModeration, OpenAiModerationCreateRequest } from '../types';
 
@@ -13,8 +13,8 @@ export class ModerationsApi {
 
 
 /** Create moderation */
-  async create(body: OpenAiModerationCreateRequest): Promise<OpenAiModeration> {
-    return this.client.post<OpenAiModeration>(aiApiPath(`/moderations`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiModerationCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiModeration> {
+    return this.client.request<OpenAiModeration>(aiApiPath(`/moderations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

@@ -49,17 +49,10 @@ tables:
     last_balance_checked_at: instant
     last_rotated_at: instant
     next_rotate_at: instant
-    last_verified_at: instant
-    last_used_at: instant
     rpm_limit: int64
     timeout_ms: int32
     retry_policy: json
     circuit_breaker_policy: json
-    health_status:
-      type: int32
-      constraints: NOT NULL DEFAULT 1
-    last_latency_ms: int32
-    consecutive_error_count: int64
     proxy_id: int64
     risk_level: int32
   unique_constraints:
@@ -117,10 +110,8 @@ tables:
       AND (quota_limit IS NULL OR quota_limit >= 0)
       AND (quota_used IS NULL OR quota_used >= 0)
       AND (upstream_balance_amount IS NULL OR upstream_balance_amount >= 0)
-  - name: ck_ai_upstream_account_health_values
-    expression: (last_latency_ms IS NULL OR last_latency_ms >= 0)
-      AND (consecutive_error_count IS NULL OR consecutive_error_count >= 0)
-      AND (timeout_ms IS NULL OR timeout_ms > 0)
+  - name: ck_ai_upstream_account_timeout
+    expression: timeout_ms IS NULL OR timeout_ms > 0
   indexes:
   - name: uk_ai_upstream_account_scope_id
     unique: true
@@ -142,13 +133,6 @@ tables:
     - supplier_id
     - status
     - id
-  - name: idx_ai_upstream_account_health_status
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - health_status
-    - id
   - name: idx_ai_upstream_account_preferred_endpoint
     columns:
     - tenant_id
@@ -156,6 +140,71 @@ tables:
     - preferred_endpoint_id
     - status
     - id
+- table: ai_upstream_account_health_state
+  domain: ai
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: operational_state
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    account_id:
+      type: int64
+      constraints: NOT NULL
+    health_status:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_verified_at: instant
+    last_used_at: instant
+    last_success_at: instant
+    last_failure_at: instant
+  unique_constraints:
+  - name: uk_ai_upstream_account_health_state_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+  foreign_keys:
+  - name: fk_ai_upstream_account_health_state_account
+    columns:
+    - tenant_id
+    - organization_id
+    - account_id
+    references_table: ai_upstream_account
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_upstream_account_health_state_identity
+    expression: id = account_id
+  - name: ck_ai_upstream_account_health_state_values
+    expression: health_status IN (0, 1, 2)
+      AND (last_latency_ms IS NULL OR last_latency_ms >= 0)
+      AND consecutive_error_count >= 0
+  indexes:
+  - name: idx_ai_upstream_account_health_state_health
+    columns:
+    - tenant_id
+    - organization_id
+    - health_status
+    - updated_at
+    - account_id
+  lifecycle:
+    storage_strategy: overwrite_state
+    concurrency: atomic_upsert
+    cleanup:
+      strategy: foreign_key_cascade
+      parent_table: ai_upstream_account
 - table: ai_upstream_account_credential
   domain: ai
   profile: credential_ref
@@ -913,7 +962,7 @@ tables:
     - status
     - enabled
     - id
-  - name: idx_ai_model_mapping_rule_binding_channel_group_lookup
+  - name: idx_ai_model_mapping_rule_binding_account_group_lookup
     columns:
     - tenant_id
     - organization_id
@@ -1044,15 +1093,6 @@ tables:
     environment:
       type: int32
       constraints: NOT NULL DEFAULT 1
-    health_status:
-      type: int32
-      constraints: NOT NULL DEFAULT 1
-    last_latency_ms: int32
-    consecutive_error_count:
-      type: int64
-      constraints: NOT NULL DEFAULT 0
-    last_checked_at: instant
-    last_sync_at: instant
     metadata_schema_version: string(32)
     sort_order:
       type: int32
@@ -1069,9 +1109,6 @@ tables:
   check_constraints:
   - name: ck_ai_upstream_supplier_type
     expression: supplier_type IN ('official', 'relay')
-  - name: ck_ai_upstream_supplier_health_values
-    expression: (last_latency_ms IS NULL OR last_latency_ms >= 0)
-      AND consecutive_error_count >= 0
   indexes:
   - name: uk_ai_upstream_supplier_scope_id
     unique: true
@@ -1101,7 +1138,7 @@ tables:
     - protocol_code
     - status
     - id
-- table: ai_provider_object_route
+- table: ai_upstream_object_route
   domain: ai
   profile: runtime_binding
   compliance_level: L2
@@ -1139,24 +1176,24 @@ tables:
     expires_at: instant
     last_seen_at: instant
   unique_constraints:
-  - name: uk_ai_provider_object_route_uuid
+  - name: uk_ai_upstream_object_route_uuid
     columns:
     - uuid
-  - name: uk_ai_provider_object_route_object
+  - name: uk_ai_upstream_object_route_object
     columns:
     - tenant_id
     - organization_id
     - object_type
     - object_id
   indexes:
-  - name: idx_ai_provider_object_route_fast
+  - name: idx_ai_upstream_object_route_fast
     columns:
     - tenant_id
     - organization_id
     - object_key_hash
     - status
     - id
-  - name: idx_ai_provider_object_route_parent
+  - name: idx_ai_upstream_object_route_parent
     columns:
     - tenant_id
     - organization_id
@@ -1164,7 +1201,7 @@ tables:
     - parent_object_id
     - status
     - id
-  - name: idx_ai_provider_object_route_account
+  - name: idx_ai_upstream_object_route_account
     columns:
     - tenant_id
     - organization_id
@@ -1172,7 +1209,7 @@ tables:
     - account_id
     - status
     - id
-  - name: idx_ai_provider_object_route_expiry
+  - name: idx_ai_upstream_object_route_expiry
     columns:
     - tenant_id
     - organization_id
@@ -1511,15 +1548,6 @@ tables:
     environment:
       type: int32
       constraints: NOT NULL DEFAULT 1
-    health_status:
-      type: int32
-      constraints: NOT NULL DEFAULT 1
-    last_latency_ms: int32
-    consecutive_error_count:
-      type: int64
-      constraints: NOT NULL DEFAULT 0
-    last_checked_at: instant
-    last_sync_at: instant
     priority:
       type: int32
       constraints: NOT NULL DEFAULT 100
@@ -1555,8 +1583,6 @@ tables:
   - name: ck_ai_upstream_supplier_endpoint_values
     expression: priority >= 0 AND routing_weight >= 0
       AND (timeout_ms IS NULL OR timeout_ms > 0)
-      AND (last_latency_ms IS NULL OR last_latency_ms >= 0)
-      AND consecutive_error_count >= 0
   indexes:
   - name: uk_ai_upstream_supplier_endpoint_scope_id
     unique: true
@@ -1574,13 +1600,75 @@ tables:
     - priority
     - routing_weight
     - id
-  - name: idx_ai_upstream_supplier_endpoint_health_status
+- table: ai_upstream_supplier_endpoint_health_state
+  domain: ai
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: operational_state
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    supplier_id:
+      type: int64
+      constraints: NOT NULL
+    endpoint_id:
+      type: int64
+      constraints: NOT NULL
+    health_status:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    last_latency_ms: int32
+    consecutive_error_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_checked_at: instant
+    last_success_at: instant
+    last_failure_at: instant
+  unique_constraints:
+  - name: uk_ai_upstream_supplier_endpoint_health_state_scope
     columns:
     - tenant_id
     - organization_id
-    - status
-    - health_status
+    - endpoint_id
+  foreign_keys:
+  - name: fk_ai_upstream_supplier_endpoint_health_state_endpoint
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
+    - endpoint_id
+    references_table: ai_upstream_supplier_endpoint
+    references_columns:
+    - tenant_id
+    - organization_id
+    - supplier_id
     - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_upstream_supplier_endpoint_health_state_identity
+    expression: id = endpoint_id
+  - name: ck_ai_upstream_supplier_endpoint_health_state_values
+    expression: health_status IN (0, 1, 2)
+      AND (last_latency_ms IS NULL OR last_latency_ms >= 0)
+      AND consecutive_error_count >= 0
+  indexes:
+  - name: idx_ai_upstream_supplier_endpoint_health_state_health
+    columns:
+    - tenant_id
+    - organization_id
+    - health_status
+    - updated_at
+    - endpoint_id
+  lifecycle:
+    storage_strategy: overwrite_state
+    concurrency: atomic_upsert
+    cleanup:
+      strategy: foreign_key_cascade
+      parent_table: ai_upstream_supplier_endpoint
 - table: ai_upstream_supplier_auth_method
   domain: ai
   profile: tenant_entity
@@ -1612,6 +1700,9 @@ tables:
     config_schema:
       type: json
       constraints: NOT NULL DEFAULT '{}'::jsonb
+    runtime_auth_config:
+      type: json
+      constraints: NOT NULL
     authorization_url: string(512)
     token_url: string(512)
     scopes: json
@@ -1646,6 +1737,8 @@ tables:
   - name: ck_ai_upstream_supplier_auth_method_type
     expression: auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4', 'custom')
       AND priority >= 0
+  - name: ck_ai_upstream_supplier_auth_method_runtime_auth_config
+    expression: jsonb_typeof(runtime_auth_config) = 'object'
   indexes:
   - name: idx_ai_upstream_supplier_auth_method_supplier_status
     columns:

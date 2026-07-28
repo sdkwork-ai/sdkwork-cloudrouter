@@ -83,14 +83,6 @@
       "system_of_record": true
     },
     {
-      "table_name": "ai_provider_object_route",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "runtime_binding",
-      "system_of_record": true
-    },
-    {
       "table_name": "ai_quota_policy",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -187,6 +179,22 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_upstream_account_health_state",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_object_route",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "runtime_binding",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_upstream_supplier",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -208,6 +216,14 @@
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_upstream_supplier_endpoint_health_state",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "operational_state",
       "system_of_record": true
     },
     {

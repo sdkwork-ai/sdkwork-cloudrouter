@@ -29,24 +29,6 @@ pub struct GatewayApiKeyListPage {
     pub page_size: i64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ListAppUpstreamAccountGroupsQuery {
-    pub tenant_id: i64,
-    pub organization_id: i64,
-    pub page_no: i64,
-    pub page_size: i64,
-    pub offset: i64,
-    pub q: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AppUpstreamAccountGroupListPage {
-    pub items: Vec<UpstreamAccountGroup>,
-    pub total: i64,
-    pub page_no: i64,
-    pub page_size: i64,
-}
-
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct GatewayApiKeyManagementSnapshot {
     pub api_keys: Vec<GatewayApiKey>,
@@ -271,11 +253,6 @@ pub trait GatewayApiKeyManagementReadStore {
         &'a self,
         query: ListGatewayApiKeysQuery,
     ) -> ApiKeyManagementReadFuture<'a, GatewayApiKeyListPage>;
-
-    fn list_app_upstream_account_groups<'a>(
-        &'a self,
-        query: ListAppUpstreamAccountGroupsQuery,
-    ) -> ApiKeyManagementReadFuture<'a, AppUpstreamAccountGroupListPage>;
 }
 
 fn collect_access_policies<C>(catalog: &C, api_keys: &[GatewayApiKey]) -> Vec<GatewayAccessPolicy>

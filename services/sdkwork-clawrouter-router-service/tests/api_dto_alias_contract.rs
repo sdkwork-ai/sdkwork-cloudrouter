@@ -18,10 +18,6 @@ const PRODUCT_API_SOURCES: &[(&str, &str)] = &[
     ),
     ("admin_mcp.rs", include_str!("../src/api/admin_mcp.rs")),
     (
-        "admin_messaging.rs",
-        include_str!("../src/api/admin_messaging.rs"),
-    ),
-    (
         "admin_record.rs",
         include_str!("../src/api/admin_record.rs"),
     ),
@@ -34,10 +30,6 @@ const PRODUCT_API_SOURCES: &[(&str, &str)] = &[
     (
         "admin_payment_runtime.rs",
         include_str!("../src/api/admin_payment_runtime.rs"),
-    ),
-    (
-        "admin_service_provider.rs",
-        include_str!("../src/api/admin_service_provider.rs"),
     ),
     (
         "admin_storage.rs",

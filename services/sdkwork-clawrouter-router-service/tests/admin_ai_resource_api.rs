@@ -8,8 +8,8 @@ use axum::body::Body;
 use axum::http::{header::CONTENT_TYPE, HeaderValue, Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, AiRoutingCacheInvalidatingAdminAiResourceStore,
-    EntityUuidGenerator, ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
-    ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE, ROUTING_SNAPSHOT_CACHE_NAMESPACE,
+    EntityUuidGenerator, ROUTING_CONFIG_VERSION_CACHE_NAMESPACE, ROUTING_SNAPSHOT_CACHE_NAMESPACE,
+    ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
 };
 use sdkwork_clawrouter_router_service::domain::DomainError;
 use sdkwork_clawrouter_router_service::ports::{
@@ -243,7 +243,7 @@ async fn admin_ai_resource_route_invalidates_routing_cache_after_successful_muta
         .unwrap();
     manager
         .set_json(
-            ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE,
+            ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
             "tenant:10:org:20:object:resp_123",
             serde_json::json!({ "channelId": 1 }),
         )
@@ -281,7 +281,7 @@ async fn admin_ai_resource_route_invalidates_routing_cache_after_successful_muta
         .is_none());
     assert!(manager
         .get_json(
-            ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE,
+            ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
             "tenant:10:org:20:object:resp_123"
         )
         .await

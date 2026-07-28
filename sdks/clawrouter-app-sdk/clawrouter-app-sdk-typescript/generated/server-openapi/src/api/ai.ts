@@ -1,6 +1,6 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AppChannelGroupListResponse, DashboardOverviewResponse } from '../types';
+import type { AppRoutingAccountGroupListResponse, DashboardOverviewResponse } from '../types';
 export class AiUsageLogsApi {
   private client: HttpClient;
 
@@ -82,8 +82,34 @@ export class AiRoutingApiKeysApi {
   }
 }
 
+export interface AiRoutingAccountGroupsListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export class AiRoutingAccountGroupsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List routing account groups */
+  async list(params?: AiRoutingAccountGroupsListParams, requestOptions?: ApiRequestOptions): Promise<AppRoutingAccountGroupListResponse> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AppRoutingAccountGroupListResponse>(appendQueryString(appApiPath(`/ai/routing/account_groups`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  }
+}
+
 export class AiRoutingApi {
   private client: HttpClient;
+  public readonly accountGroups: AiRoutingAccountGroupsApi;
   public readonly apiKeys: AiRoutingApiKeysApi;
   public readonly channels: AiRoutingChannelsApi;
   public readonly requestTraces: AiRoutingRequestTracesApi;
@@ -91,6 +117,7 @@ export class AiRoutingApi {
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.accountGroups = new AiRoutingAccountGroupsApi(client);
     this.apiKeys = new AiRoutingApiKeysApi(client);
     this.channels = new AiRoutingChannelsApi(client);
     this.requestTraces = new AiRoutingRequestTracesApi(client);
@@ -217,23 +244,8 @@ export class AiDashboardApi {
 
 }
 
-export class AiChannelGroupsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List groups */
-  async list(requestOptions?: ApiRequestOptions): Promise<AppChannelGroupListResponse> {
-    return this.client.request<AppChannelGroupListResponse>(appApiPath(`/ai/channel_groups`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
-  }
-}
-
 export class AiApi {
   private client: HttpClient;
-  public readonly channelGroups: AiChannelGroupsApi;
   public readonly dashboard: AiDashboardApi;
   public readonly gateway: AiGatewayApi;
   public readonly generations: AiGenerationsApi;
@@ -242,7 +254,6 @@ export class AiApi {
 
   constructor(client: HttpClient) {
     this.client = client;
-    this.channelGroups = new AiChannelGroupsApi(client);
     this.dashboard = new AiDashboardApi(client);
     this.gateway = new AiGatewayApi(client);
     this.generations = new AiGenerationsApi(client);

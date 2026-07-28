@@ -54,7 +54,7 @@ const EXECUTABLE_DEPENDENCY_MOUNTS = {
       runtimeMode: "same-origin-mounted",
       cargoDependency: "sdkwork_routes_membership_app_api",
       embeddedExecutableExport:
-        "sdkwork_routes_membership_app_api::app_membership_router_with_sqlite_pool",
+        "sdkwork_routes_membership_app_api::app_membership_router_with_postgres_pool",
     },
     sourceEvidence: [
       {
@@ -67,7 +67,6 @@ const EXECUTABLE_DEPENDENCY_MOUNTS = {
         path: "crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs",
         requiredText: [
           "app_membership_router_with_postgres_pool",
-          "app_membership_router_with_sqlite_pool",
           "let membership_router = build_membership_router_from_pool(",
           "merge_federated_app_capability_router_with_optional_auth(",
         ],
@@ -172,12 +171,16 @@ async function readAppbaseIamRouteEntries() {
 
 async function readMembershipAppRouteEntries() {
   const source = await readFile(MEMBERSHIP_APP_MANIFEST_PATH, "utf8");
-  const match = source.match(
+  const routeArrayMatch = source.match(
+    /const APP_API_HTTP_ROUTES: &\[HttpRoute\] = &\[([\s\S]*?)\];/,
+  );
+  const inlineManifestMatch = source.match(
     /pub const APP_API_HTTP_ROUTE_MANIFEST: HttpRouteManifest = HttpRouteManifest::new\(&\[([\s\S]*?)\]\);/,
   );
+  const match = routeArrayMatch ?? inlineManifestMatch;
   if (!match) {
     throw new Error(
-      `failed to parse APP_API_HTTP_ROUTE_MANIFEST from ${MEMBERSHIP_APP_MANIFEST_PATH}`,
+      `failed to parse membership HttpRoute entries from ${MEMBERSHIP_APP_MANIFEST_PATH}`,
     );
   }
   return `    ${match[1].trim()}`;

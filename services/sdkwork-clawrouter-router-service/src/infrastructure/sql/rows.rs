@@ -3,10 +3,10 @@ use crate::domain::{
     BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
     GatewayApiKeyAccountGroupBinding, GatewayRiskRule, ModelMappingBindingType, ModelMappingRule,
     ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
-    PricingPlan, ProviderAuthProfile, ProviderRetryPolicy, QuotaPolicy, RouteCandidate,
-    RoutingCapability, RoutingFallbackMode, RoutingPolicy, RoutingPolicyScope, RoutingRule,
-    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot,
-    UpstreamAccountRoute, UpstreamResourceEntitlement,
+    PricingPlan, ProviderRetryPolicy, QuotaPolicy, RouteCandidate, RoutingCapability,
+    RoutingFallbackMode, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
+    UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
+    UpstreamResourceEntitlement,
 };
 
 pub struct ModelVendorRow {
@@ -128,7 +128,7 @@ pub struct ModelUpstreamRouteRow {
     pub base_url: Option<String>,
     pub secret_ref: Option<String>,
     pub auth_type: Option<String>,
-    pub auth_config_json: Option<String>,
+    pub runtime_auth_config_json: String,
     pub timeout_ms: Option<i64>,
     pub retry_policy_json: Option<String>,
 }
@@ -154,7 +154,7 @@ pub struct UpstreamAccountRouteRow {
     pub secret_ref: Option<String>,
     pub secret_ciphertext: Option<String>,
     pub auth_type: Option<String>,
-    pub auth_config_json: Option<String>,
+    pub runtime_auth_config_json: String,
     pub timeout_ms: Option<i64>,
     pub retry_policy_json: Option<String>,
     pub account_group_bindings_json: String,
@@ -225,10 +225,9 @@ impl UpstreamAccountRouteRow {
     pub fn try_into_domain(self) -> DomainResult<UpstreamAccountRoute> {
         let timeout_ms = parse_timeout_ms(self.timeout_ms)?;
         let retry_policy = parse_retry_policy(self.retry_policy_json)?;
-        let auth_profile = ProviderAuthProfile::from_account_config(
-            &self.supplier_code,
-            self.auth_type.as_deref(),
-            self.auth_config_json.as_deref(),
+        let auth_profile = crate::domain::resolve_upstream_runtime_auth_profile(
+            self.auth_type.as_deref().unwrap_or_default(),
+            &self.runtime_auth_config_json,
         )?;
         let last_latency_ms = self
             .last_latency_ms
@@ -236,7 +235,7 @@ impl UpstreamAccountRouteRow {
             .transpose()
             .map_err(|error| {
                 DomainError::new(format!(
-                    "ai_upstream_account.last_latency_ms must be non-negative: {error}"
+                    "ai_upstream_account_health_state.last_latency_ms must be non-negative: {error}"
                 ))
             })?;
 
@@ -279,10 +278,9 @@ impl ModelUpstreamRouteRow {
         )?;
         let timeout_ms = parse_timeout_ms(self.timeout_ms)?;
         let retry_policy = parse_retry_policy(self.retry_policy_json)?;
-        let auth_profile = ProviderAuthProfile::from_account_config(
-            &self.supplier_code,
-            self.auth_type.as_deref(),
-            self.auth_config_json.as_deref(),
+        let auth_profile = crate::domain::resolve_upstream_runtime_auth_profile(
+            self.auth_type.as_deref().unwrap_or_default(),
+            &self.runtime_auth_config_json,
         )?;
         let provider_model =
             normalized_provider_model(&self.catalog_key, &self.model, &self.provider_model);

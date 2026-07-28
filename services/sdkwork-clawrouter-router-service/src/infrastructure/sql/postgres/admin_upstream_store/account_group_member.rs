@@ -5,8 +5,8 @@ use sqlx::{PgPool, Postgres, Transaction};
 
 use super::account_group;
 use super::shared::{
-    column, ensure_bounded_collection, generated_uuid, not_found, store_error, DEFAULT_DATA_SCOPE,
-    MAX_NESTED_ITEMS,
+    column, ensure_bounded_collection, generated_uuid, not_found, record_routing_change,
+    store_error, DEFAULT_DATA_SCOPE, MAX_NESTED_ITEMS,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
@@ -136,6 +136,16 @@ pub(super) async fn replace(
     )
     .await?;
     let result = list_in_transaction(&mut tx, &subject, account_group_id).await?;
+    record_routing_change(
+        &mut tx,
+        &subject,
+        &requested_at,
+        "upstream_account_group",
+        account_group_id,
+        "replace_upstream_account_group_members",
+        serde_json::json!({"memberCount": result.len()}),
+    )
+    .await?;
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit account group member replacement", error))?;

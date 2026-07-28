@@ -93,7 +93,9 @@
     }
   ],
   "contracts": {
-    "publicExports": [],
+    "publicExports": [
+      "src/lib.rs"
+    ],
     "runtimeEntrypoints": [
       "Cargo.toml"
     ],
@@ -110,7 +112,7 @@
   },
   "verification": {
     "commands": [
-      "cargo test --manifest-path apps/sdkwork-clawrouter/crates/sdkwork-claw-test-support/Cargo.toml"
+      "cargo test -p sdkwork-claw-test-support"
     ]
   },
   "metadata": {

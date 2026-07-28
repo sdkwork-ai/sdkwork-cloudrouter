@@ -71,6 +71,10 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
                 auth_method_name: "API key".to_owned(),
                 auth_type: "api_key".to_owned(),
                 config_schema: serde_json::json!({"type": "string"}),
+                runtime_auth_config: serde_json::json!({
+                    "credentialTransport": "bearer",
+                    "defaultHeaders": {}
+                }),
                 authorization_url: None,
                 token_url: None,
                 scopes: None,
@@ -164,6 +168,10 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         .expect("idempotent credential replay");
     assert_eq!(credential.id, replay.id);
     assert_eq!(Some("sk-t****xxxx".to_owned()), credential.masked_label);
+    assert_eq!(
+        6,
+        routing_config_version(&context.pool, subject.tenant_id, subject.organization_id).await
+    );
 
     let stored = sqlx::query(
         "SELECT credential_ref, credential_hash FROM ai_upstream_account_credential WHERE id = $1",
@@ -339,7 +347,47 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         .expect_err("group member dependency must block account deletion");
     assert!(blocked.is_conflict());
 
+    assert_eq!(
+        9,
+        routing_config_version(&context.pool, subject.tenant_id, subject.organization_id).await
+    );
+    assert_eq!(9, routing_config_version(&context.pool, 0, 0).await);
+    let config_events = sqlx::query(
+        r#"
+        SELECT event_payload::text AS event_payload
+        FROM ai_config_change_event
+        WHERE tenant_id = $1 AND organization_id = $2 AND config_scope = 'routing'
+        ORDER BY config_version ASC
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .fetch_all(&context.pool)
+    .await
+    .expect("load upstream routing config events");
+    assert_eq!(9, config_events.len());
+    for event in config_events {
+        let payload: String = event.try_get("event_payload").expect("event payload");
+        assert!(!payload.contains(&long_secret));
+        assert!(!payload.contains(&credential_ref));
+    }
+
     context.cleanup().await;
+}
+
+async fn routing_config_version(pool: &PgPool, tenant_id: i64, organization_id: i64) -> i64 {
+    sqlx::query_scalar(
+        r#"
+        SELECT config_version
+        FROM ai_config_version
+        WHERE tenant_id = $1 AND organization_id = $2 AND config_scope = 'routing'
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(organization_id)
+    .fetch_one(pool)
+    .await
+    .expect("load routing config version")
 }
 
 fn upstream_subject(tenant_id: i64, organization_id: i64) -> AdminUpstreamSubject {

@@ -1156,15 +1156,15 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "channelGroup",
+        "accountGroup",
         "model",
         "rpm",
         "tpm"
       ],
       "properties": {
-        "channelGroup": {
+        "accountGroup": {
           "type": "string",
-          "description": "channelGroup field on AdminModelLimitCreateRequest."
+          "description": "Upstream account group code for the model rate limit."
         },
         "model": {
           "type": "string",
@@ -2989,9 +2989,9 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "channelGroup",
-        "channelGroupId",
-        "channelGroupName",
+        "accountGroup",
+        "accountGroupId",
+        "accountGroupName",
         "id",
         "model",
         "rpm",
@@ -2999,27 +2999,27 @@
         "tpm"
       ],
       "properties": {
-        "channelGroup": {
+        "accountGroup": {
           "type": "string",
-          "description": "channelGroup field on ModelLimitRuleItem."
+          "description": "Upstream account group code."
         },
-        "channelGroupId": {
+        "accountGroupId": {
           "anyOf": [
             {
               "type": "string"
             },
             {}
           ],
-          "description": "channelGroupId field on ModelLimitRuleItem."
+          "description": "Upstream account group identifier."
         },
-        "channelGroupName": {
+        "accountGroupName": {
           "anyOf": [
             {
               "type": "string"
             },
             {}
           ],
-          "description": "channelGroupName field on ModelLimitRuleItem."
+          "description": "Upstream account group display name."
         },
         "id": {
           "type": "string",
@@ -3347,63 +3347,6 @@
     }
   },
   "operations": {
-    "GET /backend/v3/api/ai/channel_groups/{channelGroupId}/channel_bindings": {
-      "responseSchema": "AdminChannelBindingPage"
-    },
-    "PUT /backend/v3/api/ai/channel_groups/{channelGroupId}/channel_bindings": {
-      "requestSchema": "AdminChannelBindingReplaceRequest",
-      "responseSchema": "AdminChannelBindingPage"
-    },
-    "GET /backend/v3/api/ai/channel_groups": {
-      "responseSchema": "AdminChannelGroupPage"
-    },
-    "POST /backend/v3/api/ai/channel_groups": {
-      "requestSchema": "AdminChannelGroupCreateRequest",
-      "responseSchema": "AdminChannelGroupItem"
-    },
-    "PATCH /backend/v3/api/ai/channel_groups/{channelGroupId}": {
-      "requestSchema": "AdminChannelGroupUpdateRequest",
-      "responseSchema": "AdminChannelGroupItem"
-    },
-    "GET /backend/v3/api/integration/provider_secrets": {
-      "responseSchema": "AdminProviderSecretPage"
-    },
-    "POST /backend/v3/api/integration/provider_secrets": {
-      "requestSchema": "AdminProviderSecretCreateRequest",
-      "responseSchema": "AdminProviderSecretItem"
-    },
-    "PUT /backend/v3/api/integration/provider_secrets": {
-      "requestSchema": "AdminProviderSecretUpdateRequest",
-      "responseSchema": "AdminProviderSecretItem"
-    },
-    "GET /backend/v3/api/integration/channels": {
-      "responseSchema": "AdminChannelPage"
-    },
-    "POST /backend/v3/api/integration/channels": {
-      "requestSchema": "AdminChannelCreateRequest",
-      "responseSchema": "AdminChannelItem"
-    },
-    "PUT /backend/v3/api/integration/channels": {
-      "requestSchema": "AdminChannelUpdateRequest",
-      "responseSchema": "AdminChannelItem"
-    },
-    "POST /backend/v3/api/integration/channels/{channelId}/verify": {
-      "responseSchema": "AdminChannelVerifyResult"
-    },
-    "POST /backend/v3/api/sites/{siteId}/test_connection": {
-      "responseSchema": "AdminSiteConnectionCheckResult"
-    },
-    "POST /backend/v3/api/sites/{siteId}/health_check": {
-      "responseSchema": "AdminSiteConnectionCheckResult"
-    },
-    "POST /backend/v3/api/sites": {
-      "requestSchema": "AdminSiteCreateRequest",
-      "responseSchema": "AdminSiteItem"
-    },
-    "PATCH /backend/v3/api/sites/{siteId}": {
-      "requestSchema": "AdminSiteUpdateRequest",
-      "responseSchema": "AdminSiteItem"
-    },
     "GET /backend/v3/api/system/site/settings": {
       "responseSchema": "AdminSiteSettingsResponse"
     },

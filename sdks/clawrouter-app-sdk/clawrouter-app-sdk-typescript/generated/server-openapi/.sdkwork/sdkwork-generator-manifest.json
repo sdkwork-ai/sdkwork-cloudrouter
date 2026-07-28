@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "fa280755797ab29e9fb2be7a6c6caf1aea4ed1ac6c117bfefc7b6b6c1effbf4a"
+      "sha256": "fa678833ca716024577349a47fab418e6f7bbb470f586e79c457e5989dd07407"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "863262f3dbaffe9c621cc057e6d041ce05acfb545254ea48ed0e2a72e3f049b1"
+      "sha256": "a73a5ba12d385a46b1ec79d69c4302664056ac038f241f365c0d036fdc292aca"
     },
     {
       "path": "src/api/base.ts",
@@ -96,7 +96,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "a400aaa79494485aecb46e21b6662c0bbb9315fe2bd4cbef86abe82b96964dda"
+      "sha256": "76535919e618fc20622129e92e469d0d2110eb030cb73213278277b3c22e503a"
     },
     {
       "path": "src/http/index.ts",
@@ -119,12 +119,12 @@
       "sha256": "38c4808dc1904a99a9f4ee9a92e7b4936f21d52baf0922319a5d54fc662ed07a"
     },
     {
-      "path": "src/types/app-channel-group-list-response.ts",
-      "sha256": "b2c903a5df2683c7498f28aff75b501df85d06225dcde807211a1f0f8018625a"
+      "path": "src/types/app-routing-account-group-list-response.ts",
+      "sha256": "8865fe1804a76a9bda9ddafee30533faadb3436878633661254554c1eb4d4196"
     },
     {
-      "path": "src/types/app-channel-group.ts",
-      "sha256": "9e870cfb53d7ea926768b90ccf7087a5626b2ad8568031d2b48d85c1ca222550"
+      "path": "src/types/app-routing-account-group.ts",
+      "sha256": "3b7439f4329b274c8ba7819c32cda0d5ea6b15c33a319959e1c5bd194dd25933"
     },
     {
       "path": "src/types/common.ts",
@@ -172,7 +172,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "48636c1c04f0ba78b5a2d6ab73573218d903f5d26fbea1d919232d1f8a35da6f"
+      "sha256": "6bed96c3b8a07cafb04ac138c0bffecc27b6d4ee1bb6a21a39a78367a6601cf7"
     },
     {
       "path": "src/types/json-null.ts",

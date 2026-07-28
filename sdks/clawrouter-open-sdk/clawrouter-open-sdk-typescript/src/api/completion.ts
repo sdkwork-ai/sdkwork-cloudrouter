@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { OpenAiCompletion, OpenAiCompletionCreateRequest } from '../types';
 
@@ -13,8 +13,8 @@ export class CompletionApi {
 
 
 /** Create completion */
-  async create(body: OpenAiCompletionCreateRequest): Promise<OpenAiCompletion> {
-    return this.client.post<OpenAiCompletion>(aiApiPath(`/completions`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiCompletionCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiCompletion> {
+    return this.client.request<OpenAiCompletion>(aiApiPath(`/completions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

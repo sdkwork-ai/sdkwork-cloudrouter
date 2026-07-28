@@ -2,8 +2,8 @@ export * from './common';
 
 export type { AppApiKeyItem } from './app-api-key-item';
 export type { AppApiKeyListResponse } from './app-api-key-list-response';
-export type { AppChannelGroup } from './app-channel-group';
-export type { AppChannelGroupListResponse } from './app-channel-group-list-response';
+export type { AppRoutingAccountGroup } from './app-routing-account-group';
+export type { AppRoutingAccountGroupListResponse } from './app-routing-account-group-list-response';
 
 export type { CreateApiKeyRequest } from './create-api-key-request';
 export type { CreateApiKeyResponse } from './create-api-key-response';

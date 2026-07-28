@@ -237,7 +237,9 @@ class DatabaseContractMaterializer:
     def materialize(self) -> list[Path]:
         if self.module_spec == ROOT_MODULE:
             self.composite_compiler.write_dialect(DATABASE_ENGINE)
-        self.compiler.write_baseline(DATABASE_ENGINE, self._baseline_path())
+            self.composite_compiler.write_baseline(DATABASE_ENGINE, self._baseline_path())
+        else:
+            self.compiler.write_baseline(DATABASE_ENGINE, self._baseline_path())
         rendered = self.render()
         outputs = self._outputs()
         payloads = (
@@ -267,9 +269,15 @@ class DatabaseContractMaterializer:
         messages: list[str] = []
         if self.module_spec == ROOT_MODULE:
             messages.extend(self.composite_compiler.check_dialect(DATABASE_ENGINE).messages)
-        messages.extend(
-            self.compiler.check_baseline(DATABASE_ENGINE, self._baseline_path()).messages
-        )
+            messages.extend(
+                self.composite_compiler.check_baseline(
+                    DATABASE_ENGINE, self._baseline_path()
+                ).messages
+            )
+        else:
+            messages.extend(
+                self.compiler.check_baseline(DATABASE_ENGINE, self._baseline_path()).messages
+            )
         rendered = self.render()
         payloads = (
             rendered.schema_yaml,

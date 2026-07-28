@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { GoogleEmptyResponse, GoogleFile, GoogleFileListResponse, GoogleFileUploadMultipartRequest } from '../types';
 
@@ -18,27 +18,27 @@ export class FilesGoogleV1betaFilesApi {
 
 
 /** Google Gemini list files */
-  async list(params?: FilesGoogleV1betaFilesListParams): Promise<GoogleFileListResponse> {
+  async list(params?: FilesGoogleV1betaFilesListParams, requestOptions?: ApiRequestOptions): Promise<GoogleFileListResponse> {
     const query = buildQueryString([
       { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<GoogleFileListResponse>(appendQueryString(aiApiPath(`/google/v1beta/files`), query));
+    return this.client.request<GoogleFileListResponse>(appendQueryString(aiApiPath(`/google/v1beta/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Google Gemini upload file */
-  async create(body: GoogleFileUploadMultipartRequest): Promise<GoogleFile> {
-    return this.client.post<GoogleFile>(aiApiPath(`/google/v1beta/files`), body, undefined, undefined, 'multipart/form-data');
+  async create(body: GoogleFileUploadMultipartRequest, requestOptions?: ApiRequestOptions): Promise<GoogleFile> {
+    return this.client.request<GoogleFile>(aiApiPath(`/google/v1beta/files`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'multipart/form-data' });
   }
 
 /** Google Gemini delete file */
-  async delete(fileId: string): Promise<GoogleEmptyResponse> {
-    return this.client.delete<GoogleEmptyResponse>(aiApiPath(`/google/v1beta/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`));
+  async delete(fileId: string, requestOptions?: ApiRequestOptions): Promise<GoogleEmptyResponse> {
+    return this.client.request<GoogleEmptyResponse>(aiApiPath(`/google/v1beta/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Google Gemini retrieve file */
-  async retrieve(fileId: string): Promise<GoogleFile> {
-    return this.client.get<GoogleFile>(aiApiPath(`/google/v1beta/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`));
+  async retrieve(fileId: string, requestOptions?: ApiRequestOptions): Promise<GoogleFile> {
+    return this.client.request<GoogleFile>(aiApiPath(`/google/v1beta/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

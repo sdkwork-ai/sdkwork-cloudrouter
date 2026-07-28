@@ -206,7 +206,6 @@ impl GatewayRequestTraceCommand {
                 self.upstream_account_group_snapshot.as_str(),
                 128,
             ),
-            // This command field is stored as ai_request_trace.channel_name_snapshot.
             ("supplier_code", self.supplier_code.as_str(), 128),
             ("requested_model", self.requested_model.as_str(), 256),
             (

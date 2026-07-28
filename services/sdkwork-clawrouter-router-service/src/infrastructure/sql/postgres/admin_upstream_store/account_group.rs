@@ -1,7 +1,10 @@
 use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
-use super::shared::{column, conflict, not_found, search_pattern, store_error, DEFAULT_DATA_SCOPE};
+use super::shared::{
+    column, conflict, not_found, record_routing_change, search_pattern, store_error,
+    DEFAULT_DATA_SCOPE,
+};
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
@@ -115,6 +118,21 @@ pub(super) async fn save(
         Some(account_group_id) => update(&mut tx, account_group_id, &command).await?,
         None => insert(&mut tx, &command).await?,
     };
+    let action = if command.account_group_id.is_some() {
+        "update_upstream_account_group"
+    } else {
+        "create_upstream_account_group"
+    };
+    record_routing_change(
+        &mut tx,
+        &command.subject,
+        &command.requested_at,
+        "upstream_account_group",
+        account_group_id,
+        action,
+        serde_json::json!({"accountGroupCode": command.group_code}),
+    )
+    .await?;
     let item = get_in_transaction(&mut tx, &command.subject, account_group_id)
         .await?
         .ok_or_else(|| DomainError::new("saved upstream account group could not be reloaded"))?;
@@ -210,6 +228,16 @@ pub(super) async fn delete(
             "upstream account group version changed during deletion",
         ));
     }
+    record_routing_change(
+        &mut tx,
+        &subject,
+        &requested_at,
+        "upstream_account_group",
+        account_group_id,
+        "delete_upstream_account_group",
+        serde_json::json!({}),
+    )
+    .await?;
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit account group delete", error))?;

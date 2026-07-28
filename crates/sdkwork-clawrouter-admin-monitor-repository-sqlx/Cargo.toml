@@ -12,8 +12,3 @@ path = "src/lib.rs"
 serde = { workspace = true, features = ["derive"] }
 sqlx = { workspace = true }
 sdkwork-database-sqlx.workspace = true
-
-[dev-dependencies]
-anyhow.workspace = true
-sdkwork-claw-test-support.workspace = true
-tokio.workspace = true

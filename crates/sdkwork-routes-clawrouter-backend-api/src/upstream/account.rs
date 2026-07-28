@@ -7,21 +7,23 @@ use axum::{Json, Router};
 use sdkwork_clawrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use sdkwork_clawrouter_router_service::ports::{
     AdminUpstreamAccountCredentialItem, AdminUpstreamAccountItem,
-    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
+    AdminUpstreamAccountVerificationItem, CreateAdminUpstreamAccountCredentialCommand,
+    SaveAdminUpstreamAccountCommand, VerifyAdminUpstreamAccountCommand,
 };
 use sdkwork_utils_rust::{parse_datetime, SdkWorkResultCode};
 use serde::{Deserialize, Serialize};
 
 use super::shared::{
-    decode_json, decode_query, domain_error, generated_uuid, idempotency_uuid, item_response,
-    list_query, list_response, no_content_response, not_found, optional_text, parse_id,
-    parse_if_match, positive_decimal, problem, requested_at, required_text, subject, ListQuery,
+    decode_json, decode_query, domain_error, idempotency_uuid, item_response, list_query,
+    list_response, no_content_response, not_found, optional_text, parse_id, parse_if_match,
+    positive_decimal, problem, requested_at, required_text, subject, verification_error, ListQuery,
     UpstreamState,
 };
 
 const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
 const MAX_SECRET_LENGTH: usize = 65_536;
+const ACCOUNT_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_002;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -71,6 +73,14 @@ struct CredentialCreateRequest {
     expires_at: Option<String>,
 }
 
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct AccountVerifyRequest {
+    endpoint_id: Option<String>,
+    credential_id: Option<String>,
+    timeout_ms: Option<u64>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AccountResponse {
@@ -116,6 +126,28 @@ struct CredentialResponse {
     status: i32,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CredentialCreatedResponse {
+    #[serde(flatten)]
+    credential: CredentialResponse,
+    raw_secret: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AccountVerificationResponse {
+    account_id: String,
+    supplier_code: String,
+    endpoint_id: String,
+    credential_id: String,
+    success: bool,
+    status_code: Option<u16>,
+    latency_ms: String,
+    verified_at: String,
+    message: String,
+}
+
 pub(super) fn routes() -> Router<UpstreamState> {
     Router::new()
         .route(
@@ -123,18 +155,22 @@ pub(super) fn routes() -> Router<UpstreamState> {
             get(list_accounts).post(create_account),
         )
         .route(
-            "/backend/v3/api/ai/upstream_accounts/{account_id}",
+            "/backend/v3/api/ai/upstream_accounts/{accountId}",
             get(get_account)
                 .patch(update_account)
                 .delete(delete_account),
         )
         .route(
-            "/backend/v3/api/ai/upstream_accounts/{account_id}/credentials",
+            "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials",
             get(list_credentials).post(create_credential),
         )
         .route(
-            "/backend/v3/api/ai/upstream_accounts/{account_id}/credentials/{credential_id}",
+            "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}",
             axum::routing::delete(deactivate_credential),
+        )
+        .route(
+            "/backend/v3/api/ai/upstream_accounts/{accountId}/verify",
+            axum::routing::post(verify_account),
         )
 }
 
@@ -179,13 +215,19 @@ async fn get_account(
 async fn create_account(
     State(state): State<UpstreamState>,
     RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    headers: HeaderMap,
     payload: Result<Json<AccountCreateRequest>, JsonRejection>,
 ) -> Response {
+    let scoped = subject(scoped);
+    let uuid = match idempotency_uuid(&headers, &scoped, ACCOUNT_CREATE_IDEMPOTENCY_SCOPE) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
     let payload = match decode_json(payload) {
         Ok(value) => value,
         Err(response) => return response,
     };
-    let command = match create_command(subject(scoped), payload) {
+    let command = match create_command(scoped, uuid, payload) {
         Ok(value) => value,
         Err(response) => return response,
     };
@@ -315,12 +357,19 @@ async fn create_credential(
         Ok(value) => value,
         Err(response) => return response,
     };
+    let raw_secret = payload.secret.clone();
     let command = match credential_command(scoped, account_id, uuid, payload) {
         Ok(value) => value,
         Err(response) => return response,
     };
     match state.store.create_account_credential(command).await {
-        Ok(item) => item_response(StatusCode::CREATED, CredentialResponse::from(item)),
+        Ok(item) => item_response(
+            StatusCode::CREATED,
+            CredentialCreatedResponse {
+                credential: CredentialResponse::from(item),
+                raw_secret,
+            },
+        ),
         Err(error) => domain_error(error),
     }
 }
@@ -349,15 +398,71 @@ async fn deactivate_credential(
     }
 }
 
+async fn verify_account(
+    State(state): State<UpstreamState>,
+    RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    Path(account_id): Path<String>,
+    payload: Result<Json<AccountVerifyRequest>, JsonRejection>,
+) -> Response {
+    let account_id = match parse_id(account_id, "accountId") {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    let payload = match decode_json(payload) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    let timeout_ms = match verification_timeout_ms(payload.timeout_ms) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    let command = VerifyAdminUpstreamAccountCommand {
+        subject: subject(scoped),
+        account_id,
+        endpoint_id: match payload.endpoint_id {
+            Some(value) => match parse_id(value, "endpointId") {
+                Ok(value) => Some(value),
+                Err(response) => return response,
+            },
+            None => None,
+        },
+        credential_id: match payload.credential_id {
+            Some(value) => match parse_id(value, "credentialId") {
+                Ok(value) => Some(value),
+                Err(response) => return response,
+            },
+            None => None,
+        },
+        timeout_ms,
+        requested_at: requested_at(),
+    };
+    match state.verifier.verify_account(command).await {
+        Ok(item) => item_response(StatusCode::OK, AccountVerificationResponse::from(item)),
+        Err(error) => verification_error(error),
+    }
+}
+
+fn verification_timeout_ms(value: Option<u64>) -> Result<u64, Response> {
+    let value = value.unwrap_or(10_000);
+    if !(100..=30_000).contains(&value) {
+        return Err(problem(
+            SdkWorkResultCode::InvalidParameter,
+            "timeoutMs must be between 100 and 30000",
+        ));
+    }
+    Ok(value)
+}
+
 fn create_command(
     subject: sdkwork_clawrouter_router_service::ports::AdminUpstreamSubject,
+    uuid: String,
     request: AccountCreateRequest,
 ) -> Result<SaveAdminUpstreamAccountCommand, Response> {
     Ok(SaveAdminUpstreamAccountCommand {
         subject,
         account_id: None,
         expected_version: None,
-        uuid: generated_uuid(),
+        uuid,
         supplier_id: parse_id(request.supplier_id, "supplierId")?,
         preferred_endpoint_id: request
             .preferred_endpoint_id
@@ -611,5 +716,63 @@ impl From<AdminUpstreamAccountCredentialItem> for CredentialResponse {
             last_used_at: item.last_used_at,
             status: item.status,
         }
+    }
+}
+
+impl From<AdminUpstreamAccountVerificationItem> for AccountVerificationResponse {
+    fn from(item: AdminUpstreamAccountVerificationItem) -> Self {
+        Self {
+            account_id: item.account_id.to_string(),
+            supplier_code: item.supplier_code,
+            endpoint_id: item.endpoint_id.to_string(),
+            credential_id: item.credential_id.to_string(),
+            success: item.success,
+            status_code: item.status_code,
+            latency_ms: item.latency_ms.to_string(),
+            verified_at: item.verified_at,
+            message: item.message,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verification_timeout_enforces_public_contract_bounds() {
+        assert_eq!(10_000, verification_timeout_ms(None).unwrap());
+        assert_eq!(100, verification_timeout_ms(Some(100)).unwrap());
+        assert_eq!(30_000, verification_timeout_ms(Some(30_000)).unwrap());
+        assert_eq!(
+            StatusCode::BAD_REQUEST,
+            verification_timeout_ms(Some(99)).unwrap_err().status()
+        );
+        assert_eq!(
+            StatusCode::BAD_REQUEST,
+            verification_timeout_ms(Some(30_001)).unwrap_err().status()
+        );
+    }
+
+    #[test]
+    fn verification_response_exposes_metadata_without_secret_material() {
+        let response = AccountVerificationResponse::from(AdminUpstreamAccountVerificationItem {
+            account_id: 11,
+            supplier_code: "openai".to_owned(),
+            endpoint_id: 12,
+            credential_id: 13,
+            success: false,
+            status_code: Some(401),
+            latency_ms: 25,
+            verified_at: "2026-07-28T12:00:00Z".to_owned(),
+            message: "upstream provider rejected the configured credential".to_owned(),
+        });
+        let payload = serde_json::to_value(response).unwrap();
+        let serialized = payload.to_string();
+
+        assert_eq!("13", payload["credentialId"]);
+        assert!(!serialized.contains("credentialRef"));
+        assert!(!serialized.contains("rawSecret"));
+        assert!(!serialized.contains("\"secret\""));
     }
 }

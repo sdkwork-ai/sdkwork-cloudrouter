@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "23f96e6888f5f1e566c77d7c9661c0bf4729a8ed0480b97148df03b44cf8df2d",
+  "changeFingerprint": "870436766d41775700fa2fd5c914e7267d2740ac84eac8b7b96cef885b1e5387",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -48,8 +48,8 @@
         "paths": [
           "src/types/app-api-key-item.ts",
           "src/types/app-api-key-list-response.ts",
-          "src/types/app-channel-group-list-response.ts",
-          "src/types/app-channel-group.ts",
+          "src/types/app-routing-account-group-list-response.ts",
+          "src/types/app-routing-account-group.ts",
           "src/types/common.ts",
           "src/types/create-api-key-request.ts",
           "src/types/create-api-key-response.ts",
@@ -315,7 +315,7 @@
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "23f96e6888f5f1e566c77d7c9661c0bf4729a8ed0480b97148df03b44cf8df2d",
+    "changeFingerprint": "870436766d41775700fa2fd5c914e7267d2740ac84eac8b7b96cef885b1e5387",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -345,8 +345,8 @@
         "src/sdk.ts",
         "src/types/app-api-key-item.ts",
         "src/types/app-api-key-list-response.ts",
-        "src/types/app-channel-group-list-response.ts",
-        "src/types/app-channel-group.ts",
+        "src/types/app-routing-account-group-list-response.ts",
+        "src/types/app-routing-account-group.ts",
         "src/types/common.ts",
         "src/types/create-api-key-request.ts",
         "src/types/create-api-key-response.ts",
@@ -421,8 +421,8 @@
           "paths": [
             "src/types/app-api-key-item.ts",
             "src/types/app-api-key-list-response.ts",
-            "src/types/app-channel-group-list-response.ts",
-            "src/types/app-channel-group.ts",
+            "src/types/app-routing-account-group-list-response.ts",
+            "src/types/app-routing-account-group.ts",
             "src/types/common.ts",
             "src/types/create-api-key-request.ts",
             "src/types/create-api-key-response.ts",

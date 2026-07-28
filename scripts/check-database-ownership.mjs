@@ -76,33 +76,6 @@ function main() {
     }
   }
 
-  const gatewayRoutingBaselinePath = path.join(
-    args.root,
-    'database/ddl/baseline/postgres/0003_gateway_routing_dictionary.sql',
-  );
-  const gatewayRoutingBaselineSql = fs.readFileSync(gatewayRoutingBaselinePath, 'utf8');
-  if (collectCreateTables(gatewayRoutingBaselineSql).length > 0) {
-    failures.push(
-      '0003_gateway_routing_dictionary.sql must remain a retired stub; sdkwork-models composes catalog DDL',
-    );
-  }
-
-  const messagingBaselinePath = path.join(
-    args.root,
-    'database/ddl/baseline/postgres/0004_messaging_runtime_projection.sql',
-  );
-  const messagingBaselineSql = fs.readFileSync(messagingBaselinePath, 'utf8');
-  if (collectCreateTables(messagingBaselineSql).length > 0) {
-    failures.push(
-      '0004_messaging_runtime_projection.sql must remain a retired stub without CREATE TABLE',
-    );
-  }
-  for (const tableName of collectCreateTables(messagingBaselineSql)) {
-    if (tableName.startsWith('messaging_')) {
-      failures.push(`retired messaging baseline must not define ${tableName}`);
-    }
-  }
-
   const installerPath = path.join(
     args.root,
     'services/sdkwork-clawrouter-router-service/src/infrastructure/sql/installer.rs',

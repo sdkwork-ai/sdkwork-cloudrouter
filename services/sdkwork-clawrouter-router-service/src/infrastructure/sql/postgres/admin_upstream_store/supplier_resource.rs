@@ -1,8 +1,8 @@
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    generated_uuid, map_resource_row, store_error, validate_resource_inputs, DEFAULT_DATA_SCOPE,
-    MAX_NESTED_ITEMS,
+    generated_uuid, map_resource_row, record_routing_change, store_error, validate_resource_inputs,
+    DEFAULT_DATA_SCOPE, MAX_NESTED_ITEMS,
 };
 use super::supplier;
 use crate::domain::DomainResult;
@@ -121,6 +121,16 @@ pub(super) async fn replace(
     )
     .await?;
     let result = list_in_transaction(&mut tx, &subject, supplier_id).await?;
+    record_routing_change(
+        &mut tx,
+        &subject,
+        &requested_at,
+        "upstream_supplier",
+        supplier_id,
+        "replace_upstream_supplier_resources",
+        serde_json::json!({"resourceBindingCount": result.len()}),
+    )
+    .await?;
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit supplier resource replacement", error))?;

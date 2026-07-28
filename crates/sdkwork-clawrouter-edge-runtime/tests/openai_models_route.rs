@@ -4,7 +4,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelVendor, ModelVendorDefinition,
+    AiModel, DecimalValue, GatewayApiKey, ModelVendor, ModelVendorDefinition, UpstreamAccountGroup,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;

@@ -153,43 +153,6 @@ async fn app_api_key_list_returns_persisted_copyable_key_for_owner() {
 }
 
 #[tokio::test]
-async fn app_upstream_account_group_list_returns_owner_groups_with_display_names() {
-    let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
-    let command_store = Arc::new(TestApiKeyCommandStore::default());
-    let router = sdkwork_clawrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
-        read_store,
-        command_store,
-        Arc::new(TestHasher),
-        Arc::new(TestSecretGenerator),
-    );
-
-    let response = router
-        .oneshot(signed_request(
-            "GET",
-            "/app/v3/api/ai/upstream_account_groups",
-            "",
-        ))
-        .await
-        .unwrap();
-
-    assert_eq!(StatusCode::OK, response.status());
-    let payload = json_payload(response).await;
-    assert_eq!(0, payload["code"].as_i64().unwrap());
-    assert_eq!(
-        "premium",
-        payload["data"]["items"][0]["code"].as_str().unwrap()
-    );
-    assert_eq!("Premium customers", payload["data"]["items"][0]["name"]);
-    assert_eq!(
-        "default",
-        payload["data"]["items"][1]["code"].as_str().unwrap()
-    );
-    assert_eq!("Default customers", payload["data"]["items"][1]["name"]);
-    assert_eq!(2, payload["data"]["items"].as_array().unwrap().len());
-    assert!(payload["data"]["pageInfo"].is_object());
-}
-
-#[tokio::test]
 async fn app_api_key_delete_revokes_owner_key() {
     let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
     let command_store = Arc::new(TestApiKeyCommandStore::default());

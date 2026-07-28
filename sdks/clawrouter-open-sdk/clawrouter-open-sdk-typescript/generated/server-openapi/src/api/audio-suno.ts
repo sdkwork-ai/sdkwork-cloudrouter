@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { SunoMusicGenerationRequest, SunoMusicGenerationResponse, SunoMusicGenerationTaskResponse } from '../types';
 
@@ -13,13 +13,13 @@ export class AudioSunoV1MusicGenerationsApi {
 
 
 /** Suno music generation */
-  async create(body: SunoMusicGenerationRequest): Promise<SunoMusicGenerationResponse> {
-    return this.client.post<SunoMusicGenerationResponse>(aiApiPath(`/suno/v1/music/generations`), body, undefined, undefined, 'application/json');
+  async create(body: SunoMusicGenerationRequest, requestOptions?: ApiRequestOptions): Promise<SunoMusicGenerationResponse> {
+    return this.client.request<SunoMusicGenerationResponse>(aiApiPath(`/suno/v1/music/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Suno retrieve music generation */
-  async retrieve(taskId: string): Promise<SunoMusicGenerationTaskResponse> {
-    return this.client.get<SunoMusicGenerationTaskResponse>(aiApiPath(`/suno/v1/music/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`));
+  async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<SunoMusicGenerationTaskResponse> {
+    return this.client.request<SunoMusicGenerationTaskResponse>(aiApiPath(`/suno/v1/music/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

@@ -229,7 +229,7 @@ class SchemaGuardianTest(unittest.TestCase):
                   legacy_compatibility_guardrails:
                     forbidden_synonym_tables: []
                 tables:
-                  - table: ai_provider_object_route
+                  - table: ai_upstream_object_route
                     domain: ai
                     columns:
                       id: int64
@@ -244,7 +244,7 @@ class SchemaGuardianTest(unittest.TestCase):
                 root,
                 "postgres",
                 """
-                CREATE TABLE IF NOT EXISTS ai_provider_object_route (
+                CREATE TABLE IF NOT EXISTS ai_upstream_object_route (
                     id BIGINT NOT NULL PRIMARY KEY,
                     tenant_id BIGINT NOT NULL,
                     organization_id BIGINT NOT NULL,
@@ -252,8 +252,8 @@ class SchemaGuardianTest(unittest.TestCase):
                     object_id VARCHAR(128) NOT NULL,
                     deleted_at TIMESTAMPTZ
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_object
-                    ON ai_provider_object_route
+                CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_object_route_object
+                    ON ai_upstream_object_route
                     (tenant_id, organization_id, object_type, object_id)
                     WHERE deleted_at IS NULL;
                 """,
@@ -261,7 +261,7 @@ class SchemaGuardianTest(unittest.TestCase):
             query = root / "crates" / "gateway" / "src" / "postgres" / "sticky.sql"
             query.parent.mkdir(parents=True, exist_ok=True)
             query.write_text(
-                "INSERT INTO ai_provider_object_route "
+                "INSERT INTO ai_upstream_object_route "
                 "(id, tenant_id, organization_id, object_type, object_id) "
                 "VALUES ($1, $2, $3, $4, $5)\n"
                 "ON CONFLICT (tenant_id, organization_id, object_type, object_id) "
@@ -274,7 +274,7 @@ class SchemaGuardianTest(unittest.TestCase):
             self.assertFalse(result.ok)
             self.assertIn(
                 "repository SQL crates/gateway/src/postgres/sticky.sql:2 ON CONFLICT target "
-                "ai_provider_object_route(tenant_id, organization_id, object_type, object_id) "
+                "ai_upstream_object_route(tenant_id, organization_id, object_type, object_id) "
                 "does not explicitly match generated PostgreSQL partial UNIQUE predicate(s): "
                 "deleted_at is null",
                 result.messages,
@@ -296,7 +296,7 @@ class SchemaGuardianTest(unittest.TestCase):
                       id: int64
                       tenant_id: int64
                       request_id: string(64)
-                  - table: ai_provider_object_route
+                  - table: ai_upstream_object_route
                     domain: ai
                     columns:
                       id: int64
@@ -319,14 +319,14 @@ class SchemaGuardianTest(unittest.TestCase):
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_usage_request
                     ON ai_usage (tenant_id, request_id);
-                CREATE TABLE IF NOT EXISTS ai_provider_object_route (
+                CREATE TABLE IF NOT EXISTS ai_upstream_object_route (
                     id BIGINT NOT NULL PRIMARY KEY,
                     tenant_id BIGINT NOT NULL,
                     object_id VARCHAR(128) NOT NULL,
                     deleted_at TIMESTAMP
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_provider_object_route_object
-                    ON ai_provider_object_route (tenant_id, object_id)
+                CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_object_route_object
+                    ON ai_upstream_object_route (tenant_id, object_id)
                     WHERE deleted_at IS NULL;
             """
             self.write_generated_schema(root, "postgres", ddl)
@@ -338,7 +338,7 @@ class SchemaGuardianTest(unittest.TestCase):
                 "ON CONFLICT (request_id, tenant_id) DO NOTHING;\n"
                 "INSERT INTO ai_usage (id, tenant_id, request_id) VALUES (?, ?, ?) "
                 "ON CONFLICT (id) DO UPDATE SET request_id = excluded.request_id;\n"
-                "INSERT INTO ai_provider_object_route (id, tenant_id, object_id) VALUES (?, ?, ?) "
+                "INSERT INTO ai_upstream_object_route (id, tenant_id, object_id) VALUES (?, ?, ?) "
                 "ON CONFLICT (object_id, tenant_id) WHERE (\"deleted_at\" IS NULL) "
                 "DO UPDATE SET object_id = excluded.object_id;\n"
                 "INSERT INTO imported_usage (id, request_id) VALUES (?, ?) "

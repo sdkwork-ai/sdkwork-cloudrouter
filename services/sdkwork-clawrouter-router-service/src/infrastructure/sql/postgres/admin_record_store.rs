@@ -68,7 +68,7 @@ SELECT
     COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_id,
     CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS started_at,
     COALESCE(NULLIF(t.api_key_name_snapshot, ''), NULLIF(u.api_key_name_snapshot, ''), '-') AS api_key_name_snapshot,
-    COALESCE(NULLIF(t.upstream_account_group_snapshot, ''), NULLIF(u.upstream_account_group_snapshot, ''), '-') AS upstream_account_group_snapshot,
+    COALESCE(NULLIF(t.account_group_snapshot, ''), NULLIF(u.upstream_account_group_snapshot, ''), '-') AS upstream_account_group_snapshot,
     u.modality AS modality,
     COALESCE(NULLIF(u.provider_native_model, ''), NULLIF(t.provider_native_model, ''), NULLIF(u.model, ''), NULLIF(t.provider_model, ''), '-') AS model,
     COALESCE(NULLIF(u.provider_native_model, ''), NULLIF(t.provider_native_model, ''), NULLIF(u.model, ''), NULLIF(t.provider_model, ''), '') AS provider_native_model,
@@ -142,7 +142,7 @@ AND (
     $4::text IS NULL
     OR lower(COALESCE(t.request_id, '')) LIKE $4
     OR lower(COALESCE(t.api_key_name_snapshot, '')) LIKE $4
-    OR lower(COALESCE(t.upstream_account_group_snapshot, '')) LIKE $4
+    OR lower(COALESCE(t.account_group_snapshot, '')) LIKE $4
     OR lower(COALESCE(u.api_key_name_snapshot, '')) LIKE $4
     OR lower(COALESCE(u.upstream_account_group_snapshot, '')) LIKE $4
 )

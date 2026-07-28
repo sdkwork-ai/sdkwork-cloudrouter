@@ -3,7 +3,7 @@ use std::pin::Pin;
 
 use serde::Serialize;
 
-use crate::domain::{DomainResult, ProviderCircuitBreakerPolicy, ProviderRetryPolicy};
+use crate::domain::DomainResult;
 
 pub type AppRoutingReadFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
@@ -23,8 +23,8 @@ pub struct AppRoutingListQuery {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AppRoutingChannelListPage {
-    pub items: Vec<AppRoutingChannelItem>,
+pub struct AppRoutingAccountGroupListPage {
+    pub items: Vec<AppRoutingAccountGroupItem>,
     pub total: i64,
     pub page_no: i64,
     pub page_size: i64,
@@ -60,67 +60,21 @@ impl<T> AppRoutingItems<T> {
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct AppRoutingChannelItem {
+pub struct AppRoutingAccountGroupItem {
     pub id: String,
-    pub name: String,
-    pub vendor: String,
-    pub provider: String,
-    pub supplier_code: String,
-    pub protocol: String,
-    pub access_type: String,
-    pub base_url: String,
-    pub api_key: String,
-    pub models: Vec<String>,
-    pub capabilities: Vec<String>,
-    pub is_multimodal: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timeout_ms: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub retry_policy: Option<AppRoutingRetryPolicyItem>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub circuit_breaker_policy: Option<AppRoutingCircuitBreakerPolicyItem>,
-    pub weight: i64,
+    pub group_code: String,
+    pub group_name: String,
+    pub description: String,
+    pub routing_strategy: String,
+    pub fallback_mode: String,
+    pub cost_multiplier: String,
+    pub sale_multiplier: String,
     pub status: String,
-    pub latency: String,
-    pub rpm: i64,
-    pub balance: String,
-    pub errors: i64,
-}
-
-#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct AppRoutingRetryPolicyItem {
-    pub max_attempts: usize,
-    pub retryable_status_codes: Vec<u16>,
-    pub backoff_ms: u64,
-}
-
-impl AppRoutingRetryPolicyItem {
-    pub fn from_json(value: &str) -> Option<Self> {
-        ProviderRetryPolicy::from_json_str(value)
-            .ok()
-            .map(|policy| Self {
-                max_attempts: policy.max_attempts,
-                retryable_status_codes: policy.retryable_status_codes,
-                backoff_ms: policy.backoff_ms,
-            })
-    }
-}
-
-#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct AppRoutingCircuitBreakerPolicyItem {
-    pub failure_threshold: usize,
-}
-
-impl AppRoutingCircuitBreakerPolicyItem {
-    pub fn from_json(value: &str) -> Option<Self> {
-        ProviderCircuitBreakerPolicy::from_json_str(value)
-            .ok()
-            .map(|policy| Self {
-                failure_threshold: policy.failure_threshold,
-            })
-    }
+    pub authorized: bool,
+    pub member_account_count: i64,
+    pub available_account_count: i64,
+    pub resource_codes: Vec<String>,
+    pub resource_group_codes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
@@ -134,6 +88,15 @@ pub struct AppRoutingApiKeyItem {
     pub status: String,
     pub total_usage: String,
     pub created_at: String,
+    pub account_groups: Vec<AppRoutingApiKeyAccountGroupItem>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppRoutingApiKeyAccountGroupItem {
+    pub id: String,
+    pub code: String,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
@@ -142,7 +105,12 @@ pub struct AppRoutingRequestTraceItem {
     pub id: String,
     pub time: String,
     pub model: String,
-    pub channel: String,
+    pub upstream_account_id: String,
+    pub upstream_account_code: String,
+    pub upstream_account_name: String,
+    pub upstream_account_group_id: String,
+    pub upstream_account_group_code: String,
+    pub upstream_account_group_name: String,
     pub status: i64,
     pub duration: String,
     pub tokens: i64,
@@ -188,11 +156,11 @@ pub struct AppRoutingUsageSnapshot {
 }
 
 pub trait AppRoutingReadStore {
-    fn load_routing_channels<'a>(
+    fn load_routing_account_groups<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
-    ) -> AppRoutingReadFuture<'a, AppRoutingChannelListPage>;
+    ) -> AppRoutingReadFuture<'a, AppRoutingAccountGroupListPage>;
 
     fn load_routing_api_keys<'a>(
         &'a self,

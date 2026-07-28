@@ -45,7 +45,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 28,
+  "materializedTableCount": 30,
   "materializedTables": [
     "ai_config_change_event",
     "ai_config_version",
@@ -57,7 +57,6 @@
     "ai_pricing_plan_binding",
     "ai_pricing_rule",
     "ai_pricing_tier",
-    "ai_provider_object_route",
     "ai_quota_policy",
     "ai_request_trace",
     "ai_routing_decision_log",
@@ -70,9 +69,12 @@
     "ai_upstream_account_group_member",
     "ai_upstream_account_group_metric_snapshot",
     "ai_upstream_account_group_resource",
+    "ai_upstream_account_health_state",
+    "ai_upstream_object_route",
     "ai_upstream_supplier",
     "ai_upstream_supplier_auth_method",
     "ai_upstream_supplier_endpoint",
+    "ai_upstream_supplier_endpoint_health_state",
     "ai_upstream_supplier_resource",
     "ai_usage"
   ],

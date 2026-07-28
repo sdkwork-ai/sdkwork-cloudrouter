@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { OpenAiModel, OpenAiModelList } from '../types';
 
@@ -13,13 +13,13 @@ export class ModelsApi {
 
 
 /** List models */
-  async list(): Promise<OpenAiModelList> {
-    return this.client.get<OpenAiModelList>(aiApiPath(`/models`));
+  async list(requestOptions?: ApiRequestOptions): Promise<OpenAiModelList> {
+    return this.client.request<OpenAiModelList>(aiApiPath(`/models`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Retrieve model */
-  async retrieve(model: string): Promise<OpenAiModel> {
-    return this.client.get<OpenAiModel>(aiApiPath(`/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}`));
+  async retrieve(model: string, requestOptions?: ApiRequestOptions): Promise<OpenAiModel> {
+    return this.client.request<OpenAiModel>(aiApiPath(`/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

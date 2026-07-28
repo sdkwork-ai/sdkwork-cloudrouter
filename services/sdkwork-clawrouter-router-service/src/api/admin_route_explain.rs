@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
 use axum::{Json, Router};
@@ -33,7 +33,6 @@ impl<C> Clone for AdminRouteExplainState<C> {
 #[serde(rename_all = "camelCase")]
 struct AdminRouteExplainRequest {
     api_key_id: Option<String>,
-    account_group_id: Option<String>,
     resource_code: Option<String>,
     catalog_key: Option<String>,
     model: Option<String>,
@@ -69,6 +68,12 @@ struct AdminRouteExplainResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct AdminRouteExplainItemEnvelope {
+    item: AdminRouteExplainResponse,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct AdminRouteExplainCandidateResponse {
     kind: &'static str,
     supplier_code: String,
@@ -99,13 +104,17 @@ where
     C: PricingCatalog + Send + Sync + 'static,
 {
     Router::new()
-        .route("/backend/v3/api/ai/route_explain", post(explain_route::<C>))
+        .route(
+            "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain",
+            post(explain_route::<C>),
+        )
         .with_state(AdminRouteExplainState { catalog })
 }
 
 async fn explain_route<C>(
     RequiredAdminSqlScopedSubject(subject): RequiredAdminSqlScopedSubject,
     State(state): State<AdminRouteExplainState<C>>,
+    Path(account_group_id): Path<String>,
     body: Bytes,
 ) -> Response
 where
@@ -115,8 +124,12 @@ where
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
-    let normalized = match normalize_route_explain_request(state.catalog.as_ref(), subject, request)
-    {
+    let normalized = match normalize_route_explain_request(
+        state.catalog.as_ref(),
+        subject,
+        account_group_id,
+        request,
+    ) {
         Ok(request) => request,
         Err(RouteExplainRequestError::BadRequest(message)) => return bad_request(message),
         Err(RouteExplainRequestError::NotFound) => return route_target_not_found(),
@@ -177,26 +190,28 @@ where
         }
     };
 
-    Json(success_envelope(AdminRouteExplainResponse {
-        source: "runtime_selector",
-        ready: blocked_reasons.is_empty(),
-        resource_code: normalized.resource_code,
-        catalog_key: normalized.catalog_key,
-        model: normalized.model,
-        api_code: normalized.api_code,
-        capability: capability_code(normalized.capability).to_owned(),
-        billing_meter: normalized.billing_meter.code().to_owned(),
-        api_key_id: normalized.context.api_key_id.to_string(),
-        account_group_id: normalized.context.group_id.to_string(),
-        group_code: normalized.context.group_code,
-        pricing_plan_code: normalized.context.pricing_plan_code,
-        candidate_count: selected_candidates.len(),
-        selected_candidates,
-        blocked_reasons,
-        warnings: Vec::new(),
-        policy_id: policy_id.map(|value| value.to_string()),
-        rule_id: rule_id.map(|value| value.to_string()),
-        policy_snapshot_version: "runtime-catalog-current".to_owned(),
+    Json(success_envelope(AdminRouteExplainItemEnvelope {
+        item: AdminRouteExplainResponse {
+            source: "runtime_selector",
+            ready: blocked_reasons.is_empty(),
+            resource_code: normalized.resource_code,
+            catalog_key: normalized.catalog_key,
+            model: normalized.model,
+            api_code: normalized.api_code,
+            capability: capability_code(normalized.capability).to_owned(),
+            billing_meter: normalized.billing_meter.code().to_owned(),
+            api_key_id: normalized.context.api_key_id.to_string(),
+            account_group_id: normalized.context.group_id.to_string(),
+            group_code: normalized.context.group_code,
+            pricing_plan_code: normalized.context.pricing_plan_code,
+            candidate_count: selected_candidates.len(),
+            selected_candidates,
+            blocked_reasons,
+            warnings: Vec::new(),
+            policy_id: policy_id.map(|value| value.to_string()),
+            rule_id: rule_id.map(|value| value.to_string()),
+            policy_snapshot_version: "runtime-catalog-current".to_owned(),
+        },
     }))
     .into_response()
 }
@@ -221,6 +236,7 @@ enum RouteExplainRequestError {
 fn normalize_route_explain_request<C>(
     catalog: &C,
     subject: SqlScopedAdminSubject,
+    account_group_id: String,
     request: AdminRouteExplainRequest,
 ) -> Result<NormalizedRouteExplainRequest, RouteExplainRequestError>
 where
@@ -233,13 +249,8 @@ where
         .find_api_key(api_key_id)
         .filter(|api_key| object_scope_matches(subject, api_key.tenant_id, api_key.organization_id))
         .ok_or(RouteExplainRequestError::NotFound)?;
-    let account_group_id = request
-        .account_group_id
-        .as_deref()
-        .map(|value| parse_positive_i64(Some(value), "accountGroupId"))
-        .transpose()
-        .map_err(RouteExplainRequestError::BadRequest)?
-        .unwrap_or(api_key.default_account_group_id);
+    let account_group_id = parse_positive_i64(Some(&account_group_id), "accountGroupId")
+        .map_err(RouteExplainRequestError::BadRequest)?;
     let group = catalog
         .find_upstream_account_group(account_group_id)
         .filter(|group| object_scope_matches(subject, group.tenant_id, group.organization_id))

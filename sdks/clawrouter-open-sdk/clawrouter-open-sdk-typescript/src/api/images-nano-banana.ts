@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { NanoBananaImageGenerationRequest, NanoBananaImageGenerationTask } from '../types';
 
@@ -13,13 +13,13 @@ export class ImagesNanoBananaV1ImagesGenerationsApi {
 
 
 /** Nano Banana image generation */
-  async create(body: NanoBananaImageGenerationRequest): Promise<NanoBananaImageGenerationTask> {
-    return this.client.post<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations`), body, undefined, undefined, 'application/json');
+  async create(body: NanoBananaImageGenerationRequest, requestOptions?: ApiRequestOptions): Promise<NanoBananaImageGenerationTask> {
+    return this.client.request<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Nano Banana retrieve image generation */
-  async retrieve(taskId: string): Promise<NanoBananaImageGenerationTask> {
-    return this.client.get<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`));
+  async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<NanoBananaImageGenerationTask> {
+    return this.client.request<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 

@@ -1016,9 +1016,9 @@ where
         quantity.billable_quantity.as_str(),
         &billing_meter,
     )?;
-    let upstream_cost_amount = match price.upstream_cost.as_ref() {
-        Some(upstream) => adapter_meter_amount(
-            upstream.unit_price.unit_price,
+    let upstream_cost_amount = match price.procurement_cost.as_ref() {
+        Some(procurement_cost) => adapter_meter_amount(
+            procurement_cost.unit_price,
             quantity.billable_quantity.as_str(),
             &billing_meter,
         )?,
@@ -1089,10 +1089,12 @@ where
         provider_error_code: None,
         error_type: None,
         error_message_masked: None,
-        base_input_unit_price: price.customer_charge_before_rate.to_fixed_string(6),
+        base_input_unit_price: price
+            .customer_charge_before_sale_multiplier
+            .to_fixed_string(6),
         base_output_unit_price: "0.000000".to_owned(),
         cache_read_unit_price: "0.000000".to_owned(),
-        rate_multiplier: price.rate_multiplier.to_fixed_string(6),
+        rate_multiplier: price.sale_multiplier.to_fixed_string(6),
         reference_multiplier: price.reference_multiplier.to_fixed_string(6),
         official_reference_amount: official_reference_amount
             .to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
@@ -1375,7 +1377,7 @@ fn adapter_usage_pricing_snapshot(
         },
         "provider": {
             "code": invocation.provider.supplier_code.as_str(),
-            "channelId": invocation.provider.account_id,
+            "accountId": invocation.provider.account_id,
             "regionCode": invocation.provider.region_code.as_str()
         },
         "pricingPlan": {
@@ -1385,17 +1387,33 @@ fn adapter_usage_pricing_snapshot(
             "code": price.group_code.as_str()
         },
         "multipliers": {
-            "rate": price.rate_multiplier.to_fixed_string(6),
-            "reference": price.reference_multiplier.to_fixed_string(6)
+            "sale": price.sale_multiplier.to_fixed_string(6),
+            "reference": price.reference_multiplier.to_fixed_string(6),
+            "accountContractCost": price
+                .account_contract_cost_multiplier
+                .map(|multiplier| multiplier.to_fixed_string(6)),
+            "accountGroupCost": price
+                .account_group_cost_multiplier
+                .map(|multiplier| multiplier.to_fixed_string(6)),
+            "procurementCost": price
+                .procurement_cost_multiplier
+                .map(|multiplier| multiplier.to_fixed_string(6))
         },
         "unitPrice": {
             "officialReference": price.official_reference.unit_price.to_fixed_string(6),
-            "customerBeforeRate": price.customer_charge_before_rate.to_fixed_string(6),
+            "customerBeforeSaleMultiplier": price
+                .customer_charge_before_sale_multiplier
+                .to_fixed_string(6),
             "customerCharge": price.customer_charge.to_fixed_string(6),
-            "upstreamCost": price
-                .upstream_cost
+            "rawUpstreamCost": price
+                .raw_upstream_cost
                 .as_ref()
                 .map(|upstream| upstream.unit_price.to_fixed_string(6))
+                .unwrap_or_else(|| "0.000000".to_owned()),
+            "procurementCost": price
+                .procurement_cost
+                .as_ref()
+                .map(|cost| cost.to_fixed_string(6))
                 .unwrap_or_else(|| "0.000000".to_owned()),
             "currency": price.customer_charge.currency.as_str()
         },
@@ -1918,8 +1936,8 @@ mod tests {
     use super::*;
     use sdkwork_clawrouter_router_service::domain::ModelVendor;
     use sdkwork_clawrouter_router_service::domain::{
-        AiModel, UpstreamAccountGroup, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
-        ModelVendorDefinition, Money, PriceSide, PricingPlan,
+        AiModel, GatewayApiKey, ModelPrice, ModelUpstreamRoute, ModelVendorDefinition, Money,
+        PriceSide, PricingPlan, UpstreamAccountGroup, UpstreamAccountRoute,
     };
     use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 
@@ -2122,6 +2140,10 @@ mod tests {
             )
             .with_upstream_endpoint(Some("https://example.invalid/vidu"), Some("vault://test")),
         );
+        catalog.add_upstream_account_route(
+            UpstreamAccountRoute::new("tencent-cloud", 9301)
+                .with_account_group_binding(10, 10, 100),
+        );
         catalog.add_plan(PricingPlan::new(
             "standard",
             PriceSide::OfficialReference,
@@ -2231,6 +2253,16 @@ mod tests {
                 "vidu2.0",
             )
             .with_region_code("cn"),
+        );
+        catalog.add_upstream_account_route(
+            UpstreamAccountRoute::new("tencent-cloud", 9301)
+                .with_region_code("global")
+                .with_account_group_binding(10, 10, 100),
+        );
+        catalog.add_upstream_account_route(
+            UpstreamAccountRoute::new("tencent-cloud", 9301)
+                .with_region_code("cn")
+                .with_account_group_binding(10, 10, 100),
         );
         catalog.add_plan(PricingPlan::new(
             "standard",
@@ -2379,6 +2411,9 @@ mod tests {
                 Some("vault://openrouter/test"),
             ),
         );
+        catalog.add_upstream_account_route(
+            UpstreamAccountRoute::new("openrouter", 9302).with_account_group_binding(10, 10, 100),
+        );
         catalog.add_plan(PricingPlan::new(
             "standard",
             PriceSide::OfficialReference,
@@ -2400,6 +2435,16 @@ mod tests {
             BillingMeter::ApiRequest,
             Money::usd("0.020000").unwrap(),
         ));
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "openrouter/anthropic/claude-3-opus",
+                "anthropic/claude-3-opus",
+                PriceSide::UpstreamCost,
+                BillingMeter::ApiRequest,
+                Money::usd("0.010000").unwrap(),
+            )
+            .for_upstream_account("openrouter", 9302),
+        );
         let context = test_api_key_context();
         let mut invocation =
             test_adapter_invocation("openrouter.chat", "/openrouter/v1/chat/completions");

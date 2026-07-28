@@ -5,122 +5,156 @@ use sqlx::{PgPool, Row};
 use crate::application::ApiKeySecretCodec;
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
-    AppRoutingApiKeyItem, AppRoutingApiKeyListPage, AppRoutingChannelItem,
-    AppRoutingChannelListPage, AppRoutingListQuery, AppRoutingModelStats, AppRoutingReadFuture,
-    AppRoutingReadStore, AppRoutingRequestTraceItem, AppRoutingRequestTraceListPage,
-    AppRoutingRetryPolicyItem, AppRoutingSubject, AppRoutingUsageData, AppRoutingUsageSnapshot,
+    AppRoutingAccountGroupItem, AppRoutingAccountGroupListPage, AppRoutingApiKeyAccountGroupItem,
+    AppRoutingApiKeyItem, AppRoutingApiKeyListPage, AppRoutingListQuery, AppRoutingModelStats,
+    AppRoutingReadFuture, AppRoutingReadStore, AppRoutingRequestTraceItem,
+    AppRoutingRequestTraceListPage, AppRoutingSubject, AppRoutingUsageData,
+    AppRoutingUsageSnapshot,
 };
 
-const LOAD_ROUTING_CHANNELS: &str = r#"
+const LOAD_ROUTING_ACCOUNT_GROUPS: &str = r#"
 SELECT
-    CAST(c.id AS TEXT) AS id,
-    COALESCE(NULLIF(c.channel_name, ''), NULLIF(c.account_code, ''), NULLIF(c.supplier_code, ''), '') AS name,
-    COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS vendor,
-    COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS provider,
-    COALESCE(NULLIF(c.supplier_code, ''), 'custom') AS supplier_code,
-    CASE LOWER(COALESCE(NULLIF(c.protocol_code, ''), NULLIF(c.supplier_code, ''), 'openai'))
-        WHEN 'openai' THEN 1
-        WHEN 'anthropic' THEN 2
-        WHEN 'gemini' THEN 3
-        WHEN 'google' THEN 3
-        WHEN 'ollama' THEN 4
-        ELSE 9
-    END AS protocol,
-    COALESCE(c.auth_type, 1) AS access_type,
-    COALESCE(NULLIF(cc.base_url, ''), NULLIF(c.base_url, ''), '') AS base_url,
-    COALESCE(NULLIF(cc.masked_label, ''), NULLIF(c.masked_label, ''), 'configured') AS api_key,
+    CAST(g.id AS TEXT) AS id,
+    g.group_code,
+    g.group_name,
+    COALESCE(g.description, '') AS description,
+    g.routing_strategy,
+    g.fallback_mode,
+    CAST(g.cost_multiplier AS TEXT) AS cost_multiplier,
+    CAST(g.sale_multiplier AS TEXT) AS sale_multiplier,
+    g.status,
+    EXISTS (
+        SELECT 1
+          FROM iam_gateway_api_key k
+         WHERE k.tenant_id = g.tenant_id
+           AND k.organization_id = g.organization_id
+           AND k.user_id = $3
+           AND k.status = 1
+           AND k.deleted_at IS NULL
+           AND (
+               k.account_group_id = g.id
+               OR EXISTS (
+                   SELECT 1
+                     FROM iam_gateway_api_key_account_group b
+                    WHERE b.tenant_id = k.tenant_id
+                      AND b.organization_id = k.organization_id
+                      AND b.api_key_id = k.id
+                      AND b.account_group_id = g.id
+                      AND b.binding_role = 'route'
+                      AND b.status = 1
+                      AND b.deleted_at IS NULL
+                      AND (b.effective_from IS NULL OR b.effective_from <= CURRENT_TIMESTAMP)
+                      AND (b.effective_to IS NULL OR b.effective_to > CURRENT_TIMESTAMP)
+               )
+           )
+    ) AS authorized,
+    (
+        SELECT COUNT(1)
+          FROM ai_upstream_account_group_member m
+         WHERE m.tenant_id = g.tenant_id
+           AND m.organization_id = g.organization_id
+           AND m.account_group_id = g.id
+           AND m.status = 1
+           AND m.enabled
+           AND m.deleted_at IS NULL
+           AND (m.effective_from IS NULL OR m.effective_from <= CURRENT_TIMESTAMP)
+           AND (m.effective_to IS NULL OR m.effective_to > CURRENT_TIMESTAMP)
+    ) AS member_account_count,
+    (
+        SELECT COUNT(1)
+          FROM ai_upstream_account_group_member m
+          JOIN ai_upstream_account a
+            ON a.tenant_id = m.tenant_id
+           AND a.organization_id = m.organization_id
+           AND a.id = m.account_id
+           AND a.status = 1
+           AND a.deleted_at IS NULL
+          JOIN ai_upstream_account_health_state account_health
+            ON account_health.tenant_id = a.tenant_id
+           AND account_health.organization_id = a.organization_id
+           AND account_health.account_id = a.id
+           AND account_health.health_status = 1
+          JOIN ai_upstream_supplier s
+            ON s.tenant_id = a.tenant_id
+           AND s.organization_id = a.organization_id
+           AND s.id = a.supplier_id
+           AND s.status = 1
+           AND s.deleted_at IS NULL
+         WHERE m.tenant_id = g.tenant_id
+           AND m.organization_id = g.organization_id
+           AND m.account_group_id = g.id
+           AND m.status = 1
+           AND m.enabled
+           AND m.deleted_at IS NULL
+           AND (m.effective_from IS NULL OR m.effective_from <= CURRENT_TIMESTAMP)
+           AND (m.effective_to IS NULL OR m.effective_to > CURRENT_TIMESTAMP)
+           AND EXISTS (
+               SELECT 1
+                 FROM ai_upstream_account_credential c
+                WHERE c.tenant_id = a.tenant_id
+                  AND c.organization_id = a.organization_id
+                  AND c.account_id = a.id
+                  AND c.status = 1
+                  AND c.is_active
+                  AND c.deleted_at IS NULL
+                  AND (c.expires_at IS NULL OR c.expires_at > CURRENT_TIMESTAMP)
+           )
+           AND EXISTS (
+               SELECT 1
+                 FROM ai_upstream_supplier_endpoint endpoint
+                 JOIN ai_upstream_supplier_endpoint_health_state endpoint_health
+                   ON endpoint_health.tenant_id = endpoint.tenant_id
+                  AND endpoint_health.organization_id = endpoint.organization_id
+                  AND endpoint_health.endpoint_id = endpoint.id
+                  AND endpoint_health.health_status = 1
+                WHERE endpoint.tenant_id = a.tenant_id
+                  AND endpoint.organization_id = a.organization_id
+                  AND endpoint.supplier_id = a.supplier_id
+                  AND endpoint.status = 1
+                  AND endpoint.deleted_at IS NULL
+                  AND (a.preferred_endpoint_id IS NULL OR endpoint.id = a.preferred_endpoint_id)
+           )
+    ) AS available_account_count,
     COALESCE(
         (
-            SELECT jsonb_agg(selected.capability ORDER BY selected.capability)::text
-            FROM (
-                SELECT DISTINCT capability
-                FROM (
-                    SELECT CASE LOWER(COALESCE(NULLIF(r.modality_code, ''), NULLIF(cr.resource_code, ''), NULLIF(cr.resource_group_code, '')))
-                        WHEN 'llm' THEN 'llm'
-                        WHEN 'chat' THEN 'llm'
-                        WHEN 'embedding' THEN 'llm'
-                        WHEN 'rerank' THEN 'llm'
-                        WHEN 'modality.llm' THEN 'llm'
-                        WHEN 'modality.chat' THEN 'llm'
-                        WHEN 'modality.embedding' THEN 'llm'
-                        WHEN 'modality.rerank' THEN 'llm'
-                        WHEN 'image' THEN 'image'
-                        WHEN 'vision' THEN 'image'
-                        WHEN 'modality.image' THEN 'image'
-                        WHEN 'modality.vision' THEN 'image'
-                        WHEN 'audio' THEN 'audio'
-                        WHEN 'speech' THEN 'audio'
-                        WHEN 'modality.audio' THEN 'audio'
-                        WHEN 'modality.speech' THEN 'audio'
-                        WHEN 'music' THEN 'music'
-                        WHEN 'modality.music' THEN 'music'
-                        WHEN 'sfx' THEN 'sfx'
-                        WHEN 'sound_effect' THEN 'sfx'
-                        WHEN 'sound_effects' THEN 'sfx'
-                        WHEN 'modality.sfx' THEN 'sfx'
-                        WHEN 'modality.sound_effect' THEN 'sfx'
-                        WHEN 'modality.sound_effects' THEN 'sfx'
-                        WHEN 'video' THEN 'video'
-                        WHEN 'modality.video' THEN 'video'
-                    END AS capability
-                    FROM ai_channel_resource cr
-                    LEFT JOIN ai_resource r
-                      ON r.resource_code = cr.resource_code
-                     AND r.tenant_id = cr.tenant_id
-                     AND r.organization_id = cr.organization_id
-                     AND r.deleted_at IS NULL
-                    LEFT JOIN ai_resource_group rg
-                      ON rg.group_code = cr.resource_group_code
-                     AND rg.tenant_id = cr.tenant_id
-                     AND rg.organization_id = cr.organization_id
-                     AND rg.deleted_at IS NULL
-                    WHERE cr.account_id = c.id
-                      AND cr.tenant_id = c.tenant_id
-                      AND cr.organization_id = c.organization_id
-                      AND cr.deleted_at IS NULL
-                      AND cr.status = 1
-                      AND cr.grant_type = 'allow'
-                      AND (
-                          COALESCE(r.resource_type, rg.group_type, '') = 'modality'
-                          OR cr.resource_code LIKE 'modality.%'
-                          OR cr.resource_group_code LIKE 'modality.%'
-                      )
-                ) capability_source
-                WHERE capability IS NOT NULL
-            ) selected
+            SELECT jsonb_agg(r.resource_code ORDER BY r.priority, r.id)::text
+              FROM ai_upstream_account_group_resource r
+             WHERE r.tenant_id = g.tenant_id
+               AND r.organization_id = g.organization_id
+               AND r.account_group_id = g.id
+               AND r.status = 1
+               AND r.deleted_at IS NULL
+               AND r.grant_type = 'allow'
+               AND NULLIF(r.resource_code, '') IS NOT NULL
+               AND (r.effective_from IS NULL OR r.effective_from <= CURRENT_TIMESTAMP)
+               AND (r.effective_to IS NULL OR r.effective_to > CURRENT_TIMESTAMP)
         ),
-        '["llm"]'
-    ) AS capabilities_json,
-    c.timeout_ms,
-    c.retry_policy::text AS retry_policy_json,
-    c.circuit_breaker_policy::text AS circuit_breaker_policy_json,
-    COALESCE(c.weight, 0) AS weight,
-    c.status AS status,
-    c.health_status AS health_status,
-    COALESCE(c.last_latency_ms, 0) AS latency_ms,
-    COALESCE(c.rpm_limit, 0) AS rpm_limit,
-    CAST(c.upstream_balance_amount AS TEXT) AS balance_amount,
-    COALESCE(c.upstream_balance_currency, '') AS balance_currency,
-    COALESCE(c.consecutive_error_count, 0) AS errors,
+        '[]'
+    ) AS resource_codes_json,
+    COALESCE(
+        (
+            SELECT jsonb_agg(r.resource_group_code ORDER BY r.priority, r.id)::text
+              FROM ai_upstream_account_group_resource r
+             WHERE r.tenant_id = g.tenant_id
+               AND r.organization_id = g.organization_id
+               AND r.account_group_id = g.id
+               AND r.status = 1
+               AND r.deleted_at IS NULL
+               AND r.grant_type = 'allow'
+               AND NULLIF(r.resource_group_code, '') IS NOT NULL
+               AND (r.effective_from IS NULL OR r.effective_from <= CURRENT_TIMESTAMP)
+               AND (r.effective_to IS NULL OR r.effective_to > CURRENT_TIMESTAMP)
+        ),
+        '[]'
+    ) AS resource_group_codes_json,
     COUNT(*) OVER() AS total
-FROM ai_channel c
-LEFT JOIN LATERAL (
-    SELECT credential.id, credential.base_url, credential.masked_label
-    FROM ai_channel_credential credential
-    WHERE credential.account_id = c.id
-      AND credential.tenant_id = c.tenant_id
-      AND credential.organization_id = c.organization_id
-      AND credential.status = 1
-      AND credential.deleted_at IS NULL
-    ORDER BY COALESCE(credential.priority, 100) ASC, COALESCE(credential.weight, 100) DESC, credential.id ASC
-    LIMIT 1
-) cc ON true
-WHERE c.tenant_id = $1
-  AND c.organization_id = $2
-  AND c.deleted_at IS NULL
-  AND ($3::text IS NULL OR lower(COALESCE(c.channel_name, c.account_code, c.supplier_code, '')) LIKE lower($3))
-ORDER BY c.priority ASC NULLS LAST, c.weight DESC NULLS LAST, c.id DESC
-LIMIT $4 OFFSET $5
+FROM ai_upstream_account_group g
+WHERE g.tenant_id = $1
+  AND g.organization_id = $2
+  AND g.deleted_at IS NULL
+  AND ($4::text IS NULL OR lower(CONCAT_WS(' ', g.group_code, g.group_name, g.description)) LIKE lower($4))
+ORDER BY g.priority ASC, g.group_code ASC, g.id ASC
+LIMIT $5 OFFSET $6
 "#;
 
 const LOAD_ROUTING_API_KEYS: &str = r#"
@@ -132,6 +166,7 @@ SELECT
     k.status AS api_key_status,
     CAST(k.created_at AS TEXT) AS created_at,
     CAST(COALESCE(SUM(COALESCE(u.request_count, 0)), 0) AS TEXT) AS total_usage,
+    ag.account_groups_json,
     COUNT(*) OVER() AS total
 FROM iam_gateway_api_key k
 LEFT JOIN ai_usage u
@@ -140,12 +175,43 @@ LEFT JOIN ai_usage u
  AND u.user_id = k.user_id
  AND u.api_key_id = k.id
  AND u.status = 1
+LEFT JOIN LATERAL (
+    SELECT COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'id', CAST(g.id AS TEXT),
+                'code', g.group_code,
+                'name', g.group_name
+            ) ORDER BY g.priority, g.group_code, g.id
+        ),
+        '[]'::jsonb
+    )::text AS account_groups_json
+    FROM ai_upstream_account_group g
+    WHERE g.tenant_id = k.tenant_id
+      AND g.organization_id = k.organization_id
+      AND g.status = 1
+      AND g.deleted_at IS NULL
+      AND g.id IN (
+          SELECT k.account_group_id WHERE k.account_group_id IS NOT NULL
+          UNION
+          SELECT b.account_group_id
+            FROM iam_gateway_api_key_account_group b
+           WHERE b.tenant_id = k.tenant_id
+             AND b.organization_id = k.organization_id
+             AND b.api_key_id = k.id
+             AND b.binding_role = 'route'
+             AND b.status = 1
+             AND b.deleted_at IS NULL
+             AND (b.effective_from IS NULL OR b.effective_from <= CURRENT_TIMESTAMP)
+             AND (b.effective_to IS NULL OR b.effective_to > CURRENT_TIMESTAMP)
+      )
+) ag ON true
 WHERE k.tenant_id = $1
   AND k.organization_id = $2
   AND k.user_id = $3
   AND k.deleted_at IS NULL
   AND ($4::text IS NULL OR lower(COALESCE(k.name, k.key_prefix, k.key_display_masked, '')) LIKE lower($4))
-GROUP BY k.id, k.name, k.key_prefix, k.key_display_masked, k.metadata, k.status, k.created_at
+GROUP BY k.id, k.name, k.key_prefix, k.key_display_masked, k.metadata, k.status, k.created_at, ag.account_groups_json
 ORDER BY k.updated_at DESC NULLS LAST, k.id DESC
 LIMIT $5 OFFSET $6
 "#;
@@ -162,7 +228,10 @@ WITH selected_trace AS (
         status,
         created_at,
         ended_at,
-        channel_name_snapshot,
+        account_group_id,
+        account_group_snapshot,
+        account_id,
+        account_name_snapshot,
         requested_model,
         provider_model,
         request_path,
@@ -190,7 +259,10 @@ WITH selected_trace AS (
             t.status,
             t.created_at,
             t.ended_at,
-            t.channel_name_snapshot,
+            t.account_group_id,
+            t.account_group_snapshot,
+            t.account_id,
+            t.account_name_snapshot,
             t.requested_model,
             t.provider_model,
             t.request_path,
@@ -240,7 +312,12 @@ SELECT
     COALESCE(NULLIF(t.trace_id, ''), '') AS trace_id,
     COALESCE(NULLIF(t.request_id, ''), '') AS request_id,
     COALESCE(NULLIF(u.catalog_key, ''), NULLIF(d.resolved_model, ''), NULLIF(t.provider_model, ''), NULLIF(t.requested_model, ''), '-') AS model,
-    COALESCE(NULLIF(t.channel_name_snapshot, ''), CAST(d.selected_account_id AS TEXT), '-') AS channel,
+    COALESCE(CAST(t.account_id AS TEXT), CAST(d.selected_account_id AS TEXT), '') AS upstream_account_id,
+    COALESCE(NULLIF(a.account_code, ''), '') AS upstream_account_code,
+    COALESCE(NULLIF(t.account_name_snapshot, ''), NULLIF(a.account_name, ''), '') AS upstream_account_name,
+    COALESCE(CAST(t.account_group_id AS TEXT), '') AS upstream_account_group_id,
+    COALESCE(NULLIF(g.group_code, ''), '') AS upstream_account_group_code,
+    COALESCE(NULLIF(t.account_group_snapshot, ''), NULLIF(g.group_name, ''), '') AS upstream_account_group_name,
     COALESCE(NULLIF(t.request_path, ''), '') AS request_path,
     COALESCE(NULLIF(t.http_method, ''), '') AS http_method,
     t.http_status AS http_status,
@@ -255,7 +332,7 @@ SELECT
     COALESCE(CAST(t.ended_at AS TEXT), '') AS ended_at,
     CASE WHEN COALESCE(t.streaming, false) THEN 1 ELSE 0 END AS streaming,
     t.latency_ms AS latency_ms,
-    COALESCE(u.total_tokens, t.total_tokens, 0) AS total_tokens,
+    CAST(COALESCE(u.total_tokens, t.total_tokens, 0) AS BIGINT) AS total_tokens,
     COUNT(*) OVER() AS total
 FROM selected_trace t
 LEFT JOIN ai_routing_decision_log d
@@ -263,6 +340,16 @@ LEFT JOIN ai_routing_decision_log d
  AND d.tenant_id = t.tenant_id
  AND d.organization_id = t.organization_id
  AND d.request_id = t.request_id
+LEFT JOIN ai_upstream_account a
+  ON a.tenant_id = t.tenant_id
+ AND a.organization_id = t.organization_id
+ AND a.id = COALESCE(t.account_id, d.selected_account_id)
+ AND a.deleted_at IS NULL
+LEFT JOIN ai_upstream_account_group g
+  ON g.tenant_id = t.tenant_id
+ AND g.organization_id = t.organization_id
+ AND g.id = t.account_group_id
+ AND g.deleted_at IS NULL
 LEFT JOIN usage_by_request u
   ON u.tenant_id = t.tenant_id
  AND u.organization_id = t.organization_id
@@ -384,17 +471,18 @@ impl PostgresAppRoutingReadStore {
 }
 
 impl AppRoutingReadStore for PostgresAppRoutingReadStore {
-    fn load_routing_channels<'a>(
+    fn load_routing_account_groups<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
         query: AppRoutingListQuery,
-    ) -> AppRoutingReadFuture<'a, AppRoutingChannelListPage> {
+    ) -> AppRoutingReadFuture<'a, AppRoutingAccountGroupListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
             let search = query.q.as_deref().map(|value| format!("%{value}%"));
-            let rows = sqlx::query(LOAD_ROUTING_CHANNELS)
+            let rows = sqlx::query(LOAD_ROUTING_ACCOUNT_GROUPS)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
+                .bind(subject.user_id)
                 .bind(search)
                 .bind(query.page_size.max(1))
                 .bind(query.offset.max(0))
@@ -407,9 +495,9 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
                 .unwrap_or(0);
             let items = rows
                 .into_iter()
-                .map(row_to_channel)
+                .map(row_to_account_group)
                 .collect::<DomainResult<Vec<_>>>()?;
-            Ok(AppRoutingChannelListPage {
+            Ok(AppRoutingAccountGroupListPage {
                 items,
                 total,
                 page_no: query.page_no,
@@ -515,51 +603,22 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
     }
 }
 
-fn row_to_channel(row: sqlx::postgres::PgRow) -> DomainResult<AppRoutingChannelItem> {
-    let id = string_cell(&row, "id");
-    let capabilities = parse_string_array(&string_cell(&row, "capabilities_json"))?;
-    let errors = integer_cell(&row, "errors");
-    let status = required_integer_cell(&row, "status")?;
-    let health_status = required_integer_cell(&row, "health_status")?;
-    let retry_policy_json = string_cell(&row, "retry_policy_json");
-    let circuit_breaker_policy_json = string_cell(&row, "circuit_breaker_policy_json");
-    Ok(AppRoutingChannelItem {
-        id: id.clone(),
-        name: string_cell(&row, "name"),
-        vendor: display_vendor(&string_cell(&row, "vendor")),
-        provider: display_vendor(&string_cell(&row, "provider")),
-        supplier_code: string_cell(&row, "supplier_code"),
-        protocol: protocol_label(required_integer_cell(&row, "protocol")?)?,
-        access_type: access_type_label(required_integer_cell(&row, "access_type")?)?,
-        base_url: string_cell(&row, "base_url"),
-        api_key: string_cell(&row, "api_key"),
-        models: Vec::new(),
-        is_multimodal: capabilities.iter().any(|capability| capability != "llm"),
-        capabilities,
-        timeout_ms: row.try_get("timeout_ms").ok().flatten(),
-        retry_policy: retry_policy_json
-            .trim()
-            .is_empty()
-            .then_some(None)
-            .unwrap_or_else(|| AppRoutingRetryPolicyItem::from_json(&retry_policy_json)),
-        circuit_breaker_policy: circuit_breaker_policy_json
-            .trim()
-            .is_empty()
-            .then_some(None)
-            .unwrap_or_else(|| {
-                crate::ports::AppRoutingCircuitBreakerPolicyItem::from_json(
-                    &circuit_breaker_policy_json,
-                )
-            }),
-        weight: integer_cell(&row, "weight"),
-        status: status_label(status, health_status, errors)?,
-        latency: duration_or_na(integer_cell(&row, "latency_ms")),
-        rpm: integer_cell(&row, "rpm_limit"),
-        balance: balance_label(
-            &string_cell(&row, "balance_amount"),
-            &string_cell(&row, "balance_currency"),
-        ),
-        errors,
+fn row_to_account_group(row: sqlx::postgres::PgRow) -> DomainResult<AppRoutingAccountGroupItem> {
+    Ok(AppRoutingAccountGroupItem {
+        id: string_cell(&row, "id"),
+        group_code: string_cell(&row, "group_code"),
+        group_name: string_cell(&row, "group_name"),
+        description: string_cell(&row, "description"),
+        routing_strategy: string_cell(&row, "routing_strategy"),
+        fallback_mode: string_cell(&row, "fallback_mode"),
+        cost_multiplier: string_cell(&row, "cost_multiplier"),
+        sale_multiplier: string_cell(&row, "sale_multiplier"),
+        status: account_group_status_label(required_integer_cell(&row, "status")?)?,
+        authorized: required_bool_cell(&row, "authorized")?,
+        member_account_count: integer_cell(&row, "member_account_count"),
+        available_account_count: integer_cell(&row, "available_account_count"),
+        resource_codes: parse_string_array(&string_cell(&row, "resource_codes_json"))?,
+        resource_group_codes: parse_string_array(&string_cell(&row, "resource_group_codes_json"))?,
     })
 }
 
@@ -579,6 +638,7 @@ fn row_to_api_key(
         status: api_key_status_label(required_integer_cell(&row, "api_key_status")?)?,
         total_usage: string_cell(&row, "total_usage"),
         created_at: string_cell(&row, "created_at"),
+        account_groups: parse_api_key_account_groups(&string_cell(&row, "account_groups_json"))?,
     })
 }
 
@@ -589,7 +649,12 @@ fn row_to_request_trace(row: sqlx::postgres::PgRow) -> DomainResult<AppRoutingRe
         id: string_cell(&row, "id"),
         time: string_cell(&row, "trace_time"),
         model: string_cell(&row, "model"),
-        channel: string_cell(&row, "channel"),
+        upstream_account_id: string_cell(&row, "upstream_account_id"),
+        upstream_account_code: string_cell(&row, "upstream_account_code"),
+        upstream_account_name: string_cell(&row, "upstream_account_name"),
+        upstream_account_group_id: string_cell(&row, "upstream_account_group_id"),
+        upstream_account_group_code: string_cell(&row, "upstream_account_group_code"),
+        upstream_account_group_name: string_cell(&row, "upstream_account_group_name"),
         status: http_status,
         duration: duration_label(latency_ms),
         tokens: integer_cell(&row, "total_tokens"),
@@ -636,52 +701,30 @@ fn require_subject(subject: Option<AppRoutingSubject>) -> DomainResult<AppRoutin
 fn parse_string_array(value: &str) -> DomainResult<Vec<String>> {
     let parsed: Vec<String> = serde_json::from_str(value).map_err(|error| {
         DomainError::new(format!(
-            "invalid routing channel capabilities json from database row: {error}"
+            "invalid routing resource array from database row: {error}"
         ))
     })?;
     let mut normalized = Vec::new();
     for value in parsed {
-        let Some(capability) = normalize_capability(&value) else {
+        let value = value.trim();
+        if value.is_empty() {
             continue;
-        };
-        if !normalized.iter().any(|value| value == capability) {
-            normalized.push(capability.to_owned());
         }
-    }
-    if normalized.is_empty() {
-        normalized.push("llm".to_owned());
+        if !normalized.iter().any(|existing| existing == value) {
+            normalized.push(value.to_owned());
+        }
     }
     Ok(normalized)
 }
 
-fn normalize_capability(value: &str) -> Option<&'static str> {
-    match value.trim().to_ascii_lowercase().as_str() {
-        "" => None,
-        "llm" | "chat" | "completion" | "completions" | "response" | "responses" | "embedding"
-        | "embeddings" | "rerank" | "modality.llm" | "modality.chat" | "modality.embedding"
-        | "modality.rerank" => Some("llm"),
-        "image" | "images" | "vision" | "modality.image" | "modality.images"
-        | "modality.vision" => Some("image"),
-        "audio" | "speech" | "stt" | "tts" | "modality.audio" | "modality.speech"
-        | "modality.stt" | "modality.tts" => Some("audio"),
-        "music" | "modality.music" => Some("music"),
-        "sfx"
-        | "sound_effect"
-        | "sound_effects"
-        | "modality.sfx"
-        | "modality.sound_effect"
-        | "modality.sound_effects" => Some("sfx"),
-        "video" | "videos" | "modality.video" | "modality.videos" => Some("video"),
-        value
-            if value.starts_with("vendor.")
-                || value.starts_with("api.")
-                || value.starts_with("model.")
-                || value.starts_with("bundle.") =>
-        {
-            None
-        }
-        _ => None,
-    }
+fn parse_api_key_account_groups(
+    value: &str,
+) -> DomainResult<Vec<AppRoutingApiKeyAccountGroupItem>> {
+    serde_json::from_str(value).map_err(|error| {
+        DomainError::new(format!(
+            "invalid routing API key account-group array from database row: {error}"
+        ))
+    })
 }
 
 fn string_cell(row: &sqlx::postgres::PgRow, column: &str) -> String {
@@ -712,74 +755,22 @@ fn optional_integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> Option<i6
         .or_else(|| string_cell(row, column).parse::<i64>().ok())
 }
 
-fn display_vendor(value: &str) -> String {
-    match value {
-        "openai" => "OpenAI",
-        "anthropic" => "Anthropic",
-        "google" => "Gemini",
-        "openrouter" => "OpenRouter",
-        "deepseek" => "DeepSeek",
-        "zhipu" => "Zhipu",
-        "mistral" => "Mistral",
-        "meta" => "Meta",
-        "ollama" => "Ollama",
-        "azure_openai" => "Azure OpenAI",
-        "custom" => "Custom",
-        _ => value,
-    }
-    .to_owned()
+fn required_bool_cell(row: &sqlx::postgres::PgRow, column: &str) -> DomainResult<bool> {
+    row.try_get::<bool, _>(column).map_err(|error| {
+        DomainError::new(format!(
+            "missing or invalid routing {column} flag from database row: {error}"
+        ))
+    })
 }
 
-fn protocol_label(value: i64) -> DomainResult<String> {
-    match value {
-        1 => Ok("OpenAI"),
-        2 => Ok("Anthropic"),
-        3 => Ok("Gemini"),
-        4 => Ok("Ollama"),
-        9 => Ok("Custom"),
+fn account_group_status_label(status: i64) -> DomainResult<String> {
+    match status {
+        1 => Ok("enabled".to_owned()),
+        0 | 4 => Ok("disabled".to_owned()),
         value => Err(DomainError::new(format!(
-            "invalid routing channel protocol from database row: {value}"
+            "invalid routing account-group status from database row: {value}"
         ))),
     }
-    .map(str::to_owned)
-}
-
-fn access_type_label(value: i64) -> DomainResult<String> {
-    match value {
-        1 => Ok("Standard API Key"),
-        2 => Ok("GCP Vertex OAuth"),
-        3 => Ok("AWS Bedrock"),
-        4 => Ok("Azure OpenAI"),
-        5 => Ok("Claude Code"),
-        value => Err(DomainError::new(format!(
-            "invalid routing channel access_type from database row: {value}"
-        ))),
-    }
-    .map(str::to_owned)
-}
-
-fn status_label(status: i64, health_status: i64, errors: i64) -> DomainResult<String> {
-    match health_status {
-        1 | 2 => {}
-        value => {
-            return Err(DomainError::new(format!(
-                "invalid routing channel health_status from database row: {value}"
-            )));
-        }
-    }
-
-    let label = match status {
-        -1 | 0 => "disabled",
-        1 if health_status == 2 || errors > 0 => "error",
-        1 => "active",
-        2 => "error",
-        value => {
-            return Err(DomainError::new(format!(
-                "invalid routing channel status from database row: {value}"
-            )));
-        }
-    };
-    Ok(label.to_owned())
 }
 
 fn api_key_status_label(status: i64) -> DomainResult<String> {
@@ -832,32 +823,12 @@ fn missing_integer_cell_error(column: &str) -> DomainError {
     match column {
         "http_status" => DomainError::new("missing routing trace http_status from database row"),
         "api_key_status" => DomainError::new("missing routing api key status from database row"),
-        column => DomainError::new(format!(
-            "missing routing channel {column} from database row"
-        )),
-    }
-}
-
-fn duration_or_na(value: i64) -> String {
-    if value > 0 {
-        duration_label(value)
-    } else {
-        "N/A".to_owned()
+        column => DomainError::new(format!("missing routing {column} from database row")),
     }
 }
 
 fn duration_label(value: i64) -> String {
     format!("{value}ms")
-}
-
-fn balance_label(amount: &str, currency: &str) -> String {
-    if amount.trim().is_empty() {
-        return "N/A".to_owned();
-    }
-    if currency.trim().is_empty() {
-        return amount.trim().to_owned();
-    }
-    format!("{} {}", currency.trim(), amount.trim())
 }
 
 fn success_rate_label(success: i64, total: i64) -> String {

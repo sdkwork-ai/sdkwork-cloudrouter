@@ -226,52 +226,110 @@
         ],
         "type": "object"
       },
-      "AppChannelGroup": {
+      "AppRoutingAccountGroup": {
         "additionalProperties": false,
-        "description": "App channel group schema exposed by Claw Router.",
+        "description": "App routing account group schema exposed by Claw Router.",
         "properties": {
-          "code": {
-            "description": "Code field on app channel group.",
+          "accountCount": {
+            "description": "Account count field on app routing account group.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "availableAccountCount": {
+            "description": "Available account count field on app routing account group.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "costMultiplier": {
+            "description": "Cost multiplier field on app routing account group.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "fallbackMode": {
+            "description": "Fallback mode field on app routing account group.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "groupCode": {
+            "description": "Group code field on app routing account group.",
             "maxLength": 128,
-            "minLength": 1,
+            "type": "string"
+          },
+          "groupName": {
+            "description": "Group name field on app routing account group.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "groupType": {
+            "description": "Group type field on app routing account group.",
+            "maxLength": 32,
             "type": "string"
           },
           "id": {
-            "description": "Id field on app channel group.",
-            "maxLength": 128,
-            "minLength": 1,
+            "description": "Id field on app routing account group.",
+            "maxLength": 32,
             "type": "string"
           },
-          "name": {
-            "description": "Name field on app channel group.",
-            "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
+          "resourceCodes": {
+            "description": "Resource codes field on app routing account group.",
+            "items": {
+              "description": "Resource codes field on app routing account group.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "type": "array"
           },
-          "rate": {
-            "description": "Rate field on app channel group.",
+          "resourceGroupCodes": {
+            "description": "Resource group codes field on app routing account group.",
+            "items": {
+              "description": "Resource group codes field on app routing account group.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "routingStrategy": {
+            "description": "Routing strategy field on app routing account group.",
             "maxLength": 64,
-            "nullable": true,
             "type": "string"
+          },
+          "saleMultiplier": {
+            "description": "Sale multiplier field on app routing account group.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on app routing account group.",
+            "format": "int32",
+            "type": "integer"
           }
         },
         "required": [
           "id",
-          "code",
-          "name",
-          "rate"
+          "groupCode",
+          "groupName",
+          "groupType",
+          "routingStrategy",
+          "fallbackMode",
+          "costMultiplier",
+          "saleMultiplier",
+          "accountCount",
+          "availableAccountCount",
+          "resourceCodes",
+          "resourceGroupCodes",
+          "status"
         ],
         "type": "object"
       },
-      "AppChannelGroupListResponse": {
+      "AppRoutingAccountGroupListResponse": {
         "additionalProperties": false,
-        "description": "App channel group list response schema exposed by Claw Router.",
-        "name": "AppChannelGroupListResponse",
+        "description": "App routing account group list response schema exposed by Claw Router.",
+        "name": "AppRoutingAccountGroupListResponse",
         "properties": {
           "items": {
-            "description": "Items field on app channel group list response.",
+            "description": "Items field on app routing account group list response.",
             "items": {
-              "$ref": "#/components/schemas/AppChannelGroup"
+              "$ref": "#/components/schemas/AppRoutingAccountGroup"
             },
             "type": "array"
           },
@@ -281,7 +339,7 @@
                 "$ref": "#/components/schemas/PageInfo"
               }
             ],
-            "description": "Page info field on app channel group list response."
+            "description": "Page info field on app routing account group list response."
           }
         },
         "required": [
@@ -289,33 +347,6 @@
           "pageInfo"
         ],
         "type": "object"
-      },
-      "ChannelGroupsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by channel groups list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/AppChannelGroupListResponse"
-                  }
-                ],
-                "description": "Data field on channel groups list result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Channel groups list result schema exposed by Claw Router.",
-        "x-operation-id": "channelGroups.list"
       },
       "ConversationsCreateResult": {
         "allOf": [
@@ -1647,6 +1678,33 @@
         ],
         "type": "object"
       },
+      "RoutingAccountGroupsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by routing account groups list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AppRoutingAccountGroupListResponse"
+                  }
+                ],
+                "description": "Data field on routing account groups list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Routing account groups list result schema exposed by Claw Router.",
+        "x-operation-id": "routing.accountGroups.list"
+      },
       "RoutingApiKeysListResult": {
         "allOf": [
           {
@@ -2242,88 +2300,6 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.2",
   "paths": {
-    "/app/v3/api/ai/channel_groups": {
-      "get": {
-        "description": "List groups. Reads ai_channel_group, ai_channel_group_metric_snapshot, ai_pricing_plan. Writes none. File targets none.",
-        "operationId": "channelGroups.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChannelGroupsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List groups",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_channel_group",
-          "ai_channel_group_metric_snapshot",
-          "ai_pricing_plan"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-resource": "channelGroups",
-        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
-        "x-write-tables": []
-      }
-    },
     "/app/v3/api/ai/dashboard/overview": {
       "get": {
         "description": "List dashboard overview. Reads ai_usage, ai_request_trace, ai_model_rank_snapshot, ops_notification_message, ops_metric_snapshot, ops_gateway_instance. Writes none. File targets none.",
@@ -2765,6 +2741,126 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "generations.workspace",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/playgroundGenerationsService.ts",
+        "x-write-tables": []
+      }
+    },
+    "/app/v3/api/ai/routing/account_groups": {
+      "get": {
+        "description": "List routing account groups. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account_group_resource, ai_upstream_account, ai_upstream_supplier. Writes none. File targets none.",
+        "operationId": "routing.accountGroups.list",
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutingAccountGroupsListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List routing account groups",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_upstream_account_group",
+          "ai_upstream_account_group_member",
+          "ai_upstream_account_group_resource",
+          "ai_upstream_account",
+          "ai_upstream_supplier"
+        ],
+        "x-route-scope": "console",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-resource": "routing.accountGroups",
+        "x-source-file": "services/sdkwork-clawrouter-router-service/src/api/app_routing.rs",
         "x-write-tables": []
       }
     },
@@ -3862,6 +3958,7 @@
             "required": true,
             "schema": {
               "maxLength": 128,
+              "minLength": 1,
               "type": "string"
             }
           }

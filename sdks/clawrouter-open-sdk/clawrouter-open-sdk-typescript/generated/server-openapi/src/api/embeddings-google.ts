@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { GoogleBatchEmbedContentsRequest, GoogleBatchEmbedContentsResponse, GoogleEmbedContentRequest, GoogleEmbedContentResponse } from '../types';
 
@@ -13,8 +13,8 @@ export class EmbeddingsGoogleV1betaModelsModelEmbedContentApi {
 
 
 /** Google Gemini embed content */
-  async create(model: string, body: GoogleEmbedContentRequest): Promise<GoogleEmbedContentResponse> {
-    return this.client.post<GoogleEmbedContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:embedContent`), body, undefined, undefined, 'application/json');
+  async create(model: string, body: GoogleEmbedContentRequest, requestOptions?: ApiRequestOptions): Promise<GoogleEmbedContentResponse> {
+    return this.client.request<GoogleEmbedContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:embedContent`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -27,8 +27,8 @@ export class EmbeddingsGoogleV1betaModelsModelBatchEmbedContentsApi {
 
 
 /** Google Gemini batch embed contents */
-  async create(model: string, body: GoogleBatchEmbedContentsRequest): Promise<GoogleBatchEmbedContentsResponse> {
-    return this.client.post<GoogleBatchEmbedContentsResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:batchEmbedContents`), body, undefined, undefined, 'application/json');
+  async create(model: string, body: GoogleBatchEmbedContentsRequest, requestOptions?: ApiRequestOptions): Promise<GoogleBatchEmbedContentsResponse> {
+    return this.client.request<GoogleBatchEmbedContentsResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:batchEmbedContents`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

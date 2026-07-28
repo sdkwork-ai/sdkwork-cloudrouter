@@ -24,6 +24,7 @@ mod paypal_payment_adapter;
 mod runtime_stream_bus;
 mod stripe_payment_adapter;
 mod upstream_account_route_planner;
+mod upstream_cache_invalidation;
 mod upstream_route_selector;
 mod usage_settlement_config;
 mod usage_settlement_worker;
@@ -34,9 +35,7 @@ pub use ai_route_taxonomy::{
     builtin_ai_route_taxonomy, find_builtin_ai_route, AiRouteTaxonomyEntry, AiRoutingIndex,
 };
 pub use ai_routing_cache_invalidation::{
-    AiRoutingCacheInvalidatingAdminAiResourceStore,
-    AiRoutingCacheInvalidatingAdminChannelGroupStore, AiRoutingCacheInvalidatingAdminChannelStore,
-    AiRoutingCacheInvalidatingAdminModelStore, AiRoutingCacheInvalidatingAdminProviderSecretStore,
+    AiRoutingCacheInvalidatingAdminAiResourceStore, AiRoutingCacheInvalidatingAdminModelStore,
     AiRoutingCacheInvalidator,
 };
 pub use alipay_payment_adapter::{
@@ -54,8 +53,8 @@ pub use cache_runtime::{
     RuntimeCacheManager, AUTH_QR_CACHE_NAMESPACE, DEFAULT_CACHE_KEY_PREFIX,
     DEFAULT_DESKTOP_CACHE_INSTANCE_NAME, DEFAULT_REDIS_CONNECTION_PROFILE_NAME,
     DEFAULT_SERVICE_CACHE_INSTANCE_NAME, ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
-    ROUTING_DISABLED_CHANNEL_CACHE_NAMESPACE, ROUTING_IDEMPOTENCY_CACHE_NAMESPACE,
-    ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE, ROUTING_SNAPSHOT_CACHE_NAMESPACE,
+    ROUTING_DISABLED_UPSTREAM_ACCOUNT_CACHE_NAMESPACE, ROUTING_IDEMPOTENCY_CACHE_NAMESPACE,
+    ROUTING_SNAPSHOT_CACHE_NAMESPACE, ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
 };
 pub use category_seed::{
     c_category_type_scope, load_admin_category_seed_bundles, DEFAULT_ADMIN_CATEGORY_SEED_DATASETS,
@@ -170,6 +169,7 @@ pub use stripe_payment_adapter::{
     StripeHyperPaymentHttpClient, StripePaymentHttpClient, StripePaymentProviderAdapter,
     StripePaymentProviderConfig,
 };
+pub use upstream_cache_invalidation::AiRoutingCacheInvalidatingAdminUpstreamStore;
 pub use upstream_route_selector::{
     SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute,
     SelectedUpstreamModelRoute, SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError,

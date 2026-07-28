@@ -468,7 +468,7 @@ SELECT
     COALESCE(cc.priority, 100) AS credential_priority,
     100 AS credential_weight,
     c.contract_cost_multiplier::text AS contract_cost_multiplier,
-    c.last_latency_ms,
+    account_health.last_latency_ms,
     NULLIF(c.account_code, '') AS account_code,
     COALESCE(NULLIF(c.region_code, ''), 'global') AS region_code,
     c.supplier_id,
@@ -477,25 +477,31 @@ SELECT
     COALESCE(e.priority, 100) AS endpoint_priority,
     COALESCE(e.routing_weight, 100) AS endpoint_weight,
     CASE
-        WHEN COALESCE(e.health_status, 1) = 1
-          OR COALESCE(e.updated_at, CURRENT_TIMESTAMP) + ($1 * INTERVAL '1 second') <= CURRENT_TIMESTAMP
+        WHEN endpoint_health.endpoint_id IS NULL THEN 0
+        WHEN endpoint_health.health_status = 1
+          OR (
+              endpoint_health.health_status = 2
+              AND endpoint_health.updated_at + ($1 * INTERVAL '1 second') <= CURRENT_TIMESTAMP
+          )
         THEN 1
-        ELSE 2
+        ELSE endpoint_health.health_status
     END AS endpoint_health_status,
     e.base_url,
     'managed://upstream-account-credential/' || cc.id::text AS secret_ref,
     cc.credential_ref AS secret_ciphertext,
     am.auth_type,
-    '{}'::jsonb::text AS auth_config_json,
+    am.runtime_auth_config::text AS runtime_auth_config_json,
     COALESCE(c.timeout_ms, e.timeout_ms) AS timeout_ms,
     c.retry_policy::text AS retry_policy_json,
     CASE
-        WHEN (COALESCE(c.health_status, 1) = 1
-              OR COALESCE(c.updated_at, CURRENT_TIMESTAMP) + ($1 * INTERVAL '1 second') <= CURRENT_TIMESTAMP)
-         AND (COALESCE(s.health_status, 1) = 1
-              OR COALESCE(s.updated_at, CURRENT_TIMESTAMP) + ($1 * INTERVAL '1 second') <= CURRENT_TIMESTAMP)
+        WHEN account_health.account_id IS NULL THEN 0
+        WHEN account_health.health_status = 1
+          OR (
+              account_health.health_status = 2
+              AND account_health.updated_at + ($1 * INTERVAL '1 second') <= CURRENT_TIMESTAMP
+          )
         THEN 1
-        ELSE 2
+        ELSE account_health.health_status
     END AS account_health_status,
     1 AS credential_health_status,
     COALESCE((
@@ -643,6 +649,14 @@ JOIN ai_upstream_supplier_endpoint e
  AND e.organization_id = c.organization_id
  AND e.deleted_at IS NULL
  AND e.status = 1
+LEFT JOIN ai_upstream_account_health_state account_health
+  ON account_health.tenant_id = c.tenant_id
+ AND account_health.organization_id = c.organization_id
+ AND account_health.account_id = c.id
+LEFT JOIN ai_upstream_supplier_endpoint_health_state endpoint_health
+  ON endpoint_health.tenant_id = e.tenant_id
+ AND endpoint_health.organization_id = e.organization_id
+ AND endpoint_health.endpoint_id = e.id
 WHERE c.deleted_at IS NULL
   AND c.status = 1
   AND EXISTS (

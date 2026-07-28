@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { OpenAiUpload, OpenAiUploadCompleteRequest, OpenAiUploadCreateRequest, OpenAiUploadPart, OpenAiUploadPartMultipartRequest } from '../types';
 
@@ -13,8 +13,8 @@ export class UploadsPartsApi {
 
 
 /** Add upload part */
-  async create(uploadId: string, body: OpenAiUploadPartMultipartRequest): Promise<OpenAiUploadPart> {
-    return this.client.post<OpenAiUploadPart>(aiApiPath(`/uploads/${serializePathParameter(uploadId, { name: 'upload_id', style: 'simple', explode: false })}/parts`), body, undefined, undefined, 'multipart/form-data');
+  async create(uploadId: string, body: OpenAiUploadPartMultipartRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiUploadPart> {
+    return this.client.request<OpenAiUploadPart>(aiApiPath(`/uploads/${serializePathParameter(uploadId, { name: 'upload_id', style: 'simple', explode: false })}/parts`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'multipart/form-data' });
   }
 }
 
@@ -29,18 +29,18 @@ export class UploadsApi {
 
 
 /** Create upload */
-  async create(body: OpenAiUploadCreateRequest): Promise<OpenAiUpload> {
-    return this.client.post<OpenAiUpload>(aiApiPath(`/uploads`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiUploadCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiUpload> {
+    return this.client.request<OpenAiUpload>(aiApiPath(`/uploads`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Cancel upload */
-  async cancel(uploadId: string): Promise<OpenAiUpload> {
-    return this.client.post<OpenAiUpload>(aiApiPath(`/uploads/${serializePathParameter(uploadId, { name: 'upload_id', style: 'simple', explode: false })}/cancel`));
+  async cancel(uploadId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiUpload> {
+    return this.client.request<OpenAiUpload>(aiApiPath(`/uploads/${serializePathParameter(uploadId, { name: 'upload_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
   }
 
 /** Complete upload */
-  async complete(uploadId: string, body: OpenAiUploadCompleteRequest): Promise<OpenAiUpload> {
-    return this.client.post<OpenAiUpload>(aiApiPath(`/uploads/${serializePathParameter(uploadId, { name: 'upload_id', style: 'simple', explode: false })}/complete`), body, undefined, undefined, 'application/json');
+  async complete(uploadId: string, body: OpenAiUploadCompleteRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiUpload> {
+    return this.client.request<OpenAiUpload>(aiApiPath(`/uploads/${serializePathParameter(uploadId, { name: 'upload_id', style: 'simple', explode: false })}/complete`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

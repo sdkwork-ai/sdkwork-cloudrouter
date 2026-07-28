@@ -16,8 +16,6 @@ use sdkwork_web_core::{TenantAppContext, WebRequestContext};
 
 use sdkwork_claw_http::TenantIsolationViolation;
 
-use sdkwork_clawrouter_app_providers_repository_sqlx::AppProvidersSubject;
-
 use crate::api::response::problem_from_wire_code;
 use crate::api::subject::unauthorized_subject_response;
 use crate::ports::{
@@ -130,16 +128,6 @@ impl From<SqlScopedSubject> for crate::ports::SettlementsDashboardSubject {
     }
 }
 
-impl From<SqlScopedSubject> for crate::ports::AppGatewayTracesSubject {
-    fn from(subject: SqlScopedSubject) -> Self {
-        Self {
-            tenant_id: subject.tenant_id,
-            organization_id: subject.organization_id,
-            user_id: subject.user_id,
-        }
-    }
-}
-
 impl From<SqlScopedSubject> for crate::ports::AppGenerationHistorySubject {
     fn from(subject: SqlScopedSubject) -> Self {
         Self {
@@ -166,7 +154,6 @@ macro_rules! impl_app_user_sql_subject_from {
 
 impl_app_user_sql_subject_from!(AppNotificationSubject);
 impl_app_user_sql_subject_from!(SettingsSubject);
-impl_app_user_sql_subject_from!(AppProvidersSubject);
 impl_app_user_sql_subject_from!(AppChatSubject);
 impl_app_user_sql_subject_from!(AppRoutingSubject);
 impl_app_user_sql_subject_from!(AppRoutingStrategySubject);

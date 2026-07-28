@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { DeleteResult, OpenAiChatCompletion, OpenAiChatCompletionList, OpenAiChatCompletionMessageList, OpenAiChatCompletionRequest, OpenAiChatCompletionUpdateRequest } from '../types';
 
@@ -20,14 +20,14 @@ export class ChatCompletionsMessagesApi {
 
 
 /** List stored chat completion messages */
-  async list(completionId: string, params?: ChatCompletionsMessagesListParams): Promise<OpenAiChatCompletionMessageList> {
+  async list(completionId: string, params?: ChatCompletionsMessagesListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiChatCompletionMessageList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiChatCompletionMessageList>(appendQueryString(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}/messages`), query));
+    return this.client.request<OpenAiChatCompletionMessageList>(appendQueryString(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}/messages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -51,7 +51,7 @@ export class ChatCompletionsApi {
 
 
 /** List stored chat completions */
-  async list(params?: ChatCompletionsListParams): Promise<OpenAiChatCompletionList> {
+  async list(params?: ChatCompletionsListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiChatCompletionList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
@@ -60,27 +60,27 @@ export class ChatCompletionsApi {
       { name: 'model', value: params?.model, style: 'form', explode: true, allowReserved: false },
       { name: 'metadata', value: params?.metadata, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiChatCompletionList>(appendQueryString(aiApiPath(`/chat/completions`), query));
+    return this.client.request<OpenAiChatCompletionList>(appendQueryString(aiApiPath(`/chat/completions`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create chat completion */
-  async create(body: OpenAiChatCompletionRequest): Promise<OpenAiChatCompletion> {
-    return this.client.post<OpenAiChatCompletion>(aiApiPath(`/chat/completions`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiChatCompletionRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiChatCompletion> {
+    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete stored chat completion */
-  async delete(completionId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`));
+  async delete(completionId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve stored chat completion */
-  async retrieve(completionId: string): Promise<OpenAiChatCompletion> {
-    return this.client.get<OpenAiChatCompletion>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`));
+  async retrieve(completionId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiChatCompletion> {
+    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Modify stored chat completion */
-  async update(completionId: string, body: OpenAiChatCompletionUpdateRequest): Promise<OpenAiChatCompletion> {
-    return this.client.post<OpenAiChatCompletion>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(completionId: string, body: OpenAiChatCompletionUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiChatCompletion> {
+    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

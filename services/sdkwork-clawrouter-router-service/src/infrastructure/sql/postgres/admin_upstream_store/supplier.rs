@@ -1,7 +1,10 @@
 use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
-use super::shared::{column, conflict, not_found, search_pattern, store_error, DEFAULT_DATA_SCOPE};
+use super::shared::{
+    column, conflict, not_found, record_routing_change, search_pattern, store_error,
+    DEFAULT_DATA_SCOPE,
+};
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
@@ -10,24 +13,40 @@ use crate::ports::{
 };
 
 const SUPPLIER_COLUMNS: &str = r#"
-    id,
-    uuid,
-    supplier_code,
-    supplier_name,
-    display_name,
-    description,
-    supplier_type,
-    adapter_code,
-    protocol_code,
-    website_url,
-    docs_url,
-    region_code,
-    environment,
-    health_status,
-    sort_order,
-    status,
-    version,
-    TO_CHAR(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
+    supplier.id,
+    supplier.uuid,
+    supplier.supplier_code,
+    supplier.supplier_name,
+    supplier.display_name,
+    supplier.description,
+    supplier.supplier_type,
+    supplier.adapter_code,
+    supplier.protocol_code,
+    supplier.website_url,
+    supplier.docs_url,
+    supplier.region_code,
+    supplier.environment,
+    COALESCE((
+        SELECT CASE
+            WHEN BOOL_OR(COALESCE(endpoint_health.health_status, 0) = 1) THEN 1
+            WHEN BOOL_AND(COALESCE(endpoint_health.health_status, 0) = 2) THEN 2
+            ELSE 0
+        END
+        FROM ai_upstream_supplier_endpoint endpoint
+        LEFT JOIN ai_upstream_supplier_endpoint_health_state endpoint_health
+          ON endpoint_health.tenant_id = endpoint.tenant_id
+         AND endpoint_health.organization_id = endpoint.organization_id
+         AND endpoint_health.endpoint_id = endpoint.id
+        WHERE endpoint.tenant_id = supplier.tenant_id
+          AND endpoint.organization_id = supplier.organization_id
+          AND endpoint.supplier_id = supplier.id
+          AND endpoint.status = 1
+          AND endpoint.deleted_at IS NULL
+    ), 0) AS health_status,
+    supplier.sort_order,
+    supplier.status,
+    supplier.version,
+    TO_CHAR(supplier.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
 "#;
 
 pub(super) async fn list(
@@ -60,17 +79,17 @@ pub(super) async fn list(
     let sql = format!(
         r#"
         SELECT {SUPPLIER_COLUMNS}
-        FROM ai_upstream_supplier
-        WHERE tenant_id = $1
-          AND organization_id = $2
-          AND deleted_at IS NULL
+        FROM ai_upstream_supplier supplier
+        WHERE supplier.tenant_id = $1
+          AND supplier.organization_id = $2
+          AND supplier.deleted_at IS NULL
           AND (
                 $3::text IS NULL
-                OR supplier_code ILIKE $3 ESCAPE '\'
-                OR supplier_name ILIKE $3 ESCAPE '\'
-                OR display_name ILIKE $3 ESCAPE '\'
+                OR supplier.supplier_code ILIKE $3 ESCAPE '\'
+                OR supplier.supplier_name ILIKE $3 ESCAPE '\'
+                OR supplier.display_name ILIKE $3 ESCAPE '\'
           )
-        ORDER BY sort_order ASC, updated_at DESC, id ASC
+        ORDER BY supplier.sort_order ASC, supplier.updated_at DESC, supplier.id ASC
         LIMIT $4 OFFSET $5
         "#
     );
@@ -103,11 +122,11 @@ pub(super) async fn get(
     let sql = format!(
         r#"
         SELECT {SUPPLIER_COLUMNS}
-        FROM ai_upstream_supplier
-        WHERE tenant_id = $1
-          AND organization_id = $2
-          AND id = $3
-          AND deleted_at IS NULL
+        FROM ai_upstream_supplier supplier
+        WHERE supplier.tenant_id = $1
+          AND supplier.organization_id = $2
+          AND supplier.id = $3
+          AND supplier.deleted_at IS NULL
         "#
     );
     sqlx::query(&sql)
@@ -133,6 +152,21 @@ pub(super) async fn save(
         Some(supplier_id) => update(&mut tx, supplier_id, &command).await?,
         None => insert(&mut tx, &command).await?,
     };
+    let action = if command.supplier_id.is_some() {
+        "update_upstream_supplier"
+    } else {
+        "create_upstream_supplier"
+    };
+    record_routing_change(
+        &mut tx,
+        &command.subject,
+        &command.requested_at,
+        "upstream_supplier",
+        supplier_id,
+        action,
+        serde_json::json!({"supplierCode": command.supplier_code}),
+    )
+    .await?;
     let item = get_in_transaction(&mut tx, &command.subject, supplier_id)
         .await?
         .ok_or_else(|| DomainError::new("saved upstream supplier could not be reloaded"))?;
@@ -228,6 +262,16 @@ pub(super) async fn delete(
             "upstream supplier version changed during deletion",
         ));
     }
+    record_routing_change(
+        &mut tx,
+        &subject,
+        &requested_at,
+        "upstream_supplier",
+        supplier_id,
+        "delete_upstream_supplier",
+        serde_json::json!({}),
+    )
+    .await?;
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit upstream supplier delete", error))?;
@@ -317,13 +361,13 @@ async fn insert(
             created_at, updated_at, version, metadata,
             supplier_code, supplier_name, display_name, description,
             supplier_type, adapter_code, protocol_code, website_url, docs_url,
-            region_code, environment, health_status, sort_order
+            region_code, environment, sort_order
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
             $12, $13, $14, $15, $16,
-            $17, $18, 1, $19
+            $17, $18, $19
         )
         "#,
     )
@@ -449,9 +493,9 @@ async fn get_in_transaction(
     let sql = format!(
         r#"
         SELECT {SUPPLIER_COLUMNS}
-        FROM ai_upstream_supplier
-        WHERE tenant_id = $1 AND organization_id = $2
-          AND id = $3 AND deleted_at IS NULL
+        FROM ai_upstream_supplier supplier
+        WHERE supplier.tenant_id = $1 AND supplier.organization_id = $2
+          AND supplier.id = $3 AND supplier.deleted_at IS NULL
         "#
     );
     sqlx::query(&sql)

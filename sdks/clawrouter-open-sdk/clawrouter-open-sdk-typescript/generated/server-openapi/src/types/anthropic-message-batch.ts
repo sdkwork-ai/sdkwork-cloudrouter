@@ -4,11 +4,11 @@ import type { ProviderJsonValue } from './provider-json-value';
 /** Anthropic Claude anthropic message batch schema exposed by Claw Router vendor routing. */
 export interface AnthropicMessageBatch {
   /** Time cancellation began. */
-  cancel_initiated_at?: string;
+  cancel_initiated_at?: string | null;
   /** Time the batch was created. */
   created_at?: string;
   /** Time the batch ended. */
-  ended_at?: string;
+  ended_at?: string | null;
   /** Time the batch expires. */
   expires_at?: string;
   /** Message batch identifier. */

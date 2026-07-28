@@ -2,7 +2,8 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    column, conflict, masked_secret, not_found, search_pattern, store_error, DEFAULT_DATA_SCOPE,
+    column, conflict, masked_secret, not_found, record_routing_change, search_pattern, store_error,
+    DEFAULT_DATA_SCOPE,
 };
 use crate::application::{ApiKeySecretCodec, ApiKeySecretHasher};
 use crate::domain::{DomainError, DomainResult};
@@ -15,16 +16,19 @@ use crate::ports::{
 
 const MAX_CREDENTIAL_SECRET_BYTES: usize = 32 * 1024;
 const ACCOUNT_COLUMNS: &str = r#"
-    id, uuid, supplier_id, supplier_code, preferred_endpoint_id,
-    account_code, account_name, account_type, auth_method_code,
-    external_account_id, environment, region_code,
-    quota_limit::text AS quota_limit,
-    quota_used::text AS quota_used,
-    upstream_balance_amount::text AS upstream_balance_amount,
-    upstream_balance_currency,
-    contract_cost_multiplier::text AS contract_cost_multiplier,
-    rpm_limit, timeout_ms, health_status, status, version,
-    TO_CHAR(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
+    account.id, account.uuid, account.supplier_id, account.supplier_code,
+    account.preferred_endpoint_id, account.account_code, account.account_name,
+    account.account_type, account.auth_method_code, account.external_account_id,
+    account.environment, account.region_code,
+    account.quota_limit::text AS quota_limit,
+    account.quota_used::text AS quota_used,
+    account.upstream_balance_amount::text AS upstream_balance_amount,
+    account.upstream_balance_currency,
+    account.contract_cost_multiplier::text AS contract_cost_multiplier,
+    account.rpm_limit, account.timeout_ms,
+    COALESCE(account_health.health_status, 0) AS health_status,
+    account.status, account.version,
+    TO_CHAR(account.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
 "#;
 
 const CREDENTIAL_COLUMNS: &str = r#"
@@ -75,6 +79,10 @@ pub(super) async fn list(
         r#"
         SELECT {ACCOUNT_COLUMNS}
         FROM ai_upstream_account account
+        LEFT JOIN ai_upstream_account_health_state account_health
+          ON account_health.tenant_id = account.tenant_id
+         AND account_health.organization_id = account.organization_id
+         AND account_health.account_id = account.id
         WHERE account.tenant_id = $1
           AND account.organization_id = $2
           AND account.deleted_at IS NULL
@@ -117,9 +125,13 @@ pub(super) async fn get(
     let sql = format!(
         r#"
         SELECT {ACCOUNT_COLUMNS}
-        FROM ai_upstream_account
-        WHERE tenant_id = $1 AND organization_id = $2
-          AND id = $3 AND deleted_at IS NULL
+        FROM ai_upstream_account account
+        LEFT JOIN ai_upstream_account_health_state account_health
+          ON account_health.tenant_id = account.tenant_id
+         AND account_health.organization_id = account.organization_id
+         AND account_health.account_id = account.id
+        WHERE account.tenant_id = $1 AND account.organization_id = $2
+          AND account.id = $3 AND account.deleted_at IS NULL
         "#
     );
     sqlx::query(&sql)
@@ -146,6 +158,24 @@ pub(super) async fn save(
         Some(account_id) => update(&mut tx, account_id, &command).await?,
         None => insert(&mut tx, &command).await?,
     };
+    let action = if command.account_id.is_some() {
+        "update_upstream_account"
+    } else {
+        "create_upstream_account"
+    };
+    record_routing_change(
+        &mut tx,
+        &command.subject,
+        &command.requested_at,
+        "upstream_account",
+        account_id,
+        action,
+        serde_json::json!({
+            "accountCode": command.account_code,
+            "supplierId": command.supplier_id
+        }),
+    )
+    .await?;
     let item = get_in_transaction(&mut tx, &command.subject, account_id)
         .await?
         .ok_or_else(|| DomainError::new("saved upstream account could not be reloaded"))?;
@@ -226,6 +256,16 @@ pub(super) async fn delete(
     if result.rows_affected() != 1 {
         return Err(conflict("upstream account version changed during deletion"));
     }
+    record_routing_change(
+        &mut tx,
+        &subject,
+        &requested_at,
+        "upstream_account",
+        account_id,
+        "delete_upstream_account",
+        serde_json::json!({}),
+    )
+    .await?;
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit upstream account delete", error))?;
@@ -397,7 +437,8 @@ pub(super) async fn create_credential(
     .await
     .map_err(|error| store_error("failed to create upstream account credential", error))?;
 
-    let (resolved_id, existing_hash) = if result.rows_affected() == 1 {
+    let created = result.rows_affected() == 1;
+    let (resolved_id, existing_hash) = if created {
         (credential_id, credential_hash.clone())
     } else {
         let replay = sqlx::query(
@@ -434,6 +475,25 @@ pub(super) async fn create_credential(
         get_credential_in_transaction(&mut tx, &command.subject, command.account_id, resolved_id)
             .await?
             .ok_or_else(|| DomainError::new("created credential could not be reloaded"))?;
+    if created {
+        reset_account_health(
+            &mut tx,
+            &command.subject,
+            command.account_id,
+            &command.requested_at,
+        )
+        .await?;
+        record_routing_change(
+            &mut tx,
+            &command.subject,
+            &command.requested_at,
+            "upstream_account",
+            command.account_id,
+            "create_upstream_account_credential",
+            serde_json::json!({"credentialId": resolved_id}),
+        )
+        .await?;
+    }
     tx.commit()
         .await
         .map_err(|error| store_error("failed to commit credential transaction", error))?;
@@ -447,6 +507,10 @@ pub(super) async fn deactivate_credential(
     credential_id: i64,
     requested_at: String,
 ) -> DomainResult<bool> {
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin credential deactivation", error))?;
     let result = sqlx::query(
         r#"
         UPDATE ai_upstream_account_credential credential
@@ -459,6 +523,8 @@ pub(super) async fn deactivate_credential(
           AND credential.organization_id = $3
           AND credential.account_id = $4
           AND credential.id = $5
+          AND credential.is_active = TRUE
+          AND credential.status = 1
           AND credential.deleted_at IS NULL
           AND account.tenant_id = credential.tenant_id
           AND account.organization_id = credential.organization_id
@@ -466,15 +532,32 @@ pub(super) async fn deactivate_credential(
           AND account.deleted_at IS NULL
         "#,
     )
-    .bind(requested_at)
+    .bind(&requested_at)
     .bind(subject.tenant_id)
     .bind(subject.organization_id)
     .bind(account_id)
     .bind(credential_id)
-    .execute(pool)
+    .execute(&mut *tx)
     .await
     .map_err(|error| store_error("failed to deactivate upstream account credential", error))?;
-    Ok(result.rows_affected() == 1)
+    let deactivated = result.rows_affected() == 1;
+    if deactivated {
+        reset_account_health(&mut tx, &subject, account_id, &requested_at).await?;
+        record_routing_change(
+            &mut tx,
+            &subject,
+            &requested_at,
+            "upstream_account",
+            account_id,
+            "deactivate_upstream_account_credential",
+            serde_json::json!({"credentialId": credential_id}),
+        )
+        .await?;
+    }
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit credential deactivation", error))?;
+    Ok(deactivated)
 }
 
 async fn insert(
@@ -497,7 +580,7 @@ async fn insert(
             account_code, account_name, account_type, auth_method_code,
             external_account_id, environment, region_code,
             quota_limit, upstream_balance_currency, contract_cost_multiplier,
-            rpm_limit, timeout_ms, health_status, consecutive_error_count
+            rpm_limit, timeout_ms
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
@@ -505,7 +588,7 @@ async fn insert(
             $11, $12, $13, $14,
             $15, $16, $17,
             $18::numeric, $19, $20::numeric,
-            $21, $22, 1, 0
+            $21, $22
         )
         "#,
     )
@@ -534,6 +617,21 @@ async fn insert(
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create upstream account", error))?;
+    sqlx::query(
+        r#"
+        INSERT INTO ai_upstream_account_health_state (
+            id, tenant_id, organization_id, created_at, updated_at,
+            account_id, health_status, consecutive_error_count
+        ) VALUES ($1, $2, $3, $4::timestamptz, $4::timestamptz, $1, 0, 0)
+        "#,
+    )
+    .bind(account_id)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(&command.requested_at)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to initialize upstream account health", error))?;
     Ok(account_id)
 }
 
@@ -547,7 +645,7 @@ async fn update(
     })?;
     let existing = sqlx::query(
         r#"
-        SELECT account_code, supplier_id, auth_method_code, version
+        SELECT account_code, supplier_id, auth_method_code, preferred_endpoint_id, version
         FROM ai_upstream_account
         WHERE tenant_id = $1 AND organization_id = $2
           AND id = $3 AND deleted_at IS NULL
@@ -591,6 +689,14 @@ async fn update(
         "auth_method_code",
         "failed to map upstream account auth method",
     )?;
+    let current_preferred_endpoint_id: Option<i64> = column(
+        &existing,
+        "preferred_endpoint_id",
+        "failed to map upstream account preferred endpoint",
+    )?;
+    let routing_target_changed = current_supplier_id != command.supplier_id
+        || current_auth_method != command.auth_method_code.trim()
+        || current_preferred_endpoint_id != command.preferred_endpoint_id;
     if current_supplier_id != command.supplier_id
         || current_auth_method != command.auth_method_code.trim()
     {
@@ -665,7 +771,44 @@ async fn update(
     if result.rows_affected() != 1 {
         return Err(conflict("upstream account version changed during update"));
     }
+    if routing_target_changed {
+        reset_account_health(tx, &command.subject, account_id, &command.requested_at).await?;
+    }
     Ok(account_id)
+}
+
+async fn reset_account_health(
+    tx: &mut Transaction<'_, Postgres>,
+    subject: &AdminUpstreamSubject,
+    account_id: i64,
+    requested_at: &str,
+) -> DomainResult<()> {
+    sqlx::query(
+        r#"
+        INSERT INTO ai_upstream_account_health_state (
+            id, tenant_id, organization_id, created_at, updated_at,
+            account_id, health_status, consecutive_error_count
+        ) VALUES ($1, $2, $3, $4::timestamptz, $4::timestamptz, $1, 0, 0)
+        ON CONFLICT (tenant_id, organization_id, account_id)
+        DO UPDATE SET
+            health_status = 0,
+            last_latency_ms = NULL,
+            consecutive_error_count = 0,
+            last_verified_at = NULL,
+            last_used_at = NULL,
+            last_success_at = NULL,
+            last_failure_at = NULL,
+            updated_at = EXCLUDED.updated_at
+        "#,
+    )
+    .bind(account_id)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(requested_at)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to reset upstream account health", error))?;
+    Ok(())
 }
 
 async fn validate_supplier_bindings(
@@ -798,9 +941,13 @@ async fn get_in_transaction(
     let sql = format!(
         r#"
         SELECT {ACCOUNT_COLUMNS}
-        FROM ai_upstream_account
-        WHERE tenant_id = $1 AND organization_id = $2
-          AND id = $3 AND deleted_at IS NULL
+        FROM ai_upstream_account account
+        LEFT JOIN ai_upstream_account_health_state account_health
+          ON account_health.tenant_id = account.tenant_id
+         AND account_health.organization_id = account.organization_id
+         AND account_health.account_id = account.id
+        WHERE account.tenant_id = $1 AND account.organization_id = $2
+          AND account.id = $3 AND account.deleted_at IS NULL
         "#
     );
     sqlx::query(&sql)

@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { DeleteResult, OpenAiAudioTranscription, OpenAiAudioTranscriptionRequest, OpenAiAudioTranslation, OpenAiAudioTranslationRequest, OpenAiSpeechCreateRequest, OpenAiVoice, OpenAiVoiceConsent, OpenAiVoiceConsentCreateRequest, OpenAiVoiceConsentList, OpenAiVoiceConsentUpdateRequest, OpenAiVoiceCreateRequest, OpenAiVoiceList } from '../types';
 
@@ -20,24 +20,24 @@ export class AudioVoicesApi {
 
 
 /** List voices */
-  async list(params?: AudioVoicesListParams): Promise<OpenAiVoiceList> {
+  async list(params?: AudioVoicesListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiVoiceList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiVoiceList>(appendQueryString(aiApiPath(`/audio/voices`), query));
+    return this.client.request<OpenAiVoiceList>(appendQueryString(aiApiPath(`/audio/voices`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create voice */
-  async create(body: OpenAiVoiceCreateRequest): Promise<OpenAiVoice> {
-    return this.client.post<OpenAiVoice>(aiApiPath(`/audio/voices`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiVoiceCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVoice> {
+    return this.client.request<OpenAiVoice>(aiApiPath(`/audio/voices`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Retrieve voice */
-  async retrieve(voiceId: string): Promise<OpenAiVoice> {
-    return this.client.get<OpenAiVoice>(aiApiPath(`/audio/voices/${serializePathParameter(voiceId, { name: 'voice_id', style: 'simple', explode: false })}`));
+  async retrieve(voiceId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVoice> {
+    return this.client.request<OpenAiVoice>(aiApiPath(`/audio/voices/${serializePathParameter(voiceId, { name: 'voice_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 }
 
@@ -57,34 +57,34 @@ export class AudioVoiceConsentsApi {
 
 
 /** List voice consents */
-  async list(params?: AudioVoiceConsentsListParams): Promise<OpenAiVoiceConsentList> {
+  async list(params?: AudioVoiceConsentsListParams, requestOptions?: ApiRequestOptions): Promise<OpenAiVoiceConsentList> {
     const query = buildQueryString([
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
       { name: 'order', value: params?.order, style: 'form', explode: true, allowReserved: false },
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.get<OpenAiVoiceConsentList>(appendQueryString(aiApiPath(`/audio/voice_consents`), query));
+    return this.client.request<OpenAiVoiceConsentList>(appendQueryString(aiApiPath(`/audio/voice_consents`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Create voice consent */
-  async create(body: OpenAiVoiceConsentCreateRequest): Promise<OpenAiVoiceConsent> {
-    return this.client.post<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiVoiceConsentCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVoiceConsent> {
+    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete voice consent */
-  async delete(consentId: string): Promise<DeleteResult> {
-    return this.client.delete<DeleteResult>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`));
+  async delete(consentId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
+    return this.client.request<DeleteResult>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
   }
 
 /** Retrieve voice consent */
-  async retrieve(consentId: string): Promise<OpenAiVoiceConsent> {
-    return this.client.get<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`));
+  async retrieve(consentId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVoiceConsent> {
+    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
   }
 
 /** Update voice consent */
-  async update(consentId: string, body: OpenAiVoiceConsentUpdateRequest): Promise<OpenAiVoiceConsent> {
-    return this.client.post<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), body, undefined, undefined, 'application/json');
+  async update(consentId: string, body: OpenAiVoiceConsentUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVoiceConsent> {
+    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -97,8 +97,8 @@ export class AudioTranslationsApi {
 
 
 /** Create translation */
-  async create(body: OpenAiAudioTranslationRequest): Promise<OpenAiAudioTranslation> {
-    return this.client.post<OpenAiAudioTranslation>(aiApiPath(`/audio/translations`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiAudioTranslationRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiAudioTranslation> {
+    return this.client.request<OpenAiAudioTranslation>(aiApiPath(`/audio/translations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -111,8 +111,8 @@ export class AudioTranscriptionsApi {
 
 
 /** Create transcription */
-  async create(body: OpenAiAudioTranscriptionRequest): Promise<OpenAiAudioTranscription> {
-    return this.client.post<OpenAiAudioTranscription>(aiApiPath(`/audio/transcriptions`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiAudioTranscriptionRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiAudioTranscription> {
+    return this.client.request<OpenAiAudioTranscription>(aiApiPath(`/audio/transcriptions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -125,8 +125,8 @@ export class AudioSpeechApi {
 
 
 /** Create speech */
-  async create(body: OpenAiSpeechCreateRequest): Promise<Blob> {
-    return this.client.post<Blob>(aiApiPath(`/audio/speech`), body, undefined, undefined, 'application/json');
+  async create(body: OpenAiSpeechCreateRequest, requestOptions?: ApiRequestOptions): Promise<Blob> {
+    return this.client.request<Blob>(aiApiPath(`/audio/speech`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

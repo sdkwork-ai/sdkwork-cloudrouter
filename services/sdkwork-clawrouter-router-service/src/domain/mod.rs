@@ -1,3 +1,5 @@
+mod upstream_auth;
+
 pub use sdkwork_models_catalog_service::domain::{
     ensure_canonical_model_catalog_key, is_model_region_segment, model_catalog_scope_matches_key,
     parse_model_catalog_identity, provider_native_model_id, AiModel, AiModelPublicMetadata,
@@ -15,3 +17,6 @@ pub use sdkwork_models_catalog_service::domain::{
     DEFAULT_RETRYABLE_PROVIDER_STATUS_CODES,
 };
 pub use sdkwork_models_contract_service::{DomainError, DomainResult};
+pub use upstream_auth::{
+    canonical_upstream_runtime_auth_config, resolve_upstream_runtime_auth_profile,
+};

@@ -31,7 +31,7 @@
     "publicExports": ["."],
     "providedPorts": [{ "name": "settlementsDashboardReadStore", "export": "." }],
     "requiredPorts": [],
-    "runtimeEntrypoints": ["PostgresSettlementsDashboardReadStore::new", "SqliteSettlementsDashboardReadStore::new"],
+    "runtimeEntrypoints": ["PostgresSettlementsDashboardReadStore::new"],
     "routeManifest": null,
     "sdkClients": [],
     "sdkDependencies": [],
@@ -43,9 +43,9 @@
   "integration": {
     "authority": "The root migration manifest tracks application composition; Cargo remains dependency authority.",
     "dependencyPolicy": "Consumers use package-root repository types and constructors only.",
-    "languagePolicy": "The crate contains authored Rust SQLx implementations for PostgreSQL and SQLite."
+    "languagePolicy": "The crate contains the authoritative PostgreSQL Rust SQLx implementation."
   },
   "verification": {
-    "commands": ["cargo test -p sdkwork-clawrouter-settlements-dashboard-repository-sqlx --test dialect_parity"]
+    "commands": ["cargo test -p sdkwork-clawrouter-settlements-dashboard-repository-sqlx --lib"]
   }
 }

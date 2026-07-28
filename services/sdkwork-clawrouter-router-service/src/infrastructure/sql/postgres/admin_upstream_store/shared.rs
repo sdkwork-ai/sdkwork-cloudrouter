@@ -4,8 +4,11 @@ use sqlx::postgres::PgRow;
 use sqlx::{Decode, Postgres, Row, Type};
 
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::routing_config_change::{
+    record_postgres_ai_routing_config_change, AiRoutingConfigChange,
+};
 use crate::infrastructure::sql::store_error::redacted_store_error;
-use crate::ports::{AdminUpstreamResourceInput, AdminUpstreamResourceItem};
+use crate::ports::{AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamSubject};
 
 pub(super) const DEFAULT_DATA_SCOPE: i32 = 1;
 pub(super) const MAX_NESTED_ITEMS: usize = 200;
@@ -110,6 +113,33 @@ pub(super) fn map_resource_row(row: PgRow) -> DomainResult<AdminUpstreamResource
 
 pub(super) fn generated_uuid() -> String {
     sdkwork_utils_rust::uuid()
+}
+
+pub(super) async fn record_routing_change(
+    tx: &mut sqlx::Transaction<'_, Postgres>,
+    subject: &AdminUpstreamSubject,
+    requested_at: &str,
+    changed_object_type: &str,
+    changed_object_id: i64,
+    action: &str,
+    event_payload: serde_json::Value,
+) -> DomainResult<i64> {
+    let request_id = generated_uuid();
+    record_postgres_ai_routing_config_change(
+        tx,
+        AiRoutingConfigChange {
+            tenant_id: subject.tenant_id,
+            organization_id: subject.organization_id,
+            operator_id: subject.operator_id,
+            request_id: &request_id,
+            requested_at,
+            changed_object_type,
+            changed_object_id,
+            action,
+            event_payload,
+        },
+    )
+    .await
 }
 
 pub(super) fn masked_secret(secret: &str) -> String {

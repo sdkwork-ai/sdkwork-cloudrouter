@@ -118,22 +118,6 @@ impl RowMapping for sqlx::postgres::PgRow {
     }
 }
 
-impl RowMapping for sqlx::sqlite::SqliteRow {
-    fn string_cell(&self, column: &str) -> String {
-        self.try_get::<Option<String>, _>(column)
-            .ok()
-            .flatten()
-            .unwrap_or_default()
-    }
-
-    fn optional_integer_cell(&self, column: &str) -> Option<i64> {
-        self.try_get::<Option<i64>, _>(column)
-            .ok()
-            .flatten()
-            .or_else(|| integer_string_cell(&self.string_cell(column)))
-    }
-}
-
 fn breakdown_item_mut(
     breakdown: &mut SettlementBillBreakdown,
     modality: i64,

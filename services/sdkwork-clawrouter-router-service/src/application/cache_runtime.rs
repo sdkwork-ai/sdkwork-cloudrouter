@@ -17,10 +17,11 @@ use crate::domain::{DomainError, DomainResult};
 
 pub const AUTH_QR_CACHE_NAMESPACE: &str = "auth.qr.challenge";
 pub const ROUTING_SNAPSHOT_CACHE_NAMESPACE: &str = "routing.snapshot";
-pub const ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE: &str = "routing.provider_object_route";
+pub const ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE: &str = "routing.upstream_object_route";
 pub const ROUTING_IDEMPOTENCY_CACHE_NAMESPACE: &str = "routing.idempotency";
 pub const ROUTING_CONFIG_VERSION_CACHE_NAMESPACE: &str = "routing.config_version";
-pub const ROUTING_DISABLED_CHANNEL_CACHE_NAMESPACE: &str = "routing.disabled_channel";
+pub const ROUTING_DISABLED_UPSTREAM_ACCOUNT_CACHE_NAMESPACE: &str =
+    "routing.disabled_upstream_account";
 pub const DEFAULT_DESKTOP_CACHE_INSTANCE_NAME: &str = "local-default";
 pub const DEFAULT_SERVICE_CACHE_INSTANCE_NAME: &str = "redis-default";
 pub const DEFAULT_CACHE_KEY_PREFIX: &str = "claw";
@@ -2026,17 +2027,17 @@ fn default_cache_namespace_policies(instance_name: &str) -> Vec<CacheNamespacePo
     route_snapshot.stale_while_revalidate_seconds = 300;
     route_snapshot.jitter_percent = 5;
 
-    let mut provider_object_route = CacheNamespacePolicy::new(
-        ROUTING_PROVIDER_OBJECT_ROUTE_CACHE_NAMESPACE,
+    let mut upstream_object_route = CacheNamespacePolicy::new(
+        ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
         instance_name,
         3_600,
         "tenant",
         "private",
         vec!["routing".to_owned(), "sticky".to_owned(), "ai".to_owned()],
     );
-    provider_object_route.failure_mode = "origin_fallback".to_owned();
-    provider_object_route.consistency = "coordination_critical".to_owned();
-    provider_object_route.jitter_percent = 5;
+    upstream_object_route.failure_mode = "origin_fallback".to_owned();
+    upstream_object_route.consistency = "coordination_critical".to_owned();
+    upstream_object_route.jitter_percent = 5;
 
     let mut idempotency = CacheNamespacePolicy::new(
         ROUTING_IDEMPOTENCY_CACHE_NAMESPACE,
@@ -2066,24 +2067,24 @@ fn default_cache_namespace_policies(instance_name: &str) -> Vec<CacheNamespacePo
     config_version.consistency = "coordination_critical".to_owned();
     config_version.jitter_percent = 0;
 
-    let mut disabled_channel = CacheNamespacePolicy::new(
-        ROUTING_DISABLED_CHANNEL_CACHE_NAMESPACE,
+    let mut disabled_upstream_account = CacheNamespacePolicy::new(
+        ROUTING_DISABLED_UPSTREAM_ACCOUNT_CACHE_NAMESPACE,
         instance_name,
         300,
         "tenant",
         "internal",
         vec!["routing".to_owned(), "health".to_owned(), "ai".to_owned()],
     );
-    disabled_channel.failure_mode = "fail_closed".to_owned();
-    disabled_channel.consistency = "coordination_critical".to_owned();
-    disabled_channel.jitter_percent = 0;
+    disabled_upstream_account.failure_mode = "fail_closed".to_owned();
+    disabled_upstream_account.consistency = "coordination_critical".to_owned();
+    disabled_upstream_account.jitter_percent = 0;
 
     vec![
         auth_qr,
         route_snapshot,
-        provider_object_route,
+        upstream_object_route,
         idempotency,
         config_version,
-        disabled_channel,
+        disabled_upstream_account,
     ]
 }

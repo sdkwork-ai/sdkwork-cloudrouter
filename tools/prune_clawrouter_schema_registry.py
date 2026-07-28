@@ -15,7 +15,6 @@ ASSEMBLY_PATH = ROOT / "docs/schema-registry/sdkwork-clawrouter.tables.yaml"
 TABLE_REGISTRY_PATH = ROOT / "database/contract/table-registry.json"
 SCHEMA_CONTRACT_PATH = ROOT / "database/contract/schema.yaml"
 BASELINE_PATH = ROOT / "database/ddl/baseline/postgres/0001_clawrouter_baseline.sql"
-GATEWAY_ROUTING_PATH = ROOT / "database/ddl/baseline/postgres/0003_gateway_routing_dictionary.sql"
 
 # Tables owned by sdkwork-kernel / sdkwork-agent (router must not generate DDL).
 KERNEL_RUNTIME_TABLES = {
@@ -208,13 +207,6 @@ def sync_contract_artifacts(table_names: list[str]) -> None:
     )
 
 
-def retire_gateway_routing_dictionary_stub() -> None:
-    GATEWAY_ROUTING_PATH.write_text(
-        "-- Retired: gateway routing dictionary tables are owned by sdkwork-models and composed at install time.\n",
-        encoding="utf-8",
-    )
-
-
 def copy_generated_baseline(postgres_sql: str) -> None:
     BASELINE_PATH.write_text(postgres_sql if postgres_sql.endswith("\n") else postgres_sql + "\n", encoding="utf-8")
 
@@ -244,8 +236,6 @@ def main() -> None:
     postgres_sql = compiler.compile_postgres()
     compiler.write_postgres()
     copy_generated_baseline(postgres_sql)
-    retire_gateway_routing_dictionary_stub()
-
     manifest = SchemaManifestGenerator(root=ROOT).generate()
     generated_tables = [
         table["table"]

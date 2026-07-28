@@ -15,11 +15,3 @@ username = "sdkwork_ai_prod"
 password_file = "./database.secret"
 ssl_mode = "require"
 max_connections = 16
-
-# Alternative local SQLite shape. Keep this as a reference section only; the
-# runtime parser reads [database], so move these values into [database] when
-# intentionally using SQLite.
-[database_sqlite_example]
-engine = "sqlite"
-url = "sqlite://target/dev/clawrouter.sqlite"
-max_connections = 1

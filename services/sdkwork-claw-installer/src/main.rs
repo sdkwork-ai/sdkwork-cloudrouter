@@ -11,7 +11,7 @@ use sdkwork_iam_bootstrap::{
 };
 use sdkwork_models_database_host::connect_models_database;
 use serde::Serialize;
-use sqlx::{PgPool, SqlitePool};
+use sqlx::PgPool;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::process::ExitCode;
@@ -42,29 +42,21 @@ async fn run() -> anyhow::Result<()> {
         .map_err(anyhow::Error::msg)?
         .ok_or(InstallerCliError::MissingDatabaseUrl)?;
 
-    match config.engine {
-        DatabaseEngine::Sqlite => run_sqlite(config, command).await?,
-        DatabaseEngine::Postgres => run_postgres(config, command).await?,
-    }
+    require_postgres_installer_database(&config)?;
+    run_postgres(config, command).await?;
 
     Ok(())
 }
 
-async fn run_sqlite(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
-    let database_pool = connect_installer_database_pool(&config).await?;
-    apply_explicit_schema_lifecycle_if_required(&database_pool, &command).await?;
-    let pool = database_pool
-        .as_sqlite()
-        .cloned()
-        .ok_or_else(|| InstallerCliError::DatabaseConnection("expected SQLite pool".to_owned()))?;
-    if let InstallerCommand::ResetAdmin(options) = &command {
-        return run_reset_admin_sqlite(&pool, options).await;
+fn require_postgres_installer_database(config: &DatabaseConfig) -> anyhow::Result<()> {
+    if matches!(config.engine, DatabaseEngine::Postgres) {
+        return Ok(());
     }
-    run_command(
-        DatabaseInstaller::for_sqlite(pool).with_env_options()?,
-        command,
+    Err(InstallerCliError::InvalidArgument(
+        "clawrouterctl requires PostgreSQL because Claw Router server data is authoritative"
+            .to_owned(),
     )
-    .await
+    .into())
 }
 
 async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
@@ -91,12 +83,8 @@ async fn connect_installer_database_pool(
     )
     .await
     .map_err(|error| {
-        InstallerCliError::DatabaseConnection(database_connection_error_message(
-            config.engine,
-            &config.url,
-            error,
-        ))
-        .into()
+        InstallerCliError::DatabaseConnection(database_connection_error_message(&config.url, error))
+            .into()
     })
 }
 
@@ -119,22 +107,12 @@ async fn apply_explicit_schema_lifecycle_if_required(
     Ok(())
 }
 
-fn database_connection_error_message(
-    engine: DatabaseEngine,
-    database_url: &str,
-    error: impl std::fmt::Display,
-) -> String {
-    match engine {
-        DatabaseEngine::Postgres => format!(
-            "PostgreSQL database is not reachable for SDKWORK_CLAW_DATABASE_URL ({}) within {} seconds: {error}. Start the configured PostgreSQL service, fix the host/port/credentials, or run a SQLite dev profile such as pnpm dev:sqlite.",
-            redact_database_url(database_url),
-            sdkwork_clawrouter_router_service::infrastructure::sql::pool::POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS
-        ),
-        DatabaseEngine::Sqlite => format!(
-            "SQLite database is not reachable for SDKWORK_CLAW_DATABASE_URL ({}): {error}. Verify the database file path and directory permissions.",
-            redact_database_url(database_url)
-        ),
-    }
+fn database_connection_error_message(database_url: &str, error: impl std::fmt::Display) -> String {
+    format!(
+        "PostgreSQL database is not reachable for SDKWORK_CLAW_DATABASE_URL ({}) within {} seconds: {error}. Start the configured PostgreSQL service or fix the host, port, and credentials.",
+        redact_database_url(database_url),
+        sdkwork_clawrouter_router_service::infrastructure::sql::pool::POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS
+    )
 }
 
 fn redact_database_url(database_url: &str) -> String {
@@ -466,10 +444,7 @@ fn installer_error_code(error: &(dyn std::error::Error + 'static), message: &str
         || message.contains("must not be blank")
     {
         "invalid_state"
-    } else if message.contains("database")
-        || message.contains("sqlite")
-        || message.contains("postgres")
-    {
+    } else if message.contains("database") || message.contains("postgres") {
         "database_error"
     } else if message.contains("catalog") || message.contains("sdkwork-models") {
         "catalog_error"
@@ -625,61 +600,7 @@ fn bootstrap_credential_id(user_id: &str) -> String {
 /// then falls back to looking up by username within the default tenant, then
 /// falls back to the tenant's bootstrap owner from `iam_organization_membership`.
 /// This handles environments where IAM bootstrap assigned a non-canonical id
-/// (e.g. a snowflake id) or a different username than `admin`.
-async fn resolve_bootstrap_admin_user_id_sqlite(pool: &SqlitePool) -> anyhow::Result<String> {
-    let canonical: Option<(String,)> =
-        sqlx::query_as("SELECT id FROM iam_user WHERE id = ? AND tenant_id = ? AND is_deleted = 0")
-            .bind(DEFAULT_BOOTSTRAP_ADMIN_USER_ID)
-            .bind(DEFAULT_IAM_TENANT_ID)
-            .fetch_optional(pool)
-            .await?;
-    if let Some((id,)) = canonical {
-        return Ok(id);
-    }
-    let by_username: Option<(String,)> = sqlx::query_as(
-        "SELECT id FROM iam_user WHERE tenant_id = ? AND username = ? AND is_deleted = 0",
-    )
-    .bind(DEFAULT_IAM_TENANT_ID)
-    .bind(DEFAULT_BOOTSTRAP_ADMIN_USERNAME)
-    .fetch_optional(pool)
-    .await?;
-    if let Some((id,)) = by_username {
-        return Ok(id);
-    }
-    resolve_bootstrap_admin_user_id_from_owner_sqlite(pool).await
-}
-
-async fn resolve_bootstrap_admin_user_id_from_owner_sqlite(
-    pool: &SqlitePool,
-) -> anyhow::Result<String> {
-    let owner: Option<(String,)> = sqlx::query_as(
-        "SELECT user_id FROM iam_organization_membership \
-         WHERE tenant_id = ? AND membership_kind = 'owner' AND status = 'active' \
-         LIMIT 1",
-    )
-    .bind(DEFAULT_IAM_TENANT_ID)
-    .fetch_optional(pool)
-    .await?;
-    if let Some((user_id,)) = owner {
-        let user: Option<(String,)> = sqlx::query_as(
-            "SELECT id FROM iam_user WHERE id = ? AND tenant_id = ? AND is_deleted = 0",
-        )
-        .bind(&user_id)
-        .bind(DEFAULT_IAM_TENANT_ID)
-        .fetch_optional(pool)
-        .await?;
-        if let Some((id,)) = user {
-            return Ok(id);
-        }
-    }
-    Err(InstallerCliError::InvalidState(format!(
-        "bootstrap admin user not found (username={DEFAULT_BOOTSTRAP_ADMIN_USERNAME}, \
-         tenant_id={DEFAULT_IAM_TENANT_ID}). Run `pnpm dev` or `pnpm start` first to \
-         initialize IAM bootstrap, then retry reset-admin."
-    ))
-    .into())
-}
-
+/// or a different username than `admin`.
 async fn resolve_bootstrap_admin_user_id_postgres(pool: &PgPool) -> anyhow::Result<String> {
     let canonical: Option<(String,)> = sqlx::query_as(
         "SELECT id::text FROM iam_user WHERE id = $1 AND tenant_id = $2 AND is_deleted = 0",
@@ -735,54 +656,6 @@ async fn resolve_bootstrap_admin_user_id_from_owner_postgres(
     .into())
 }
 
-async fn run_reset_admin_sqlite(
-    pool: &SqlitePool,
-    options: &ResetAdminOptions,
-) -> anyhow::Result<()> {
-    let password = read_reset_admin_password()?;
-    let admin_user_id = resolve_bootstrap_admin_user_id_sqlite(pool).await?;
-
-    let now = chrono::Utc::now().to_rfc3339();
-    let password_hash = hash_admin_password(&password)?;
-
-    let affected = sqlx::query(
-        "UPDATE iam_credential SET \
-         credential_hash = ?, failed_attempts = 0, status = 'active', updated_at = ? \
-         WHERE tenant_id = ? AND user_id = ? AND credential_type = 'password'",
-    )
-    .bind(&password_hash)
-    .bind(&now)
-    .bind(DEFAULT_IAM_TENANT_ID)
-    .bind(&admin_user_id)
-    .execute(pool)
-    .await?
-    .rows_affected();
-    if affected == 0 {
-        sqlx::query(
-            "INSERT INTO iam_credential \
-             (id, tenant_id, user_id, credential_type, credential_hash, \
-             failed_attempts, status, created_at, updated_at) \
-             VALUES (?, ?, ?, 'password', ?, 0, 'active', ?, ?)",
-        )
-        .bind(bootstrap_credential_id(&admin_user_id))
-        .bind(DEFAULT_IAM_TENANT_ID)
-        .bind(&admin_user_id)
-        .bind(&password_hash)
-        .bind(&now)
-        .bind(&now)
-        .execute(pool)
-        .await?;
-    }
-
-    let username = resolve_admin_username_sqlite(pool, &options.username, &admin_user_id).await?;
-    print_json(&ResetAdminOutput {
-        status: "reset",
-        user_id: admin_user_id,
-        tenant_id: DEFAULT_IAM_TENANT_ID,
-        username,
-    })
-}
-
 async fn run_reset_admin_postgres(
     pool: &PgPool,
     options: &ResetAdminOptions,
@@ -828,23 +701,6 @@ async fn run_reset_admin_postgres(
         tenant_id: DEFAULT_IAM_TENANT_ID,
         username,
     })
-}
-
-async fn resolve_admin_username_sqlite(
-    pool: &SqlitePool,
-    fallback: &str,
-    user_id: &str,
-) -> anyhow::Result<String> {
-    let row: Option<(String,)> = sqlx::query_as(
-        "SELECT username FROM iam_user WHERE id = ? AND tenant_id = ? AND is_deleted = 0",
-    )
-    .bind(user_id)
-    .bind(DEFAULT_IAM_TENANT_ID)
-    .fetch_optional(pool)
-    .await?;
-    Ok(row
-        .map(|(username,)| username)
-        .unwrap_or_else(|| fallback.to_owned()))
 }
 
 async fn resolve_admin_username_postgres(
@@ -1033,13 +889,23 @@ mod tests {
     #[test]
     fn postgres_database_connection_message_redacts_password_and_names_fallback() {
         let message = database_connection_error_message(
-            DatabaseEngine::Postgres,
             "postgresql://sdkwork_ai_dev:sdkworkdev123@[::1]:5432/sdkwork_ai_dev?sslmode=disable",
             sqlx::Error::PoolTimedOut,
         );
 
         assert!(message.contains("postgresql://sdkwork_ai_dev:***@[::1]:5432"));
         assert!(!message.contains("sdkworkdev123"));
-        assert!(message.contains("pnpm dev:sqlite"));
+        assert!(message.contains("PostgreSQL database is not reachable"));
+    }
+
+    #[test]
+    fn installer_rejects_sqlite_as_non_authoritative_server_storage() {
+        let config = DatabaseConfig::from_url("sqlite::memory:").expect("parse SQLite config");
+        let error = require_postgres_installer_database(&config)
+            .expect_err("server installer must reject SQLite");
+
+        assert!(error
+            .to_string()
+            .contains("clawrouterctl requires PostgreSQL"));
     }
 }

@@ -1,5 +1,5 @@
 import { aiApiPath } from './paths';
-import type { HttpClient } from '../http/client';
+import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { AnthropicCountMessageTokensRequest, AnthropicCountMessageTokensResponse, AnthropicMessage, AnthropicMessageCreateRequest } from '../types';
 
@@ -13,8 +13,8 @@ export class ChatAnthropicV1MessagesCountTokensApi {
 
 
 /** Anthropic count message tokens */
-  async create(body: AnthropicCountMessageTokensRequest): Promise<AnthropicCountMessageTokensResponse> {
-    return this.client.post<AnthropicCountMessageTokensResponse>(aiApiPath(`/anthropic/v1/messages/count_tokens`), body, undefined, undefined, 'application/json');
+  async create(body: AnthropicCountMessageTokensRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicCountMessageTokensResponse> {
+    return this.client.request<AnthropicCountMessageTokensResponse>(aiApiPath(`/anthropic/v1/messages/count_tokens`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -29,8 +29,8 @@ export class ChatAnthropicV1MessagesApi {
 
 
 /** Anthropic Claude message */
-  async create(body: AnthropicMessageCreateRequest): Promise<AnthropicMessage> {
-    return this.client.post<AnthropicMessage>(aiApiPath(`/anthropic/v1/messages`), body, undefined, undefined, 'application/json');
+  async create(body: AnthropicMessageCreateRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicMessage> {
+    return this.client.request<AnthropicMessage>(aiApiPath(`/anthropic/v1/messages`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
