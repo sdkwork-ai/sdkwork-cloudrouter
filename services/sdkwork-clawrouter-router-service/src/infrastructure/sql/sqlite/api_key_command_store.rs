@@ -466,7 +466,7 @@ async fn insert_api_key(
         tenant_id: command.tenant_id,
         organization_id: command.organization_id,
         user_id: command.user_id,
-        group_id: command.group_id,
+        default_account_group_id: command.group_id,
         name: command.name.clone(),
         key_prefix: command.key_prefix.clone(),
         key_display_masked: command.key_display_masked.clone(),
@@ -750,7 +750,7 @@ fn gateway_api_key_from_row(
             .try_get::<i64, _>("organization_id")
             .map_err(row_error)?,
         user_id: row.try_get::<i64, _>("user_id").map_err(row_error)?,
-        group_id: row.try_get::<i64, _>("group_id").map_err(row_error)?,
+        default_account_group_id: row.try_get::<i64, _>("group_id").map_err(row_error)?,
         name: row.try_get::<String, _>("name").map_err(row_error)?,
         key_prefix: row.try_get::<String, _>("key_prefix").map_err(row_error)?,
         key_display_masked: row

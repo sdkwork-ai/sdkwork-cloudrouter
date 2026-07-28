@@ -464,7 +464,7 @@ impl GatewayApiKeyRow {
             tenant_id: self.tenant_id,
             organization_id: self.organization_id,
             user_id: self.user_id,
-            group_id: self.group_id,
+            default_account_group_id: self.group_id,
             name: self.name,
             key_prefix: self.key_prefix,
             key_display_masked: self.key_display_masked,
@@ -696,7 +696,7 @@ pub struct UpstreamAccountGroupMetricSnapshotRow {
 impl UpstreamAccountGroupMetricSnapshotRow {
     pub fn try_into_domain(self) -> DomainResult<UpstreamAccountGroupMetricSnapshot> {
         Ok(UpstreamAccountGroupMetricSnapshot {
-            group_id: self.group_id,
+            account_group_id: self.group_id,
             capacity_used: parse_optional_decimal(self.capacity_used)?,
             capacity_limit: parse_optional_decimal(self.capacity_limit)?,
             usage_amount_total: parse_optional_decimal(self.usage_amount_total)?,
