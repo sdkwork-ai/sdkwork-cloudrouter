@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -53,13 +52,6 @@ fn delivery_lease_lost_error(operation: &str) -> DomainError {
     DomainError::new(format!(
         "gateway accounting retry {operation} failed because the delivery lease is no longer owned or its terminal state is unknown"
     ))
-}
-
-fn require_single_delivery_mutation(operation: &str, rows_affected: u64) -> DomainResult<()> {
-    if rows_affected == 1 {
-        return Ok(());
-    }
-    Err(delivery_lease_lost_error(operation))
 }
 
 fn serialize_envelope(envelope: &GatewayAccountingRetryEnvelope) -> DomainResult<String> {

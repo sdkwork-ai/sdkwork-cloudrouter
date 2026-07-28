@@ -9,7 +9,7 @@ use crate::domain::{BillingMeter, DecimalValue, DomainError, DomainResult};
 
 pub type GatewayUsageRecordFuture<'a> = Pin<Box<dyn Future<Output = DomainResult<()>> + Send + 'a>>;
 
-// The SQLite baseline enforces this textual ceiling for NUMERIC(38, 12)
+// The PostgreSQL baseline enforces this textual ceiling for NUMERIC(38, 12)
 // persistence fields. Check it before DecimalValue parses the input so a
 // malformed upstream value cannot force unbounded parser work.
 const DECIMAL_INPUT_MAX_BYTES: usize = 40;
