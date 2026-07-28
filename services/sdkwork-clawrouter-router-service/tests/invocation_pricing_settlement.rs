@@ -67,10 +67,12 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
         ),
     );
     catalog.add_upstream_account_route(
-        UpstreamAccountRoute::new("openrouter", 3001).with_upstream_endpoint(
-            Some("https://provider.example/openrouter"),
-            Some("vault://provider/openrouter"),
-        ),
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_upstream_endpoint(
+                Some("https://provider.example/openrouter"),
+                Some("vault://provider/openrouter"),
+            )
+            .with_account_group_binding(10, 100, 100),
     );
     add_price(
         &mut catalog,
@@ -110,10 +112,12 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
         ),
     );
     catalog.add_upstream_account_route(
-        UpstreamAccountRoute::new("fallback", 3002).with_upstream_endpoint(
-            Some("https://provider.example/fallback"),
-            Some("vault://provider/fallback"),
-        ),
+        UpstreamAccountRoute::new("fallback", 3002)
+            .with_upstream_endpoint(
+                Some("https://provider.example/fallback"),
+                Some("vault://provider/fallback"),
+            )
+            .with_account_group_binding(10, 100, 100),
     );
     add_provider_price(
         &mut catalog,
@@ -315,7 +319,7 @@ async fn pricing_preflight_quotes_token_input_and_output_prices() {
     assert_eq!(
         "0.110000",
         input
-            .upstream_cost_unit_price
+            .procurement_cost_unit_price
             .as_ref()
             .expect("upstream")
             .to_fixed_string(6)
@@ -730,7 +734,8 @@ async fn settlement_prefers_line_level_adapter_quotes_over_meter_quotes() {
         .quote_for_meter(&BillingMeter::ApiResult)
         .expect("api result quote")
         .clone();
-    quote.customer_charge_before_rate = Money::usd("0.040000").expect("line-level unit price");
+    quote.customer_charge_before_sale_multiplier =
+        Money::usd("0.040000").expect("line-level unit price");
     quote.customer_charge_unit_price = Money::usd("0.040000").expect("line-level unit price");
     quote.pricing_plan_code = "line-level-plan".to_owned();
     invocation.usage.add_line(

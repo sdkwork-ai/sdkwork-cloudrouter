@@ -696,11 +696,19 @@ where
             .to_fixed_string(6),
         base_output_unit_price: output_price
             .as_ref()
-            .map(|price| price.customer_charge_before_sale_multiplier.to_fixed_string(6))
+            .map(|price| {
+                price
+                    .customer_charge_before_sale_multiplier
+                    .to_fixed_string(6)
+            })
             .unwrap_or_else(|| output_customer_charge.to_fixed_string(6)),
         cache_read_unit_price: cache_read_price
             .as_ref()
-            .map(|price| price.customer_charge_before_sale_multiplier.to_fixed_string(6))
+            .map(|price| {
+                price
+                    .customer_charge_before_sale_multiplier
+                    .to_fixed_string(6)
+            })
             .unwrap_or_else(|| cache_read_customer_charge.to_fixed_string(6)),
         sale_multiplier: input_price.sale_multiplier,
         reference_multiplier: input_price.reference_multiplier,
