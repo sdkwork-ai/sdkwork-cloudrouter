@@ -246,7 +246,7 @@ impl UpstreamAccountRouteRow {
             auth_profile,
             timeout_ms,
             retry_policy,
-            account_group_bindings: parse_provider_upstream_account_account_group_bindings(&self.account_group_bindings_json)?,
+            account_group_bindings: parse_provider_upstream_account_group_bindings(&self.account_group_bindings_json)?,
             channel_health_status: self.channel_health_status,
             credential_health_status: self.credential_health_status,
         })
@@ -476,7 +476,7 @@ impl GatewayApiKeyRow {
             expire_at: self.expire_at,
             status_code: self.status_code,
             default_for_runtime: self.default_for_runtime,
-            account_group_bindings: parse_gateway_api_key_upstream_account_account_group_bindings(
+            account_group_bindings: parse_gateway_api_key_upstream_account_group_bindings(
                 &self.account_group_bindings_json,
             )?,
         })
@@ -488,7 +488,7 @@ impl GatewayApiKeyRow {
     }
 }
 
-fn parse_gateway_api_key_upstream_account_account_group_bindings(
+fn parse_gateway_api_key_upstream_account_group_bindings(
     value: &str,
 ) -> DomainResult<Vec<GatewayApiKeyAccountGroupBinding>> {
     let value = parse_json_value(value, "gateway api key channel group bindings")?;
@@ -507,10 +507,10 @@ fn parse_gateway_api_key_upstream_account_account_group_bindings(
         (
             binding.priority,
             std::cmp::Reverse(binding.weight),
-            binding.group_id,
+            binding.account_group_id,
         )
     });
-    bindings.dedup_by_key(|binding| binding.group_id);
+    bindings.dedup_by_key(|binding| binding.account_group_id);
     Ok(bindings)
 }
 
@@ -820,7 +820,7 @@ fn parse_route_candidates(value: &str, field_name: &str) -> DomainResult<Vec<Rou
         .collect()
 }
 
-fn parse_provider_upstream_account_account_group_bindings(
+fn parse_provider_upstream_account_group_bindings(
     value: &str,
 ) -> DomainResult<Vec<UpstreamAccountGroupBinding>> {
     let value = parse_json_value(value, "route candidate group bindings")?;

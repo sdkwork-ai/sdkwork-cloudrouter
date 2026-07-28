@@ -167,7 +167,7 @@ impl GatewayApiKeyManagementSnapshot {
     ) -> Option<UpstreamAccountGroupMetricSnapshot> {
         self.upstream_account_group_metric_snapshots
             .iter()
-            .find(|snapshot| snapshot.group_id == group_id)
+            .find(|snapshot| snapshot.account_group_id == group_id)
             .cloned()
     }
 
@@ -197,7 +197,7 @@ impl GatewayApiKeyManagementSnapshot {
             .filter(|snapshot| {
                 upstream_account_groups
                     .iter()
-                    .any(|group| group.id == snapshot.group_id)
+                    .any(|group| group.id == snapshot.account_group_id)
             })
             .cloned()
             .collect();

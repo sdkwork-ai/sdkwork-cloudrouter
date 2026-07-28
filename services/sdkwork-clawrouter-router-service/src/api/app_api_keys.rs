@@ -676,14 +676,14 @@ fn to_item_response_with_used_quota(
     api_key: GatewayApiKey,
     used_quota_override: Option<String>,
 ) -> AppApiKeyItemResponse {
-    let group = snapshot.find_upstream_account_group(api_key.group_id);
+    let group = snapshot.find_upstream_account_group(api_key.default_account_group_id);
     let access_policy = api_key
         .policy_id
         .and_then(|policy_id| snapshot.find_access_policy(policy_id));
     let quota_policy = api_key
         .quota_policy_id
         .and_then(|policy_id| snapshot.find_quota_policy(policy_id));
-    let metric_snapshot = snapshot.find_latest_upstream_account_group_metric_snapshot(api_key.group_id);
+    let metric_snapshot = snapshot.find_latest_upstream_account_group_metric_snapshot(api_key.default_account_group_id);
     let masked_key = api_key.masked_key();
 
     AppApiKeyItemResponse {

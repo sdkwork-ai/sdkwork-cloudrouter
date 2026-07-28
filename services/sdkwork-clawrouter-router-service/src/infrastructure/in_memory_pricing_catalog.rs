@@ -247,7 +247,7 @@ impl PricingCatalog for InMemoryPricingCatalog {
     ) -> Option<UpstreamAccountGroupMetricSnapshot> {
         self.upstream_account_group_metric_snapshots
             .iter()
-            .find(|snapshot| snapshot.group_id == group_id)
+            .find(|snapshot| snapshot.account_group_id == group_id)
             .cloned()
     }
 

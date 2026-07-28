@@ -213,7 +213,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         let channel_routes = self.catalog.list_upstream_account_routes();
         let channel_routes_loaded = channel_routes.len();
         let api_scope_keys = [query.api_code.as_str()];
-        let account_group_bindings = upstream_account_account_group_bindings(
+        let account_group_bindings = upstream_account_group_bindings(
             &channel_routes,
             query.context.group_id,
             &api_scope_keys,
@@ -311,7 +311,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
     ) -> Result<SelectedUpstreamAccountRoute, ProviderRouteSelectionError> {
         let channel_routes = self.catalog.list_upstream_account_routes();
         let api_scope_keys = [query.api_code.as_str()];
-        let account_group_bindings = upstream_account_account_group_bindings(
+        let account_group_bindings = upstream_account_group_bindings(
             &channel_routes,
             query.context.group_id,
             &api_scope_keys,
@@ -374,7 +374,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         }
 
         let mut contexts = api_key
-            .effective_account_account_group_bindings()
+            .effective_account_group_bindings()
             .into_iter()
             .filter(|binding| binding.binding_role.trim().eq_ignore_ascii_case("route"))
             .filter_map(|binding| self.context_from_group_binding(context, &binding))
@@ -391,7 +391,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         context: &AuthenticatedApiKeyContext,
         binding: &GatewayApiKeyAccountGroupBinding,
     ) -> Option<AuthenticatedApiKeyContext> {
-        let group = self.catalog.find_upstream_account_group(binding.group_id)?;
+        let group = self.catalog.find_upstream_account_group(binding.account_group_id)?;
         // Verify the bound channel group belongs to the same tenant/organization,
         // or is a global resource (tenant_id == 0)
         if group.tenant_id != 0 && group.tenant_id != context.tenant_id {
@@ -407,7 +407,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
             user_id: context.user_id,
             api_key_name_snapshot: context.api_key_name_snapshot.clone(),
             group_id: group.id,
-            group_code: normalized_text_or(&binding.group_code, &group.code),
+            group_code: normalized_text_or(&binding.account_group_code, &group.code),
             pricing_plan_code: normalized_text_or(
                 &binding.pricing_plan_code,
                 &group.pricing_plan_code,
@@ -1193,7 +1193,7 @@ fn log_unavailable_model_route_diagnostics(
     );
 }
 
-fn upstream_account_account_group_bindings(
+fn upstream_account_group_bindings(
     routes: &[UpstreamAccountRoute],
     group_id: i64,
     api_scope_keys: &[&str],
@@ -1206,7 +1206,7 @@ fn upstream_account_account_group_bindings(
             .account_group_bindings
             .iter()
             .filter(|binding| {
-                if binding.group_id != group_id {
+                if binding.account_group_id != group_id {
                     return false;
                 }
                 binding_matches_api_scope(binding, api_scope_keys)

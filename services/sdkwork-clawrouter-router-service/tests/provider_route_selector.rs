@@ -2118,7 +2118,7 @@ fn selector_restricts_model_route_account_group_bindings_by_api_scope() {
 }
 
 #[test]
-fn selector_restricts_upstream_account_account_group_bindings_by_capability_scope() {
+fn selector_restricts_upstream_account_group_bindings_by_capability_scope() {
     let mut catalog = base_catalog();
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter-image-only", 3001)
@@ -2156,7 +2156,7 @@ fn selector_restricts_upstream_account_account_group_bindings_by_capability_scop
 }
 
 #[test]
-fn selector_restricts_upstream_account_account_group_bindings_by_api_scope() {
+fn selector_restricts_upstream_account_group_bindings_by_api_scope() {
     let mut catalog = base_catalog();
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter-files-other-api", 3001)
@@ -2362,7 +2362,7 @@ fn selector_allows_capability_scoped_channel_route_when_api_scope_is_unrestricte
 }
 
 #[test]
-fn selector_matches_upstream_account_account_group_bindings_by_standard_api_code() {
+fn selector_matches_upstream_account_group_bindings_by_standard_api_code() {
     let mut catalog = base_catalog();
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter-files-other-api", 3001)
@@ -2672,7 +2672,7 @@ fn selector_rejects_model_route_when_account_group_bindings_exist_but_not_for_up
 }
 
 #[test]
-fn selector_chooses_route_from_explicit_api_key_upstream_account_account_group_bindings() {
+fn selector_chooses_route_from_explicit_api_key_upstream_account_group_bindings() {
     let mut catalog = base_catalog();
     catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         20,
@@ -2684,7 +2684,7 @@ fn selector_chooses_route_from_explicit_api_key_upstream_account_account_group_b
     catalog.add_api_key(
         GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test")
             .with_owner(10, 20, 30)
-            .with_account_account_group_bindings(vec![
+            .with_account_group_bindings(vec![
                 GatewayApiKeyAccountGroupBinding::new(10, "standard-group", "standard", 100, 100),
                 GatewayApiKeyAccountGroupBinding::new(20, "premium-group", "standard", 1, 100),
             ]),

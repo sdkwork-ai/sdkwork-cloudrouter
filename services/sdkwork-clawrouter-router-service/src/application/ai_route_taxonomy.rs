@@ -61,13 +61,13 @@ impl AiRoutingIndex {
                 group_binding_count += 1;
                 if binding.api_scope.is_empty() {
                     by_group_api
-                        .entry((binding.group_id, "*".to_owned()))
+                        .entry((binding.account_group_id, "*".to_owned()))
                         .or_default()
                         .push(index);
                 } else {
                     for api_scope in &binding.api_scope {
                         by_group_api
-                            .entry((binding.group_id, normalize_api_scope_value(api_scope)))
+                            .entry((binding.account_group_id, normalize_api_scope_value(api_scope)))
                             .or_default()
                             .push(index);
                     }
@@ -126,7 +126,7 @@ impl AiRoutingIndex {
                     .account_group_bindings
                     .iter()
                     .filter(|binding| {
-                        binding.group_id == group_id
+                        binding.account_group_id == group_id
                             && binding_matches_api_scope(
                                 binding.api_scope.as_slice(),
                                 &api_scope_keys,

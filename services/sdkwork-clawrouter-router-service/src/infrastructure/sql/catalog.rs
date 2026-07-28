@@ -43,7 +43,7 @@ pub struct SqlPricingCatalogSnapshotSummary {
     pub callable_provider_routes: usize,
     pub upstream_account_routes: usize,
     pub callable_upstream_account_routes: usize,
-    pub provider_upstream_account_account_group_bindings: usize,
+    pub provider_upstream_account_group_bindings: usize,
     pub routing_policies: usize,
     pub routing_rules: usize,
     pub model_mappings: usize,
@@ -258,7 +258,7 @@ impl SqlPricingCatalogSnapshot {
                     has_text(route.base_url.as_deref()) && has_text(route.secret_ref.as_deref())
                 })
                 .count(),
-            provider_upstream_account_account_group_bindings: self
+            provider_upstream_account_group_bindings: self
                 .upstream_account_routes
                 .iter()
                 .map(|route| route.account_group_bindings.len())
@@ -699,7 +699,7 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
     ) -> Option<UpstreamAccountGroupMetricSnapshot> {
         self.upstream_account_group_metric_snapshots
             .iter()
-            .find(|snapshot| snapshot.group_id == group_id)
+            .find(|snapshot| snapshot.account_group_id == group_id)
             .cloned()
     }
 

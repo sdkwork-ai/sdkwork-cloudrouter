@@ -1142,7 +1142,7 @@ fn row_mappers_convert_sql_rows_into_domain_objects() {
         default_for_runtime: false,
     }
     .into_domain();
-    assert_eq!(10, api_key.group_id);
+    assert_eq!(10, api_key.default_account_group_id);
     assert_eq!(2, api_key.account_group_bindings.len());
     assert_eq!(20, api_key.account_group_bindings[0].group_id);
     assert_eq!("premium-group", api_key.account_group_bindings[0].group_code);

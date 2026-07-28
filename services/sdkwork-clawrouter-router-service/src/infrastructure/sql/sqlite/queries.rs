@@ -170,7 +170,7 @@ resource_group_tree AS (
      AND item.status = 1
      AND (
           item.resource_group_id = binding.resource_group_id
-          OR (NULLIF(item.resource_group_code, '') IS NOT NULL AND item.resource_group_code = binding.group_code)
+          OR (NULLIF(item.resource_group_code, '') IS NOT NULL AND item.resource_group_code = binding.account_group_code)
      )
     UNION ALL
     SELECT
@@ -524,7 +524,7 @@ resource_group_tree AS (
      AND item.status = 1
      AND (
           item.resource_group_id = binding.resource_group_id
-          OR (NULLIF(item.resource_group_code, '') IS NOT NULL AND item.resource_group_code = binding.group_code)
+          OR (NULLIF(item.resource_group_code, '') IS NOT NULL AND item.resource_group_code = binding.account_group_code)
      )
     UNION ALL
     SELECT

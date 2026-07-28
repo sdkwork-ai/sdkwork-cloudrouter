@@ -518,7 +518,7 @@ async fn update_api_key(
         api_key.name = name.clone();
     }
     if let Some(group_id) = command.group_id {
-        api_key.group_id = group_id;
+        api_key.default_account_group_id = group_id;
     }
     if let Some(expire_at) = &command.expire_at {
         api_key.expire_at = expire_at.clone();
@@ -549,7 +549,7 @@ async fn update_api_key(
         "#,
     )
     .bind(&api_key.name)
-    .bind(api_key.group_id)
+    .bind(api_key.default_account_group_id)
     .bind(api_key.policy_id)
     .bind(api_key.quota_policy_id)
     .bind(api_key.expire_at.as_deref())
@@ -1007,7 +1007,7 @@ async fn insert_update_audit_log(
         "operatorId": command.operator_id,
         "operatorType": command.operator_type,
         "apiKeyId": command.api_key_id,
-        "groupId": api_key.group_id,
+        "groupId": api_key.default_account_group_id,
         "name": api_key.name,
         "storesSecretPlaintext": false
     });

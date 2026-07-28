@@ -300,7 +300,7 @@ pub(crate) async fn import_sqlite_ai_routing_seed(pool: &SqlitePool) -> Result<(
     import_sqlite_default_admin_channels(&mut tx, &catalog).await?;
     import_sqlite_default_admin_channel_credentials(&mut tx, &catalog).await?;
     import_sqlite_default_admin_upstream_account_groups(&mut tx, &catalog).await?;
-    import_sqlite_default_admin_upstream_account_account_group_bindings(&mut tx, &catalog).await?;
+    import_sqlite_default_admin_upstream_account_group_bindings(&mut tx, &catalog).await?;
     tx.commit().await?;
     Ok(())
 }
@@ -316,7 +316,7 @@ pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(),
     import_postgres_default_admin_channels(&mut tx, &catalog).await?;
     import_postgres_default_admin_channel_credentials(&mut tx, &catalog).await?;
     import_postgres_default_admin_upstream_account_groups(&mut tx, &catalog).await?;
-    import_postgres_default_admin_upstream_account_account_group_bindings(&mut tx, &catalog).await?;
+    import_postgres_default_admin_upstream_account_group_bindings(&mut tx, &catalog).await?;
     tx.commit().await?;
     Ok(())
 }
@@ -1302,7 +1302,7 @@ async fn import_postgres_default_admin_upstream_account_groups(
     Ok(())
 }
 
-async fn import_sqlite_default_admin_upstream_account_account_group_bindings(
+async fn import_sqlite_default_admin_upstream_account_group_bindings(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     catalog: &AiRoutingSeedCatalog,
 ) -> Result<(), sqlx::Error> {
@@ -1339,7 +1339,7 @@ async fn import_sqlite_default_admin_upstream_account_account_group_bindings(
     Ok(())
 }
 
-async fn import_postgres_default_admin_upstream_account_account_group_bindings(
+async fn import_postgres_default_admin_upstream_account_group_bindings(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     catalog: &AiRoutingSeedCatalog,
 ) -> Result<(), sqlx::Error> {

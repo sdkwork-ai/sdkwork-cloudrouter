@@ -239,7 +239,7 @@ where
         .map(|value| parse_positive_i64(Some(value), "channelGroupId"))
         .transpose()
         .map_err(RouteExplainRequestError::BadRequest)?
-        .unwrap_or(api_key.group_id);
+        .unwrap_or(api_key.default_account_group_id);
     let group = catalog
         .find_upstream_account_group(account_group_id)
         .filter(|group| object_scope_matches(subject, group.tenant_id, group.organization_id))

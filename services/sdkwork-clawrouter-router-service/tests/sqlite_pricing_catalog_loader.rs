@@ -126,7 +126,7 @@ async fn sqlite_loader_builds_pricing_catalog_snapshot_from_schema_tables() {
         .unwrap();
     assert_eq!("1000.000000", quota.quota_limit.unwrap().to_fixed_string(6));
     let metric = snapshot
-        .find_latest_upstream_account_group_metric_snapshot(api_key.group_id)
+        .find_latest_upstream_account_group_metric_snapshot(api_key.default_account_group_id)
         .unwrap();
     assert_eq!(
         "37.500000",
@@ -188,7 +188,7 @@ async fn sqlite_loader_anonymous_model_catalog_hides_tenant_upstream_prices() {
 }
 
 #[tokio::test]
-async fn sqlite_loader_loads_explicit_api_key_upstream_account_account_group_bindings() {
+async fn sqlite_loader_loads_explicit_api_key_upstream_account_group_bindings() {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect("sqlite::memory:")
@@ -211,7 +211,7 @@ async fn sqlite_loader_loads_explicit_api_key_upstream_account_account_group_bin
         .unwrap();
 
     let api_key = snapshot.find_api_key(100).unwrap();
-    assert_eq!(10, api_key.group_id);
+    assert_eq!(10, api_key.default_account_group_id);
     assert_eq!(2, api_key.account_group_bindings.len());
     assert_eq!(20, api_key.account_group_bindings[0].group_id);
     assert_eq!("premium-group", api_key.account_group_bindings[0].group_code);

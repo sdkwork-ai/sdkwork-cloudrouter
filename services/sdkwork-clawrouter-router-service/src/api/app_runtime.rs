@@ -3584,7 +3584,7 @@ where
         return Err(DomainError::new("runtime route API key is disabled"));
     }
     let group = catalog
-        .find_upstream_account_group(api_key.group_id)
+        .find_upstream_account_group(api_key.default_account_group_id)
         .ok_or_else(|| DomainError::new("runtime route channel group is not available"))?;
     let context = AuthenticatedApiKeyContext {
         api_key_id: api_key.id,
@@ -3619,7 +3619,7 @@ fn select_runtime_api_key(
                         requested_model_key = %requested_model_key,
                         route_key_id = api_key.id,
                         api_key_id = api_key.id,
-                        group_id = api_key.group_id,
+                        group_id = api_key.default_account_group_id,
                         route_probe_required = matches!(status, RuntimeGatewayRouteProbeStatus::Routable),
                         "app runtime gateway API key selected from request"
                     );
@@ -3633,7 +3633,7 @@ fn select_runtime_api_key(
                             requested_model_key = %requested_model_key,
                             route_key_id = api_key.id,
                             api_key_id = api_key.id,
-                            group_id = api_key.group_id,
+                            group_id = api_key.default_account_group_id,
                             error = %failure.reason,
                             "app runtime route probe has an empty local route snapshot; deferring route validation to gateway"
                         );
@@ -3701,7 +3701,7 @@ fn select_runtime_api_key(
                 user_id = subject.user_id,
                 requested_model_key = %requested_model_key,
                 api_key_id = api_key.id,
-                group_id = api_key.group_id,
+                group_id = api_key.default_account_group_id,
                 default_for_runtime = api_key.default_for_runtime,
                 "app runtime gateway API key selected"
             );
@@ -3714,7 +3714,7 @@ fn select_runtime_api_key(
             user_id = subject.user_id,
             requested_model_key = %requested_model_key,
             api_key_id = api_key.id,
-            group_id = api_key.group_id,
+            group_id = api_key.default_account_group_id,
             default_for_runtime = api_key.default_for_runtime,
             "app runtime gateway API key selected"
         );
@@ -3732,7 +3732,7 @@ fn select_runtime_api_key(
                 user_id = subject.user_id,
                 requested_model_key = %requested_model_key,
                 api_key_id = api_key.id,
-                group_id = api_key.group_id,
+                group_id = api_key.default_account_group_id,
                 default_for_runtime = api_key.default_for_runtime,
                 "app runtime selected default gateway API key after inconclusive empty local route snapshot probe"
             );
@@ -3745,7 +3745,7 @@ fn select_runtime_api_key(
             user_id = subject.user_id,
             requested_model_key = %requested_model_key,
             api_key_id = api_key.id,
-            group_id = api_key.group_id,
+            group_id = api_key.default_account_group_id,
             default_for_runtime = api_key.default_for_runtime,
             "app runtime selected gateway API key after inconclusive empty local route snapshot probe"
         );
@@ -3769,7 +3769,7 @@ fn select_runtime_api_key(
             user_id = subject.user_id,
             requested_model_key = %requested_model_key,
             api_key_id = api_key.id,
-            group_id = api_key.group_id,
+            group_id = api_key.default_account_group_id,
             default_for_runtime = api_key.default_for_runtime,
             "app runtime gateway API key selected without route probe"
         );
@@ -3782,7 +3782,7 @@ fn select_runtime_api_key(
         user_id = subject.user_id,
         requested_model_key = %requested_model_key,
         api_key_id = api_key.id,
-        group_id = api_key.group_id,
+        group_id = api_key.default_account_group_id,
         default_for_runtime = api_key.default_for_runtime,
         "app runtime gateway API key selected without route probe"
     );
@@ -3841,7 +3841,7 @@ where
             organization_id = subject.organization_id,
             user_id = subject.user_id,
             api_key_id = api_key.id,
-            group_id = api_key.group_id,
+            group_id = api_key.default_account_group_id,
             requested_model_key,
             "app runtime gateway route probe is not required for request"
         );
@@ -3872,7 +3872,7 @@ where
             organization_id = subject.organization_id,
             user_id = subject.user_id,
             api_key_id = api_key.id,
-            group_id = api_key.group_id,
+            group_id = api_key.default_account_group_id,
             requested_model_key,
             capability = capability_label,
             error = %failure.reason,
@@ -3880,14 +3880,14 @@ where
         );
         return Err(failure);
     }
-    let Some(group) = catalog.find_upstream_account_group(api_key.group_id) else {
+    let Some(group) = catalog.find_upstream_account_group(api_key.default_account_group_id) else {
         let failure = runtime_gateway_route_probe_failure(
             api_key,
             None,
             Some(capability_label),
             format!(
                 "runtime route channel group is not available: {}",
-                api_key.group_id
+                api_key.default_account_group_id
             ),
             false,
         );
@@ -3896,7 +3896,7 @@ where
             organization_id = subject.organization_id,
             user_id = subject.user_id,
             api_key_id = api_key.id,
-            group_id = api_key.group_id,
+            group_id = api_key.default_account_group_id,
             requested_model_key,
             capability = capability_label,
             error = %failure.reason,
@@ -3930,7 +3930,7 @@ where
                 organization_id = subject.organization_id,
                 user_id = subject.user_id,
                 api_key_id = api_key.id,
-                group_id = api_key.group_id,
+                group_id = api_key.default_account_group_id,
                 requested_model_key,
                 routing_catalog_key,
                 capability = capability_label,
@@ -3944,7 +3944,7 @@ where
                 runtime_route_probe_has_empty_route_snapshot(catalog, &routing_catalog_key);
             let failure = runtime_gateway_route_probe_failure(
                 api_key,
-                Some(api_key.group_id),
+                Some(api_key.default_account_group_id),
                 Some(capability_label),
                 error.to_string(),
                 empty_route_snapshot,
@@ -3954,7 +3954,7 @@ where
                 organization_id = subject.organization_id,
                 user_id = subject.user_id,
                 api_key_id = api_key.id,
-                group_id = api_key.group_id,
+                group_id = api_key.default_account_group_id,
                 requested_model_key,
                 routing_catalog_key,
                 capability = capability_label,
