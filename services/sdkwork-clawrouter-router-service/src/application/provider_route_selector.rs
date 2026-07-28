@@ -983,7 +983,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
             account_id: Some(route.account_id),
             region_code: Some(route.region_code.clone()),
         })?;
-        if resolved.upstream_cost.is_none() {
+        if resolved.procurement_cost.is_none() {
             return Err(DomainError::new(format!(
                 "upstream cost price not found for model {}, supplier {}, account {}, and region {}",
                 route.catalog_key, route.supplier_code, route.account_id, route.region_code

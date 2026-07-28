@@ -301,13 +301,25 @@ fn quote_from_resolved(
         region_code: resolved.official_reference.region_code.clone(),
         meter: resolved.billing_meter.clone(),
         official_reference_unit_price: resolved.official_reference.unit_price.clone(),
-        upstream_cost_unit_price: resolved
-            .upstream_cost
+        raw_upstream_cost_unit_price: resolved
+            .raw_upstream_cost
             .as_ref()
             .map(|price| price.unit_price.clone()),
-        customer_charge_before_rate: resolved.customer_charge_before_rate.clone(),
+        procurement_cost_unit_price: resolved.procurement_cost.clone(),
+        account_contract_cost_multiplier: resolved
+            .account_contract_cost_multiplier
+            .map(|value| value.to_fixed_string(6)),
+        account_group_cost_multiplier: resolved
+            .account_group_cost_multiplier
+            .map(|value| value.to_fixed_string(6)),
+        procurement_cost_multiplier: resolved
+            .procurement_cost_multiplier
+            .map(|value| value.to_fixed_string(6)),
+        customer_charge_before_sale_multiplier: resolved
+            .customer_charge_before_sale_multiplier
+            .clone(),
         customer_charge_unit_price: resolved.customer_charge.clone(),
-        rate_multiplier: resolved.rate_multiplier.to_fixed_string(6),
+        sale_multiplier: resolved.sale_multiplier.to_fixed_string(6),
         reference_multiplier: resolved.reference_multiplier.to_fixed_string(6),
         pricing_plan_code: resolved.pricing_plan_code.clone(),
         group_code: resolved.group_code.clone(),
@@ -387,10 +399,14 @@ mod tests {
             region_code: "global".to_owned(),
             meter,
             official_reference_unit_price: price.clone(),
-            upstream_cost_unit_price: Some(price.clone()),
-            customer_charge_before_rate: price.clone(),
+            raw_upstream_cost_unit_price: Some(price.clone()),
+            procurement_cost_unit_price: Some(price.clone()),
+            account_contract_cost_multiplier: Some("1.000000".to_owned()),
+            account_group_cost_multiplier: Some("1.000000".to_owned()),
+            procurement_cost_multiplier: Some("1.000000".to_owned()),
+            customer_charge_before_sale_multiplier: price.clone(),
             customer_charge_unit_price: price,
-            rate_multiplier: "1.000000".to_owned(),
+            sale_multiplier: "1.000000".to_owned(),
             reference_multiplier: "1.000000".to_owned(),
             pricing_plan_code: pricing_plan_code.to_owned(),
             group_code: "standard-group".to_owned(),
