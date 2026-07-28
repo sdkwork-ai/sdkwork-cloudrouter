@@ -184,7 +184,7 @@ fn add_price_for_resource(
         Money::usd(unit_price).unwrap(),
     );
     if side == PriceSide::UpstreamCost {
-        price = price.for_provider("openrouter", 3001);
+        price = price.for_upstream_account("openrouter", 3001);
     }
     catalog.add_price(price);
 }
@@ -204,7 +204,7 @@ fn add_provider_price(
             meter,
             Money::usd(unit_price).unwrap(),
         )
-        .for_provider(supplier_code, account_id),
+        .for_upstream_account(supplier_code, account_id),
     );
 }
 

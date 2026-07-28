@@ -2151,7 +2151,7 @@ mod tests {
                 BillingMeter::ApiRequest,
                 Money::usd("0.010000").unwrap(),
             )
-            .for_provider("tencent-cloud", 9301),
+            .for_upstream_account("tencent-cloud", 9301),
         );
         let context = AuthenticatedApiKeyContext {
             tenant_id: 100001,
@@ -2275,7 +2275,7 @@ mod tests {
                 Money::usd("0.010000").unwrap(),
             )
             .with_region_code("global")
-            .for_provider("tencent-cloud", 9301),
+            .for_upstream_account("tencent-cloud", 9301),
         );
         catalog.add_price(
             ModelPrice::new_for_catalog_key(
@@ -2286,7 +2286,7 @@ mod tests {
                 Money::cny("0.080000").unwrap(),
             )
             .with_region_code("cn")
-            .for_provider("tencent-cloud", 9301),
+            .for_upstream_account("tencent-cloud", 9301),
         );
         let context = test_api_key_context();
         let mut invocation =

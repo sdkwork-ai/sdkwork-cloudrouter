@@ -112,7 +112,7 @@ fn catalog_with_hashed_api_key_without_routing(key_hash: String) -> InMemoryPric
             BillingMeter::LlmInputToken,
             Money::usd("0.110000").unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog.add_price(ModelPrice::new_for_catalog_key(
         "openai/gpt-4o-mini",
@@ -129,7 +129,7 @@ fn catalog_with_hashed_api_key_without_routing(key_hash: String) -> InMemoryPric
             BillingMeter::LlmCacheReadToken,
             Money::usd("0.055000").unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog.add_price(ModelPrice::new_for_catalog_key(
         "openai/gpt-4o-mini",
@@ -146,7 +146,7 @@ fn catalog_with_hashed_api_key_without_routing(key_hash: String) -> InMemoryPric
             BillingMeter::LlmOutputToken,
             Money::usd("0.440000").unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog
 }
@@ -286,7 +286,7 @@ fn catalog_with_group_channel_routes(
             BillingMeter::LlmInputToken,
             Money::usd("0.115000").unwrap(),
         )
-        .for_provider("openrouter-premium", 3002),
+        .for_upstream_account("openrouter-premium", 3002),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -296,7 +296,7 @@ fn catalog_with_group_channel_routes(
             BillingMeter::LlmOutputToken,
             Money::usd("0.460000").unwrap(),
         )
-        .for_provider("openrouter-premium", 3002),
+        .for_upstream_account("openrouter-premium", 3002),
     );
     add_group_routing_policy(
         &mut catalog,
@@ -409,7 +409,7 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
             Money::cny("0.004000").unwrap(),
         )
         .with_region_code("cn")
-        .for_provider("minimax_direct", 4001),
+        .for_upstream_account("minimax_direct", 4001),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -430,7 +430,7 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
             Money::cny("0.006000").unwrap(),
         )
         .with_region_code("global")
-        .for_provider("minimax_global_direct", 4002),
+        .for_upstream_account("minimax_global_direct", 4002),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -938,7 +938,7 @@ async fn openai_chat_completions_channel_scoped_mapping_switches_target_route_on
             BillingMeter::LlmInputToken,
             Money::usd("2.000000").unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog.add_model_mapping(
         ModelMappingRule::new(
@@ -1004,7 +1004,7 @@ async fn openai_chat_completions_routes_catalog_model_through_channel_route_with
             BillingMeter::LlmInputToken,
             Money::usd("0.900000").unwrap(),
         )
-        .for_provider("openrouter-gpt55", 3002),
+        .for_upstream_account("openrouter-gpt55", 3002),
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter-gpt55", 3002)
@@ -1106,7 +1106,7 @@ async fn openai_chat_completions_accepts_slash_native_model_and_sends_native_mod
             BillingMeter::LlmInputToken,
             Money::usd("0.900000").unwrap(),
         )
-        .for_provider("openrouter", 3003),
+        .for_upstream_account("openrouter", 3003),
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter", 3003)
@@ -1203,7 +1203,7 @@ async fn openai_chat_completions_routes_alibaba_regional_model_through_region_sc
             BillingMeter::LlmInputToken,
             Money::usd("1.000000").unwrap(),
         )
-        .for_provider("dashscope", 3101),
+        .for_upstream_account("dashscope", 3101),
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("dashscope", 3101)
@@ -1305,7 +1305,7 @@ async fn openai_chat_completions_routes_group_bound_channel_route_without_explic
             BillingMeter::LlmInputToken,
             Money::usd("1.000000").unwrap(),
         )
-        .for_provider("dashscope", 3101),
+        .for_upstream_account("dashscope", 3101),
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("dashscope", 3101)
@@ -1430,7 +1430,7 @@ async fn openai_chat_completions_routes_model_candidates_through_bound_group_cha
             BillingMeter::LlmInputToken,
             Money::usd("0.120000").unwrap(),
         )
-        .for_provider("openrouter-bound", 3002),
+        .for_upstream_account("openrouter-bound", 3002),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -1440,7 +1440,7 @@ async fn openai_chat_completions_routes_model_candidates_through_bound_group_cha
             BillingMeter::LlmOutputToken,
             Money::usd("0.480000").unwrap(),
         )
-        .for_provider("openrouter-bound", 3002),
+        .for_upstream_account("openrouter-bound", 3002),
     );
     add_group_routing_policy(
         &mut catalog,
@@ -1759,7 +1759,7 @@ async fn openai_chat_completions_rejects_group_policy_missing_chat_capability_wi
             BillingMeter::LlmInputToken,
             Money::usd("0.120000").unwrap(),
         )
-        .for_provider("global-openrouter", 3003),
+        .for_upstream_account("global-openrouter", 3003),
     );
     catalog.add_routing_policy(RoutingPolicy::new(
         8001,
@@ -2594,7 +2594,7 @@ async fn openai_chat_completions_fails_over_to_rule_fallback_after_primary_relay
             BillingMeter::LlmInputToken,
             Money::usd("0.120000").unwrap(),
         )
-        .for_provider("openrouter-fallback", 3002),
+        .for_upstream_account("openrouter-fallback", 3002),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -2604,7 +2604,7 @@ async fn openai_chat_completions_fails_over_to_rule_fallback_after_primary_relay
             BillingMeter::LlmOutputToken,
             Money::usd("0.480000").unwrap(),
         )
-        .for_provider("openrouter-fallback", 3002),
+        .for_upstream_account("openrouter-fallback", 3002),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -2714,7 +2714,7 @@ async fn openai_chat_completions_fails_over_after_retryable_provider_status() {
                 meter,
                 Money::usd("0.120000").unwrap(),
             )
-            .for_provider("openrouter-fallback", 3002),
+            .for_upstream_account("openrouter-fallback", 3002),
         );
     }
     catalog.add_routing_policy(
@@ -2823,7 +2823,7 @@ async fn openai_chat_completions_uses_runtime_default_retry_policy_for_status_fa
                 meter,
                 Money::usd("0.120000").unwrap(),
             )
-            .for_provider("openrouter-fallback", 3002),
+            .for_upstream_account("openrouter-fallback", 3002),
         );
     }
     catalog.add_routing_policy(
@@ -2927,7 +2927,7 @@ async fn openai_chat_completions_fail_closed_strategy_stops_after_retryable_prov
                 meter,
                 Money::usd("0.120000").unwrap(),
             )
-            .for_provider("openrouter-fallback", 3002),
+            .for_upstream_account("openrouter-fallback", 3002),
         );
     }
     catalog.add_routing_policy(
@@ -3027,7 +3027,7 @@ async fn openai_chat_completions_stream_fails_over_to_rule_fallback_before_respo
             BillingMeter::LlmInputToken,
             Money::usd("0.120000").unwrap(),
         )
-        .for_provider("openrouter-fallback", 3002),
+        .for_upstream_account("openrouter-fallback", 3002),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -3037,7 +3037,7 @@ async fn openai_chat_completions_stream_fails_over_to_rule_fallback_before_respo
             BillingMeter::LlmOutputToken,
             Money::usd("0.480000").unwrap(),
         )
-        .for_provider("openrouter-fallback", 3002),
+        .for_upstream_account("openrouter-fallback", 3002),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(

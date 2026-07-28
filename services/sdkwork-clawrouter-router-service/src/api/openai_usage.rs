@@ -177,7 +177,7 @@ pub(crate) struct GatewayUsageRecordCommandBuilder {
     base_input_unit_price: String,
     base_output_unit_price: String,
     cache_read_unit_price: String,
-    rate_multiplier: DecimalValue,
+    sale_multiplier: DecimalValue,
     reference_multiplier: DecimalValue,
     official_input_unit_price: DecimalValue,
     official_output_unit_price: DecimalValue,
@@ -276,7 +276,7 @@ impl GatewayUsageRecordCommandBuilder {
             base_input_unit_price: self.base_input_unit_price.clone(),
             base_output_unit_price: self.base_output_unit_price.clone(),
             cache_read_unit_price: self.cache_read_unit_price.clone(),
-            rate_multiplier: self.rate_multiplier.to_fixed_string(6),
+            rate_multiplier: self.sale_multiplier.to_fixed_string(6),
             reference_multiplier: self.reference_multiplier.to_fixed_string(6),
             official_reference_amount: official_reference_amount
                 .to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
@@ -691,16 +691,18 @@ where
         modality: billing_profile.modality,
         usage_type: billing_profile.usage_type,
         billing_meter_code: billing_profile.input_meter.code().to_owned(),
-        base_input_unit_price: input_price.customer_charge_before_rate.to_fixed_string(6),
+        base_input_unit_price: input_price
+            .customer_charge_before_sale_multiplier
+            .to_fixed_string(6),
         base_output_unit_price: output_price
             .as_ref()
-            .map(|price| price.customer_charge_before_rate.to_fixed_string(6))
+            .map(|price| price.customer_charge_before_sale_multiplier.to_fixed_string(6))
             .unwrap_or_else(|| output_customer_charge.to_fixed_string(6)),
         cache_read_unit_price: cache_read_price
             .as_ref()
-            .map(|price| price.customer_charge_before_rate.to_fixed_string(6))
+            .map(|price| price.customer_charge_before_sale_multiplier.to_fixed_string(6))
             .unwrap_or_else(|| cache_read_customer_charge.to_fixed_string(6)),
-        rate_multiplier: input_price.rate_multiplier,
+        sale_multiplier: input_price.sale_multiplier,
         reference_multiplier: input_price.reference_multiplier,
         official_input_unit_price: input_price.official_reference.unit_price.unit_price,
         official_output_unit_price: output_price
@@ -773,9 +775,9 @@ fn build_pricing_snapshot(
             "requestedCatalogKey": route.catalog_key.as_str(),
             "providerNativeModel": provider_native_model_id(&route.provider_model)
         },
-        "provider": {
+        "supplier": {
             "code": route.supplier_code.as_str(),
-            "channelId": route.account_id
+            "accountId": route.account_id
         },
         "pricingPlan": {
             "code": input_price.pricing_plan_code.as_str()
@@ -784,8 +786,11 @@ fn build_pricing_snapshot(
             "code": input_price.group_code.as_str()
         },
         "multipliers": {
-            "rate": input_price.rate_multiplier.to_fixed_string(6),
-            "reference": input_price.reference_multiplier.to_fixed_string(6)
+            "sale": input_price.sale_multiplier.to_fixed_string(6),
+            "reference": input_price.reference_multiplier.to_fixed_string(6),
+            "accountContractCost": input_price.account_contract_cost_multiplier.map(|value| value.to_fixed_string(6)),
+            "accountGroupCost": input_price.account_group_cost_multiplier.map(|value| value.to_fixed_string(6)),
+            "procurementCost": input_price.procurement_cost_multiplier.map(|value| value.to_fixed_string(6))
         },
         "meters": {
             "input": pricing_meter_snapshot(input_price),
@@ -801,12 +806,17 @@ fn pricing_meter_snapshot(price: &ResolvedModelPrice) -> Value {
         "meter": price.billing_meter.code(),
         "source": price_source_code(price.source),
         "officialReferenceUnitPrice": price.official_reference.unit_price.to_fixed_string(6),
-        "customerUnitPrice": price.customer_charge_before_rate.to_fixed_string(6),
+        "customerChargeBeforeSaleMultiplier": price.customer_charge_before_sale_multiplier.to_fixed_string(6),
         "chargedUnitPrice": price.customer_charge.to_fixed_string(6),
-        "upstreamUnitPrice": price
-            .upstream_cost
+        "rawUpstreamUnitPrice": price
+            .raw_upstream_cost
             .as_ref()
             .map(|upstream| upstream.unit_price.to_fixed_string(6))
+            .unwrap_or_else(|| "0.000000".to_owned()),
+        "procurementCostUnitPrice": price
+            .procurement_cost
+            .as_ref()
+            .map(|cost| cost.to_fixed_string(6))
             .unwrap_or_else(|| "0.000000".to_owned()),
         "currency": price.customer_charge.currency.as_str()
     })
@@ -886,9 +896,9 @@ pub(crate) fn provider_usage_record_error(error: DomainError) -> OpenAiInvocatio
 
 fn upstream_unit_price(price: &ResolvedModelPrice) -> DecimalValue {
     price
-        .upstream_cost
+        .procurement_cost
         .as_ref()
-        .map(|price| price.unit_price.unit_price)
+        .map(|price| price.unit_price)
         .unwrap_or(DecimalValue::ZERO)
 }
 

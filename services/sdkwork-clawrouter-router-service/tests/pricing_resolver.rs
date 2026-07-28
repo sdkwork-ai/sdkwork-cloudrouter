@@ -61,7 +61,7 @@ fn catalog_with_openai_model() -> InMemoryPricingCatalog {
         )
         .with_catalog_key("openai/gpt-4o-mini")
         .with_region_code("global")
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog
 }
@@ -141,7 +141,7 @@ fn resolves_upstream_cost_for_the_selected_provider_channel() {
         )
         .with_catalog_key("openai/gpt-4o-mini")
         .with_region_code("global")
-        .for_provider("openrouter", 3002),
+        .for_upstream_account("openrouter", 3002),
     );
     let resolver = PricingResolver::new(&catalog);
 
@@ -292,7 +292,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
             Money::new("CNY", "0.150000").unwrap(),
         )
         .with_region_code("cn")
-        .for_provider("minimax_cn_direct", 3001),
+        .for_upstream_account("minimax_cn_direct", 3001),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -313,7 +313,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
             Money::usd("0.020000").unwrap(),
         )
         .with_region_code("global")
-        .for_provider("minimax_global_direct", 3002),
+        .for_upstream_account("minimax_global_direct", 3002),
     );
 
     let resolved = PricingResolver::new(&catalog)
@@ -473,7 +473,7 @@ fn rejects_selected_channel_that_is_not_a_provider_route_for_the_model() {
         )
         .with_catalog_key("openai/gpt-4o-mini")
         .with_region_code("global")
-        .for_provider("openrouter", 9999),
+        .for_upstream_account("openrouter", 9999),
     );
     let resolver = PricingResolver::new(&catalog);
 
@@ -540,7 +540,7 @@ fn channel_route_resolves_price_stack_with_its_explicit_region() {
             Money::new("CNY", "0.150000").unwrap(),
         )
         .with_region_code("cn")
-        .for_provider("minimax_upstream", 4001),
+        .for_upstream_account("minimax_upstream", 4001),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(

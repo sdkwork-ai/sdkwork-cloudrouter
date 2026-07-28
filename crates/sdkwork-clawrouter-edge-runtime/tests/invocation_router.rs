@@ -581,7 +581,7 @@ fn catalog_with_failover_routes_and_hashed_api_key(
             BillingMeter::LlmInputToken,
             Money::usd("0.110000").unwrap(),
         )
-        .for_provider("fallback", 3002),
+        .for_upstream_account("fallback", 3002),
     );
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
@@ -591,7 +591,7 @@ fn catalog_with_failover_routes_and_hashed_api_key(
             BillingMeter::LlmOutputToken,
             Money::usd("0.440000").unwrap(),
         )
-        .for_provider("fallback", 3002),
+        .for_upstream_account("fallback", 3002),
     );
     catalog.add_routing_rule(
         RoutingRule::new(
@@ -702,7 +702,7 @@ fn add_price_pair(
             meter,
             Money::usd(upstream_price).unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
 }
 
@@ -729,7 +729,7 @@ fn add_price(
             meter,
             Money::usd(upstream_price).unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
 }
 

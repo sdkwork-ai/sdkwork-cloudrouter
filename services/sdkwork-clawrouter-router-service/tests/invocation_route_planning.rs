@@ -83,7 +83,7 @@ fn add_model_route(
             BillingMeter::LlmInputToken,
             Money::usd(unit_price).unwrap(),
         )
-        .for_provider(supplier_code, account_id),
+        .for_upstream_account(supplier_code, account_id),
     );
 }
 
@@ -484,7 +484,7 @@ async fn account_resolution_preserves_credential_rotation() {
             BillingMeter::LlmInputToken,
             Money::usd("0.110000").unwrap(),
         )
-        .for_provider("credential-provider", 3004),
+        .for_upstream_account("credential-provider", 3004),
     );
     add_group_policy_rule(
         &mut catalog,

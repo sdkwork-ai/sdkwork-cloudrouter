@@ -100,7 +100,7 @@ fn catalog() -> InMemoryPricingCatalog {
             BillingMeter::LlmInputToken,
             Money::usd("0.110000").unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog
 }

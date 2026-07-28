@@ -105,7 +105,7 @@ fn catalog_for_model_list() -> InMemoryPricingCatalog {
             Money::usd("0.151000").unwrap(),
         )
         .with_catalog_key("openai/gpt-4o-mini")
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog.add_price(
         ModelPrice::new(
@@ -115,7 +115,7 @@ fn catalog_for_model_list() -> InMemoryPricingCatalog {
             Money::usd("0.110000").unwrap(),
         )
         .with_catalog_key("openai/gpt-4o-mini")
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog.add_price(
         ModelPrice::new(
@@ -125,7 +125,7 @@ fn catalog_for_model_list() -> InMemoryPricingCatalog {
             Money::usd("0.120000").unwrap(),
         )
         .with_catalog_key("openai/gpt-4o-mini")
-        .for_provider("azure_openai", 2001),
+        .for_upstream_account("azure_openai", 2001),
     );
     catalog
 }

@@ -325,7 +325,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             BillingMeter::EmbeddingInputToken,
             Money::usd("0.010000").unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(

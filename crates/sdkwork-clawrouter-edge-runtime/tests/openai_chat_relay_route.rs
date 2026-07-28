@@ -84,7 +84,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             BillingMeter::LlmInputToken,
             Money::usd("0.110000").unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     catalog.add_price(ModelPrice::new_for_catalog_key(
         "openai/gpt-4o-mini",
@@ -101,7 +101,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             BillingMeter::LlmOutputToken,
             Money::usd("0.440000").unwrap(),
         )
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     add_group_routing_policy(
         &mut catalog,

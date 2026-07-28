@@ -174,7 +174,7 @@ fn catalog() -> InMemoryPricingCatalog {
             Money::usd("0.110000").unwrap(),
         )
         .with_catalog_key("openai/gpt-4o-mini")
-        .for_provider("openrouter", 3001),
+        .for_upstream_account("openrouter", 3001),
     );
     let mut channel_scoped_official_price = ModelPrice::new(
         "gpt-4o-mini",

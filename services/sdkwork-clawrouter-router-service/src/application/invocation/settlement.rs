@@ -140,7 +140,7 @@ fn command_for_line(
         quantity,
     )
     .map_err(|error| settlement_error(error.to_string()))?;
-    let upstream_cost_amount = match quote.upstream_cost_unit_price.as_ref() {
+    let upstream_cost_amount = match quote.procurement_cost_unit_price.as_ref() {
         Some(price) => amount_for_line(&line.meter, &price.unit_price, quantity)
             .map_err(|error| settlement_error(error.to_string()))?,
         None => DecimalValue::ZERO,
@@ -223,7 +223,7 @@ fn command_for_line(
         base_input_unit_price,
         base_output_unit_price,
         cache_read_unit_price,
-        rate_multiplier: quote.rate_multiplier.clone(),
+        rate_multiplier: quote.sale_multiplier.clone(),
         reference_multiplier: quote.reference_multiplier.clone(),
         official_reference_amount: official_reference_amount
             .to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
@@ -261,7 +261,9 @@ fn unit_price_columns(
     line: &InvocationUsageLine,
     quote: &InvocationPricingQuote,
 ) -> (String, String, String) {
-    let unit_price = quote.customer_charge_before_rate.to_fixed_string(6);
+    let unit_price = quote
+        .customer_charge_before_sale_multiplier
+        .to_fixed_string(6);
     match line.role {
         InvocationUsageLineRole::Output => {
             ("0.000000".to_owned(), unit_price, "0.000000".to_owned())
@@ -470,9 +472,9 @@ fn pricing_snapshot(
             "requestedModel": quote.requested_model.as_str(),
             "providerNativeModel": invocation.resource.provider_native_model.as_deref()
         },
-        "provider": {
+        "supplier": {
             "code": quote.supplier_code.as_deref(),
-            "channelId": quote.account_id,
+            "accountId": quote.account_id,
             "regionCode": quote.region_code.as_str()
         },
         "pricing": {
@@ -480,16 +482,24 @@ fn pricing_snapshot(
             "plan": quote.pricing_plan_code.as_str(),
             "group": quote.group_code.as_str(),
             "officialReferenceUnitPrice": quote.official_reference_unit_price.to_fixed_string(6),
-            "customerUnitPrice": quote.customer_charge_before_rate.to_fixed_string(6),
+            "customerChargeBeforeSaleMultiplier": quote.customer_charge_before_sale_multiplier.to_fixed_string(6),
             "chargedUnitPrice": quote.customer_charge_unit_price.to_fixed_string(6),
-            "upstreamUnitPrice": quote
-                .upstream_cost_unit_price
+            "rawUpstreamUnitPrice": quote
+                .raw_upstream_cost_unit_price
+                .as_ref()
+                .map(|price| price.to_fixed_string(6))
+                .unwrap_or_else(|| "0.000000".to_owned()),
+            "procurementCostUnitPrice": quote
+                .procurement_cost_unit_price
                 .as_ref()
                 .map(|price| price.to_fixed_string(6))
                 .unwrap_or_else(|| "0.000000".to_owned()),
             "currency": quote.customer_charge_unit_price.currency.as_str(),
-            "rateMultiplier": quote.rate_multiplier.as_str(),
-            "referenceMultiplier": quote.reference_multiplier.as_str()
+            "saleMultiplier": quote.sale_multiplier.as_str(),
+            "referenceMultiplier": quote.reference_multiplier.as_str(),
+            "accountContractCostMultiplier": quote.account_contract_cost_multiplier.as_deref(),
+            "accountGroupCostMultiplier": quote.account_group_cost_multiplier.as_deref(),
+            "procurementCostMultiplier": quote.procurement_cost_multiplier.as_deref()
         }
     })
     .to_string()
@@ -520,9 +530,9 @@ fn adapter_usage_pricing_snapshot(
             "model": quote.requested_model.as_str(),
             "providerNativeModel": provider_native_model.as_str()
         },
-        "provider": {
+        "supplier": {
             "code": quote.supplier_code.as_deref(),
-            "channelId": quote.account_id,
+            "accountId": quote.account_id,
             "regionCode": quote.region_code.as_str()
         },
         "pricingPlan": {
@@ -532,15 +542,23 @@ fn adapter_usage_pricing_snapshot(
             "code": quote.group_code.as_str()
         },
         "multipliers": {
-            "rate": quote.rate_multiplier.as_str(),
-            "reference": quote.reference_multiplier.as_str()
+            "sale": quote.sale_multiplier.as_str(),
+            "reference": quote.reference_multiplier.as_str(),
+            "accountContractCost": quote.account_contract_cost_multiplier.as_deref(),
+            "accountGroupCost": quote.account_group_cost_multiplier.as_deref(),
+            "procurementCost": quote.procurement_cost_multiplier.as_deref()
         },
         "unitPrice": {
             "officialReference": quote.official_reference_unit_price.to_fixed_string(6),
-            "customerBeforeRate": quote.customer_charge_before_rate.to_fixed_string(6),
+            "customerChargeBeforeSaleMultiplier": quote.customer_charge_before_sale_multiplier.to_fixed_string(6),
             "customerCharge": quote.customer_charge_unit_price.to_fixed_string(6),
-            "upstreamCost": quote
-                .upstream_cost_unit_price
+            "rawUpstreamCost": quote
+                .raw_upstream_cost_unit_price
+                .as_ref()
+                .map(|price| price.to_fixed_string(6))
+                .unwrap_or_else(|| "0.000000".to_owned()),
+            "procurementCost": quote
+                .procurement_cost_unit_price
                 .as_ref()
                 .map(|price| price.to_fixed_string(6))
                 .unwrap_or_else(|| "0.000000".to_owned()),
