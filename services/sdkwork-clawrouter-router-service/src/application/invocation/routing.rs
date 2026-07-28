@@ -42,7 +42,7 @@ pub struct StickyRouteConstraint {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InvocationRouteCandidateKind {
     Model,
-    Channel,
+    UpstreamAccount,
     Sticky,
 }
 

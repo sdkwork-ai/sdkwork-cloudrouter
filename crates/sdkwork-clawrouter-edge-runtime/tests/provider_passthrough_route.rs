@@ -364,7 +364,7 @@ fn gateway_openapi_v1_paths_are_product_routes_or_openai_passthrough_routes() {
 }
 
 #[test]
-fn gateway_openapi_vendor_paths_are_runtime_provider_routes_without_public_manifest() {
+fn gateway_openapi_vendor_paths_are_runtime_model_upstream_routes_without_public_manifest() {
     let spec: serde_json::Value = serde_json::from_str(include_str!(
         "../../../apps/sdkwork-clawrouter-pc/public/openapi.json"
     ))

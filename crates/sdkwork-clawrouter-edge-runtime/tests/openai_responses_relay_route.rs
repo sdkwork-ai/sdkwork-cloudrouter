@@ -33,7 +33,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         )
         .with_catalog_key("openai/gpt-4.1-mini"),
     );
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4.1-mini",
             "gpt-4.1-mini",

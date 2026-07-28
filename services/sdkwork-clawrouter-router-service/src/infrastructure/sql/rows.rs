@@ -275,7 +275,7 @@ impl ModelUpstreamRouteRow {
     pub fn try_into_domain(self) -> DomainResult<ModelUpstreamRoute> {
         ensure_base_catalog_key(
             &self.catalog_key,
-            "provider route catalog_key must use vendor/model identity",
+            "upstream route catalog_key must use vendor/model identity",
         )?;
         let timeout_ms = parse_timeout_ms(self.timeout_ms)?;
         let retry_policy = parse_retry_policy(self.retry_policy_json)?;
@@ -355,10 +355,10 @@ fn normalized_credential_rotation(value: String) -> String {
 fn parse_timeout_ms(timeout_ms: Option<i64>) -> DomainResult<Option<u64>> {
     match timeout_ms {
         Some(timeout_ms) if timeout_ms <= 0 => Err(DomainError::new(format!(
-            "ai_channel.timeout_ms must be positive when configured: {timeout_ms}"
+            "ai_upstream_account.timeout_ms must be positive when configured: {timeout_ms}"
         ))),
         Some(timeout_ms) => Ok(Some(u64::try_from(timeout_ms).map_err(|error| {
-            DomainError::new(format!("invalid ai_channel.timeout_ms: {error}"))
+            DomainError::new(format!("invalid ai_upstream_account.timeout_ms: {error}"))
         })?)),
         None => Ok(None),
     }
@@ -473,7 +473,7 @@ pub struct GatewayApiKeyRow {
 impl GatewayApiKeyRow {
     pub fn into_domain(self) -> GatewayApiKey {
         self.try_into_domain()
-            .expect("gateway api key channel group bindings must be valid")
+            .expect("gateway API key upstream account group bindings must be valid")
     }
 
     pub fn try_into_domain(self) -> DomainResult<GatewayApiKey> {
@@ -509,10 +509,10 @@ impl GatewayApiKeyRow {
 fn parse_gateway_api_key_upstream_account_group_bindings(
     value: &str,
 ) -> DomainResult<Vec<GatewayApiKeyAccountGroupBinding>> {
-    let value = parse_json_value(value, "gateway api key channel group bindings")?;
+    let value = parse_json_value(value, "gateway API key upstream account group bindings")?;
     let serde_json::Value::Array(items) = value else {
         return Err(DomainError::new(
-            "gateway api key channel group bindings must be a json array",
+            "gateway API key upstream account group bindings must be a JSON array",
         ));
     };
 
@@ -538,7 +538,7 @@ fn parse_gateway_api_key_upstream_account_group_binding(
 ) -> DomainResult<GatewayApiKeyAccountGroupBinding> {
     let serde_json::Value::Object(object) = value else {
         return Err(DomainError::new(format!(
-            "gateway api key channel group bindings[{index}] must be a json object"
+            "gateway API key upstream account group bindings[{index}] must be a JSON object"
         )));
     };
     let group_id = object
@@ -547,12 +547,12 @@ fn parse_gateway_api_key_upstream_account_group_binding(
         .and_then(serde_json::Value::as_i64)
         .ok_or_else(|| {
             DomainError::new(format!(
-                "gateway api key channel group bindings[{index}] must contain integer groupId"
+                "gateway API key upstream account group bindings[{index}] must contain integer groupId"
             ))
         })?;
     if group_id <= 0 {
         return Err(DomainError::new(format!(
-            "gateway api key channel group bindings[{index}].groupId must be positive"
+            "gateway API key upstream account group bindings[{index}].groupId must be positive"
         )));
     }
     let group_code =
@@ -604,7 +604,7 @@ fn parse_optional_i32(
         .transpose()
         .map_err(|error| {
             DomainError::new(format!(
-                "gateway api key channel group bindings[{index}].{key} is invalid: {error}"
+                "gateway API key upstream account group bindings[{index}].{key} is invalid: {error}"
             ))
         })
 }

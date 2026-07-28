@@ -30,7 +30,6 @@ pub(crate) mod sql_admin_storage;
 pub(crate) mod sql_hash;
 pub(crate) mod sql_runtime_region_settings;
 pub(crate) mod sql_site_settings;
-pub mod sqlite;
 pub(crate) mod store_error;
 pub(crate) mod string_value;
 

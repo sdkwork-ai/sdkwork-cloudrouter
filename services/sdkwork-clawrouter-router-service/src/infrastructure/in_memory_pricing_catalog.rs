@@ -11,7 +11,7 @@ use crate::ports::PricingCatalog;
 pub struct InMemoryPricingCatalog {
     vendors: Vec<ModelVendorDefinition>,
     models: Vec<AiModel>,
-    provider_routes: Vec<ModelUpstreamRoute>,
+    model_upstream_routes: Vec<ModelUpstreamRoute>,
     upstream_account_routes: Vec<UpstreamAccountRoute>,
     routing_policies: Vec<RoutingPolicy>,
     routing_rules: Vec<RoutingRule>,
@@ -35,8 +35,8 @@ impl InMemoryPricingCatalog {
         self.models.push(model);
     }
 
-    pub fn add_provider_route(&mut self, route: ModelUpstreamRoute) {
-        self.provider_routes.push(route);
+    pub fn add_model_upstream_route(&mut self, route: ModelUpstreamRoute) {
+        self.model_upstream_routes.push(route);
     }
 
     pub fn add_upstream_account_route(&mut self, route: UpstreamAccountRoute) {
@@ -145,7 +145,7 @@ impl PricingCatalog for InMemoryPricingCatalog {
     }
 
     fn list_model_upstream_routes(&self, model: &str) -> Vec<ModelUpstreamRoute> {
-        self.provider_routes
+        self.model_upstream_routes
             .iter()
             .filter(|route| catalog_key_matches_route_scope(&route.catalog_key, model))
             .cloned()
@@ -292,7 +292,7 @@ impl PricingCatalog for InMemoryPricingCatalog {
         model: &str,
         supplier_code: &str,
     ) -> Option<ModelUpstreamRoute> {
-        self.provider_routes
+        self.model_upstream_routes
             .iter()
             .find(|route| {
                 catalog_key_matches_route_scope(&route.catalog_key, model)

@@ -5,8 +5,8 @@ use sdkwork_claw_http::ApiKeyIdentity;
 use crate::api::openai_error::openai_error;
 use crate::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
-    ProviderRouteSelectionError, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
-    SelectProviderRouteQuery, SelectedProviderRoute,
+    SelectUpstreamModelRouteQuery, SelectedUpstreamModelRoute, UpstreamRouteSelectionError,
+    UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 use crate::domain::{
     AiModel, BillingMeter, ModelMappingRule, ProviderAuthProfile, ProviderRetryPolicy,
@@ -17,7 +17,7 @@ use crate::ports::PricingCatalog;
 pub(crate) type OpenAiRouteError = Box<Response>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ResolvedOpenAiProviderRoute {
+pub struct ResolvedOpenAiUpstreamRoute {
     pub catalog_key: String,
     pub policy_id: Option<i64>,
     pub rule_id: Option<i64>,
@@ -36,9 +36,9 @@ pub struct ResolvedOpenAiProviderRoute {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ResolvedOpenAiProviderRoutePlan {
+pub struct ResolvedOpenAiUpstreamRoutePlan {
     pub catalog_key: String,
-    pub routes: Vec<ResolvedOpenAiProviderRoute>,
+    pub routes: Vec<ResolvedOpenAiUpstreamRoute>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -180,7 +180,7 @@ pub(super) fn ensure_model_capability(
 }
 
 #[allow(dead_code)]
-pub(super) fn resolve_openai_provider_route<C>(
+pub(super) fn resolve_openai_upstream_route<C>(
     catalog: &C,
     context: &AuthenticatedApiKeyContext,
     model: &str,
@@ -188,11 +188,11 @@ pub(super) fn resolve_openai_provider_route<C>(
     capability_label: &str,
     capability: RoutingCapability,
     billing_meter: BillingMeter,
-) -> Result<ResolvedOpenAiProviderRoute, OpenAiRouteError>
+) -> Result<ResolvedOpenAiUpstreamRoute, OpenAiRouteError>
 where
     C: PricingCatalog,
 {
-    Ok(resolve_openai_provider_route_plan(
+    Ok(resolve_openai_upstream_route_plan(
         catalog,
         context,
         model,
@@ -212,7 +212,7 @@ where
     })?)
 }
 
-pub(crate) fn resolve_openai_provider_route_plan<C>(
+pub(crate) fn resolve_openai_upstream_route_plan<C>(
     catalog: &C,
     context: &AuthenticatedApiKeyContext,
     model: &str,
@@ -220,7 +220,7 @@ pub(crate) fn resolve_openai_provider_route_plan<C>(
     capability_label: &str,
     capability: RoutingCapability,
     billing_meter: BillingMeter,
-) -> Result<ResolvedOpenAiProviderRoutePlan, OpenAiRouteError>
+) -> Result<ResolvedOpenAiUpstreamRoutePlan, OpenAiRouteError>
 where
     C: PricingCatalog,
 {
@@ -250,8 +250,8 @@ where
     ensure_model_capability(&catalog_model, accepted_capabilities, capability_label)?;
     let model_catalog_key = catalog_model.catalog_key;
     let routing_catalog_key = route_scope_catalog_key(effective_model, &model_catalog_key);
-    let model_plan = ProviderRouteSelector::new(catalog)
-        .select_plan(SelectProviderRouteQuery {
+    let model_plan = UpstreamRouteSelector::new(catalog)
+        .select_model_route_plan(SelectUpstreamModelRouteQuery {
             context: context.clone(),
             catalog_key: routing_catalog_key.clone(),
             requested_model: model.to_owned(),
@@ -259,8 +259,8 @@ where
             capability,
             billing_meter,
         })
-        .map_err(provider_route_selection_error)?;
-    let channel_routes = catalog.list_upstream_account_routes();
+        .map_err(upstream_route_selection_error)?;
+    let account_routes = catalog.list_upstream_account_routes();
     let routes = model_plan
         .routes
         .into_iter()
@@ -272,19 +272,19 @@ where
                 catalog_model.vendor_code.as_str(),
                 routing_catalog_key.as_str(),
                 selection,
-                &channel_routes,
+                &account_routes,
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
     if routes.is_empty() {
-        return Err(provider_route_selection_error(
-            ProviderRouteSelectionError::provider_route_unavailable(format!(
-                "provider route is not available for configured channel route: route plan is empty for model {}",
+        return Err(upstream_route_selection_error(
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: route plan is empty for model {}",
                 routing_catalog_key
             )),
         ));
     }
-    Ok(ResolvedOpenAiProviderRoutePlan {
+    Ok(ResolvedOpenAiUpstreamRoutePlan {
         catalog_key: routing_catalog_key,
         routes,
     })
@@ -312,39 +312,40 @@ fn resolve_model_route(
     requested_model: &str,
     vendor_code: &str,
     catalog_key: &str,
-    selection: SelectedProviderRoute,
-    channel_routes: &[crate::domain::UpstreamAccountRoute],
-) -> Result<ResolvedOpenAiProviderRoute, OpenAiRouteError> {
+    selection: SelectedUpstreamModelRoute,
+    account_routes: &[crate::domain::UpstreamAccountRoute],
+) -> Result<ResolvedOpenAiUpstreamRoute, OpenAiRouteError> {
     let model_route = selection.route;
-    let channel_metadata = find_selected_channel_route_metadata(&model_route, channel_routes);
-    if channel_metadata
+    let account_metadata =
+        find_selected_upstream_account_route_metadata(&model_route, account_routes);
+    if account_metadata
         .as_ref()
         .map(|route| route.supplier_code.as_str())
         .is_some_and(|supplier_code| supplier_code != model_route.supplier_code)
     {
-        return Err(provider_route_selection_error(
-            ProviderRouteSelectionError::provider_route_unavailable(format!(
-                "provider route is not available for configured channel route: selected channel {} provider mismatch for model {}",
+        return Err(upstream_route_selection_error(
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: selected upstream account {} supplier mismatch for model {}",
                 model_route.account_id, catalog_key
             )),
         ));
     }
     if !has_text(model_route.base_url.as_deref()) || !has_text(model_route.secret_ref.as_deref()) {
-        return Err(provider_route_selection_error(
-            ProviderRouteSelectionError::provider_route_unavailable(format!(
-                "provider route is not available for configured channel route: selected channel {} is missing callable base URL or credential for model {}",
+        return Err(upstream_route_selection_error(
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: selected upstream account {} is missing callable base URL or credential for model {}",
                 model_route.account_id, catalog_key
             )),
         ));
     }
 
-    let channel_mapping = catalog.resolve_model_mapping(
+    let account_mapping = catalog.resolve_model_mapping(
         requested_model,
         &ResolveModelMappingContext::new()
             .with_vendor_code(vendor_code)
             .with_account_id(model_route.account_id)
             .with_account_code(
-                channel_metadata
+                account_metadata
                     .as_ref()
                     .and_then(|route| route.account_code.as_deref())
                     .unwrap_or_default(),
@@ -352,32 +353,32 @@ fn resolve_model_route(
             .with_account_group_id(selection.group_id)
             .with_account_group_code(selection.group_code.as_str())
             .with_supplier(
-                channel_metadata
+                account_metadata
                     .as_ref()
                     .and_then(|route| route.supplier_id),
-                channel_metadata
+                account_metadata
                     .as_ref()
                     .map(|route| route.supplier_code.as_str()),
             )
             .with_endpoint(
-                channel_metadata
+                account_metadata
                     .as_ref()
                     .and_then(|route| route.endpoint_id),
-                channel_metadata
+                account_metadata
                     .as_ref()
                     .and_then(|route| route.endpoint_code.as_deref()),
             ),
     );
-    let model_route = match channel_mapping.as_ref() {
+    let model_route = match account_mapping.as_ref() {
         Some(rule) if rule.effective_catalog_key() != model_route.catalog_key => catalog
             .list_model_upstream_routes(rule.effective_catalog_key())
             .into_iter()
             .find(|candidate| candidate.account_id == model_route.account_id)
             .map(|candidate| apply_selected_route_account(candidate, &model_route))
             .ok_or_else(|| {
-                provider_route_selection_error(ProviderRouteSelectionError::provider_route_unavailable(
+                upstream_route_selection_error(UpstreamRouteSelectionError::upstream_route_unavailable(
                     format!(
-                        "provider route is not available for configured channel route: channel {} has no mapped route for model {}",
+                        "upstream route is not available for configured upstream account route: upstream account {} has no mapped route for model {}",
                         model_route.account_id,
                         rule.effective_catalog_key()
                     ),
@@ -385,20 +386,20 @@ fn resolve_model_route(
             })?,
         _ => model_route,
     };
-    if channel_metadata
+    if account_metadata
         .as_ref()
         .map(|route| route.supplier_code.as_str())
         .is_some_and(|supplier_code| supplier_code != model_route.supplier_code)
     {
-        return Err(provider_route_selection_error(
-            ProviderRouteSelectionError::provider_route_unavailable(format!(
-                "provider route is not available for configured channel route: selected channel {} provider mismatch for model {}",
+        return Err(upstream_route_selection_error(
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: selected upstream account {} supplier mismatch for model {}",
                 model_route.account_id, model_route.catalog_key
             )),
         ));
     }
 
-    let provider_model = channel_mapping
+    let provider_model = account_mapping
         .as_ref()
         .and_then(|rule| rule.effective_provider_model().map(str::to_owned))
         .unwrap_or_else(|| {
@@ -409,9 +410,9 @@ fn resolve_model_route(
             )
         });
     let region_code =
-        resolved_deployment_region_code(&model_route.region_code, channel_metadata.as_ref());
+        resolved_deployment_region_code(&model_route.region_code, account_metadata.as_ref());
 
-    Ok(ResolvedOpenAiProviderRoute {
+    Ok(ResolvedOpenAiUpstreamRoute {
         catalog_key: model_route.catalog_key,
         policy_id: selection.policy_id,
         rule_id: selection.rule_id,
@@ -430,11 +431,11 @@ fn resolve_model_route(
     })
 }
 
-fn find_selected_channel_route_metadata(
+fn find_selected_upstream_account_route_metadata(
     model_route: &crate::domain::ModelUpstreamRoute,
-    channel_routes: &[crate::domain::UpstreamAccountRoute],
+    account_routes: &[crate::domain::UpstreamAccountRoute],
 ) -> Option<crate::domain::UpstreamAccountRoute> {
-    let mut candidates = channel_routes
+    let mut candidates = account_routes
         .iter()
         .filter(|route| {
             route.account_id == model_route.account_id
@@ -509,20 +510,20 @@ fn normalize_region_code(value: &str) -> String {
 
 fn resolved_deployment_region_code(
     model_route_region: &str,
-    channel_metadata: Option<&crate::domain::UpstreamAccountRoute>,
+    account_metadata: Option<&crate::domain::UpstreamAccountRoute>,
 ) -> String {
     let model_route_region = model_route_region.trim();
     if !model_route_region.is_empty() {
         return model_route_region.to_owned();
     }
-    let channel_route_region = channel_metadata
+    let account_route_region = account_metadata
         .map(|route| route.region_code.as_str())
         .unwrap_or_default()
         .trim();
-    if channel_route_region.is_empty() {
+    if account_route_region.is_empty() {
         "global".to_owned()
     } else {
-        channel_route_region.to_owned()
+        account_route_region.to_owned()
     }
 }
 
@@ -552,14 +553,14 @@ fn normalized_resolved_provider_model(
     }
 }
 
-impl ResolvedOpenAiProviderRoutePlan {
-    pub fn first_route(&self) -> Option<ResolvedOpenAiProviderRoute> {
+impl ResolvedOpenAiUpstreamRoutePlan {
+    pub fn first_route(&self) -> Option<ResolvedOpenAiUpstreamRoute> {
         self.routes.first().cloned()
     }
 }
 
 pub(super) fn route_http_status_is_retryable(
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     default_retry_policy: &ProviderRetryPolicy,
     status_code: u16,
 ) -> bool {
@@ -571,7 +572,7 @@ pub(super) fn route_http_status_is_retryable(
 }
 
 pub(super) fn provider_relay_attempt_retry_policy(
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     _failure_strategy: OpenAiRuntimeFailureStrategy,
     route_count: usize,
 ) -> Option<ProviderRetryPolicy> {
@@ -585,20 +586,20 @@ pub(super) fn provider_relay_attempt_retry_policy(
     route.provider_retry_policy.clone()
 }
 
-fn provider_route_selection_error(error: ProviderRouteSelectionError) -> OpenAiRouteError {
+fn upstream_route_selection_error(error: UpstreamRouteSelectionError) -> OpenAiRouteError {
     let message = error.to_string();
     match error.kind() {
-        ProviderRouteSelectionErrorKind::ProviderRouteUnavailable => Box::new(openai_error(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable => Box::new(openai_error(
             StatusCode::SERVICE_UNAVAILABLE,
-            if message.contains("provider route snapshot is empty") {
-                "provider_route_snapshot_empty"
+            if message.contains("upstream route snapshot is empty") {
+                "upstream_route_snapshot_empty"
             } else {
-                "provider_route_not_available"
+                "upstream_route_not_available"
             },
             "server_error",
             message,
         )),
-        ProviderRouteSelectionErrorKind::PricingUnavailable => Box::new(openai_error(
+        UpstreamRouteSelectionErrorKind::PricingUnavailable => Box::new(openai_error(
             StatusCode::BAD_REQUEST,
             "pricing_unavailable",
             "invalid_request_error",

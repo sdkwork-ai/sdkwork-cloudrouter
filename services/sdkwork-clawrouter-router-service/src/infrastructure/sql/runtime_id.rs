@@ -4,7 +4,6 @@ use sdkwork_claw_config::{DeploymentMode, RuntimeTomlConfig};
 use sdkwork_database_config::claw_database::postgres_url_with_search_path;
 use sdkwork_database_config::DatabaseConfig as StandardDatabaseConfig;
 use sdkwork_database_config::DatabaseEngine as StandardDatabaseEngine;
-use sdkwork_database_config::SqliteJournalMode;
 use sdkwork_id_core::SnowflakeIdGenerator;
 
 use crate::domain::{DomainError, DomainResult};
@@ -13,30 +12,18 @@ use crate::domain::{DomainError, DomainResult};
 /// for use with `sdkwork-database-sqlx::PoolBuilder`.
 pub(crate) fn to_standard_database_config(
     config: &sdkwork_claw_config::DatabaseConfig,
-) -> StandardDatabaseConfig {
-    let engine = match config.engine {
-        sdkwork_claw_config::DatabaseEngine::Sqlite => StandardDatabaseEngine::Sqlite,
-        sdkwork_claw_config::DatabaseEngine::Postgres => StandardDatabaseEngine::Postgres,
-    };
-    let url = match config.engine {
-        sdkwork_claw_config::DatabaseEngine::Postgres => {
-            postgres_url_with_search_path(&config.url, "SDKWORK_CLAW")
-        }
-        sdkwork_claw_config::DatabaseEngine::Sqlite => config.url.clone(),
-    };
-    StandardDatabaseConfig {
-        engine,
-        url,
-        max_connections: config.max_connections,
-        sqlite: sdkwork_database_config::SqliteConfig {
-            journal_mode: SqliteJournalMode::Wal,
-            busy_timeout_secs: 30,
-            foreign_keys: true,
-            create_if_missing: true,
-            ..sdkwork_database_config::SqliteConfig::default()
-        },
-        ..StandardDatabaseConfig::default()
+) -> Result<StandardDatabaseConfig, RuntimeIdConfigurationError> {
+    if !matches!(config.engine, sdkwork_claw_config::DatabaseEngine::Postgres) {
+        return Err(RuntimeIdConfigurationError::new(
+            "Claw Router server runtime requires PostgreSQL; SQLite is client-local only",
+        ));
     }
+    Ok(StandardDatabaseConfig {
+        engine: StandardDatabaseEngine::Postgres,
+        url: postgres_url_with_search_path(&config.url, "SDKWORK_CLAW"),
+        max_connections: config.max_connections,
+        ..StandardDatabaseConfig::default()
+    })
 }
 
 const CLAW_RUNTIME_NODE_ID_ENV: &str = "SDKWORK_CLAW_SNOWFLAKE_NODE_ID";
@@ -263,7 +250,7 @@ mod tests {
             max_connections: 10,
         };
 
-        let standard = to_standard_database_config(&config);
+        let standard = to_standard_database_config(&config).expect("postgres config");
 
         match previous_schema {
             Some(value) => std::env::set_var("SDKWORK_CLAW_DATABASE_SCHEMA", value),

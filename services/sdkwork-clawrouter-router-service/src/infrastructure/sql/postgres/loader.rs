@@ -81,7 +81,7 @@ impl PostgresPricingCatalogLoader {
             // Model routes are derived from the effective resource entitlements carried by
             // upstream account routes. Keeping a second SQL authority here would allow the two
             // snapshots to disagree and would reintroduce the retired channel tables.
-            provider_routes: Vec::new(),
+            model_upstream_routes: Vec::new(),
             upstream_account_routes: row_mapping::load_upstream_account_routes(
                 &mut *tx,
                 PricingCatalogSql::load_upstream_account_routes(),

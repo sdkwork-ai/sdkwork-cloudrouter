@@ -50,10 +50,10 @@ pub fn find_builtin_ai_route(route_key: &str) -> Option<&'static AiRouteTaxonomy
 
 impl AiRoutingIndex {
     pub fn compile<C: PricingCatalog>(catalog: &C) -> Self {
-        Self::from_channel_routes(catalog.list_upstream_account_routes())
+        Self::from_upstream_account_routes(catalog.list_upstream_account_routes())
     }
 
-    pub fn from_channel_routes(routes: Vec<UpstreamAccountRoute>) -> Self {
+    pub fn from_upstream_account_routes(routes: Vec<UpstreamAccountRoute>) -> Self {
         let mut group_binding_count = 0;
         let mut by_group_api = BTreeMap::<(i64, String), Vec<usize>>::new();
         for (index, route) in routes.iter().enumerate() {
@@ -90,7 +90,7 @@ impl AiRoutingIndex {
         }
     }
 
-    pub fn matching_channels(
+    pub fn matching_accounts(
         &self,
         group_id: i64,
         api_code: &str,
@@ -104,7 +104,7 @@ impl AiRoutingIndex {
             return sorted_callable_routes(
                 self.routes
                     .iter()
-                    .filter(|route| channel_route_is_callable(route))
+                    .filter(|route| account_route_is_callable(route))
                     .cloned()
                     .collect(),
             );
@@ -123,7 +123,7 @@ impl AiRoutingIndex {
         let candidates = candidate_indexes
             .into_iter()
             .filter_map(|index| self.routes.get(index))
-            .filter(|route| channel_route_is_callable(route))
+            .filter(|route| account_route_is_callable(route))
             .filter_map(|route| {
                 let matched_bindings = route
                     .account_group_bindings
@@ -275,13 +275,13 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         AiRouteModelRequirement::Ignored,
         "batch",
     ),
-    channel(
+    account(
         "openai.models",
         "openai.models",
         RoutingCapability::Network,
         BillingMeter::ApiRequest,
     ),
-    channel(
+    account(
         "openai.moderations",
         "openai.moderations",
         RoutingCapability::Network,
@@ -449,7 +449,7 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::ImageResult,
         "image_task",
     ),
-    channel(
+    account(
         "kling.task_query",
         "kling.task_query",
         RoutingCapability::Network,
@@ -469,7 +469,7 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::VideoResult,
         "video_task",
     ),
-    channel(
+    account(
         "jimeng.task_query",
         "jimeng.task_query",
         RoutingCapability::Network,
@@ -489,7 +489,7 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::VideoResult,
         "video_task",
     ),
-    channel(
+    account(
         "volcengine.task_query",
         "volcengine.task_query",
         RoutingCapability::Network,
@@ -537,7 +537,7 @@ const fn model(
     }
 }
 
-const fn channel(
+const fn account(
     route_key: &'static str,
     api_code: &'static str,
     capability: RoutingCapability,
@@ -713,7 +713,7 @@ fn normalize_route_key(value: &str) -> String {
         .replace(['/', ':', '-'], ".")
 }
 
-fn channel_route_is_callable(route: &UpstreamAccountRoute) -> bool {
+fn account_route_is_callable(route: &UpstreamAccountRoute) -> bool {
     has_text(route.base_url.as_deref()) && has_text(route.secret_ref.as_deref())
 }
 

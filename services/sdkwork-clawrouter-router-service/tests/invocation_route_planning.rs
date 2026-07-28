@@ -9,13 +9,19 @@ use sdkwork_clawrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, RouteCandidate,
     RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
-    UpstreamAccountRoute,
+    UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use serde_json::json;
 use std::sync::Arc;
 
 fn base_catalog() -> InMemoryPricingCatalog {
+    base_catalog_with_group_strategy(UpstreamAccountRoutingStrategy::Weighted)
+}
+
+fn base_catalog_with_group_strategy(
+    routing_strategy: UpstreamAccountRoutingStrategy,
+) -> InMemoryPricingCatalog {
     let mut catalog = InMemoryPricingCatalog::default();
     catalog.add_vendor(ModelVendorDefinition::new(
         "openai",
@@ -32,15 +38,18 @@ fn base_catalog() -> InMemoryPricingCatalog {
         DecimalValue::parse("1.000000").unwrap(),
         Money::usd("0.000000").unwrap(),
     ));
-    catalog.add_upstream_account_group(UpstreamAccountGroup::new_scoped(
-        10,
-        10,
-        20,
-        "standard-group",
-        "standard",
-        DecimalValue::parse("1.000000").unwrap(),
-        DecimalValue::parse("1.000000").unwrap(),
-    ));
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new_scoped(
+            10,
+            10,
+            20,
+            "standard-group",
+            "standard",
+            DecimalValue::parse("1.000000").unwrap(),
+            DecimalValue::parse("1.000000").unwrap(),
+        )
+        .with_routing_strategy(routing_strategy),
+    );
     catalog
         .add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test").with_owner(10, 20, 30));
     catalog.add_price(ModelPrice::new_for_catalog_key(
@@ -61,7 +70,7 @@ fn add_model_route(
     api_code: &str,
     unit_price: &str,
 ) {
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
@@ -75,6 +84,7 @@ fn add_model_route(
             Some(format!("vault://providers/{supplier_code}/main")),
         ),
     );
+    add_account_route(catalog, account_id, supplier_code);
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
             "openai/gpt-4o-mini",
@@ -87,12 +97,23 @@ fn add_model_route(
     );
 }
 
-fn add_channel_route(catalog: &mut InMemoryPricingCatalog, account_id: i64, supplier_code: &str) {
+fn add_account_route(catalog: &mut InMemoryPricingCatalog, account_id: i64, supplier_code: &str) {
+    add_account_route_with_priority(catalog, account_id, supplier_code, 100);
+}
+
+fn add_account_route_with_priority(
+    catalog: &mut InMemoryPricingCatalog,
+    account_id: i64,
+    supplier_code: &str,
+    priority: i32,
+) {
     catalog.add_upstream_account_route(
-        UpstreamAccountRoute::new(supplier_code, account_id).with_upstream_endpoint(
-            Some(format!("https://provider.example/{supplier_code}")),
-            Some(format!("vault://providers/{supplier_code}/main")),
-        ),
+        UpstreamAccountRoute::new(supplier_code, account_id)
+            .with_upstream_endpoint(
+                Some(format!("https://provider.example/{supplier_code}")),
+                Some(format!("vault://providers/{supplier_code}/main")),
+            )
+            .with_account_group_binding(10, priority, 100),
     );
 }
 
@@ -134,8 +155,8 @@ fn add_group_policy_rule(
 fn subject() -> sdkwork_clawrouter_router_service::application::InvocationSubject {
     sdkwork_clawrouter_router_service::application::InvocationSubject::from_api_key_context(
         AuthenticatedApiKeyContext {
-            tenant_id: 100001,
-            organization_id: 0,
+            tenant_id: 10,
+            organization_id: 20,
             user_id: 30,
             api_key_id: 100,
             api_key_name_snapshot: "Test key".to_owned(),
@@ -206,7 +227,7 @@ async fn plans_model_route_and_resolves_account() {
         202,
         r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
         "openai/gpt-4o-mini",
-        vec![RouteCandidate::new(3001, 100)],
+        vec![RouteCandidate::new(10, 100)],
         vec![],
     );
     let catalog = Arc::new(catalog);
@@ -254,9 +275,9 @@ async fn plans_model_route_and_resolves_account() {
 }
 
 #[tokio::test]
-async fn plans_management_api_channel_route() {
+async fn plans_management_api_account_route() {
     let mut catalog = base_catalog();
-    add_channel_route(&mut catalog, 3002, "openrouter-files");
+    add_account_route(&mut catalog, 3002, "openrouter-files");
     add_group_policy_rule(
         &mut catalog,
         3,
@@ -264,7 +285,7 @@ async fn plans_management_api_channel_route() {
         302,
         r#"{"routeKey":"openai/management/files"}"#,
         "",
-        vec![RouteCandidate::new(3002, 100)],
+        vec![RouteCandidate::new(10, 100)],
         vec![],
     );
     let catalog = Arc::new(catalog);
@@ -287,9 +308,9 @@ async fn plans_management_api_channel_route() {
 }
 
 #[tokio::test]
-async fn plans_provider_native_channel_route_and_resolves_account() {
+async fn plans_provider_native_account_route_and_resolves_account() {
     let mut catalog = base_catalog();
-    add_channel_route(&mut catalog, 4001, "kling");
+    add_account_route(&mut catalog, 4001, "kling");
     add_group_policy_rule(
         &mut catalog,
         6,
@@ -297,7 +318,7 @@ async fn plans_provider_native_channel_route_and_resolves_account() {
         602,
         r#"{"routeKey":"kling.text_to_video"}"#,
         "kling.text_to_video",
-        vec![RouteCandidate::new(4001, 100)],
+        vec![RouteCandidate::new(10, 100)],
         vec![],
     );
     let catalog = Arc::new(catalog);
@@ -330,9 +351,9 @@ async fn plans_provider_native_channel_route_and_resolves_account() {
 }
 
 #[tokio::test]
-async fn plans_provider_native_channel_route_even_when_request_contains_model_metadata() {
+async fn plans_provider_native_account_route_even_when_request_contains_model_metadata() {
     let mut catalog = base_catalog();
-    add_channel_route(&mut catalog, 4001, "kling");
+    add_account_route(&mut catalog, 4001, "kling");
     add_group_policy_rule(
         &mut catalog,
         6,
@@ -340,7 +361,7 @@ async fn plans_provider_native_channel_route_even_when_request_contains_model_me
         602,
         r#"{"routeKey":"kling.text_to_video"}"#,
         "kling.text_to_video",
-        vec![RouteCandidate::new(4001, 100)],
+        vec![RouteCandidate::new(10, 100)],
         vec![],
     );
     let catalog = Arc::new(catalog);
@@ -372,7 +393,7 @@ async fn plans_provider_native_channel_route_even_when_request_contains_model_me
 #[tokio::test]
 async fn sticky_route_constraint_overrides_normal_route_selection() {
     let mut catalog = base_catalog();
-    add_channel_route(&mut catalog, 3003, "sticky-provider");
+    add_account_route(&mut catalog, 3003, "sticky-provider");
     let catalog = Arc::new(catalog);
     let mut invocation = openai_invocation(
         Method::GET,
@@ -407,8 +428,8 @@ async fn sticky_route_constraint_overrides_normal_route_selection() {
 }
 
 #[tokio::test]
-async fn model_route_plan_preserves_failover_order() {
-    let mut catalog = base_catalog();
+async fn model_route_plan_preserves_account_group_failover_order() {
+    let mut catalog = base_catalog_with_group_strategy(UpstreamAccountRoutingStrategy::Failover);
     add_model_route(
         &mut catalog,
         3001,
@@ -425,6 +446,8 @@ async fn model_route_plan_preserves_failover_order() {
         "openai.chat_completions",
         "0.120000",
     );
+    add_account_route_with_priority(&mut catalog, 3001, "primary-provider", 10);
+    add_account_route_with_priority(&mut catalog, 3002, "fallback-provider", 20);
     add_group_policy_rule(
         &mut catalog,
         4,
@@ -432,8 +455,8 @@ async fn model_route_plan_preserves_failover_order() {
         402,
         r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
         "openai/gpt-4o-mini",
-        vec![RouteCandidate::new(3001, 100)],
-        vec![RouteCandidate::new(3002, 50)],
+        vec![RouteCandidate::new(10, 100)],
+        vec![],
     );
     let catalog = Arc::new(catalog);
     let mut invocation = openai_invocation(
@@ -461,7 +484,7 @@ async fn model_route_plan_preserves_failover_order() {
 #[tokio::test]
 async fn account_resolution_preserves_credential_rotation() {
     let mut catalog = base_catalog();
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
@@ -486,6 +509,15 @@ async fn account_resolution_preserves_credential_rotation() {
         )
         .for_upstream_account("credential-provider", 3004),
     );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("credential-provider", 3004)
+            .with_credential(Some(9001), "round_robin", 10, 100)
+            .with_upstream_endpoint(
+                Some("https://provider.example/credential-provider"),
+                Some("vault://providers/credential-provider/9001"),
+            )
+            .with_account_group_binding(10, 100, 100),
+    );
     add_group_policy_rule(
         &mut catalog,
         5,
@@ -493,7 +525,7 @@ async fn account_resolution_preserves_credential_rotation() {
         502,
         r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
         "openai/gpt-4o-mini",
-        vec![RouteCandidate::new(3004, 100)],
+        vec![RouteCandidate::new(10, 100)],
         vec![],
     );
     let catalog = Arc::new(catalog);

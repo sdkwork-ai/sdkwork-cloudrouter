@@ -20,7 +20,7 @@ use std::sync::{Arc, RwLock};
 pub struct PricingCatalogRows {
     pub vendors: Vec<ModelVendorRow>,
     pub models: Vec<AiModelRow>,
-    pub provider_routes: Vec<ModelUpstreamRouteRow>,
+    pub model_upstream_routes: Vec<ModelUpstreamRouteRow>,
     pub upstream_account_routes: Vec<UpstreamAccountRouteRow>,
     pub routing_policies: Vec<RoutingPolicyRow>,
     pub routing_rules: Vec<RoutingRuleRow>,
@@ -39,8 +39,8 @@ pub struct PricingCatalogRows {
 pub struct SqlPricingCatalogSnapshotSummary {
     pub vendors: usize,
     pub models: usize,
-    pub provider_routes: usize,
-    pub callable_provider_routes: usize,
+    pub model_upstream_routes: usize,
+    pub callable_model_upstream_routes: usize,
     pub upstream_account_routes: usize,
     pub callable_upstream_account_routes: usize,
     pub provider_upstream_account_group_bindings: usize,
@@ -96,7 +96,7 @@ impl From<&ModelPrice> for ModelPriceBusinessIdentity {
 pub struct SqlPricingCatalogSnapshot {
     vendors: Vec<ModelVendorDefinition>,
     models: Vec<AiModel>,
-    provider_routes: Vec<ModelUpstreamRoute>,
+    model_upstream_routes: Vec<ModelUpstreamRoute>,
     upstream_account_routes: Vec<UpstreamAccountRoute>,
     routing_policies: Vec<RoutingPolicy>,
     routing_rules: Vec<RoutingRule>,
@@ -117,7 +117,7 @@ pub struct SqlPricingCatalogSnapshot {
     upstream_account_groups_by_id: HashMap<i64, UpstreamAccountGroup>,
     pricing_plans_by_code: HashMap<String, Vec<ScopedPricingPlan>>,
     vendors_by_code: HashMap<String, ModelVendorDefinition>,
-    provider_routes_by_key: HashMap<String, Vec<ModelUpstreamRoute>>,
+    model_upstream_routes_by_key: HashMap<String, Vec<ModelUpstreamRoute>>,
     prices_by_key: HashMap<String, Vec<ScopedModelPrice>>,
 }
 
@@ -135,8 +135,8 @@ impl SqlPricingCatalogSnapshot {
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
-            provider_routes: map_rows(
-                rows.provider_routes,
+            model_upstream_routes: map_rows(
+                rows.model_upstream_routes,
                 ModelUpstreamRouteRow::try_into_domain,
             )?,
             upstream_account_routes: map_rows(
@@ -173,7 +173,7 @@ impl SqlPricingCatalogSnapshot {
             upstream_account_groups_by_id: HashMap::new(),
             pricing_plans_by_code: HashMap::new(),
             vendors_by_code: HashMap::new(),
-            provider_routes_by_key: HashMap::new(),
+            model_upstream_routes_by_key: HashMap::new(),
             prices_by_key: HashMap::new(),
         };
         snapshot.build_indexes();
@@ -219,8 +219,8 @@ impl SqlPricingCatalogSnapshot {
             .iter()
             .map(|vendor| (vendor.vendor_code.clone(), vendor.clone()))
             .collect();
-        self.provider_routes_by_key =
-            self.provider_routes
+        self.model_upstream_routes_by_key =
+            self.model_upstream_routes
                 .iter()
                 .fold(HashMap::new(), |mut acc, route| {
                     acc.entry(route.catalog_key.trim().to_owned())
@@ -245,9 +245,9 @@ impl SqlPricingCatalogSnapshot {
         SqlPricingCatalogSnapshotSummary {
             vendors: self.vendors.len(),
             models: self.models.len(),
-            provider_routes: self.provider_routes.len(),
-            callable_provider_routes: self
-                .provider_routes
+            model_upstream_routes: self.model_upstream_routes.len(),
+            callable_model_upstream_routes: self
+                .model_upstream_routes
                 .iter()
                 .filter(|route| {
                     has_text(route.base_url.as_deref()) && has_text(route.secret_ref.as_deref())
@@ -597,7 +597,7 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
     }
 
     fn list_model_upstream_routes(&self, model: &str) -> Vec<ModelUpstreamRoute> {
-        self.provider_routes_by_key
+        self.model_upstream_routes_by_key
             .get(model.trim())
             .cloned()
             .unwrap_or_default()
@@ -745,7 +745,7 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         model: &str,
         supplier_code: &str,
     ) -> Option<ModelUpstreamRoute> {
-        self.provider_routes_by_key
+        self.model_upstream_routes_by_key
             .get(model.trim())
             .and_then(|routes| {
                 routes

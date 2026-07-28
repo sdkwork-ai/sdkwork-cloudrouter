@@ -25,10 +25,6 @@ impl UpstreamAccountGroupBindings {
         self.by_account.contains_key(&account_id)
     }
 
-    fn get_for_account(&self, account_id: i64) -> Option<&[UpstreamAccountGroupBinding]> {
-        self.by_account.get(&account_id).map(Vec::as_slice)
-    }
-
     fn contains_group(&self, account_group_id: i64) -> bool {
         self.selected_account_group_id == Some(account_group_id)
             && self
@@ -54,12 +50,12 @@ impl UpstreamAccountGroupBindings {
     }
 }
 
-pub struct ProviderRouteSelector<'a, C: PricingCatalog> {
+pub struct UpstreamRouteSelector<'a, C: PricingCatalog> {
     catalog: &'a C,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SelectProviderRouteQuery {
+pub struct SelectUpstreamModelRouteQuery {
     pub context: AuthenticatedApiKeyContext,
     pub catalog_key: String,
     pub requested_model: String,
@@ -69,7 +65,7 @@ pub struct SelectProviderRouteQuery {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SelectedProviderRoute {
+pub struct SelectedUpstreamModelRoute {
     pub route: ModelUpstreamRoute,
     pub group_id: i64,
     pub group_code: String,
@@ -79,8 +75,8 @@ pub struct SelectedProviderRoute {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SelectedProviderRoutePlan {
-    pub routes: Vec<SelectedProviderRoute>,
+pub struct SelectedUpstreamModelRoutePlan {
+    pub routes: Vec<SelectedUpstreamModelRoute>,
     pub policy_id: Option<i64>,
     pub rule_id: Option<i64>,
 }
@@ -104,44 +100,44 @@ pub struct SelectedUpstreamAccountRoute {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProviderRouteSelectionError {
-    kind: ProviderRouteSelectionErrorKind,
+pub struct UpstreamRouteSelectionError {
+    kind: UpstreamRouteSelectionErrorKind,
     message: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ProviderRouteSelectionErrorKind {
-    ProviderRouteUnavailable,
+pub enum UpstreamRouteSelectionErrorKind {
+    UpstreamRouteUnavailable,
     PricingUnavailable,
 }
 
-impl ProviderRouteSelectionError {
-    pub fn provider_route_unavailable(message: impl Into<String>) -> Self {
+impl UpstreamRouteSelectionError {
+    pub fn upstream_route_unavailable(message: impl Into<String>) -> Self {
         Self {
-            kind: ProviderRouteSelectionErrorKind::ProviderRouteUnavailable,
+            kind: UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
             message: message.into(),
         }
     }
 
     pub fn pricing_unavailable(message: impl Into<String>) -> Self {
         Self {
-            kind: ProviderRouteSelectionErrorKind::PricingUnavailable,
+            kind: UpstreamRouteSelectionErrorKind::PricingUnavailable,
             message: message.into(),
         }
     }
 
-    pub fn kind(&self) -> ProviderRouteSelectionErrorKind {
+    pub fn kind(&self) -> UpstreamRouteSelectionErrorKind {
         self.kind
     }
 }
 
-impl Display for ProviderRouteSelectionError {
+impl Display for UpstreamRouteSelectionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.message)
     }
 }
 
-impl std::error::Error for ProviderRouteSelectionError {}
+impl std::error::Error for UpstreamRouteSelectionError {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct SelectedPolicyScope {
@@ -151,20 +147,20 @@ struct SelectedPolicyScope {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PolicyScopeRouteSelection {
-    Planned(SelectedProviderRoutePlan),
-    SoftUnavailable(ProviderRouteSelectionError),
-    HardError(ProviderRouteSelectionError),
+    Planned(SelectedUpstreamModelRoutePlan),
+    SoftUnavailable(UpstreamRouteSelectionError),
+    HardError(UpstreamRouteSelectionError),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum PolicyScopeChannelRouteSelection {
+enum PolicyScopeUpstreamAccountRouteSelection {
     Selected(SelectedUpstreamAccountRoute),
-    SoftUnavailable(ProviderRouteSelectionError),
-    HardError(ProviderRouteSelectionError),
+    SoftUnavailable(UpstreamRouteSelectionError),
+    HardError(UpstreamRouteSelectionError),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum CandidateRouteEvaluation {
+enum CandidateUpstreamModelRouteEvaluation {
     Planned(Vec<ModelUpstreamRoute>),
     PricingUnavailable(DomainError),
     RoutingInvalid(DomainError),
@@ -172,42 +168,44 @@ enum CandidateRouteEvaluation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum CandidateChannelRouteEvaluation {
+enum CandidateUpstreamAccountRouteEvaluation {
     Selected(UpstreamAccountRoute),
     RoutingInvalid(DomainError),
     NoCallableCandidate,
 }
 
-impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
+impl<'a, C: PricingCatalog> UpstreamRouteSelector<'a, C> {
     pub fn new(catalog: &'a C) -> Self {
         Self { catalog }
     }
 
-    pub fn select(
+    pub fn select_model_route(
         &self,
-        query: SelectProviderRouteQuery,
-    ) -> Result<SelectedProviderRoute, ProviderRouteSelectionError> {
-        self.select_plan(query)?.first_route().ok_or_else(|| {
-            ProviderRouteSelectionError::provider_route_unavailable(
-                "selected provider route plan contains no routes",
-            )
-        })
+        query: SelectUpstreamModelRouteQuery,
+    ) -> Result<SelectedUpstreamModelRoute, UpstreamRouteSelectionError> {
+        self.select_model_route_plan(query)?
+            .first_route()
+            .ok_or_else(|| {
+                UpstreamRouteSelectionError::upstream_route_unavailable(
+                    "selected upstream model route plan contains no routes",
+                )
+            })
     }
 
-    pub fn select_plan(
+    pub fn select_model_route_plan(
         &self,
-        query: SelectProviderRouteQuery,
-    ) -> Result<SelectedProviderRoutePlan, ProviderRouteSelectionError> {
+        query: SelectUpstreamModelRouteQuery,
+    ) -> Result<SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError> {
         let mut last_unavailable = None;
         for context in self.route_contexts(&query.context)? {
-            let scoped_query = SelectProviderRouteQuery {
+            let scoped_query = SelectUpstreamModelRouteQuery {
                 context,
                 ..query.clone()
             };
-            match self.select_plan_for_context(scoped_query) {
+            match self.select_model_route_plan_for_context(scoped_query) {
                 Ok(selection) => return Ok(selection),
                 Err(error)
-                    if error.kind() == ProviderRouteSelectionErrorKind::PricingUnavailable =>
+                    if error.kind() == UpstreamRouteSelectionErrorKind::PricingUnavailable =>
                 {
                     return Err(error);
                 }
@@ -218,22 +216,22 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         }
 
         Err(last_unavailable.unwrap_or_else(|| {
-            ProviderRouteSelectionError::provider_route_unavailable(format!(
-                "provider route is not available for model: {}",
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for model: {}",
                 query.catalog_key
             ))
         }))
     }
 
-    fn select_plan_for_context(
+    fn select_model_route_plan_for_context(
         &self,
-        query: SelectProviderRouteQuery,
-    ) -> Result<SelectedProviderRoutePlan, ProviderRouteSelectionError> {
-        let channel_routes = self.catalog.list_upstream_account_routes();
-        let channel_routes_loaded = channel_routes.len();
+        query: SelectUpstreamModelRouteQuery,
+    ) -> Result<SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError> {
+        let account_routes = self.catalog.list_upstream_account_routes();
+        let account_routes_loaded = account_routes.len();
         let api_scope_keys = [query.api_code.as_str()];
         let account_group_bindings = upstream_account_group_bindings(
-            &channel_routes,
+            &account_routes,
             query.context.group_id,
             &api_scope_keys,
             query.capability,
@@ -241,30 +239,30 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         let model_routes = self.catalog.list_model_upstream_routes(&query.catalog_key);
         let model_routes_loaded = model_routes.len();
         let routes =
-            self.group_scoped_model_routes(model_routes, &channel_routes, &account_group_bindings);
-        let channel_routes =
-            self.group_scoped_channel_routes(channel_routes, &account_group_bindings);
-        if routes.is_empty() && channel_routes.is_empty() {
+            self.group_scoped_model_routes(model_routes, &account_routes, &account_group_bindings);
+        let account_routes =
+            self.group_scoped_account_routes(account_routes, &account_group_bindings);
+        if routes.is_empty() && account_routes.is_empty() {
             log_unavailable_model_route_diagnostics(
                 &query,
                 model_routes_loaded,
-                channel_routes_loaded,
+                account_routes_loaded,
                 &account_group_bindings,
                 routes.len(),
-                channel_routes.len(),
+                account_routes.len(),
             );
-            return Err(ProviderRouteSelectionError::provider_route_unavailable(
-                unavailable_model_route_message(&query, model_routes_loaded, channel_routes_loaded),
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
+                unavailable_model_route_message(&query, model_routes_loaded, account_routes_loaded),
             ));
         }
 
         let policy_scopes = self.select_policy_scopes(&query.context);
         let mut last_unavailable = None;
         for policy_scope in policy_scopes {
-            match self.select_plan_from_policy_scope(
+            match self.select_model_route_plan_from_policy_scope(
                 &query,
                 &routes,
-                &channel_routes,
+                &account_routes,
                 policy_scope,
                 &account_group_bindings,
             ) {
@@ -278,37 +276,37 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         if let Some(error) = last_unavailable {
             return Err(error);
         }
-        if let Some(selection) = self.select_group_bound_channel_route_plan(
+        if let Some(selection) = self.select_group_bound_account_route_plan(
             &query,
             &routes,
-            &channel_routes,
+            &account_routes,
             &account_group_bindings,
         )? {
             return Ok(selection);
         }
 
-        Err(ProviderRouteSelectionError::provider_route_unavailable(
+        Err(UpstreamRouteSelectionError::upstream_route_unavailable(
             format!(
-                "provider route is not available for configured channel route: routing policy scope is required for model {}",
+                "upstream route is not available for configured upstream account route: routing policy scope is required for model {}",
                 query.catalog_key
             ),
         ))
     }
 
-    pub fn select_channel_route(
+    pub fn select_account_route(
         &self,
         query: SelectUpstreamAccountRouteQuery,
-    ) -> Result<SelectedUpstreamAccountRoute, ProviderRouteSelectionError> {
+    ) -> Result<SelectedUpstreamAccountRoute, UpstreamRouteSelectionError> {
         let mut last_unavailable = None;
         for context in self.route_contexts(&query.context)? {
             let scoped_query = SelectUpstreamAccountRouteQuery {
                 context,
                 ..query.clone()
             };
-            match self.select_channel_route_for_context(scoped_query) {
+            match self.select_account_route_for_context(scoped_query) {
                 Ok(selection) => return Ok(selection),
                 Err(error)
-                    if error.kind() == ProviderRouteSelectionErrorKind::PricingUnavailable =>
+                    if error.kind() == UpstreamRouteSelectionErrorKind::PricingUnavailable =>
                 {
                     return Err(error);
                 }
@@ -319,60 +317,62 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         }
 
         Err(last_unavailable.unwrap_or_else(|| {
-            ProviderRouteSelectionError::provider_route_unavailable(format!(
-                "provider route is not available for configured channel route: routing policy scope is required for route {}",
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: routing policy scope is required for route {}",
                 query.route_key
             ))
         }))
     }
 
-    fn select_channel_route_for_context(
+    fn select_account_route_for_context(
         &self,
         query: SelectUpstreamAccountRouteQuery,
-    ) -> Result<SelectedUpstreamAccountRoute, ProviderRouteSelectionError> {
-        let channel_routes = self.catalog.list_upstream_account_routes();
+    ) -> Result<SelectedUpstreamAccountRoute, UpstreamRouteSelectionError> {
+        let account_routes = self.catalog.list_upstream_account_routes();
         let api_scope_keys = [query.api_code.as_str()];
         let account_group_bindings = upstream_account_group_bindings(
-            &channel_routes,
+            &account_routes,
             query.context.group_id,
             &api_scope_keys,
             query.capability,
         );
-        let routes = self.group_scoped_channel_routes(channel_routes, &account_group_bindings);
+        let routes = self.group_scoped_account_routes(account_routes, &account_group_bindings);
         if routes.is_empty() {
-            return Err(ProviderRouteSelectionError::provider_route_unavailable(
-                "provider route is not available for configured channel route: no channel routes are configured",
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
+                "upstream route is not available for configured upstream account route: no upstream account routes are configured",
             ));
         }
 
         let policy_scopes = self.select_policy_scopes(&query.context);
         let mut last_unavailable = None;
         for policy_scope in policy_scopes {
-            match self.select_channel_route_from_policy_scope(
+            match self.select_account_route_from_policy_scope(
                 &query,
                 &routes,
                 policy_scope,
                 &account_group_bindings,
             ) {
-                PolicyScopeChannelRouteSelection::Selected(selection) => return Ok(selection),
-                PolicyScopeChannelRouteSelection::SoftUnavailable(error) => {
+                PolicyScopeUpstreamAccountRouteSelection::Selected(selection) => {
+                    return Ok(selection)
+                }
+                PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(error) => {
                     last_unavailable = Some(error);
                 }
-                PolicyScopeChannelRouteSelection::HardError(error) => return Err(error),
+                PolicyScopeUpstreamAccountRouteSelection::HardError(error) => return Err(error),
             }
         }
         if let Some(error) = last_unavailable {
             return Err(error);
         }
         if let Some(selection) =
-            self.select_group_bound_channel_route(&routes, &account_group_bindings, &query.context)
+            self.select_group_bound_account_route(&routes, &account_group_bindings, &query.context)?
         {
             return Ok(selection);
         }
 
-        Err(ProviderRouteSelectionError::provider_route_unavailable(
+        Err(UpstreamRouteSelectionError::upstream_route_unavailable(
             format!(
-                "provider route is not available for configured channel route: routing policy scope is required for route {}",
+                "upstream route is not available for configured upstream account route: routing policy scope is required for route {}",
                 query.route_key
             ),
         ))
@@ -381,7 +381,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
     fn route_contexts(
         &self,
         context: &AuthenticatedApiKeyContext,
-    ) -> Result<Vec<AuthenticatedApiKeyContext>, ProviderRouteSelectionError> {
+    ) -> Result<Vec<AuthenticatedApiKeyContext>, UpstreamRouteSelectionError> {
         let Some(api_key) = self.catalog.find_api_key(context.api_key_id) else {
             return Ok(vec![context.clone()]);
         };
@@ -389,7 +389,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
             || api_key.organization_id != context.organization_id
             || api_key.user_id != context.user_id
         {
-            return Err(ProviderRouteSelectionError::provider_route_unavailable(
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
                 "authenticated api key context does not match catalog ownership",
             ));
         }
@@ -415,7 +415,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         let group = self
             .catalog
             .find_upstream_account_group(binding.account_group_id)?;
-        // Verify the bound channel group belongs to the same tenant/organization,
+        // Verify the bound account group belongs to the same tenant/organization,
         // or is a global resource (tenant_id == 0)
         if group.tenant_id != 0 && group.tenant_id != context.tenant_id {
             return None;
@@ -466,11 +466,11 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         scopes
     }
 
-    fn select_plan_from_policy_scope(
+    fn select_model_route_plan_from_policy_scope(
         &self,
-        query: &SelectProviderRouteQuery,
+        query: &SelectUpstreamModelRouteQuery,
         routes: &[ModelUpstreamRoute],
-        channel_routes: &[UpstreamAccountRoute],
+        account_routes: &[UpstreamAccountRoute],
         policy_scope: SelectedPolicyScope,
         account_group_bindings: &UpstreamAccountGroupBindings,
     ) -> PolicyScopeRouteSelection {
@@ -479,8 +479,8 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         {
             Some(policy) => policy,
             None => {
-                let error = ProviderRouteSelectionError::provider_route_unavailable(format!(
-                    "provider route is not available for configured channel route: {} policy scope has no routing policy for capability {:?}",
+                let error = UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                    "upstream route is not available for configured upstream account route: {} policy scope has no routing policy for capability {:?}",
                     scope_label(policy_scope.scope),
                     query.capability
                 ));
@@ -489,8 +489,8 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         };
         let Some(profile_id) = policy.default_profile_id else {
             return PolicyScopeRouteSelection::SoftUnavailable(
-                ProviderRouteSelectionError::provider_route_unavailable(format!(
-                    "provider route is not available for configured channel route: routing policy {} has no default profile",
+                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                    "upstream route is not available for configured upstream account route: routing policy {} has no default profile",
                     policy.policy_code
                 )),
             );
@@ -505,14 +505,14 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
             let candidate_chain = scoped_candidate_chain(&rule, &policy, account_group_bindings);
             let used_rule_fallback_chain =
                 candidate_chain_uses_rule_fallback(&rule, &candidate_chain);
-            match self.evaluate_candidate_route_plan(query, routes, channel_routes, candidate_chain)
+            match self.evaluate_candidate_route_plan(query, routes, account_routes, candidate_chain)
             {
-                CandidateRouteEvaluation::Planned(routes) => {
-                    return PolicyScopeRouteSelection::Planned(SelectedProviderRoutePlan {
+                CandidateUpstreamModelRouteEvaluation::Planned(routes) => {
+                    return PolicyScopeRouteSelection::Planned(SelectedUpstreamModelRoutePlan {
                         routes: routes
                             .into_iter()
                             .map(|route| {
-                                selected_provider_route(
+                                selected_upstream_model_route(
                                     route,
                                     &query.context,
                                     Some(policy.id),
@@ -524,23 +524,23 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                         rule_id: Some(rule.id),
                     });
                 }
-                CandidateRouteEvaluation::PricingUnavailable(error) => {
+                CandidateUpstreamModelRouteEvaluation::PricingUnavailable(error) => {
                     return PolicyScopeRouteSelection::HardError(
-                        ProviderRouteSelectionError::pricing_unavailable(format!(
-                            "pricing is not available for configured channel route: policy {} rule {} candidate price is unavailable for model {}: {}",
+                        UpstreamRouteSelectionError::pricing_unavailable(format!(
+                            "pricing is not available for configured upstream account route: policy {} rule {} candidate price is unavailable for model {}: {}",
                             policy.policy_code, rule.rule_code, query.catalog_key, error
                         )),
                     );
                 }
-                CandidateRouteEvaluation::RoutingInvalid(error) => {
+                CandidateUpstreamModelRouteEvaluation::RoutingInvalid(error) => {
                     return PolicyScopeRouteSelection::HardError(
-                        ProviderRouteSelectionError::provider_route_unavailable(format!(
+                        UpstreamRouteSelectionError::upstream_route_unavailable(format!(
                             "upstream account routing configuration is invalid for policy {} rule {}: {}",
                             policy.policy_code, rule.rule_code, error
                         )),
                     );
                 }
-                CandidateRouteEvaluation::NoCallableCandidate => {}
+                CandidateUpstreamModelRouteEvaluation::NoCallableCandidate => {}
             }
             if !policy
                 .fallback_mode_or_default()
@@ -548,19 +548,19 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                 && !rule.fallback_chain.is_empty()
             {
                 return PolicyScopeRouteSelection::SoftUnavailable(
-                    ProviderRouteSelectionError::provider_route_unavailable(format!(
-                        "provider route is not available for configured channel route: policy {} fallback mode none disables rule {} fallback chain for model {}",
+                    UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                        "upstream route is not available for configured upstream account route: policy {} fallback mode none disables rule {} fallback chain for model {}",
                         policy.policy_code, rule.rule_code, query.catalog_key
                     )),
                 );
             }
             return PolicyScopeRouteSelection::SoftUnavailable(
-                ProviderRouteSelectionError::provider_route_unavailable(format!(
-                    "provider route is not available for configured channel route: policy {} rule {} has no callable priced candidate channel{} for model {}",
+                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                    "upstream route is not available for configured upstream account route: policy {} rule {} has no callable priced candidate upstream account{} for model {}",
                     policy.policy_code,
                     rule.rule_code,
                     if used_rule_fallback_chain {
-                        " or fallback channel"
+                        " or fallback upstream account"
                     } else {
                         ""
                     },
@@ -569,37 +569,37 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
             );
         }
         PolicyScopeRouteSelection::SoftUnavailable(
-            ProviderRouteSelectionError::provider_route_unavailable(format!(
-                "provider route is not available for configured channel route: policy {} has no routing rule for model {}",
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: policy {} has no routing rule for model {}",
                 policy.policy_code, query.catalog_key
             )),
         )
     }
 
-    fn select_channel_route_from_policy_scope(
+    fn select_account_route_from_policy_scope(
         &self,
         query: &SelectUpstreamAccountRouteQuery,
         routes: &[UpstreamAccountRoute],
         policy_scope: SelectedPolicyScope,
         account_group_bindings: &UpstreamAccountGroupBindings,
-    ) -> PolicyScopeChannelRouteSelection {
+    ) -> PolicyScopeUpstreamAccountRouteSelection {
         let policy = match self
             .select_policy_for_capability(&policy_scope.policies, query.capability)
         {
             Some(policy) => policy,
             None => {
-                let error = ProviderRouteSelectionError::provider_route_unavailable(format!(
-                    "provider route is not available for configured channel route: {} policy scope has no routing policy for capability {:?}",
+                let error = UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                    "upstream route is not available for configured upstream account route: {} policy scope has no routing policy for capability {:?}",
                     scope_label(policy_scope.scope),
                     query.capability
                 ));
-                return PolicyScopeChannelRouteSelection::HardError(error);
+                return PolicyScopeUpstreamAccountRouteSelection::HardError(error);
             }
         };
         let Some(profile_id) = policy.default_profile_id else {
-            return PolicyScopeChannelRouteSelection::SoftUnavailable(
-                ProviderRouteSelectionError::provider_route_unavailable(format!(
-                    "provider route is not available for configured channel route: routing policy {} has no default profile",
+            return PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(
+                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                    "upstream route is not available for configured upstream account route: routing policy {} has no default profile",
                     policy.policy_code
                 )),
             );
@@ -614,9 +614,9 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
             let candidate_chain = scoped_candidate_chain(&rule, &policy, account_group_bindings);
             let used_rule_fallback_chain =
                 candidate_chain_uses_rule_fallback(&rule, &candidate_chain);
-            match self.evaluate_candidate_channel_routes(routes, candidate_chain) {
-                CandidateChannelRouteEvaluation::Selected(route) => {
-                    return PolicyScopeChannelRouteSelection::Selected(
+            match self.evaluate_candidate_account_routes(routes, candidate_chain) {
+                CandidateUpstreamAccountRouteEvaluation::Selected(route) => {
+                    return PolicyScopeUpstreamAccountRouteSelection::Selected(
                         selected_upstream_account_route(
                             route,
                             &query.context,
@@ -625,35 +625,35 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                         ),
                     );
                 }
-                CandidateChannelRouteEvaluation::RoutingInvalid(error) => {
-                    return PolicyScopeChannelRouteSelection::HardError(
-                        ProviderRouteSelectionError::provider_route_unavailable(format!(
+                CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error) => {
+                    return PolicyScopeUpstreamAccountRouteSelection::HardError(
+                        UpstreamRouteSelectionError::upstream_route_unavailable(format!(
                             "upstream account routing configuration is invalid for policy {} rule {}: {}",
                             policy.policy_code, rule.rule_code, error
                         )),
                     );
                 }
-                CandidateChannelRouteEvaluation::NoCallableCandidate => {}
+                CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate => {}
             }
             if !policy
                 .fallback_mode_or_default()
                 .allows_rule_fallback_chain()
                 && !rule.fallback_chain.is_empty()
             {
-                return PolicyScopeChannelRouteSelection::SoftUnavailable(
-                    ProviderRouteSelectionError::provider_route_unavailable(format!(
-                        "provider route is not available for configured channel route: policy {} fallback mode none disables rule {} fallback chain for route {}",
+                return PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(
+                    UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                        "upstream route is not available for configured upstream account route: policy {} fallback mode none disables rule {} fallback chain for route {}",
                         policy.policy_code, rule.rule_code, query.route_key
                     )),
                 );
             }
-            return PolicyScopeChannelRouteSelection::SoftUnavailable(
-                ProviderRouteSelectionError::provider_route_unavailable(format!(
-                    "provider route is not available for configured channel route: policy {} rule {} has no callable channel route candidate{} for route {}",
+            return PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(
+                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                    "upstream route is not available for configured upstream account route: policy {} rule {} has no callable upstream account route candidate{} for route {}",
                     policy.policy_code,
                     rule.rule_code,
                     if used_rule_fallback_chain {
-                        " or fallback channel"
+                        " or fallback upstream account"
                     } else {
                         ""
                     },
@@ -661,9 +661,9 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                 )),
             );
         }
-        PolicyScopeChannelRouteSelection::SoftUnavailable(
-            ProviderRouteSelectionError::provider_route_unavailable(format!(
-                "provider route is not available for configured channel route: policy {} has no routing rule for route {}",
+        PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: policy {} has no routing rule for route {}",
                 policy.policy_code, query.route_key
             )),
         )
@@ -727,22 +727,22 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
 
     fn evaluate_candidate_route_plan(
         &self,
-        query: &SelectProviderRouteQuery,
+        query: &SelectUpstreamModelRouteQuery,
         routes: &[ModelUpstreamRoute],
-        channel_routes: &[UpstreamAccountRoute],
+        account_routes: &[UpstreamAccountRoute],
         candidates: Vec<RouteCandidate>,
-    ) -> CandidateRouteEvaluation {
+    ) -> CandidateUpstreamModelRouteEvaluation {
         let mut pricing_error = None;
         let mut selected_routes = Vec::new();
         for candidate in candidates {
             let candidate_routes = match self.resolve_candidate_model_routes(
                 query,
                 routes,
-                channel_routes,
+                account_routes,
                 &candidate,
             ) {
                 Ok(routes) => routes,
-                Err(error) => return CandidateRouteEvaluation::RoutingInvalid(error),
+                Err(error) => return CandidateUpstreamModelRouteEvaluation::RoutingInvalid(error),
             };
             if candidate_routes.is_empty() {
                 continue;
@@ -761,60 +761,60 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
         }
         if selected_routes.is_empty() {
             pricing_error
-                .map(CandidateRouteEvaluation::PricingUnavailable)
-                .unwrap_or(CandidateRouteEvaluation::NoCallableCandidate)
+                .map(CandidateUpstreamModelRouteEvaluation::PricingUnavailable)
+                .unwrap_or(CandidateUpstreamModelRouteEvaluation::NoCallableCandidate)
         } else {
-            CandidateRouteEvaluation::Planned(selected_routes)
+            CandidateUpstreamModelRouteEvaluation::Planned(selected_routes)
         }
     }
 
-    fn select_group_bound_channel_route_plan(
+    fn select_group_bound_account_route_plan(
         &self,
-        query: &SelectProviderRouteQuery,
+        query: &SelectUpstreamModelRouteQuery,
         routes: &[ModelUpstreamRoute],
-        channel_routes: &[UpstreamAccountRoute],
+        account_routes: &[UpstreamAccountRoute],
         account_group_bindings: &UpstreamAccountGroupBindings,
-    ) -> Result<Option<SelectedProviderRoutePlan>, ProviderRouteSelectionError> {
+    ) -> Result<Option<SelectedUpstreamModelRoutePlan>, UpstreamRouteSelectionError> {
         let candidates =
-            group_bound_channel_route_candidates(channel_routes, account_group_bindings);
+            group_bound_account_route_candidates(account_routes, account_group_bindings);
         if candidates.is_empty() {
             return Ok(None);
         }
 
-        match self.evaluate_candidate_route_plan(query, routes, channel_routes, candidates) {
-            CandidateRouteEvaluation::Planned(routes) => Ok(Some(SelectedProviderRoutePlan {
+        match self.evaluate_candidate_route_plan(query, routes, account_routes, candidates) {
+            CandidateUpstreamModelRouteEvaluation::Planned(routes) => Ok(Some(SelectedUpstreamModelRoutePlan {
                 routes: routes
                     .into_iter()
-                    .map(|route| selected_provider_route(route, &query.context, None, None))
+                    .map(|route| selected_upstream_model_route(route, &query.context, None, None))
                     .collect(),
                 policy_id: None,
                 rule_id: None,
             })),
-            CandidateRouteEvaluation::PricingUnavailable(error) => {
-                Err(ProviderRouteSelectionError::pricing_unavailable(format!(
-                    "pricing is not available for group-bound channel route for model {}: {}",
+            CandidateUpstreamModelRouteEvaluation::PricingUnavailable(error) => {
+                Err(UpstreamRouteSelectionError::pricing_unavailable(format!(
+                    "pricing is not available for group-bound upstream account route for model {}: {}",
                     query.catalog_key, error
                 )))
             }
-            CandidateRouteEvaluation::RoutingInvalid(error) => Err(
-                ProviderRouteSelectionError::provider_route_unavailable(format!(
+            CandidateUpstreamModelRouteEvaluation::RoutingInvalid(error) => Err(
+                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
                     "upstream account routing configuration is invalid for group-bound route: {}",
                     error
                 )),
             ),
-            CandidateRouteEvaluation::NoCallableCandidate => Ok(None),
+            CandidateUpstreamModelRouteEvaluation::NoCallableCandidate => Ok(None),
         }
     }
 
     fn resolve_candidate_model_routes(
         &self,
-        query: &SelectProviderRouteQuery,
+        query: &SelectUpstreamModelRouteQuery,
         routes: &[ModelUpstreamRoute],
-        channel_routes: &[UpstreamAccountRoute],
+        account_routes: &[UpstreamAccountRoute],
         candidate: &RouteCandidate,
     ) -> DomainResult<Vec<ModelUpstreamRoute>> {
         let group = self.require_account_group(candidate.account_group_id)?;
-        let account_routes = channel_routes
+        let account_routes = account_routes
             .iter()
             .filter(|route| {
                 account_route_matches_candidate_group(route, candidate)
@@ -824,7 +824,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                         candidate.region_code.as_deref(),
                     )
             })
-            .filter(|route| self.channel_route_is_callable(route))
+            .filter(|route| self.account_route_is_callable(route))
             .collect::<Vec<_>>()
             .into_iter()
             .cloned()
@@ -847,13 +847,13 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                 matched_model_route = true;
                 push_unique_model_route(
                     &mut resolved,
-                    apply_channel_route_account(route.clone(), &account_route),
+                    apply_upstream_account_route(route.clone(), &account_route),
                 );
             }
             if !matched_model_route {
                 push_unique_model_route(
                     &mut resolved,
-                    synthetic_model_route_from_channel_route(
+                    synthetic_model_route_from_account_route(
                         query,
                         &account_route,
                         candidate.account_group_id,
@@ -870,11 +870,11 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                 || !route.auth_profile.default_headers.is_empty())
     }
 
-    fn evaluate_candidate_channel_routes(
+    fn evaluate_candidate_account_routes(
         &self,
         routes: &[UpstreamAccountRoute],
         candidates: Vec<RouteCandidate>,
-    ) -> CandidateChannelRouteEvaluation {
+    ) -> CandidateUpstreamAccountRouteEvaluation {
         for candidate in candidates {
             let candidate_routes = routes
                 .iter()
@@ -888,41 +888,49 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
                 .cloned()
                 .collect::<Vec<_>>()
                 .into_iter()
-                .filter(|route| self.channel_route_is_callable(route))
+                .filter(|route| self.account_route_is_callable(route))
                 .collect::<Vec<_>>();
             let group = match self.require_account_group(candidate.account_group_id) {
                 Ok(group) => group,
-                Err(error) => return CandidateChannelRouteEvaluation::RoutingInvalid(error),
+                Err(error) => {
+                    return CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error)
+                }
             };
             let routes = match plan_upstream_account_routes(&group, candidate_routes) {
                 Ok(routes) => routes,
-                Err(error) => return CandidateChannelRouteEvaluation::RoutingInvalid(error),
+                Err(error) => {
+                    return CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error)
+                }
             };
             let Some(route) = routes.into_iter().next() else {
                 continue;
             };
-            return CandidateChannelRouteEvaluation::Selected(route);
+            return CandidateUpstreamAccountRouteEvaluation::Selected(route);
         }
-        CandidateChannelRouteEvaluation::NoCallableCandidate
+        CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate
     }
 
-    fn select_group_bound_channel_route(
+    fn select_group_bound_account_route(
         &self,
         routes: &[UpstreamAccountRoute],
         account_group_bindings: &UpstreamAccountGroupBindings,
         context: &AuthenticatedApiKeyContext,
-    ) -> Option<SelectedUpstreamAccountRoute> {
-        let candidates = group_bound_channel_route_candidates(routes, account_group_bindings);
-        match self.evaluate_candidate_channel_routes(routes, candidates) {
-            CandidateChannelRouteEvaluation::Selected(route) => {
-                Some(selected_upstream_account_route(route, context, None, None))
+    ) -> Result<Option<SelectedUpstreamAccountRoute>, UpstreamRouteSelectionError> {
+        let candidates = group_bound_account_route_candidates(routes, account_group_bindings);
+        match self.evaluate_candidate_account_routes(routes, candidates) {
+            CandidateUpstreamAccountRouteEvaluation::Selected(route) => {
+                Ok(Some(selected_upstream_account_route(route, context, None, None)))
             }
-            CandidateChannelRouteEvaluation::RoutingInvalid(_) => None,
-            CandidateChannelRouteEvaluation::NoCallableCandidate => None,
+            CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error) => Err(
+                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                    "upstream account routing configuration is invalid for the selected account group: {error}"
+                )),
+            ),
+            CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate => Ok(None),
         }
     }
 
-    fn group_scoped_channel_routes(
+    fn group_scoped_account_routes(
         &self,
         routes: Vec<UpstreamAccountRoute>,
         account_group_bindings: &UpstreamAccountGroupBindings,
@@ -936,23 +944,23 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
     fn group_scoped_model_routes(
         &self,
         routes: Vec<ModelUpstreamRoute>,
-        channel_routes: &[UpstreamAccountRoute],
+        account_routes: &[UpstreamAccountRoute],
         account_group_bindings: &UpstreamAccountGroupBindings,
     ) -> Vec<ModelUpstreamRoute> {
         routes
             .into_iter()
             .filter(|route| {
-                channel_routes.iter().any(|channel_route| {
-                    channel_route.account_id == route.account_id
-                        && channel_route.supplier_code == route.supplier_code
-                        && account_group_bindings.contains_account(channel_route.account_id)
-                        && self.channel_route_is_callable(channel_route)
+                account_routes.iter().any(|account_route| {
+                    account_route.account_id == route.account_id
+                        && account_route.supplier_code == route.supplier_code
+                        && account_group_bindings.contains_account(account_route.account_id)
+                        && self.account_route_is_callable(account_route)
                 })
             })
             .collect()
     }
 
-    fn channel_route_is_callable(&self, route: &UpstreamAccountRoute) -> bool {
+    fn account_route_is_callable(&self, route: &UpstreamAccountRoute) -> bool {
         has_text(route.base_url.as_deref())
             && (has_text(route.secret_ref.as_deref())
                 || !route.auth_profile.default_headers.is_empty())
@@ -971,7 +979,7 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
 
     fn ensure_route_is_priced(
         &self,
-        query: &SelectProviderRouteQuery,
+        query: &SelectUpstreamModelRouteQuery,
         route: &ModelUpstreamRoute,
     ) -> DomainResult<()> {
         let resolved = PricingResolver::new(self.catalog).resolve(ResolveModelPriceQuery {
@@ -993,19 +1001,19 @@ impl<'a, C: PricingCatalog> ProviderRouteSelector<'a, C> {
     }
 }
 
-impl SelectedProviderRoutePlan {
-    pub fn first_route(&self) -> Option<SelectedProviderRoute> {
+impl SelectedUpstreamModelRoutePlan {
+    pub fn first_route(&self) -> Option<SelectedUpstreamModelRoute> {
         self.routes.first().cloned()
     }
 }
 
-fn selected_provider_route(
+fn selected_upstream_model_route(
     route: ModelUpstreamRoute,
     context: &AuthenticatedApiKeyContext,
     policy_id: Option<i64>,
     rule_id: Option<i64>,
-) -> SelectedProviderRoute {
-    SelectedProviderRoute {
+) -> SelectedUpstreamModelRoute {
+    SelectedUpstreamModelRoute {
         route,
         group_id: context.group_id,
         group_code: context.group_code.clone(),
@@ -1029,18 +1037,6 @@ fn selected_upstream_account_route(
         policy_id,
         rule_id,
     }
-}
-
-fn candidate_chain(rule: &RoutingRule, policy: &RoutingPolicy) -> Vec<RouteCandidate> {
-    let mut candidates = rule.candidate_account_groups.clone();
-    candidates.sort_by_key(|candidate| (Reverse(candidate.weight), candidate.account_group_id));
-    if policy
-        .fallback_mode_or_default()
-        .allows_rule_fallback_chain()
-    {
-        candidates.extend(rule.fallback_chain.clone());
-    }
-    candidates
 }
 
 fn scoped_candidate_chain(
@@ -1084,7 +1080,7 @@ fn group_bound_candidates(
     candidates
 }
 
-fn group_bound_channel_route_candidates(
+fn group_bound_account_route_candidates(
     routes: &[UpstreamAccountRoute],
     account_group_bindings: &UpstreamAccountGroupBindings,
 ) -> Vec<RouteCandidate> {
@@ -1148,7 +1144,7 @@ fn capability_match_rank(policy: &RoutingPolicy, capability: RoutingCapability) 
 
 fn scope_label(scope: RoutingPolicyScope) -> &'static str {
     match scope {
-        RoutingPolicyScope::UpstreamAccountGroup => "channel group",
+        RoutingPolicyScope::UpstreamAccountGroup => "account group",
         RoutingPolicyScope::ApiKey => "api key",
         RoutingPolicyScope::Organization => "organization",
         RoutingPolicyScope::Tenant => "tenant",
@@ -1207,29 +1203,29 @@ fn normalize_region_code(value: &str) -> String {
 }
 
 fn unavailable_model_route_message(
-    query: &SelectProviderRouteQuery,
+    query: &SelectUpstreamModelRouteQuery,
     model_routes_loaded: usize,
-    channel_routes_loaded: usize,
+    account_routes_loaded: usize,
 ) -> String {
-    if model_routes_loaded == 0 && channel_routes_loaded == 0 {
+    if model_routes_loaded == 0 && account_routes_loaded == 0 {
         return format!(
-            "provider route snapshot is empty for model: {}",
+            "upstream route snapshot is empty for model: {}",
             query.catalog_key
         );
     }
     format!(
-        "provider route is not available for model: {}",
+        "upstream route is not available for model: {}",
         query.catalog_key
     )
 }
 
 fn log_unavailable_model_route_diagnostics(
-    query: &SelectProviderRouteQuery,
+    query: &SelectUpstreamModelRouteQuery,
     model_routes_loaded: usize,
-    channel_routes_loaded: usize,
+    account_routes_loaded: usize,
     account_group_bindings: &UpstreamAccountGroupBindings,
     scoped_model_routes: usize,
-    scoped_channel_routes: usize,
+    scoped_account_routes: usize,
 ) {
     tracing::warn!(
         requested_model = %query.requested_model,
@@ -1242,11 +1238,11 @@ fn log_unavailable_model_route_diagnostics(
         account_group_code = %query.context.group_code,
         capability = ?query.capability,
         model_routes_loaded,
-        channel_routes_loaded,
+        account_routes_loaded,
         matching_group_bound_accounts = account_group_bindings.matched_account_count(),
         scoped_model_routes,
-        scoped_channel_routes,
-        "provider route selection found no available model or channel route"
+        scoped_account_routes,
+        "upstream route selection found no available model or upstream account route"
     );
 }
 
@@ -1276,14 +1272,6 @@ fn upstream_account_group_bindings(
         }
     }
     bindings
-}
-
-fn best_group_binding(
-    bindings: &[UpstreamAccountGroupBinding],
-) -> Option<&UpstreamAccountGroupBinding> {
-    bindings
-        .iter()
-        .min_by_key(|binding| (binding.priority, Reverse(binding.weight)))
 }
 
 fn binding_matches_api_scope(
@@ -1356,8 +1344,8 @@ fn capability_binding_codes(capability: RoutingCapability) -> &'static [&'static
     }
 }
 
-fn synthetic_model_route_from_channel_route(
-    query: &SelectProviderRouteQuery,
+fn synthetic_model_route_from_account_route(
+    query: &SelectUpstreamModelRouteQuery,
     route: &UpstreamAccountRoute,
     account_group_id: i64,
 ) -> ModelUpstreamRoute {
@@ -1387,25 +1375,25 @@ fn synthetic_model_route_from_channel_route(
     model_route
 }
 
-fn apply_channel_route_account(
+fn apply_upstream_account_route(
     route: ModelUpstreamRoute,
-    channel_route: &UpstreamAccountRoute,
+    account_route: &UpstreamAccountRoute,
 ) -> ModelUpstreamRoute {
     let mut route = route
-        .with_region_code(&channel_route.region_code)
+        .with_region_code(&account_route.region_code)
         .with_credential(
-            channel_route.credential_id,
-            channel_route.credential_rotation.clone(),
-            channel_route.credential_priority,
-            channel_route.credential_weight,
+            account_route.credential_id,
+            account_route.credential_rotation.clone(),
+            account_route.credential_priority,
+            account_route.credential_weight,
         )
         .with_upstream_endpoint(
-            channel_route.base_url.clone(),
-            channel_route.secret_ref.clone(),
+            account_route.base_url.clone(),
+            account_route.secret_ref.clone(),
         )
-        .with_auth_profile(channel_route.auth_profile.clone());
-    route.timeout_ms = channel_route.timeout_ms;
-    route.retry_policy = channel_route.retry_policy.clone();
+        .with_auth_profile(account_route.auth_profile.clone());
+    route.timeout_ms = account_route.timeout_ms;
+    route.retry_policy = account_route.retry_policy.clone();
     route
 }
 
@@ -1434,7 +1422,7 @@ fn same_model_route_target(left: &ModelUpstreamRoute, right: &ModelUpstreamRoute
 fn account_route_allows_model_request(
     route: &UpstreamAccountRoute,
     candidate: &RouteCandidate,
-    query: &SelectProviderRouteQuery,
+    query: &SelectUpstreamModelRouteQuery,
 ) -> bool {
     let Some(binding) = route
         .account_group_bindings
@@ -1454,7 +1442,7 @@ fn account_route_allows_model_request(
 fn matching_resource_entitlement<'a>(
     route: &'a UpstreamAccountRoute,
     account_group_id: i64,
-    query: &SelectProviderRouteQuery,
+    query: &SelectUpstreamModelRouteQuery,
 ) -> Option<&'a crate::domain::UpstreamResourceEntitlement> {
     route
         .account_group_bindings
@@ -1468,7 +1456,7 @@ fn matching_resource_entitlement<'a>(
 
 fn resource_entitlement_matches_request(
     entitlement: &crate::domain::UpstreamResourceEntitlement,
-    query: &SelectProviderRouteQuery,
+    query: &SelectUpstreamModelRouteQuery,
 ) -> bool {
     let catalog_key = query.catalog_key.trim();
     let requested_model = query.requested_model.trim();
@@ -1561,7 +1549,7 @@ fn model_route_matches_request_api(route: &ModelUpstreamRoute, requested_api_cod
         .unwrap_or(true)
 }
 
-fn provider_native_model_from_query(query: &SelectProviderRouteQuery) -> String {
+fn provider_native_model_from_query(query: &SelectUpstreamModelRouteQuery) -> String {
     if let Some(native_model) = native_model_from_base_catalog_key(&query.catalog_key) {
         return native_model;
     }

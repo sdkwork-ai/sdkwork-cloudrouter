@@ -6,7 +6,7 @@ use axum::http::{Request, StatusCode};
 use sdkwork_claw_test_support::assert_server_generated_request_id;
 use sdkwork_clawrouter_router_service::api::{
     OpenAiInvocationContext, OpenAiInvocationPlugin, OpenAiInvocationPluginFuture,
-    OpenAiInvocationRelayOutcome, OpenAiProviderRoute,
+    OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute,
 };
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::domain::{
@@ -39,7 +39,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         )
         .with_catalog_key("openai/text-embedding-3-small"),
     );
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/text-embedding-3-small",
             "text-embedding-3-small",
@@ -130,7 +130,7 @@ fn catalog_with_hashed_api_key_missing_billing_subject(key_hash: String) -> InMe
 
 fn catalog_with_embeddings_fallback_route(key_hash: String) -> InMemoryPricingCatalog {
     let mut catalog = catalog_with_hashed_api_key(key_hash);
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/text-embedding-3-small",
             "text-embedding-3-small",
@@ -482,7 +482,7 @@ impl OpenAiInvocationPlugin for RecordingEmbeddingsInvocationPlugin {
     fn after_route_selection<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        route: &'a mut OpenAiProviderRoute,
+        route: &'a mut OpenAiUpstreamRoute,
     ) -> OpenAiInvocationPluginFuture<'a> {
         self.events.lock().unwrap().push(format!(
             "after_route_selection:{}:{}",
@@ -494,13 +494,14 @@ impl OpenAiInvocationPlugin for RecordingEmbeddingsInvocationPlugin {
     fn before_relay<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        route: &'a mut OpenAiProviderRoute,
+        route: &'a mut OpenAiUpstreamRoute,
     ) -> OpenAiInvocationPluginFuture<'a> {
         self.events.lock().unwrap().push(format!(
             "before_relay:{}",
             route.provider_base_url.as_deref().unwrap_or_default()
         ));
-        route.provider_base_url = Some("http://plugin-account-pool.internal/embeddings".to_owned());
+        route.provider_base_url =
+            Some("http://plugin-upstream-account-group.internal/embeddings".to_owned());
         route.provider_secret_ref =
             Some("vault://providers/openrouter/account/embeddings-plugin".to_owned());
         route.provider_auth_profile = ProviderAuthProfile::header("x-api-key");
@@ -510,7 +511,7 @@ impl OpenAiInvocationPlugin for RecordingEmbeddingsInvocationPlugin {
     fn after_relay<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        _route: &'a OpenAiProviderRoute,
+        _route: &'a OpenAiUpstreamRoute,
         outcome: &'a OpenAiInvocationRelayOutcome,
     ) -> OpenAiInvocationPluginFuture<'a> {
         self.events
@@ -559,13 +560,13 @@ async fn openai_embeddings_invocation_plugins_cannot_override_account_before_rel
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!(
-        "provider_route_mutation_not_allowed",
+        "upstream_route_mutation_not_allowed",
         payload["error"]["code"]
     );
     assert!(payload["error"]["message"]
         .as_str()
         .unwrap()
-        .contains("plugin mutated selected provider route"));
+        .contains("plugin mutated selected upstream route"));
     assert_eq!(
         vec![
             "before_route_selection:text-embedding-3-small",
@@ -826,7 +827,7 @@ async fn openai_embeddings_rejects_chat_only_model_before_fake_success() {
         "openai",
         vec!["chat"],
     ));
-    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
+    catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",

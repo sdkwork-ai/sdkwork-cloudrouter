@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use sdkwork_clawrouter_router_service::application::{
-    AuthenticatedApiKeyContext, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
-    SelectProviderRouteQuery, SelectUpstreamAccountRouteQuery,
+    AuthenticatedApiKeyContext, SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery,
+    UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 use sdkwork_clawrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, GatewayApiKeyAccountGroupBinding,
@@ -92,8 +92,8 @@ fn context(group_id: i64) -> AuthenticatedApiKeyContext {
     }
 }
 
-fn model_query(group_id: i64) -> SelectProviderRouteQuery {
-    SelectProviderRouteQuery {
+fn model_query(group_id: i64) -> SelectUpstreamModelRouteQuery {
+    SelectUpstreamModelRouteQuery {
         context: context(group_id),
         catalog_key: MODEL_CATALOG_KEY.to_owned(),
         requested_model: MODEL_ID.to_owned(),
@@ -174,8 +174,8 @@ fn add_model_policy(
 }
 
 fn select_account(catalog: &InMemoryPricingCatalog, group_id: i64) -> i64 {
-    ProviderRouteSelector::new(catalog)
-        .select(model_query(group_id))
+    UpstreamRouteSelector::new(catalog)
+        .select_model_route(model_query(group_id))
         .unwrap()
         .route
         .account_id
@@ -194,8 +194,8 @@ fn group_bound_account_routes_work_without_an_explicit_policy() {
         account_route(group_id, 3001, "openai-direct", 1, 100),
     );
 
-    let selected = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap();
 
     assert_eq!(3001, selected.route.account_id);
@@ -218,12 +218,12 @@ fn routing_rule_candidates_are_account_group_ids_not_account_ids() {
     );
     add_model_policy(&mut catalog, group_id, vec![RouteCandidate::new(3001, 100)]);
 
-    let error = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap_err();
 
     assert_eq!(
-        ProviderRouteSelectionErrorKind::ProviderRouteUnavailable,
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
         error.kind()
     );
     assert!(error.to_string().contains("no callable priced candidate"));
@@ -251,8 +251,8 @@ fn matching_group_policy_selects_an_account_inside_the_group() {
         vec![RouteCandidate::new(group_id, 100)],
     );
 
-    let selected = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap();
 
     assert_eq!(3002, selected.route.account_id);
@@ -271,8 +271,8 @@ fn authenticated_api_key_scope_mismatch_fails_closed() {
     let mut query = model_query(group_id);
     query.context.tenant_id = 999;
 
-    let error = ProviderRouteSelector::new(&catalog)
-        .select(query)
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(query)
         .unwrap_err();
 
     assert!(error
@@ -440,8 +440,8 @@ fn fallback_mode_none_returns_only_the_primary_account() {
         account_route(group_id, 3002, "supplier-b", 2, 100),
     );
 
-    let plan = ProviderRouteSelector::new(&catalog)
-        .select_plan(model_query(group_id))
+    let plan = UpstreamRouteSelector::new(&catalog)
+        .select_model_route_plan(model_query(group_id))
         .unwrap();
 
     assert_eq!(
@@ -474,8 +474,8 @@ fn fallback_mode_same_supplier_excludes_other_suppliers() {
         account_route(group_id, 3003, "supplier-b", 3, 100),
     );
 
-    let plan = ProviderRouteSelector::new(&catalog)
-        .select_plan(model_query(group_id))
+    let plan = UpstreamRouteSelector::new(&catalog)
+        .select_model_route_plan(model_query(group_id))
         .unwrap();
     let accounts = plan
         .routes
@@ -503,8 +503,8 @@ fn fallback_mode_cross_supplier_keeps_the_ordered_fallback_chain() {
         account_route(group_id, 3002, "supplier-b", 2, 100),
     );
 
-    let plan = ProviderRouteSelector::new(&catalog)
-        .select_plan(model_query(group_id))
+    let plan = UpstreamRouteSelector::new(&catalog)
+        .select_model_route_plan(model_query(group_id))
         .unwrap();
 
     assert_eq!(
@@ -545,8 +545,8 @@ fn endpoint_priority_is_applied_after_account_selection() {
             ),
     );
 
-    let selected = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap();
 
     assert_eq!(
@@ -586,8 +586,8 @@ fn endpoint_weight_distributes_equal_priority_base_urls() {
 
     let mut counts = BTreeMap::new();
     for _ in 0..4 {
-        let url = ProviderRouteSelector::new(&catalog)
-            .select(model_query(group_id))
+        let url = UpstreamRouteSelector::new(&catalog)
+            .select_model_route(model_query(group_id))
             .unwrap()
             .route
             .base_url
@@ -637,8 +637,8 @@ fn credential_priority_is_applied_inside_the_selected_endpoint() {
         base.with_credential(Some(1), "priority", 1, 1),
     );
 
-    let selected = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap();
 
     assert_eq!(Some(1), selected.route.credential_id);
@@ -664,8 +664,8 @@ fn credential_round_robin_rotates_equal_priority_credentials() {
 
     let credentials = (0..4)
         .map(|_| {
-            ProviderRouteSelector::new(&catalog)
-                .select(model_query(group_id))
+            UpstreamRouteSelector::new(&catalog)
+                .select_model_route(model_query(group_id))
                 .unwrap()
                 .route
                 .credential_id
@@ -692,12 +692,12 @@ fn configured_empty_resource_intersection_is_fail_closed() {
             .with_account_group_bindings(vec![binding]),
     );
 
-    let error = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap_err();
 
     assert_eq!(
-        ProviderRouteSelectionErrorKind::ProviderRouteUnavailable,
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
         error.kind()
     );
 }
@@ -747,8 +747,8 @@ fn one_mismatched_resource_dimension_denies_the_route() {
             .with_account_group_bindings(vec![binding]),
     );
 
-    assert!(ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    assert!(UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .is_err());
 }
 
@@ -773,8 +773,8 @@ fn member_api_scope_and_capability_are_both_enforced() {
             .with_account_group_bindings(vec![binding]),
     );
 
-    assert!(ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    assert!(UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .is_err());
 }
 
@@ -810,8 +810,8 @@ fn region_scoped_group_candidate_selects_the_matching_deployment() {
         vec![RouteCandidate::new(group_id, 100).with_region_code("cn")],
     );
 
-    let selected = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap();
 
     assert_eq!("cn", selected.route.region_code);
@@ -833,12 +833,12 @@ fn callable_route_without_upstream_price_reports_pricing_unavailable() {
         100,
     ));
 
-    let error = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap_err();
 
     assert_eq!(
-        ProviderRouteSelectionErrorKind::PricingUnavailable,
+        UpstreamRouteSelectionErrorKind::PricingUnavailable,
         error.kind()
     );
 }
@@ -855,12 +855,12 @@ fn missing_endpoint_or_credential_is_not_callable() {
         UpstreamAccountRoute::new("supplier-a", 3001).with_account_group_binding(group_id, 1, 100),
     );
 
-    let error = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap_err();
 
     assert_eq!(
-        ProviderRouteSelectionErrorKind::ProviderRouteUnavailable,
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
         error.kind()
     );
 }
@@ -904,8 +904,8 @@ fn api_key_account_group_binding_priority_selects_the_premium_group() {
         account_route(premium_group_id, 4001, "premium-supplier", 1, 100),
     );
 
-    let selected = ProviderRouteSelector::new(&catalog)
-        .select(model_query(standard_group_id))
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(standard_group_id))
         .unwrap();
 
     assert_eq!(premium_group_id, selected.group_id);
@@ -929,8 +929,8 @@ fn route_key_requests_use_the_same_group_strategy() {
         account_route(group_id, 3002, "supplier-b", 1, 100),
     );
 
-    let selected = ProviderRouteSelector::new(&catalog)
-        .select_channel_route(SelectUpstreamAccountRouteQuery {
+    let selected = UpstreamRouteSelector::new(&catalog)
+        .select_account_route(SelectUpstreamAccountRouteQuery {
             context: context(group_id),
             route_key: "openai.files".to_owned(),
             api_code: "openai.files".to_owned(),
@@ -956,8 +956,8 @@ fn non_positive_cost_multiplier_is_rejected_as_invalid_routing_configuration() {
         account_route(group_id, 3001, "supplier-a", 1, 100),
     );
 
-    let error = ProviderRouteSelector::new(&catalog)
-        .select(model_query(group_id))
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
         .unwrap_err();
 
     assert!(error

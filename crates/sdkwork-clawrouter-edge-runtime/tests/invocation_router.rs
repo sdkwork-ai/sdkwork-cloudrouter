@@ -383,7 +383,7 @@ fn catalog_with_hashed_api_key_and_base_url(
         )
         .with_catalog_key("kling.text_to_video"),
     );
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
@@ -549,7 +549,7 @@ fn catalog_with_failover_routes_and_hashed_api_key(
     fallback_base_url: &str,
 ) -> InMemoryPricingCatalog {
     let mut catalog = catalog_with_hashed_api_key_and_base_url(key_hash, primary_base_url);
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
@@ -631,7 +631,7 @@ fn catalog_with_encoded_image_model_and_hashed_api_key(key_hash: &str) -> InMemo
         )
         .with_catalog_key("openrouter/gpt-4o-mini+latest"),
     );
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openrouter/gpt-4o-mini+latest",
             "openrouter/gpt-4o-mini+latest",

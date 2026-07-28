@@ -11,7 +11,7 @@ use crate::api::openai_error::openai_error;
 use crate::api::request_id::generate_server_request_id;
 use crate::application::AuthenticatedApiKeyContext;
 
-pub use super::openai_runtime::ResolvedOpenAiProviderRoute as OpenAiProviderRoute;
+pub use super::openai_runtime::ResolvedOpenAiUpstreamRoute as OpenAiUpstreamRoute;
 
 const X_TRACE_ID: &str = "x-trace-id";
 const MAX_HTTP_USER_AGENT_LEN: usize = 1024;
@@ -261,10 +261,10 @@ impl OpenAiInvocationPlugin for OpenAiBillingSubjectGuardPlugin {
                 missing.push("user");
             }
             if subject.group_id <= 0 {
-                missing.push("channel group");
+                missing.push("upstream account group");
             }
             if subject.group_code.trim().is_empty() {
-                missing.push("channel group code");
+                missing.push("upstream account group code");
             }
             if subject.pricing_plan_code.trim().is_empty() {
                 missing.push("pricing plan");
@@ -297,7 +297,7 @@ pub trait OpenAiInvocationPlugin: Send + Sync {
     fn after_route_selection<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        _route: &'a mut OpenAiProviderRoute,
+        _route: &'a mut OpenAiUpstreamRoute,
     ) -> OpenAiInvocationPluginFuture<'a> {
         ok_plugin_future()
     }
@@ -305,7 +305,7 @@ pub trait OpenAiInvocationPlugin: Send + Sync {
     fn before_relay<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        _route: &'a mut OpenAiProviderRoute,
+        _route: &'a mut OpenAiUpstreamRoute,
     ) -> OpenAiInvocationPluginFuture<'a> {
         ok_plugin_future()
     }
@@ -313,7 +313,7 @@ pub trait OpenAiInvocationPlugin: Send + Sync {
     fn after_relay<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        _route: &'a OpenAiProviderRoute,
+        _route: &'a OpenAiUpstreamRoute,
         _outcome: &'a OpenAiInvocationRelayOutcome,
     ) -> OpenAiInvocationPluginFuture<'a> {
         ok_plugin_future()
@@ -322,7 +322,7 @@ pub trait OpenAiInvocationPlugin: Send + Sync {
     fn on_error<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        _route: Option<&'a OpenAiProviderRoute>,
+        _route: Option<&'a OpenAiUpstreamRoute>,
         _error: &'a OpenAiInvocationPluginError,
     ) -> OpenAiInvocationPluginFuture<'a> {
         ok_plugin_future()
@@ -331,7 +331,7 @@ pub trait OpenAiInvocationPlugin: Send + Sync {
     fn on_route_fault<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        _route: &'a OpenAiProviderRoute,
+        _route: &'a OpenAiUpstreamRoute,
         _fault: &'a OpenAiInvocationFault,
     ) -> OpenAiInvocationPluginFuture<'a> {
         ok_plugin_future()
@@ -340,7 +340,7 @@ pub trait OpenAiInvocationPlugin: Send + Sync {
     fn on_route_success<'a>(
         &'a self,
         _context: &'a OpenAiInvocationContext,
-        _route: &'a OpenAiProviderRoute,
+        _route: &'a OpenAiUpstreamRoute,
         _outcome: &'a OpenAiInvocationRelayOutcome,
     ) -> OpenAiInvocationPluginFuture<'a> {
         ok_plugin_future()
@@ -372,7 +372,7 @@ pub(super) async fn notify_before_route_selection(
 pub(super) async fn notify_after_route_selection(
     plugins: &[OpenAiInvocationPluginRef],
     context: &OpenAiInvocationContext,
-    route: &mut OpenAiProviderRoute,
+    route: &mut OpenAiUpstreamRoute,
 ) -> Result<(), OpenAiInvocationPluginError> {
     let selected_route = route.clone();
     for plugin in plugins {
@@ -383,7 +383,7 @@ pub(super) async fn notify_after_route_selection(
         }
         result?;
         if route_was_mutated {
-            return Err(provider_route_mutation_not_allowed());
+            return Err(upstream_route_mutation_not_allowed());
         }
     }
     Ok(())
@@ -392,7 +392,7 @@ pub(super) async fn notify_after_route_selection(
 pub(super) async fn notify_before_relay(
     plugins: &[OpenAiInvocationPluginRef],
     context: &OpenAiInvocationContext,
-    route: &mut OpenAiProviderRoute,
+    route: &mut OpenAiUpstreamRoute,
 ) -> Result<(), OpenAiInvocationPluginError> {
     let selected_route = route.clone();
     for plugin in plugins {
@@ -403,25 +403,25 @@ pub(super) async fn notify_before_relay(
         }
         result?;
         if route_was_mutated {
-            return Err(provider_route_mutation_not_allowed());
+            return Err(upstream_route_mutation_not_allowed());
         }
     }
     Ok(())
 }
 
-fn provider_route_mutation_not_allowed() -> OpenAiInvocationPluginError {
+fn upstream_route_mutation_not_allowed() -> OpenAiInvocationPluginError {
     OpenAiInvocationPluginError::new(
         StatusCode::INTERNAL_SERVER_ERROR,
-        "provider_route_mutation_not_allowed",
+        "upstream_route_mutation_not_allowed",
         "server_error",
-        "plugin mutated selected provider route; provider account changes must be configured through account-pool routing",
+        "plugin mutated the selected upstream route; upstream account changes must be configured through upstream account group routing",
     )
 }
 
 pub(super) async fn notify_after_relay_observers(
     plugins: &[OpenAiInvocationPluginRef],
     context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
+    route: &OpenAiUpstreamRoute,
     outcome: &OpenAiInvocationRelayOutcome,
 ) {
     for plugin in plugins {
@@ -440,7 +440,7 @@ pub(super) async fn notify_after_relay_observers(
 pub(super) async fn notify_error(
     plugins: &[OpenAiInvocationPluginRef],
     context: &OpenAiInvocationContext,
-    route: Option<&OpenAiProviderRoute>,
+    route: Option<&OpenAiUpstreamRoute>,
     error: &OpenAiInvocationPluginError,
 ) {
     for plugin in plugins {
@@ -457,7 +457,7 @@ pub(super) async fn notify_error(
 pub(super) async fn notify_route_fault(
     plugins: &[OpenAiInvocationPluginRef],
     context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
+    route: &OpenAiUpstreamRoute,
     fault: &OpenAiInvocationFault,
 ) {
     for plugin in plugins {
@@ -476,7 +476,7 @@ pub(super) async fn notify_route_fault(
 pub(super) async fn notify_route_success(
     plugins: &[OpenAiInvocationPluginRef],
     context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
+    route: &OpenAiUpstreamRoute,
     outcome: &OpenAiInvocationRelayOutcome,
 ) {
     for plugin in plugins {

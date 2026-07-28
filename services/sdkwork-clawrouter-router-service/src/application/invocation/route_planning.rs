@@ -6,8 +6,8 @@ use super::{
     InvocationRoutePlan, InvocationSurface, ResourceType, StickyRouteConstraint,
 };
 use crate::application::{
-    AuthenticatedApiKeyContext, ProviderRouteSelector, SelectProviderRouteQuery,
-    SelectUpstreamAccountRouteQuery, SelectedProviderRoute, SelectedUpstreamAccountRoute,
+    AuthenticatedApiKeyContext, SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery,
+    SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute, UpstreamRouteSelector,
 };
 use crate::domain::{
     provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute, ProviderAuthProfile,
@@ -61,7 +61,7 @@ where
             if should_plan_model_route(invocation) {
                 plan_model_route(self.catalog.as_ref(), invocation, context)
             } else {
-                plan_channel_route(self.catalog.as_ref(), invocation, context)
+                plan_upstream_account_route(self.catalog.as_ref(), invocation, context)
             }
         })
     }
@@ -92,8 +92,8 @@ where
         .clone()
         .unwrap_or(BillingMeter::LlmInputToken);
     let mapping_context = context.clone();
-    let plan = ProviderRouteSelector::new(catalog)
-        .select_plan(SelectProviderRouteQuery {
+    let plan = UpstreamRouteSelector::new(catalog)
+        .select_model_route_plan(SelectUpstreamModelRouteQuery {
             context,
             catalog_key,
             requested_model: requested_model.clone(),
@@ -116,7 +116,7 @@ where
     Ok(())
 }
 
-fn plan_channel_route<C>(
+fn plan_upstream_account_route<C>(
     catalog: &C,
     invocation: &mut Invocation,
     context: AuthenticatedApiKeyContext,
@@ -124,8 +124,8 @@ fn plan_channel_route<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    let selection = ProviderRouteSelector::new(catalog)
-        .select_channel_route(SelectUpstreamAccountRouteQuery {
+    let selection = UpstreamRouteSelector::new(catalog)
+        .select_account_route(SelectUpstreamAccountRouteQuery {
             context,
             route_key: invocation.resource.route_key.clone(),
             api_code: invocation.resource.api_code.clone(),
@@ -135,9 +135,10 @@ where
 
     invocation.routing.policy_id = selection.policy_id;
     invocation.routing.rule_id = selection.rule_id;
-    invocation.routing.route_plan = Some(InvocationRoutePlan::new(vec![channel_candidate(
-        selection, invocation,
-    )]));
+    invocation.routing.route_plan =
+        Some(InvocationRoutePlan::new(vec![upstream_account_candidate(
+            selection, invocation,
+        )]));
     Ok(())
 }
 
@@ -149,7 +150,7 @@ fn sticky_candidate<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    let channel_route = matching_channel_route(catalog, &sticky_route);
+    let account_route = matching_upstream_account_route(catalog, &sticky_route);
     let group = sticky_route
         .account_group_id
         .and_then(|group_id| catalog.find_upstream_account_group(group_id));
@@ -182,27 +183,27 @@ where
         region_code: sticky_route
             .region_code
             .or_else(|| {
-                channel_route
+                account_route
                     .as_ref()
                     .map(|route| route.region_code.clone())
             })
             .unwrap_or_else(|| "global".to_owned()),
-        credential_id: channel_route.as_ref().and_then(|route| route.credential_id),
-        credential_rotation: channel_route
+        credential_id: account_route.as_ref().and_then(|route| route.credential_id),
+        credential_rotation: account_route
             .as_ref()
             .map(|route| route.credential_rotation.clone()),
-        base_url: channel_route
+        base_url: account_route
             .as_ref()
             .and_then(|route| route.base_url.clone()),
-        secret_ref: channel_route
+        secret_ref: account_route
             .as_ref()
             .and_then(|route| route.secret_ref.clone()),
-        auth_profile: channel_route
+        auth_profile: account_route
             .as_ref()
             .map(|route| route.auth_profile.clone())
             .unwrap_or_else(ProviderAuthProfile::default),
-        timeout_ms: channel_route.as_ref().and_then(|route| route.timeout_ms),
-        retry_policy: channel_route
+        timeout_ms: account_route.as_ref().and_then(|route| route.timeout_ms),
+        retry_policy: account_route
             .as_ref()
             .and_then(|route| route.retry_policy.clone()),
     }
@@ -211,26 +212,26 @@ where
 fn mapped_model_candidate<C>(
     catalog: &C,
     requested_model: &str,
-    selection: SelectedProviderRoute,
+    selection: SelectedUpstreamModelRoute,
     context: &AuthenticatedApiKeyContext,
 ) -> InvocationRouteCandidate
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
     let route = &selection.route;
-    let channel_routes = catalog.list_upstream_account_routes();
-    let channel_metadata = find_channel_route_metadata(route, &channel_routes);
+    let account_routes = catalog.list_upstream_account_routes();
+    let account_metadata = find_upstream_account_route_metadata(route, &account_routes);
     let vendor_code = catalog
         .find_model(&route.catalog_key)
         .map(|model| model.vendor_code)
         .unwrap_or_default();
-    let channel_mapping = catalog.resolve_model_mapping(
+    let account_mapping = catalog.resolve_model_mapping(
         requested_model,
         &ResolveModelMappingContext::new()
             .with_vendor_code(vendor_code.as_str())
             .with_account_id(route.account_id)
             .with_account_code(
-                channel_metadata
+                account_metadata
                     .as_ref()
                     .and_then(|route| route.account_code.as_deref())
                     .unwrap_or_default(),
@@ -243,7 +244,7 @@ where
     let provider_model = route.provider_model.clone();
     let mut candidate = model_candidate(selection);
     candidate.provider_model = Some(
-        channel_mapping
+        account_mapping
             .as_ref()
             .and_then(|rule| rule.effective_provider_model().map(str::to_owned))
             .unwrap_or_else(|| {
@@ -253,11 +254,11 @@ where
     candidate
 }
 
-fn find_channel_route_metadata(
+fn find_upstream_account_route_metadata(
     model_route: &ModelUpstreamRoute,
-    channel_routes: &[UpstreamAccountRoute],
+    account_routes: &[UpstreamAccountRoute],
 ) -> Option<UpstreamAccountRoute> {
-    let mut candidates = channel_routes
+    let mut candidates = account_routes
         .iter()
         .filter(|route| {
             route.account_id == model_route.account_id
@@ -305,7 +306,7 @@ fn normalized_resolved_provider_model(
     }
 }
 
-fn model_candidate(selection: SelectedProviderRoute) -> InvocationRouteCandidate {
+fn model_candidate(selection: SelectedUpstreamModelRoute) -> InvocationRouteCandidate {
     let route = selection.route;
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::Model,
@@ -331,13 +332,13 @@ fn model_candidate(selection: SelectedProviderRoute) -> InvocationRouteCandidate
     }
 }
 
-fn channel_candidate(
+fn upstream_account_candidate(
     selection: SelectedUpstreamAccountRoute,
     invocation: &Invocation,
 ) -> InvocationRouteCandidate {
     let route = selection.route;
     InvocationRouteCandidate {
-        kind: InvocationRouteCandidateKind::Channel,
+        kind: InvocationRouteCandidateKind::UpstreamAccount,
         supplier_code: route.supplier_code.clone(),
         account_id: route.account_id,
         account_group_id: Some(selection.group_id),
@@ -370,7 +371,7 @@ fn authenticated_context(
     let group_id = invocation
         .subject
         .account_group_id
-        .ok_or_else(|| route_error("route planning requires channel group context"))?;
+        .ok_or_else(|| route_error("route planning requires upstream account group context"))?;
     Ok(AuthenticatedApiKeyContext {
         api_key_id,
         tenant_id: invocation.subject.tenant_id,
@@ -451,7 +452,7 @@ fn model_matches_requested(model: &AiModel, requested_model: &str) -> bool {
     model.catalog_key == requested_model || model.model == requested_model
 }
 
-fn matching_channel_route<C>(
+fn matching_upstream_account_route<C>(
     catalog: &C,
     sticky_route: &StickyRouteConstraint,
 ) -> Option<UpstreamAccountRoute>

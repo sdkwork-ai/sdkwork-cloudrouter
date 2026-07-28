@@ -20,14 +20,14 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 use tokio::time::sleep;
 
-use crate::api::openai_runtime::resolve_openai_provider_route_plan;
+use crate::api::openai_runtime::resolve_openai_upstream_route_plan;
 use crate::api::response::{
     json_created_response, json_success_list_response, offset_page_info, parse_offset_list_query,
     problem_from_wire_code, success_envelope,
 };
 use crate::application::{
-    AuthenticatedApiKeyContext, EntityUuidGenerator, InMemoryRuntimeStreamBus,
-    ProviderRouteSelector, RuntimeStreamBus, SelectProviderRouteQuery,
+    AuthenticatedApiKeyContext, EntityUuidGenerator, InMemoryRuntimeStreamBus, RuntimeStreamBus,
+    SelectUpstreamModelRouteQuery, UpstreamRouteSelector,
 };
 use crate::domain::{AiModel, BillingMeter, DomainError, GatewayApiKey, RoutingCapability};
 use crate::infrastructure::OsApiKeySecretGenerator;
@@ -1876,16 +1876,16 @@ fn runtime_gateway_response_can_retry_after_empty_route_snapshot(
 }
 
 fn runtime_gateway_error_is_route_snapshot_miss(message: &str) -> bool {
-    if runtime_gateway_error_code(message).as_deref() == Some("provider_route_snapshot_empty") {
+    if runtime_gateway_error_code(message).as_deref() == Some("upstream_route_snapshot_empty") {
         return true;
     }
-    message.contains("provider_route_not_available")
+    message.contains("upstream_route_not_available")
         && message.contains("route diagnostics:")
         && runtime_gateway_route_diagnostic_usize(message, "model_routes_loaded") == Some(0)
-        && runtime_gateway_route_diagnostic_usize(message, "channel_routes_loaded") == Some(0)
+        && runtime_gateway_route_diagnostic_usize(message, "account_routes_loaded") == Some(0)
         && runtime_gateway_route_diagnostic_bool(message, "any_account_group_bindings")
             == Some(false)
-        && runtime_gateway_route_diagnostic_usize(message, "matching_group_bound_channels")
+        && runtime_gateway_route_diagnostic_usize(message, "matching_group_bound_accounts")
             == Some(0)
 }
 
@@ -3460,7 +3460,7 @@ where
     let model = execution.item.model.as_deref().ok_or_else(|| {
         DomainError::new("runtime invocation model is required for stream execution")
     })?;
-    let route_plan = resolve_openai_provider_route_plan(
+    let route_plan = resolve_openai_upstream_route_plan(
         catalog,
         &context,
         model,
@@ -3586,7 +3586,7 @@ where
     }
     let group = catalog
         .find_upstream_account_group(api_key.default_account_group_id)
-        .ok_or_else(|| DomainError::new("runtime route channel group is not available"))?;
+        .ok_or_else(|| DomainError::new("runtime upstream account group is not available"))?;
     let context = AuthenticatedApiKeyContext {
         api_key_id: api_key.id,
         tenant_id: api_key.tenant_id,
@@ -3887,7 +3887,7 @@ where
             None,
             Some(capability_label),
             format!(
-                "runtime route channel group is not available: {}",
+                "runtime upstream account group is not available: {}",
                 api_key.default_account_group_id
             ),
             false,
@@ -3917,14 +3917,16 @@ where
     };
     let routing_catalog_key =
         runtime_route_scope_catalog_key(requested_model_key, catalog_model.catalog_key.as_str());
-    match ProviderRouteSelector::new(catalog).select_plan(SelectProviderRouteQuery {
-        context,
-        catalog_key: routing_catalog_key.clone(),
-        requested_model: requested_model_key.to_owned(),
-        api_code: runtime_openai_route_probe_api_code(capability_label).to_owned(),
-        capability,
-        billing_meter,
-    }) {
+    match UpstreamRouteSelector::new(catalog).select_model_route_plan(
+        SelectUpstreamModelRouteQuery {
+            context,
+            catalog_key: routing_catalog_key.clone(),
+            requested_model: requested_model_key.to_owned(),
+            api_code: runtime_openai_route_probe_api_code(capability_label).to_owned(),
+            capability,
+            billing_meter,
+        },
+    ) {
         Ok(plan) => {
             tracing::info!(
                 tenant_id = subject.tenant_id,
@@ -4029,7 +4031,7 @@ fn runtime_api_key_cannot_route_error(
         })
         .unwrap_or_default();
     DomainError::new(format!(
-        "runtime route API key cannot route requested model: {requested_model_key};{selected_key}{probe_failure} verify the channel group is bound to an active channel account in the channel route and has a valid pricing plan"
+        "runtime route API key cannot route requested model: {requested_model_key};{selected_key}{probe_failure} verify the upstream account group is bound to an active upstream account and has a valid pricing plan"
     ))
 }
 

@@ -53,7 +53,7 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
     ));
     catalog
         .add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test").with_owner(10, 20, 30));
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
@@ -98,7 +98,7 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
         PriceSide::UpstreamCost,
         "0.480000",
     );
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
             "gpt-4o-mini",
@@ -141,15 +141,35 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
     );
     add_price(
         &mut catalog,
+        BillingMeter::ApiRequest,
+        PriceSide::UpstreamCost,
+        "0.008000",
+    );
+    add_price(
+        &mut catalog,
         BillingMeter::ApiResult,
         PriceSide::OfficialReference,
         "0.020000",
+    );
+    add_price(
+        &mut catalog,
+        BillingMeter::ApiResult,
+        PriceSide::UpstreamCost,
+        "0.015000",
     );
     add_price_for_resource(
         &mut catalog,
         BillingMeter::ApiRequest,
         PriceSide::OfficialReference,
         "0.005000",
+        "openai/management/files",
+        "management/files",
+    );
+    add_price_for_resource(
+        &mut catalog,
+        BillingMeter::ApiRequest,
+        PriceSide::UpstreamCost,
+        "0.004000",
         "openai/management/files",
         "management/files",
     );
@@ -703,14 +723,14 @@ async fn pricing_after_requotes_usage_lines_for_final_failover_account() {
     assert_eq!(3002, input.account_id);
     assert!(input
         .pricing_snapshot
-        .contains("\"upstreamUnitPrice\":\"0.050000\""));
+        .contains("\"procurementCostUnitPrice\":\"0.050000\""));
 
     let output = &invocation.usage.settlement_commands[1];
     assert_eq!("fallback", output.supplier_code);
     assert_eq!(3002, output.account_id);
     assert!(output
         .pricing_snapshot
-        .contains("\"upstreamUnitPrice\":\"0.090000\""));
+        .contains("\"procurementCostUnitPrice\":\"0.090000\""));
 }
 
 #[tokio::test]

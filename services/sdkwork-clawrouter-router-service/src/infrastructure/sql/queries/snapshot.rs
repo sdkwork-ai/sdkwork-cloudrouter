@@ -756,14 +756,13 @@ WHERE r.deleted_at IS NULL
   AND r.mapping_mode = 'alias'
 ORDER BY
   CASE b.binding_type
-      WHEN 'provider_account' THEN 0
-      WHEN 'channel' THEN 1
-      WHEN 'upstream_account_group' THEN 2
-      WHEN 'vendor' THEN 3
-      WHEN 'global' THEN 4
-      WHEN 'site' THEN 5
-      WHEN 'site_service' THEN 6
-      ELSE 7
+      WHEN 'upstream_account' THEN 0
+      WHEN 'upstream_account_group' THEN 1
+      WHEN 'supplier_endpoint' THEN 2
+      WHEN 'upstream_supplier' THEN 3
+      WHEN 'vendor' THEN 4
+      WHEN 'global' THEN 5
+      ELSE 6
   END,
   b.sort_order ASC,
   i.sort_order ASC,

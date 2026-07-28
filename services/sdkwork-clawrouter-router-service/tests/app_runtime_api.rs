@@ -550,7 +550,7 @@ async fn app_runtime_stream_routes_catalog_model_through_channel_route_without_m
                 "runtime-event-uuid-1",
                 "runtime-event-uuid-2",
             ])),
-            Arc::new(TestRuntimeCatalog::without_model_provider_route(
+            Arc::new(TestRuntimeCatalog::without_model_upstream_route(
                 "openai/gpt-5.5",
             )),
             Arc::new(RecordingStreamRelay::new(Arc::clone(&relay_requests))),
@@ -1634,7 +1634,7 @@ async fn app_runtime_prefers_gateway_chat_completions_over_local_relay_when_both
         sdkwork_clawrouter_router_service::api::app_runtime_router_with_store_and_gateway_client_chat_stream_relay(
             store.clone(),
             Arc::new(SequentialUuidGenerator::new(vec!["runtime-event-uuid-1"])),
-            Arc::new(TestRuntimeCatalog::without_model_provider_route(
+            Arc::new(TestRuntimeCatalog::without_model_upstream_route(
                 "openai/gpt-5.5",
             )),
             Arc::new(RecordingGatewayRuntimeClient::new(Arc::clone(
@@ -2133,7 +2133,7 @@ async fn app_runtime_gateway_executor_does_not_retry_configured_route_mismatch()
 
     let body = runtime_failed_sse_text(response).await;
     assert!(
-        body.contains("provider_route_not_available"),
+        body.contains("upstream_route_not_available"),
         "must return the gateway route diagnostic without retrying unrelated config errors: {body}"
     );
     let gateway_requests = gateway_requests.lock().unwrap();
@@ -3918,7 +3918,7 @@ impl TestRuntimeCatalog {
         }
     }
 
-    fn without_model_provider_route(catalog_key: &str) -> Self {
+    fn without_model_upstream_route(catalog_key: &str) -> Self {
         Self {
             include_model_route: false,
             ..Self::with_model_format(catalog_key, None)
@@ -4552,11 +4552,11 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                 )
             } else if transient_empty_route_snapshot {
                 Body::from(
-                    "{\"error\":{\"message\":\"provider route snapshot is empty for model: openai/gpt-5.5\",\"type\":\"server_error\",\"code\":\"provider_route_snapshot_empty\"}}",
+                    "{\"error\":{\"message\":\"upstream route snapshot is empty for model: openai/gpt-5.5\",\"type\":\"server_error\",\"code\":\"upstream_route_snapshot_empty\"}}",
                 )
             } else if response_kind == GatewayResponseKind::ConfiguredRouteMismatch {
                 Body::from(
-                    "{\"error\":{\"message\":\"provider route is not available for model: openai/gpt-5.5; route diagnostics: requested_model=openai/gpt-5.5; api_key_id=1; tenant_id=100001; organization_id=0; user_id=2; account_group_id=1; account_group_code=grp; capability=Chat; model_routes_loaded=1; channel_routes_loaded=1; any_account_group_bindings=true; matching_group_bound_channels=0; scoped_model_routes=0; scoped_channel_routes=0\",\"type\":\"server_error\",\"code\":\"provider_route_not_available\"}}",
+                    "{\"error\":{\"message\":\"upstream route is not available for model: openai/gpt-5.5; route diagnostics: requested_model=openai/gpt-5.5; api_key_id=1; tenant_id=100001; organization_id=0; user_id=2; account_group_id=1; account_group_code=grp; capability=Chat; model_routes_loaded=1; account_routes_loaded=1; any_account_group_bindings=true; matching_group_bound_accounts=0; scoped_model_routes=0; scoped_account_routes=0\",\"type\":\"server_error\",\"code\":\"upstream_route_not_available\"}}",
                 )
             } else if request.path == "/v1/images/generations" || request.path == "/v1/images/edits"
             {

@@ -32,14 +32,14 @@ fn catalog_for_model_list() -> InMemoryPricingCatalog {
         "anthropic",
         vec!["chat"],
     ));
-    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
+    catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",
         3001,
         "gpt-4o-mini",
     ));
-    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
+    catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "azure_openai",

@@ -3,7 +3,7 @@ use sqlx::PgPool;
 use crate::api::{
     OpenAiInvocationContext, OpenAiInvocationFault, OpenAiInvocationFaultKind,
     OpenAiInvocationPlugin, OpenAiInvocationPluginFuture, OpenAiInvocationRelayOutcome,
-    OpenAiProviderRoute,
+    OpenAiUpstreamRoute,
 };
 use crate::domain::{DomainError, DomainResult, ProviderCircuitBreakerPolicy};
 use crate::infrastructure::sql::store_error::redacted_store_error;
@@ -26,7 +26,7 @@ impl OpenAiInvocationPlugin for PostgresOpenAiInvocationTelemetryPlugin {
     fn on_route_fault<'a>(
         &'a self,
         context: &'a OpenAiInvocationContext,
-        route: &'a OpenAiProviderRoute,
+        route: &'a OpenAiUpstreamRoute,
         fault: &'a OpenAiInvocationFault,
     ) -> OpenAiInvocationPluginFuture<'a> {
         Box::pin(async move {
@@ -45,7 +45,7 @@ impl OpenAiInvocationPlugin for PostgresOpenAiInvocationTelemetryPlugin {
     fn on_route_success<'a>(
         &'a self,
         context: &'a OpenAiInvocationContext,
-        route: &'a OpenAiProviderRoute,
+        route: &'a OpenAiUpstreamRoute,
         outcome: &'a OpenAiInvocationRelayOutcome,
     ) -> OpenAiInvocationPluginFuture<'a> {
         Box::pin(async move {
@@ -66,7 +66,7 @@ impl OpenAiInvocationPlugin for PostgresOpenAiInvocationTelemetryPlugin {
 async fn record_fault(
     pool: &PgPool,
     context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
+    route: &OpenAiUpstreamRoute,
     fault: &OpenAiInvocationFault,
 ) -> DomainResult<()> {
     match fault.kind {
@@ -79,7 +79,7 @@ async fn record_fault(
 async fn record_success(
     pool: &PgPool,
     context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
+    route: &OpenAiUpstreamRoute,
     outcome: &OpenAiInvocationRelayOutcome,
 ) -> DomainResult<()> {
     record_channel_success(pool, context, route, outcome.latency_ms).await
@@ -88,7 +88,7 @@ async fn record_success(
 async fn record_channel_fault(
     pool: &PgPool,
     context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
+    route: &OpenAiUpstreamRoute,
     latency_ms: Option<i64>,
 ) -> DomainResult<()> {
     let state = load_channel_fault_state(pool, context, route).await?;
@@ -135,7 +135,7 @@ async fn record_channel_fault(
 async fn record_channel_success(
     pool: &PgPool,
     context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
+    route: &OpenAiUpstreamRoute,
     latency_ms: Option<i64>,
 ) -> DomainResult<()> {
     sqlx::query(
@@ -175,7 +175,7 @@ struct ChannelFaultState {
 async fn load_channel_fault_state(
     pool: &PgPool,
     context: &OpenAiInvocationContext,
-    route: &OpenAiProviderRoute,
+    route: &OpenAiUpstreamRoute,
 ) -> DomainResult<ChannelFaultState> {
     let row = sqlx::query(
         r#"

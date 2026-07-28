@@ -4,11 +4,10 @@ use std::fmt::{Display, Formatter};
 
 use sdkwork_models::ModelCatalog;
 use sdkwork_utils_rust as sdkwork_utils;
-use sqlx::{PgPool, Row, SqlitePool};
+use sqlx::{PgPool, Row};
 
 use crate::infrastructure::sql::ai_routing_seed::{
-    import_postgres_ai_routing_seed, import_sqlite_ai_routing_seed,
-    postgres_ai_routing_seed_complete, sqlite_ai_routing_seed_complete,
+    import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete,
 };
 use crate::infrastructure::sql::model_catalog_import::{
     catalog_api_endpoint_projections, catalog_authority_keys,
@@ -206,26 +205,14 @@ pub struct CatalogRefreshReport {
 /// or dialect conversion responsibilities. Callers must run the canonical
 /// `sdkwork-clawrouter-database-host` lifecycle first.
 pub struct DatabaseInstaller {
-    backend: InstallerBackend,
+    pool: PgPool,
     options: DatabaseInstallOptions,
 }
 
-enum InstallerBackend {
-    Sqlite(SqlitePool),
-    Postgres(PgPool),
-}
-
 impl DatabaseInstaller {
-    pub fn for_sqlite(pool: SqlitePool) -> Self {
-        Self {
-            backend: InstallerBackend::Sqlite(pool),
-            options: DatabaseInstallOptions::commercial(),
-        }
-    }
-
     pub fn for_postgres(pool: PgPool) -> Self {
         Self {
-            backend: InstallerBackend::Postgres(pool),
+            pool,
             options: DatabaseInstallOptions::commercial(),
         }
     }
@@ -358,25 +345,14 @@ impl DatabaseInstaller {
             requested_at: sdkwork_utils::format_datetime(sdkwork_utils::now(), None),
         };
 
-        let item = match &self.backend {
-            InstallerBackend::Sqlite(pool) => {
-                crate::infrastructure::sql::sqlite::SqliteAdminModelStore::new(pool.clone())
-                    .sync_catalog(command)
-                    .await
-            }
-            InstallerBackend::Postgres(pool) => {
-                crate::infrastructure::sql::postgres::PostgresAdminModelStore::new(pool.clone())
-                    .sync_catalog(command)
-                    .await
-            }
-        }
-        .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
+        let item =
+            crate::infrastructure::sql::postgres::PostgresAdminModelStore::new(self.pool.clone())
+                .sync_catalog(command)
+                .await
+                .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
 
         if item.synced {
-            match &self.backend {
-                InstallerBackend::Sqlite(pool) => import_sqlite_ai_routing_seed(pool).await?,
-                InstallerBackend::Postgres(pool) => import_postgres_ai_routing_seed(pool).await?,
-            }
+            import_postgres_ai_routing_seed(&self.pool).await?;
         }
 
         Ok(CatalogRefreshReport {
@@ -442,10 +418,7 @@ impl DatabaseInstaller {
         if !self.catalog_complete(&catalog).await? {
             return Ok(InstallationStatus::UpgradeRequired);
         }
-        let routing_seed_complete = match &self.backend {
-            InstallerBackend::Sqlite(pool) => sqlite_ai_routing_seed_complete(pool).await?,
-            InstallerBackend::Postgres(pool) => postgres_ai_routing_seed_complete(pool).await?,
-        };
+        let routing_seed_complete = postgres_ai_routing_seed_complete(&self.pool).await?;
         if !routing_seed_complete {
             return Ok(InstallationStatus::UpgradeRequired);
         }
@@ -456,38 +429,20 @@ impl DatabaseInstaller {
     }
 
     async fn ensure_default_service_node(&self) -> Result<bool, DatabaseInstallError> {
-        let rows_affected = match &self.backend {
-            InstallerBackend::Sqlite(pool) => sqlx::query(DEFAULT_SERVICE_NODE_SEED_SQL)
-                .execute(pool)
-                .await?
-                .rows_affected(),
-            InstallerBackend::Postgres(pool) => sqlx::query(DEFAULT_SERVICE_NODE_SEED_SQL)
-                .execute(pool)
-                .await?
-                .rows_affected(),
-        };
+        let rows_affected = sqlx::query(DEFAULT_SERVICE_NODE_SEED_SQL)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
         Ok(rows_affected > 0)
     }
 
     async fn default_service_node_complete(&self) -> Result<bool, DatabaseInstallError> {
-        let count = match &self.backend {
-            InstallerBackend::Sqlite(pool) => {
-                sqlx::query_scalar::<_, i64>(
-                    "SELECT COUNT(*) FROM ops_gateway_instance WHERE instance_code = ? AND deleted_at IS NULL",
-                )
-                .bind(DEFAULT_SERVICE_NODE_INSTANCE_CODE)
-                .fetch_one(pool)
-                .await?
-            }
-            InstallerBackend::Postgres(pool) => {
-                sqlx::query_scalar::<_, i64>(
-                    "SELECT COUNT(*) FROM ops_gateway_instance WHERE instance_code = $1 AND deleted_at IS NULL",
-                )
-                .bind(DEFAULT_SERVICE_NODE_INSTANCE_CODE)
-                .fetch_one(pool)
-                .await?
-            }
-        };
+        let count = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM ops_gateway_instance WHERE instance_code = $1 AND deleted_at IS NULL",
+        )
+        .bind(DEFAULT_SERVICE_NODE_INSTANCE_CODE)
+        .fetch_one(&self.pool)
+        .await?;
         Ok(count == 1)
     }
 
@@ -512,19 +467,14 @@ impl DatabaseInstaller {
     }
 
     async fn application_schema_ready(&self) -> Result<bool, DatabaseInstallError> {
-        match &self.backend {
-            InstallerBackend::Sqlite(pool) => sqlite_table_exists(pool, "ai_channel").await,
-            InstallerBackend::Postgres(pool) => postgres_table_exists(pool, "ai_channel").await,
-        }
-        .map_err(DatabaseInstallError::Database)
+        postgres_table_exists(&self.pool, "ai_upstream_supplier")
+            .await
+            .map_err(DatabaseInstallError::Database)
     }
 
     async fn model_catalog_schema_ready(&self) -> Result<bool, DatabaseInstallError> {
         for table in MODEL_CATALOG_TABLES {
-            let exists = match &self.backend {
-                InstallerBackend::Sqlite(pool) => sqlite_table_exists(pool, table).await?,
-                InstallerBackend::Postgres(pool) => postgres_table_exists(pool, table).await?,
-            };
+            let exists = postgres_table_exists(&self.pool, table).await?;
             if !exists {
                 return Ok(false);
             }
@@ -534,14 +484,8 @@ impl DatabaseInstaller {
 
     async fn catalog_complete(&self, catalog: &ModelCatalog) -> Result<bool, DatabaseInstallError> {
         for expectation in catalog_expectations(catalog) {
-            let actual = match &self.backend {
-                InstallerBackend::Sqlite(pool) => {
-                    sqlite_string_values(pool, expectation.table, expectation.column).await?
-                }
-                InstallerBackend::Postgres(pool) => {
-                    postgres_string_values(pool, expectation.table, expectation.column).await?
-                }
-            };
+            let actual =
+                postgres_string_values(&self.pool, expectation.table, expectation.column).await?;
             if !expectation.expected.is_subset(&actual) {
                 return Ok(false);
             }
@@ -669,14 +613,6 @@ fn expectation(
     }
 }
 
-async fn sqlite_string_values(
-    pool: &SqlitePool,
-    table: &'static str,
-    column: &'static str,
-) -> Result<BTreeSet<String>, sqlx::Error> {
-    string_values(pool, table, column).await
-}
-
 async fn postgres_string_values(
     pool: &PgPool,
     table: &'static str,
@@ -688,28 +624,6 @@ async fn postgres_string_values(
         .into_iter()
         .filter_map(|row| row.try_get::<String, _>("value").ok())
         .collect())
-}
-
-async fn string_values(
-    pool: &SqlitePool,
-    table: &'static str,
-    column: &'static str,
-) -> Result<BTreeSet<String>, sqlx::Error> {
-    let query = format!("SELECT DISTINCT {column} AS value FROM {table}");
-    let rows = sqlx::query(&query).fetch_all(pool).await?;
-    Ok(rows
-        .into_iter()
-        .filter_map(|row| row.try_get::<String, _>("value").ok())
-        .collect())
-}
-
-async fn sqlite_table_exists(pool: &SqlitePool, table: &str) -> Result<bool, sqlx::Error> {
-    let count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?")
-            .bind(table)
-            .fetch_one(pool)
-            .await?;
-    Ok(count == 1)
 }
 
 async fn postgres_table_exists(pool: &PgPool, table: &str) -> Result<bool, sqlx::Error> {
@@ -918,31 +832,6 @@ fn normalize_install_code(value: String, name: &str) -> Result<String, DatabaseI
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sqlx::sqlite::SqlitePoolOptions;
-
-    #[tokio::test]
-    async fn bootstrap_rejects_an_empty_database_without_mutating_schema() {
-        let pool = SqlitePoolOptions::new()
-            .max_connections(1)
-            .connect("sqlite::memory:")
-            .await
-            .expect("create sqlite pool");
-        let installer = DatabaseInstaller::for_sqlite(pool.clone());
-
-        assert_eq!(
-            InstallationStatus::NotInstalled,
-            installer.status().await.unwrap()
-        );
-        let error = installer.ensure_bootstrap_data().await.unwrap_err();
-        assert!(error.to_string().contains("explicit"));
-
-        let table_count: i64 =
-            sqlx::query_scalar("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'")
-                .fetch_one(&pool)
-                .await
-                .unwrap();
-        assert_eq!(0, table_count);
-    }
 
     #[test]
     fn catalog_refresh_validation_is_bounded_and_deterministic() {

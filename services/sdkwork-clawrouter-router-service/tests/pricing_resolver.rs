@@ -4,7 +4,7 @@ use sdkwork_clawrouter_router_service::application::{
 use sdkwork_clawrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, UpstreamAccountGroup,
-    UpstreamAccountRoute,
+    UpstreamAccountGroupBinding, UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 
@@ -21,7 +21,7 @@ fn catalog_with_openai_model() -> InMemoryPricingCatalog {
         "openai",
         vec!["chat", "tools"],
     ));
-    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
+    catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",
@@ -69,6 +69,53 @@ fn catalog_with_openai_model() -> InMemoryPricingCatalog {
         .for_upstream_account("openrouter", 3001),
     );
     catalog
+}
+
+#[test]
+fn applies_account_contract_and_group_override_to_procurement_cost() {
+    let mut catalog = catalog_with_openai_model();
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_contract_cost_multiplier(DecimalValue::parse("0.800000").unwrap())
+            .with_account_group_bindings(vec![UpstreamAccountGroupBinding::new(10, 100, 100)
+                .with_cost_multiplier_override(Some(DecimalValue::parse("1.500000").unwrap()))]),
+    );
+
+    let resolved = PricingResolver::new(&catalog)
+        .resolve(ResolveModelPriceQuery {
+            api_key_id: 100,
+            account_group_id: Some(10),
+            model: "openai/gpt-4o-mini".to_owned(),
+            billing_meter: BillingMeter::LlmInputToken,
+            supplier_code: Some("openrouter".to_owned()),
+            account_id: Some(3001),
+            region_code: Some("global".to_owned()),
+        })
+        .unwrap();
+
+    assert_eq!(
+        "0.110000",
+        resolved
+            .raw_upstream_cost
+            .unwrap()
+            .unit_price
+            .to_fixed_string(6)
+    );
+    assert_eq!(
+        "1.200000",
+        resolved
+            .procurement_cost_multiplier
+            .unwrap()
+            .to_fixed_string(6)
+    );
+    assert_eq!(
+        "0.132000",
+        resolved.procurement_cost.unwrap().to_fixed_string(6)
+    );
+    assert_eq!(
+        "0.066000",
+        resolved.gross_margin_per_unit.unwrap().to_fixed_string(6)
+    );
 }
 
 #[test]
@@ -140,7 +187,7 @@ fn resolves_customer_price_from_upstream_account_group_plan_and_official_referen
     assert_eq!("1.100000", resolved.sale_multiplier.to_fixed_string(6));
     assert_eq!("1.200000", resolved.reference_multiplier.to_fixed_string(6));
     assert_eq!(
-        "0.198000",
+        "0.180000",
         resolved
             .customer_charge_before_sale_multiplier
             .unit_price
@@ -153,9 +200,9 @@ fn resolves_customer_price_from_upstream_account_group_plan_and_official_referen
 }
 
 #[test]
-fn resolves_upstream_cost_for_the_selected_provider_channel() {
+fn resolves_upstream_cost_for_the_selected_account() {
     let mut catalog = catalog_with_openai_model();
-    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
+    catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",
@@ -263,7 +310,7 @@ fn model_catalog_identity_does_not_supply_pricing_region_without_route_context()
 }
 
 #[test]
-fn base_catalog_key_resolves_selected_channel_region_price_stack() {
+fn base_catalog_key_resolves_selected_account_region_price_stack() {
     let mut catalog = InMemoryPricingCatalog::default();
     catalog.add_vendor(ModelVendorDefinition::new(
         "minimax",
@@ -288,7 +335,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
         DecimalValue::parse("1.000000").unwrap(),
     ));
     catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test"));
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "minimax/MiniMax-M2.7",
             "MiniMax-M2.7",
@@ -298,7 +345,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
         )
         .with_region_code("cn"),
     );
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "minimax/MiniMax-M2.7",
             "MiniMax-M2.7",
@@ -415,7 +462,7 @@ fn base_catalog_key_resolves_selected_channel_region_price_stack() {
 }
 
 #[test]
-fn selected_route_region_disambiguates_same_provider_channel_deployments() {
+fn selected_route_region_disambiguates_same_supplier_account_deployments() {
     let mut catalog = InMemoryPricingCatalog::default();
     catalog.add_vendor(ModelVendorDefinition::new(
         "deepseek",
@@ -445,7 +492,7 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
         DecimalValue::parse("1.000000").unwrap(),
     ));
     catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test"));
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "deepseek/deepseek-v4-pro",
             "deepseek-v4-pro",
@@ -455,7 +502,7 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
         )
         .with_region_code("global"),
     );
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "deepseek/deepseek-v4-pro",
             "deepseek-v4-pro",
@@ -523,7 +570,7 @@ fn selected_route_region_disambiguates_same_provider_channel_deployments() {
 }
 
 #[test]
-fn rejects_selected_channel_that_is_not_a_provider_route_for_the_model() {
+fn rejects_selected_account_that_is_not_an_upstream_route_for_the_model() {
     let mut catalog = catalog_with_openai_model();
     catalog.add_price(
         ModelPrice::new(
@@ -550,11 +597,11 @@ fn rejects_selected_channel_that_is_not_a_provider_route_for_the_model() {
         })
         .unwrap_err();
 
-    assert!(error.to_string().contains("channel 9999"));
+    assert!(error.to_string().contains("account 9999"));
 }
 
 #[test]
-fn channel_route_resolves_price_stack_with_its_explicit_region() {
+fn upstream_account_route_resolves_price_stack_with_its_explicit_region() {
     let mut catalog = InMemoryPricingCatalog::default();
     catalog.add_vendor(ModelVendorDefinition::new(
         "minimax",

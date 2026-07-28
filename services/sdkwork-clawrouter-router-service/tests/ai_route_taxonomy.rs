@@ -202,7 +202,7 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
 
     let index = AiRoutingIndex::compile(&catalog);
 
-    let chat_candidates = index.matching_channels(
+    let chat_candidates = index.matching_accounts(
         10,
         "openai.chat_completions",
         RoutingCapability::Chat,
@@ -211,7 +211,7 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
     );
     assert_eq!(vec![3001], account_ids(&chat_candidates));
 
-    let image_candidates = index.matching_channels(
+    let image_candidates = index.matching_accounts(
         10,
         "openai.images.generations",
         RoutingCapability::Image,
@@ -220,7 +220,7 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
     );
     assert_eq!(vec![3002], account_ids(&image_candidates));
 
-    let other_model_same_api = index.matching_channels(
+    let other_model_same_api = index.matching_accounts(
         10,
         "openai.chat_completions",
         RoutingCapability::Chat,
@@ -229,7 +229,7 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
     );
     assert_eq!(vec![3001], account_ids(&other_model_same_api));
 
-    let wrong_group = index.matching_channels(
+    let wrong_group = index.matching_accounts(
         11,
         "openai.chat_completions",
         RoutingCapability::Chat,

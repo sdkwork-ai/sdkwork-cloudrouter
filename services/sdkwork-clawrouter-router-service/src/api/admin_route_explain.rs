@@ -10,9 +10,9 @@ use serde::{Deserialize, Serialize};
 use crate::api::admin_sql_subject::{RequiredAdminSqlScopedSubject, SqlScopedAdminSubject};
 use crate::api::response::{not_found_problem, problem_from_wire_code, success_envelope};
 use crate::application::{
-    AuthenticatedApiKeyContext, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
-    SelectProviderRouteQuery, SelectUpstreamAccountRouteQuery, SelectedProviderRoute,
-    SelectedUpstreamAccountRoute,
+    AuthenticatedApiKeyContext, SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery,
+    SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind,
+    UpstreamRouteSelector,
 };
 use crate::domain::{BillingMeter, GatewayApiKey, RoutingCapability, UpstreamAccountGroup};
 use crate::ports::PricingCatalog;
@@ -122,10 +122,10 @@ where
         Err(RouteExplainRequestError::NotFound) => return route_target_not_found(),
     };
 
-    let selector = ProviderRouteSelector::new(state.catalog.as_ref());
+    let selector = UpstreamRouteSelector::new(state.catalog.as_ref());
     let result = if let Some(catalog_key) = normalized.catalog_key.clone() {
         selector
-            .select_plan(SelectProviderRouteQuery {
+            .select_model_route_plan(SelectUpstreamModelRouteQuery {
                 context: normalized.context.clone(),
                 catalog_key,
                 requested_model: normalized.model.clone().unwrap_or_default(),
@@ -145,7 +145,7 @@ where
             })
     } else {
         selector
-            .select_channel_route(SelectUpstreamAccountRouteQuery {
+            .select_account_route(SelectUpstreamAccountRouteQuery {
                 context: normalized.context.clone(),
                 route_key: normalized.route_key.clone(),
                 api_code: normalized.api_code.clone(),
@@ -155,7 +155,7 @@ where
                 let policy_id = selection.policy_id;
                 let rule_id = selection.rule_id;
                 (
-                    vec![to_channel_candidate_response(
+                    vec![to_upstream_account_candidate_response(
                         selection,
                         &normalized.api_code,
                     )],
@@ -236,7 +236,7 @@ where
     let account_group_id = request
         .account_group_id
         .as_deref()
-        .map(|value| parse_positive_i64(Some(value), "channelGroupId"))
+        .map(|value| parse_positive_i64(Some(value), "accountGroupId"))
         .transpose()
         .map_err(RouteExplainRequestError::BadRequest)?
         .unwrap_or(api_key.default_account_group_id);
@@ -303,11 +303,11 @@ fn ensure_same_scope(api_key: &GatewayApiKey, group: &UpstreamAccountGroup) -> R
     if api_key.tenant_id == group.tenant_id && api_key.organization_id == group.organization_id {
         return Ok(());
     }
-    Err("apiKeyId and channelGroupId must belong to the same tenant and organization".to_owned())
+    Err("apiKeyId and accountGroupId must belong to the same tenant and organization".to_owned())
 }
 
 fn to_model_candidate_response(
-    selection: SelectedProviderRoute,
+    selection: SelectedUpstreamModelRoute,
 ) -> AdminRouteExplainCandidateResponse {
     let route = selection.route;
     AdminRouteExplainCandidateResponse {
@@ -328,13 +328,13 @@ fn to_model_candidate_response(
     }
 }
 
-fn to_channel_candidate_response(
+fn to_upstream_account_candidate_response(
     selection: SelectedUpstreamAccountRoute,
     api_code: &str,
 ) -> AdminRouteExplainCandidateResponse {
     let route = selection.route;
     AdminRouteExplainCandidateResponse {
-        kind: "channel",
+        kind: "upstream_account",
         supplier_code: route.supplier_code,
         account_id: route.account_id.to_string(),
         account_group_id: selection.group_id.to_string(),
@@ -351,10 +351,10 @@ fn to_channel_candidate_response(
     }
 }
 
-fn route_explain_error_code(kind: ProviderRouteSelectionErrorKind) -> &'static str {
+fn route_explain_error_code(kind: UpstreamRouteSelectionErrorKind) -> &'static str {
     match kind {
-        ProviderRouteSelectionErrorKind::ProviderRouteUnavailable => "route.unavailable",
-        ProviderRouteSelectionErrorKind::PricingUnavailable => "pricing.unavailable",
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable => "route.unavailable",
+        UpstreamRouteSelectionErrorKind::PricingUnavailable => "pricing.unavailable",
     }
 }
 

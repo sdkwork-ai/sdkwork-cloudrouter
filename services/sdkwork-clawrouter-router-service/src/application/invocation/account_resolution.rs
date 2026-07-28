@@ -110,7 +110,7 @@ fn validate_callable_candidate(
     }
     if candidate.account_id <= 0 {
         return Err(account_error(
-            "resolved route candidate is missing channel id",
+            "resolved route candidate is missing upstream account id",
         ));
     }
     if is_blank(candidate.base_url.as_deref()) {

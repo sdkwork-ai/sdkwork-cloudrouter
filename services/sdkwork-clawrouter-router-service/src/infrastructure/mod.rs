@@ -15,7 +15,6 @@ pub use app_runtime_gateway_http_client::{
 };
 pub use gateway_accounting_retry_queue::{
     InMemoryGatewayAccountingRetryQueue, RedisGatewayAccountingRetryQueue,
-    SqliteGatewayAccountingRetryQueue,
 };
 pub use in_memory_pricing_catalog::InMemoryPricingCatalog;
 pub use redis_runtime_stream_bus::RedisRuntimeStreamBus;

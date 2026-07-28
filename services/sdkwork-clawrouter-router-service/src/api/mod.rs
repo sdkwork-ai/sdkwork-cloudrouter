@@ -159,7 +159,7 @@ pub use openai_invocation::{
     normalize_user_agent_header, OpenAiInvocationContext, OpenAiInvocationEndpoint,
     OpenAiInvocationFault, OpenAiInvocationFaultKind, OpenAiInvocationPlugin,
     OpenAiInvocationPluginError, OpenAiInvocationPluginFuture, OpenAiInvocationPluginRef,
-    OpenAiInvocationRelayOutcome, OpenAiProviderRoute,
+    OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute,
 };
 pub use openai_models::openai_models_router;
 pub use openai_responses::openai_responses_router;

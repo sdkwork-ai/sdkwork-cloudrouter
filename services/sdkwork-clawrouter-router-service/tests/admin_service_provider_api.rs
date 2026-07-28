@@ -17,8 +17,8 @@ use serde_json::{json, Map, Value};
 use tower::ServiceExt;
 
 #[tokio::test]
-async fn admin_service_provider_route_exposes_commercial_provider_center() {
-    let router = sdkwork_clawrouter_router_service::api::admin_service_provider_router_with_store(
+async fn admin_service_upstream_route_exposes_commercial_provider_center() {
+    let router = sdkwork_clawrouter_router_service::api::admin_service_upstream_router_with_store(
         Arc::new(TestAdminServiceProviderStore),
     );
 
@@ -93,8 +93,8 @@ async fn admin_service_provider_route_exposes_commercial_provider_center() {
 }
 
 #[tokio::test]
-async fn admin_service_provider_route_rejects_missing_trusted_subject() {
-    let router = sdkwork_clawrouter_router_service::api::admin_service_provider_router_with_store(
+async fn admin_service_upstream_route_rejects_missing_trusted_subject() {
+    let router = sdkwork_clawrouter_router_service::api::admin_service_upstream_router_with_store(
         Arc::new(TestAdminServiceProviderStore),
     );
 
@@ -116,7 +116,7 @@ async fn admin_service_provider_route_rejects_missing_trusted_subject() {
 
 #[tokio::test]
 async fn admin_service_provider_price_simulation_rejects_invalid_quantity_before_store_call() {
-    let router = sdkwork_clawrouter_router_service::api::admin_service_provider_router_with_store(
+    let router = sdkwork_clawrouter_router_service::api::admin_service_upstream_router_with_store(
         Arc::new(TestAdminServiceProviderStore),
     );
 
@@ -140,7 +140,7 @@ async fn admin_service_provider_price_simulation_rejects_invalid_quantity_before
 
 #[tokio::test]
 async fn admin_service_provider_list_routes_accept_chain_filters() {
-    let router = sdkwork_clawrouter_router_service::api::admin_service_provider_router_with_store(
+    let router = sdkwork_clawrouter_router_service::api::admin_service_upstream_router_with_store(
         Arc::new(TestAdminServiceProviderStore),
     );
 
@@ -159,7 +159,7 @@ async fn admin_service_provider_list_routes_accept_chain_filters() {
 
 #[tokio::test]
 async fn admin_service_provider_write_routes_expose_downstream_and_pricing_maintenance() {
-    let router = sdkwork_clawrouter_router_service::api::admin_service_provider_router_with_store(
+    let router = sdkwork_clawrouter_router_service::api::admin_service_upstream_router_with_store(
         Arc::new(TestAdminServiceProviderStore),
     );
 
@@ -212,7 +212,7 @@ async fn admin_service_provider_write_routes_expose_downstream_and_pricing_maint
 
 #[tokio::test]
 async fn admin_service_provider_write_routes_require_idempotency_key() {
-    let router = sdkwork_clawrouter_router_service::api::admin_service_provider_router_with_store(
+    let router = sdkwork_clawrouter_router_service::api::admin_service_upstream_router_with_store(
         Arc::new(TestAdminServiceProviderStore),
     );
 

@@ -93,7 +93,7 @@ fn catalog() -> InMemoryPricingCatalog {
                 },
             ),
     );
-    catalog.add_provider_route(ModelUpstreamRoute::new_for_catalog_key(
+    catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
         "openrouter",

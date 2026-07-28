@@ -307,7 +307,7 @@ fn resolve_provider_secret(
 ///
 /// A missing retry policy means one attempt. Configured retry budgets are
 /// honored only for requests that are intrinsically replay-safe. A local
-/// idempotency key is not enough: the current provider route and adapter
+/// idempotency key is not enough: the current upstream route and adapter
 /// contracts do not prove a stable key is both forwarded and supported by the
 /// selected provider. Internal provider adapters are also single-attempt until
 /// their request contract explicitly carries and honors provider idempotency.
@@ -344,7 +344,9 @@ fn account_from_candidate(
         ));
     }
     if candidate.account_id <= 0 {
-        return Err(dispatch_error("dispatch candidate is missing channel id"));
+        return Err(dispatch_error(
+            "dispatch candidate is missing upstream account id",
+        ));
     }
     Ok(InvocationAccount {
         supplier_code: candidate.supplier_code.clone(),

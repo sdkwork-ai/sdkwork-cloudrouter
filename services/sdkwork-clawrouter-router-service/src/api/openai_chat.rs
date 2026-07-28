@@ -26,9 +26,9 @@ use crate::api::openai_invocation::{
     OpenAiInvocationRelayOutcome,
 };
 use crate::api::openai_runtime::{
-    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_provider_route_plan,
+    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
     route_http_status_is_retryable, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
-    ResolvedOpenAiProviderRoute, ResolvedOpenAiProviderRoutePlan,
+    ResolvedOpenAiUpstreamRoute, ResolvedOpenAiUpstreamRoutePlan,
 };
 use crate::api::openai_usage::{
     build_request_trace_command, build_usage_record_command_builder, chat_usage_billing_profile,
@@ -532,7 +532,7 @@ where
         notify_error(&state.plugins, &invocation_context, None, &error).await;
         return error.into_openai_response();
     }
-    let mut route_plan = match resolve_openai_provider_route_plan(
+    let mut route_plan = match resolve_openai_upstream_route_plan(
         state.catalog.as_ref(),
         &context,
         &request.model,
@@ -559,7 +559,7 @@ where
                         "invalid_request_error".to_owned()
                     }),
                     Some(format!(
-                        "provider route selection failed for model: {}",
+                        "upstream route selection failed for model: {}",
                         request.model
                     )),
                 ),
@@ -725,7 +725,7 @@ async fn relay_chat_completion_stream(
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: AuthenticatedApiKeyContext,
-    route_plan: ResolvedOpenAiProviderRoutePlan,
+    route_plan: ResolvedOpenAiUpstreamRoutePlan,
     request: ParsedOpenAiChatCompletionRequest,
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: &ProviderRetryPolicy,
@@ -787,7 +787,7 @@ async fn relay_chat_completion_stream_route(
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     requested_model: &str,
     request_body: serde_json::Value,
     failure_strategy: OpenAiRuntimeFailureStrategy,
@@ -1013,7 +1013,7 @@ async fn relay_chat_completion(
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: AuthenticatedApiKeyContext,
-    route_plan: ResolvedOpenAiProviderRoutePlan,
+    route_plan: ResolvedOpenAiUpstreamRoutePlan,
     request: ParsedOpenAiChatCompletionRequest,
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: &ProviderRetryPolicy,
@@ -1084,7 +1084,7 @@ async fn relay_chat_completion_route(
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     requested_model: &str,
     request_body: serde_json::Value,
     failure_strategy: OpenAiRuntimeFailureStrategy,
@@ -1264,7 +1264,7 @@ struct StreamingUsageRecordingBody {
     command_builder: Option<GatewayUsageRecordCommandBuilder>,
     plugins: Vec<OpenAiInvocationPluginRef>,
     invocation_context: OpenAiInvocationContext,
-    route: ResolvedOpenAiProviderRoute,
+    route: ResolvedOpenAiUpstreamRoute,
     event_buffer: String,
     usage: Option<OpenAiTokenUsage>,
     recording: Option<GatewayUsageRecordFuture<'static>>,
@@ -1281,7 +1281,7 @@ impl StreamingUsageRecordingBody {
         command_builder: GatewayUsageRecordCommandBuilder,
         plugins: Vec<OpenAiInvocationPluginRef>,
         invocation_context: OpenAiInvocationContext,
-        route: ResolvedOpenAiProviderRoute,
+        route: ResolvedOpenAiUpstreamRoute,
     ) -> Self {
         Self {
             inner,

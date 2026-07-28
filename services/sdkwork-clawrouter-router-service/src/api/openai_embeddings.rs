@@ -22,9 +22,9 @@ use crate::api::openai_invocation::{
     OpenAiInvocationRelayOutcome,
 };
 use crate::api::openai_runtime::{
-    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_provider_route_plan,
+    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
     route_http_status_is_retryable, OpenAiRouteError, OpenAiRuntimeFailureStrategy,
-    OpenAiRuntimeRouteConfig, ResolvedOpenAiProviderRoute, ResolvedOpenAiProviderRoutePlan,
+    OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoute, ResolvedOpenAiUpstreamRoutePlan,
 };
 use crate::api::openai_usage::{
     build_request_trace_command, provider_error_code_from_body, provider_error_message_from_body,
@@ -368,7 +368,7 @@ where
                         "invalid_request_error".to_owned()
                     }),
                     Some(format!(
-                        "provider route selection failed for model: {}",
+                        "upstream route selection failed for model: {}",
                         request.model
                     )),
                 ),
@@ -472,11 +472,11 @@ fn validate_embeddings_model<C>(
     state: &OpenAiEmbeddingsState<C>,
     context: &AuthenticatedApiKeyContext,
     model: &str,
-) -> Result<ResolvedOpenAiProviderRoutePlan, OpenAiRouteError>
+) -> Result<ResolvedOpenAiUpstreamRoutePlan, OpenAiRouteError>
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    resolve_openai_provider_route_plan(
+    resolve_openai_upstream_route_plan(
         state.catalog.as_ref(),
         context,
         model,
@@ -494,7 +494,7 @@ async fn relay_embedding(
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: AuthenticatedApiKeyContext,
-    route_plan: ResolvedOpenAiProviderRoutePlan,
+    route_plan: ResolvedOpenAiUpstreamRoutePlan,
     request: ParsedOpenAiEmbeddingsRequest,
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: &ProviderRetryPolicy,
@@ -562,7 +562,7 @@ async fn relay_embedding_route(
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     requested_model: &str,
     request_body: serde_json::Value,
     failure_strategy: OpenAiRuntimeFailureStrategy,

@@ -7,7 +7,7 @@ use crate::api::openai_invocation::{
     OpenAiInvocationContext, OpenAiInvocationEndpoint, OpenAiInvocationFault,
     OpenAiInvocationPluginError, OpenAiInvocationRelayOutcome,
 };
-use crate::api::openai_runtime::ResolvedOpenAiProviderRoute;
+use crate::api::openai_runtime::ResolvedOpenAiUpstreamRoute;
 use crate::application::{
     AuthenticatedApiKeyContext, PricingResolver, ResolveModelPriceQuery, ResolvedModelPrice,
 };
@@ -93,7 +93,7 @@ where
     pub async fn record_after_relay(
         &self,
         context: &OpenAiInvocationContext,
-        route: &ResolvedOpenAiProviderRoute,
+        route: &ResolvedOpenAiUpstreamRoute,
         outcome: &OpenAiInvocationRelayOutcome,
     ) -> Result<(), OpenAiInvocationPluginError> {
         if context.stream || !(200..=299).contains(&outcome.status_code) {
@@ -133,7 +133,7 @@ where
     pub(crate) async fn record_after_success(
         &self,
         context: &OpenAiInvocationContext,
-        route: &ResolvedOpenAiProviderRoute,
+        route: &ResolvedOpenAiUpstreamRoute,
         outcome: &OpenAiInvocationRelayOutcome,
     ) -> Result<(), OpenAiInvocationFault> {
         self.record_after_relay(context, route, outcome)
@@ -469,7 +469,7 @@ fn non_negative_integer(field: &str, integer: i64) -> DomainResult<i64> {
 pub(crate) fn build_usage_record_command<C>(
     catalog: &C,
     invocation_context: &OpenAiInvocationContext,
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     http_status: u16,
     streaming: bool,
     usage: OpenAiTokenUsage,
@@ -492,7 +492,7 @@ where
 
 pub(crate) fn build_request_trace_command(
     invocation_context: &OpenAiInvocationContext,
-    route: Option<&ResolvedOpenAiProviderRoute>,
+    route: Option<&ResolvedOpenAiUpstreamRoute>,
     http_status: Option<u16>,
     streaming: bool,
     latency_ms: Option<i64>,
@@ -597,7 +597,7 @@ pub(crate) fn build_usage_record_command_builder<C>(
     catalog: &C,
     invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     http_status: u16,
     streaming: bool,
     billing_profile: OpenAiUsageBillingProfile,
@@ -739,7 +739,7 @@ where
 fn resolve_optional_cache_read_price<C>(
     catalog: &C,
     context: &AuthenticatedApiKeyContext,
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     meter: BillingMeter,
     fallback: &ResolvedModelPrice,
 ) -> DomainResult<Option<ResolvedModelPrice>>
@@ -768,7 +768,7 @@ where
 }
 
 fn build_pricing_snapshot(
-    route: &ResolvedOpenAiProviderRoute,
+    route: &ResolvedOpenAiUpstreamRoute,
     input_price: &ResolvedModelPrice,
     output_price: Option<&ResolvedModelPrice>,
     cache_read_price: Option<&ResolvedModelPrice>,

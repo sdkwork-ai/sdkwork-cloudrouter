@@ -21,10 +21,10 @@ mod payment_provider_runtime_snapshot;
 mod payment_reconciliation_runtime;
 mod payment_refund_runtime;
 mod paypal_payment_adapter;
-mod provider_route_selector;
 mod runtime_stream_bus;
 mod stripe_payment_adapter;
 mod upstream_account_route_planner;
+mod upstream_route_selector;
 mod usage_settlement_config;
 mod usage_settlement_worker;
 mod wechat_pay_adapter;
@@ -156,11 +156,6 @@ pub use paypal_payment_adapter::{
     PayPalHyperPaymentHttpClient, PayPalPaymentHttpClient, PayPalPaymentProviderAdapter,
     PayPalPaymentProviderConfig,
 };
-pub use provider_route_selector::{
-    ProviderRouteSelectionError, ProviderRouteSelectionErrorKind, ProviderRouteSelector,
-    SelectProviderRouteQuery, SelectUpstreamAccountRouteQuery, SelectedProviderRoute,
-    SelectedProviderRoutePlan, SelectedUpstreamAccountRoute,
-};
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{
     ApiKeyAuthenticator, ApiKeySecretCodec, ApiKeySecretHasher, AuthenticateApiKeyQuery,
@@ -174,6 +169,11 @@ pub use sdkwork_models_catalog_service::{
 pub use stripe_payment_adapter::{
     StripeHyperPaymentHttpClient, StripePaymentHttpClient, StripePaymentProviderAdapter,
     StripePaymentProviderConfig,
+};
+pub use upstream_route_selector::{
+    SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute,
+    SelectedUpstreamModelRoute, SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError,
+    UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 pub use usage_settlement_config::{
     resolve_usage_settlement_worker_config, usage_settlement_worker_config_from_env_or_toml,

@@ -33,7 +33,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         )
         .with_catalog_key("openai/text-embedding-3-small"),
     );
-    catalog.add_provider_route(
+    catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/text-embedding-3-small",
             "text-embedding-3-small",
