@@ -27,7 +27,7 @@ function trace(id: string) {
     method: 'POST' as const,
     status: 200,
     duration: '128ms',
-    channel: 'openai-main',
+    upstreamAccount: 'openai-main',
   };
 }
 

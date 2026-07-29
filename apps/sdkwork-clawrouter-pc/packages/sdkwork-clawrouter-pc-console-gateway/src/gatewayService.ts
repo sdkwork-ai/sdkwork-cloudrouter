@@ -15,7 +15,7 @@ export interface GatewayTrace {
   method: SdkGatewayTrace['method'];
   status: number;
   duration: SdkGatewayTrace['duration'];
-  channel: SdkGatewayTrace['channel'];
+  upstreamAccount: SdkGatewayTrace['upstreamAccount'];
 }
 
 export interface GatewayTracePageInfo {
@@ -89,7 +89,11 @@ function readGatewayTrace(value: unknown): GatewayTrace {
     method: readHttpMethod(item.method),
     status: readHttpStatus(item.status),
     duration: readRequiredString(item, 'duration', 'Gateway trace duration is required'),
-    channel: readRequiredString(item, 'channel', 'Gateway trace channel is required'),
+    upstreamAccount: readRequiredString(
+      item,
+      'upstreamAccount',
+      'Gateway trace upstream account is required',
+    ),
   };
 }
 
@@ -155,6 +159,8 @@ function readHttpMethod(value: unknown): GatewayTrace['method'] {
     || value === 'DELETE'
     || value === 'OPTIONS'
     || value === 'HEAD'
+    || value === 'CONNECT'
+    || value === 'TRACE'
   ) {
     return value;
   }

@@ -1524,7 +1524,7 @@ frontend_operations:
 - route: /console/gateway
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts
   operation: fetchTraces
-  operation_id: ai.gateway.traces.get
+  operation_id: gateway.traces.list
   kind: read
   api_surface: app
   api_method: GET
@@ -1532,11 +1532,37 @@ frontend_operations:
   sdk_domain: ai
   read_sources:
   - ai_request_trace
-  - ops_gateway_instance
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: GatewayTracesPage
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          name: GatewayTrace
+          required: [id, time, ip, endpoint, method, status, duration, upstreamAccount]
+          properties:
+            id: { type: string }
+            time: { type: string, description: Gateway request start time. }
+            ip: { type: string, description: Masked client IP address. }
+            endpoint: { type: string }
+            method: { type: string, enum: [GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, CONNECT, TRACE] }
+            status: { type: integer, format: int32, minimum: 100, maximum: 599 }
+            duration: { type: string, description: HTTP latency display value, for example 128ms. }
+            upstreamAccount: { type: string, description: Routed upstream account display name snapshot. }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: cursor
+    schema: { type: string, maxLength: 1024 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /rankings
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-rankings/src/rankingService.ts
   operation: fetchModelRankings
@@ -2862,13 +2888,28 @@ frontend_operations:
   - integration_webhook_endpoint
   - ops_notification_delivery
   response_schema:
-    name: NoData
-    properties: {}
+    name: SettingsDataResponse
+    type: object
+    additionalProperties: false
+    required: [language, timezone, webhookUrl, notifications]
+    properties:
+      language: { type: string, maxLength: 32 }
+      timezone: { type: string, maxLength: 64 }
+      webhookUrl: { type: string, maxLength: 1024 }
+      notifications:
+        type: object
+        additionalProperties: false
+        name: SettingsNotifications
+        required: [billReminder, quotaWarning, apiMonitor]
+        properties:
+          billReminder: { type: boolean }
+          quotaWarning: { type: boolean }
+          apiMonitor: { type: boolean }
   query_parameters: []
 - route: /console/settings
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts
   operation: updateSettings
-  operation_id: iam.users.settings.put
+  operation_id: users.settings.update
   kind: update
   api_surface: app
   api_method: PUT
@@ -2878,9 +2919,31 @@ frontend_operations:
   - iam_user_preference
   - integration_webhook_endpoint
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: UpdateSettingsResponse
+    type: object
+    additionalProperties: false
+    required: [success]
+    properties:
+      success: { type: boolean }
+  request_schema:
+    name: UpdateSettingsRequest
+    type: object
+    additionalProperties: false
+    required: [language, timezone, webhookUrl, notifications]
+    properties:
+      language: { type: string, maxLength: 32 }
+      timezone: { type: string, maxLength: 64 }
+      webhookUrl: { type: string, maxLength: 1024 }
+      notifications:
+        type: object
+        additionalProperties: false
+        name: UpdateSettingsNotificationsRequest
+        required: [billReminder, quotaWarning, apiMonitor]
+        properties:
+          billReminder: { type: boolean }
+          quotaWarning: { type: boolean }
+          apiMonitor: { type: boolean }
+  request_body_required: true
   write_tables:
   - iam_user_preference
   - integration_webhook_endpoint
@@ -7849,10 +7912,9 @@ frontend_models:
   - method
   - status
   - duration
-  - channel
+  - upstreamAccount
   data_sources:
   - ai_request_trace
-  - ops_gateway_instance
 - route: /console/settings
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts
   interface: SettingsData

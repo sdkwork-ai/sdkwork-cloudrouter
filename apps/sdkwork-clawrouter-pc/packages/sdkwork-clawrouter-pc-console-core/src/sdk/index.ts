@@ -7,6 +7,8 @@ export type {
   DashboardOverviewResponse,
   GatewayTrace,
   SettingsDataResponse,
+  UpdateSettingsRequest,
+  UpdateSettingsResponse,
   UpdateApiKeyRequest,
   UsageLogItem,
   UsageLogsResponse,

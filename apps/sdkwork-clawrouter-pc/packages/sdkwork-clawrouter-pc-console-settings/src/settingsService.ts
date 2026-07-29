@@ -1,15 +1,13 @@
 import {
-  ensureSdkworkApiSuccess,
   isRecord,
-  readApiRecord,
-  readRequiredApiItem,
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import { getClawRouterAppSdkClient } from '@sdkwork/clawrouter-pc-console-core/sdk';
 import type {
   SettingsDataResponse as SdkSettingsDataResponse,
-  UpdateSettingsRequest,
+  UpdateSettingsRequest as SdkUpdateSettingsRequest,
+  UpdateSettingsResponse as SdkUpdateSettingsResponse,
 } from '@sdkwork/clawrouter-pc-console-core/sdk';
 
 type SdkSettingsNotifications = SdkSettingsDataResponse['notifications'];
@@ -30,8 +28,7 @@ export interface SettingsData {
 export class SettingsService {
   static async fetchSettings(): Promise<SettingsData> {
     const result = await getClawRouterAppSdkClient().iam.users.settings.retrieve();
-    ensureSdkworkApiSuccess(result, 'console.settings.states.loadErrorFallback');
-    return normalizeSettings(readRequiredApiItem(result, 'console.settings.states.loadErrorFallback'));
+    return normalizeSettings(result);
   }
 
   static async updateSettings(data: SettingsData): Promise<void> {
@@ -42,7 +39,7 @@ export class SettingsService {
   }
 }
 
-function toUpdateSettingsRequest(data: SettingsData): UpdateSettingsRequest {
+function toUpdateSettingsRequest(data: SettingsData): SdkUpdateSettingsRequest {
   return {
     language: requiredText(data.language, 'language'),
     timezone: requiredText(data.timezone, 'timezone'),
@@ -74,7 +71,11 @@ function webhookUrl(value: string): string {
   return normalized;
 }
 
-function normalizeSettings(data: ApiRecord): SettingsData {
+function normalizeSettings(value: unknown): SettingsData {
+  if (!isRecord(value)) {
+    throw new Error('console.settings.states.loadErrorFallback');
+  }
+  const data: ApiRecord = value;
   const notifications = readRequiredRecord(data, 'notifications', 'Settings notifications are required');
   return {
     language: readRequiredString(data, 'language', 'Settings language is required'),
@@ -88,13 +89,8 @@ function normalizeSettings(data: ApiRecord): SettingsData {
   };
 }
 
-function ensureSettingsUpdateSuccess(result: unknown): void {
-  try {
-    ensureSdkworkApiSuccess(result, 'Settings update confirmation is required');
-  } catch {
-    throw new Error('Settings update confirmation is required');
-  }
-  if (readRequiredBoolean(readApiRecord(result), 'success', 'Settings update confirmation is required') !== true) {
+function ensureSettingsUpdateSuccess(result: SdkUpdateSettingsResponse): void {
+  if (result.success !== true) {
     throw new Error('Settings update confirmation is required');
   }
 }

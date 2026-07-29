@@ -25,6 +25,9 @@ export type { DashboardSparklinePoint } from './dashboard-sparkline-point';
 export type { DashboardTopModel } from './dashboard-top-model';
 
 export type { FieldError } from './field-error';
+export type { GatewayTrace } from './gateway-trace';
+
+export type { GatewayTracesPage } from './gateway-traces-page';
 
 export type { JsonNull } from './json-null';
 export type { JsonObject } from './json-object';
@@ -41,9 +44,14 @@ export type { SdkWorkPageData } from './sdk-work-page-data';
 export type { SdkWorkPlatformErrorCode } from './sdk-work-platform-error-code';
 export type { SdkWorkResourceData } from './sdk-work-resource-data';
 export type { SdkWorkResourceResponse } from './sdk-work-resource-response';
+export type { SettingsDataResponse } from './settings-data-response';
+export type { SettingsNotifications } from './settings-notifications';
 
 export type { UpdateApiKeyRequest } from './update-api-key-request';
 export type { UpdateApiKeyResponse } from './update-api-key-response';
+export type { UpdateSettingsNotificationsRequest } from './update-settings-notifications-request';
+export type { UpdateSettingsRequest } from './update-settings-request';
+export type { UpdateSettingsResponse } from './update-settings-response';
 export type { UsageLogItem } from './usage-log-item';
 
 export type { UsageLogsResponse } from './usage-logs-response';

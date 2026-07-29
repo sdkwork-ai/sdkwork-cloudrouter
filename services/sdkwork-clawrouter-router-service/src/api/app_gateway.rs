@@ -23,6 +23,7 @@ const DEFAULT_GATEWAY_TRACES_PAGE_SIZE: i64 = 20;
 const MAX_GATEWAY_TRACES_PAGE_SIZE: i64 = 200;
 const MAX_GATEWAY_TRACES_KEYWORD_LEN: usize = 128;
 const MAX_GATEWAY_TRACES_CURSOR_LEN: usize = 1024;
+const MAX_GATEWAY_TRACES_CURSOR_EPOCH_MICROS: i64 = 253_402_300_799_999_999;
 
 #[derive(Clone)]
 struct AppGatewayTracesState {
@@ -186,11 +187,71 @@ fn decode_gateway_traces_cursor(value: &str) -> Result<AppGatewayTracesCursor, S
         base64url_decode(value).ok_or_else(|| "gateway traces cursor is invalid".to_owned())?;
     let payload = serde_json::from_slice::<GatewayTracesCursorPayload>(&decoded)
         .map_err(|_| "gateway traces cursor is invalid".to_owned())?;
-    if payload.id <= 0 {
+    if payload.id <= 0
+        || !(0..=MAX_GATEWAY_TRACES_CURSOR_EPOCH_MICROS).contains(&payload.started_at_micros)
+    {
         return Err("gateway traces cursor is invalid".to_owned());
     }
     Ok(AppGatewayTracesCursor {
         started_at_micros: payload.started_at_micros,
         id: payload.id,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        decode_gateway_traces_cursor, encode_gateway_traces_cursor, validate_gateway_traces_query,
+        AppGatewayTracesListQuery,
+    };
+    use crate::ports::AppGatewayTracesCursor;
+
+    #[test]
+    fn gateway_trace_cursor_round_trips_as_opaque_base64url() {
+        let cursor = AppGatewayTracesCursor {
+            started_at_micros: 1_782_531_200_123_456,
+            id: 42,
+        };
+
+        let encoded = encode_gateway_traces_cursor(&cursor).unwrap();
+
+        assert!(!encoded.contains('{'));
+        assert_eq!(cursor, decode_gateway_traces_cursor(&encoded).unwrap());
+    }
+
+    #[test]
+    fn gateway_trace_cursor_rejects_invalid_or_out_of_range_values() {
+        for value in ["", "not-base64url", "IA"] {
+            assert!(decode_gateway_traces_cursor(value).is_err());
+        }
+        let invalid_id = sdkwork_utils_rust::base64url_encode(
+            br#"{"started_at_micros":1782531200123456,"id":0}"#,
+        );
+        assert!(decode_gateway_traces_cursor(&invalid_id).is_err());
+    }
+
+    #[test]
+    fn gateway_trace_query_enforces_bounded_page_and_search_values() {
+        let validated = validate_gateway_traces_query(AppGatewayTracesListQuery {
+            cursor: None,
+            page_size: None,
+            q: Some("  trace-42  ".to_owned()),
+        })
+        .unwrap();
+        assert_eq!(20, validated.page_size);
+        assert_eq!(Some("trace-42"), validated.keyword.as_deref());
+
+        assert!(validate_gateway_traces_query(AppGatewayTracesListQuery {
+            cursor: None,
+            page_size: Some(201),
+            q: None,
+        })
+        .is_err());
+        assert!(validate_gateway_traces_query(AppGatewayTracesListQuery {
+            cursor: None,
+            page_size: Some(20),
+            q: Some("x".repeat(129)),
+        })
+        .is_err());
+    }
 }

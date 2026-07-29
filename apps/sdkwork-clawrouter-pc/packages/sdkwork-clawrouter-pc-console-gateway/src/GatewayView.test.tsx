@@ -70,7 +70,7 @@ function trace(id: string): GatewayTrace {
     method: 'POST',
     status: 200,
     duration: '128ms',
-    channel: 'openai-main',
+    upstreamAccount: 'openai-main',
   };
 }
 

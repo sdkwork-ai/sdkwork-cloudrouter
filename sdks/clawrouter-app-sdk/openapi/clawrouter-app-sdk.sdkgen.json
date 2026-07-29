@@ -1496,6 +1496,69 @@
         ],
         "type": "object"
       },
+      "GatewayTrace": {
+        "additionalProperties": false,
+        "description": "Gateway trace schema exposed by Claw Router.",
+        "properties": {
+          "duration": {
+            "description": "HTTP latency display value",
+            "type": "string"
+          },
+          "endpoint": {
+            "description": "Endpoint field on gateway trace.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on gateway trace.",
+            "type": "string"
+          },
+          "ip": {
+            "description": "Masked client IP address.",
+            "type": "string"
+          },
+          "method": {
+            "description": "Method field on gateway trace.",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "OPTIONS",
+              "HEAD",
+              "CONNECT",
+              "TRACE"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on gateway trace.",
+            "format": "int32",
+            "maximum": 599,
+            "minimum": 100,
+            "type": "integer"
+          },
+          "time": {
+            "description": "Gateway request start time.",
+            "type": "string"
+          },
+          "upstreamAccount": {
+            "description": "Routed upstream account display name snapshot.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "time",
+          "ip",
+          "endpoint",
+          "method",
+          "status",
+          "duration",
+          "upstreamAccount"
+        ],
+        "type": "object"
+      },
       "GatewayTracesListResult": {
         "allOf": [
           {
@@ -1508,10 +1571,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/GatewayTracesPage"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on gateway traces list result."
               }
             },
             "required": [
@@ -1522,6 +1585,33 @@
         ],
         "description": "Gateway traces list result schema exposed by Claw Router.",
         "x-operation-id": "gateway.traces.list"
+      },
+      "GatewayTracesPage": {
+        "additionalProperties": false,
+        "description": "Gateway traces page schema exposed by Claw Router.",
+        "name": "GatewayTracesPage",
+        "properties": {
+          "items": {
+            "description": "Items field on gateway traces page.",
+            "items": {
+              "$ref": "#/components/schemas/GatewayTrace"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on gateway traces page."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
       },
       "GenerationsImagesTextToImageCreateResult": {
         "allOf": [
@@ -2340,6 +2430,67 @@
           }
         ]
       },
+      "SettingsDataResponse": {
+        "additionalProperties": false,
+        "description": "Settings data response schema exposed by Claw Router.",
+        "name": "SettingsDataResponse",
+        "properties": {
+          "language": {
+            "description": "Language field on settings data response.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "notifications": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SettingsNotifications"
+              }
+            ],
+            "description": "Notifications field on settings data response."
+          },
+          "timezone": {
+            "description": "Timezone field on settings data response.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "webhookUrl": {
+            "description": "Webhook url field on settings data response.",
+            "maxLength": 1024,
+            "type": "string"
+          }
+        },
+        "required": [
+          "language",
+          "timezone",
+          "webhookUrl",
+          "notifications"
+        ],
+        "type": "object"
+      },
+      "SettingsNotifications": {
+        "additionalProperties": false,
+        "description": "Settings notifications schema exposed by Claw Router.",
+        "properties": {
+          "apiMonitor": {
+            "description": "Api monitor field on settings notifications.",
+            "type": "boolean"
+          },
+          "billReminder": {
+            "description": "Bill reminder field on settings notifications.",
+            "type": "boolean"
+          },
+          "quotaWarning": {
+            "description": "Quota warning field on settings notifications.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "billReminder",
+          "quotaWarning",
+          "apiMonitor"
+        ],
+        "type": "object"
+      },
       "SiteRuntimeListResult": {
         "allOf": [
           {
@@ -2578,6 +2729,82 @@
         },
         "required": [
           "item"
+        ],
+        "type": "object"
+      },
+      "UpdateSettingsNotificationsRequest": {
+        "additionalProperties": false,
+        "description": "Update settings notifications request schema exposed by Claw Router.",
+        "properties": {
+          "apiMonitor": {
+            "description": "Api monitor field on update settings notifications request.",
+            "type": "boolean"
+          },
+          "billReminder": {
+            "description": "Bill reminder field on update settings notifications request.",
+            "type": "boolean"
+          },
+          "quotaWarning": {
+            "description": "Quota warning field on update settings notifications request.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "billReminder",
+          "quotaWarning",
+          "apiMonitor"
+        ],
+        "type": "object"
+      },
+      "UpdateSettingsRequest": {
+        "additionalProperties": false,
+        "description": "Update settings request schema exposed by Claw Router.",
+        "name": "UpdateSettingsRequest",
+        "properties": {
+          "language": {
+            "description": "Language field on update settings request.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "notifications": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdateSettingsNotificationsRequest"
+              }
+            ],
+            "description": "Notifications field on update settings request."
+          },
+          "timezone": {
+            "description": "Timezone field on update settings request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "webhookUrl": {
+            "description": "Webhook url field on update settings request.",
+            "maxLength": 1024,
+            "type": "string"
+          }
+        },
+        "required": [
+          "language",
+          "timezone",
+          "webhookUrl",
+          "notifications"
+        ],
+        "type": "object"
+      },
+      "UpdateSettingsResponse": {
+        "additionalProperties": false,
+        "description": "Update settings response schema exposed by Claw Router.",
+        "name": "UpdateSettingsResponse",
+        "properties": {
+          "success": {
+            "description": "Success field on update settings response.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
         ],
         "type": "object"
       },
@@ -2849,10 +3076,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/SettingsDataResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on users settings retrieve result."
               }
             },
             "required": [
@@ -2876,10 +3103,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/UpdateSettingsResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on users settings update result."
               }
             },
             "required": [
@@ -3040,7 +3267,40 @@
       "get": {
         "description": "List traces. Reads ai_request_trace, ops_gateway_instance. Writes none. File targets none.",
         "operationId": "gateway.traces.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Cursor query parameter.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 1024,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -5058,6 +5318,17 @@
         "description": "Update settings. Reads iam_user_preference, integration_webhook_endpoint. Writes iam_user_preference, integration_webhook_endpoint. File targets none.",
         "operationId": "users.settings.update",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettingsRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for update settings.",
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {

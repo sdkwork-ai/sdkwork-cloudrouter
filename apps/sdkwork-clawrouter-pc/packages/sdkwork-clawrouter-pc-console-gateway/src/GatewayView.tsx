@@ -16,7 +16,7 @@ type GatewaySummary = {
   total: number;
   success: number;
   failed: number;
-  uniqueChannels: number;
+  uniqueAccounts: number;
 };
 
 function getLoadErrorMessage(error: unknown, fallback: string, t: TranslationFunction): string {
@@ -44,7 +44,7 @@ function summarizeTraces(traces: GatewayTrace[]): GatewaySummary {
       total: 0,
       success: 0,
       failed: 0,
-      uniqueChannels: new Set(traces.map((trace) => trace.channel).filter(Boolean)).size,
+      uniqueAccounts: new Set(traces.map((trace) => trace.upstreamAccount).filter(Boolean)).size,
     },
   );
 }
@@ -155,7 +155,7 @@ export function GatewayView() {
         <SummaryItem icon={<AlignLeft className="w-4 h-4 text-blue-500" />} label={t('console.gateway.summary.traceRows')} value={summary.total.toString()} />
         <SummaryItem icon={<Activity className="w-4 h-4 text-emerald-500" />} label={t('console.gateway.summary.successful')} value={summary.success.toString()} />
         <SummaryItem icon={<Timer className="w-4 h-4 text-rose-500" />} label={t('console.gateway.summary.failed')} value={summary.failed.toString()} />
-        <SummaryItem icon={<Server className="w-4 h-4 text-indigo-500" />} label={t('console.gateway.summary.channels')} value={summary.uniqueChannels.toString()} />
+        <SummaryItem icon={<Server className="w-4 h-4 text-indigo-500" />} label={t('console.gateway.summary.accounts')} value={summary.uniqueAccounts.toString()} />
       </div>
 
       <div className="space-y-3 flex flex-col items-start w-full">
@@ -266,7 +266,7 @@ function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
             <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.endpoint')}</th>
             <th className="px-4 py-2.5 font-medium text-center">{t('console.gateway.table.status')}</th>
             <th className="px-4 py-2.5 font-medium text-right">{t('console.gateway.table.duration')}</th>
-            <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.routedChannel')}</th>
+            <th className="px-4 py-2.5 font-medium">{t('console.gateway.table.routedAccount')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 dark:divide-white/5 text-slate-700 dark:text-slate-300">
@@ -299,7 +299,7 @@ function GatewayTraceTable({ traces }: { traces: GatewayTrace[] }) {
                 </span>
               </td>
               <td className="px-4 py-2.5 text-right">{trace.duration}</td>
-              <td className="px-4 py-2.5 text-slate-500">{trace.channel}</td>
+              <td className="px-4 py-2.5 text-slate-500">{trace.upstreamAccount}</td>
             </tr>
           ))}
         </tbody>

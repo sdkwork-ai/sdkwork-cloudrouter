@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/clawrouter-app-sdk"
   },
-  "changeFingerprint": "a05026128603a3638ccde190271ae406307ae0121a411a4adf89e88c0a197546",
+  "changeFingerprint": "b45240d133ead4397a639f21da4d8056e9a515c19250ebf2f5f1d4a7e31a8cd6",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -60,6 +60,8 @@
       "src/types/dashboard-sparkline-point.ts",
       "src/types/dashboard-top-model.ts",
       "src/types/field-error.ts",
+      "src/types/gateway-trace.ts",
+      "src/types/gateway-traces-page.ts",
       "src/types/index.ts",
       "src/types/json-null.ts",
       "src/types/json-object.ts",
@@ -74,8 +76,13 @@
       "src/types/sdk-work-platform-error-code.ts",
       "src/types/sdk-work-resource-data.ts",
       "src/types/sdk-work-resource-response.ts",
+      "src/types/settings-data-response.ts",
+      "src/types/settings-notifications.ts",
       "src/types/update-api-key-request.ts",
       "src/types/update-api-key-response.ts",
+      "src/types/update-settings-notifications-request.ts",
+      "src/types/update-settings-request.ts",
+      "src/types/update-settings-response.ts",
       "src/types/usage-log-item.ts",
       "src/types/usage-logs-response.ts",
       "tsconfig.json"
@@ -146,6 +153,8 @@
           "src/types/dashboard-sparkline-point.ts",
           "src/types/dashboard-top-model.ts",
           "src/types/field-error.ts",
+          "src/types/gateway-trace.ts",
+          "src/types/gateway-traces-page.ts",
           "src/types/index.ts",
           "src/types/json-null.ts",
           "src/types/json-object.ts",
@@ -160,8 +169,13 @@
           "src/types/sdk-work-platform-error-code.ts",
           "src/types/sdk-work-resource-data.ts",
           "src/types/sdk-work-resource-response.ts",
+          "src/types/settings-data-response.ts",
+          "src/types/settings-notifications.ts",
           "src/types/update-api-key-request.ts",
           "src/types/update-api-key-response.ts",
+          "src/types/update-settings-notifications-request.ts",
+          "src/types/update-settings-request.ts",
+          "src/types/update-settings-response.ts",
           "src/types/usage-log-item.ts",
           "src/types/usage-logs-response.ts"
         ]

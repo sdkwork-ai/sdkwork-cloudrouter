@@ -1,6 +1,9 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AppApiKeyItem, AppApiKeyListResponse, CreateApiKeyRequest, CreateApiKeyResponse, UpdateApiKeyRequest } from '../types';
+
+import type { AppApiKeyItem, AppApiKeyListResponse, CreateApiKeyRequest, CreateApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
+
+
 export class IamUsersSettingsApi {
   private client: HttpClient;
 
@@ -10,13 +13,13 @@ export class IamUsersSettingsApi {
 
 
 /** List settings */
-  async retrieve(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<SettingsDataResponse> {
+    return this.client.request<SettingsDataResponse>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update settings */
-  async update(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, sdkworkUnwrapKind: 'data' });
+  async update(body: UpdateSettingsRequest, requestOptions?: ApiRequestOptions): Promise<UpdateSettingsResponse> {
+    return this.client.request<UpdateSettingsResponse>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 

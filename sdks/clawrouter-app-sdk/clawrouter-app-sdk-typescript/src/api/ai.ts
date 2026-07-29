@@ -1,6 +1,6 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse, UsageLogsResponse } from '../types';
+import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse, GatewayTracesPage, UsageLogsResponse } from '../types';
 export interface AiUsageLogsListParams {
   page?: number;
   pageSize?: number;
@@ -206,6 +206,12 @@ export class AiGenerationsApi {
   }
 }
 
+export interface AiGatewayTracesListParams {
+  cursor?: string;
+  pageSize?: number;
+  q?: string;
+}
+
 export class AiGatewayTracesApi {
   private client: HttpClient;
 
@@ -215,8 +221,13 @@ export class AiGatewayTracesApi {
 
 
 /** List traces */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/gateway/traces`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  async list(params?: AiGatewayTracesListParams, requestOptions?: ApiRequestOptions): Promise<GatewayTracesPage> {
+    const query = buildQueryString([
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<GatewayTracesPage>(appendQueryString(appApiPath(`/ai/gateway/traces`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 

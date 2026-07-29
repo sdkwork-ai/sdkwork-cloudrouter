@@ -9940,7 +9940,37 @@
       "operation": "fetchTraces",
       "operation_id": "gateway.traces.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "maxLength": 1024,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_request_trace",
@@ -9949,11 +9979,81 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "GatewayTracesPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "GatewayTracesPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "GatewayTrace",
+                "properties": {
+                  "duration": {
+                    "description": "HTTP latency display value",
+                    "type": "string"
+                  },
+                  "endpoint": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "ip": {
+                    "description": "Masked client IP address.",
+                    "type": "string"
+                  },
+                  "method": {
+                    "enum": [
+                      "GET",
+                      "POST",
+                      "PUT",
+                      "PATCH",
+                      "DELETE",
+                      "OPTIONS",
+                      "HEAD",
+                      "CONNECT",
+                      "TRACE"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "format": "int32",
+                    "maximum": 599,
+                    "minimum": 100,
+                    "type": "integer"
+                  },
+                  "time": {
+                    "description": "Gateway request start time.",
+                    "type": "string"
+                  },
+                  "upstreamAccount": {
+                    "description": "Routed upstream account display name snapshot.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "time",
+                  "ip",
+                  "endpoint",
+                  "method",
+                  "status",
+                  "duration",
+                  "upstreamAccount"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -10119,11 +10219,51 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "SettingsDataResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "SettingsDataResponse",
+          "properties": {
+            "language": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "notifications": {
+              "additionalProperties": false,
+              "name": "SettingsNotifications",
+              "properties": {
+                "apiMonitor": {
+                  "type": "boolean"
+                },
+                "billReminder": {
+                  "type": "boolean"
+                },
+                "quotaWarning": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "billReminder",
+                "quotaWarning",
+                "apiMonitor"
+              ],
+              "type": "object"
+            },
+            "timezone": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "webhookUrl": {
+              "maxLength": 1024,
+              "type": "string"
+            }
+          },
+          "required": [
+            "language",
+            "timezone",
+            "webhookUrl",
+            "notifications"
+          ],
           "type": "object"
         }
       },
@@ -10157,14 +10297,70 @@
         "iam_user_preference",
         "integration_webhook_endpoint"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "UpdateSettingsRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "UpdateSettingsRequest",
+          "properties": {
+            "language": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "notifications": {
+              "additionalProperties": false,
+              "name": "UpdateSettingsNotificationsRequest",
+              "properties": {
+                "apiMonitor": {
+                  "type": "boolean"
+                },
+                "billReminder": {
+                  "type": "boolean"
+                },
+                "quotaWarning": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "billReminder",
+                "quotaWarning",
+                "apiMonitor"
+              ],
+              "type": "object"
+            },
+            "timezone": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "webhookUrl": {
+              "maxLength": 1024,
+              "type": "string"
+            }
+          },
+          "required": [
+            "language",
+            "timezone",
+            "webhookUrl",
+            "notifications"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "UpdateSettingsResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpdateSettingsResponse",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "success"
+          ],
           "type": "object"
         }
       },
