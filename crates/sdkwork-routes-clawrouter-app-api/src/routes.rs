@@ -28,10 +28,9 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
-    PostgresAdminTransactionCenterStore, PostgresAppChatStore,
-    PostgresAppGatewayTracesReadStore, PostgresAppNotificationStore, PostgresAppRoutingReadStore,
-    PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
-    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
+    PostgresAdminTransactionCenterStore, PostgresAppChatStore, PostgresAppGatewayTracesReadStore,
+    PostgresAppNotificationStore, PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore,
+    PostgresAppRuntimeStore, PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
     PostgresGatewayApiKeyCommandStore, PostgresModelRankingRefreshStore,
     PostgresModelRankingsReadStore, PostgresPaymentCallbackStore,
     PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
@@ -47,10 +46,9 @@ use sdkwork_clawrouter_router_service::ports::{
     AppChatStore, AppGatewayTracesReadStore, AppNotificationStore, AppRoutingReadStore,
     AppRoutingStrategyStore, AppRuntimeStore, DashboardOverviewReadStore,
     GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome,
-    ModelRankingRefreshRunStatus,
-    ModelRankingRefreshStore, ModelRankingsCacheInvalidation, ModelRankingsReadModelStore,
-    PaymentCallbackStore, SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore,
-    UsageLogsReadStore,
+    ModelRankingRefreshRunStatus, ModelRankingRefreshStore, ModelRankingsCacheInvalidation,
+    ModelRankingsReadModelStore, PaymentCallbackStore, SettingsStore,
+    SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
 };
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
 use sdkwork_database_sqlx::DatabasePool;
@@ -393,9 +391,7 @@ fn router_with_runtime_stores_and_database_status(
             ),
             subject_boundary_config.clone(),
         ),
-        None => {
-            router.merge(sdkwork_clawrouter_router_service::api::app_gateway_traces_router())
-        }
+        None => router.merge(sdkwork_clawrouter_router_service::api::app_gateway_traces_router()),
     };
     router = match app_notification_store {
         Some(store) => sdkwork_claw_http::merge_web_framework_scoped_app_router(
@@ -554,8 +550,7 @@ pub async fn router_with_postgres_product_catalog(
         Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
     let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
-    let gateway_traces_read_store =
-        Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
+    let gateway_traces_read_store = Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
@@ -650,8 +645,7 @@ pub async fn router_with_postgres_shared_runtime(
         Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
     let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
-    let gateway_traces_read_store =
-        Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
+    let gateway_traces_read_store = Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
@@ -879,8 +873,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
     let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
-    let gateway_traces_read_store =
-        Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
+    let gateway_traces_read_store = Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));

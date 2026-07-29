@@ -179,14 +179,11 @@ fn encode_gateway_traces_cursor(cursor: &AppGatewayTracesCursor) -> Result<Strin
 }
 
 fn decode_gateway_traces_cursor(value: &str) -> Result<AppGatewayTracesCursor, String> {
-    if value.is_empty()
-        || value.len() > MAX_GATEWAY_TRACES_CURSOR_LEN
-        || value.trim() != value
-    {
+    if value.is_empty() || value.len() > MAX_GATEWAY_TRACES_CURSOR_LEN || value.trim() != value {
         return Err("gateway traces cursor is invalid".to_owned());
     }
-    let decoded = base64url_decode(value)
-        .ok_or_else(|| "gateway traces cursor is invalid".to_owned())?;
+    let decoded =
+        base64url_decode(value).ok_or_else(|| "gateway traces cursor is invalid".to_owned())?;
     let payload = serde_json::from_slice::<GatewayTracesCursorPayload>(&decoded)
         .map_err(|_| "gateway traces cursor is invalid".to_owned())?;
     if payload.id <= 0 {

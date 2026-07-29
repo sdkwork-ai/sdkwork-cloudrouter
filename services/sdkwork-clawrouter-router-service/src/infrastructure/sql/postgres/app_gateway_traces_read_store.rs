@@ -202,9 +202,8 @@ fn required_integer_cell(
     column: &str,
     field_name: &str,
 ) -> DomainResult<i64> {
-    optional_integer_cell(row, column).ok_or_else(|| {
-        DomainError::new(format!("missing {field_name} from database row"))
-    })
+    optional_integer_cell(row, column)
+        .ok_or_else(|| DomainError::new(format!("missing {field_name} from database row")))
 }
 
 fn optional_integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> Option<i64> {
