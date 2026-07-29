@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "870436766d41775700fa2fd5c914e7267d2740ac84eac8b7b96cef885b1e5387",
+  "changeFingerprint": "96e455315a916f9e3fdce87525392fb5b733443f6e472c6617af9a3c6510ffad",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -50,6 +50,14 @@
           "src/types/app-api-key-list-response.ts",
           "src/types/app-routing-account-group-list-response.ts",
           "src/types/app-routing-account-group.ts",
+          "src/types/app-routing-api-key-account-group.ts",
+          "src/types/app-routing-api-key-list-response.ts",
+          "src/types/app-routing-api-key.ts",
+          "src/types/app-routing-model-stats.ts",
+          "src/types/app-routing-request-trace-list-response.ts",
+          "src/types/app-routing-request-trace.ts",
+          "src/types/app-routing-usage-data.ts",
+          "src/types/app-routing-usage-snapshot.ts",
           "src/types/common.ts",
           "src/types/create-api-key-request.ts",
           "src/types/create-api-key-response.ts",
@@ -244,10 +252,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 101,
-    "models": 71,
+    "totalFiles": 108,
+    "models": 78,
     "apis": 7,
-    "types": 73
+    "types": 80
   },
   "warnings": [
     {
@@ -310,12 +318,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 59,
+    "writtenFiles": 67,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "870436766d41775700fa2fd5c914e7267d2740ac84eac8b7b96cef885b1e5387",
+    "changeFingerprint": "96e455315a916f9e3fdce87525392fb5b733443f6e472c6617af9a3c6510ffad",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -347,6 +355,14 @@
         "src/types/app-api-key-list-response.ts",
         "src/types/app-routing-account-group-list-response.ts",
         "src/types/app-routing-account-group.ts",
+        "src/types/app-routing-api-key-account-group.ts",
+        "src/types/app-routing-api-key-list-response.ts",
+        "src/types/app-routing-api-key.ts",
+        "src/types/app-routing-model-stats.ts",
+        "src/types/app-routing-request-trace-list-response.ts",
+        "src/types/app-routing-request-trace.ts",
+        "src/types/app-routing-usage-data.ts",
+        "src/types/app-routing-usage-snapshot.ts",
         "src/types/common.ts",
         "src/types/create-api-key-request.ts",
         "src/types/create-api-key-response.ts",
@@ -423,6 +439,14 @@
             "src/types/app-api-key-list-response.ts",
             "src/types/app-routing-account-group-list-response.ts",
             "src/types/app-routing-account-group.ts",
+            "src/types/app-routing-api-key-account-group.ts",
+            "src/types/app-routing-api-key-list-response.ts",
+            "src/types/app-routing-api-key.ts",
+            "src/types/app-routing-model-stats.ts",
+            "src/types/app-routing-request-trace-list-response.ts",
+            "src/types/app-routing-request-trace.ts",
+            "src/types/app-routing-usage-data.ts",
+            "src/types/app-routing-usage-snapshot.ts",
             "src/types/common.ts",
             "src/types/create-api-key-request.ts",
             "src/types/create-api-key-response.ts",

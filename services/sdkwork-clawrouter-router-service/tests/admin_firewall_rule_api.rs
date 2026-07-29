@@ -7,8 +7,9 @@ use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_clawrouter_router_service::domain::DomainResult;
 use sdkwork_clawrouter_router_service::ports::{
-    AdminFirewallRuleCommandFuture, AdminFirewallRuleItem, AdminFirewallRuleStore,
-    CreateAdminFirewallRuleCommand, DeleteAdminFirewallRuleCommand, ListAdminFirewallRulesQuery,
+    AdminFirewallRuleCommandFuture, AdminFirewallRuleItem, AdminFirewallRuleListPage,
+    AdminFirewallRuleStore, CreateAdminFirewallRuleCommand, DeleteAdminFirewallRuleCommand,
+    ListAdminFirewallRulesQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -27,7 +28,7 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/router/firewall/rules")
+                .uri("/backend/v3/api/system/firewalls/rules")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -38,7 +39,7 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!("IP blacklist", create_payload["data"]["item"]["type"]);
@@ -57,7 +58,7 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/router/firewall/rules")
+                .uri("/backend/v3/api/system/firewalls/rules")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -75,7 +76,7 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
         .oneshot(
             Request::builder()
                 .method("DELETE")
-                .uri("/backend/v3/api/router/firewall/rules/1")
+                .uri("/backend/v3/api/system/firewalls/rules/1")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -83,15 +84,17 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, delete_response.status());
-    let delete_payload = json_payload(delete_response).await;
-    assert_eq!(true, delete_payload["data"]["deleted"]);
+    assert_eq!(StatusCode::NO_CONTENT, delete_response.status());
+    let delete_body = axum::body::to_bytes(delete_response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert!(delete_body.is_empty());
 
     let final_list_response = router
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/router/firewall/rules")
+                .uri("/backend/v3/api/system/firewalls/rules")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -122,7 +125,7 @@ async fn admin_firewall_rule_route_rejects_invalid_value_without_calling_store()
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/router/firewall/rules")
+                .uri("/backend/v3/api/system/firewalls/rules")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -154,7 +157,7 @@ async fn admin_firewall_rule_route_rejects_missing_trusted_subject() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/router/firewall/rules")
+                .uri("/backend/v3/api/system/firewalls/rules")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -183,9 +186,10 @@ impl AdminFirewallRuleStore for TestFirewallRuleStore {
     fn list_firewall_rules<'a>(
         &'a self,
         query: ListAdminFirewallRulesQuery,
-    ) -> AdminFirewallRuleCommandFuture<'a, Vec<AdminFirewallRuleItem>> {
+    ) -> AdminFirewallRuleCommandFuture<'a, AdminFirewallRuleListPage> {
         Box::pin(async move {
-            Ok(self
+            let q = query.q.as_deref().map(str::to_ascii_lowercase);
+            let items = self
                 .items
                 .lock()
                 .unwrap()
@@ -194,9 +198,26 @@ impl AdminFirewallRuleStore for TestFirewallRuleStore {
                     item.tenant_id == query.subject.tenant_id
                         && item.organization_id == query.subject.organization_id
                         && item.deleted_at.is_none()
+                        && q.as_ref().map_or(true, |q| {
+                            item.firewall_type.to_ascii_lowercase().contains(q)
+                                || item.value.to_ascii_lowercase().contains(q)
+                                || item.reason.to_ascii_lowercase().contains(q)
+                        })
                 })
                 .cloned()
-                .collect())
+                .collect::<Vec<_>>();
+            let total = items.len() as i64;
+            let items = items
+                .into_iter()
+                .skip(query.offset.max(0) as usize)
+                .take(query.page_size.max(0) as usize)
+                .collect();
+            Ok(AdminFirewallRuleListPage {
+                items,
+                total,
+                page_no: query.page_no,
+                page_size: query.page_size,
+            })
         })
     }
 

@@ -264,9 +264,6 @@ async fn create_key(
 ) -> Response {
     match create_key_inner(state, scope, headers, request).await {
         Ok(response) => json_created_response(None, response),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => {
-            problem_from_wire_code("4010", message).into_response()
-        }
         Err(AppApiKeyCreateError::BadRequest(message)) => {
             problem_from_wire_code("4001", message).into_response()
         }
@@ -288,9 +285,6 @@ async fn update_key(
 ) -> Response {
     match update_key_inner(state, scope, headers, api_key_id, request).await {
         Ok(response) => Json(success_envelope(response)).into_response(),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => {
-            problem_from_wire_code("4010", message).into_response()
-        }
         Err(AppApiKeyCreateError::BadRequest(message)) => {
             problem_from_wire_code("4001", message).into_response()
         }
@@ -311,9 +305,6 @@ async fn delete_key(
 ) -> Response {
     match delete_key_inner(state, scope, headers, api_key_id).await {
         Ok(_) => no_content_response(None),
-        Err(AppApiKeyCreateError::Unauthorized(message)) => {
-            problem_from_wire_code("4010", message).into_response()
-        }
         Err(AppApiKeyCreateError::BadRequest(message)) => {
             problem_from_wire_code("4001", message).into_response()
         }
@@ -387,7 +378,6 @@ async fn create_key_inner(
         key_prefix: key_prefix(&raw_key),
         key_display_masked: mask_created_key(&raw_key),
         key_hash,
-        copyable_key: raw_key.clone(),
         hash_alg: HASH_ALG_HMAC_SHA256.to_owned(),
         secret_version: SECRET_VERSION,
         request_id,
@@ -1243,10 +1233,6 @@ fn system_error(error: DomainError) -> AppApiKeyCreateError {
     AppApiKeyCreateError::System(error.to_string())
 }
 
-fn unauthorized_error(error: impl std::fmt::Display) -> AppApiKeyCreateError {
-    AppApiKeyCreateError::Unauthorized(error.to_string())
-}
-
 fn store_error(error: DomainError) -> AppApiKeyCreateError {
     if error.is_conflict() {
         AppApiKeyCreateError::Conflict(error.to_string())
@@ -1257,7 +1243,6 @@ fn store_error(error: DomainError) -> AppApiKeyCreateError {
 
 #[derive(Debug)]
 enum AppApiKeyCreateError {
-    Unauthorized(String),
     BadRequest(String),
     Conflict(String),
     System(String),

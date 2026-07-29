@@ -1722,7 +1722,7 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
                             {
                                 "api_surface": "backend",
                                 "api_method": "POST",
-                                "api_path": "/backend/v3/api/router/firewall/rules",
+                                "api_path": "/backend/v3/api/system/firewalls/rules",
                                 "operation": "addFirewall",
                                 "operation_id": "firewalls.rules.create",
                                 "tag": "firewall",
@@ -1780,7 +1780,7 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
                 "export class FirewallApi {\n"
                 "  constructor(private client: HttpClient) {}\n"
                 "  async create(body: AdminFirewallRuleCreateRequest): Promise<FirewallsRulesCreateResult> {\n"
-                "    return this.client.post<FirewallsRulesCreateResult>(backendApiPath(`/router/firewall/rules`), body, undefined, undefined, 'application/json');\n"
+                "    return this.client.post<FirewallsRulesCreateResult>(backendApiPath(`/system/firewalls/rules`), body, undefined, undefined, 'application/json');\n"
                 "  }\n"
                 "}\n",
                 encoding="utf-8",

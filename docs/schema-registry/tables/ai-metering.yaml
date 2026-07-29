@@ -13,7 +13,6 @@ tables:
   columns:
     decision_log_id: int64
     api_key_id: int64
-    legacy_api_key_id: int64
     api_key_name_snapshot: string(128)
     account_group_id: int64
     account_group_snapshot: string(128)
@@ -232,7 +231,6 @@ tables:
     attempt_no: int32
     decision_log_id: int64
     api_key_id: int64
-    legacy_api_key_id: int64
     api_key_name_snapshot: string(128)
     account_group_id: int64
     account_group_snapshot: string(128)

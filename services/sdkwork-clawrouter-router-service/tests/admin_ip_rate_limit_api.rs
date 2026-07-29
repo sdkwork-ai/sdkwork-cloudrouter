@@ -27,7 +27,7 @@ async fn admin_ip_rate_limit_route_creates_and_lists_ip_rules() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/router/rate_limits/ip")
+                .uri("/backend/v3/api/system/rate_limits/ip")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -55,7 +55,7 @@ async fn admin_ip_rate_limit_route_creates_and_lists_ip_rules() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/router/rate_limits/ip")
+                .uri("/backend/v3/api/system/rate_limits/ip")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::empty())
                 .unwrap(),
@@ -85,7 +85,7 @@ async fn admin_ip_rate_limit_route_rejects_invalid_ip_without_calling_store() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/backend/v3/api/router/rate_limits/ip")
+                .uri("/backend/v3/api/system/rate_limits/ip")
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
@@ -117,7 +117,7 @@ async fn admin_ip_rate_limit_route_rejects_missing_trusted_subject() {
         .oneshot(
             Request::builder()
                 .method("GET")
-                .uri("/backend/v3/api/router/rate_limits/ip")
+                .uri("/backend/v3/api/system/rate_limits/ip")
                 .body(Body::empty())
                 .unwrap(),
         )

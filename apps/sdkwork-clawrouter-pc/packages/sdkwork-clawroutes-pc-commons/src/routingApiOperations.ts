@@ -1,9 +1,8 @@
 import { getClawRouterAppSdkClient } from './sdk-clients.ts';
 import type {
-  RoutingApiKeysListResult,
-  RoutingChannelsListResult,
-  RoutingRequestTracesListResult,
-  RoutingUsageListResult,
+  AppRoutingApiKeyListResponse,
+  AppRoutingRequestTraceListResponse,
+  AppRoutingUsageSnapshot,
 } from '@sdkwork/clawrouter-app-sdk';
 
 const DEFAULT_ROUTING_PAGE_SIZE = 20;
@@ -22,18 +21,14 @@ function routingListParams(params: RoutingListParams = {}) {
   };
 }
 
-export async function fetchRoutingChannels(params: RoutingListParams = {}): Promise<RoutingChannelsListResult> {
-  return getClawRouterAppSdkClient().ai.routing.channels.list(routingListParams(params));
-}
-
-export async function fetchRoutingApiKeys(params: RoutingListParams = {}): Promise<RoutingApiKeysListResult> {
+export async function fetchRoutingApiKeys(params: RoutingListParams = {}): Promise<AppRoutingApiKeyListResponse> {
   return getClawRouterAppSdkClient().ai.routing.apiKeys.list(routingListParams(params));
 }
 
-export async function fetchRoutingRequestTraces(params: RoutingListParams = {}): Promise<RoutingRequestTracesListResult> {
+export async function fetchRoutingRequestTraces(params: RoutingListParams = {}): Promise<AppRoutingRequestTraceListResponse> {
   return getClawRouterAppSdkClient().ai.routing.requestTraces.list(routingListParams(params));
 }
 
-export async function fetchRoutingUsage(): Promise<RoutingUsageListResult> {
-  return getClawRouterAppSdkClient().ai.routing.usage.list();
+export async function fetchRoutingUsage(): Promise<AppRoutingUsageSnapshot> {
+  return getClawRouterAppSdkClient().ai.routing.usage.retrieve();
 }

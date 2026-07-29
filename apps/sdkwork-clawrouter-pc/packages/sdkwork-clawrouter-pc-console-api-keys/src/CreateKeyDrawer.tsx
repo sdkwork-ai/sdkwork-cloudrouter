@@ -14,10 +14,9 @@ import {
   Zap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { CopyButton } from '@sdkwork/clawroutes-pc-commons/components/CopyButton';
-import type { ApiKey, ChannelGroup } from './apiKeyService';
-import { DEFAULT_CHANNEL_GROUP, type ApiKeyFormValues as ApiKeyFormValuesContract } from './apiKeyForm';
-import { formatChannelGroupOptionLabel } from './channelGroups';
+import type { AccountGroup, ApiKey } from './apiKeyService';
+import { DEFAULT_ACCOUNT_GROUP, type ApiKeyFormValues as ApiKeyFormValuesContract } from './apiKeyForm';
+import { formatAccountGroupOptionLabel } from './accountGroups';
 
 export type ApiKeyFormValues = ApiKeyFormValuesContract;
 
@@ -25,7 +24,7 @@ interface KeyFormDrawerProps {
   isOpen: boolean;
   mode?: 'create' | 'view' | 'edit';
   initialData?: ApiKey | null;
-  groups: ChannelGroup[];
+  groups: AccountGroup[];
   groupsLoading?: boolean;
   submitting?: boolean;
   onClose: () => void;
@@ -57,9 +56,9 @@ export function CreateKeyDrawer({
   const { t } = useTranslation();
   const isView = mode === 'view';
   const isEdit = mode === 'edit';
-  const defaultGroup = useMemo(() => groups[0]?.code ?? DEFAULT_CHANNEL_GROUP, [groups]);
+  const defaultGroup = useMemo(() => groups[0]?.code ?? DEFAULT_ACCOUNT_GROUP, [groups]);
   const [name, setName] = useState('');
-  const [channelGroup, setChannelGroup] = useState(defaultGroup);
+  const [accountGroup, setAccountGroup] = useState(defaultGroup);
   const [expiryType, setExpiryType] = useState<'never' | 'custom' | '1h' | '1d' | '1m'>('never');
   const [expiryDate, setExpiryDate] = useState('');
   const [createCount, setCreateCount] = useState(1);
@@ -74,8 +73,8 @@ export function CreateKeyDrawer({
     }
     if (initialData) {
       setName(initialData.displayName);
-      const normalizedGroup = initialData.channelGroup.trim();
-      setChannelGroup(
+      const normalizedGroup = initialData.accountGroup.trim();
+      setAccountGroup(
         groups.some((item) => item.code === normalizedGroup)
           ? normalizedGroup
           : defaultGroup,
@@ -90,7 +89,7 @@ export function CreateKeyDrawer({
       return;
     }
     setName('');
-    setChannelGroup(defaultGroup);
+    setAccountGroup(defaultGroup);
     setExpiryType('never');
     setExpiryDate('');
     setCreateCount(1);
@@ -109,7 +108,7 @@ export function CreateKeyDrawer({
     : isEdit
       ? t('console.apiKeys.editTitle', '编辑 API 密钥')
       : t('console.apiKeys.createTitle', '创建 API 密钥');
-  const group = channelGroup;
+  const group = accountGroup;
   const canSubmit = !isView && !submitting && name.trim().length > 0 && group.length > 0 && allowedModalities.size > 0;
 
   const handleExpiryShortcut = (type: 'never' | '1h' | '1d' | '1m') => {
@@ -153,7 +152,7 @@ export function CreateKeyDrawer({
     }
     await onSubmit({
       name: name.trim(),
-      channelGroup: group,
+      accountGroup: group,
       quota: isUnlimitedQuota ? '0.000000' : quota.trim(),
       isUnlimitedQuota,
       modalities: Array.from(allowedModalities),
@@ -189,10 +188,6 @@ export function CreateKeyDrawer({
                 label={t('console.apiKeys.maskedToken', 'Masked token')}
                 value={initialData.maskedKey}
                 monospace
-                copyText={initialData.copyableKey}
-                copyLabel={t('console.apiKeys.copyKey', '复制密钥')}
-                copiedLabel={t('console.apiKeys.keyCopied', '密钥已复制')}
-                copyDisabled={!initialData.copyableKey}
               />
               <ReadOnlyRow label={t('console.apiKeys.status', 'Status')} value={initialData.status} />
               <ReadOnlyRow label={t('console.apiKeys.usedQuota', 'Used quota')} value={initialData.usedQuota} />
@@ -224,7 +219,7 @@ export function CreateKeyDrawer({
                 onFocus={() => {
                   void onRequestGroups?.();
                 }}
-                onChange={(event) => setChannelGroup(event.target.value)}
+                onChange={(event) => setAccountGroup(event.target.value)}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none disabled:opacity-60 dark:border-white/10 dark:bg-[#252525] dark:text-white"
               >
                 {groupsLoading ? (
@@ -232,14 +227,14 @@ export function CreateKeyDrawer({
                 ) : null}
                 {groups.map((item) => (
                   <option key={item.code} value={item.code}>
-                    {formatChannelGroupOptionLabel(item)}
+                    {formatAccountGroupOptionLabel(item)}
                   </option>
                 ))}
                 {!groupsLoading && groups.length > 0 && !groups.some((item) => item.code === group) ? (
                   <option value={group}>{group}</option>
                 ) : null}
                 {!groupsLoading && groups.length === 0 ? (
-                  <option value={DEFAULT_CHANNEL_GROUP}>{t('console.apiKeys.defaultGroup', '默认分组')}</option>
+                  <option value={DEFAULT_ACCOUNT_GROUP}>{t('console.apiKeys.defaultGroup', '默认分组')}</option>
                 ) : null}
               </select>
             </div>
@@ -416,18 +411,10 @@ function ReadOnlyRow({
   label,
   value,
   monospace = false,
-  copyText,
-  copyLabel,
-  copiedLabel,
-  copyDisabled = false,
 }: {
   label: string;
   value: string;
   monospace?: boolean;
-  copyText?: string | null;
-  copyLabel?: string;
-  copiedLabel?: string;
-  copyDisabled?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-3 text-sm first:border-t-0 first:pt-0 dark:border-white/10">
@@ -436,17 +423,6 @@ function ReadOnlyRow({
         <span className={`truncate font-medium text-slate-800 dark:text-slate-200 ${monospace ? 'font-mono' : ''}`}>
           {value}
         </span>
-        {copyLabel ? (
-          <CopyButton
-            text={copyText ?? ''}
-            label={copyLabel}
-            copiedLabel={copiedLabel}
-            title={copyLabel}
-            disabled={copyDisabled}
-            className="h-7 w-7 shrink-0 border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1e1e1e]"
-            iconClassName="h-3.5 w-3.5"
-          />
-        ) : null}
       </span>
     </div>
   );

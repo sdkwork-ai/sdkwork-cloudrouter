@@ -27,7 +27,6 @@ import {
   ShieldCheck,
   Tags,
   TicketPercent,
-  UserCog,
   Users,
   WalletCards,
   Wrench,
@@ -88,9 +87,8 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     defaultPath: '/admin/dashboard',
     pathPrefixes: [
       '/admin/dashboard',
-      '/admin/group',
+      '/admin/upstream',
       '/admin/model',
-      '/admin/channel',
       '/admin/record',
       '/admin/analytics',
     ],
@@ -150,12 +148,10 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       groupBlock('admin.menu.home.modelManagement', [
         itemBlock({ path: '/admin/model', labelKey: 'admin.menu.models', icon: Database }),
         itemBlock({ path: '/admin/model/resources', labelKey: 'admin.menu.modelResources', icon: Boxes, iconColor: 'text-emerald-500' }),
-        itemBlock({ path: '/admin/model/sites', labelKey: 'admin.menu.modelSites', icon: Globe2, iconColor: 'text-sky-500' }),
         itemBlock({ path: '/admin/model/mappings', labelKey: 'admin.menu.modelMappings', icon: ArrowRightLeft, iconColor: 'text-indigo-500' }),
       ]),
-      groupBlock('admin.menu.home.accountPoolManagement', [
-        itemBlock({ path: '/admin/group', labelKey: 'admin.menu.groups', icon: UserCog }),
-        itemBlock({ path: '/admin/channel', labelKey: 'admin.menu.channels', icon: Network }),
+      groupBlock('admin.menu.home.upstreamManagement', [
+        itemBlock({ path: '/admin/upstream', labelKey: 'admin.menu.upstream', icon: Network, iconColor: 'text-cyan-500' }),
       ]),
       groupBlock('admin.menu.home.dataManagement', [
         itemBlock({ path: '/admin/record', labelKey: 'admin.menu.records', icon: Activity }),

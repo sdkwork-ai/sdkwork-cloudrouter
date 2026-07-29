@@ -92,10 +92,6 @@ pub fn admin_ip_rate_limit_router_with_store(
 ) -> Router {
     Router::new()
         .route(
-            "/backend/v3/api/router/rate_limits/ip",
-            get(fetch_ip_rate_limits).post(create_ip_rate_limit),
-        )
-        .route(
             "/backend/v3/api/system/rate_limits/ip",
             get(fetch_ip_rate_limits).post(create_ip_rate_limit),
         )

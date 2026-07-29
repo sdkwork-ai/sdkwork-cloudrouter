@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use sqlx::{PgPool, Row};
 
-use crate::application::ApiKeySecretCodec;
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
     AppRoutingAccountGroupItem, AppRoutingAccountGroupListPage, AppRoutingApiKeyAccountGroupItem,
@@ -162,7 +159,6 @@ SELECT
     CAST(k.id AS TEXT) AS id,
     COALESCE(NULLIF(k.name, ''), 'API Key #' || CAST(k.id AS TEXT)) AS name,
     COALESCE(NULLIF(k.key_display_masked, ''), NULLIF(k.key_prefix, ''), '') AS key_display_masked,
-    k.metadata ->> 'copyableKeyCiphertext' AS copyable_key_ciphertext,
     k.status AS api_key_status,
     CAST(k.created_at AS TEXT) AS created_at,
     CAST(COALESCE(SUM(COALESCE(u.request_count, 0)), 0) AS TEXT) AS total_usage,
@@ -354,8 +350,26 @@ LEFT JOIN usage_by_request u
   ON u.tenant_id = t.tenant_id
  AND u.organization_id = t.organization_id
  AND u.request_id = t.request_id
+WHERE (
+    $4::text IS NULL
+    OR lower(CONCAT_WS(
+        ' ',
+        t.request_id,
+        t.trace_id,
+        t.requested_model,
+        t.provider_model,
+        t.request_path,
+        t.provider_error_code,
+        a.account_code,
+        a.account_name,
+        g.group_code,
+        g.group_name,
+        u.catalog_key,
+        d.resolved_model
+    )) LIKE lower($4)
+)
 ORDER BY t.started_at DESC NULLS LAST, t.id DESC
-LIMIT $4 OFFSET $5
+LIMIT $5 OFFSET $6
 "#;
 
 const LOAD_ROUTING_USAGE_CHART: &str = r#"
@@ -448,25 +462,11 @@ LIMIT 10
 #[derive(Clone)]
 pub struct PostgresAppRoutingReadStore {
     pool: PgPool,
-    api_key_secret_codec: Option<Arc<dyn ApiKeySecretCodec + Send + Sync>>,
 }
 
 impl PostgresAppRoutingReadStore {
     pub fn new(pool: PgPool) -> Self {
-        Self {
-            pool,
-            api_key_secret_codec: None,
-        }
-    }
-
-    pub fn with_api_key_secret_codec(
-        pool: PgPool,
-        api_key_secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>,
-    ) -> Self {
-        Self {
-            pool,
-            api_key_secret_codec: Some(api_key_secret_codec),
-        }
+        Self { pool }
     }
 }
 
@@ -528,7 +528,6 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
                 .first()
                 .and_then(|row| row.try_get::<i64, _>("total").ok())
                 .unwrap_or(0);
-            let row_to_api_key = |row| row_to_api_key(row, self.api_key_secret_codec.as_deref());
             let items = rows
                 .into_iter()
                 .map(row_to_api_key)
@@ -549,10 +548,12 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
     ) -> AppRoutingReadFuture<'a, AppRoutingRequestTraceListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
+            let search = query.q.as_deref().map(|value| format!("%{value}%"));
             let rows = sqlx::query(LOAD_ROUTING_REQUEST_TRACES)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
+                .bind(search)
                 .bind(query.page_size.max(1))
                 .bind(query.offset.max(0))
                 .fetch_all(&self.pool)
@@ -622,19 +623,11 @@ fn row_to_account_group(row: sqlx::postgres::PgRow) -> DomainResult<AppRoutingAc
     })
 }
 
-fn row_to_api_key(
-    row: sqlx::postgres::PgRow,
-    api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
-) -> DomainResult<AppRoutingApiKeyItem> {
-    let copyable_key = decode_api_key_copyable_key(
-        string_cell(&row, "copyable_key_ciphertext"),
-        api_key_secret_codec,
-    )?;
+fn row_to_api_key(row: sqlx::postgres::PgRow) -> DomainResult<AppRoutingApiKeyItem> {
     Ok(AppRoutingApiKeyItem {
         id: string_cell(&row, "id"),
         name: string_cell(&row, "name"),
         display_key: string_cell(&row, "key_display_masked"),
-        copyable_key,
         status: api_key_status_label(required_integer_cell(&row, "api_key_status")?)?,
         total_usage: string_cell(&row, "total_usage"),
         created_at: string_cell(&row, "created_at"),
@@ -801,24 +794,6 @@ fn routing_trace_latency_ms(value: i64) -> DomainResult<i64> {
     )))
 }
 
-fn decode_api_key_copyable_key(
-    copyable_key_ciphertext: String,
-    api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
-) -> DomainResult<Option<String>> {
-    let copyable_key_ciphertext = copyable_key_ciphertext.trim();
-    if copyable_key_ciphertext.is_empty() {
-        return Ok(None);
-    }
-    let Some(api_key_secret_codec) = api_key_secret_codec else {
-        return Err(DomainError::new(
-            "api key secret codec is required to load routing copyable key material",
-        ));
-    };
-    Ok(Some(
-        api_key_secret_codec.decode_secret(copyable_key_ciphertext)?,
-    ))
-}
-
 fn missing_integer_cell_error(column: &str) -> DomainError {
     match column {
         "http_status" => DomainError::new("missing routing trace http_status from database row"),
@@ -857,6 +832,6 @@ mod tests {
             .expect_err("invalid routing capabilities json must fail");
         assert!(invalid
             .to_string()
-            .contains("invalid routing channel capabilities json from database row"));
+            .contains("invalid routing resource array from database row"));
     }
 }

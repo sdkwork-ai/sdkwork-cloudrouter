@@ -15,7 +15,7 @@ export class AiUpstreamSuppliersResourcesApi {
 
 /** List upstream supplier resources */
   async list(supplierId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamSupplierResourceListResponse> {
-    return this.client.request<UpstreamSupplierResourceListResponse>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamSupplierResourceListResponse>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Update upstream supplier resources */
@@ -26,7 +26,7 @@ export class AiUpstreamSuppliersResourcesApi {
       },
       {}
     );
-    return this.client.request<UpstreamSupplierResourceCollection>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamSupplierResourceCollection>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -44,7 +44,7 @@ export class AiUpstreamSuppliersEndpointsApi {
 
 /** List upstream supplier endpoints */
   async list(supplierId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamSupplierEndpointListResponse> {
-    return this.client.request<UpstreamSupplierEndpointListResponse>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/endpoints`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamSupplierEndpointListResponse>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/endpoints`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Update upstream supplier endpoints */
@@ -55,7 +55,7 @@ export class AiUpstreamSuppliersEndpointsApi {
       },
       {}
     );
-    return this.client.request<UpstreamSupplierEndpointCollection>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/endpoints`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamSupplierEndpointCollection>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/endpoints`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -73,7 +73,7 @@ export class AiUpstreamSuppliersAuthMethodsApi {
 
 /** List upstream supplier auth methods */
   async list(supplierId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamSupplierAuthMethodListResponse> {
-    return this.client.request<UpstreamSupplierAuthMethodListResponse>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/auth_methods`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamSupplierAuthMethodListResponse>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/auth_methods`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Update upstream supplier auth methods */
@@ -84,7 +84,7 @@ export class AiUpstreamSuppliersAuthMethodsApi {
       },
       {}
     );
-    return this.client.request<UpstreamSupplierAuthMethodCollection>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/auth_methods`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamSupplierAuthMethodCollection>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/auth_methods`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -127,7 +127,7 @@ export class AiUpstreamSuppliersApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<UpstreamSupplierListResponse>(appendQueryString(backendApiPath(`/ai/upstream_suppliers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamSupplierListResponse>(appendQueryString(backendApiPath(`/ai/upstream_suppliers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create upstream supplier */
@@ -138,7 +138,7 @@ export class AiUpstreamSuppliersApi {
       },
       {}
     );
-    return this.client.request<UpstreamSupplier>(backendApiPath(`/ai/upstream_suppliers`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamSupplier>(backendApiPath(`/ai/upstream_suppliers`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Delete upstream supplier */
@@ -154,7 +154,7 @@ export class AiUpstreamSuppliersApi {
 
 /** Get upstream supplier */
   async retrieve(supplierId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamSupplier> {
-    return this.client.request<UpstreamSupplier>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamSupplier>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'item' });
   }
 
 /** Update upstream supplier */
@@ -165,7 +165,7 @@ export class AiUpstreamSuppliersApi {
       },
       {}
     );
-    return this.client.request<UpstreamSupplier>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamSupplier>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -194,7 +194,7 @@ export class AiUpstreamAccountsCredentialsApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<UpstreamAccountCredentialListResponse>(appendQueryString(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamAccountCredentialListResponse>(appendQueryString(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create upstream account credential */
@@ -205,7 +205,7 @@ export class AiUpstreamAccountsCredentialsApi {
       },
       {}
     );
-    return this.client.request<UpstreamAccountCredentialCreated>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamAccountCredentialCreated>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Delete upstream account credential */
@@ -249,7 +249,7 @@ export class AiUpstreamAccountsApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<UpstreamAccountListResponse>(appendQueryString(backendApiPath(`/ai/upstream_accounts`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamAccountListResponse>(appendQueryString(backendApiPath(`/ai/upstream_accounts`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create upstream account */
@@ -260,7 +260,7 @@ export class AiUpstreamAccountsApi {
       },
       {}
     );
-    return this.client.request<UpstreamAccount>(backendApiPath(`/ai/upstream_accounts`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamAccount>(backendApiPath(`/ai/upstream_accounts`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Delete upstream account */
@@ -276,7 +276,7 @@ export class AiUpstreamAccountsApi {
 
 /** Get upstream account */
   async retrieve(accountId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccount> {
-    return this.client.request<UpstreamAccount>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamAccount>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'item' });
   }
 
 /** Update upstream account */
@@ -287,12 +287,12 @@ export class AiUpstreamAccountsApi {
       },
       {}
     );
-    return this.client.request<UpstreamAccount>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamAccount>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Verify upstream account */
   async verify(accountId: string, body: VerifyUpstreamAccountRequest, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountVerification> {
-    return this.client.request<UpstreamAccountVerification>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/verify`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<UpstreamAccountVerification>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/verify`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -310,7 +310,7 @@ export class AiUpstreamAccountGroupsResourcesApi {
 
 /** List upstream account group resources */
   async list(accountGroupId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountGroupResourceListResponse> {
-    return this.client.request<UpstreamAccountGroupResourceListResponse>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamAccountGroupResourceListResponse>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Update upstream account group resources */
@@ -321,7 +321,7 @@ export class AiUpstreamAccountGroupsResourcesApi {
       },
       {}
     );
-    return this.client.request<UpstreamAccountGroupResourceCollection>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamAccountGroupResourceCollection>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/resources`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -339,7 +339,7 @@ export class AiUpstreamAccountGroupsMembersApi {
 
 /** List upstream account group members */
   async list(accountGroupId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountGroupMemberListResponse> {
-    return this.client.request<UpstreamAccountGroupMemberListResponse>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/members`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamAccountGroupMemberListResponse>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/members`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Update upstream account group members */
@@ -350,7 +350,7 @@ export class AiUpstreamAccountGroupsMembersApi {
       },
       {}
     );
-    return this.client.request<UpstreamAccountGroupMemberCollection>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/members`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamAccountGroupMemberCollection>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/members`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -391,7 +391,7 @@ export class AiUpstreamAccountGroupsApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<UpstreamAccountGroupListResponse>(appendQueryString(backendApiPath(`/ai/upstream_account_groups`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamAccountGroupListResponse>(appendQueryString(backendApiPath(`/ai/upstream_account_groups`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create upstream account group */
@@ -402,7 +402,7 @@ export class AiUpstreamAccountGroupsApi {
       },
       {}
     );
-    return this.client.request<UpstreamAccountGroup>(backendApiPath(`/ai/upstream_account_groups`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamAccountGroup>(backendApiPath(`/ai/upstream_account_groups`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Delete upstream account group */
@@ -418,7 +418,7 @@ export class AiUpstreamAccountGroupsApi {
 
 /** Get upstream account group */
   async retrieve(accountGroupId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountGroup> {
-    return this.client.request<UpstreamAccountGroup>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<UpstreamAccountGroup>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'item' });
   }
 
 /** Update upstream account group */
@@ -429,12 +429,12 @@ export class AiUpstreamAccountGroupsApi {
       },
       {}
     );
-    return this.client.request<UpstreamAccountGroup>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<UpstreamAccountGroup>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Explain upstream account group route */
   async explain(accountGroupId: string, body: ExplainUpstreamAccountGroupRouteRequest, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountGroupRouteExplanation> {
-    return this.client.request<UpstreamAccountGroupRouteExplanation>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/route_explain`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<UpstreamAccountGroupRouteExplanation>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/route_explain`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -448,7 +448,7 @@ export class AiModelMappingOptionsApi {
 
 /** List model options catalog */
   async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/ai/model_mapping_options`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Record<string, never>>(backendApiPath(`/ai/model_mapping_options`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 

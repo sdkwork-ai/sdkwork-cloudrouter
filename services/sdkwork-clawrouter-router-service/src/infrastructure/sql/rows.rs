@@ -459,7 +459,6 @@ pub struct GatewayApiKeyRow {
     pub key_prefix: String,
     pub key_display_masked: String,
     pub key_hash: String,
-    pub copyable_key: Option<String>,
     pub policy_id: Option<i64>,
     pub quota_policy_id: Option<i64>,
     pub created_at: String,
@@ -485,7 +484,6 @@ impl GatewayApiKeyRow {
             key_prefix: self.key_prefix,
             key_display_masked: self.key_display_masked,
             key_hash: self.key_hash,
-            copyable_key: self.copyable_key,
             policy_id: self.policy_id,
             quota_policy_id: self.quota_policy_id,
             created_at: self.created_at,
@@ -498,10 +496,6 @@ impl GatewayApiKeyRow {
         })
     }
 
-    pub fn with_copyable_key(mut self, copyable_key: Option<String>) -> Self {
-        self.copyable_key = copyable_key;
-        self
-    }
 }
 
 fn parse_gateway_api_key_upstream_account_group_bindings(

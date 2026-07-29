@@ -984,6 +984,43 @@ class FrontendOperationAuditTest(unittest.TestCase):
                 result.messages,
             )
 
+    def test_allows_clawrouter_owned_ai_backend_operation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_file(
+                root,
+                "apps/sdkwork-clawrouter-pc/packages/demo/src/upstreamService.ts",
+                """
+                import { getClawRouterBackendSdkClient } from 'sdkwork-clawroutes-pc-commons';
+
+                export async function listUpstreamSuppliers(): Promise<unknown> {
+                  return getClawRouterBackendSdkClient().ai.upstreamSuppliers.list();
+                }
+                """,
+            )
+            self.write_contract(
+                root,
+                """
+                routes:
+                  - route: /admin/upstream
+                    required_tables: [ai_upstream_supplier]
+                frontend_operations:
+                  - route: /admin/upstream
+                    source: apps/sdkwork-clawrouter-pc/packages/demo/src/upstreamService.ts
+                    operation: listUpstreamSuppliers
+                    kind: read
+                    api_surface: backend
+                    api_method: GET
+                    api_path: /backend/v3/api/ai/upstream_suppliers
+                    sdk_domain: ai
+                    read_sources: [ai_upstream_supplier]
+                """,
+            )
+
+            result = FrontendOperationAudit(root=root).validate()
+
+            self.assertTrue(result.ok, result.messages)
+
     def test_accepts_commerce_dependency_service_as_generated_sdk_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

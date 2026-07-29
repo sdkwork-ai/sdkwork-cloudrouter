@@ -2633,11 +2633,6 @@ tables:
         required: false
         postgres_type: BIGINT
         constraints: ''
-      legacy_api_key_id:
-        type: int64
-        required: false
-        postgres_type: BIGINT
-        constraints: ''
       api_key_name_snapshot:
         type: string(128)
         required: false
@@ -3064,11 +3059,6 @@ tables:
         postgres_type: JSONB
         constraints: NOT NULL DEFAULT '{}'::jsonb
       api_key_id:
-        type: int64
-        required: false
-        postgres_type: BIGINT
-        constraints: ''
-      legacy_api_key_id:
         type: int64
         required: false
         postgres_type: BIGINT
@@ -6526,11 +6516,6 @@ tables:
         postgres_type: BIGINT
         constraints: ''
       api_key_id:
-        type: int64
-        required: false
-        postgres_type: BIGINT
-        constraints: ''
-      legacy_api_key_id:
         type: int64
         required: false
         postgres_type: BIGINT

@@ -18,12 +18,12 @@ use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, default_service_cache_manager,
     AiRoutingCacheInvalidatingAdminAiResourceStore, AiRoutingCacheInvalidatingAdminModelStore,
-    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretCodec, ApiKeySecretHasher,
+    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretHasher, CredentialSecretCodec,
     ModelRankingsService, RedisCacheBackend, RuntimeCacheManager, DEFAULT_CACHE_KEY_PREFIX,
     DEFAULT_REDIS_CONNECTION_PROFILE_NAME, DEFAULT_SERVICE_CACHE_INSTANCE_NAME,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
-    HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
+    HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::RefreshableSqlPricingCatalog;
 use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
@@ -79,7 +79,7 @@ pub struct RouterApiRouteModule {
 
 pub const SERVICE_NAME: &str = "sdkwork-clawrouter-admin-gateway";
 type ApiKeyHasher = Arc<dyn ApiKeySecretHasher + Send + Sync>;
-type ApiKeyCodec = Arc<dyn ApiKeySecretCodec + Send + Sync>;
+type CredentialCodec = Arc<dyn CredentialSecretCodec + Send + Sync>;
 type AdminAnnouncementRuntimeStore = Arc<dyn AdminAnnouncementStore + Send + Sync>;
 type AdminAuthSettingsRuntimeStore = Arc<dyn AdminAuthSettingsStore + Send + Sync>;
 type ApiKeyCommandRuntimeStore = Arc<dyn GatewayApiKeyCommandStore + Send + Sync>;
@@ -675,14 +675,13 @@ pub fn router_with_postgres_shared_runtime(
     models_catalog_root: Option<String>,
 ) -> Result<Router, ProductCatalogRouterError> {
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
+    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
     let announcement_store: AdminAnnouncementRuntimeStore =
         Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
     let auth_settings_store: AdminAuthSettingsRuntimeStore =
         Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
-    let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
-        PostgresGatewayApiKeyCommandStore::new(pool.clone(), api_key_secret_codec.clone()),
-    );
+    let api_key_command_store: ApiKeyCommandRuntimeStore =
+        Arc::new(PostgresGatewayApiKeyCommandStore::new(pool.clone()));
     let catalog_store: AdminCatalogRuntimeStore =
         Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
     let inventory_store: AdminInventoryRuntimeStore =
@@ -695,13 +694,13 @@ pub fn router_with_postgres_shared_runtime(
         Arc::new(CatalogPostgresAdminAiResourceStore::new(pool.clone()));
     let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
         pool.clone(),
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
         api_key_hasher.clone(),
     ));
     let upstream_store =
         ai_routing_cache_invalidating_upstream_store(upstream_store, Some(cache_manager.clone()));
     let upstream_verifier: AdminUpstreamRuntimeVerifier = Arc::new(
-        PostgresAdminUpstreamAccountVerifier::new(pool.clone(), api_key_secret_codec.clone()),
+        PostgresAdminUpstreamAccountVerifier::new(pool.clone(), credential_secret_codec.clone()),
     );
     let ip_rate_limit_store: AdminIpRateLimitRuntimeStore =
         Arc::new(PostgresAdminIpRateLimitStore::new(pool.clone()));
@@ -870,7 +869,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
     let cache_manager = cache_manager_from_env_or_toml(runtime_toml)?;
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
+    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
     let trusted_subject_config = require_trusted_subject_config(trusted_subject_config)?;
     let app_session_config = require_app_session_config(app_session_config)?;
     if !matches!(config.engine, DatabaseEngine::Postgres) {
@@ -895,9 +894,9 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
     if startup_install_mode.should_ensure() {
         database_installer.ensure_bootstrap_data().await?;
     }
-    let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
+    let snapshot = PostgresPricingCatalogLoader::with_credential_secret_codec(
         pool.clone(),
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
     )
     .load_snapshot()
     .await?;
@@ -905,9 +904,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
     let auth_settings_store: AdminAuthSettingsRuntimeStore =
         Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
-    let api_key_command_store: ApiKeyCommandRuntimeStore = Arc::new(
-        PostgresGatewayApiKeyCommandStore::new(pool.clone(), api_key_secret_codec.clone()),
-    );
+    let api_key_command_store: ApiKeyCommandRuntimeStore =
+        Arc::new(PostgresGatewayApiKeyCommandStore::new(pool.clone()));
     let catalog_store: AdminCatalogRuntimeStore =
         Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
     let inventory_store: AdminInventoryRuntimeStore =
@@ -920,13 +918,13 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         Arc::new(CatalogPostgresAdminAiResourceStore::new(pool.clone()));
     let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
         pool.clone(),
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
         api_key_hasher.clone(),
     ));
     let upstream_store =
         ai_routing_cache_invalidating_upstream_store(upstream_store, Some(cache_manager.clone()));
     let upstream_verifier: AdminUpstreamRuntimeVerifier = Arc::new(
-        PostgresAdminUpstreamAccountVerifier::new(pool.clone(), api_key_secret_codec.clone()),
+        PostgresAdminUpstreamAccountVerifier::new(pool.clone(), credential_secret_codec.clone()),
     );
     let ip_rate_limit_store: AdminIpRateLimitRuntimeStore =
         Arc::new(PostgresAdminIpRateLimitStore::new(pool.clone()));
@@ -1162,11 +1160,11 @@ fn build_api_key_hasher(
     Ok(Arc::new(hasher))
 }
 
-fn api_key_secret_codec_from_config(
+fn credential_secret_codec_from_config(
     config: &ApiKeySecurityConfig,
-) -> Result<ApiKeyCodec, ProductCatalogRouterError> {
+) -> Result<CredentialCodec, ProductCatalogRouterError> {
     Ok(Arc::new(
-        RingAeadApiKeySecretCodec::new(config.pepper_secret())
+        RingAeadCredentialSecretCodec::new(config.pepper_secret())
             .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?,
     ))
 }

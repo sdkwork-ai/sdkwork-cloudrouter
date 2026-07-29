@@ -2663,6 +2663,7 @@ dependencies = [
  "hyper-rustls",
  "hyper-util",
  "prometheus",
+ "redis 1.2.4",
  "sdkwork-claw-config",
  "sdkwork-claw-http",
  "sdkwork-claw-observability",

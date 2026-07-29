@@ -165,6 +165,9 @@ pool_idle_timeout_seconds = 120
 
 [security]
 api_key_pepper_file = "/etc/sdkwork/router/api-key-pepper.secret"
+internal_gateway_signing_secret_file = "/etc/sdkwork/router/internal-gateway-signing.secret"
+internal_gateway_request_ttl_seconds = 30
+internal_gateway_max_clock_skew_seconds = 5
 trusted_subject_secret_file = "/etc/sdkwork/router/trusted-subject.secret"
 trusted_subject_max_clock_skew_seconds = 120
 app_session_secret_file = "/etc/sdkwork/router/app-session.secret"
@@ -391,6 +394,21 @@ password_file = "/etc/sdkwork/router/bootstrap-admin.secret"
     assert_eq!(
         Some("/etc/sdkwork/router/api-key-pepper.secret"),
         config.security.api_key_pepper_file.as_deref()
+    );
+    assert_eq!(
+        Some("/etc/sdkwork/router/internal-gateway-signing.secret"),
+        config
+            .security
+            .internal_gateway_signing_secret_file
+            .as_deref()
+    );
+    assert_eq!(
+        Some(30),
+        config.security.internal_gateway_request_ttl_seconds
+    );
+    assert_eq!(
+        Some(5),
+        config.security.internal_gateway_max_clock_skew_seconds
     );
     assert_eq!(
         Some("/etc/sdkwork/router/trusted-subject.secret"),

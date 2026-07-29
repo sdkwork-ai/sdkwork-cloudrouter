@@ -5,7 +5,9 @@ use axum::body::{to_bytes, Body};
 use axum::extract::ConnectInfo;
 use axum::http::{header, HeaderMap, HeaderValue, Request, StatusCode, Uri};
 use axum::response::Response;
-use sdkwork_claw_security::REDACTED;
+use sdkwork_claw_security::{
+    INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEWAY_ROUTE_PREFIX, REDACTED,
+};
 use sdkwork_clawrouter_router_service::application::{
     BillingMode, DeferredStreamInvocation, DeferredStreamResponse, DispatchMode,
     GatewayInvocationPolicyViolation, Invocation, InvocationBody, InvocationClassificationRequest,
@@ -17,7 +19,8 @@ use sdkwork_clawrouter_router_service::ports::PricingCatalog;
 use serde_json::{json, Value};
 
 use crate::gateway_api_key_auth::{
-    authenticate_gateway_api_key, sanitize_authenticated_gateway_uri,
+    authenticate_gateway_api_key, authenticate_internal_gateway_request,
+    sanitize_authenticated_gateway_uri,
 };
 use crate::invocation_router::InvocationRouterState;
 use crate::invocation_stream::{wrap_invocation_stream, InvocationStreamTimeouts};
@@ -45,6 +48,88 @@ where
         Ok(uri) => uri,
         Err(response) => return response,
     };
+    handle_authenticated_invocation(state, Request::from_parts(parts, body), auth_context).await
+}
+
+pub(crate) async fn handle_internal_invocation<C>(
+    state: InvocationRouterState<C>,
+    request: Request<Body>,
+) -> Response
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
+    let Some(verifier) = state.internal_gateway_verifier.as_ref() else {
+        return response_from_invocation_error(&InvocationError::new(
+            InvocationErrorKind::Authentication,
+            "internal gateway authentication is unavailable",
+        ));
+    };
+    let (mut parts, body) = request.into_parts();
+    if contains_public_api_key_credential(&parts.headers) {
+        return response_from_invocation_error(&InvocationError::new(
+            InvocationErrorKind::Authentication,
+            "internal gateway requests must not contain public API key credentials",
+        ));
+    }
+    if content_length_from_headers(&parts.headers)
+        .is_some_and(|content_length| content_length > state.body_limit_bytes)
+    {
+        return response_from_invocation_error(&invalid_request(format!(
+            "request body exceeds the maximum allowed size of {} bytes",
+            state.body_limit_bytes
+        )));
+    }
+    let body = match to_bytes(body, state.body_limit_bytes).await {
+        Ok(body) => body,
+        Err(error) => {
+            return response_from_invocation_error(&invalid_request(format!(
+                "request body is invalid: {error}"
+            )))
+        }
+    };
+    let auth_context = match authenticate_internal_gateway_request(
+        state.catalog.as_ref(),
+        verifier.as_ref(),
+        &parts.headers,
+        &parts.method,
+        &parts.uri,
+        &body,
+    )
+    .await
+    {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
+    parts.uri = match internal_gateway_target_uri(&parts.uri)
+        .and_then(|uri| sanitize_authenticated_gateway_uri(&uri).map_err(|_| ()))
+    {
+        Ok(uri) => uri,
+        Err(()) => {
+            return response_from_invocation_error(&invalid_request(
+                "internal gateway target URI is invalid",
+            ))
+        }
+    };
+    for header in INTERNAL_GATEWAY_AUTH_HEADERS {
+        parts.headers.remove(*header);
+    }
+    handle_authenticated_invocation(
+        state,
+        Request::from_parts(parts, Body::from(body)),
+        auth_context,
+    )
+    .await
+}
+
+async fn handle_authenticated_invocation<C>(
+    state: InvocationRouterState<C>,
+    request: Request<Body>,
+    auth_context: sdkwork_clawrouter_router_service::application::AuthenticatedApiKeyContext,
+) -> Response
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
+    let (parts, body) = request.into_parts();
     let preclassified_openai = if is_openai_prefixed_path(parts.uri.path()) {
         match classify_request(&parts.method, &parts.uri) {
             Ok(classified) => Some(classified),
@@ -110,6 +195,25 @@ where
                 .unwrap_or_else(empty_response)
         }
     }
+}
+
+fn contains_public_api_key_credential(headers: &HeaderMap) -> bool {
+    ["authorization", "x-api-key", "x-goog-api-key", "api-key"]
+        .iter()
+        .any(|name| headers.contains_key(*name))
+}
+
+fn internal_gateway_target_uri(uri: &Uri) -> Result<Uri, ()> {
+    let target_path = uri
+        .path()
+        .strip_prefix(INTERNAL_GATEWAY_ROUTE_PREFIX)
+        .filter(|path| path.starts_with('/') && path.len() > 1)
+        .ok_or(())?;
+    let path_and_query = match uri.query() {
+        Some(query) => format!("{target_path}?{query}"),
+        None => target_path.to_owned(),
+    };
+    path_and_query.parse::<Uri>().map_err(|_| ())
 }
 
 fn deferred_stream_response_to_http(

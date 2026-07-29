@@ -42,8 +42,8 @@ routes:
   - apps/sdkwork-clawrouter-pc/src/App.tsx
   - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
-- route: /admin/channel
-  package: '@sdkwork/clawrouter-pc-admin-channel'
+- route: /admin/upstream
+  package: '@sdkwork/clawrouter-pc-admin-upstream'
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
@@ -51,10 +51,10 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
   api_surface: backend
   operation_routes:
-  - /admin/channel
+  - /admin/upstream
   evidence:
   - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
+  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/dashboard
   package: '@sdkwork/clawrouter-pc-admin-dashboard'
@@ -69,20 +69,6 @@ routes:
   evidence:
   - apps/sdkwork-clawrouter-pc/src/App.tsx
   - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
-  - docs/schema-registry/frontend-field-contracts.yaml
-- route: /admin/group
-  package: '@sdkwork/clawrouter-pc-admin-group'
-  owner: admin-control-plane
-  route_scope: admin
-  delivery_kind: sdk_backed_business_runtime
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-  api_surface: backend
-  operation_routes:
-  - /admin/group
-  evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/model
   package: '@sdkwork/models-pc-admin-catalog'
@@ -122,20 +108,6 @@ routes:
   - /admin/model/resources
   evidence:
   - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - docs/schema-registry/frontend-field-contracts.yaml
-- route: /admin/model/sites
-  package: '@sdkwork/clawrouter-pc-admin-relay-site'
-  owner: admin-control-plane
-  route_scope: admin
-  delivery_kind: sdk_backed_business_runtime
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-  api_surface: backend
-  operation_routes:
-  - /admin/model/sites
-  evidence:
-  - apps/sdkwork-clawrouter-pc/src/App.tsx
-  - apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/monitor
   package: '@sdkwork/clawrouter-pc-admin-monitor'

@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
-use crate::application::ApiKeySecretCodec;
 use crate::domain::{
     DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
     UpstreamAccountGroup,
@@ -21,18 +18,11 @@ const API_KEY_STATUS_REVOKED: i32 = 4;
 #[derive(Clone)]
 pub struct PostgresGatewayApiKeyCommandStore {
     pool: PgPool,
-    api_key_secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>,
 }
 
 impl PostgresGatewayApiKeyCommandStore {
-    pub fn new(
-        pool: PgPool,
-        api_key_secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>,
-    ) -> Self {
-        Self {
-            pool,
-            api_key_secret_codec,
-        }
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
     }
 }
 
@@ -74,7 +64,6 @@ impl GatewayApiKeyCommandStore for PostgresGatewayApiKeyCommandStore {
                 &command,
                 access_policy.as_ref().map(|policy| policy.id),
                 quota_policy.as_ref().map(|policy| policy.id),
-                self.api_key_secret_codec.as_ref(),
             )
             .await?;
             insert_audit_log(&mut tx, &command, api_key.id).await?;
@@ -98,8 +87,7 @@ impl GatewayApiKeyCommandStore for PostgresGatewayApiKeyCommandStore {
             let mut tx = self.pool.begin().await.map_err(|error| {
                 store_error("failed to begin api key update transaction", error)
             })?;
-            let updated =
-                update_api_key(&mut tx, &command, self.api_key_secret_codec.as_ref()).await?;
+            let updated = update_api_key(&mut tx, &command).await?;
             tx.commit().await.map_err(|error| {
                 store_error("failed to commit api key update transaction", error)
             })?;
@@ -362,9 +350,8 @@ async fn insert_api_key(
     command: &CreateGatewayApiKeyCommand,
     policy_id: Option<i64>,
     quota_policy_id: Option<i64>,
-    api_key_secret_codec: &(dyn ApiKeySecretCodec + Send + Sync),
 ) -> DomainResult<GatewayApiKey> {
-    let metadata = api_key_metadata_json(command, api_key_secret_codec)?;
+    let metadata = api_key_metadata_json(command)?;
     let id = next_claw_runtime_id("gateway api key creation")?;
     sqlx::query(
         r#"
@@ -407,7 +394,6 @@ async fn insert_api_key(
         key_prefix: command.key_prefix.clone(),
         key_display_masked: command.key_display_masked.clone(),
         key_hash: command.key_hash.clone(),
-        copyable_key: Some(command.copyable_key.clone()),
         policy_id,
         quota_policy_id,
         created_at: command.created_at.clone(),
@@ -494,7 +480,6 @@ async fn insert_audit_log(
 async fn update_api_key(
     tx: &mut Transaction<'_, Postgres>,
     command: &UpdateGatewayApiKeyCommand,
-    api_key_secret_codec: &(dyn ApiKeySecretCodec + Send + Sync),
 ) -> DomainResult<Option<UpdatedGatewayApiKey>> {
     let current = load_owned_api_key(
         tx,
@@ -502,7 +487,6 @@ async fn update_api_key(
         command.tenant_id,
         command.organization_id,
         command.user_id,
-        api_key_secret_codec,
     )
     .await?;
     let Some(mut api_key) = current else {
@@ -579,7 +563,6 @@ async fn load_owned_api_key(
     tenant_id: i64,
     organization_id: i64,
     user_id: i64,
-    api_key_secret_codec: &(dyn ApiKeySecretCodec + Send + Sync),
 ) -> DomainResult<Option<GatewayApiKey>> {
     let row = sqlx::query(
         r#"
@@ -593,7 +576,6 @@ async fn load_owned_api_key(
             COALESCE(key_prefix, '') AS key_prefix,
             COALESCE(NULLIF(key_display_masked, ''), COALESCE(key_prefix, '') || '********') AS key_display_masked,
             COALESCE(key_hash, '') AS key_hash,
-            metadata ->> 'copyableKeyCiphertext' AS copyable_key,
             policy_id,
             quota_policy_id,
             created_at::text AS created_at,
@@ -618,8 +600,7 @@ async fn load_owned_api_key(
     .await
     .map_err(|error| store_error("failed to load api key for update", error))?;
 
-    row.map(|row| gateway_api_key_from_row(row, api_key_secret_codec))
-        .transpose()
+    row.map(gateway_api_key_from_row).transpose()
 }
 
 async fn clear_runtime_default_api_keys(
@@ -690,10 +671,7 @@ async fn set_runtime_default_api_key(
     Ok(())
 }
 
-fn gateway_api_key_from_row(
-    row: sqlx::postgres::PgRow,
-    api_key_secret_codec: &(dyn ApiKeySecretCodec + Send + Sync),
-) -> DomainResult<GatewayApiKey> {
+fn gateway_api_key_from_row(row: sqlx::postgres::PgRow) -> DomainResult<GatewayApiKey> {
     Ok(GatewayApiKey {
         id: row.try_get::<i64, _>("id").map_err(row_error)?,
         tenant_id: row.try_get::<i64, _>("tenant_id").map_err(row_error)?,
@@ -708,11 +686,6 @@ fn gateway_api_key_from_row(
             .try_get::<String, _>("key_display_masked")
             .map_err(row_error)?,
         key_hash: row.try_get::<String, _>("key_hash").map_err(row_error)?,
-        copyable_key: row
-            .try_get::<Option<String>, _>("copyable_key")
-            .map_err(row_error)?
-            .map(|ciphertext| api_key_secret_codec.decode_secret(&ciphertext))
-            .transpose()?,
         policy_id: row
             .try_get::<Option<i64>, _>("policy_id")
             .map_err(row_error)?,
@@ -1118,14 +1091,8 @@ fn json_string_array(value: &str) -> DomainResult<Vec<String>> {
     serde_json::from_str::<Vec<String>>(value).map_err(|error| DomainError::new(error.to_string()))
 }
 
-fn api_key_metadata_json(
-    command: &CreateGatewayApiKeyCommand,
-    api_key_secret_codec: &(dyn ApiKeySecretCodec + Send + Sync),
-) -> DomainResult<String> {
-    let copyable_key_ciphertext = api_key_secret_codec.encode_secret(&command.copyable_key)?;
+fn api_key_metadata_json(command: &CreateGatewayApiKeyCommand) -> DomainResult<String> {
     serde_json::to_string(&serde_json::json!({
-        "copyableKeyCiphertext": copyable_key_ciphertext,
-        "copyableKeyStorage": "encrypted-managed-console-read-model",
         "runtime": {
             "defaultForRuntime": command.default_for_runtime
         }

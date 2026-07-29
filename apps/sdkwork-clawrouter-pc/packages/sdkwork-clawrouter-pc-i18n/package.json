@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/clawrouter-pc-admin-upstream": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*"
   },
   "devDependencies": {

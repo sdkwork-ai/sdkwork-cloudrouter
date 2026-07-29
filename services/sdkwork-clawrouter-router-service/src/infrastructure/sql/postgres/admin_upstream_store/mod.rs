@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use sqlx::PgPool;
 
-use crate::application::{ApiKeySecretCodec, ApiKeySecretHasher};
+use crate::application::{ApiKeySecretHasher, CredentialSecretCodec};
 use crate::ports::{
     AdminUpstreamAccountCredentialItem, AdminUpstreamAccountGroupItem,
     AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
@@ -31,7 +31,7 @@ pub use verifier::PostgresAdminUpstreamAccountVerifier;
 #[derive(Clone)]
 pub struct PostgresAdminUpstreamStore {
     pool: PgPool,
-    secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>,
+    secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>,
     secret_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
 }
 
@@ -49,7 +49,7 @@ impl std::fmt::Debug for PostgresAdminUpstreamStore {
 impl PostgresAdminUpstreamStore {
     pub fn new(
         pool: PgPool,
-        secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>,
+        secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>,
         secret_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     ) -> Self {
         Self {

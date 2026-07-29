@@ -2,6 +2,7 @@ pub mod api_key;
 pub mod app_session;
 pub mod database;
 pub mod deployment;
+pub mod internal_gateway;
 pub mod payment_webhook;
 pub mod provider_adapter;
 pub mod provider_relay;
@@ -21,6 +22,7 @@ pub use database::{
 pub use deployment::{
     resolve_deployment_runtime, DeploymentMode, DeploymentProfile, DeploymentRuntime, RuntimeTarget,
 };
+pub use internal_gateway::InternalGatewaySecurityConfig;
 pub use payment_webhook::PaymentWebhookConfig;
 pub use provider_adapter::{ProviderAdapterConfig, ProviderAdapterManifestDiscoveryConfig};
 pub use provider_relay::{

@@ -40,7 +40,9 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
                     check_constraints:
                       - name: ck_ai_upstream_supplier_tenant
                         columns: [tenant_id]
-                        expression: tenant_id > 0
+                        expressions:
+                          postgres: tenant_id > 0
+                          sqlite: tenant_id > 0
                   - table: ai_model_vendor
                     domain: models
                     generated_by_this_project: false
@@ -100,6 +102,10 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
             self.assertNotIn("sqlite_type", table["columns"]["created_at"])
             self.assertIn("primary_key", {item["type"] for item in table["constraints"]})
             self.assertIn("check", {item["type"] for item in table["constraints"]})
+            self.assertIn(
+                "tenant_id > 0",
+                {item.get("expression") for item in table["constraints"]},
+            )
             self.assertEqual("deleted_at IS NULL", table["indexes"][0]["where"])
 
     def test_materialize_writes_authoritative_postgres_assets_and_clears_composition(self) -> None:

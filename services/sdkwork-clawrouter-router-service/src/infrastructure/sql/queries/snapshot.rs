@@ -902,7 +902,6 @@ SELECT
     COALESCE(key_prefix, '') AS key_prefix,
     COALESCE(NULLIF(key_display_masked, ''), COALESCE(key_prefix, '') || '********') AS key_display_masked,
     COALESCE(key_hash, '') AS key_hash,
-    metadata ->> 'copyableKeyCiphertext' AS copyable_key,
     policy_id,
     quota_policy_id,
     created_at::text AS created_at,

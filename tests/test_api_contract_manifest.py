@@ -151,6 +151,42 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
             self.assertEqual("sessions.create", operation["operation_id"])
             self.assertEqual("iam", operation["sdk_domain"])
 
+    def test_backend_read_operation_can_use_post_for_typed_query(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            contract = self.write_contract(
+                root,
+                """
+                frontend_operations:
+                  - route: /admin/upstream
+                    source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
+                    operation: explainUpstreamAccountGroupRoute
+                    operation_id: upstreamAccountGroups.explain
+                    kind: read
+                    api_surface: backend
+                    api_method: POST
+                    api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain
+                    sdk_domain: ai
+                    read_sources: [ai_upstream_account_group]
+                    request_schema:
+                      name: ExplainUpstreamAccountGroupRouteRequest
+                      properties:
+                        resourceCode: { type: string }
+                    response_schema:
+                      name: UpstreamAccountGroupRouteExplanationResponse
+                      properties:
+                        ready: { type: boolean }
+                """,
+            )
+
+            manifest = ApiContractManifestGenerator(root=root, contract_path=contract).generate()
+
+            self.assertEqual(1, manifest["summary"]["operation_count"])
+            operation = manifest["operations"][0]
+            self.assertEqual("read", operation["kind"])
+            self.assertEqual("POST", operation["api_method"])
+            self.assertEqual("upstreamAccountGroups.explain", operation["operation_id"])
+
     def test_payload_schema_preserves_component_refs_inside_properties(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

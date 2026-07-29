@@ -157,8 +157,8 @@ pub use paypal_payment_adapter::{
 };
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{
-    ApiKeyAuthenticator, ApiKeySecretCodec, ApiKeySecretHasher, AuthenticateApiKeyQuery,
-    AuthenticatedApiKeyContext, ListModelCatalogQuery, ModelCatalogGroup, ModelCatalogItem,
+    ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
+    CredentialSecretCodec, ListModelCatalogQuery, ModelCatalogGroup, ModelCatalogItem,
     ModelCatalogPage, ModelCatalogPriceView, ModelCatalogQueryService,
     ModelCatalogReferencePriceView, ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig,
     ModelRankingsService, PriceAvailability, PricingResolver, ResolveModelPriceQuery,

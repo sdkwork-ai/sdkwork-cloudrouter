@@ -2,7 +2,7 @@ import type { CreateApiKeyInput } from './apiKeyService';
 
 export type ApiKeyFormValues = {
   name: string;
-  channelGroup: string;
+  accountGroup: string;
   quota: string;
   isUnlimitedQuota: boolean;
   modalities: string[];
@@ -12,7 +12,7 @@ export type ApiKeyFormValues = {
 };
 
 export const DEFAULT_API_KEY_MODALITIES = ['text', 'image', 'video', 'audio', 'music'] as const;
-export const DEFAULT_CHANNEL_GROUP = 'default';
+export const DEFAULT_ACCOUNT_GROUP = 'default';
 
 type ApiKeyModality = (typeof DEFAULT_API_KEY_MODALITIES)[number];
 
@@ -24,7 +24,7 @@ const MAX_BATCH_CREATE_COUNT = 100;
 export function createApiKeyInputFromForm(values: ApiKeyFormValues, _index = 0): CreateApiKeyInput {
   return {
     name: requiredText(values.name, 'name'),
-    channelGroup: normalizeOptionalText(values.channelGroup, DEFAULT_CHANNEL_GROUP),
+    accountGroup: normalizeOptionalText(values.accountGroup, DEFAULT_ACCOUNT_GROUP),
     quota: normalizeQuota(values.quota, values.isUnlimitedQuota),
     isUnlimitedQuota: values.isUnlimitedQuota,
     modalities: normalizeModalities(values.modalities),

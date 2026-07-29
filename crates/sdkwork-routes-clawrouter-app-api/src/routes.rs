@@ -5,19 +5,19 @@ use crate::{manifest, paths};
 use axum::Router;
 use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    PaymentWebhookConfig, RedisConfig, RequestLimitsConfig, RuntimeConfigProfile,
-    RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
+    InternalGatewaySecurityConfig, PaymentWebhookConfig, RedisConfig, RequestLimitsConfig,
+    RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
-    bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretCodec,
-    ApiKeySecretHasher, EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
+    bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretHasher,
+    CredentialSecretCodec, EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
     ModelRankingRefreshWorkerConfig, ModelRankingsService, PaymentAggregateRuntimeStore,
     PaymentProviderRegistry, RuntimeStreamBus,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
-    HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
+    HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
@@ -67,7 +67,7 @@ pub struct RouterApiRouteModule {
 
 pub const SERVICE_NAME: &str = "sdkwork-clawrouter-standalone-gateway";
 const DEFAULT_APP_RUNTIME_CATALOG_REFRESH_INTERVAL_MILLIS: u64 = 60_000;
-type ApiKeyCodec = Arc<dyn ApiKeySecretCodec + Send + Sync>;
+type CredentialCodec = Arc<dyn CredentialSecretCodec + Send + Sync>;
 
 struct AppApiKeyRuntimeDeps {
     read_store: Arc<dyn GatewayApiKeyManagementReadStore + Send + Sync>,
@@ -78,19 +78,16 @@ struct AppApiKeyRuntimeDeps {
 fn app_api_key_runtime_deps_for_postgres(
     pool: PgPool,
     api_key_security_config: &ApiKeySecurityConfig,
-    api_key_secret_codec: ApiKeyCodec,
+    credential_secret_codec: CredentialCodec,
 ) -> Result<AppApiKeyRuntimeDeps, ProductCatalogRouterError> {
     let api_key_hasher = HmacSha256ApiKeySecretHasher::new(api_key_security_config.pepper_secret())
         .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
     Ok(AppApiKeyRuntimeDeps {
-        read_store: Arc::new(PostgresPricingCatalogLoader::with_api_key_secret_codec(
+        read_store: Arc::new(PostgresPricingCatalogLoader::with_credential_secret_codec(
             pool.clone(),
-            api_key_secret_codec.clone(),
+            credential_secret_codec.clone(),
         )),
-        command_store: Arc::new(PostgresGatewayApiKeyCommandStore::new(
-            pool,
-            api_key_secret_codec,
-        )),
+        command_store: Arc::new(PostgresGatewayApiKeyCommandStore::new(pool)),
         api_key_hasher: Arc::new(api_key_hasher),
     })
 }
@@ -512,10 +509,10 @@ pub async fn router_with_postgres_product_catalog(
     payment_webhook_config: PaymentWebhookConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
     let deployment_mode = DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?;
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
-    let read_store = Arc::new(PostgresPricingCatalogLoader::with_api_key_secret_codec(
+    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
+    let read_store = Arc::new(PostgresPricingCatalogLoader::with_credential_secret_codec(
         pool.clone(),
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
     ));
     let model_catalog_snapshot = read_store.load_snapshot().await?;
     let model_rankings_store =
@@ -539,17 +536,14 @@ pub async fn router_with_postgres_product_catalog(
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
-    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::with_api_key_secret_codec(
-        pool.clone(),
-        api_key_secret_codec.clone(),
-    ));
+    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
     let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
         &api_key_security_config,
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
     )?);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
@@ -605,7 +599,7 @@ pub async fn router_with_postgres_shared_runtime(
     app_runtime_stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
     model_ranking_refresh_worker_config: ModelRankingRefreshWorkerConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
+    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
     let model_rankings_store =
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
     maybe_spawn_postgres_model_ranking_refresh_worker(
@@ -633,16 +627,13 @@ pub async fn router_with_postgres_shared_runtime(
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
-    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::with_api_key_secret_codec(
-        pool.clone(),
-        api_key_secret_codec.clone(),
-    ));
+    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
     let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
         &api_key_security_config,
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
     )?);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
@@ -785,7 +776,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         .map_err(ProductCatalogRouterError::Config)?;
     let app_runtime_stream_bus =
         build_app_runtime_stream_bus(runtime_toml, deployment_mode).await?;
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
+    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
     let app_runtime_catalog_refresh_interval =
         app_runtime_catalog_refresh_interval_from_env_or_toml(runtime_toml)
             .map_err(ProductCatalogRouterError::Config)?;
@@ -812,9 +803,9 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             .ensure_bootstrap_data()
             .await?;
     }
-    let read_store = Arc::new(PostgresPricingCatalogLoader::with_api_key_secret_codec(
+    let read_store = Arc::new(PostgresPricingCatalogLoader::with_credential_secret_codec(
         pool.clone(),
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
     ));
     let model_catalog_snapshot = read_store.load_snapshot().await?;
     log_app_runtime_catalog_snapshot_summary(
@@ -827,7 +818,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     spawn_postgres_app_runtime_catalog_refresh_worker(
         &pool,
         Arc::clone(&app_runtime_execution_catalog),
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
         app_runtime_catalog_refresh_interval,
     );
     let model_rankings_store =
@@ -857,16 +848,13 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
-    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::with_api_key_secret_codec(
-        pool.clone(),
-        api_key_secret_codec.clone(),
-    ));
+    let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
     let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
         &api_key_security_config,
-        api_key_secret_codec.clone(),
+        credential_secret_codec.clone(),
     )?);
     let usage_settlement_worker_config =
         sdkwork_clawrouter_router_service::application::resolve_usage_settlement_worker_config(
@@ -1006,11 +994,11 @@ fn ensure_server_safe_deployment_mode(
     Ok(())
 }
 
-fn api_key_secret_codec_from_config(
+fn credential_secret_codec_from_config(
     config: &ApiKeySecurityConfig,
-) -> Result<ApiKeyCodec, ProductCatalogRouterError> {
+) -> Result<CredentialCodec, ProductCatalogRouterError> {
     Ok(Arc::new(
-        RingAeadApiKeySecretCodec::new(config.pepper_secret())
+        RingAeadCredentialSecretCodec::new(config.pepper_secret())
             .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?,
     ))
 }
@@ -1019,7 +1007,14 @@ fn build_app_runtime_gateway_client(
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<AppRuntimeGatewayRuntimeClient, String> {
     let base_url = app_runtime_gateway_base_url(runtime_toml);
-    AppRuntimeGatewayHttpClient::new(base_url)
+    let security_config = InternalGatewaySecurityConfig::from_env_or_runtime_toml(runtime_toml)?
+        .ok_or_else(|| {
+            format!(
+                "{} is required for app runtime gateway calls",
+                InternalGatewaySecurityConfig::ENV_SIGNING_SECRET
+            )
+        })?;
+    AppRuntimeGatewayHttpClient::new(base_url, &security_config)
         .map(|client| Arc::new(client) as AppRuntimeGatewayRuntimeClient)
         .map_err(|error| error.to_string())
 }
@@ -1141,16 +1136,16 @@ pub fn shared_runtime_catalog_refresh_interval_from_toml(
 fn spawn_postgres_app_runtime_catalog_refresh_worker(
     pool: &PgPool,
     catalog: Arc<RefreshableSqlPricingCatalog>,
-    api_key_secret_codec: ApiKeyCodec,
+    credential_secret_codec: CredentialCodec,
     interval: Duration,
 ) -> tokio::task::JoinHandle<()> {
     let pool = pool.clone();
     tokio::spawn(async move {
         loop {
             sleep(interval).await;
-            match PostgresPricingCatalogLoader::with_api_key_secret_codec(
+            match PostgresPricingCatalogLoader::with_credential_secret_codec(
                 pool.clone(),
-                api_key_secret_codec.clone(),
+                credential_secret_codec.clone(),
             )
             .load_snapshot()
             .await

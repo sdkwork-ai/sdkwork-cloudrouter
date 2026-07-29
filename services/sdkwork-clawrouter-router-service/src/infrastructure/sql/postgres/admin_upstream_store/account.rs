@@ -5,7 +5,7 @@ use super::shared::{
     column, conflict, masked_secret, not_found, record_routing_change, search_pattern, store_error,
     DEFAULT_DATA_SCOPE,
 };
-use crate::application::{ApiKeySecretCodec, ApiKeySecretHasher};
+use crate::application::{ApiKeySecretHasher, CredentialSecretCodec};
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
@@ -340,7 +340,7 @@ pub(super) async fn list_credentials(
 
 pub(super) async fn create_credential(
     pool: &PgPool,
-    secret_codec: &(dyn ApiKeySecretCodec + Send + Sync),
+    secret_codec: &(dyn CredentialSecretCodec + Send + Sync),
     secret_hasher: &(dyn ApiKeySecretHasher + Send + Sync),
     command: CreateAdminUpstreamAccountCredentialCommand,
 ) -> DomainResult<AdminUpstreamAccountCredentialItem> {

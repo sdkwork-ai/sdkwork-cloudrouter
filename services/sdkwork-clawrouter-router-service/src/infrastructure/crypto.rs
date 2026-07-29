@@ -4,12 +4,12 @@ use hmac::{Hmac, Mac};
 use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, AES_256_GCM};
 use sha2::{Digest, Sha256};
 
-use crate::application::{ApiKeySecretCodec, ApiKeySecretHasher};
+use crate::application::{ApiKeySecretHasher, CredentialSecretCodec};
 use crate::domain::{DomainError, DomainResult};
 
 type HmacSha256 = Hmac<Sha256>;
-const API_KEY_SECRET_CIPHERTEXT_VERSION: &str = "v1";
-const API_KEY_SECRET_NONCE_LEN: usize = 12;
+const CREDENTIAL_SECRET_CIPHERTEXT_VERSION: &str = "v1";
+const CREDENTIAL_SECRET_NONCE_LEN: usize = 12;
 
 #[derive(Clone)]
 pub struct HmacSha256ApiKeySecretHasher {
@@ -48,41 +48,41 @@ impl fmt::Debug for HmacSha256ApiKeySecretHasher {
 }
 
 #[derive(Clone)]
-pub struct RingAeadApiKeySecretCodec {
+pub struct RingAeadCredentialSecretCodec {
     key: LessSafeKey,
 }
 
-impl RingAeadApiKeySecretCodec {
+impl RingAeadCredentialSecretCodec {
     pub fn new(pepper_secret: impl AsRef<str>) -> DomainResult<Self> {
         let pepper_secret = pepper_secret.as_ref().trim();
         if pepper_secret.is_empty() {
             return Err(DomainError::new(
-                "api key secret codec pepper must not be blank",
+                "credential secret codec pepper must not be blank",
             ));
         }
         let digest = Sha256::digest(pepper_secret.as_bytes());
         let unbound_key = UnboundKey::new(&AES_256_GCM, digest.as_slice())
-            .map_err(|_| DomainError::new("api key secret codec key is invalid"))?;
+            .map_err(|_| DomainError::new("credential secret codec key is invalid"))?;
         Ok(Self {
             key: LessSafeKey::new(unbound_key),
         })
     }
 }
 
-impl ApiKeySecretCodec for RingAeadApiKeySecretCodec {
+impl CredentialSecretCodec for RingAeadCredentialSecretCodec {
     fn encode_secret(&self, secret: &str) -> DomainResult<String> {
-        let mut nonce_bytes = [0_u8; API_KEY_SECRET_NONCE_LEN];
+        let mut nonce_bytes = [0_u8; CREDENTIAL_SECRET_NONCE_LEN];
         getrandom::fill(&mut nonce_bytes).map_err(|error| {
-            DomainError::new(format!("failed to generate api key nonce: {error}"))
+            DomainError::new(format!("failed to generate credential nonce: {error}"))
         })?;
         let nonce = Nonce::assume_unique_for_key(nonce_bytes);
         let mut in_out = secret.as_bytes().to_vec();
         self.key
             .seal_in_place_append_tag(nonce, Aad::empty(), &mut in_out)
-            .map_err(|_| DomainError::new("failed to encrypt api key secret"))?;
+            .map_err(|_| DomainError::new("failed to encrypt credential secret"))?;
         Ok(format!(
             "{}:{}:{}",
-            API_KEY_SECRET_CIPHERTEXT_VERSION,
+            CREDENTIAL_SECRET_CIPHERTEXT_VERSION,
             hex::encode(nonce_bytes),
             hex::encode(in_out)
         ))
@@ -93,37 +93,37 @@ impl ApiKeySecretCodec for RingAeadApiKeySecretCodec {
         let version = parts.next();
         let nonce_hex = parts.next();
         let ciphertext_hex = parts.next();
-        if version != Some(API_KEY_SECRET_CIPHERTEXT_VERSION)
+        if version != Some(CREDENTIAL_SECRET_CIPHERTEXT_VERSION)
             || nonce_hex.is_none()
             || ciphertext_hex.is_none()
             || parts.next().is_some()
         {
             return Err(DomainError::new(
-                "api key secret ciphertext format is invalid",
+                "credential secret ciphertext format is invalid",
             ));
         }
 
         let nonce_vec = hex::decode(nonce_hex.unwrap())
-            .map_err(|_| DomainError::new("api key secret nonce is invalid"))?;
-        let nonce_bytes: [u8; API_KEY_SECRET_NONCE_LEN] = nonce_vec
+            .map_err(|_| DomainError::new("credential secret nonce is invalid"))?;
+        let nonce_bytes: [u8; CREDENTIAL_SECRET_NONCE_LEN] = nonce_vec
             .try_into()
-            .map_err(|_| DomainError::new("api key secret nonce length is invalid"))?;
+            .map_err(|_| DomainError::new("credential secret nonce length is invalid"))?;
         let nonce = Nonce::assume_unique_for_key(nonce_bytes);
         let mut in_out = hex::decode(ciphertext_hex.unwrap())
-            .map_err(|_| DomainError::new("api key secret ciphertext is invalid"))?;
+            .map_err(|_| DomainError::new("credential secret ciphertext is invalid"))?;
         let plaintext = self
             .key
             .open_in_place(nonce, Aad::empty(), &mut in_out)
-            .map_err(|_| DomainError::new("failed to decrypt api key secret"))?;
+            .map_err(|_| DomainError::new("failed to decrypt credential secret"))?;
         String::from_utf8(plaintext.to_vec())
-            .map_err(|_| DomainError::new("api key secret plaintext is not valid utf-8"))
+            .map_err(|_| DomainError::new("credential secret plaintext is not valid utf-8"))
     }
 }
 
-impl fmt::Debug for RingAeadApiKeySecretCodec {
+impl fmt::Debug for RingAeadCredentialSecretCodec {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
-            .debug_struct("RingAeadApiKeySecretCodec")
+            .debug_struct("RingAeadCredentialSecretCodec")
             .field("key", &"[REDACTED]")
             .finish()
     }

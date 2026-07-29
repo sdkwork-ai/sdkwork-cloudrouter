@@ -529,9 +529,7 @@ fn item_from_row(row: sqlx::postgres::PgRow) -> DomainResult<AdminModelRateLimit
         model: row.try_get("model").map_err(row_error)?,
         account_group: row.try_get("account_group").map_err(row_error)?,
         account_group_id: required_integer_cell(&row, "group_id")?,
-        account_group_name: row
-            .try_get("account_group_name")
-            .map_err(row_error)?,
+        account_group_name: row.try_get("account_group_name").map_err(row_error)?,
         rpm: required_integer_cell(&row, "rpm")?,
         tpm: required_integer_cell(&row, "tpm")?,
         status: status_label(

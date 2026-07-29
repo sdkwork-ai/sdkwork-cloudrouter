@@ -143,6 +143,14 @@ class FrontendOperationAudit:
     MODELS_BACKEND_SDK_CLIENT = "getModelsBackendSdkClient"
     MODELS_BACKEND_SDK_PATTERN = re.compile(r"\bgetModelsBackendSdkClient\s*\(")
     MODELS_APP_SDK_PATTERN = re.compile(r"\bgetModelsAppSdkClient\s*\(")
+    MODELS_BACKEND_API_PATH_PREFIXES = (
+        "/backend/v3/api/ai/model_vendors",
+        "/backend/v3/api/ai/models",
+        "/backend/v3/api/ai/model_mappings",
+        "/backend/v3/api/ai/model_rankings",
+        "/backend/v3/api/ai/resources",
+        "/backend/v3/api/ai/resource_groups",
+    )
     MODELS_SOURCE_PREFIX = "../sdkwork-models/"
     CLAWROUTER_PORTAL_MODELS_SOURCE_PREFIX = (
         "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/"
@@ -966,9 +974,14 @@ class FrontendOperationAudit:
             return True
         if normalized_source.startswith(self.CLAWROUTER_PORTAL_RANKINGS_SOURCE_PREFIX):
             return True
-        if api_surface != "backend":
+        if api_surface != "backend" or not self._is_models_dependency_domain(sdk_domain):
             return False
-        return self._is_models_dependency_domain(sdk_domain)
+        if not isinstance(source_operation, dict):
+            return False
+        api_path = source_operation.get("api_path")
+        return isinstance(api_path, str) and api_path.startswith(
+            self.MODELS_BACKEND_API_PATH_PREFIXES
+        )
 
     def _is_appbase_dependency_operation(
         self,

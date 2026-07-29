@@ -192,9 +192,9 @@ function NodesTab() {
               itemCount={totalNodes}
               hasNextPage={page * pageSize < totalNodes}
               disabled={loading}
-              showingLabel={t('admin.group.pagination.showing')}
-              pageLabel={t('admin.group.pagination.page', { page })}
-              pageSizeLabel={t('admin.group.pagination.pageSize')}
+              showingLabel={t('common.pagination.showing')}
+              pageLabel={t('common.pagination.page', { page })}
+              pageSizeLabel={t('common.pagination.pageSize')}
               previousLabel={t('common.actions.previousPage')}
               nextLabel={t('common.actions.nextPage')}
               pageSizeOptions={[10, 20, 50, 100]}
@@ -423,9 +423,9 @@ function AlertsTab() {
               itemCount={totalAlerts}
               hasNextPage={page * pageSize < totalAlerts}
               disabled={loading}
-              showingLabel={t('admin.group.pagination.showing')}
-              pageLabel={t('admin.group.pagination.page', { page })}
-              pageSizeLabel={t('admin.group.pagination.pageSize')}
+              showingLabel={t('common.pagination.showing')}
+              pageLabel={t('common.pagination.page', { page })}
+              pageSizeLabel={t('common.pagination.pageSize')}
               previousLabel={t('common.actions.previousPage')}
               nextLabel={t('common.actions.nextPage')}
               pageSizeOptions={[10, 20, 50, 100]}

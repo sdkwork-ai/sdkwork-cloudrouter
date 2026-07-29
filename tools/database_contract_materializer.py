@@ -381,8 +381,8 @@ class DatabaseContractMaterializer:
             columns[name] = logical_type
         return columns
 
-    @staticmethod
     def _constraints(
+        self,
         table: dict[str, Any],
         columns: dict[str, Any],
         policy: dict[str, Any],
@@ -446,12 +446,18 @@ class DatabaseContractMaterializer:
                 }
             )
         for item in table.get("check_constraints", []) or []:
+            name = item["name"]
             constraints.append(
                 {
-                    "name": item["name"],
+                    "name": name,
                     "type": "check",
                     "columns": item.get("columns", []),
-                    "expression": item["expression"],
+                    "expression": self.compiler.resolve_check_expression(
+                        item,
+                        table_name,
+                        name,
+                        DATABASE_ENGINE,
+                    ),
                 }
             )
         return constraints

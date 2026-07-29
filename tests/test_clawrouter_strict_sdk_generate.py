@@ -480,6 +480,48 @@ class ClawRouterStrictSdkGenerateTest(unittest.TestCase):
                             },
                         }
                     },
+                    "/backend/v3/api/iam/api_keys": {
+                        "post": {
+                            "operationId": "apiKeys.create",
+                            "tags": ["iam"],
+                            "security": [{"AuthToken": [], "AccessToken": []}],
+                            "responses": {
+                                "201": {
+                                    "description": "Created",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {"$ref": "#/components/schemas/ApiKeysCreateResult"}
+                                        }
+                                    },
+                                }
+                            },
+                        }
+                    },
+                    "/backend/v3/api/iam/api_keys/{apiKeyId}": {
+                        "patch": {
+                            "operationId": "apiKeys.update",
+                            "tags": ["iam"],
+                            "security": [{"AuthToken": [], "AccessToken": []}],
+                            "parameters": [
+                                {
+                                    "name": "apiKeyId",
+                                    "in": "path",
+                                    "required": True,
+                                    "schema": {"type": "string"},
+                                }
+                            ],
+                            "responses": {
+                                "200": {
+                                    "description": "OK",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {"$ref": "#/components/schemas/ApiKeysUpdateResult"}
+                                        }
+                                    },
+                                }
+                            },
+                        }
+                    },
                 },
                 "components": {
                     "securitySchemes": {
@@ -576,6 +618,70 @@ class ClawRouterStrictSdkGenerateTest(unittest.TestCase):
                                 },
                             ],
                         },
+                        "ApiKeyItem": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["id", "maskedKey"],
+                            "properties": {
+                                "id": {"type": "string"},
+                                "maskedKey": {"type": "string"},
+                            },
+                        },
+                        "CreateApiKeyResponse": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["item", "rawKey"],
+                            "properties": {
+                                "item": {
+                                    "allOf": [{"$ref": "#/components/schemas/ApiKeyItem"}]
+                                },
+                                "rawKey": {"type": "string"},
+                            },
+                        },
+                        "UpdateApiKeyResponse": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["item"],
+                            "properties": {
+                                "item": {
+                                    "allOf": [{"$ref": "#/components/schemas/ApiKeyItem"}]
+                                }
+                            },
+                        },
+                        "ApiKeysCreateResult": {
+                            "allOf": [
+                                {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                                {
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "required": ["data"],
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {"$ref": "#/components/schemas/CreateApiKeyResponse"}
+                                            ]
+                                        }
+                                    },
+                                },
+                            ],
+                        },
+                        "ApiKeysUpdateResult": {
+                            "allOf": [
+                                {"$ref": "#/components/schemas/SdkWorkApiResponse"},
+                                {
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "required": ["data"],
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {"$ref": "#/components/schemas/UpdateApiKeyResponse"}
+                                            ]
+                                        }
+                                    },
+                                },
+                            ],
+                        },
                     }
                 },
             }
@@ -627,6 +733,9 @@ class ClawRouterStrictSdkGenerateTest(unittest.TestCase):
             self.assertNotIn("src/types/cache-namespaces-keys-list-result.ts", files)
             self.assertIn("Promise<AdminAnalyticsOverview>", generated_source)
             self.assertIn("Promise<CacheNamespaceKeyPage>", generated_source)
+            self.assertIn("Promise<CreateApiKeyResponse>", generated_source)
+            self.assertIn("Promise<ApiKeyItem>", generated_source)
+            self.assertIn("rawKey: string;", files["src/types/create-api-key-response.ts"])
             self.assertIn("{ name: 'page_size', value: params?.pageSize", generated_source)
 
     def test_apply_generation_runs_project_runtime_standardizer(self) -> None:

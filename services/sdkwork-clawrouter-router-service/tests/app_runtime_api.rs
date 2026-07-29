@@ -11,6 +11,7 @@ use bytes::Bytes;
 use futures_util::stream;
 use futures_util::StreamExt as FuturesStreamExt;
 use http_body_util::BodyExt;
+use sdkwork_claw_security::InternalGatewayPrincipal;
 use sdkwork_clawrouter_router_service::application::{
     EntityUuidGenerator, InMemoryRuntimeStreamBus,
 };
@@ -1600,7 +1601,8 @@ async fn app_runtime_gateway_executor_routes_openai_chat_invocations_to_gateway_
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!("/v1/chat/completions", gateway_requests[0].path);
-    assert_eq!("Bearer sk-copyable-101", gateway_requests[0].authorization);
+    assert!(gateway_requests[0].authorization.is_empty());
+    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
     assert_eq!(Some("req-1"), gateway_requests[0].request_id.as_deref());
     assert_eq!(Some("trace-1"), gateway_requests[0].trace_id.as_deref());
     assert_eq!("gpt-4o-mini", gateway_requests[0].body["model"]);
@@ -1736,13 +1738,11 @@ async fn app_runtime_gateway_executor_prefers_console_default_api_key_without_fr
                 TestRuntimeApiKeyFixture {
                     id: 101,
                     group_id: 10,
-                    copyable_key: "sk-copyable-101",
                     default_for_runtime: false,
                 },
                 TestRuntimeApiKeyFixture {
                     id: 202,
                     group_id: 10,
-                    copyable_key: "sk-copyable-202",
                     default_for_runtime: true,
                 },
             ])),
@@ -1756,7 +1756,8 @@ async fn app_runtime_gateway_executor_prefers_console_default_api_key_without_fr
     assert_eq!(StatusCode::OK, response.status());
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
-    assert_eq!("Bearer sk-copyable-202", gateway_requests[0].authorization);
+    assert!(gateway_requests[0].authorization.is_empty());
+    assert_eq!(202, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
     assert!(gateway_requests[0].body.get("routeKeyId").is_none());
 }
 
@@ -1790,13 +1791,11 @@ async fn app_runtime_gateway_executor_selects_lowest_route_capable_api_key_when_
                 TestRuntimeApiKeyFixture {
                     id: 202,
                     group_id: 10,
-                    copyable_key: "sk-copyable-202",
                     default_for_runtime: false,
                 },
                 TestRuntimeApiKeyFixture {
                     id: 101,
                     group_id: 10,
-                    copyable_key: "sk-copyable-101",
                     default_for_runtime: false,
                 },
             ])),
@@ -1810,7 +1809,8 @@ async fn app_runtime_gateway_executor_selects_lowest_route_capable_api_key_when_
         assert_eq!(StatusCode::OK, response.status());
         let gateway_requests = gateway_requests.lock().unwrap();
         assert_eq!(1, gateway_requests.len());
-        assert_eq!("Bearer sk-copyable-101", gateway_requests[0].authorization);
+        assert!(gateway_requests[0].authorization.is_empty());
+        assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
     }
 }
 
@@ -1844,13 +1844,11 @@ async fn app_runtime_gateway_executor_prefers_request_route_key_over_console_def
                 TestRuntimeApiKeyFixture {
                     id: 101,
                     group_id: 10,
-                    copyable_key: "sk-copyable-101",
                     default_for_runtime: false,
                 },
                 TestRuntimeApiKeyFixture {
                     id: 202,
                     group_id: 10,
-                    copyable_key: "sk-copyable-202",
                     default_for_runtime: true,
                 },
             ])),
@@ -1864,7 +1862,8 @@ async fn app_runtime_gateway_executor_prefers_request_route_key_over_console_def
     assert_eq!(StatusCode::OK, response.status());
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
-    assert_eq!("Bearer sk-copyable-101", gateway_requests[0].authorization);
+    assert!(gateway_requests[0].authorization.is_empty());
+    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
     assert!(gateway_requests[0].body.get("routeKeyId").is_none());
 }
 
@@ -1939,13 +1938,11 @@ async fn app_runtime_gateway_executor_prefers_route_capable_api_key_over_unrouta
                 TestRuntimeApiKeyFixture {
                     id: 101,
                     group_id: 10,
-                    copyable_key: "sk-copyable-101",
                     default_for_runtime: false,
                 },
                 TestRuntimeApiKeyFixture {
                     id: 202,
                     group_id: 20,
-                    copyable_key: "sk-copyable-202",
                     default_for_runtime: true,
                 },
             ])),
@@ -1959,7 +1956,8 @@ async fn app_runtime_gateway_executor_prefers_route_capable_api_key_over_unrouta
     assert_eq!(StatusCode::OK, response.status());
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
-    assert_eq!("Bearer sk-copyable-101", gateway_requests[0].authorization);
+    assert!(gateway_requests[0].authorization.is_empty());
+    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
 }
 
 #[tokio::test]
@@ -1991,7 +1989,6 @@ async fn app_runtime_gateway_executor_does_not_call_gateway_when_no_api_key_can_
                 TestRuntimeApiKeyFixture {
                     id: 202,
                     group_id: 20,
-                    copyable_key: "sk-copyable-202",
                     default_for_runtime: true,
                 },
             ])),
@@ -2047,7 +2044,8 @@ async fn app_runtime_gateway_executor_defers_empty_route_snapshot_probe_to_gatew
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!("/v1/chat/completions", gateway_requests[0].path);
-    assert_eq!("Bearer sk-copyable-101", gateway_requests[0].authorization);
+    assert!(gateway_requests[0].authorization.is_empty());
+    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
     assert_eq!("gpt-5.5", gateway_requests[0].body["model"]);
 }
 
@@ -2708,7 +2706,8 @@ async fn app_runtime_gateway_executor_routes_image_generation_to_gateway_images_
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!("/v1/images/generations", gateway_requests[0].path);
-    assert_eq!("Bearer sk-copyable-101", gateway_requests[0].authorization);
+    assert!(gateway_requests[0].authorization.is_empty());
+    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
     assert_eq!("openai/gpt-image-2", gateway_requests[0].body["model"]);
     assert_eq!("brand launch poster", gateway_requests[0].body["prompt"]);
     assert_eq!(2, gateway_requests[0].body["n"]);
@@ -2951,7 +2950,8 @@ async fn app_runtime_gateway_executor_routes_suno_music_generation_to_provider_m
         "/provider/suno/v1/music/generations",
         gateway_requests[0].path
     );
-    assert_eq!("Bearer sk-copyable-101", gateway_requests[0].authorization);
+    assert!(gateway_requests[0].authorization.is_empty());
+    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
     assert_eq!("suno-v5", gateway_requests[0].body["model"]);
     assert_eq!(
         "upbeat synthwave launch theme",
@@ -3396,43 +3396,6 @@ async fn app_runtime_gateway_executor_routes_elevenlabs_sfx_generation_and_keeps
     assert_runtime_completed_event_recorded(&event_commands);
 }
 
-#[tokio::test]
-async fn app_runtime_gateway_executor_requires_copyable_gateway_api_key_secret() {
-    let store = Arc::new(TestAppRuntimeStore::with_invocation(
-        AppRuntimeInvocationRecord {
-            item: AppRuntimeInvocationItem {
-                status: "streaming".to_owned(),
-                runtime: "openai_compatible".to_owned(),
-                endpoint: Some("chat.stream".to_owned()),
-                model: Some("openai/gpt-4o-mini".to_owned()),
-                provider: Some("openai".to_owned()),
-                ..sample_invocation()
-            },
-            request_json: json!({
-                "messages": [{"role": "user", "content": "ping"}]
-            }),
-            metadata: json!({}),
-        },
-    ));
-    store.list_events_items.lock().unwrap().clear();
-    let gateway_requests = Arc::new(Mutex::new(Vec::new()));
-    let router =
-        sdkwork_clawrouter_router_service::api::app_runtime_router_with_store_and_gateway_client(
-            store,
-            Arc::new(SequentialUuidGenerator::new(Vec::new())),
-            Arc::new(TestRuntimeCatalog::without_copyable_key()),
-            Arc::new(RecordingGatewayRuntimeClient::new(Arc::clone(
-                &gateway_requests,
-            ))),
-        );
-
-    let response = runtime_stream_request(router).await;
-
-    let body = runtime_failed_sse_text(response).await;
-    assert!(body.contains("copyable gateway API key"), "{body}");
-    assert!(gateway_requests.lock().unwrap().is_empty());
-}
-
 async fn runtime_stream_request(router: axum::Router) -> axum::response::Response {
     router
         .oneshot(
@@ -3501,12 +3464,15 @@ impl AppRuntimeStore for TestAppRuntimeStore {
     fn list_invocations<'a>(
         &'a self,
         subject: AppRuntimeSubject,
-        _query: sdkwork_clawrouter_router_service::ports::AppRuntimeInvocationQuery,
+        query: sdkwork_clawrouter_router_service::ports::AppRuntimeInvocationQuery,
     ) -> AppRuntimeFuture<'a, AppRuntimeInvocationList> {
         Box::pin(async move {
             self.list_invocation_subjects.lock().unwrap().push(subject);
             Ok(AppRuntimeInvocationList {
                 items: vec![sample_invocation()],
+                total: 1,
+                page_no: query.page,
+                page_size: query.page_size,
             })
         })
     }
@@ -3578,13 +3544,17 @@ impl AppRuntimeStore for TestAppRuntimeStore {
         &'a self,
         subject: AppRuntimeSubject,
         _invocation_id: String,
-        _page: i64,
-        _page_size: i64,
+        page: i64,
+        page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeEventList> {
         Box::pin(async move {
             self.list_event_subjects.lock().unwrap().push(subject);
+            let items = self.list_events_items.lock().unwrap().clone();
             Ok(AppRuntimeEventList {
-                items: self.list_events_items.lock().unwrap().clone(),
+                total: items.len() as i64,
+                items,
+                page_no: page,
+                page_size,
             })
         })
     }
@@ -3612,7 +3582,12 @@ impl AppRuntimeStore for TestAppRuntimeStore {
                     .then_with(|| left.id.cmp(&right.id))
             });
             items.truncate(limit.max(1) as usize);
-            Ok(AppRuntimeEventList { items })
+            Ok(AppRuntimeEventList {
+                total: items.len() as i64,
+                items,
+                page_no: 1,
+                page_size: limit,
+            })
         })
     }
 
@@ -3699,12 +3674,15 @@ impl AppRuntimeStore for TestAppRuntimeStore {
         &'a self,
         _subject: AppRuntimeSubject,
         _invocation_id: String,
-        _page: i64,
-        _page_size: i64,
+        page: i64,
+        page_size: i64,
     ) -> AppRuntimeFuture<'a, AppRuntimeArtifactList> {
-        Box::pin(async {
+        Box::pin(async move {
             Ok(AppRuntimeArtifactList {
                 items: vec![sample_artifact()],
+                total: 1,
+                page_no: page,
+                page_size,
             })
         })
     }
@@ -3885,7 +3863,6 @@ struct TestRuntimeCatalog {
     api_format: Option<String>,
     include_model_route: bool,
     include_channel_route: bool,
-    include_copyable_key: bool,
     include_pricing_plan: bool,
     api_keys: Option<Vec<TestRuntimeApiKeyFixture>>,
     foreign_api_key_id: Option<i64>,
@@ -3895,7 +3872,6 @@ struct TestRuntimeCatalog {
 struct TestRuntimeApiKeyFixture {
     id: i64,
     group_id: i64,
-    copyable_key: &'static str,
     default_for_runtime: bool,
 }
 
@@ -3911,7 +3887,6 @@ impl TestRuntimeCatalog {
             api_format: api_format.map(str::to_owned),
             include_model_route: true,
             include_channel_route: true,
-            include_copyable_key: true,
             include_pricing_plan: true,
             api_keys: None,
             foreign_api_key_id: None,
@@ -3943,13 +3918,6 @@ impl TestRuntimeCatalog {
     fn with_foreign_api_key(api_key_id: i64) -> Self {
         Self {
             foreign_api_key_id: Some(api_key_id),
-            ..Self::default()
-        }
-    }
-
-    fn without_copyable_key() -> Self {
-        Self {
-            include_copyable_key: false,
             ..Self::default()
         }
     }
@@ -4091,7 +4059,6 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
                         "hash",
                     )
                     .with_owner(10, 20, 30)
-                    .with_copyable_key(fixture.copyable_key)
                     .with_default_for_runtime(fixture.default_for_runtime)
                 })
                 .collect();
@@ -4100,11 +4067,6 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
             101, 10, "sk-app", "hash",
         )
         .with_owner(10, 20, 30);
-        let api_key = if self.include_copyable_key {
-            api_key.with_copyable_key("sk-copyable-101")
-        } else {
-            api_key
-        };
         let mut api_keys = vec![api_key];
         if let Some(api_key_id) = self.foreign_api_key_id {
             api_keys.push(
@@ -4114,8 +4076,7 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
                     "sk-foreign",
                     "foreign-hash",
                 )
-                .with_owner(99, 20, 30)
-                .with_copyable_key("sk-copyable-foreign"),
+                .with_owner(99, 20, 30),
             );
         }
         api_keys
@@ -4411,6 +4372,7 @@ struct GatewayRequestCapture {
     method: Method,
     path: String,
     authorization: String,
+    internal_principal: Option<InternalGatewayPrincipal>,
     content_type: String,
     request_id: Option<String>,
     trace_id: Option<String>,
@@ -4537,6 +4499,7 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                     .get("authorization")
                     .cloned()
                     .unwrap_or_default(),
+                internal_principal: request.internal_principal.clone(),
                 request_id: request.headers.get("x-request-id").cloned(),
                 trace_id: request.headers.get("x-trace-id").cloned(),
                 content_type,

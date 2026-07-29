@@ -363,8 +363,8 @@
         "additionalProperties": false,
         "description": "AdminModelLimitCreateRequest contract.",
         "properties": {
-          "channelGroup": {
-            "description": "channelGroup field on AdminModelLimitCreateRequest.",
+          "accountGroup": {
+            "description": "Upstream account group code for the model rate limit.",
             "type": "string"
           },
           "model": {
@@ -381,7 +381,7 @@
           }
         },
         "required": [
-          "channelGroup",
+          "accountGroup",
           "model",
           "rpm",
           "tpm"
@@ -2997,27 +2997,27 @@
         "additionalProperties": false,
         "description": "ModelLimitRuleItem contract.",
         "properties": {
-          "channelGroup": {
-            "description": "channelGroup field on ModelLimitRuleItem.",
+          "accountGroup": {
+            "description": "Upstream account group code.",
             "type": "string"
           },
-          "channelGroupId": {
+          "accountGroupId": {
             "anyOf": [
               {
                 "type": "string"
               },
               {}
             ],
-            "description": "channelGroupId field on ModelLimitRuleItem."
+            "description": "Upstream account group identifier."
           },
-          "channelGroupName": {
+          "accountGroupName": {
             "anyOf": [
               {
                 "type": "string"
               },
               {}
             ],
-            "description": "channelGroupName field on ModelLimitRuleItem."
+            "description": "Upstream account group display name."
           },
           "id": {
             "description": "id field on ModelLimitRuleItem.",
@@ -3045,9 +3045,9 @@
           }
         },
         "required": [
-          "channelGroup",
-          "channelGroupId",
-          "channelGroupName",
+          "accountGroup",
+          "accountGroupId",
+          "accountGroupName",
           "id",
           "model",
           "rpm",
@@ -9137,7 +9137,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -9241,7 +9241,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-idempotent": true,
         "x-sdkwork-resource": "upstreamAccountGroups",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
           "ops_audit_log",
@@ -9341,7 +9341,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
           "ops_audit_log",
@@ -9435,7 +9435,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -9547,7 +9547,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
           "ops_audit_log",
@@ -9645,7 +9645,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups.members",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -9759,7 +9759,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups.members",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
           "ai_upstream_account_group_member",
@@ -9860,7 +9860,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups.resources",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -9975,7 +9975,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups.resources",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
           "ai_upstream_account_group_resource",
@@ -9990,7 +9990,7 @@
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain": {
       "post": {
-        "description": "Explain upstream account group route. Reads ai_upstream_account_group, ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ai_upstream_account_group, ai_upstream_account_group_resource, ai_resource, ai_resource_group, iam_gateway_api_key, ai_upstream_object_route, ai_routing_policy, ai_routing_rule. Writes none. File targets none.",
+        "description": "Explain upstream account group route. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ai_upstream_account_group_resource, ai_resource, ai_resource_group, iam_gateway_api_key, ai_upstream_object_route, ai_routing_policy, ai_routing_rule. Writes none. File targets none.",
         "operationId": "upstreamAccountGroups.explain",
         "parameters": [
           {
@@ -10076,14 +10076,12 @@
         "tags": [
           "ai"
         ],
-        "x-contract-kind": "action",
+        "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
           "ai_upstream_account_group",
-          "ai_upstream_account_group",
           "ai_upstream_account_group_member",
           "ai_upstream_account",
-          "ai_upstream_account_group",
           "ai_upstream_account_group_resource",
           "ai_resource",
           "ai_resource_group",
@@ -10096,7 +10094,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups",
-        "x-source-file": "services/sdkwork-clawrouter-router-service/src/api/admin_route_explain.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -10215,7 +10213,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -10320,7 +10318,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-idempotent": true,
         "x-sdkwork-resource": "upstreamAccounts",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ai_upstream_account",
@@ -10422,7 +10420,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ai_upstream_account",
@@ -10520,7 +10518,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -10633,7 +10631,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ai_upstream_account",
@@ -10766,7 +10764,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts.credentials",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -10880,7 +10878,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-idempotent": true,
         "x-sdkwork-resource": "upstreamAccounts.credentials",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account",
           "ai_upstream_account_credential",
@@ -10980,7 +10978,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts.credentials",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account",
           "ai_upstream_account_credential",
@@ -11092,7 +11090,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account",
           "ai_upstream_supplier_endpoint",
@@ -11215,7 +11213,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -11319,7 +11317,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-idempotent": true,
         "x-sdkwork-resource": "upstreamSuppliers",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ops_audit_log",
@@ -11419,7 +11417,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ops_audit_log",
@@ -11513,7 +11511,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -11625,7 +11623,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ops_audit_log",
@@ -11722,7 +11720,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.authMethods",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -11835,7 +11833,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.authMethods",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ai_upstream_supplier_auth_method",
@@ -11933,7 +11931,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.endpoints",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -12046,7 +12044,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.endpoints",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ai_upstream_supplier_endpoint",
@@ -12146,7 +12144,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.resources",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [],
         "x-sdkwork-owner": "sdkwork-clawrouter",
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
@@ -12261,7 +12259,7 @@
         "x-sdkwork-conditional-write": true,
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.resources",
-        "x-source-file": "crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs",
+        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
           "ai_upstream_supplier_resource",
@@ -22380,7 +22378,43 @@
       "get": {
         "description": "List firewalls. Reads iam_gateway_risk_rule. Writes none. File targets none.",
         "operationId": "firewalls.rules.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -22449,8 +22483,8 @@
           "iam_gateway_risk_rule"
         ],
         "x-route-scope": "admin",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-domain": "intelligence",
+        "x-sdk-domain": "system",
+        "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [],
@@ -22539,8 +22573,8 @@
           "iam_gateway_risk_rule"
         ],
         "x-route-scope": "admin",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-domain": "intelligence",
+        "x-sdk-domain": "system",
+        "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [
@@ -22627,8 +22661,8 @@
           "iam_gateway_risk_rule"
         ],
         "x-route-scope": "admin",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-domain": "intelligence",
+        "x-sdk-domain": "system",
+        "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
         "x-write-tables": [
@@ -22973,7 +23007,43 @@
       "get": {
         "description": "List token limits. Reads ai_quota_policy, iam_gateway_api_key. Writes none. File targets none.",
         "operationId": "rateLimits.apiKeys.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -23150,7 +23220,43 @@
       "get": {
         "description": "List IP limits. Reads iam_gateway_risk_rule. Writes none. File targets none.",
         "operationId": "rateLimits.ip.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -23323,9 +23429,45 @@
     },
     "/backend/v3/api/system/rate_limits/models": {
       "get": {
-        "description": "List model limits. Reads ai_quota_policy, ai_channel_group. Writes none. File targets none.",
+        "description": "List model limits. Reads ai_quota_policy, ai_upstream_account_group. Writes none. File targets none.",
         "operationId": "rateLimits.models.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -23392,7 +23534,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_quota_policy",
-          "ai_channel_group"
+          "ai_upstream_account_group"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
@@ -23404,7 +23546,7 @@
         "x-sdkwork-api-authority": "sdkwork-clawrouter.backend"
       },
       "post": {
-        "description": "Create model limit. Reads ai_quota_policy, ai_channel_group. Writes ai_quota_policy, ops_audit_log. File targets none.",
+        "description": "Create model limit. Reads ai_quota_policy, ai_upstream_account_group. Writes ai_quota_policy, ops_audit_log. File targets none.",
         "operationId": "rateLimits.models.create",
         "parameters": [],
         "requestBody": {
@@ -23483,7 +23625,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_quota_policy",
-          "ai_channel_group"
+          "ai_upstream_account_group"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",

@@ -293,46 +293,41 @@ tables:
         required: false
         postgres_type: BIGINT
         constraints: ''
-      legacy_api_key_id:
-        type: int64
-        required: false
-        postgres_type: BIGINT
-        constraints: ''
       account_group_id:
         type: int64
-        required: false
+        required: true
         postgres_type: BIGINT
-        constraints: ''
+        constraints: NOT NULL
       name:
         type: string(128)
-        required: false
+        required: true
         postgres_type: VARCHAR(128)
-        constraints: ''
+        constraints: NOT NULL
       key_prefix:
         type: string(32)
-        required: false
+        required: true
         postgres_type: VARCHAR(32)
-        constraints: ''
+        constraints: NOT NULL
       key_display_masked:
         type: string(64)
-        required: false
+        required: true
         postgres_type: VARCHAR(64)
-        constraints: ''
+        constraints: NOT NULL
       key_hash:
         type: string(128)
-        required: false
+        required: true
         postgres_type: VARCHAR(128)
-        constraints: ''
+        constraints: NOT NULL
       hash_alg:
         type: string(32)
-        required: false
+        required: true
         postgres_type: VARCHAR(32)
-        constraints: ''
+        constraints: NOT NULL
       secret_version:
         type: int64
-        required: false
+        required: true
         postgres_type: BIGINT
-        constraints: ''
+        constraints: NOT NULL
       idempotency_key:
         type: string(128)
         required: true
@@ -419,14 +414,9 @@ tables:
         columns: &id001
           - key_hash
         where: null
-      - name: uk_iam_gateway_api_key_legacy
-        type: unique
-        columns: &id002
-          - legacy_api_key_id
-        where: null
       - name: uk_iam_gateway_api_key_idempotency
         type: unique
-        columns: &id003
+        columns: &id002
           - tenant_id
           - idempotency_key
         where: null
@@ -435,12 +425,8 @@ tables:
         columns: *id001
         unique: true
         where: deleted_at IS NULL
-      - name: uk_iam_gateway_api_key_legacy
-        columns: *id002
-        unique: true
-        where: deleted_at IS NULL
       - name: uk_iam_gateway_api_key_idempotency
-        columns: *id003
+        columns: *id002
         unique: true
         where: deleted_at IS NULL
       - name: uk_iam_gateway_api_key_scope_id
@@ -617,12 +603,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_iam_gateway_api_key_account_group_uuid
         type: unique
-        columns: &id004
+        columns: &id003
           - uuid
         where: null
       - name: uk_iam_gateway_api_key_account_group_binding
         type: unique
-        columns: &id005
+        columns: &id004
           - tenant_id
           - organization_id
           - api_key_id
@@ -655,11 +641,11 @@ tables:
         expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_iam_gateway_api_key_account_group_uuid
-        columns: *id004
+        columns: *id003
         unique: true
         where: deleted_at IS NULL
       - name: uk_iam_gateway_api_key_account_group_binding
-        columns: *id005
+        columns: *id004
         unique: true
         where: deleted_at IS NULL
       - name: idx_iam_gateway_api_key_account_group_active
@@ -890,7 +876,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_iam_gateway_risk_rule_tenant_target
         type: unique
-        columns: &id006
+        columns: &id005
           - tenant_id
           - organization_id
           - rule_type
@@ -899,7 +885,7 @@ tables:
         where: null
     indexes:
       - name: uk_iam_gateway_risk_rule_tenant_target
-        columns: *id006
+        columns: *id005
         unique: true
         where: deleted_at IS NULL
       - name: idx_iam_gateway_risk_rule_scope_priority

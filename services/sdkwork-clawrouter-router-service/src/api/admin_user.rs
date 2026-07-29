@@ -730,7 +730,6 @@ fn build_backend_create_api_key_command(
         key_prefix: key_prefix(raw_key),
         key_display_masked: mask_created_key(raw_key),
         key_hash,
-        copyable_key: raw_key.to_owned(),
         hash_alg: HASH_ALG_HMAC_SHA256.to_owned(),
         secret_version: SECRET_VERSION,
         request_id,

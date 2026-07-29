@@ -2575,7 +2575,6 @@ tables:
     attempt_no: int32
     decision_log_id: int64
     api_key_id: int64
-    legacy_api_key_id: int64
     api_key_name_snapshot: string(128)
     account_group_id: int64
     account_group_snapshot: string(128)
@@ -2937,7 +2936,6 @@ tables:
   - worker
   columns:
     api_key_id: int64
-    legacy_api_key_id: int64
     policy_id: int64
     profile_id: int64
     rule_id: int64
@@ -4301,7 +4299,6 @@ tables:
   columns:
     decision_log_id: int64
     api_key_id: int64
-    legacy_api_key_id: int64
     api_key_name_snapshot: string(128)
     account_group_id: int64
     account_group_snapshot: string(128)
@@ -4668,14 +4665,27 @@ tables:
       constraints: NOT NULL
     owner_type: int32
     owner_id: int64
-    legacy_api_key_id: int64
-    account_group_id: int64
-    name: string(128)
-    key_prefix: string(32)
-    key_display_masked: string(64)
-    key_hash: string(128)
-    hash_alg: string(32)
-    secret_version: int64
+    account_group_id:
+      type: int64
+      constraints: NOT NULL
+    name:
+      type: string(128)
+      constraints: NOT NULL
+    key_prefix:
+      type: string(32)
+      constraints: NOT NULL
+    key_display_masked:
+      type: string(64)
+      constraints: NOT NULL
+    key_hash:
+      type: string(128)
+      constraints: NOT NULL
+    hash_alg:
+      type: string(32)
+      constraints: NOT NULL
+    secret_version:
+      type: int64
+      constraints: NOT NULL
     idempotency_key:
       type: string(128)
       constraints: NOT NULL
@@ -4696,9 +4706,6 @@ tables:
   - name: uk_iam_gateway_api_key_hash
     columns:
     - key_hash
-  - name: uk_iam_gateway_api_key_legacy
-    columns:
-    - legacy_api_key_id
   - name: uk_iam_gateway_api_key_idempotency
     columns:
     - tenant_id

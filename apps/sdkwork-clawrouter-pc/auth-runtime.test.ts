@@ -1496,11 +1496,11 @@ test("admin layout enforces route permission guard for protected admin pages", a
   assert.match(guardSource, /isAdminRouteAllowed/);
   assert.match(guardSource, /shared\.auth\.adminAccess\.forbiddenTitle/);
   assert.match(permissionsSource, /resolveAdminRoutePermissionHint/);
-  assert.equal(isAdminRouteAllowed("/admin/group", ["iam.users.read"]), true);
-  assert.equal(isAdminRouteAllowed("/admin/group", ["clawrouter.admin.access"]), false);
+  assert.equal(isAdminRouteAllowed("/admin/upstream", ["iam.users.read"]), false);
+  assert.equal(isAdminRouteAllowed("/admin/upstream", ["clawrouter.admin.access"]), true);
   assert.equal(isAdminRouteAllowed("/admin/dashboard", ["clawrouter.admin.access"]), true);
   assert.equal(isAdminRouteAllowed("/admin/dashboard", ["clawrouter.*"]), true);
-  assert.equal(isAdminRouteAllowed("/admin/group", ["*"]), true);
+  assert.equal(isAdminRouteAllowed("/admin/upstream", ["*"]), true);
 });
 
 test("portal i18n keeps document language aligned with active locale", () => {
@@ -1520,7 +1520,7 @@ test("generated SDK auth errors clear the app session and redirect protected pag
   const redirects: string[] = [];
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "#risk",
-    pathname: "/admin/channel",
+    pathname: "/admin/upstream",
     replace: (to) => redirects.push(to),
     search: "?provider_id=2",
   });
@@ -2295,85 +2295,51 @@ test("admin model vendor item is grouped under model management", () => {
   assert.doesNotMatch(i18nSource, /\u6a21\u578b\u5e73\u53f0\u7ba1\u7406/);
 });
 
-test("admin group and AI channels are grouped under AI channel management", () => {
+test("upstream administration has one canonical navigation entry", () => {
   const adminRegistrySource = readAdminRegistrySource();
   const i18nSource = readI18nResourceSource();
 
   assert.match(
     adminRegistrySource,
-    /groupBlock\('admin\.menu\.home\.modelManagement'[\s\S]*groupBlock\('admin\.menu\.home\.accountPoolManagement'/,
+    /groupBlock\('admin\.menu\.home\.modelManagement'[\s\S]*groupBlock\('admin\.menu\.home\.upstreamManagement'/,
   );
   assert.match(
     adminRegistrySource,
-    /groupBlock\('admin\.menu\.home\.accountPoolManagement',\s*\[\s*itemBlock\(\{\s*path:\s*'\/admin\/group',\s*labelKey:\s*'admin\.menu\.groups'[\s\S]*itemBlock\(\{\s*path:\s*'\/admin\/channel',\s*labelKey:\s*'admin\.menu\.channels'/s,
+    /groupBlock\('admin\.menu\.home\.upstreamManagement',\s*\[\s*itemBlock\(\{\s*path:\s*'\/admin\/upstream',\s*labelKey:\s*'admin\.menu\.upstream'/s,
   );
 
   assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.userManagement'/);
   assert.doesNotMatch(adminRegistrySource, /groupBlock\('admin\.menu\.home\.agentSkills'/);
-  assert.match(i18nSource, /"admin\.menu\.home\.accountPoolManagement":\s*"AI Channel Management"/);
-  assert.match(i18nSource, /"admin\.menu\.home\.accountPoolManagement":\s*"AI \u6e20\u9053\u7ba1\u7406"/);
+  assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"Upstream Management"/);
+  assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"\u4e0a\u6e38\u7ba1\u7406"/);
 });
 
-test("admin channel credential details expose API key copy without leaking hidden values in the table", () => {
-  const channelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-channel/src/index.tsx");
-  const i18nSource = readI18nResourceSource();
+test("upstream credentials reveal plaintext only in the create response dialog", () => {
+  const accountSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-upstream/src/accountTab.tsx");
+  const serviceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts");
 
-  assert.match(channelSource, /Copy,/);
-  assert.match(channelSource, /const handleCopyCredentialApiKey = useCallback/);
-  assert.match(channelSource, /navigator\.clipboard\.writeText\(apiKey\)/);
-  assert.match(channelSource, /t\('admin\.channel\.fields\.apiKey'\)/);
-  assert.match(channelSource, /<CredentialDetailsModal[\s\S]*onCopyCredentialApiKey=\{handleCopyCredentialApiKey\}/);
-  assert.match(channelSource, /<BusinessStateTableRow colSpan=\{8\}/);
-  assert.match(channelSource, /copyLabel=\{t\('common\.actions\.copyApiKey'\)\}/);
-  assert.match(channelSource, /onCopy=\{\(\) => onCopyCredentialApiKey\(credential\)\}/);
-  assert.match(channelSource, /copyDisabled=\{!hasApiKey\}/);
-  assert.match(channelSource, /const hasApiKey = Boolean\(credential\.apiKey\?\.trim\(\)\);/);
-  assert.match(channelSource, /maskApiKeyForDisplay\(credential\.apiKey\)/);
-  assert.match(channelSource, /<CredentialSummaryCell channel=\{channel\} \/>/);
-  assert.doesNotMatch(channelSource, /<ApiKeyCell/);
-  assert.doesNotMatch(channelSource, /apiKeyVisible\s*\?\s*channel\.apiKey/);
-  assert.ok(findI18nLocaleKeys(i18nSource, "en").has("admin.channel.table.apiKey"));
-  assert.ok(findI18nLocaleKeys(i18nSource, "zh").has("admin.channel.table.apiKey"));
+  assert.match(accountSource, /created\.rawSecret/);
+  assert.match(accountSource, /<CopyButton text=\{created\.rawSecret\}/);
+  assert.doesNotMatch(accountSource, /credential\.rawSecret|credential\.secret/);
+  assert.match(serviceSource, /createCredential/);
+  assert.doesNotMatch(serviceSource, /fetch\(|axios|authorization/i);
 });
 
-test("admin channel table keeps channel and provider content on one line", () => {
-  const channelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-channel/src/index.tsx");
-
-  assert.match(channelSource, /<td className="px-6 py-4 align-top max-w-\[14rem\]">/);
-  assert.match(channelSource, /className="flex min-w-0 items-center gap-2 whitespace-nowrap"/);
-  assert.match(channelSource, /<span className="min-w-0 truncate">\{channel\.name\}<\/span>/);
-  assert.match(channelSource, /<CapabilityBadges capabilities=\{channel\.capabilities\} \/>/);
-  assert.doesNotMatch(channelSource, /<CapabilityBadges capabilities=\{channel\.capabilities\} \/>\s*<\/td>/);
-  assert.doesNotMatch(channelSource, /className="flex flex-wrap gap-1 mt-2"/);
-  assert.match(channelSource, /<td className="px-6 py-4 align-top max-w-\[12rem\]">/);
-  assert.doesNotMatch(channelSource, /<div className="flex flex-col gap-1\.5">/);
-  assert.match(channelSource, /<div className="flex min-w-0 items-center gap-2 whitespace-nowrap">/);
-  assert.match(channelSource, /text-sm flex min-w-0 items-center gap-1\.5 whitespace-nowrap/);
-  assert.match(channelSource, /<span className="min-w-0 truncate">\{channel\.vendor\}<\/span>/);
-  assert.match(channelSource, /text-xs text-slate-500 min-w-0 whitespace-nowrap/);
-  assert.doesNotMatch(channelSource, /<span className="min-w-0 truncate">\{channel\.protocol\}<\/span>/);
-  assert.match(channelSource, /<span className="min-w-0 truncate">\{channel\.accessType\}<\/span>/);
-});
-
-test("admin module registry is relay-focused with home and operations only", () => {
+test("admin module registry exposes the owned commercial management centers", () => {
   const adminRegistrySource = readAdminRegistrySource();
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
   const appSource = readPortalFile("./src/App.tsx");
   const adminHostSource = readPortalFile("./src/admin/clawRouterAdminHostMount.tsx");
   const operationsMenu = findAdminModuleMenuSource(adminRegistrySource, "operations");
 
-  assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g), ["home", "operations"]);
-  assert.deepEqual(findOrderedMatches(adminRegistrySource, /moduleId:\s*'([^']+)'/g), ["home", "operations"]);
-  assert.doesNotMatch(adminRegistrySource, /productCenter|transactionCenter|memberCenter|marketingCenter|financeCenter|serviceProviderCenter|messagingCenter|storageCenter|driveCenter|appCenter/);
+  assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g), ["home", "membershipCenter", "marketingCenter", "paymentCenter", "storageCenter", "operations"]);
+  assert.deepEqual(findOrderedMatches(adminRegistrySource, /moduleId:\s*'([^']+)'/g), ["home", "membershipCenter", "marketingCenter", "paymentCenter", "storageCenter", "operations"]);
   assert.doesNotMatch(operationsMenu, /\/admin\/oauth/);
-  assert.doesNotMatch(adminRegistrySource, /path:\s*'\/admin\/(catalog|orders|payments|memberships|marketing|finance|wallet|oauth|service-providers|agents|skill|prompts|mcp|announcement|user|organization)'/);
+  assert.doesNotMatch(adminRegistrySource, /path:\s*'\/admin\/(catalog|orders|finance|wallet|oauth|service-providers|agents|skill|prompts|mcp|announcement|user|organization)'/);
 
   for (const pkg of [
     "@sdkwork/clawrouter-pc-admin-catalog",
     "@sdkwork/clawrouter-pc-admin-orders",
-    "@sdkwork/clawrouter-pc-admin-payments",
-    "@sdkwork/clawrouter-pc-admin-memberships",
-    "@sdkwork/clawrouter-pc-admin-marketing",
     "@sdkwork/clawrouter-pc-admin-finance",
     "@sdkwork/clawrouter-pc-admin-wallet",
     "@sdkwork/clawrouter-pc-admin-messaging",
@@ -2390,8 +2356,8 @@ test("admin module registry is relay-focused with home and operations only", () 
     assert.equal(packageJson.dependencies[pkg], undefined, `package.json must not depend on ${pkg}`);
   }
 
-  assert.doesNotMatch(`${appSource}\n${adminHostSource}`, /CatalogAdmin|OrdersAdmin|PaymentsAdmin|MembershipsAdmin|MarketingAdmin|FinanceAdmin|WalletAdmin|OauthAdmin|ServiceProviderAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|MessagingAdmin/);
-  assert.match(adminHostSource, /ModelAdmin|ChannelAdmin|RecordAdmin|AnalyticsAdmin|MonitorAdmin|RateLimitAdmin/);
+  assert.doesNotMatch(`${appSource}\n${adminHostSource}`, /CatalogAdmin|OrdersAdmin|FinanceAdmin|WalletAdmin|OauthAdmin|ServiceProviderAdmin|AgentsAdmin|SkillAdmin|PromptsAdmin|McpAdmin|AnnouncementAdmin|UserAdmin|OrganizationAdmin|MessagingAdmin/);
+  assert.match(adminHostSource, /ModelAdmin|UpstreamAdmin|RecordAdmin|AnalyticsAdmin|MonitorAdmin|RateLimitAdmin/);
 });
 
 test("admin relay home menu excludes retired platform and commerce groups", () => {

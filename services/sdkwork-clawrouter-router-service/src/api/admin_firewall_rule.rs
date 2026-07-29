@@ -96,12 +96,6 @@ struct AdminFirewallRuleItemEnvelope {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct AdminFirewallRuleDeleteResponse {
-    deleted: bool,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct AdminFirewallRuleItemResponse {
     id: String,
     #[serde(rename = "type")]
@@ -116,14 +110,6 @@ pub fn admin_firewall_rule_router_with_store(
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
 ) -> Router {
     Router::new()
-        .route(
-            "/backend/v3/api/router/firewall/rules",
-            get(fetch_firewall_rules).post(create_firewall_rule),
-        )
-        .route(
-            "/backend/v3/api/router/firewall/rules/{rule_id}",
-            axum::routing::delete(delete_firewall_rule),
-        )
         .route(
             "/backend/v3/api/system/firewalls/rules",
             get(fetch_firewall_rules).post(create_firewall_rule),

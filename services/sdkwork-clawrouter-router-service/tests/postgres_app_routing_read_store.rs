@@ -73,7 +73,6 @@ async fn postgres_app_routing_projects_authorized_account_groups_api_keys_and_tr
     assert_eq!("Production gateway key", api_key.name);
     assert_eq!("sk-live-****-0001", api_key.display_key);
     assert_eq!("3", api_key.total_usage);
-    assert_eq!(None, api_key.copyable_key);
     assert_eq!(2, api_key.account_groups.len());
     assert_eq!("standard", api_key.account_groups[0].code);
     assert_eq!("fallback", api_key.account_groups[1].code);

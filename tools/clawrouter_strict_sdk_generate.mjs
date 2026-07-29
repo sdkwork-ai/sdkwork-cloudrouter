@@ -673,17 +673,25 @@ function sdkworkV3RuntimePayloadSchema(spec, dataSchema) {
 
   if (typeof normalized.$ref === 'string') {
     const resolved = resolveComponentSchema(spec, normalized.$ref);
-    if (resolved?.properties?.item) {
+    if (isSingleItemPayloadSchema(resolved)) {
       return unwrapSingleAllOfRef(resolved.properties.item) || resolved.properties.item;
     }
     return { $ref: normalized.$ref };
   }
 
-  if (normalized.properties?.item) {
+  if (isSingleItemPayloadSchema(normalized)) {
     return unwrapSingleAllOfRef(normalized.properties.item) || normalized.properties.item;
   }
 
   return structuredClone(normalized);
+}
+
+function isSingleItemPayloadSchema(schema) {
+  if (!schema?.properties || typeof schema.properties !== 'object' || Array.isArray(schema.properties)) {
+    return false;
+  }
+  const propertyNames = Object.keys(schema.properties);
+  return propertyNames.length === 1 && propertyNames[0] === 'item';
 }
 
 function unwrapSingleAllOfRef(schema) {

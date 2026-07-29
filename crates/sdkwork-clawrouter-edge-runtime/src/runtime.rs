@@ -4,22 +4,25 @@ use std::sync::Arc;
 use axum::Router;
 use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    DeploymentRuntime, PaymentWebhookConfig, ProviderAdapterConfig,
+    DeploymentRuntime, InternalGatewaySecurityConfig, PaymentWebhookConfig, ProviderAdapterConfig,
     ProviderAdapterManifestDiscoveryConfig, ProviderRelayConfig, ProviderSecretMapConfig,
-    RequestLimitsConfig, RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode,
+    RedisConfig, RequestLimitsConfig, RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode,
     TrustedSubjectConfig,
 };
 use sdkwork_claw_http::QueryStringApiKeyPolicy;
 use sdkwork_claw_provider_adapter_contract::AdapterRouteStatus;
 use sdkwork_claw_provider_adapter_http::ProviderAdapterHttpClient;
 use sdkwork_claw_provider_adapter_registry::{ProviderAdapterRegistry, ProviderAdapterRouteConfig};
-use sdkwork_claw_security::redact_error_message;
+use sdkwork_claw_security::{
+    redact_error_message, InMemoryInternalGatewayReplayStore, InternalGatewayReplayStore,
+    InternalGatewayRequestVerifier,
+};
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::api::{
     OpenAiInvocationPluginRef, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
 use sdkwork_clawrouter_router_service::application::{
-    resolve_usage_settlement_worker_config, ApiKeySecretCodec, ApiKeySecretHasher,
+    resolve_usage_settlement_worker_config, ApiKeySecretHasher, CredentialSecretCodec,
     GatewayAccountingRetryHealth, GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig,
     RetryingGatewayUsageRecorder, RuntimeCacheManager, RuntimeStreamBus, TenantInflightConfig,
     UsageSettlementWorker, UsageSettlementWorkerConfig,
@@ -29,7 +32,7 @@ use sdkwork_clawrouter_router_service::domain::{
     DEFAULT_PROVIDER_RETRY_ATTEMPTS, DEFAULT_RETRYABLE_PROVIDER_STATUS_CODES,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
-    HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
+    HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::provider::{
     AdapterAwareChatCompletionRelay, AdapterAwareChatCompletionStreamRelay,
@@ -67,13 +70,14 @@ use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
 
 use crate::edge_server::EdgeInProcessUpstreams;
+use crate::internal_gateway_replay_store::RedisInternalGatewayReplayStore;
 use crate::invocation_sticky_store::InvocationStickyObjectRouteStore;
 use crate::router;
 use crate::router_with_database_status_and_passthrough_placeholder;
 use crate::InvocationHttpDispatcher;
 
 type ApiKeyHasher = Arc<dyn ApiKeySecretHasher + Send + Sync>;
-type ApiKeyCodec = Arc<dyn ApiKeySecretCodec + Send + Sync>;
+type CredentialCodec = Arc<dyn CredentialSecretCodec + Send + Sync>;
 type ChatRelay = Arc<dyn ChatCompletionRelay + Send + Sync>;
 type ChatStreamRelay = Arc<dyn ChatCompletionStreamRelay + Send + Sync>;
 type EmbeddingRelay = Arc<dyn EmbeddingsRelay + Send + Sync>;
@@ -164,6 +168,7 @@ fn router_with_invocation_runtime_routes<C>(
     response_max_bytes: NonZeroUsize,
     provider_response_timeout: Duration,
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
+    internal_gateway_verifier: Arc<InternalGatewayRequestVerifier>,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -197,6 +202,7 @@ where
             body_max_bytes,
             stream_response_timeout,
             query_string_api_key_policy,
+            Some(internal_gateway_verifier),
         ),
     )
 }
@@ -255,6 +261,7 @@ fn router_with_database_runtime_routes<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    let internal_gateway_verifier = build_internal_gateway_request_verifier(runtime_toml)?;
     let dispatcher_response_max_bytes =
         invocation_response_max_bytes(provider_runtime_config.response_max_bytes)?;
     let body_max_bytes = gateway_invocation_body_max_bytes(request_limits_config);
@@ -277,6 +284,7 @@ where
             dispatcher_response_max_bytes,
             provider_runtime_config.response_timeout,
             provider_runtime_config.http_pool_config,
+            Arc::clone(&internal_gateway_verifier),
         )
     } else {
         let relays = build_openai_runtime_relays(
@@ -319,6 +327,7 @@ where
             dispatcher_response_max_bytes,
             provider_runtime_config.response_timeout,
             provider_runtime_config.http_pool_config,
+            Arc::clone(&internal_gateway_verifier),
         )
     };
     Ok(merge_relay_authenticated_openai_passthrough(
@@ -333,6 +342,65 @@ where
         body_max_bytes,
         provider_runtime_config.response_timeout,
         provider_runtime_config.http_pool_config,
+    ))
+}
+
+fn build_internal_gateway_request_verifier(
+    runtime_toml: Option<&RuntimeTomlConfig>,
+) -> Result<Arc<InternalGatewayRequestVerifier>, GatewayRouterError> {
+    let config = InternalGatewaySecurityConfig::from_env_or_runtime_toml(runtime_toml)
+        .map_err(GatewayRouterError::Config)?
+        .ok_or_else(|| {
+            GatewayRouterError::Config(format!(
+                "{} is required for internal app runtime gateway authentication",
+                InternalGatewaySecurityConfig::ENV_SIGNING_SECRET
+            ))
+        })?;
+    let deployment_mode = DeploymentMode::from_env_or_runtime_toml(runtime_toml)
+        .map_err(GatewayRouterError::Config)?;
+    let environment = runtime_toml
+        .and_then(|runtime| runtime.install.environment.as_deref())
+        .unwrap_or("development")
+        .trim()
+        .to_ascii_lowercase();
+    let requires_shared_replay_store = deployment_mode != DeploymentMode::Desktop
+        && matches!(environment.as_str(), "production" | "prod" | "staging");
+    let redis_config = RedisConfig::from_env_or_runtime_toml_with_default_enabled(
+        runtime_toml,
+        requires_shared_replay_store,
+    )
+    .map_err(GatewayRouterError::Config)?;
+    let replay_store: Arc<dyn InternalGatewayReplayStore> = match redis_config {
+        Some(redis_config) => Arc::new(
+            RedisInternalGatewayReplayStore::new(
+                redis_config.url(),
+                redis_config.key_prefix(),
+                redis_config.command_timeout_millis(),
+            )
+            .map_err(GatewayRouterError::Config)?,
+        ),
+        None if requires_shared_replay_store => {
+            return Err(GatewayRouterError::Config(
+                "production/staging internal gateway authentication requires Redis replay protection"
+                    .to_owned(),
+            ));
+        }
+        None => {
+            tracing::warn!(
+                deployment_mode = deployment_mode.as_str(),
+                environment,
+                "Redis is not configured; internal gateway replay protection is process-local"
+            );
+            Arc::new(InMemoryInternalGatewayReplayStore::default())
+        }
+    };
+    Ok(Arc::new(
+        InternalGatewayRequestVerifier::new(
+            config.signing_secret(),
+            config.request_ttl_seconds(),
+            config.max_clock_skew_seconds(),
+        )
+        .with_replay_store(replay_store),
     ))
 }
 
@@ -998,7 +1066,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
     require_postgres_server_database(&config)?;
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
-    let api_key_secret_codec = api_key_secret_codec_from_config(&api_key_security_config)?;
+    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
         .map_err(GatewayRouterError::Config)?;
     let provider_passthrough_config = provider_relay_config.clone();
@@ -1032,9 +1100,9 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                 .ensure_bootstrap_data()
                 .await?;
         }
-        let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
+        let snapshot = PostgresPricingCatalogLoader::with_credential_secret_codec(
             pool.clone(),
-            api_key_secret_codec.clone(),
+            credential_secret_codec.clone(),
         )
         .with_circuit_breaker_recovery_window_seconds(
             provider_runtime.circuit_breaker_recovery_window_seconds,
@@ -1069,7 +1137,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
             &pool,
             Arc::clone(&catalog),
             provider_secret_resolver.clone(),
-            api_key_secret_codec.clone(),
+            credential_secret_codec.clone(),
             provider_runtime.catalog_refresh_interval,
             provider_runtime.circuit_breaker_recovery_window_seconds,
         );
@@ -1388,8 +1456,8 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
     let shared_catalog_refresh_interval = provider_runtime
         .catalog_refresh_interval
         .min(app_catalog_refresh_interval);
-    let api_key_secret_codec =
-        api_key_secret_codec_from_config(&api_key_security_config).map_err(anyhow::Error::new)?;
+    let credential_secret_codec =
+        credential_secret_codec_from_config(&api_key_security_config).map_err(anyhow::Error::new)?;
 
     {
         let database_pool =
@@ -1425,9 +1493,9 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                 .await
                 .map_err(anyhow::Error::new)?;
         }
-        let snapshot = PostgresPricingCatalogLoader::with_api_key_secret_codec(
+        let snapshot = PostgresPricingCatalogLoader::with_credential_secret_codec(
             pool.clone(),
-            api_key_secret_codec.clone(),
+            credential_secret_codec.clone(),
         )
         .with_circuit_breaker_recovery_window_seconds(
             provider_runtime.circuit_breaker_recovery_window_seconds,
@@ -1449,7 +1517,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
             &pool,
             Arc::clone(&catalog),
             provider_secret_resolver.clone(),
-            api_key_secret_codec,
+            credential_secret_codec,
             shared_catalog_refresh_interval,
             provider_runtime.circuit_breaker_recovery_window_seconds,
         );
@@ -1767,7 +1835,7 @@ fn spawn_postgres_catalog_refresh_worker(
     pool: &PgPool,
     catalog: Arc<RefreshableSqlPricingCatalog>,
     provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
-    api_key_secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>,
+    credential_secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>,
     interval: Duration,
     circuit_breaker_recovery_window_seconds: u64,
 ) -> tokio::task::JoinHandle<()> {
@@ -1780,9 +1848,9 @@ fn spawn_postgres_catalog_refresh_worker(
                 _ = shutdown_rx.recv() => break,
                 _ = sleep(interval) => {}
             }
-            let loader = PostgresPricingCatalogLoader::with_api_key_secret_codec(
+            let loader = PostgresPricingCatalogLoader::with_credential_secret_codec(
                 pool.clone(),
-                api_key_secret_codec.clone(),
+                credential_secret_codec.clone(),
             )
             .with_circuit_breaker_recovery_window_seconds(circuit_breaker_recovery_window_seconds);
             let observed_version = match loader.load_routing_config_version().await {
@@ -1957,11 +2025,11 @@ fn build_api_key_hasher(config: &ApiKeySecurityConfig) -> Result<ApiKeyHasher, G
     Ok(Arc::new(hasher))
 }
 
-fn api_key_secret_codec_from_config(
+fn credential_secret_codec_from_config(
     config: &ApiKeySecurityConfig,
-) -> Result<ApiKeyCodec, GatewayRouterError> {
+) -> Result<CredentialCodec, GatewayRouterError> {
     Ok(Arc::new(
-        RingAeadApiKeySecretCodec::new(config.pepper_secret())
+        RingAeadCredentialSecretCodec::new(config.pepper_secret())
             .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
     ))
 }

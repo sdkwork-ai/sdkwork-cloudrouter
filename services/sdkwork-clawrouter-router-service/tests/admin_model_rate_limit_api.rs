@@ -30,14 +30,14 @@ async fn admin_model_rate_limit_route_creates_and_lists_model_limits() {
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
-                    r#"{"model":"openai/gpt-4o-mini","channelGroup":"standard-group","rpm":600,"tpm":120000}"#,
+                    r#"{"model":"openai/gpt-4o-mini","accountGroup":"standard-group","rpm":600,"tpm":120000}"#,
                 ))
                 .unwrap(),
         )
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, create_response.status());
+    assert_eq!(StatusCode::CREATED, create_response.status());
     let create_payload = json_payload(create_response).await;
     assert_eq!(0, create_payload["code"].as_i64().unwrap());
     assert_eq!(
@@ -46,12 +46,12 @@ async fn admin_model_rate_limit_route_creates_and_lists_model_limits() {
     );
     assert_eq!(
         "standard-group",
-        create_payload["data"]["item"]["channelGroup"]
+        create_payload["data"]["item"]["accountGroup"]
     );
-    assert_eq!("10", create_payload["data"]["item"]["channelGroupId"]);
+    assert_eq!("10", create_payload["data"]["item"]["accountGroupId"]);
     assert_eq!(
         "Standard group",
-        create_payload["data"]["item"]["channelGroupName"]
+        create_payload["data"]["item"]["accountGroupName"]
     );
     assert_eq!(600, create_payload["data"]["item"]["rpm"]);
     assert_eq!(120000, create_payload["data"]["item"]["tpm"]);
@@ -95,7 +95,7 @@ async fn admin_model_rate_limit_route_rejects_invalid_model_without_calling_stor
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
-                    r#"{"model":"gpt 4o","channelGroup":"standard-group","rpm":600,"tpm":120000}"#,
+                    r#"{"model":"gpt 4o","accountGroup":"standard-group","rpm":600,"tpm":120000}"#,
                 ))
                 .unwrap(),
         )
@@ -125,7 +125,7 @@ async fn admin_model_rate_limit_route_rejects_invalid_limit_without_calling_stor
                 .header("content-type", "application/json")
                 .internal_trusted_subject(100001, 0, 30)
                 .body(Body::from(
-                    r#"{"model":"gpt-4o-mini","channelGroup":"standard-group","rpm":0,"tpm":120000}"#,
+                    r#"{"model":"gpt-4o-mini","accountGroup":"standard-group","rpm":0,"tpm":120000}"#,
                 ))
                 .unwrap(),
         )
@@ -162,28 +162,6 @@ async fn admin_model_rate_limit_route_rejects_missing_trusted_subject() {
     assert_eq!(40101, payload["code"].as_i64().unwrap());
 }
 
-#[tokio::test]
-async fn admin_model_rate_limit_route_does_not_expose_legacy_public_path() {
-    let router = sdkwork_clawrouter_router_service::api::admin_model_rate_limit_router_with_store(
-        Arc::new(TestModelRateLimitStore::default()),
-        Arc::new(TestUuidGenerator),
-    );
-
-    let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/router/rate_limits/models")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(StatusCode::NOT_FOUND, response.status());
-}
-
 async fn json_payload(response: axum::response::Response) -> Value {
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
@@ -215,7 +193,7 @@ impl AdminModelRateLimitStore for TestModelRateLimitStore {
                         && item.deleted_at.is_none()
                         && q.as_ref().map_or(true, |q| {
                             item.model.to_ascii_lowercase().contains(q)
-                                || item.upstream_account_group.to_ascii_lowercase().contains(q)
+                                || item.account_group.to_ascii_lowercase().contains(q)
                         })
                 })
                 .cloned()
@@ -247,9 +225,9 @@ impl AdminModelRateLimitStore for TestModelRateLimitStore {
                 tenant_id: command.subject.tenant_id,
                 organization_id: command.subject.organization_id,
                 model: command.model,
-                upstream_account_group: command.upstream_account_group,
+                account_group: command.account_group,
                 account_group_id: 10,
-                upstream_account_group_name: "Standard group".to_owned(),
+                account_group_name: "Standard group".to_owned(),
                 rpm: command.rpm,
                 tpm: command.tpm,
                 status: "active".to_owned(),

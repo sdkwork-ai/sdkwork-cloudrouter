@@ -765,7 +765,10 @@ class ApiContractManifestGenerator:
         return contract
 
     def _allowed_methods(self, kind: str, api_surface: str) -> set[str]:
-        return set(self.KIND_METHODS[kind])
+        methods = set(self.KIND_METHODS[kind])
+        if kind == "read" and api_surface == "backend":
+            methods.add("POST")
+        return methods
 
     def _invalid_path_param(self, api_path: str) -> str | None:
         for raw in re.findall(r"\{([^}]*)\}", api_path):

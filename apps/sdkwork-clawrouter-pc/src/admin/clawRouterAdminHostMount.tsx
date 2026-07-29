@@ -23,12 +23,10 @@ function lazyAdminRoute(
 const DashboardAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-dashboard'), 'DashboardAdmin');
 const AnalyticsAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-analytics'), 'AnalyticsAdmin');
 const CacheAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-cache'), 'CacheAdmin');
-const GroupAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-group'), 'GroupAdmin');
+const UpstreamAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-upstream'), 'UpstreamAdmin');
 const ModelAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelAdmin');
 const ModelMappingAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelMappingAdmin');
 const ResourceAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-resource'), 'ResourceAdmin');
-const SiteAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-relay-site'), 'SiteAdmin');
-const ChannelAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-channel'), 'ChannelAdmin');
 const RecordAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-record'), 'RecordAdmin');
 const MonitorAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-monitor'), 'MonitorAdmin');
 const RateLimitAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-ratelimit'), 'RateLimitAdmin');
@@ -44,12 +42,10 @@ const StorageAdmin = lazyAdminRoute(() => import('@sdkwork/clawrouter-pc-admin-s
 export const CLAWROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly ClawRouterAdminRouteContribution[] = [
   route('dashboard', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-dashboard', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <DashboardAdmin />),
   route('analytics', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-analytics', ['clawrouter-backend-sdk'], 'clawrouter.system.read', <AnalyticsAdmin />),
-  route('group', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-group', ['clawrouter-backend-sdk', 'sdkwork-models-backend-sdk'], 'iam.users.read', <GroupAdmin />),
+  route('upstream', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-upstream', ['clawrouter-backend-sdk'], 'clawrouter.admin.access', <UpstreamAdmin />),
   route('model', 'sdkwork-models', '@sdkwork/models-pc-admin-catalog', ['sdkwork-models-backend-sdk'], 'clawrouter.admin.access', <ModelAdmin />),
   route('model/resources', 'sdkwork-models', '@sdkwork/models-pc-admin-resource', ['sdkwork-models-backend-sdk'], 'clawrouter.admin.access', <ResourceAdmin />),
-  route('model/sites', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-relay-site', ['clawrouter-backend-sdk', 'sdkwork-models-backend-sdk'], 'clawrouter.admin.access', <SiteAdmin />),
   route('model/mappings', 'sdkwork-models', '@sdkwork/models-pc-admin-catalog', ['sdkwork-models-backend-sdk'], 'clawrouter.admin.access', <ModelMappingAdmin />),
-  route('channel', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-channel', ['clawrouter-backend-sdk', 'sdkwork-models-backend-sdk'], 'iam.users.read', <ChannelAdmin />),
   route('record', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-record', ['clawrouter-backend-sdk'], 'clawrouter.system.read', <RecordAdmin />),
   route('monitor', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-monitor', ['clawrouter-backend-sdk'], 'clawrouter.system.read', <MonitorAdmin />),
   route('cache', 'sdkwork-clawrouter', '@sdkwork/clawrouter-pc-admin-cache', ['clawrouter-backend-sdk'], 'clawrouter.system.read', <CacheAdmin />),

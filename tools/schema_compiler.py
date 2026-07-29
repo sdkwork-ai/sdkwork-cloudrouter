@@ -685,14 +685,49 @@ class SchemaCompiler:
             if not isinstance(item, dict):
                 raise SchemaCompileError(f"{table_name}.check_constraints must contain mappings")
             name = self._require_identifier(item.get("name"), f"{table_name}.check.name")
-            expression = item.get("expression")
-            if not isinstance(expression, str) or not expression.strip():
-                raise SchemaCompileError(f"{table_name}.{name}.expression must be a non-empty string")
-            expression = expression.strip()
-            if ";" in expression or "--" in expression or "/*" in expression or "*/" in expression:
-                raise SchemaCompileError(f"{table_name}.{name}.expression contains unsafe SQL")
+            expression = self.resolve_check_expression(item, table_name, name, dialect)
             constraints.append(f"CONSTRAINT {name} CHECK ({expression})")
         return constraints
+
+    @staticmethod
+    def resolve_check_expression(
+        item: dict[str, Any],
+        table_name: str,
+        constraint_name: str,
+        dialect: str,
+    ) -> str:
+        expression = item.get("expression")
+        expressions = item.get("expressions")
+        if expression is not None and expressions is not None:
+            raise SchemaCompileError(
+                f"{table_name}.{constraint_name} must declare expression or expressions, not both"
+            )
+        if expressions is not None:
+            if not isinstance(expressions, dict):
+                raise SchemaCompileError(
+                    f"{table_name}.{constraint_name}.expressions must be a mapping"
+                )
+            unsupported_dialects = sorted(set(expressions) - {"postgres", "sqlite"})
+            if unsupported_dialects:
+                raise SchemaCompileError(
+                    f"{table_name}.{constraint_name}.expressions contains unsupported dialects: "
+                    f"{', '.join(unsupported_dialects)}"
+                )
+            expression = expressions.get(dialect)
+            if expression is None:
+                raise SchemaCompileError(
+                    f"{table_name}.{constraint_name}.expressions.{dialect} is required"
+                )
+        if not isinstance(expression, str) or not expression.strip():
+            raise SchemaCompileError(
+                f"{table_name}.{constraint_name}.expression must be a non-empty string"
+            )
+        expression = expression.strip()
+        if ";" in expression or "--" in expression or "/*" in expression or "*/" in expression:
+            raise SchemaCompileError(
+                f"{table_name}.{constraint_name}.expression contains unsafe SQL"
+            )
+        return expression
 
     def _decimal_columns(self, table_name: str, table: dict[str, Any]) -> list[str]:
         columns = table.get("columns", {}) or {}

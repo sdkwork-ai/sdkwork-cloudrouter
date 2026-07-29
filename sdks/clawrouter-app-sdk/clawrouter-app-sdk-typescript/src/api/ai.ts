@@ -1,6 +1,6 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AppRoutingAccountGroupListResponse, DashboardOverviewResponse } from '../types';
+import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse } from '../types';
 export class AiUsageLogsApi {
   private client: HttpClient;
 
@@ -11,7 +11,7 @@ export class AiUsageLogsApi {
 
 /** List logs */
   async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/usage/logs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/usage/logs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -35,9 +35,15 @@ export class AiRoutingUsageApi {
 
 
 /** List routing usage */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/routing/usage`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<AppRoutingUsageSnapshot> {
+    return this.client.request<AppRoutingUsageSnapshot>(appApiPath(`/ai/routing/usage`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
+}
+
+export interface AiRoutingRequestTracesListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
 }
 
 export class AiRoutingRequestTracesApi {
@@ -49,23 +55,20 @@ export class AiRoutingRequestTracesApi {
 
 
 /** List routing request traces */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/routing/request_traces`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  async list(params?: AiRoutingRequestTracesListParams, requestOptions?: ApiRequestOptions): Promise<AppRoutingRequestTraceListResponse> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AppRoutingRequestTraceListResponse>(appendQueryString(appApiPath(`/ai/routing/request_traces`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
-export class AiRoutingChannelsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List routing channels */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/routing/channels`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
-  }
+export interface AiRoutingApiKeysListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
 }
 
 export class AiRoutingApiKeysApi {
@@ -77,8 +80,13 @@ export class AiRoutingApiKeysApi {
 
 
 /** List routing API keys */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/routing/api_keys`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+  async list(params?: AiRoutingApiKeysListParams, requestOptions?: ApiRequestOptions): Promise<AppRoutingApiKeyListResponse> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AppRoutingApiKeyListResponse>(appendQueryString(appApiPath(`/ai/routing/api_keys`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -103,7 +111,7 @@ export class AiRoutingAccountGroupsApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AppRoutingAccountGroupListResponse>(appendQueryString(appApiPath(`/ai/routing/account_groups`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<AppRoutingAccountGroupListResponse>(appendQueryString(appApiPath(`/ai/routing/account_groups`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -111,7 +119,6 @@ export class AiRoutingApi {
   private client: HttpClient;
   public readonly accountGroups: AiRoutingAccountGroupsApi;
   public readonly apiKeys: AiRoutingApiKeysApi;
-  public readonly channels: AiRoutingChannelsApi;
   public readonly requestTraces: AiRoutingRequestTracesApi;
   public readonly usage: AiRoutingUsageApi;
 
@@ -119,7 +126,6 @@ export class AiRoutingApi {
     this.client = client;
     this.accountGroups = new AiRoutingAccountGroupsApi(client);
     this.apiKeys = new AiRoutingApiKeysApi(client);
-    this.channels = new AiRoutingChannelsApi(client);
     this.requestTraces = new AiRoutingRequestTracesApi(client);
     this.usage = new AiRoutingUsageApi(client);
   }
@@ -136,7 +142,7 @@ export class AiGenerationsWorkspaceApi {
 
 /** List playground generation history from service */
   async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations/workspace`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations/workspace`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -150,7 +156,7 @@ export class AiGenerationsImagesTextToImageApi {
 
 /** Run playground asset generation */
   async create(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations/images/text_to_image`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations/images/text_to_image`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -179,7 +185,7 @@ export class AiGenerationsApi {
 
 /** List generation history */
   async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -193,7 +199,7 @@ export class AiGatewayTracesApi {
 
 /** List traces */
   async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/gateway/traces`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/gateway/traces`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -229,7 +235,7 @@ export class AiDashboardOverviewApi {
       { name: 'start_time', value: params?.startTime, style: 'form', explode: true, allowReserved: false },
       { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<DashboardOverviewResponse>(appendQueryString(appApiPath(`/ai/dashboard/overview`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<DashboardOverviewResponse>(appendQueryString(appApiPath(`/ai/dashboard/overview`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 

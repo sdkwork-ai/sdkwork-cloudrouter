@@ -24,14 +24,13 @@ export function ApiKeyUsageDetailsDrawer({
   const { t } = useTranslation();
   const [activeToolId, setActiveToolId] = useState<ApiKeyUsageToolId>('codex');
   const endpoints = useMemo(() => resolveCurrentGatewayEndpoints(), []);
-  const apiKeyCopyableKey = apiKey?.copyableKey ?? '<YOUR_CLAW_ROUTER_API_KEY>';
   const snippets = useMemo(
     () =>
       buildApiKeyUsageToolSnippets({
-        apiKeyPlaceholder: apiKeyCopyableKey,
+        apiKeyPlaceholder: '<YOUR_CLAW_ROUTER_API_KEY>',
         ...endpoints,
       }),
-    [apiKeyCopyableKey, endpoints],
+    [endpoints],
   );
   const activeProfile =
     API_KEY_USAGE_TOOL_PROFILES.find((profile) => profile.id === activeToolId)
@@ -62,16 +61,7 @@ export function ApiKeyUsageDetailsDrawer({
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
               <span className="font-semibold text-slate-700 dark:text-slate-200">{apiKey.displayName}</span>
               <span className="font-mono">{apiKey.maskedKey}</span>
-              <CopyButton
-                text={apiKey.copyableKey ?? ''}
-                label={t('console.apiKeys.copyKey', '复制密钥')}
-                copiedLabel={t('console.apiKeys.keyCopied', '密钥已复制')}
-                title={t('console.apiKeys.copyKey', '复制密钥')}
-                disabled={!apiKey.copyableKey}
-                className="h-7 w-7 border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1e1e1e]"
-                iconClassName="h-3.5 w-3.5"
-              />
-              <span>{apiKey.channelGroupName ?? apiKey.channelGroup}</span>
+              <span>{apiKey.accountGroupName ?? apiKey.accountGroup}</span>
             </div>
           </div>
           <button

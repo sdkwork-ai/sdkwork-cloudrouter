@@ -540,11 +540,9 @@ test("playground unavailable states stay product-focused without implementation 
 });
 
 test("admin guidance copy stays product-focused without implementation caveats", () => {
-  const adminUserSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-user/src/index.tsx");
-  const adminChannelSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-channel/src/index.tsx");
+  const upstreamSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-upstream/src/index.tsx");
 
-  assert.doesNotMatch(adminUserSource, /backend contract/i);
-  assert.doesNotMatch(adminChannelSource, /routing strategy contract/i);
+  assert.doesNotMatch(upstreamSource, /backend contract|implementation caveat/i);
 });
 
 test("admin user management keeps search on the left and the primary action on the right", () => {
@@ -581,10 +579,10 @@ test("admin searchable list toolbars keep search before primary create actions",
       primaryAction: "data-admin-user-primary-action",
     },
     {
-      file: "./packages/sdkwork-clawrouter-pc-admin-channel/src/index.tsx",
-      toolbar: "data-admin-channel-toolbar",
-      search: "data-admin-channel-search",
-      primaryAction: "data-admin-channel-primary-action",
+      file: "./packages/sdkwork-clawrouter-pc-admin-upstream/src/supplierTab.tsx",
+      toolbar: "data-admin-upstream-toolbar",
+      search: "data-admin-upstream-search",
+      primaryAction: "data-admin-upstream-primary-action",
     },
   ].filter(({ file }) => portalFileExists(file));
 

@@ -12,7 +12,6 @@ export type {
   AdminModelLimitCreateRequest,
   AdminRuntimeRegionSettingsResponse,
   AdminRuntimeRegionSettingsUpdateRequest,
-  AdminRuntimeRouteExplainRequest,
   AdminServiceNodeCreateRequest,
   AdminServiceNodeUpdateRequest,
   AdminSiteSettingsResponse,

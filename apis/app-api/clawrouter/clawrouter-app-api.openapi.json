@@ -84,23 +84,17 @@
       },
       "AppApiKeyItem": {
         "additionalProperties": false,
-        "description": "Updated API key metadata. Authenticated owner management responses include copyableKey for console copy actions.",
+        "description": "Updated API key metadata. Secret material is never returned by update operations.",
         "properties": {
-          "channelGroup": {
-            "description": "Channel group field on app api key item.",
+          "accountGroup": {
+            "description": "Account group field on app api key item.",
             "maxLength": 128,
             "minLength": 1,
             "type": "string"
           },
-          "channelGroupName": {
-            "description": "Display name snapshot for the bound channel group so the list view does not need to preload selectable groups.",
+          "accountGroupName": {
+            "description": "Display name snapshot for the bound upstream account group.",
             "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
-          },
-          "copyableKey": {
-            "description": "Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field.",
-            "maxLength": 256,
             "minLength": 1,
             "type": "string"
           },
@@ -187,7 +181,8 @@
           "id",
           "name",
           "maskedKey",
-          "channelGroup",
+          "accountGroup",
+          "accountGroupName",
           "quota",
           "usedQuota",
           "modalities",
@@ -230,19 +225,26 @@
         "additionalProperties": false,
         "description": "App routing account group schema exposed by Claw Router.",
         "properties": {
-          "accountCount": {
-            "description": "Account count field on app routing account group.",
-            "maxLength": 32,
-            "type": "string"
+          "authorized": {
+            "description": "Authorized field on app routing account group.",
+            "type": "boolean"
           },
           "availableAccountCount": {
             "description": "Available account count field on app routing account group.",
-            "maxLength": 32,
-            "type": "string"
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "costMultiplier": {
             "description": "Cost multiplier field on app routing account group.",
             "maxLength": 64,
+            "type": "string"
+          },
+          "description": {
+            "description": "Description field on app routing account group.",
+            "maxLength": 1000,
             "type": "string"
           },
           "fallbackMode": {
@@ -260,15 +262,18 @@
             "maxLength": 200,
             "type": "string"
           },
-          "groupType": {
-            "description": "Group type field on app routing account group.",
-            "maxLength": 32,
-            "type": "string"
-          },
           "id": {
             "description": "Id field on app routing account group.",
             "maxLength": 32,
             "type": "string"
+          },
+          "memberAccountCount": {
+            "description": "Member account count field on app routing account group.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "resourceCodes": {
             "description": "Resource codes field on app routing account group.",
@@ -300,24 +305,28 @@
           },
           "status": {
             "description": "Status field on app routing account group.",
-            "format": "int32",
-            "type": "integer"
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "type": "string"
           }
         },
         "required": [
           "id",
           "groupCode",
           "groupName",
-          "groupType",
+          "description",
           "routingStrategy",
           "fallbackMode",
           "costMultiplier",
           "saleMultiplier",
-          "accountCount",
+          "status",
+          "authorized",
+          "memberAccountCount",
           "availableAccountCount",
           "resourceCodes",
-          "resourceGroupCodes",
-          "status"
+          "resourceGroupCodes"
         ],
         "type": "object"
       },
@@ -345,6 +354,408 @@
         "required": [
           "items",
           "pageInfo"
+        ],
+        "type": "object"
+      },
+      "AppRoutingApiKey": {
+        "additionalProperties": false,
+        "description": "App routing api key schema exposed by Claw Router.",
+        "properties": {
+          "accountGroups": {
+            "description": "Account groups field on app routing api key.",
+            "items": {
+              "$ref": "#/components/schemas/AppRoutingApiKeyAccountGroup"
+            },
+            "type": "array"
+          },
+          "createdAt": {
+            "description": "Created at field on app routing api key.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "displayKey": {
+            "description": "Display key field on app routing api key.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on app routing api key.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on app routing api key.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on app routing api key.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "totalUsage": {
+            "description": "Total usage field on app routing api key.",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "displayKey",
+          "status",
+          "totalUsage",
+          "createdAt",
+          "accountGroups"
+        ],
+        "type": "object"
+      },
+      "AppRoutingApiKeyAccountGroup": {
+        "additionalProperties": false,
+        "description": "App routing api key account group schema exposed by Claw Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on app routing api key account group.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on app routing api key account group.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on app routing api key account group.",
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name"
+        ],
+        "type": "object"
+      },
+      "AppRoutingApiKeyListResponse": {
+        "additionalProperties": false,
+        "description": "App routing api key list response schema exposed by Claw Router.",
+        "name": "AppRoutingApiKeyListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on app routing api key list response.",
+            "items": {
+              "$ref": "#/components/schemas/AppRoutingApiKey"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on app routing api key list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "AppRoutingModelStats": {
+        "additionalProperties": false,
+        "description": "App routing model stats schema exposed by Claw Router.",
+        "properties": {
+          "lat": {
+            "description": "Lat field on app routing model stats.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "m": {
+            "description": "M field on app routing model stats.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "req": {
+            "description": "Req field on app routing model stats.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "sr": {
+            "description": "Sr field on app routing model stats.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "tok": {
+            "description": "Tok field on app routing model stats.",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "m",
+          "req",
+          "sr",
+          "tok",
+          "lat"
+        ],
+        "type": "object"
+      },
+      "AppRoutingRequestTrace": {
+        "additionalProperties": false,
+        "description": "App routing request trace schema exposed by Claw Router.",
+        "properties": {
+          "duration": {
+            "description": "Duration field on app routing request trace.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "endedAt": {
+            "description": "Ended at field on app routing request trace.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "errorMessageMasked": {
+            "description": "Error message masked field on app routing request trace.",
+            "maxLength": 1000,
+            "type": "string"
+          },
+          "errorType": {
+            "description": "Error type field on app routing request trace.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "httpMethod": {
+            "description": "Http method field on app routing request trace.",
+            "maxLength": 16,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on app routing request trace.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "model": {
+            "description": "Model field on app routing request trace.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "providerErrorCode": {
+            "description": "Provider error code field on app routing request trace.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "requestBytes": {
+            "description": "Request bytes field on app routing request trace.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "requestPath": {
+            "description": "Request path field on app routing request trace.",
+            "maxLength": 512,
+            "type": "string"
+          },
+          "requestPayloadHash": {
+            "description": "Request payload hash field on app routing request trace.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "responseBytes": {
+            "description": "Response bytes field on app routing request trace.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "responsePayloadHash": {
+            "description": "Response payload hash field on app routing request trace.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "startedAt": {
+            "description": "Started at field on app routing request trace.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on app routing request trace.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "streaming": {
+            "description": "Streaming field on app routing request trace.",
+            "type": "boolean"
+          },
+          "time": {
+            "description": "Time field on app routing request trace.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "tokens": {
+            "description": "Tokens field on app routing request trace.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "traceId": {
+            "description": "Trace id field on app routing request trace.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "upstreamAccountCode": {
+            "description": "Upstream account code field on app routing request trace.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "upstreamAccountGroupCode": {
+            "description": "Upstream account group code field on app routing request trace.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "upstreamAccountGroupId": {
+            "description": "Upstream account group id field on app routing request trace.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "upstreamAccountGroupName": {
+            "description": "Upstream account group name field on app routing request trace.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "upstreamAccountId": {
+            "description": "Upstream account id field on app routing request trace.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "upstreamAccountName": {
+            "description": "Upstream account name field on app routing request trace.",
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "time",
+          "model",
+          "upstreamAccountId",
+          "upstreamAccountCode",
+          "upstreamAccountName",
+          "upstreamAccountGroupId",
+          "upstreamAccountGroupCode",
+          "upstreamAccountGroupName",
+          "status",
+          "duration",
+          "tokens",
+          "traceId",
+          "requestPath",
+          "httpMethod",
+          "requestPayloadHash",
+          "responsePayloadHash",
+          "requestBytes",
+          "responseBytes",
+          "providerErrorCode",
+          "errorType",
+          "errorMessageMasked",
+          "startedAt",
+          "endedAt",
+          "streaming"
+        ],
+        "type": "object"
+      },
+      "AppRoutingRequestTraceListResponse": {
+        "additionalProperties": false,
+        "description": "App routing request trace list response schema exposed by Claw Router.",
+        "name": "AppRoutingRequestTraceListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on app routing request trace list response.",
+            "items": {
+              "$ref": "#/components/schemas/AppRoutingRequestTrace"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on app routing request trace list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "AppRoutingUsageData": {
+        "additionalProperties": false,
+        "description": "App routing usage data schema exposed by Claw Router.",
+        "properties": {
+          "latency": {
+            "description": "Latency field on app routing usage data.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "requests": {
+            "description": "Requests field on app routing usage data.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "time": {
+            "description": "Time field on app routing usage data.",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "time",
+          "requests",
+          "latency"
+        ],
+        "type": "object"
+      },
+      "AppRoutingUsageSnapshot": {
+        "additionalProperties": false,
+        "description": "App routing usage snapshot schema exposed by Claw Router.",
+        "name": "AppRoutingUsageSnapshot",
+        "properties": {
+          "chartData": {
+            "description": "Chart data field on app routing usage snapshot.",
+            "items": {
+              "$ref": "#/components/schemas/AppRoutingUsageData"
+            },
+            "type": "array"
+          },
+          "modelStats": {
+            "description": "Model stats field on app routing usage snapshot.",
+            "items": {
+              "$ref": "#/components/schemas/AppRoutingModelStats"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "chartData",
+          "modelStats"
         ],
         "type": "object"
       },
@@ -515,8 +926,8 @@
         "description": "Create api key request schema exposed by Claw Router.",
         "name": "CreateApiKeyRequest",
         "properties": {
-          "channelGroup": {
-            "description": "API key channel group code.",
+          "accountGroup": {
+            "description": "Upstream account group code authorized for this API key.",
             "maxLength": 64,
             "minLength": 1,
             "type": "string"
@@ -570,7 +981,7 @@
         },
         "required": [
           "name",
-          "channelGroup",
+          "accountGroup",
           "quota",
           "isUnlimitedQuota",
           "modalities",
@@ -593,7 +1004,7 @@
             "description": "Item field on create api key response."
           },
           "rawKey": {
-            "description": "Full raw API key secret returned by create responses. Authenticated owner management list and update responses also expose this value as item.copyableKey for console copy actions.",
+            "description": "Full raw API key secret returned exactly once by the create operation.",
             "minLength": 1,
             "type": "string"
           }
@@ -1717,10 +2128,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AppRoutingApiKeyListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on routing api keys list result."
               }
             },
             "required": [
@@ -1731,33 +2142,6 @@
         ],
         "description": "Routing api keys list result schema exposed by Claw Router.",
         "x-operation-id": "routing.apiKeys.list"
-      },
-      "RoutingChannelsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by routing channels list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Routing channels list result schema exposed by Claw Router.",
-        "x-operation-id": "routing.channels.list"
       },
       "RoutingRequestTracesListResult": {
         "allOf": [
@@ -1771,10 +2155,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AppRoutingRequestTraceListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on routing request traces list result."
               }
             },
             "required": [
@@ -1786,22 +2170,22 @@
         "description": "Routing request traces list result schema exposed by Claw Router.",
         "x-operation-id": "routing.requestTraces.list"
       },
-      "RoutingUsageListResult": {
+      "RoutingUsageRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by routing usage list result.",
+            "description": "Object schema used by routing usage retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AppRoutingUsageSnapshot"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on routing usage retrieve result."
               }
             },
             "required": [
@@ -1810,8 +2194,8 @@
             "type": "object"
           }
         ],
-        "description": "Routing usage list result schema exposed by Claw Router.",
-        "x-operation-id": "routing.usage.list"
+        "description": "Routing usage retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "routing.usage.retrieve"
       },
       "SdkWorkApiResponse": {
         "additionalProperties": false,
@@ -2123,8 +2507,8 @@
         "description": "Update api key request schema exposed by Claw Router.",
         "name": "UpdateApiKeyRequest",
         "properties": {
-          "channelGroup": {
-            "description": "API key channel group code to bind to this key.",
+          "accountGroup": {
+            "description": "Upstream account group code to bind to this key.",
             "maxLength": 64,
             "minLength": 1,
             "type": "string"
@@ -2860,15 +3244,51 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "routing.accountGroups",
-        "x-source-file": "services/sdkwork-clawrouter-router-service/src/api/app_routing.rs",
+        "x-source-file": "crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs",
         "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/api_keys": {
       "get": {
-        "description": "List routing API keys. Reads iam_gateway_api_key. Writes none. File targets none.",
+        "description": "List routing API keys. Reads iam_gateway_api_key, iam_gateway_api_key_account_group, ai_upstream_account_group, ai_usage. Writes none. File targets none.",
         "operationId": "routing.apiKeys.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -2934,7 +3354,10 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "iam_gateway_api_key"
+          "iam_gateway_api_key",
+          "iam_gateway_api_key_account_group",
+          "ai_upstream_account_group",
+          "ai_usage"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
@@ -2944,91 +3367,47 @@
         "x-write-tables": []
       }
     },
-    "/app/v3/api/ai/routing/channels": {
-      "get": {
-        "description": "List routing channels. Reads ai_channel_group. Writes none. File targets none.",
-        "operationId": "routing.channels.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoutingChannelsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "List routing channels",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_channel_group"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "intelligence",
-        "x-sdkwork-domain": "intelligence",
-        "x-sdkwork-resource": "routing.channels",
-        "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": []
-      }
-    },
     "/app/v3/api/ai/routing/request_traces": {
       "get": {
-        "description": "List routing request traces. Reads ai_request_trace. Writes none. File targets none.",
+        "description": "List routing request traces. Reads ai_request_trace, ai_routing_decision_log, ai_upstream_account, ai_upstream_account_group. Writes none. File targets none.",
         "operationId": "routing.requestTraces.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3094,7 +3473,10 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_request_trace"
+          "ai_request_trace",
+          "ai_routing_decision_log",
+          "ai_upstream_account",
+          "ai_upstream_account_group"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",
@@ -3107,14 +3489,14 @@
     "/app/v3/api/ai/routing/usage": {
       "get": {
         "description": "List routing usage. Reads ai_request_trace, ai_usage, ai_routing_decision_log. Writes none. File targets none.",
-        "operationId": "routing.usage.list",
+        "operationId": "routing.usage.retrieve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RoutingUsageListResult"
+                  "$ref": "#/components/schemas/RoutingUsageRetrieveResult"
                 }
               }
             },
@@ -3828,7 +4210,7 @@
     },
     "/app/v3/api/iam/api_keys": {
       "get": {
-        "description": "List keys. Reads iam_gateway_api_key, ai_channel_group, ai_channel_group_metric_snapshot, iam_gateway_access_policy, ai_quota_policy, ai_model_pricing, ai_pricing_plan. Writes none. File targets none.",
+        "description": "List keys. Reads iam_gateway_api_key, ai_upstream_account_group, ai_upstream_account_group_metric_snapshot, iam_gateway_access_policy, ai_quota_policy, ai_model_pricing, ai_pricing_plan. Writes none. File targets none.",
         "operationId": "apiKeys.list",
         "parameters": [
           {
@@ -3933,8 +4315,8 @@
         "x-file-targets": [],
         "x-read-sources": [
           "iam_gateway_api_key",
-          "ai_channel_group",
-          "ai_channel_group_metric_snapshot",
+          "ai_upstream_account_group",
+          "ai_upstream_account_group_metric_snapshot",
           "iam_gateway_access_policy",
           "ai_quota_policy",
           "ai_model_pricing",
@@ -3948,7 +4330,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create key. Reads ai_channel_group. Writes ai_channel_group, iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
+        "description": "Create key. Reads ai_upstream_account_group. Writes ai_upstream_account_group, iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
         "operationId": "apiKeys.create",
         "parameters": [
           {
@@ -4039,7 +4421,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_channel_group"
+          "ai_upstream_account_group"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
@@ -4048,7 +4430,7 @@
         "x-sdkwork-resource": "apiKeys",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
         "x-write-tables": [
-          "ai_channel_group",
+          "ai_upstream_account_group",
           "iam_gateway_api_key",
           "iam_gateway_access_policy",
           "ai_quota_policy",
@@ -4142,7 +4524,7 @@
         ]
       },
       "patch": {
-        "description": "Update key. Reads iam_gateway_api_key, ai_channel_group, iam_gateway_access_policy, ai_quota_policy. Writes iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
+        "description": "Update key. Reads iam_gateway_api_key, ai_upstream_account_group, iam_gateway_access_policy, ai_quota_policy. Writes iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
         "operationId": "apiKeys.update",
         "parameters": [
           {
@@ -4232,7 +4614,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "iam_gateway_api_key",
-          "ai_channel_group",
+          "ai_upstream_account_group",
           "iam_gateway_access_policy",
           "ai_quota_policy"
         ],

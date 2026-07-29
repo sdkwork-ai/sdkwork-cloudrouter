@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { clearStoredAppSessionToken } from "./packages/sdkwork-clawroutes-pc-commons/src/app-session-token.ts";
+import {
+  clearStoredAppSessionToken,
+  storeAppSessionFromResult,
+} from "./packages/sdkwork-clawroutes-pc-commons/src/app-session-token.ts";
 import { resetClawRouterSdkClients } from "./packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts";
 import { RateLimitService } from "./packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts";
 import {
@@ -49,6 +52,10 @@ async function withBackendSdkFetch<T>(
     });
   }) as typeof fetch;
   clearStoredAppSessionToken();
+  storeAppSessionFromResult({
+    code: "2000",
+    data: { accessToken: "test-access-token", authToken: "test-auth-token" },
+  });
   resetClawRouterSdkClients();
 
   try {
@@ -130,7 +137,7 @@ test("admin ratelimit form rejects invalid required values instead of creating p
 
   const modelForm = new FormData();
   modelForm.set("model", "gpt-4o-mini");
-  modelForm.set("channelGroup", "enterprise");
+  modelForm.set("accountGroup", "enterprise");
   modelForm.set("rpm", "60");
   modelForm.set("tpm", "not-a-number");
   assert.throws(
@@ -183,7 +190,7 @@ test("admin ratelimit page does not expose unsupported row menus and dashboard l
 test("admin model limit create input does not reuse returned model limit view model", () => {
   const form = new FormData();
   form.set("model", " gpt-4o-mini ");
-  form.set("channelGroup", " enterprise ");
+  form.set("accountGroup", " enterprise ");
   form.set("rpm", " 60 ");
   form.set("tpm", " 200000 ");
 
@@ -191,7 +198,7 @@ test("admin model limit create input does not reuse returned model limit view mo
 
   assert.deepEqual(input, {
     model: "gpt-4o-mini",
-    channelGroup: "enterprise",
+    accountGroup: "enterprise",
     rpm: 60,
     tpm: 200000,
   });
@@ -286,9 +293,9 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
             {
               id: "model-limit-1",
               model: "gpt-4o-mini",
-              channelGroup: "enterprise",
-              channelGroupId: "group-1",
-              channelGroupName: "Enterprise",
+              accountGroup: "enterprise",
+              accountGroupId: "group-1",
+              accountGroupName: "Enterprise",
               rpm: "60",
               tpm: 200000,
               status: "inactive",
@@ -302,9 +309,9 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
           item: {
             id: "model-limit-2",
             model: "claude-3-5-sonnet",
-            channelGroup: "enterprise",
-            channelGroupId: "group-1",
-            channelGroupName: "Enterprise",
+            accountGroup: "enterprise",
+            accountGroupId: "group-1",
+            accountGroupName: "Enterprise",
             rpm: 30,
             tpm: 100000,
             status: "active",
@@ -361,7 +368,7 @@ test("admin ratelimit service calls generated backend SDK paths and normalizes r
       const modelLimits = await RateLimitService.fetchModelLimits();
       const createdModel = await RateLimitService.addModelLimit({
         model: "claude-3-5-sonnet",
-        channelGroup: "enterprise",
+        accountGroup: "enterprise",
         rpm: 30,
         tpm: 100000,
       });
@@ -458,7 +465,7 @@ test("admin ratelimit service rejects invalid commands before calling generated 
         () =>
           RateLimitService.addModelLimit({
             model: "gpt-4o-mini",
-            channelGroup: "enterprise",
+            accountGroup: "enterprise",
             rpm: 60,
             tpm: 100.5,
           }),
@@ -692,7 +699,7 @@ test("admin model limit list fails closed when backend omits stable rule ids", a
           items: [
             {
               model: "gpt-4o-mini",
-              channelGroup: "enterprise",
+              accountGroup: "enterprise",
               rpm: 60,
               tpm: 200000,
               status: "active",
@@ -722,7 +729,7 @@ test("admin model limit list fails closed when backend omits or corrupts status"
           const rule = {
             id: "model-limit-1",
             model: "gpt-4o-mini",
-            channelGroup: "enterprise",
+            accountGroup: "enterprise",
             rpm: 60,
             tpm: 200000,
             status: "active",

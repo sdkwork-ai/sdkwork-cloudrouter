@@ -9,8 +9,7 @@ export type AdminRoutePermissionHint = {
 
 export const ADMIN_ROUTE_PERMISSION_HINTS: readonly AdminRoutePermissionHint[] = [
   { pathPrefix: '/admin/dashboard', requiredPermission: 'clawrouter.admin.access' },
-  { pathPrefix: '/admin/group', requiredPermission: 'iam.users.read' },
-  { pathPrefix: '/admin/channel', requiredPermission: 'iam.users.read' },
+  { pathPrefix: '/admin/upstream', requiredPermission: 'clawrouter.admin.access' },
   { pathPrefix: '/admin/settings', requiredPermission: 'clawrouter.admin.access' },
   { pathPrefix: '/admin/model', requiredPermission: 'clawrouter.admin.access' },
   { pathPrefix: '/admin/record', requiredPermission: 'clawrouter.system.read' },

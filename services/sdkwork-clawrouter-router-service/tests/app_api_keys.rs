@@ -8,12 +8,12 @@ use sdkwork_clawrouter_router_service::domain::{
     DecimalValue, DomainResult, GatewayApiKey, QuotaPolicy, UpstreamAccountGroup,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    ApiKeyCommandStoreFuture, ApiKeyManagementReadFuture, AppUpstreamAccountGroupListPage,
-    CreateGatewayApiKeyCommand, CreatedGatewayApiKey, DeleteGatewayApiKeyCommand,
+    ApiKeyCommandStoreFuture, ApiKeyManagementReadFuture, CreateGatewayApiKeyCommand,
+    CreatedGatewayApiKey, DeleteGatewayApiKeyCommand,
     DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
     GatewayApiKeyCommandStore, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
-    GatewayApiKeyManagementSnapshot, ListAppUpstreamAccountGroupsQuery, ListGatewayApiKeysQuery,
-    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
+    GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery, UpdateGatewayApiKeyCommand,
+    UpdatedGatewayApiKey,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -33,21 +33,18 @@ async fn app_api_key_create_ensures_default_group_when_missing() {
         .oneshot(signed_request(
             "POST",
             "/app/v3/api/iam/api_keys",
-            r#"{"name":"Console Key","channelGroup":"default","quota":"1000","modalities":["text"]}"#,
+            r#"{"name":"Console Key","accountGroup":"default","quota":"1000","modalities":["text"]}"#,
         ))
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(StatusCode::CREATED, response.status());
     let payload = json_payload(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    assert_eq!("default", payload["data"]["item"]["channelGroup"]);
-    assert_eq!("Default", payload["data"]["item"]["channelGroupName"]);
+    assert_eq!("default", payload["data"]["item"]["accountGroup"]);
+    assert_eq!("Default", payload["data"]["item"]["accountGroupName"]);
     assert_eq!("sk-claw-test-secret", payload["data"]["rawKey"]);
-    assert_eq!(
-        "sk-claw-test-secret",
-        payload["data"]["item"]["copyableKey"]
-    );
+    assert!(payload["data"]["item"].get("rawKey").is_none());
 
     let commands = command_store.commands.lock().unwrap();
     assert_eq!(1, commands.len());
@@ -72,7 +69,7 @@ async fn app_api_key_update_rebinds_key_to_available_group_for_owner() {
         .oneshot(signed_request(
             "PATCH",
             "/app/v3/api/iam/api_keys/701",
-            r#"{"channelGroup":"premium","name":"Updated Console Key"}"#,
+            r#"{"accountGroup":"premium","name":"Updated Console Key"}"#,
         ))
         .await
         .unwrap();
@@ -82,11 +79,8 @@ async fn app_api_key_update_rebinds_key_to_available_group_for_owner() {
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["item"]["id"]);
     assert_eq!("Updated Console Key", payload["data"]["item"]["name"]);
-    assert_eq!("premium", payload["data"]["item"]["channelGroup"]);
-    assert_eq!(
-        "sk-claw-owner-secret",
-        payload["data"]["item"]["copyableKey"]
-    );
+    assert_eq!("premium", payload["data"]["item"]["accountGroup"]);
+    assert!(payload["data"]["item"].get("rawKey").is_none());
 }
 
 #[tokio::test]
@@ -117,7 +111,7 @@ async fn app_api_key_update_marks_one_owner_key_as_runtime_default() {
 }
 
 #[tokio::test]
-async fn app_api_key_list_returns_persisted_copyable_key_for_owner() {
+async fn app_api_key_list_never_returns_raw_key_material() {
     let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
     let command_store = Arc::new(TestApiKeyCommandStore::default());
     let router = sdkwork_clawrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
@@ -136,18 +130,12 @@ async fn app_api_key_list_returns_persisted_copyable_key_for_owner() {
     let payload = json_payload(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["items"][0]["id"]);
-    assert_eq!(
-        "sk-claw-owner-secret",
-        payload["data"]["items"][0]["copyableKey"]
-    );
-    assert_ne!(
-        payload["data"]["items"][0]["maskedKey"],
-        payload["data"]["items"][0]["copyableKey"]
-    );
-    assert_eq!("default", payload["data"]["items"][0]["channelGroup"]);
+    assert!(payload["data"]["items"][0].get("rawKey").is_none());
+    assert_eq!("sk-claw-test********CRET", payload["data"]["items"][0]["maskedKey"]);
+    assert_eq!("default", payload["data"]["items"][0]["accountGroup"]);
     assert_eq!(
         "Default customers",
-        payload["data"]["items"][0]["channelGroupName"]
+        payload["data"]["items"][0]["accountGroupName"]
     );
     assert!(payload["data"]["pageInfo"].is_object());
 }
@@ -168,30 +156,11 @@ async fn app_api_key_delete_revokes_owner_key() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
-    let payload = json_payload(response).await;
-    assert_eq!(0, payload["code"].as_i64().unwrap());
-    assert_eq!("701", payload["data"]["id"]);
-}
-
-#[tokio::test]
-async fn app_upstream_account_group_routes_do_not_expose_legacy_public_path() {
-    let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
-    let command_store = Arc::new(TestApiKeyCommandStore::default());
-    let router = sdkwork_clawrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
-        read_store,
-        command_store,
-        Arc::new(TestHasher),
-        Arc::new(TestSecretGenerator),
-    );
-
-    let legacy_group_path = format!("/app/v3/api/iam/{}{}", "api_key_", "groups");
-    let response = router
-        .oneshot(signed_request("GET", &legacy_group_path, ""))
+    assert_eq!(StatusCode::NO_CONTENT, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
-
-    assert_eq!(StatusCode::NOT_FOUND, response.status());
+    assert!(body.is_empty());
 }
 
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
@@ -259,15 +228,14 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
             if self.include_owner_key {
                 snapshot.api_keys.push(GatewayApiKey {
                     id: 701,
-                    tenant_id: 100001,
-                    organization_id: 0,
+                    tenant_id: 10,
+                    organization_id: 20,
                     user_id: 30,
-                    group_id: 501,
+                    default_account_group_id: 501,
                     name: "Console Key".to_owned(),
                     key_prefix: "sk-claw-test".to_owned(),
                     key_display_masked: "sk-claw-test********CRET".to_owned(),
                     key_hash: "hash:sk-claw-test-secret".to_owned(),
-                    copyable_key: Some("sk-claw-owner-secret".to_owned()),
                     policy_id: None,
                     quota_policy_id: Some(801),
                     created_at: "2026-05-17 10:00:00".to_owned(),
@@ -346,44 +314,6 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
         })
     }
 
-    fn list_app_upstream_account_groups<'a>(
-        &'a self,
-        query: ListAppUpstreamAccountGroupsQuery,
-    ) -> ApiKeyManagementReadFuture<'a, AppUpstreamAccountGroupListPage> {
-        Box::pin(async move {
-            let snapshot = self.load_gateway_api_key_management_snapshot().await?;
-            let mut items: Vec<_> = snapshot
-                .upstream_account_groups
-                .into_iter()
-                .filter(|group| {
-                    (group.tenant_id == 0 || group.tenant_id == query.tenant_id)
-                        && (group.organization_id == 0
-                            || group.organization_id == query.organization_id)
-                })
-                .filter(|group| {
-                    query.q.as_ref().is_none_or(|search| {
-                        let search = search.to_lowercase();
-                        group.name.to_lowercase().contains(&search)
-                            || group.code.to_lowercase().contains(&search)
-                    })
-                })
-                .collect();
-            let total = items.len() as i64;
-            let offset = query.offset.max(0) as usize;
-            let page_size = query.page_size.max(0) as usize;
-            if offset >= items.len() {
-                items.clear();
-            } else {
-                items = items.into_iter().skip(offset).take(page_size).collect();
-            }
-            Ok(AppUpstreamAccountGroupListPage {
-                items,
-                total,
-                page_no: query.page_no,
-                page_size: query.page_size,
-            })
-        })
-    }
 }
 
 #[derive(Default)]
@@ -424,12 +354,11 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                     tenant_id: command.tenant_id,
                     organization_id: command.organization_id,
                     user_id: command.user_id,
-                    group_id: command.group_id,
+                    default_account_group_id: command.group_id,
                     name: command.name,
                     key_prefix: command.key_prefix,
                     key_display_masked: command.key_display_masked,
                     key_hash: command.key_hash,
-                    copyable_key: Some(command.copyable_key),
                     policy_id: None,
                     quota_policy_id: Some(801),
                     created_at: command.created_at,
@@ -459,12 +388,11 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
                     tenant_id: command.tenant_id,
                     organization_id: command.organization_id,
                     user_id: command.user_id,
-                    group_id: command.group_id.unwrap_or(501),
+                    default_account_group_id: command.group_id.unwrap_or(501),
                     name: command.name.unwrap_or_else(|| "Console Key".to_owned()),
                     key_prefix: "sk-claw-test".to_owned(),
                     key_display_masked: "sk-claw-test********CRET".to_owned(),
                     key_hash: "hash:sk-claw-test-secret".to_owned(),
-                    copyable_key: Some("sk-claw-owner-secret".to_owned()),
                     policy_id: None,
                     quota_policy_id: Some(801),
                     created_at: "2026-05-17 10:00:00".to_owned(),

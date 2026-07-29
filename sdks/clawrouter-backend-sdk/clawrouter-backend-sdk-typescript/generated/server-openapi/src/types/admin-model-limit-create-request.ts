@@ -1,7 +1,7 @@
 /** AdminModelLimitCreateRequest contract. */
 export interface AdminModelLimitCreateRequest {
-  /** channelGroup field on AdminModelLimitCreateRequest. */
-  channelGroup: string;
+  /** Upstream account group code for the model rate limit. */
+  accountGroup: string;
   /** model field on AdminModelLimitCreateRequest. */
   model: string;
   /** rpm field on AdminModelLimitCreateRequest. */

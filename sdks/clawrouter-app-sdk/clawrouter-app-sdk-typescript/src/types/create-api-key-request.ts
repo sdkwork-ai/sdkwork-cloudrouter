@@ -1,7 +1,7 @@
 /** Create api key request schema exposed by Claw Router. */
 export interface CreateApiKeyRequest {
-  /** API key channel group code. */
-  channelGroup: string;
+  /** Upstream account group code authorized for this API key. */
+  accountGroup: string;
   /** Create this key as the default backend runtime API key. */
   defaultForRuntime?: boolean;
   /** Expiration timestamp in YYYY-MM-DDTHH:mm format, or never. */

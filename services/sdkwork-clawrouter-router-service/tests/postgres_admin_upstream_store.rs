@@ -1,9 +1,9 @@
 use std::env;
 use std::sync::Arc;
 
-use sdkwork_clawrouter_router_service::application::ApiKeySecretCodec;
+use sdkwork_clawrouter_router_service::application::CredentialSecretCodec;
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
-    HmacSha256ApiKeySecretHasher, RingAeadApiKeySecretCodec,
+    HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::PostgresAdminUpstreamStore;
 use sdkwork_clawrouter_router_service::infrastructure::sql::PricingCatalogSql;
@@ -26,7 +26,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         return;
     };
     let codec = Arc::new(
-        RingAeadApiKeySecretCodec::new("0123456789abcdef0123456789abcdef")
+        RingAeadCredentialSecretCodec::new("0123456789abcdef0123456789abcdef")
             .expect("credential codec"),
     );
     let hasher = Arc::new(

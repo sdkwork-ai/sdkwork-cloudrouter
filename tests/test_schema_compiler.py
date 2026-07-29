@@ -337,6 +337,40 @@ class SchemaCompilerTest(unittest.TestCase):
                 sql,
             )
 
+    def test_compiles_dialect_specific_check_expressions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = self.write_registry(
+                root,
+                """
+                tables:
+                  - table: ai_auth_method
+                    domain: ai
+                    columns:
+                      id: { type: int64, constraints: "PRIMARY KEY" }
+                      runtime_auth_config: { type: json, constraints: "NOT NULL" }
+                    check_constraints:
+                      - name: ck_ai_auth_method_runtime_auth_config
+                        expressions:
+                          postgres: jsonb_typeof(runtime_auth_config) = 'object'
+                          sqlite: json_valid(runtime_auth_config) AND json_type(runtime_auth_config) = 'object'
+                """,
+            )
+
+            compiler = SchemaCompiler(root=root, registry_path=registry)
+
+            self.assertIn(
+                "CHECK (jsonb_typeof(runtime_auth_config) = 'object')",
+                compiler.compile_postgres(),
+            )
+            sqlite_sql = compiler.compile_sqlite()
+            self.assertIn(
+                "CHECK (json_valid(runtime_auth_config) AND "
+                "json_type(runtime_auth_config) = 'object')",
+                sqlite_sql,
+            )
+            self.assertNotIn("jsonb_typeof", sqlite_sql)
+
     def test_orders_referenced_table_and_indexes_before_foreign_key_table(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

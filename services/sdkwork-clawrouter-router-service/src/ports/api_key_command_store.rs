@@ -25,7 +25,6 @@ pub struct CreateGatewayApiKeyCommand {
     pub key_prefix: String,
     pub key_display_masked: String,
     pub key_hash: String,
-    pub copyable_key: String,
     pub hash_alg: String,
     pub secret_version: i64,
     pub request_id: String,

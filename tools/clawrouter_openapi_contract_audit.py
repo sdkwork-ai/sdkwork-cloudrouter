@@ -59,6 +59,7 @@ class ClawRouterOpenApiContractAudit:
         "disable",
         "discover",
         "enable",
+        "explain",
         "healthCheck",
         "list",
         "pay",
@@ -261,7 +262,9 @@ class ClawRouterOpenApiContractAudit:
                 messages.extend(self._audit_operation_standard(label, operation))
                 messages.extend(self._audit_query_parameters(label, operation))
                 messages.extend(self._audit_error_responses(label, operation))
-                messages.extend(self._audit_success_response(label, operation, schemas))
+                messages.extend(
+                    self._audit_success_response(label, method_lower, operation, schemas)
+                )
                 messages.extend(self._audit_request_body(label, operation, schemas))
         return messages
 
@@ -396,46 +399,70 @@ class ClawRouterOpenApiContractAudit:
     def _audit_success_response(
         self,
         label: str,
+        method: str,
         operation: dict[str, Any],
         schemas: dict[str, Any],
     ) -> list[str]:
         messages: list[str] = []
+        responses = operation.get("responses")
+        if not isinstance(responses, dict):
+            return [f"{label} must declare responses"]
+        operation_id = self._operation_id(operation)
+        action = operation_id.rsplit(".", 1)[-1] if "." in operation_id else ""
+        if method == "delete":
+            response = responses.get("204")
+            if not isinstance(response, dict):
+                return [f"{label} delete success must declare 204 without a JSON body"]
+            content = response.get("content")
+            if isinstance(content, dict) and content:
+                messages.append(f"{label} 204 response must not declare a body")
+            return messages
+
+        success_status = "201" if method == "post" and action == "create" else "200"
         response_schema = self._json_schema(
-            operation.get("responses", {}).get("200", {}) if isinstance(operation.get("responses"), dict) else {}
+            responses.get(success_status, {})
         )
         if not isinstance(response_schema, dict):
-            messages.append(f"{label} 200 response must declare an application/json schema")
+            messages.append(
+                f"{label} {success_status} response must declare an application/json schema"
+            )
             return messages
 
         envelope_data_schema = self._sdkwork_envelope_data_schema(response_schema)
         if envelope_data_schema is not None:
             if "data" not in envelope_data_schema.get("properties", {}):
-                messages.append(f"{label} 200 SdkWorkApiResponse envelope must declare typed data")
+                messages.append(
+                    f"{label} {success_status} SdkWorkApiResponse envelope must declare typed data"
+                )
             return messages
 
         response_ref = response_schema.get("$ref") if isinstance(response_schema, dict) else None
         if response_ref in self.FORBIDDEN_SUCCESS_REFS:
             messages.append(
-                f"{label} 200 response must use SdkWorkApiResponse envelope, not legacy {self._component_name(response_ref)}"
+                f"{label} {success_status} response must use SdkWorkApiResponse envelope, not legacy {self._component_name(response_ref)}"
             )
             return messages
         if response_ref in self.SDKWORK_SUCCESS_RESPONSE_REFS:
             component_name = self._component_name(response_ref)
             if component_name not in schemas:
-                messages.append(f"{label} 200 response references missing envelope schema {component_name}")
+                messages.append(
+                    f"{label} {success_status} response references missing envelope schema {component_name}"
+                )
             return messages
         if response_ref == self.SDKWORK_API_RESPONSE_REF:
             return messages
         if not isinstance(response_ref, str) or not response_ref.endswith("Result"):
             messages.append(
-                f"{label} 200 response must use SdkWorkApiResponse allOf envelope or an operation-specific *Result schema"
+                f"{label} {success_status} response must use SdkWorkApiResponse allOf envelope or an operation-specific *Result schema"
             )
             return messages
 
         component_name = self._component_name(response_ref)
         result_schema = schemas.get(component_name)
         if not isinstance(result_schema, dict):
-            messages.append(f"{label} 200 response references missing result schema {component_name}")
+            messages.append(
+                f"{label} {success_status} response references missing result schema {component_name}"
+            )
             return messages
         result_envelope_data_schema = self._sdkwork_envelope_data_schema(result_schema)
         if result_envelope_data_schema is not None:

@@ -45,9 +45,9 @@ export interface TokenLimitRule {
 export interface ModelLimitRule {
   id: string;
   model: string;
-  channelGroup: string;
-  channelGroupId?: string;
-  channelGroupName?: string;
+  accountGroup: string;
+  accountGroupId?: string;
+  accountGroupName?: string;
   rpm: number;
   tpm: number;
   status: 'active' | 'inactive';
@@ -79,7 +79,7 @@ export type TokenLimitCreateInput = {
 
 export type ModelLimitCreateInput = {
   model: string;
-  channelGroup: string;
+  accountGroup: string;
   rpm: number;
   tpm: number;
 };
@@ -261,7 +261,7 @@ function toCreateTokenLimitRequest(rule: TokenLimitCreateInput): AdminTokenLimit
 function toCreateModelLimitRequest(rule: ModelLimitCreateInput): AdminModelLimitCreateRequest {
   return {
     model: requiredText(rule.model, 'model'),
-    channelGroup: requiredText(rule.channelGroup, 'channelGroup'),
+    accountGroup: requiredText(rule.accountGroup, 'accountGroup'),
     rpm: positiveInteger(rule.rpm, 'rpm'),
     tpm: String(positiveInteger(rule.tpm, 'tpm')),
   };
@@ -321,9 +321,9 @@ function normalizeModelLimit(value: unknown): ModelLimitRule {
   return {
     id: readRequiredString(item, 'id', 'Model limit id is required'),
     model: readRequiredString(item, 'model', 'Model limit model is required'),
-    channelGroup: readRequiredString(item, 'channelGroup', 'Model limit channel group is required'),
-    channelGroupId: readString(item, 'channelGroupId') ?? undefined,
-    channelGroupName: readString(item, 'channelGroupName') ?? undefined,
+    accountGroup: readRequiredString(item, 'accountGroup', 'Model limit account group is required'),
+    accountGroupId: readString(item, 'accountGroupId') ?? undefined,
+    accountGroupName: readString(item, 'accountGroupName') ?? undefined,
     rpm: readRequiredNumber(item, 'rpm', 'Model limit rpm is required'),
     tpm: readRequiredNumber(item, 'tpm', 'Model limit tpm is required'),
     status: readModelLimitStatus(item),

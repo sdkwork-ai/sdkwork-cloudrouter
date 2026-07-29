@@ -11,7 +11,7 @@ export class NotificationPopupSeenApi {
 
 /** Mark popup seen */
   async create(notificationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/popup_seen`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/popup_seen`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -25,7 +25,7 @@ export class NotificationAcknowledgeApi {
 
 /** Acknowledge */
   async create(notificationId: string, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/acknowledge`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/acknowledge`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -43,7 +43,7 @@ export class NotificationApi {
 
 /** List notifications */
   async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/notification/notifications`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/notification/notifications`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 

@@ -4,17 +4,20 @@ import {
   publicSdkReferenceMessages,
 } from '@sdkwork/documents-pc-i18n';
 import { sdkworkSubscriptionCheckoutI18nBundle } from '@sdkwork/membership-pc-subscription/catalog';
+import {
+  upstreamAccountGroupMessages,
+  upstreamAccountMessages,
+  upstreamSharedMessages,
+  upstreamSupplierMessages,
+} from '@sdkwork/clawrouter-pc-admin-upstream/i18n';
 import { mergeI18nBundles } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
 import { adminAuthSettingsMessages } from './admin/auth-settings';
 import { adminBusinessManagementMessages } from './admin/business-management';
 import { adminCacheMessages } from './admin/cache';
-import { adminChannelMessages } from './admin/channel';
-import { adminChannelResourceRoutingMessages } from './admin/channel-resource-routing';
 import { adminCoreColumnsMessages } from './admin/core-columns';
 import { adminCoreNavigationMessages } from './admin/core-navigation';
 import { adminDashboardMessages } from './admin/dashboard';
-import { adminGroupUserMessages } from './admin/group-user';
 import { adminMiscMessages } from './admin/misc';
 import { adminModelMessages } from './admin/model';
 import { adminRateLimitMessages } from './admin/rate-limit';
@@ -51,18 +54,19 @@ export const resources = mergeI18nBundles([
   adminAuthSettingsMessages,
   adminBusinessManagementMessages,
   adminCacheMessages,
-  adminChannelMessages,
-  adminChannelResourceRoutingMessages,
   adminCoreColumnsMessages,
   adminCoreNavigationMessages,
   adminDashboardMessages,
-  adminGroupUserMessages,
   adminMiscMessages,
   adminModelMessages,
   adminRateLimitMessages,
   adminRuntimeRegionMessages,
   adminServiceNodesMessages,
   adminSiteSettingsMessages,
+  upstreamSharedMessages,
+  upstreamSupplierMessages,
+  upstreamAccountMessages,
+  upstreamAccountGroupMessages,
   consoleAccountMessages,
   consoleApiKeysMessages,
   consoleBillingMessages,

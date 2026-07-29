@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use sqlx::PgPool;
 
-use crate::application::ApiKeySecretCodec;
+use crate::application::CredentialSecretCodec;
 use crate::domain::{
     DomainError, DomainResult, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
 };
@@ -22,7 +22,7 @@ use crate::ports::{
 
 pub struct PostgresPricingCatalogLoader {
     pool: PgPool,
-    api_key_secret_codec: Option<std::sync::Arc<dyn ApiKeySecretCodec + Send + Sync>>,
+    credential_secret_codec: Option<std::sync::Arc<dyn CredentialSecretCodec + Send + Sync>>,
     circuit_breaker_recovery_window_seconds: i64,
 }
 
@@ -30,19 +30,19 @@ impl PostgresPricingCatalogLoader {
     pub fn new(pool: PgPool) -> Self {
         Self {
             pool,
-            api_key_secret_codec: None,
+            credential_secret_codec: None,
             circuit_breaker_recovery_window_seconds:
                 default_circuit_breaker_recovery_window_seconds(),
         }
     }
 
-    pub fn with_api_key_secret_codec(
+    pub fn with_credential_secret_codec(
         pool: PgPool,
-        api_key_secret_codec: std::sync::Arc<dyn ApiKeySecretCodec + Send + Sync>,
+        credential_secret_codec: std::sync::Arc<dyn CredentialSecretCodec + Send + Sync>,
     ) -> Self {
         Self {
             pool,
-            api_key_secret_codec: Some(api_key_secret_codec),
+            credential_secret_codec: Some(credential_secret_codec),
             circuit_breaker_recovery_window_seconds:
                 default_circuit_breaker_recovery_window_seconds(),
         }
@@ -139,7 +139,7 @@ impl PostgresPricingCatalogLoader {
         tx.commit().await.map_err(PostgresCatalogLoadError::from)?;
         let managed_provider_secrets = managed_provider_secrets_from_rows(
             &rows.upstream_account_routes,
-            self.api_key_secret_codec.as_deref(),
+            self.credential_secret_codec.as_deref(),
         )?;
         Ok(
             SqlPricingCatalogSnapshot::from_rows_and_managed_provider_secrets(
@@ -189,10 +189,8 @@ impl PostgresPricingCatalogLoader {
     where
         E: sqlx::Executor<'e, Database = sqlx::Postgres>,
     {
-        let rows = row_mapping::load_api_keys(executor, PricingCatalogSql::load_api_keys()).await?;
-        rows.into_iter()
-            .map(|row| decode_api_key_row_copyable_key(row, self.api_key_secret_codec.as_deref()))
-            .collect::<DomainResult<Vec<_>>>()
+        row_mapping::load_api_keys(executor, PricingCatalogSql::load_api_keys())
+            .await
             .map_err(PostgresCatalogLoadError::from)
     }
 }
@@ -203,7 +201,7 @@ fn default_circuit_breaker_recovery_window_seconds() -> i64 {
 
 fn managed_provider_secrets_from_rows(
     upstream_account_routes: &[crate::infrastructure::sql::rows::UpstreamAccountRouteRow],
-    api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
+    credential_secret_codec: Option<&(dyn CredentialSecretCodec + Send + Sync)>,
 ) -> DomainResult<BTreeMap<String, String>> {
     let mut secrets = BTreeMap::new();
     for (secret_ref, ciphertext) in upstream_account_routes.iter().filter_map(|row| {
@@ -215,7 +213,7 @@ fn managed_provider_secrets_from_rows(
             &mut secrets,
             secret_ref,
             ciphertext,
-            api_key_secret_codec,
+            credential_secret_codec,
         )?;
     }
     Ok(secrets)
@@ -225,16 +223,16 @@ fn collect_managed_provider_secret(
     secrets: &mut BTreeMap<String, String>,
     secret_ref: &str,
     ciphertext: &str,
-    api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
+    credential_secret_codec: Option<&(dyn CredentialSecretCodec + Send + Sync)>,
 ) -> DomainResult<()> {
-    let Some(api_key_secret_codec) = api_key_secret_codec else {
+    let Some(credential_secret_codec) = credential_secret_codec else {
         return Err(DomainError::new(
             "upstream account credential requires an encrypted secret codec",
         ));
     };
     secrets.insert(
         secret_ref.trim().to_owned(),
-        api_key_secret_codec.decode_secret(ciphertext)?,
+        credential_secret_codec.decode_secret(ciphertext)?,
     );
     Ok(())
 }
@@ -285,10 +283,7 @@ impl GatewayApiKeyManagementReadStore for PostgresPricingCatalogLoader {
             .map_err(sqlx_load_error)?;
             let items = rows
                 .into_iter()
-                .map(|row| {
-                    decode_api_key_row_copyable_key(row, self.api_key_secret_codec.as_deref())
-                        .and_then(|row| row.try_into_domain())
-                })
+                .map(GatewayApiKeyRow::try_into_domain)
                 .collect::<DomainResult<Vec<_>>>()?;
             Ok(GatewayApiKeyListPage {
                 items,
@@ -315,30 +310,16 @@ fn gateway_api_keys_base_sql() -> String {
         .to_owned()
 }
 
-fn decode_api_key_row_copyable_key(
-    row: GatewayApiKeyRow,
-    api_key_secret_codec: Option<&(dyn ApiKeySecretCodec + Send + Sync)>,
-) -> DomainResult<GatewayApiKeyRow> {
-    let Some(copyable_key_ciphertext) = row.copyable_key.as_deref() else {
-        return Ok(row);
-    };
-    let Some(api_key_secret_codec) = api_key_secret_codec else {
-        return Ok(row.with_copyable_key(None));
-    };
-    let copyable_key = api_key_secret_codec.decode_secret(copyable_key_ciphertext)?;
-    Ok(row.with_copyable_key(Some(copyable_key)))
-}
-
 #[cfg(test)]
 mod tests {
     use super::managed_provider_secrets_from_rows;
-    use crate::application::ApiKeySecretCodec;
-    use crate::infrastructure::crypto::RingAeadApiKeySecretCodec;
+    use crate::application::CredentialSecretCodec;
+    use crate::infrastructure::crypto::RingAeadCredentialSecretCodec;
     use crate::infrastructure::sql::rows::UpstreamAccountRouteRow;
 
     #[test]
     fn managed_upstream_credentials_are_decrypted_only_at_the_loader_boundary() {
-        let codec = RingAeadApiKeySecretCodec::new("test-upstream-credential-pepper").unwrap();
+        let codec = RingAeadCredentialSecretCodec::new("test-upstream-credential-pepper").unwrap();
         let ciphertext = codec.encode_secret("sk-sensitive-upstream-secret").unwrap();
         let rows = vec![UpstreamAccountRouteRow {
             supplier_code: "openai".to_owned(),

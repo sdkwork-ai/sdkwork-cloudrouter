@@ -8823,11 +8823,6 @@
           "type": "int64"
         },
         {
-          "name": "legacy_api_key_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
           "name": "api_key_name_snapshot",
           "source": "explicit",
           "type": "string(128)"
@@ -10198,11 +10193,6 @@
         },
         {
           "name": "api_key_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
-          "name": "legacy_api_key_id",
           "source": "explicit",
           "type": "int64"
         },
@@ -15045,11 +15035,6 @@
           "type": "int64"
         },
         {
-          "name": "legacy_api_key_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
           "name": "api_key_name_snapshot",
           "source": "explicit",
           "type": "string(128)"
@@ -16470,11 +16455,6 @@
           "type": "int64"
         },
         {
-          "name": "legacy_api_key_id",
-          "source": "explicit",
-          "type": "int64"
-        },
-        {
           "name": "account_group_id",
           "source": "explicit",
           "type": "int64"
@@ -16710,12 +16690,6 @@
             "key_hash"
           ],
           "name": "uk_iam_gateway_api_key_hash"
-        },
-        {
-          "columns": [
-            "legacy_api_key_id"
-          ],
-          "name": "uk_iam_gateway_api_key_legacy"
         },
         {
           "columns": [

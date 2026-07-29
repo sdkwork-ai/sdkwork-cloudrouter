@@ -4,7 +4,7 @@ schema:
   source: tools/hydrate_frontend_contract_relay_surfaces.py
 frontend_operations:
 - route: /console/api-keys
-  source: services/sdkwork-clawrouter-router-service/src/api/app_routing.rs
+  source: crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs
   operation: listRoutingAccountGroups
   operation_id: routing.accountGroups.list
   kind: read
@@ -30,25 +30,26 @@ frontend_operations:
           name: AppRoutingAccountGroup
           type: object
           additionalProperties: false
-          required: [id, groupCode, groupName, groupType, routingStrategy, fallbackMode, costMultiplier, saleMultiplier, accountCount, availableAccountCount, resourceCodes, resourceGroupCodes, status]
+          required: [id, groupCode, groupName, description, routingStrategy, fallbackMode, costMultiplier, saleMultiplier, status, authorized, memberAccountCount, availableAccountCount, resourceCodes, resourceGroupCodes]
           properties:
             id: { type: string, maxLength: 32 }
             groupCode: { type: string, maxLength: 128 }
             groupName: { type: string, maxLength: 200 }
-            groupType: { type: string, maxLength: 32 }
+            description: { type: string, maxLength: 1000 }
             routingStrategy: { type: string, maxLength: 64 }
             fallbackMode: { type: string, maxLength: 64 }
             costMultiplier: { type: string, maxLength: 64 }
             saleMultiplier: { type: string, maxLength: 64 }
-            accountCount: { type: string, maxLength: 32 }
-            availableAccountCount: { type: string, maxLength: 32 }
+            status: { type: string, enum: [enabled, disabled] }
+            authorized: { type: boolean }
+            memberAccountCount: { type: integer, format: int64, minimum: 0 }
+            availableAccountCount: { type: integer, format: int64, minimum: 0 }
             resourceCodes:
               type: array
               items: { type: string, maxLength: 128 }
             resourceGroupCodes:
               type: array
               items: { type: string, maxLength: 128 }
-            status: { type: integer, format: int32 }
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters:
@@ -58,8 +59,29 @@ frontend_operations:
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
   - name: q
     schema: { type: string, maxLength: 256 }
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /console/api-keys
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
+  operation: fetchGroups
+  operation_id: routing.accountGroups.list
+  kind: read
+  api_surface: app
+  api_method: GET
+  api_path: /app/v3/api/ai/routing/account_groups
+  sdk_domain: ai
+  read_sources:
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
+  - ai_upstream_account
+  - ai_upstream_supplier
+  response_schema:
+    name: NoData
+    properties: {}
+  query_parameters: []
+  operation_scope: app_shell
+  openapi_exposed: false
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSuppliers
   operation_id: upstreamSuppliers.list
   kind: read
@@ -110,8 +132,8 @@ frontend_operations:
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
   - name: q
     schema: { type: string, maxLength: 256 }
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamSupplier
   operation_id: upstreamSuppliers.create
   kind: create
@@ -153,8 +175,8 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
   idempotency_required: true
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: getUpstreamSupplier
   operation_id: upstreamSuppliers.retrieve
   kind: read
@@ -173,8 +195,8 @@ frontend_operations:
       item:
         $ref: '#/components/schemas/UpstreamSupplier'
   query_parameters: []
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamSupplier
   operation_id: upstreamSuppliers.update
   if_match_required: true
@@ -215,8 +237,8 @@ frontend_operations:
   - ai_upstream_supplier
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: deleteUpstreamSupplier
   operation_id: upstreamSuppliers.delete
   if_match_required: true
@@ -234,8 +256,8 @@ frontend_operations:
   - ai_upstream_supplier
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierEndpoints
   operation_id: upstreamSuppliers.endpoints.list
   kind: read
@@ -275,8 +297,8 @@ frontend_operations:
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamSupplierEndpoints
   operation_id: upstreamSuppliers.endpoints.update
   if_match_required: true
@@ -334,8 +356,8 @@ frontend_operations:
   - ai_upstream_supplier_endpoint
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierAuthMethods
   operation_id: upstreamSuppliers.authMethods.list
   kind: read
@@ -388,8 +410,8 @@ frontend_operations:
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamSupplierAuthMethods
   operation_id: upstreamSuppliers.authMethods.update
   if_match_required: true
@@ -461,8 +483,8 @@ frontend_operations:
   - ai_upstream_supplier_auth_method
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamSupplierResources
   operation_id: upstreamSuppliers.resources.list
   kind: read
@@ -498,8 +520,8 @@ frontend_operations:
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
-- route: /admin/upstream/suppliers
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/supplier.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamSupplierResources
   operation_id: upstreamSuppliers.resources.update
   if_match_required: true
@@ -556,8 +578,8 @@ frontend_operations:
   - ai_resource_group
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccounts
   operation_id: upstreamAccounts.list
   kind: read
@@ -615,8 +637,8 @@ frontend_operations:
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
   - name: q
     schema: { type: string, maxLength: 256 }
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamAccount
   operation_id: upstreamAccounts.create
   kind: create
@@ -662,8 +684,8 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
   idempotency_required: true
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: getUpstreamAccount
   operation_id: upstreamAccounts.retrieve
   kind: read
@@ -683,8 +705,8 @@ frontend_operations:
       item:
         $ref: '#/components/schemas/UpstreamAccount'
   query_parameters: []
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamAccount
   operation_id: upstreamAccounts.update
   if_match_required: true
@@ -729,8 +751,8 @@ frontend_operations:
   - ai_upstream_account
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: deleteUpstreamAccount
   operation_id: upstreamAccounts.delete
   if_match_required: true
@@ -752,8 +774,8 @@ frontend_operations:
   - ai_upstream_account_credential
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountCredentials
   operation_id: upstreamAccounts.credentials.list
   kind: read
@@ -799,8 +821,8 @@ frontend_operations:
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
   - name: q
     schema: { type: string, maxLength: 256 }
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamAccountCredential
   operation_id: upstreamAccounts.credentials.create
   kind: create
@@ -860,8 +882,8 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
   idempotency_required: true
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: deleteUpstreamAccountCredential
   operation_id: upstreamAccounts.credentials.delete
   kind: delete
@@ -880,8 +902,8 @@ frontend_operations:
   - ai_upstream_account_credential
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/accounts
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: verifyUpstreamAccount
   operation_id: upstreamAccounts.verify
   kind: action
@@ -930,8 +952,8 @@ frontend_operations:
   - ai_upstream_supplier_endpoint
   - ai_upstream_account_credential
   - ops_audit_log
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountGroups
   operation_id: upstreamAccountGroups.list
   kind: read
@@ -979,8 +1001,8 @@ frontend_operations:
     schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
   - name: q
     schema: { type: string, maxLength: 256 }
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: createUpstreamAccountGroup
   operation_id: upstreamAccountGroups.create
   kind: create
@@ -1020,8 +1042,8 @@ frontend_operations:
   - ops_audit_log
   - ops_config_snapshot
   idempotency_required: true
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: getUpstreamAccountGroup
   operation_id: upstreamAccountGroups.retrieve
   kind: read
@@ -1040,8 +1062,8 @@ frontend_operations:
       item:
         $ref: '#/components/schemas/UpstreamAccountGroup'
   query_parameters: []
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamAccountGroup
   operation_id: upstreamAccountGroups.update
   if_match_required: true
@@ -1080,8 +1102,8 @@ frontend_operations:
   - ai_upstream_account_group
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: deleteUpstreamAccountGroup
   operation_id: upstreamAccountGroups.delete
   if_match_required: true
@@ -1099,8 +1121,8 @@ frontend_operations:
   - ai_upstream_account_group
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountGroupMembers
   operation_id: upstreamAccountGroups.members.list
   kind: read
@@ -1138,8 +1160,8 @@ frontend_operations:
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamAccountGroupMembers
   operation_id: upstreamAccountGroups.members.update
   if_match_required: true
@@ -1195,8 +1217,8 @@ frontend_operations:
   - ai_upstream_account
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: listUpstreamAccountGroupResources
   operation_id: upstreamAccountGroups.resources.list
   kind: read
@@ -1232,8 +1254,8 @@ frontend_operations:
       pageInfo:
         $ref: '#/components/schemas/PageInfo'
   query_parameters: []
-- route: /admin/upstream/account-groups
-  source: crates/sdkwork-routes-clawrouter-backend-api/src/upstream/account_group.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: updateUpstreamAccountGroupResources
   operation_id: upstreamAccountGroups.resources.update
   if_match_required: true
@@ -1290,21 +1312,19 @@ frontend_operations:
   - ai_resource_group
   - ops_audit_log
   - ops_config_snapshot
-- route: /admin/upstream/account-groups
-  source: services/sdkwork-clawrouter-router-service/src/api/admin_route_explain.rs
+- route: /admin/upstream
+  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts
   operation: explainUpstreamAccountGroupRoute
   operation_id: upstreamAccountGroups.explain
-  kind: action
+  kind: read
   api_surface: backend
   api_method: POST
   api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain
   sdk_domain: ai
   read_sources:
   - ai_upstream_account_group
-  - ai_upstream_account_group
   - ai_upstream_account_group_member
   - ai_upstream_account
-  - ai_upstream_account_group
   - ai_upstream_account_group_resource
   - ai_resource
   - ai_resource_group
@@ -1676,8 +1696,8 @@ frontend_operations:
   api_path: /app/v3/api/ai/models
   sdk_domain: ai
   read_sources:
-  - ai_channel_group
-  - ai_channel_group_member
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
   response_schema:
     name: NoData
     properties: {}
@@ -1718,7 +1738,7 @@ frontend_operations:
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
   operation: fetchRoutingApiKeys
-  operation_id: ai.routing.api.keys.get
+  operation_id: routing.apiKeys.list
   kind: read
   api_surface: app
   api_method: GET
@@ -1726,31 +1746,54 @@ frontend_operations:
   sdk_domain: ai
   read_sources:
   - iam_gateway_api_key
+  - iam_gateway_api_key_account_group
+  - ai_upstream_account_group
+  - ai_usage
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  operation_scope: app_shell
-- route: /console/api-keys
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
-  operation: fetchRoutingChannels
-  operation_id: ai.routing.channels.get
-  kind: read
-  api_surface: app
-  api_method: GET
-  api_path: /app/v3/api/ai/routing/channels
-  sdk_domain: ai
-  read_sources:
-  - ai_channel_group
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AppRoutingApiKeyListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AppRoutingApiKey
+          type: object
+          additionalProperties: false
+          required: [id, name, displayKey, status, totalUsage, createdAt, accountGroups]
+          properties:
+            id: { type: string, maxLength: 32 }
+            name: { type: string, maxLength: 200 }
+            displayKey: { type: string, maxLength: 200 }
+            status: { type: string, maxLength: 32 }
+            totalUsage: { type: string, maxLength: 64 }
+            createdAt: { type: string, format: date-time }
+            accountGroups:
+              type: array
+              items:
+                name: AppRoutingApiKeyAccountGroup
+                type: object
+                additionalProperties: false
+                required: [id, code, name]
+                properties:
+                  id: { type: string, maxLength: 32 }
+                  code: { type: string, maxLength: 128 }
+                  name: { type: string, maxLength: 200 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 256 }
   operation_scope: app_shell
 - route: /console/gateway
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
   operation: fetchRoutingRequestTraces
-  operation_id: ai.routing.request.traces.get
+  operation_id: routing.requestTraces.list
   kind: read
   api_surface: app
   api_method: GET
@@ -1758,15 +1801,63 @@ frontend_operations:
   sdk_domain: ai
   read_sources:
   - ai_request_trace
+  - ai_routing_decision_log
+  - ai_upstream_account
+  - ai_upstream_account_group
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AppRoutingRequestTraceListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AppRoutingRequestTrace
+          type: object
+          additionalProperties: false
+          required: [id, time, model, upstreamAccountId, upstreamAccountCode, upstreamAccountName, upstreamAccountGroupId, upstreamAccountGroupCode, upstreamAccountGroupName, status, duration, tokens, traceId, requestId, requestPath, httpMethod, requestPayloadHash, responsePayloadHash, requestBytes, responseBytes, providerErrorCode, errorType, errorMessageMasked, startedAt, endedAt, streaming]
+          properties:
+            id: { type: string, maxLength: 32 }
+            time: { type: string, format: date-time }
+            model: { type: string, maxLength: 200 }
+            upstreamAccountId: { type: string, maxLength: 32 }
+            upstreamAccountCode: { type: string, maxLength: 128 }
+            upstreamAccountName: { type: string, maxLength: 200 }
+            upstreamAccountGroupId: { type: string, maxLength: 32 }
+            upstreamAccountGroupCode: { type: string, maxLength: 128 }
+            upstreamAccountGroupName: { type: string, maxLength: 200 }
+            status: { type: integer, format: int64 }
+            duration: { type: string, maxLength: 64 }
+            tokens: { type: integer, format: int64 }
+            traceId: { type: string, maxLength: 128 }
+            requestId: { type: string, maxLength: 128 }
+            requestPath: { type: string, maxLength: 512 }
+            httpMethod: { type: string, maxLength: 16 }
+            requestPayloadHash: { type: string, maxLength: 128 }
+            responsePayloadHash: { type: string, maxLength: 128 }
+            requestBytes: { type: integer, format: int64 }
+            responseBytes: { type: integer, format: int64 }
+            providerErrorCode: { type: string, maxLength: 128 }
+            errorType: { type: string, maxLength: 128 }
+            errorMessageMasked: { type: string, maxLength: 1000 }
+            startedAt: { type: string, format: date-time }
+            endedAt: { type: string, format: date-time }
+            streaming: { type: boolean }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 256 }
   operation_scope: app_shell
 - route: /console/usage
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/routingApiOperations.ts
   operation: fetchRoutingUsage
-  operation_id: ai.routing.usage.get
+  operation_id: routing.usage.retrieve
   kind: read
   api_surface: app
   api_method: GET
@@ -1777,8 +1868,35 @@ frontend_operations:
   - ai_usage
   - ai_routing_decision_log
   response_schema:
-    name: NoData
-    properties: {}
+    name: AppRoutingUsageSnapshot
+    type: object
+    additionalProperties: false
+    required: [chartData, modelStats]
+    properties:
+      chartData:
+        type: array
+        items:
+          name: AppRoutingUsageData
+          type: object
+          additionalProperties: false
+          required: [time, requests, latency]
+          properties:
+            time: { type: string, maxLength: 64 }
+            requests: { type: integer, format: int64 }
+            latency: { type: integer, format: int64 }
+      modelStats:
+        type: array
+        items:
+          name: AppRoutingModelStats
+          type: object
+          additionalProperties: false
+          required: [m, req, sr, tok, lat]
+          properties:
+            m: { type: string, maxLength: 200 }
+            req: { type: string, maxLength: 64 }
+            sr: { type: string, maxLength: 64 }
+            tok: { type: string, maxLength: 64 }
+            lat: { type: string, maxLength: 64 }
   query_parameters: []
   operation_scope: app_shell
 - route: /console/usage
@@ -2343,6 +2461,7 @@ frontend_operations:
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
   operation: createKey
+  operation_id: apiKeys.create
   kind: create
   api_surface: app
   api_method: POST
@@ -3305,24 +3424,6 @@ frontend_operations:
     name: NoData
     properties: {}
   query_parameters: []
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: fetchAccountMappings
-  operation_id: ai.model.mappings.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/model_mappings
-  sdk_domain: ai
-  read_sources:
-  - ai_model_mapping_rule
-  - ai_model_mapping_rule_binding
-  - ai_model_mapping_rule_item
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
 - route: /admin/model/mappings
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchModelMappings
@@ -3356,30 +3457,6 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_model_mapping_rule
-  - ai_model_mapping_rule_binding
-  - ai_model_mapping_rule_item
-  - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: replaceAccountMappings
-  operation_id: ai.model.mappings.put
-  kind: update
-  api_surface: backend
-  api_method: PUT
-  api_path: /backend/v3/api/ai/model_mappings
-  sdk_domain: ai
-  read_sources:
-  - ai_channel
-  - ai_model_mapping_rule
-  - ai_model_mapping_rule_binding
-  - ai_model_mapping_rule_item
-  response_schema:
-    name: NoData
-    properties: {}
-  openapi_exposed: false
   request_body_required: false
   write_tables:
   - ai_model_mapping_rule
@@ -3760,22 +3837,6 @@ frontend_operations:
   request_body_required: false
   write_tables:
   - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: fetchModels
-  operation_id: ai.models.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/models
-  sdk_domain: ai
-  read_sources:
-  - ops_audit_log
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchAllModels
@@ -3907,38 +3968,6 @@ frontend_operations:
   request_body_required: false
   write_tables:
   - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: fetchAiResourceGroups
-  operation_id: ai.resource.groups.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/resource_groups
-  sdk_domain: ai
-  read_sources:
-  - ops_audit_log
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: fetchAssignableResourceGroups
-  operation_id: ai.resource.groups.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/resource_groups
-  sdk_domain: ai
-  read_sources:
-  - ai_resource_group_item
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
 - route: /admin/model/resources
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
   operation: fetchResourceGroups
@@ -4030,39 +4059,6 @@ frontend_operations:
   - ai_resource_group
   - ai_resource_group_item
   - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: fetchAiResources
-  operation_id: ai.resources.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/resources
-  sdk_domain: ai
-  read_sources:
-  - ops_audit_log
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  operation: fetchAssignableResources
-  operation_id: ai.resources.get
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/ai/resources
-  sdk_domain: ai
-  read_sources:
-  - ai_resource
-  - ai_resource_group_item
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
-  openapi_exposed: false
 - route: /admin/model/resources
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
   operation: fetchAssignableResources
@@ -4079,70 +4075,36 @@ frontend_operations:
     name: NoData
     properties: {}
   query_parameters: []
-- route: /admin/model/resources
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: createAiResource
-  operation_id: ai.resources.post
-  kind: create
-  api_surface: backend
-  api_method: POST
-  api_path: /backend/v3/api/ai/resources
-  sdk_domain: ai
-  read_sources:
-  - ai_resource
-  - ai_resource_group_item
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_resource
-  - ai_resource_group_item
-  - ops_audit_log
-- route: /admin/model/resources
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  operation: updateAiResource
-  operation_id: ai.resources.byId.put
-  kind: update
-  api_surface: backend
-  api_method: PUT
-  api_path: /backend/v3/api/ai/resources/{resourceId}
-  sdk_domain: ai
-  read_sources:
-  - ai_resource
-  - ai_resource_group_item
-  response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
-  write_tables:
-  - ai_resource
-  - ai_resource_group_item
-  - ops_audit_log
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchFirewalls
-  operation_id: router.firewall.rules.get
+  operation_id: firewalls.rules.list
   kind: read
   api_surface: backend
   api_method: GET
-  api_path: /backend/v3/api/router/firewall/rules
-  sdk_domain: router
+  api_path: /backend/v3/api/system/firewalls/rules
+  sdk_domain: system
   read_sources:
   - iam_gateway_risk_rule
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: []
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: addFirewall
-  operation_id: router.firewall.rules.post
+  operation_id: firewalls.rules.create
   kind: create
   api_surface: backend
   api_method: POST
-  api_path: /backend/v3/api/router/firewall/rules
-  sdk_domain: router
+  api_path: /backend/v3/api/system/firewalls/rules
+  sdk_domain: system
   read_sources:
   - iam_gateway_risk_rule
   response_schema:
@@ -4155,12 +4117,12 @@ frontend_operations:
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: removeFirewall
-  operation_id: router.firewall.rules.byId.delete
+  operation_id: firewalls.rules.delete
   kind: delete
   api_surface: backend
   api_method: DELETE
-  api_path: /backend/v3/api/router/firewall/rules/{ruleId}
-  sdk_domain: router
+  api_path: /backend/v3/api/system/firewalls/rules/{ruleId}
+  sdk_domain: system
   read_sources:
   - iam_gateway_risk_rule
   response_schema:
@@ -4439,7 +4401,7 @@ frontend_operations:
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchTokenLimits
-  operation_id: system.rate.limits.api.keys.get
+  operation_id: rateLimits.apiKeys.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -4451,11 +4413,17 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: []
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: addTokenLimit
-  operation_id: system.rate.limits.api.keys.post
+  operation_id: rateLimits.apiKeys.create
   kind: create
   api_surface: backend
   api_method: POST
@@ -4474,7 +4442,7 @@ frontend_operations:
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchIpLimits
-  operation_id: system.rate.limits.ip.get
+  operation_id: rateLimits.ip.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -4485,11 +4453,17 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: []
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: addIpLimit
-  operation_id: system.rate.limits.ip.post
+  operation_id: rateLimits.ip.create
   kind: create
   api_surface: backend
   api_method: POST
@@ -4507,7 +4481,7 @@ frontend_operations:
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchModelLimits
-  operation_id: system.rate.limits.models.get
+  operation_id: rateLimits.models.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -4519,11 +4493,17 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: []
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: addModelLimit
-  operation_id: system.rate.limits.models.post
+  operation_id: rateLimits.models.create
   kind: create
   api_surface: backend
   api_method: POST
@@ -7374,326 +7354,6 @@ frontend_models:
   data_sources:
   - ops_config_snapshot
   - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: AccountModelMappingInput
-  fields:
-  - sourceModel
-  - targetModel
-  - targetVendorCode
-  data_sources:
-  - ai_model_mapping_rule
-  - ai_model_mapping_rule_item
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: AiResource
-  fields:
-  - id
-  - resourceCode
-  - resourceType
-  - displayName
-  - vendorCode
-  - modalityCode
-  - apiEndpointCode
-  - catalogKey
-  - model
-  - providerNativeModel
-  - capability
-  - capabilities
-  - compositionMode
-  - status
-  - sortOrder
-  - members
-  - members.parentResourceCode
-  - members.memberResourceCode
-  - members.memberRole
-  - members.required
-  - members.sortOrder
-  data_sources:
-  - ai_resource
-  - ai_resource_group_item
-- route: /admin/model/resources
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: AiResourceCreateInput
-  fields:
-  - resourceCode
-  - resourceType
-  - displayName
-  - vendorCode
-  - modalityCode
-  - apiEndpointCode
-  - catalogKey
-  - model
-  - providerNativeModel
-  - compositionMode
-  - status
-  - sortOrder
-  - members
-  - members.memberResourceCode
-  - members.memberRole
-  - members.required
-  - members.sortOrder
-  data_sources:
-  - ai_resource
-  - ai_resource_group_item
-  - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: AiResourceMember
-  fields:
-  - parentResourceCode
-  - memberResourceCode
-  - memberRole
-  - required
-  - sortOrder
-  data_sources:
-  - ai_resource_group_item
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: AiResourceMemberInput
-  fields:
-  - memberResourceCode
-  - memberRole
-  - required
-  - sortOrder
-  data_sources:
-  - ai_resource_group_item
-- route: /admin/model/resources
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: AiResourceUpdateInput
-  fields:
-  - resourceCode
-  - resourceType
-  - displayName
-  - vendorCode
-  - modalityCode
-  - apiEndpointCode
-  - catalogKey
-  - model
-  - providerNativeModel
-  - compositionMode
-  - status
-  - sortOrder
-  - members
-  - members.memberResourceCode
-  - members.memberRole
-  - members.required
-  - members.sortOrder
-  data_sources:
-  - ai_resource
-  - ai_resource_group_item
-  - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: ChannelCreateInput
-  fields:
-  - name
-  - vendor
-  - channelType
-  - protocol
-  - accessType
-  - credentialRotation
-  - credentials
-  - credentials.name
-  - credentials.baseUrl
-  - credentials.apiKey
-  - credentials.secretRef
-  - credentials.priority
-  - credentials.weight
-  - credentials.status
-  - expiresAt
-  - capabilities
-  - resourceCodes
-  - timeoutMs
-  - retryPolicy
-  - circuitBreakerPolicy
-  - weight
-  - status
-  data_sources:
-  - ai_channel
-  - ai_channel_credential
-  - ai_provider
-  - ai_channel_resource
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: ChannelCredentialInput
-  fields:
-  - name
-  - baseUrl
-  - apiKey
-  - secretRef
-  - priority
-  - weight
-  - status
-  data_sources:
-  - ai_channel_credential
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: ChannelCredentialItem
-  fields:
-  - id
-  - credentialId
-  - name
-  - baseUrl
-  - secretRef
-  - apiKey
-  - maskedLabel
-  - priority
-  - weight
-  - status
-  - errors
-  data_sources:
-  - ai_channel_credential
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: ChannelItem
-  fields:
-  - id
-  - channelId
-  - name
-  - vendor
-  - channelType
-  - protocol
-  - accessType
-  - credentialRotation
-  - credentials
-  - credentials.id
-  - credentials.credentialId
-  - credentials.name
-  - credentials.baseUrl
-  - credentials.secretRef
-  - credentials.apiKey
-  - credentials.maskedLabel
-  - credentials.priority
-  - credentials.weight
-  - credentials.status
-  - credentials.errors
-  - createdAt
-  - expiresAt
-  - capabilities
-  - resourceCodes
-  - isMultimodal
-  - timeoutMs
-  - retryPolicy
-  - circuitBreakerPolicy
-  - weight
-  - status
-  - balance
-  - errors
-  data_sources:
-  - ai_channel
-  - ai_channel_credential
-  - ai_provider
-  - ai_channel_resource
-  - integration_provider_health_snapshot
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: ChannelModelCatalogItem
-  fields:
-  - catalogKey
-  - model
-  - displayName
-  - vendorCode
-  - regionCode
-  data_sources:
-  - ai_model_vendor
-  - ai_model
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: ChannelTestResult
-  fields:
-  - channelId
-  - success
-  - status
-  - latency
-  - item
-  - item.id
-  - item.channelId
-  - item.name
-  - item.vendor
-  - item.channelType
-  - item.protocol
-  - item.accessType
-  - item.credentialRotation
-  - item.credentials
-  - item.credentials.id
-  - item.credentials.credentialId
-  - item.credentials.name
-  - item.credentials.baseUrl
-  - item.credentials.secretRef
-  - item.credentials.apiKey
-  - item.credentials.maskedLabel
-  - item.credentials.priority
-  - item.credentials.weight
-  - item.credentials.status
-  - item.credentials.errors
-  - item.createdAt
-  - item.expiresAt
-  - item.capabilities
-  - item.resourceCodes
-  - item.isMultimodal
-  - item.timeoutMs
-  - item.retryPolicy
-  - item.circuitBreakerPolicy
-  - item.weight
-  - item.status
-  - item.balance
-  - item.errors
-  data_sources:
-  - ai_channel
-  - ai_channel_credential
-  - ai_channel_resource
-  - ai_channel
-  - integration_provider_health_snapshot
-  - ops_config_snapshot
-  - ops_audit_log
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: ChannelUpdateInput
-  fields:
-  - name
-  - vendor
-  - channelType
-  - protocol
-  - accessType
-  - credentialRotation
-  - credentials
-  - credentials.name
-  - credentials.baseUrl
-  - credentials.apiKey
-  - credentials.secretRef
-  - credentials.priority
-  - credentials.weight
-  - credentials.status
-  - expiresAt
-  - capabilities
-  - resourceCodes
-  - timeoutMs
-  - retryPolicy
-  - circuitBreakerPolicy
-  - weight
-  - status
-  data_sources:
-  - ai_channel
-  - ai_channel_credential
-  - ai_provider
-  - ai_channel_resource
-- route: /admin/channel
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts
-  interface: ReplaceAccountModelMappingsInput
-  fields:
-  - channelId
-  - channelName
-  - accountVendorCode
-  - mappings
-  - mappings.sourceModel
-  - mappings.targetModel
-  - mappings.targetVendorCode
-  data_sources:
-  - ai_channel
-  - ai_model_mapping_rule
-  - ai_model_mapping_rule_binding
-  - ai_model_mapping_rule_item
 - route: /admin/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
   interface: DashboardDataQuery
@@ -7803,322 +7463,6 @@ frontend_models:
   data_sources:
   - ai_request_trace
   - ai_usage
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupAiResourceOption
-  fields:
-  - id
-  - resourceCode
-  - displayName
-  - resourceType
-  - vendorCode
-  - modalityCode
-  - apiEndpointCode
-  - catalogKey
-  - model
-  - providerNativeModel
-  - status
-  data_sources:
-  - ai_resource
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupChannelBindingData
-  fields:
-  - id
-  - channelGroupId
-  - channelId
-  - channelName
-  - providerCode
-  - providerName
-  - channelCode
-  - resourceCodes
-  - apiScope
-  - capabilities
-  - priority
-  - weight
-  - status
-  - healthStatus
-  data_sources:
-  - ai_channel_group_member
-  - ai_provider
-  - ai_channel
-  - ai_channel_group_resource
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupChannelBindingInput
-  fields:
-  - channelId
-  - priority
-  - weight
-  - status
-  - resourceCodes
-  - apiScope
-  - capabilities
-  data_sources:
-  - ai_channel_group_member
-  - ai_channel
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupChannelOption
-  fields:
-  - id
-  - name
-  - providerCode
-  - providerName
-  - channelCode
-  - resourceCodes
-  - apiScope
-  - capabilities
-  - status
-  - healthStatus
-  data_sources:
-  - ai_provider
-  - ai_channel
-  - ai_channel_group_resource
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupCreateInput
-  fields:
-  - groupName
-  - priceReferenceMode
-  - rateMultiplier
-  - officialPriceMultiplier
-  - groupType
-  - capacity
-  - status
-  - resourceGroupCodes
-  - resourceCodes
-  data_sources:
-  - ai_channel_group
-  - ai_pricing_plan
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupData
-  fields:
-  - id
-  - groupCode
-  - groupName
-  - providerCode
-  - priceReferenceMode
-  - rateMultiplier
-  - officialPriceMultiplier
-  - groupType
-  - accountCount
-  - capacity
-  - usage
-  - resourceGroupCodes
-  - resourceCodes
-  - status
-  data_sources:
-  - ai_channel_group
-  - ai_channel_group_metric_snapshot
-  - ai_pricing_plan
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupResourceGroupOption
-  fields:
-  - id
-  - groupCode
-  - groupName
-  - groupType
-  - selectionMode
-  - description
-  - resourceCount
-  - status
-  data_sources:
-  - ai_resource_group
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupRouteExplainResult
-  fields:
-  - source
-  - effectiveResourceCodes
-  - configuredResourceGroupAccessCount
-  - routableBindingCount
-  data_sources:
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_channel_group_resource
-  - ai_channel
-  - ai_provider
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupRoutePreflightBinding
-  fields:
-  - resourceCodes
-  - apiScope
-  - capabilities
-  - status
-  - healthStatus
-  data_sources:
-  - ai_channel_group_member
-  - ai_channel
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupRoutePreflightIssue
-  fields:
-  - code
-  - severity
-  - messageKey
-  - details
-  data_sources:
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_channel_group_resource
-  - ai_channel
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupRoutePreflightResult
-  fields:
-  - ready
-  - issueCodes
-  - issues
-  - issues.code
-  - issues.severity
-  - issues.messageKey
-  - issues.details
-  - resourceCodes
-  - resourceGroupCodes
-  - configuredResourceAccessCount
-  - apiScope
-  - capabilities
-  - activeHealthyBindingCount
-  data_sources:
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_channel_group_resource
-  - ai_channel
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupRuntimeRouteExplainCandidate
-  fields:
-  - kind
-  - providerCode
-  - channelId
-  - channelGroupId
-  - channelGroupCode
-  - pricingPlanCode
-  - policyId
-  - ruleId
-  - apiCode
-  - catalogKey
-  - requestedModel
-  - providerModel
-  - regionCode
-  - credentialId
-  - credentialRotation
-  - timeoutMs
-  data_sources:
-  - ai_channel_group
-  - ai_channel
-  - ai_provider_route
-  - ai_model_provider_route
-  - ai_routing_policy
-  - ai_routing_rule
-  - ai_pricing_plan
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupRuntimeRouteExplainIssue
-  fields:
-  - code
-  - severity
-  - message
-  data_sources:
-  - ai_provider_route
-  - ai_model_provider_route
-  - ai_model_pricing
-  - ai_routing_policy
-  - ai_routing_rule
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupRuntimeRouteExplainRequest
-  fields:
-  - apiKeyId
-  - channelGroupId
-  - resourceCode
-  - catalogKey
-  - model
-  - apiCode
-  - capability
-  - billingMeter
-  - routeKey
-  data_sources:
-  - ai_api_key
-  - ai_channel_group
-  - ai_resource
-  - ai_model
-  - ai_model_pricing
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupRuntimeRouteExplainResult
-  fields:
-  - source
-  - ready
-  - resourceCode
-  - catalogKey
-  - model
-  - apiCode
-  - capability
-  - billingMeter
-  - apiKeyId
-  - channelGroupId
-  - groupCode
-  - pricingPlanCode
-  - candidateCount
-  - selectedCandidates
-  - selectedCandidates.kind
-  - selectedCandidates.providerCode
-  - selectedCandidates.channelId
-  - selectedCandidates.channelGroupId
-  - selectedCandidates.channelGroupCode
-  - selectedCandidates.pricingPlanCode
-  - selectedCandidates.policyId
-  - selectedCandidates.ruleId
-  - selectedCandidates.apiCode
-  - selectedCandidates.catalogKey
-  - selectedCandidates.requestedModel
-  - selectedCandidates.providerModel
-  - selectedCandidates.regionCode
-  - selectedCandidates.credentialId
-  - selectedCandidates.credentialRotation
-  - selectedCandidates.timeoutMs
-  - blockedReasons
-  - blockedReasons.code
-  - blockedReasons.severity
-  - blockedReasons.message
-  - warnings
-  - warnings.code
-  - warnings.severity
-  - warnings.message
-  - policyId
-  - ruleId
-  - policySnapshotVersion
-  data_sources:
-  - ai_api_key
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_model_provider_route
-  - ai_provider_route
-  - ai_routing_policy
-  - ai_routing_rule
-  - ai_model_pricing
-  - ai_pricing_plan
-- route: /admin/group
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts
-  interface: GroupUpdateInput
-  fields:
-  - groupName
-  - priceReferenceMode
-  - rateMultiplier
-  - officialPriceMultiplier
-  - groupType
-  - capacity
-  - status
-  - resourceGroupCodes
-  - resourceCodes
-  data_sources:
-  - ai_channel_group
-  - ai_pricing_plan
 - route: /admin/monitor
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
   interface: Alert
@@ -8207,27 +7551,27 @@ frontend_models:
   interface: ModelLimitCreateInput
   fields:
   - model
-  - channelGroup
+  - accountGroup
   - rpm
   - tpm
   data_sources:
   - ai_quota_policy
-  - ai_channel_group
+  - ai_upstream_account_group
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: ModelLimitRule
   fields:
   - id
   - model
-  - channelGroup
-  - channelGroupId
-  - channelGroupName
+  - accountGroup
+  - accountGroupId
+  - accountGroupName
   - rpm
   - tpm
   - status
   data_sources:
   - ai_quota_policy
-  - ai_channel_group
+  - ai_upstream_account_group
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   interface: TokenLimitCreateInput
@@ -8294,113 +7638,6 @@ frontend_models:
   - ai_request_trace
   - ai_usage
   - ai_routing_decision_log
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  interface: SiteChannelItem
-  fields:
-  - id
-  - channelCode
-  - channelName
-  - providerCode
-  - siteCode
-  - siteServiceCode
-  - siteChannelRole
-  - healthStatus
-  - status
-  data_sources:
-  - ai_channel
-  - ai_site
-  - ai_site_service
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  interface: SiteConnectionCheckResult
-  fields:
-  - siteId
-  - status
-  - healthStatus
-  - latencyMs
-  - checkedAt
-  - message
-  data_sources:
-  - ai_site
-  - ai_site_service
-  - ops_audit_log
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  interface: SiteCreateInput
-  fields:
-  - siteName
-  - displayName
-  - description
-  - baseUrl
-  - websiteUrl
-  - docsUrl
-  - logo
-  - domains
-  - vendorCodes
-  - siteType
-  - ownerKind
-  - regionCode
-  - environment
-  - status
-  - credentialRef
-  - maskedLabel
-  data_sources:
-  - ai_site
-  - ai_site_service
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  interface: SiteItem
-  fields:
-  - id
-  - siteCode
-  - siteName
-  - displayName
-  - description
-  - baseUrl
-  - websiteUrl
-  - docsUrl
-  - logo
-  - domains
-  - vendorCodes
-  - siteType
-  - ownerKind
-  - regionCode
-  - environment
-  - healthStatus
-  - lastLatencyMs
-  - consecutiveErrorCount
-  - lastCheckedAt
-  - lastSyncAt
-  - sortOrder
-  - status
-  data_sources:
-  - ai_site
-  - ai_site_service
-- route: /admin/model/sites
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site/src/siteService.ts
-  interface: SiteUpdateInput
-  fields:
-  - siteCode
-  - siteName
-  - displayName
-  - description
-  - baseUrl
-  - websiteUrl
-  - docsUrl
-  - logo
-  - domains
-  - vendorCodes
-  - siteType
-  - ownerKind
-  - regionCode
-  - environment
-  - status
-  - credentialRef
-  - maskedLabel
-  data_sources:
-  - ai_site
-  - ai_site_service
 - route: /admin/service-nodes
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   interface: ServiceNode
@@ -8448,9 +7685,8 @@ frontend_models:
   - name
   - displayName
   - maskedKey
-  - copyableKey
-  - channelGroup
-  - channelGroupName
+  - accountGroup
+  - accountGroupName
   - rate
   - quota
   - usedQuota
@@ -8462,30 +7698,28 @@ frontend_models:
   - defaultForRuntime
   data_sources:
   - iam_gateway_api_key
-  - ai_channel_group
-  - ai_channel_group_metric_snapshot
+  - ai_upstream_account_group
+  - ai_upstream_account_group_metric_snapshot
   - iam_gateway_access_policy
   - ai_quota_policy
   - ai_model_pricing
   - ai_pricing_plan
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
-  interface: ChannelGroup
+  interface: AccountGroup
   fields:
   - id
   - code
   - name
   - rate
   data_sources:
-  - ai_channel_group
-  - ai_channel_group_metric_snapshot
-  - ai_pricing_plan
+  - ai_upstream_account_group
 - route: /console/api-keys
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts
   interface: CreateApiKeyInput
   fields:
   - name
-  - channelGroup
+  - accountGroup
   - quota
   - isUnlimitedQuota
   - modalities
@@ -8493,7 +7727,7 @@ frontend_models:
   - expires
   - defaultForRuntime
   data_sources:
-  - ai_channel_group
+  - ai_upstream_account_group
   - iam_gateway_access_policy
   - ai_quota_policy
 - route: /console/api-keys
@@ -8505,9 +7739,8 @@ frontend_models:
   - key.name
   - key.displayName
   - key.maskedKey
-  - key.copyableKey
-  - key.channelGroup
-  - key.channelGroupName
+  - key.accountGroup
+  - key.accountGroupName
   - key.rate
   - key.quota
   - key.usedQuota
@@ -8639,7 +7872,7 @@ frontend_models:
   - ai_request_trace
   - ai_usage
   - ai_routing_decision_log
-  - ai_channel_group
+  - ai_upstream_account_group
 - route: /console/user
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-user/src/userService.ts
   interface: UserProfile
@@ -8743,7 +7976,7 @@ frontend_models:
   - label
   - modelCount
   data_sources:
-  - ai_channel_group
+  - ai_upstream_account_group
 - route: /models
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
   interface: ModelCatalogResult
@@ -8758,8 +7991,8 @@ frontend_models:
   - ai_model
   - ai_model_capability
   - ai_model_pricing
-  - ai_channel_group
-  - ai_channel_group_member
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
 - route: /models
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
   interface: ModelCatalogServiceFilters
@@ -8961,22 +8194,23 @@ routes:
   - ops_config_snapshot
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/channel
+- route: /admin/upstream
   required_tables:
-  - ai_channel
-  - ai_channel_credential
-  - ai_channel_group_member
-  - ai_channel_group_resource
-  - ai_channel_resource
-  - ai_model_mapping_rule
-  - ai_model_mapping_rule_binding
-  - ai_model_mapping_rule_item
-  - ai_provider
   - ai_routing_policy
-  - ai_routing_profile
   - ai_routing_rule
-  - integration_provider_account
-  - integration_provider_health_snapshot
+  - ai_resource
+  - ai_resource_group
+  - ai_upstream_account
+  - ai_upstream_account_credential
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
+  - ai_upstream_object_route
+  - ai_upstream_supplier
+  - ai_upstream_supplier_auth_method
+  - ai_upstream_supplier_endpoint
+  - ai_upstream_supplier_resource
+  - iam_gateway_api_key
   - ops_audit_log
   - ops_config_snapshot
   dependency_owned: true
@@ -8990,24 +8224,6 @@ routes:
   - system_schema_migration
   - iam_user
   - iam_organization_membership
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/group
-  required_tables:
-  - ai_channel
-  - ai_channel_group
-  - ai_channel_group_member
-  - ai_channel_group_metric_snapshot
-  - ai_channel_group_resource
-  - ai_pricing_plan
-  - ai_pricing_plan_binding
-  - ai_pricing_rule
-  - ai_pricing_tier
-  - ai_provider
-  - ops_audit_log
-  - ops_config_snapshot
-  - ai_resource
-  - ai_resource_group_item
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/model
@@ -9039,14 +8255,6 @@ routes:
   - ai_resource_group_item
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
-- route: /admin/model/sites
-  required_tables:
-  - ai_channel
-  - ai_site
-  - ai_site_service
-  - ops_audit_log
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/monitor
   required_tables:
   - integration_provider_health_snapshot
@@ -9058,10 +8266,9 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-backend-sdk
 - route: /admin/ratelimit
   required_tables:
-  - ai_channel_group
   - ai_quota_policy
+  - ai_upstream_account_group
   - iam_gateway_api_key
-  - iam_gateway_api_key_channel_group
   - iam_gateway_risk_rule
   - ops_audit_log
   dependency_owned: true
@@ -9162,13 +8369,13 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /console/api-keys
   required_tables:
-  - ai_channel_group
-  - ai_channel_group_metric_snapshot
+  - ai_model_pricing
   - ai_pricing_plan
   - ai_quota_policy
+  - ai_upstream_account_group
+  - ai_upstream_account_group_metric_snapshot
   - iam_gateway_access_policy
   - iam_gateway_api_key
-  - iam_gateway_api_key_channel_group
   - ops_audit_log
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
@@ -9226,7 +8433,7 @@ routes:
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /console/usage
   required_tables:
-  - ai_channel_group
+  - ai_upstream_account_group
   - ai_request_trace
   - ai_routing_decision_log
   - ai_usage
@@ -9249,8 +8456,8 @@ routes:
   dependency_sdk_family: sdkwork-documents-app-sdk
 - route: /models
   required_tables:
-  - ai_channel_group
-  - ai_channel_group_member
+  - ai_upstream_account_group
+  - ai_upstream_account_group_member
   dependency_owned: true
   dependency_sdk_family: sdkwork-clawrouter-app-sdk
 - route: /models/:id
@@ -9275,7 +8482,7 @@ routes:
   - ai_chat_message
   - ai_chat_message_part
   - ai_chat_turn
-  - ai_provider
+  - ai_upstream_supplier
   - ai_request_trace
   - ai_runtime_artifact
   - ai_runtime_invocation

@@ -2819,18 +2819,12 @@ importers:
       '@sdkwork/clawrouter-pc-admin-cache':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-cache
-      '@sdkwork/clawrouter-pc-admin-channel':
-        specifier: workspace:*
-        version: link:packages/sdkwork-clawrouter-pc-admin-channel
       '@sdkwork/clawrouter-pc-admin-core':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-core
       '@sdkwork/clawrouter-pc-admin-dashboard':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-dashboard
-      '@sdkwork/clawrouter-pc-admin-group':
-        specifier: workspace:*
-        version: link:packages/sdkwork-clawrouter-pc-admin-group
       '@sdkwork/clawrouter-pc-admin-marketing':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-marketing
@@ -2849,9 +2843,6 @@ importers:
       '@sdkwork/clawrouter-pc-admin-record':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-record
-      '@sdkwork/clawrouter-pc-admin-relay-site':
-        specifier: workspace:*
-        version: link:packages/sdkwork-clawrouter-pc-admin-relay-site
       '@sdkwork/clawrouter-pc-admin-runtime-region':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-runtime-region
@@ -2867,6 +2858,9 @@ importers:
       '@sdkwork/clawrouter-pc-admin-storage':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-admin-storage
+      '@sdkwork/clawrouter-pc-admin-upstream':
+        specifier: workspace:*
+        version: link:packages/sdkwork-clawrouter-pc-admin-upstream
       '@sdkwork/clawrouter-pc-console-api-keys':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-console-api-keys
@@ -3260,15 +3254,6 @@ importers:
         specifier: ^4.1.2
         version: 4.1.9(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
-  apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel:
-    dependencies:
-      '@sdkwork/clawrouter-pc-admin-core':
-        specifier: workspace:*
-        version: link:../sdkwork-clawrouter-pc-admin-core
-      '@sdkwork/clawroutes-pc-commons':
-        specifier: workspace:*
-        version: link:../sdkwork-clawroutes-pc-commons
-
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-core:
     dependencies:
       '@sdkwork/clawrouter-backend-sdk':
@@ -3296,15 +3281,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
-
-  apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-group:
-    dependencies:
-      '@sdkwork/clawrouter-pc-admin-core':
-        specifier: workspace:*
-        version: link:../sdkwork-clawrouter-pc-admin-core
-      '@sdkwork/clawroutes-pc-commons':
-        specifier: workspace:*
-        version: link:../sdkwork-clawroutes-pc-commons
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing:
     dependencies:
@@ -3350,25 +3326,6 @@ importers:
       '@sdkwork/clawroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
-
-  apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-relay-site:
-    dependencies:
-      '@sdkwork/clawrouter-pc-admin-core':
-        specifier: workspace:*
-        version: link:../sdkwork-clawrouter-pc-admin-core
-      '@sdkwork/clawroutes-pc-commons':
-        specifier: workspace:*
-        version: link:../sdkwork-clawroutes-pc-commons
-      '@sdkwork/models-pc-admin-catalog':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog
-    devDependencies:
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.5(@types/node@25.9.4)(jiti@2.7.0)(jsdom@29.1.1)(lightningcss@1.32.0)(tsx@4.22.4)
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region:
     dependencies:
@@ -3438,6 +3395,22 @@ importers:
       '@sdkwork/clawroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-clawroutes-pc-commons
+
+  apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream:
+    dependencies:
+      '@sdkwork/clawrouter-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-clawrouter-pc-admin-core
+      '@sdkwork/clawroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-clawroutes-pc-commons
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.8(i18next@26.3.3(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys:
     dependencies:
@@ -3582,6 +3555,9 @@ importers:
 
   apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-i18n:
     dependencies:
+      '@sdkwork/clawrouter-pc-admin-upstream':
+        specifier: workspace:*
+        version: link:../sdkwork-clawrouter-pc-admin-upstream
       '@sdkwork/i18n-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
@@ -3827,8 +3803,8 @@ importers:
   sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript:
     dependencies:
       '@sdkwork/sdk-common':
-        specifier: ^1.0.2
-        version: 1.0.3
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
     devDependencies:
       '@types/node':
         specifier: 20.19.39

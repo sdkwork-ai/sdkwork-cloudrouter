@@ -1,6 +1,6 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AppApiKeyItem, AppApiKeyListResponse, CreateApiKeyRequest, UpdateApiKeyRequest } from '../types';
+import type { AppApiKeyItem, AppApiKeyListResponse, CreateApiKeyRequest, CreateApiKeyResponse, UpdateApiKeyRequest } from '../types';
 export class IamUsersSettingsApi {
   private client: HttpClient;
 
@@ -11,12 +11,12 @@ export class IamUsersSettingsApi {
 
 /** List settings */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update settings */
   async update(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any });
+    return this.client.request<Record<string, never>>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -56,18 +56,18 @@ export class IamApiKeysApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AppApiKeyListResponse>(appendQueryString(appApiPath(`/iam/api_keys`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<AppApiKeyListResponse>(appendQueryString(appApiPath(`/iam/api_keys`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create key */
-  async create(body: CreateApiKeyRequest, params: IamApiKeysCreateParams, requestOptions?: ApiRequestOptions): Promise<AppApiKeyItem> {
+  async create(body: CreateApiKeyRequest, params: IamApiKeysCreateParams, requestOptions?: ApiRequestOptions): Promise<CreateApiKeyResponse> {
     const requestHeaders = buildRequestHeaders(
       {
         'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
       },
       {}
     );
-    return this.client.request<AppApiKeyItem>(appApiPath(`/iam/api_keys`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json' });
+    return this.client.request<CreateApiKeyResponse>(appApiPath(`/iam/api_keys`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete key */
@@ -77,7 +77,7 @@ export class IamApiKeysApi {
 
 /** Update key */
   async update(apiKeyId: string, body: UpdateApiKeyRequest, requestOptions?: ApiRequestOptions): Promise<AppApiKeyItem> {
-    return this.client.request<AppApiKeyItem>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json' });
+    return this.client.request<AppApiKeyItem>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 

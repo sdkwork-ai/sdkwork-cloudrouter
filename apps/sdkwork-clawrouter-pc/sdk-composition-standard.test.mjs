@@ -232,15 +232,14 @@ test('admin host composes owner admin modules through the backend-admin core SDK
   const adminCoreComponent = json('packages/sdkwork-clawrouter-pc-admin-core/specs/component.spec.json');
   const adminCoreSdkSource = source('packages/sdkwork-clawrouter-pc-admin-core/src/sdk/index.ts');
   const adminCoreInventorySource = source('packages/sdkwork-clawrouter-pc-admin-core/src/composition/sdk-inventory.ts');
-  const channelPackage = json('packages/sdkwork-clawrouter-pc-admin-channel/package.json');
-  const channelService = source('packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts');
-  const groupService = source('packages/sdkwork-clawrouter-pc-admin-group/src/groupService.ts');
+  const upstreamPackage = json('packages/sdkwork-clawrouter-pc-admin-upstream/package.json');
+  const upstreamService = source('packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts');
 
   assert.match(appSource, /ClawRouterAdminHostRoutes/);
-  assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Channel|Group)Admin = lazyRoute/);
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 16);
+  assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Upstream)Admin = lazyRoute/);
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 18);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
-  assert.match(hostSource, /'sdkwork-clawrouter', '@sdkwork\/clawrouter-pc-admin-channel', \['clawrouter-backend-sdk', 'sdkwork-models-backend-sdk'\]/);
+  assert.match(hostSource, /'sdkwork-clawrouter', '@sdkwork\/clawrouter-pc-admin-upstream', \['clawrouter-backend-sdk'\]/);
 
   const contributions = [...hostSource.matchAll(
     /\broute\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*\[([^\]]*)\]\s*,\s*'([^']+)'/g,
@@ -300,13 +299,10 @@ test('admin host composes owner admin modules through the backend-admin core SDK
   assert.match(adminCoreSdkSource, /from '@sdkwork\/models-backend-sdk'/);
   assert.match(adminCoreSdkSource, /getModelsBackendSdkClient/);
 
-  assert.equal(channelPackage.dependencies['@sdkwork/models-backend-sdk'], undefined);
-  assert.doesNotMatch(channelService, /from '@sdkwork\/models-backend-sdk'/);
-  assert.match(channelService, /from '@sdkwork\/clawrouter-pc-admin-core\/sdk'/);
-  assert.doesNotMatch(groupService, /from '@sdkwork\/models-backend-sdk'/);
-  assert.match(groupService, /from '@sdkwork\/clawrouter-pc-admin-core\/sdk'/);
-  assert.match(channelService, /getModelsBackendSdkClient/);
-  assert.match(groupService, /getModelsBackendSdkClient/);
+  assert.equal(upstreamPackage.dependencies['@sdkwork/models-backend-sdk'], undefined);
+  assert.match(upstreamService, /from '@sdkwork\/clawrouter-pc-admin-core\/sdk'/);
+  assert.match(upstreamService, /getClawRouterBackendSdkClient/);
+  assert.doesNotMatch(upstreamService, /fetch\(|axios|XMLHttpRequest|authorization/i);
 });
 
 test('commons SDK client bootstrap composes appbase, product and open SDKs through standard credentials', () => {

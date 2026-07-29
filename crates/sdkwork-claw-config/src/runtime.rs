@@ -179,6 +179,10 @@ pub struct RedisSectionConfig {
 pub struct SecuritySectionConfig {
     pub api_key_pepper: Option<String>,
     pub api_key_pepper_file: Option<String>,
+    pub internal_gateway_signing_secret: Option<String>,
+    pub internal_gateway_signing_secret_file: Option<String>,
+    pub internal_gateway_request_ttl_seconds: Option<u64>,
+    pub internal_gateway_max_clock_skew_seconds: Option<u64>,
     pub trusted_subject_secret: Option<String>,
     pub trusted_subject_secret_file: Option<String>,
     pub trusted_subject_max_clock_skew_seconds: Option<u64>,

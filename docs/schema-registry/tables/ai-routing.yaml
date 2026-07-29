@@ -1288,7 +1288,6 @@ tables:
   - worker
   columns:
     api_key_id: int64
-    legacy_api_key_id: int64
     policy_id: int64
     profile_id: int64
     rule_id: int64
@@ -1738,7 +1737,9 @@ tables:
     expression: auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4', 'custom')
       AND priority >= 0
   - name: ck_ai_upstream_supplier_auth_method_runtime_auth_config
-    expression: jsonb_typeof(runtime_auth_config) = 'object'
+    expressions:
+      postgres: jsonb_typeof(runtime_auth_config) = 'object'
+      sqlite: json_valid(runtime_auth_config) AND json_type(runtime_auth_config) = 'object'
   indexes:
   - name: idx_ai_upstream_supplier_auth_method_supplier_status
     columns:

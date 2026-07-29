@@ -15,6 +15,7 @@ use base64::{engine::general_purpose, Engine as _};
 use bytes::Bytes;
 use futures_util::{Stream, StreamExt};
 use http_body_util::BodyExt;
+use sdkwork_claw_security::InternalGatewayPrincipal;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{Map, Value};
@@ -144,11 +145,6 @@ struct RuntimeStreamTerminalCompletion {
 enum RuntimeStreamExecutionStart {
     Active,
     TerminalAlreadyRecorded,
-}
-
-struct RuntimeAuthenticatedApiKey {
-    api_key: GatewayApiKey,
-    context: AuthenticatedApiKeyContext,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1744,28 +1740,17 @@ where
         provider = execution.item.provider.as_deref().unwrap_or(""),
         "app runtime gateway stream execution started"
     );
-    let authentication = runtime_authenticated_api_key(catalog, subject, &execution)?;
-    let copyable_key = authentication
-        .api_key
-        .copyable_key
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| {
-            DomainError::new(
-                "runtime copyable gateway API key is unavailable; select or regenerate a copyable gateway API key",
-            )
-        })?;
-    let request_plan = build_runtime_gateway_request(catalog, &execution, copyable_key)?;
+    let authentication = runtime_authenticated_context(catalog, subject, &execution)?;
+    let request_plan = build_runtime_gateway_request(catalog, &execution, &authentication)?;
     tracing::info!(
         tenant_id = subject.tenant_id,
         organization_id = subject.organization_id,
         user_id = subject.user_id,
         invocation_id = %invocation_id,
-        api_key_id = authentication.context.api_key_id,
-        group_id = authentication.context.group_id,
-        group_code = %authentication.context.group_code,
-        pricing_plan_code = %authentication.context.pricing_plan_code,
+        api_key_id = authentication.api_key_id,
+        group_id = authentication.group_id,
+        group_code = %authentication.group_code,
+        pricing_plan_code = %authentication.pricing_plan_code,
         method = %request_plan.request.method,
         path = %request_plan.request.path,
         model = %request_plan.model,
@@ -1783,8 +1768,8 @@ where
         organization_id = subject.organization_id,
         user_id = subject.user_id,
         invocation_id = %invocation_id,
-        api_key_id = authentication.context.api_key_id,
-        group_id = authentication.context.group_id,
+        api_key_id = authentication.api_key_id,
+        group_id = authentication.group_id,
         status_code = response.status_code,
         content_type = response.content_type.as_deref().unwrap_or(""),
         "app runtime gateway response received"
@@ -1925,7 +1910,7 @@ fn runtime_gateway_route_diagnostic_value<'a>(message: &'a str, key: &str) -> Op
 fn build_runtime_gateway_request<C>(
     catalog: &C,
     execution: &AppRuntimeInvocationExecution,
-    copyable_key: &str,
+    context: &AuthenticatedApiKeyContext,
 ) -> Result<RuntimeGatewayRequestPlan, DomainError>
 where
     C: PricingCatalog,
@@ -2005,7 +1990,13 @@ where
             build_runtime_gemini_request_body(&execution.request_json)?,
         ),
     };
-    request = request.with_header("authorization", format!("Bearer {copyable_key}"));
+    request = request.with_internal_principal(InternalGatewayPrincipal {
+        api_key_id: context.api_key_id,
+        tenant_id: context.tenant_id,
+        organization_id: context.organization_id,
+        user_id: context.user_id,
+        account_group_id: context.group_id,
+    });
     if let Some(request_id) = execution
         .item
         .request_id
@@ -3560,18 +3551,6 @@ fn runtime_authenticated_context<C>(
 where
     C: PricingCatalog,
 {
-    runtime_authenticated_api_key(catalog, subject, execution)
-        .map(|authentication| authentication.context)
-}
-
-fn runtime_authenticated_api_key<C>(
-    catalog: &C,
-    subject: AppRuntimeSubject,
-    execution: &AppRuntimeInvocationExecution,
-) -> Result<RuntimeAuthenticatedApiKey, DomainError>
-where
-    C: PricingCatalog,
-{
     let api_key = select_runtime_api_key(catalog, subject, execution)?;
     if api_key.tenant_id != subject.tenant_id
         || api_key.organization_id != subject.organization_id
@@ -3587,7 +3566,7 @@ where
     let group = catalog
         .find_upstream_account_group(api_key.default_account_group_id)
         .ok_or_else(|| DomainError::new("runtime upstream account group is not available"))?;
-    let context = AuthenticatedApiKeyContext {
+    Ok(AuthenticatedApiKeyContext {
         api_key_id: api_key.id,
         tenant_id: api_key.tenant_id,
         organization_id: api_key.organization_id,
@@ -3596,8 +3575,7 @@ where
         group_id: group.id,
         group_code: group.code,
         pricing_plan_code: group.pricing_plan_code,
-    };
-    Ok(RuntimeAuthenticatedApiKey { api_key, context })
+    })
 }
 
 fn select_runtime_api_key(

@@ -995,7 +995,7 @@
     },
     "/app/v3/api/ai/models": {
       "get": {
-        "description": "List models. Reads ai_channel_group, ai_channel_group_member. Writes none. File targets none.",
+        "description": "List models. Reads ai_upstream_account_group, ai_upstream_account_group_member. Writes none. File targets none.",
         "operationId": "models.list",
         "parameters": [],
         "responses": {
@@ -1058,8 +1058,8 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_channel_group",
-          "ai_channel_group_member"
+          "ai_upstream_account_group",
+          "ai_upstream_account_group_member"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "intelligence",

@@ -21,7 +21,7 @@ import type {
   AppApiKeyListResponse as SdkAppApiKeyListResponse,
   UpdateApiKeyRequest,
 } from '@sdkwork/clawrouter-pc-console-core/sdk';
-import { DEFAULT_CHANNEL_GROUP } from './apiKeyForm.ts';
+import { DEFAULT_ACCOUNT_GROUP } from './apiKeyForm.ts';
 
 type ApiKeyModality = NonNullable<CreateApiKeyRequest['modalities']>[number];
 
@@ -30,9 +30,8 @@ export interface ApiKey {
   name: SdkAppApiKeyListResponse['items'][number]['name'];
   displayName: string;
   maskedKey: string & SdkAppApiKeyListResponse['items'][number]['maskedKey'];
-  copyableKey: string | null;
-  channelGroup: string;
-  channelGroupName: string | null;
+  accountGroup: string;
+  accountGroupName: string | null;
   rate: SdkAppApiKeyListResponse['items'][number]['rate'];
   quota: SdkAppApiKeyListResponse['items'][number]['quota'];
   usedQuota: SdkAppApiKeyListResponse['items'][number]['usedQuota'];
@@ -44,7 +43,7 @@ export interface ApiKey {
   defaultForRuntime: SdkAppApiKeyListResponse['items'][number]['defaultForRuntime'];
 }
 
-export interface ChannelGroup {
+export interface AccountGroup {
   id: string;
   code: string;
   name: string;
@@ -53,7 +52,7 @@ export interface ChannelGroup {
 
 export interface CreateApiKeyInput {
   name: string;
-  channelGroup: string;
+  accountGroup: string;
   quota: string;
   isUnlimitedQuota: boolean;
   modalities: string[];
@@ -96,12 +95,12 @@ export class ApiKeyService {
     }
   }
 
-  static async fetchGroups(): Promise<ChannelGroup[]> {
+  static async fetchGroups(): Promise<AccountGroup[]> {
     try {
-      const result = await getClawRouterAppSdkClient().ai.channelGroups.list();
+      const result = await getClawRouterAppSdkClient().ai.routing.accountGroups.list();
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.loadGroupsFallback');
       const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadGroupsFallback');
-      return items.map(normalizeChannelGroup);
+      return items.map(normalizeAccountGroup);
     } catch (error) {
       throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.loadGroupsFallback'));
     }
@@ -116,11 +115,11 @@ export class ApiKeyService {
       );
 
       const data = readApiRecord(result);
-      const rawKey = readString(data, 'copyableKey');
+      const rawKey = readString(data, 'rawKey');
       if (!rawKey) {
         throw new Error('API key creation response is missing key material');
       }
-      const key = normalizeCreatedApiKey(data, rawKey);
+      const key = normalizeCreatedApiKey(data.item);
       return { key, rawKey };
     } catch (error) {
       throw new Error(readSdkErrorMessage(error, 'console.apiKeys.errors.createFallback'));
@@ -206,7 +205,7 @@ function readApiKeyListPageTotal(data: ApiRecord): number {
 function toCreateApiKeyRequest(input: CreateApiKeyInput): CreateApiKeyRequest {
   const request = {
     name: requiredText(input.name, 'name'),
-    channelGroup: optionalText(input.channelGroup) ?? DEFAULT_CHANNEL_GROUP,
+    accountGroup: optionalText(input.accountGroup) ?? DEFAULT_ACCOUNT_GROUP,
     quota: decimalQuota(input.quota),
     isUnlimitedQuota: Boolean(input.isUnlimitedQuota),
     modalities: toApiKeyModalities(input.modalities),
@@ -224,8 +223,8 @@ function toUpdateApiKeyRequest(input: UpdateApiKeyInput): UpdateApiKeyRequest {
   if (input.name !== undefined) {
     request.name = requiredText(input.name, 'name');
   }
-  if (input.channelGroup !== undefined) {
-    request.channelGroup = optionalText(input.channelGroup) ?? DEFAULT_CHANNEL_GROUP;
+  if (input.accountGroup !== undefined) {
+    request.accountGroup = optionalText(input.accountGroup) ?? DEFAULT_ACCOUNT_GROUP;
   }
   if (input.quota !== undefined) {
     request.quota = decimalQuota(input.quota);
@@ -282,9 +281,8 @@ function normalizeApiKey(value: unknown): ApiKey {
     name,
     displayName: readApiKeyDisplayName(id, name),
     maskedKey,
-    copyableKey: readNullableString(value, 'copyableKey'),
-    channelGroup: readRequiredString(value, 'channelGroup', 'API key channel group is required'),
-    channelGroupName: readNullableString(value, 'channelGroupName'),
+    accountGroup: readRequiredString(value, 'accountGroup', 'API key account group is required'),
+    accountGroupName: readNullableString(value, 'accountGroupName'),
     rate: readNullableString(value, 'rate'),
     quota: readRequiredString(value, 'quota', 'API key quota is required'),
     usedQuota: readRequiredString(value, 'usedQuota', 'API key used quota is required'),
@@ -305,34 +303,24 @@ function readApiKeyDisplayName(id: string, name: string): string {
   return normalized;
 }
 
-function normalizeCreatedApiKey(value: unknown, rawKey: string): ApiKey {
+function normalizeCreatedApiKey(value: unknown): ApiKey {
   try {
-    const key = normalizeApiKey(value);
-    if (key.copyableKey && key.copyableKey !== rawKey) {
-      throw new Error('API key creation response copyable key does not match raw key material');
-    }
-    return { ...key, copyableKey: rawKey };
-  } catch (error) {
-    if (
-      error instanceof Error
-      && error.message === 'API key creation response copyable key does not match raw key material'
-    ) {
-      throw error;
-    }
+    return normalizeApiKey(value);
+  } catch {
     throw new Error('API key creation response is missing key data');
   }
 }
 
-function normalizeChannelGroup(value: unknown): ChannelGroup {
+function normalizeAccountGroup(value: unknown): AccountGroup {
   if (!isRecord(value)) {
-    throw new Error('Channel group record is required');
+    throw new Error('Account group record is required');
   }
 
   return {
-    id: readRequiredString(value, 'id', 'Channel group id is required'),
-    code: readRequiredString(value, 'code', 'Channel group code is required'),
-    name: readRequiredString(value, 'name', 'Channel group name is required'),
-    rate: readNullableString(value, 'rate'),
+    id: readRequiredString(value, 'id', 'Account group id is required'),
+    code: readRequiredString(value, 'groupCode', 'Account group code is required'),
+    name: readRequiredString(value, 'groupName', 'Account group name is required'),
+    rate: readNullableString(value, 'costMultiplier'),
   };
 }
 

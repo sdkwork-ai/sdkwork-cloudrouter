@@ -4,6 +4,14 @@ export type { AppApiKeyItem } from './app-api-key-item';
 export type { AppApiKeyListResponse } from './app-api-key-list-response';
 export type { AppRoutingAccountGroup } from './app-routing-account-group';
 export type { AppRoutingAccountGroupListResponse } from './app-routing-account-group-list-response';
+export type { AppRoutingApiKey } from './app-routing-api-key';
+export type { AppRoutingApiKeyAccountGroup } from './app-routing-api-key-account-group';
+export type { AppRoutingApiKeyListResponse } from './app-routing-api-key-list-response';
+export type { AppRoutingModelStats } from './app-routing-model-stats';
+export type { AppRoutingRequestTrace } from './app-routing-request-trace';
+export type { AppRoutingRequestTraceListResponse } from './app-routing-request-trace-list-response';
+export type { AppRoutingUsageData } from './app-routing-usage-data';
+export type { AppRoutingUsageSnapshot } from './app-routing-usage-snapshot';
 
 export type { CreateApiKeyRequest } from './create-api-key-request';
 export type { CreateApiKeyResponse } from './create-api-key-response';

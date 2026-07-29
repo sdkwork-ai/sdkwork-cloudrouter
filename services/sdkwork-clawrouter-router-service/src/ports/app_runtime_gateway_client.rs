@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use axum::body::Body;
 use axum::http::Method;
 use bytes::Bytes;
+use sdkwork_claw_security::InternalGatewayPrincipal;
 use serde_json::Value;
 
 use crate::ports::AppRuntimeFuture;
@@ -21,6 +22,7 @@ pub struct AppRuntimeGatewayRequest {
     pub headers: BTreeMap<String, String>,
     pub body: Value,
     pub raw_body: Option<Bytes>,
+    pub internal_principal: Option<InternalGatewayPrincipal>,
 }
 
 impl AppRuntimeGatewayRequest {
@@ -31,6 +33,7 @@ impl AppRuntimeGatewayRequest {
             headers: BTreeMap::new(),
             body,
             raw_body: None,
+            internal_principal: None,
         }
     }
 
@@ -41,6 +44,11 @@ impl AppRuntimeGatewayRequest {
 
     pub fn with_raw_body(mut self, body: Bytes) -> Self {
         self.raw_body = Some(body);
+        self
+    }
+
+    pub fn with_internal_principal(mut self, principal: InternalGatewayPrincipal) -> Self {
+        self.internal_principal = Some(principal);
         self
     }
 }

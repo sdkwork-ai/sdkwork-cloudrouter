@@ -4,7 +4,7 @@ use std::time::Duration;
 use sqlx::{PgPool, Row};
 
 use super::shared::store_error;
-use crate::application::ApiKeySecretCodec;
+use crate::application::CredentialSecretCodec;
 use crate::domain::{
     resolve_upstream_runtime_auth_profile, DomainError, DomainResult, ProviderAuthProfile,
 };
@@ -21,7 +21,7 @@ const UNHEALTHY: i32 = 2;
 #[derive(Clone)]
 pub struct PostgresAdminUpstreamAccountVerifier {
     pool: PgPool,
-    secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>,
+    secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>,
 }
 
 impl std::fmt::Debug for PostgresAdminUpstreamAccountVerifier {
@@ -35,7 +35,7 @@ impl std::fmt::Debug for PostgresAdminUpstreamAccountVerifier {
 }
 
 impl PostgresAdminUpstreamAccountVerifier {
-    pub fn new(pool: PgPool, secret_codec: Arc<dyn ApiKeySecretCodec + Send + Sync>) -> Self {
+    pub fn new(pool: PgPool, secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>) -> Self {
         Self { pool, secret_codec }
     }
 }
@@ -65,7 +65,7 @@ struct VerificationTarget {
 
 async fn verify_account(
     pool: &PgPool,
-    secret_codec: &(dyn ApiKeySecretCodec + Send + Sync),
+    secret_codec: &(dyn CredentialSecretCodec + Send + Sync),
     command: VerifyAdminUpstreamAccountCommand,
 ) -> Result<AdminUpstreamAccountVerificationItem, AdminUpstreamAccountVerificationError> {
     let target = load_verification_target(pool, &command).await?;

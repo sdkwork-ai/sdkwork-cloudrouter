@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: 9657825ca3d039a8f72ef1cdcef6a5e9d411fc6901be769fa1c7b6e579dc0cf2.
+-- Registry SHA-256: 1f05fc8e334b2917d256499704b0ea4f431842f8439d0104fc5916fd007f1326.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -59,14 +59,13 @@ CREATE TABLE IF NOT EXISTS iam_gateway_api_key (
     user_id BIGINT NOT NULL,
     owner_type INTEGER,
     owner_id BIGINT,
-    legacy_api_key_id BIGINT,
-    account_group_id BIGINT,
-    name VARCHAR(128),
-    key_prefix VARCHAR(32),
-    key_display_masked VARCHAR(64),
-    key_hash VARCHAR(128),
-    hash_alg VARCHAR(32),
-    secret_version BIGINT,
+    account_group_id BIGINT NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    key_prefix VARCHAR(32) NOT NULL,
+    key_display_masked VARCHAR(64) NOT NULL,
+    key_hash VARCHAR(128) NOT NULL,
+    hash_alg VARCHAR(32) NOT NULL,
+    secret_version BIGINT NOT NULL,
     idempotency_key VARCHAR(128) NOT NULL,
     policy_id BIGINT,
     quota_policy_id BIGINT,
@@ -85,7 +84,6 @@ CREATE TABLE IF NOT EXISTS iam_gateway_api_key (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_hash ON iam_gateway_api_key (key_hash) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_legacy ON iam_gateway_api_key (legacy_api_key_id) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_idempotency ON iam_gateway_api_key (tenant_id, idempotency_key) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_api_key_scope_id ON iam_gateway_api_key (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_api_key_tenant_user_status ON iam_gateway_api_key (tenant_id, organization_id, user_id, status, updated_at, id);

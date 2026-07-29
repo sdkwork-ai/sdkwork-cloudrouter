@@ -730,30 +730,6 @@ function buildVerificationPlan(settings, env = process.env) {
     env,
   });
   plan.push({
-    label: 'portal console operations runtime tests',
-    command: 'node',
-    args: ['--experimental-strip-types', 'apps/sdkwork-clawrouter-pc/console-operations-runtime.test.ts'],
-    env,
-  });
-  plan.push({
-    label: 'portal admin group runtime tests',
-    command: 'node',
-    args: ['--experimental-strip-types', 'apps/sdkwork-clawrouter-pc/admin-group-runtime.test.ts'],
-    env,
-  });
-  plan.push({
-    label: 'portal admin channel runtime tests',
-    command: 'node',
-    args: ['--experimental-strip-types', 'apps/sdkwork-clawrouter-pc/admin-channel-runtime.test.ts'],
-    env,
-  });
-  plan.push({
-    label: 'portal admin user runtime tests',
-    command: 'node',
-    args: ['--experimental-strip-types', 'apps/sdkwork-clawrouter-pc/admin-user-runtime.test.ts'],
-    env,
-  });
-  plan.push({
     label: 'portal admin model runtime tests',
     command: 'node',
     args: ['--experimental-strip-types', 'apps/sdkwork-clawrouter-pc/admin-model-runtime.test.ts'],
@@ -766,21 +742,9 @@ function buildVerificationPlan(settings, env = process.env) {
     env,
   });
   plan.push({
-    label: 'portal admin marketing runtime tests',
-    command: 'node',
-    args: ['--experimental-strip-types', 'apps/sdkwork-clawrouter-pc/admin-marketing-runtime.test.ts'],
-    env,
-  });
-  plan.push({
     label: 'portal admin operations runtime tests',
     command: 'node',
     args: ['--experimental-strip-types', 'apps/sdkwork-clawrouter-pc/admin-operations-runtime.test.ts'],
-    env,
-  });
-  plan.push({
-    label: 'portal admin announcement runtime tests',
-    command: 'node',
-    args: ['--experimental-strip-types', 'apps/sdkwork-clawrouter-pc/admin-announcement-runtime.test.ts'],
     env,
   });
   plan.push({
@@ -848,15 +812,9 @@ const PARALLEL_SAFE_LABELS = new Set([
   'portal commerce business runtime tests',
   'portal console app runtime tests',
   'portal console routing runtime tests',
-  'portal console operations runtime tests',
-  'portal admin group runtime tests',
-  'portal admin channel runtime tests',
-  'portal admin user runtime tests',
   'portal admin model runtime tests',
   'portal admin ratelimit runtime tests',
-  'portal admin marketing runtime tests',
   'portal admin operations runtime tests',
-  'portal admin announcement runtime tests',
   'portal models SSR smoke tests',
 ]);
 

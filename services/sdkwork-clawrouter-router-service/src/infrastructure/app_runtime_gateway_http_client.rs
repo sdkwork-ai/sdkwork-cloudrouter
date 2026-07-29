@@ -9,6 +9,14 @@ use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use sdkwork_claw_config::InternalGatewaySecurityConfig;
+use sdkwork_claw_security::{
+    InternalGatewayRequestSigner, SignedInternalGatewayRequest, INTERNAL_GATEWAY_ROUTE_PREFIX,
+    X_SDKWORK_INTERNAL_ACCOUNT_GROUP_ID, X_SDKWORK_INTERNAL_API_KEY_ID,
+    X_SDKWORK_INTERNAL_AUTH_VERSION, X_SDKWORK_INTERNAL_BODY_SHA256, X_SDKWORK_INTERNAL_EXPIRES_AT,
+    X_SDKWORK_INTERNAL_ISSUED_AT, X_SDKWORK_INTERNAL_NONCE, X_SDKWORK_INTERNAL_ORGANIZATION_ID,
+    X_SDKWORK_INTERNAL_SIGNATURE, X_SDKWORK_INTERNAL_TENANT_ID, X_SDKWORK_INTERNAL_USER_ID,
+};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
@@ -26,18 +34,24 @@ pub struct AppRuntimeGatewayHttpClient {
     base_url: String,
     client: GatewayClient,
     response_timeout: Duration,
+    request_signer: InternalGatewayRequestSigner,
 }
 
 impl AppRuntimeGatewayHttpClient {
-    pub fn new(base_url: impl Into<String>) -> DomainResult<Self> {
+    pub fn new(
+        base_url: impl Into<String>,
+        security_config: &InternalGatewaySecurityConfig,
+    ) -> DomainResult<Self> {
         Self::with_response_timeout(
             base_url,
+            security_config,
             Duration::from_millis(DEFAULT_APP_RUNTIME_GATEWAY_TIMEOUT_MILLIS),
         )
     }
 
     pub fn with_response_timeout(
         base_url: impl Into<String>,
+        security_config: &InternalGatewaySecurityConfig,
         response_timeout: Duration,
     ) -> DomainResult<Self> {
         let base_url = normalize_gateway_base_url(base_url.into())?;
@@ -45,6 +59,10 @@ impl AppRuntimeGatewayHttpClient {
             base_url,
             client: build_gateway_client(),
             response_timeout,
+            request_signer: InternalGatewayRequestSigner::new(
+                security_config.signing_secret(),
+                security_config.request_ttl_seconds(),
+            ),
         })
     }
 }
@@ -61,8 +79,30 @@ impl AppRuntimeGatewayClient for AppRuntimeGatewayHttpClient {
                 headers,
                 body,
                 raw_body,
+                internal_principal,
             } = request;
-            let uri = gateway_request_uri(&self.base_url, &path)?;
+            let internal_principal = internal_principal.ok_or_else(|| {
+                DomainError::new("app runtime gateway internal principal is required")
+            })?;
+            let body = if let Some(raw_body) = raw_body {
+                raw_body
+            } else {
+                Bytes::from(serde_json::to_vec(&body).map_err(|error| {
+                    DomainError::new(format!(
+                        "failed to serialize app runtime gateway request: {error}"
+                    ))
+                })?)
+            };
+            let internal_path = internal_gateway_path(&path);
+            let signed_request = self
+                .request_signer
+                .sign(internal_principal, method.as_str(), &internal_path, &body)
+                .map_err(|error| {
+                    DomainError::new(format!(
+                        "failed to sign app runtime gateway request: {error}"
+                    ))
+                })?;
+            let uri = gateway_request_uri(&self.base_url, &internal_path)?;
             let mut builder = Request::builder().method(method).uri(uri);
             if !headers
                 .keys()
@@ -76,15 +116,7 @@ impl AppRuntimeGatewayClient for AppRuntimeGatewayHttpClient {
                     parse_gateway_header_value(&name, &value)?,
                 );
             }
-            let body = if let Some(raw_body) = raw_body {
-                raw_body
-            } else {
-                Bytes::from(serde_json::to_vec(&body).map_err(|error| {
-                    DomainError::new(format!(
-                        "failed to serialize app runtime gateway request: {error}"
-                    ))
-                })?)
-            };
+            builder = apply_internal_auth_headers(builder, &signed_request);
             let http_request = builder.body(Full::new(body)).map_err(|error| {
                 DomainError::new(format!(
                     "failed to build app runtime gateway request: {error}"
@@ -110,6 +142,45 @@ impl AppRuntimeGatewayClient for AppRuntimeGatewayHttpClient {
             ))
         })
     }
+}
+
+fn internal_gateway_path(path: &str) -> String {
+    let path = if path.starts_with('/') {
+        path.to_owned()
+    } else {
+        format!("/{path}")
+    };
+    format!("{INTERNAL_GATEWAY_ROUTE_PREFIX}{path}")
+}
+
+fn apply_internal_auth_headers(
+    builder: hyper::http::request::Builder,
+    signed_request: &SignedInternalGatewayRequest,
+) -> hyper::http::request::Builder {
+    builder
+        .header(X_SDKWORK_INTERNAL_AUTH_VERSION, &signed_request.version)
+        .header(
+            X_SDKWORK_INTERNAL_API_KEY_ID,
+            signed_request.principal.api_key_id,
+        )
+        .header(
+            X_SDKWORK_INTERNAL_TENANT_ID,
+            signed_request.principal.tenant_id,
+        )
+        .header(
+            X_SDKWORK_INTERNAL_ORGANIZATION_ID,
+            signed_request.principal.organization_id,
+        )
+        .header(X_SDKWORK_INTERNAL_USER_ID, signed_request.principal.user_id)
+        .header(
+            X_SDKWORK_INTERNAL_ACCOUNT_GROUP_ID,
+            signed_request.principal.account_group_id,
+        )
+        .header(X_SDKWORK_INTERNAL_ISSUED_AT, signed_request.issued_at)
+        .header(X_SDKWORK_INTERNAL_EXPIRES_AT, signed_request.expires_at)
+        .header(X_SDKWORK_INTERNAL_NONCE, &signed_request.nonce)
+        .header(X_SDKWORK_INTERNAL_BODY_SHA256, &signed_request.body_sha256)
+        .header(X_SDKWORK_INTERNAL_SIGNATURE, &signed_request.signature)
 }
 
 fn normalize_gateway_base_url(base_url: String) -> DomainResult<String> {

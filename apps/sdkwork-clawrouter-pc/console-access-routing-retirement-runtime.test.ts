@@ -87,7 +87,7 @@ test("retired relay-external admin routes are absent from schema governance", ()
   for (const relayRoute of [
     "/admin/dashboard",
     "/admin/model",
-    "/admin/channel",
+    "/admin/upstream",
     "/admin/settings",
     "/admin/monitor",
     "/admin/ratelimit",

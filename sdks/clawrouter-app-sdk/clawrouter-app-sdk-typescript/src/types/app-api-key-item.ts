@@ -1,11 +1,9 @@
-/** Updated API key metadata. Authenticated owner management responses include copyableKey for console copy actions. */
+/** Updated API key metadata. Secret material is never returned by update operations. */
 export interface AppApiKeyItem {
-  /** Channel group field on app api key item. */
-  channelGroup: string;
-  /** Display name snapshot for the bound channel group so the list view does not need to preload selectable groups. */
-  channelGroupName?: string;
-  /** Full plaintext API key returned only by authenticated owner management responses; public catalog responses omit this field. */
-  copyableKey?: string;
+  /** Account group field on app api key item. */
+  accountGroup: string;
+  /** Display name snapshot for the bound upstream account group. */
+  accountGroupName: string;
   /** Created field on app api key item. */
   created: string;
   /** Whether this key is the current console default for backend runtime API key selection. */

@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "@sdkwork/clawrouter-pc-admin-core": "workspace:*",
-    "@sdkwork/clawroutes-pc-commons": "workspace:*"
+    "@sdkwork/clawroutes-pc-commons": "workspace:*",
+    "react-i18next": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:"
@@ -20,6 +21,11 @@
       "types": "./src/index.tsx",
       "import": "./src/index.tsx",
       "default": "./src/index.tsx"
+    },
+    "./i18n": {
+      "types": "./src/i18n/index.ts",
+      "import": "./src/i18n/index.ts",
+      "default": "./src/i18n/index.ts"
     }
   }
 }

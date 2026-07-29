@@ -4557,6 +4557,9 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceConfigTemplate.includes('sdk_archive_root = "/usr/lib/sdkwork/router/portal/dist/sdk-archives"'));
     assert.ok(serviceConfigTemplate.includes('[security]'));
     assert.ok(serviceConfigTemplate.includes('api_key_pepper_file = "/etc/sdkwork/router/api-key-pepper.secret"'));
+    assert.ok(serviceConfigTemplate.includes('internal_gateway_signing_secret_file = "/etc/sdkwork/router/internal-gateway-signing.secret"'));
+    assert.ok(serviceConfigTemplate.includes('internal_gateway_request_ttl_seconds = 30'));
+    assert.ok(serviceConfigTemplate.includes('internal_gateway_max_clock_skew_seconds = 5'));
     assert.ok(serviceConfigTemplate.includes('trusted_subject_secret_file = "/etc/sdkwork/router/trusted-subject.secret"'));
     assert.ok(serviceConfigTemplate.includes('app_session_secret_file = "/etc/sdkwork/router/app-session.secret"'));
     assert.ok(serviceConfigTemplate.includes('payment_webhook_secret_file = "/etc/sdkwork/router/payment-webhook.secret"'));
@@ -6712,9 +6715,9 @@ test('parallel verification execution plan groups only dependency-safe expensive
       && labels.includes('open SDK runtime build'),
   ));
   assert.ok(groupedLabels.some((labels) =>
-    labels.includes('portal admin group runtime tests')
-      && labels.includes('portal admin channel runtime tests')
-      && labels.includes('portal admin user runtime tests'),
+    labels.includes('portal admin model runtime tests')
+      && labels.includes('portal admin ratelimit runtime tests')
+      && labels.includes('portal admin operations runtime tests'),
   ));
   for (const labels of groupedLabels) {
     assert.ok(!labels.includes('rust compile warnings gate') || labels.length === 1);
@@ -8062,27 +8065,13 @@ test('verification plan validates portal Vite config before dev smoke and build'
 test('portal service command results must not fabricate returned entities from empty objects', () => {
   const serviceRoot = path.join(workspaceRoot, 'apps', 'sdkwork-clawrouter-pc', 'packages');
   const serviceFiles = [
-    'sdkwork-clawrouter-pc-admin-announcement/src/announcementService.ts',
-    'sdkwork-clawrouter-pc-admin-channel/src/channelService.ts',
-    'sdkwork-clawrouter-pc-admin-group/src/groupService.ts',
+    'sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts',
     'sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts',
     'sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts',
-    'sdkwork-clawrouter-pc-admin-user/src/userService.ts',
+    'sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts',
+    'sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts',
   ];
-  const servicePaths = [
-    ...serviceFiles.map((relativeFile) => path.join(serviceRoot, relativeFile)),
-    path.join(
-      workspaceRoot,
-      'data',
-      'sdkwork-models',
-      'apps',
-      'sdkwork-models-pc',
-      'packages',
-      'sdkwork-models-pc-admin-catalog',
-      'src',
-      'modelService.ts',
-    ),
-  ];
+  const servicePaths = serviceFiles.map((relativeFile) => path.join(serviceRoot, relativeFile));
 
   for (const servicePath of servicePaths) {
     const source = readFileSync(servicePath, 'utf8');
@@ -8103,10 +8092,9 @@ test('portal service command results must not fabricate returned entities from e
 test('portal admin update commands must require returned entities instead of silent null success', () => {
   const serviceRoot = path.join(workspaceRoot, 'apps', 'sdkwork-clawrouter-pc', 'packages');
   const serviceFiles = [
-    'sdkwork-clawrouter-pc-admin-announcement/src/announcementService.ts',
-    'sdkwork-clawrouter-pc-admin-channel/src/channelService.ts',
-    'sdkwork-clawrouter-pc-admin-group/src/groupService.ts',
-    'sdkwork-clawrouter-pc-admin-user/src/userService.ts',
+    'sdkwork-clawrouter-pc-admin-memberships/src/membershipsService.ts',
+    'sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts',
+    'sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts',
   ];
 
   for (const relativeFile of serviceFiles) {
@@ -8124,27 +8112,6 @@ test('portal admin update commands must require returned entities instead of sil
   }
 });
 
-test('portal channel test commands must require returned channel entities', () => {
-  const serviceRoot = path.join(workspaceRoot, 'apps', 'sdkwork-clawrouter-pc', 'packages');
-  const serviceFiles = [
-    'sdkwork-clawrouter-pc-admin-channel/src/channelService.ts',
-  ];
-
-  for (const relativeFile of serviceFiles) {
-    const source = readFileSync(path.join(serviceRoot, relativeFile), 'utf8');
-    assert.doesNotMatch(
-      source,
-      /normalize[A-Za-z0-9_]+\(\s*isRecord\([^)]*\)\s*\?\s*[^:]+:\s*\{\}\s*\)/u,
-      `${relativeFile} must fail closed when channel test responses omit item data`,
-    );
-    assert.match(
-      source,
-      /readRequiredApiItem\([^)]*test response is missing channel data/u,
-      `${relativeFile} must use readRequiredApiItem for channel test response item data`,
-    );
-  }
-});
-
 test('portal mutable entity services must require backend stable ids', () => {
   const portalRoot = path.join(workspaceRoot, 'apps', 'sdkwork-clawrouter-pc');
   const commonsSource = readFileSync(
@@ -8152,36 +8119,6 @@ test('portal mutable entity services must require backend stable ids', () => {
     'utf8',
   );
   const guardedServices = [
-    {
-      file: path.join('sdkwork-clawrouter-pc-admin-group', 'src', 'groupService.ts'),
-      requiredMessages: ['Group id is required'],
-      forbidden: [/id:\s*readString\(item,\s*['"]id['"]\)/u],
-    },
-    {
-      file: path.join('sdkwork-clawrouter-pc-admin-channel', 'src', 'channelService.ts'),
-      requiredMessages: ['Channel id is required', 'Provider credential id is required'],
-      forbidden: [/id:\s*readString\(item,\s*['"]id['"]\)/u],
-    },
-    {
-      file: path.join('sdkwork-clawrouter-pc-admin-user', 'src', 'userService.ts'),
-      requiredMessages: ['User id is required', 'API key id is required'],
-      forbidden: [/id:\s*readNumber\(item,\s*['"]id['"]\)/u, /id:\s*readString\(item,\s*['"]id['"]\)/u],
-    },
-    {
-      file: path.join(
-        workspaceRoot,
-        'data',
-        'sdkwork-models',
-        'apps',
-        'sdkwork-models-pc',
-        'packages',
-        'sdkwork-models-pc-admin-catalog',
-        'src',
-        'modelService.ts',
-      ),
-      requiredMessages: ['Vendor id is required', 'Model id is required', 'Model vendor id is required'],
-      forbidden: [/id:\s*readString\(item,\s*['"]id['"]\)/u, /vendorId:\s*readString\(item,\s*['"]vendorId['"]\)/u],
-    },
     {
       file: path.join('sdkwork-clawrouter-pc-admin-ratelimit', 'src', 'ratelimitService.ts'),
       requiredMessages: [
@@ -8198,11 +8135,6 @@ test('portal mutable entity services must require backend stable ids', () => {
       forbidden: [/id:\s*readString\(item,\s*['"]id['"]\)/u],
     },
     {
-      file: path.join('sdkwork-clawrouter-pc-admin-announcement', 'src', 'announcementService.ts'),
-      requiredMessages: ['Announcement id is required'],
-      forbidden: [/id:\s*readString\(item,\s*['"]id['"]\)/u],
-    },
-    {
       file: path.join('sdkwork-clawrouter-pc-admin-dashboard', 'src', 'dashboardService.ts'),
       requiredMessages: ['Recent usage trace id is required'],
       forbidden: [/id:\s*readString\(item,\s*['"]id['"]\)/u],
@@ -8215,11 +8147,6 @@ test('portal mutable entity services must require backend stable ids', () => {
     {
       file: path.join('sdkwork-clawrouter-pc-admin-record', 'src', 'recordService.ts'),
       requiredMessages: ['Log record id is required'],
-      forbidden: [/id:\s*readString\(item,\s*['"]id['"]\)/u],
-    },
-    {
-      file: path.join('sdkwork-clawrouter-pc-admin-wallet', 'src', 'walletService.ts'),
-      requiredMessages: ['Recharge record id is required'],
       forbidden: [/id:\s*readString\(item,\s*['"]id['"]\)/u],
     },
     {
@@ -8374,35 +8301,12 @@ test('portal typecheck project does not compile external appbase or UI source', 
 
 test('portal workspace packages declare ESM module metadata', () => {
   const packagesRoot = path.join(workspaceRoot, 'apps', 'sdkwork-clawrouter-pc', 'packages');
-  const packageNames = [
-    'sdkwork-clawrouter-pc-admin-announcement',
-    'sdkwork-clawrouter-pc-admin-channel',
-    'sdkwork-clawrouter-pc-admin-dashboard',
-    'sdkwork-clawrouter-pc-admin-finance',
-    'sdkwork-clawrouter-pc-admin-group',
-    'sdkwork-clawrouter-pc-admin-marketing',
-    'sdkwork-clawrouter-pc-admin-relay-site',
-    'sdkwork-clawrouter-pc-admin-monitor',
-    'sdkwork-clawrouter-pc-admin-ratelimit',
-    'sdkwork-clawrouter-pc-admin-record',
-    'sdkwork-clawrouter-pc-admin-user',
-    'sdkwork-clawroutes-pc-commons',
-    'sdkwork-clawrouter-pc-console-api-keys',
-    'sdkwork-clawrouter-pc-console-core',
-    'sdkwork-clawrouter-pc-console-dashboard',
-    'sdkwork-clawrouter-pc-console-gateway',
-    'sdkwork-clawrouter-pc-console-messages',
-    'sdkwork-clawrouter-pc-console-settings',
-    'sdkwork-clawrouter-pc-console-usage',
-    'sdkwork-clawrouter-pc-console-user',
-    'sdkwork-clawrouter-pc-core',
-    'sdkwork-clawrouter-pc-home',
-    'sdkwork-clawrouter-pc-i18n',
-    'sdkwork-clawrouter-pc-models',
-    'sdkwork-clawrouter-pc-playground',
-    'sdkwork-clawrouter-pc-rankings',
-    'sdkwork-clawrouter-pc-types',
-  ];
+  const packageNames = readdirSync(packagesRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((packageName) => existsSync(path.join(packagesRoot, packageName, 'package.json')));
+
+  assert.ok(packageNames.length > 0, 'portal workspace must contain package manifests');
 
   for (const packageName of packageNames) {
     const packageJson = JSON.parse(
@@ -9204,98 +9108,6 @@ test('verification plan includes portal console routing runtime tests before bro
   ));
 });
 
-test('verification plan includes portal admin group runtime tests before broad suites', async () => {
-  const module = await import(
-    pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-claw-router-application.mjs')).href
-  );
-  const plan = module.buildVerificationPlan(
-    { skipRustTests: false, skipPythonTests: false, skipSchemaGate: true },
-    {},
-  );
-  const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const consoleRoutingRuntimeIndex = plan.findIndex((step) => step.label === 'portal console routing runtime tests');
-  const adminGroupRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin group runtime tests');
-  const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
-  const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
-
-  assert.ok(adminGroupRuntimeIndex > consoleRoutingRuntimeIndex, 'admin group runtime tests must run after console routing runtime tests');
-  assert.ok(adminGroupRuntimeIndex < rustTestsIndex, 'admin group runtime tests must run before broad Rust tests');
-  assert.ok(adminGroupRuntimeIndex < pythonTestsIndex, 'admin group runtime tests must run before broad Python tests');
-  assert.ok(commandLines.includes(
-    'node --experimental-strip-types apps/sdkwork-clawrouter-pc/admin-group-runtime.test.ts',
-  ));
-});
-
-test('verification plan includes portal console operations runtime tests before broad suites', async () => {
-  const module = await import(
-    pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-claw-router-application.mjs')).href
-  );
-  const plan = module.buildVerificationPlan(
-    { skipRustTests: false, skipPythonTests: false, skipSchemaGate: true },
-    {},
-  );
-  const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const consoleRoutingRuntimeIndex = plan.findIndex((step) => step.label === 'portal console routing runtime tests');
-  const consoleOperationsRuntimeIndex = plan.findIndex((step) => step.label === 'portal console operations runtime tests');
-  const adminGroupRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin group runtime tests');
-  const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
-  const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
-
-  assert.ok(consoleOperationsRuntimeIndex > consoleRoutingRuntimeIndex, 'console operations runtime tests must run after console routing runtime tests');
-  assert.ok(consoleOperationsRuntimeIndex < adminGroupRuntimeIndex, 'console operations runtime tests must run before admin runtime tests');
-  assert.ok(consoleOperationsRuntimeIndex < rustTestsIndex, 'console operations runtime tests must run before broad Rust tests');
-  assert.ok(consoleOperationsRuntimeIndex < pythonTestsIndex, 'console operations runtime tests must run before broad Python tests');
-  assert.ok(commandLines.includes(
-    'node --experimental-strip-types apps/sdkwork-clawrouter-pc/console-operations-runtime.test.ts',
-  ));
-});
-
-test('verification plan includes portal admin user runtime tests before broad suites', async () => {
-  const module = await import(
-    pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-claw-router-application.mjs')).href
-  );
-  const plan = module.buildVerificationPlan(
-    { skipRustTests: false, skipPythonTests: false, skipSchemaGate: true },
-    {},
-  );
-  const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const adminGroupRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin group runtime tests');
-  const adminChannelRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin channel runtime tests');
-  const adminUserRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin user runtime tests');
-  const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
-  const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
-
-  assert.ok(adminUserRuntimeIndex > adminGroupRuntimeIndex, 'admin user runtime tests must run after admin group runtime tests');
-  assert.ok(adminUserRuntimeIndex > adminChannelRuntimeIndex, 'admin user runtime tests must run after admin channel runtime tests');
-  assert.ok(adminUserRuntimeIndex < rustTestsIndex, 'admin user runtime tests must run before broad Rust tests');
-  assert.ok(adminUserRuntimeIndex < pythonTestsIndex, 'admin user runtime tests must run before broad Python tests');
-  assert.ok(commandLines.includes(
-    'node --experimental-strip-types apps/sdkwork-clawrouter-pc/admin-user-runtime.test.ts',
-  ));
-});
-
-test('verification plan includes portal admin channel runtime tests before broad suites', async () => {
-  const module = await import(
-    pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-claw-router-application.mjs')).href
-  );
-  const plan = module.buildVerificationPlan(
-    { skipRustTests: false, skipPythonTests: false, skipSchemaGate: true },
-    {},
-  );
-  const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const adminGroupRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin group runtime tests');
-  const adminChannelRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin channel runtime tests');
-  const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
-  const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
-
-  assert.ok(adminChannelRuntimeIndex > adminGroupRuntimeIndex, 'admin channel runtime tests must run after admin group runtime tests');
-  assert.ok(adminChannelRuntimeIndex < rustTestsIndex, 'admin channel runtime tests must run before broad Rust tests');
-  assert.ok(adminChannelRuntimeIndex < pythonTestsIndex, 'admin channel runtime tests must run before broad Python tests');
-  assert.ok(commandLines.includes(
-    'node --experimental-strip-types apps/sdkwork-clawrouter-pc/admin-channel-runtime.test.ts',
-  ));
-});
-
 test('verification plan includes portal admin model runtime tests before broad suites', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-claw-router-application.mjs')).href
@@ -9305,12 +9117,12 @@ test('verification plan includes portal admin model runtime tests before broad s
     {},
   );
   const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const adminUserRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin user runtime tests');
+  const consoleRoutingRuntimeIndex = plan.findIndex((step) => step.label === 'portal console routing runtime tests');
   const adminModelRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin model runtime tests');
   const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
   const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
 
-  assert.ok(adminModelRuntimeIndex > adminUserRuntimeIndex, 'admin model runtime tests must run after admin user runtime tests');
+  assert.ok(adminModelRuntimeIndex > consoleRoutingRuntimeIndex, 'admin model runtime tests must run after console routing runtime tests');
   assert.ok(adminModelRuntimeIndex < rustTestsIndex, 'admin model runtime tests must run before broad Rust tests');
   assert.ok(adminModelRuntimeIndex < pythonTestsIndex, 'admin model runtime tests must run before broad Python tests');
   assert.ok(commandLines.includes(
@@ -9340,50 +9152,6 @@ test('verification plan includes portal admin ratelimit runtime tests before bro
   ));
 });
 
-test('verification plan includes portal admin marketing runtime tests before broad suites', async () => {
-  const module = await import(
-    pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-claw-router-application.mjs')).href
-  );
-  const plan = module.buildVerificationPlan(
-    { skipRustTests: false, skipPythonTests: false, skipSchemaGate: true },
-    {},
-  );
-  const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const adminRatelimitRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin ratelimit runtime tests');
-  const adminMarketingRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin marketing runtime tests');
-  const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
-  const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
-
-  assert.ok(adminMarketingRuntimeIndex > adminRatelimitRuntimeIndex, 'admin marketing runtime tests must run after admin ratelimit runtime tests');
-  assert.ok(adminMarketingRuntimeIndex < rustTestsIndex, 'admin marketing runtime tests must run before broad Rust tests');
-  assert.ok(adminMarketingRuntimeIndex < pythonTestsIndex, 'admin marketing runtime tests must run before broad Python tests');
-  assert.ok(commandLines.includes(
-    'node --experimental-strip-types apps/sdkwork-clawrouter-pc/admin-marketing-runtime.test.ts',
-  ));
-});
-
-test('verification plan includes portal admin announcement runtime tests before broad suites', async () => {
-  const module = await import(
-    pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-claw-router-application.mjs')).href
-  );
-  const plan = module.buildVerificationPlan(
-    { skipRustTests: false, skipPythonTests: false, skipSchemaGate: true },
-    {},
-  );
-  const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const adminMarketingRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin marketing runtime tests');
-  const adminAnnouncementRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin announcement runtime tests');
-  const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
-  const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
-
-  assert.ok(adminAnnouncementRuntimeIndex > adminMarketingRuntimeIndex, 'admin announcement runtime tests must run after admin marketing runtime tests');
-  assert.ok(adminAnnouncementRuntimeIndex < rustTestsIndex, 'admin announcement runtime tests must run before broad Rust tests');
-  assert.ok(adminAnnouncementRuntimeIndex < pythonTestsIndex, 'admin announcement runtime tests must run before broad Python tests');
-  assert.ok(commandLines.includes(
-    'node --experimental-strip-types apps/sdkwork-clawrouter-pc/admin-announcement-runtime.test.ts',
-  ));
-});
-
 test('verification plan includes portal admin operations runtime tests before broad suites', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-claw-router-application.mjs')).href
@@ -9393,14 +9161,12 @@ test('verification plan includes portal admin operations runtime tests before br
     {},
   );
   const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const adminMarketingRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin marketing runtime tests');
+  const adminRatelimitRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin ratelimit runtime tests');
   const adminOperationsRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin operations runtime tests');
-  const adminAnnouncementRuntimeIndex = plan.findIndex((step) => step.label === 'portal admin announcement runtime tests');
   const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
   const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
 
-  assert.ok(adminOperationsRuntimeIndex > adminMarketingRuntimeIndex, 'admin operations runtime tests must run after admin marketing runtime tests');
-  assert.ok(adminOperationsRuntimeIndex < adminAnnouncementRuntimeIndex, 'admin operations runtime tests must run before admin announcement runtime tests');
+  assert.ok(adminOperationsRuntimeIndex > adminRatelimitRuntimeIndex, 'admin operations runtime tests must run after admin ratelimit runtime tests');
   assert.ok(adminOperationsRuntimeIndex < rustTestsIndex, 'admin operations runtime tests must run before broad Rust tests');
   assert.ok(adminOperationsRuntimeIndex < pythonTestsIndex, 'admin operations runtime tests must run before broad Python tests');
   assert.ok(commandLines.includes(

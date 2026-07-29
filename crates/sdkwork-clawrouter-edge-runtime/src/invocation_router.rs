@@ -5,11 +5,13 @@ use axum::body::Body;
 use axum::http::header::ALLOW;
 use axum::http::{HeaderValue, Method, Request, StatusCode};
 use axum::response::{IntoResponse, Response};
+use axum::routing::any;
 use axum::Router;
 use sdkwork_claw_config::{
     ProviderAdapterConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig,
 };
 use sdkwork_claw_http::QueryStringApiKeyPolicy;
+use sdkwork_claw_security::{InternalGatewayRequestVerifier, INTERNAL_GATEWAY_ROUTE_PREFIX};
 use sdkwork_clawrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_clawrouter_router_service::application::{
     AccountResolutionInterceptor, BillingPolicyInterceptor, CircuitBreakerConfig,
@@ -42,6 +44,7 @@ where
     pub(crate) body_limit_bytes: usize,
     pub(crate) stream_response_timeout: Duration,
     pub(crate) query_string_api_key_policy: QueryStringApiKeyPolicy,
+    pub(crate) internal_gateway_verifier: Option<Arc<InternalGatewayRequestVerifier>>,
 }
 
 impl<C> Clone for InvocationRouterState<C>
@@ -58,6 +61,7 @@ where
             body_limit_bytes: self.body_limit_bytes,
             stream_response_timeout: self.stream_response_timeout,
             query_string_api_key_policy: self.query_string_api_key_policy,
+            internal_gateway_verifier: self.internal_gateway_verifier.clone(),
         }
     }
 }
@@ -120,6 +124,20 @@ where
         body_limit_bytes,
         stream_response_timeout,
         query_string_api_key_policy,
+        internal_gateway_verifier: None,
+    }
+}
+
+impl<C> InvocationRouterState<C>
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
+    fn with_internal_gateway_verifier(
+        mut self,
+        verifier: Option<Arc<InternalGatewayRequestVerifier>>,
+    ) -> Self {
+        self.internal_gateway_verifier = verifier;
+        self
     }
 }
 
@@ -314,6 +332,7 @@ where
         body_limit_bytes,
         DEFAULT_STREAM_TOTAL_TIMEOUT,
         QueryStringApiKeyPolicy::default(),
+        None,
     )
 }
 
@@ -333,6 +352,7 @@ pub(crate) fn invocation_router_with_full_pipeline_provider_adapter_tenant_infli
     body_limit_bytes: usize,
     stream_response_timeout: Duration,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
+    internal_gateway_verifier: Option<Arc<InternalGatewayRequestVerifier>>,
 ) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
@@ -340,25 +360,28 @@ where
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
         .map(|resolver| Arc::new(resolver) as Arc<dyn ProviderAdapterRouteResolver>);
-    invocation_router_with_state(invocation_router_state(
-        Arc::clone(&catalog),
-        api_key_hasher,
-        invocation_pipeline_with_redis(
-            catalog,
-            dispatcher,
-            secret_resolver,
-            sticky_store,
-            usage_recorder,
-            adapter_resolver,
-            redis_config,
-            tenant_inflight_config,
-        ),
-        invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
-        false,
-        body_limit_bytes,
-        stream_response_timeout,
-        query_string_api_key_policy,
-    ))
+    invocation_router_with_state(
+        invocation_router_state(
+            Arc::clone(&catalog),
+            api_key_hasher,
+            invocation_pipeline_with_redis(
+                catalog,
+                dispatcher,
+                secret_resolver,
+                sticky_store,
+                usage_recorder,
+                adapter_resolver,
+                redis_config,
+                tenant_inflight_config,
+            ),
+            invocation_policy_guard.unwrap_or_else(default_invocation_policy_guard),
+            false,
+            body_limit_bytes,
+            stream_response_timeout,
+            query_string_api_key_policy,
+        )
+        .with_internal_gateway_verifier(internal_gateway_verifier),
+    )
 }
 
 /// Build an invocation router with explicit `trust_forwarded_headers` and
@@ -412,7 +435,15 @@ fn invocation_router_with_state<C>(state: InvocationRouterState<C>) -> Router
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    Router::new().fallback(move |request: Request<Body>| {
+    let internal_state = state.clone();
+    let internal_router = Router::new().route(
+        &format!("{INTERNAL_GATEWAY_ROUTE_PREFIX}/{{*path}}"),
+        any(move |request: Request<Body>| {
+            let state = internal_state.clone();
+            async move { crate::invocation_http::handle_internal_invocation(state, request).await }
+        }),
+    );
+    let public_router = Router::new().fallback(move |request: Request<Body>| {
         let state = state.clone();
         async move {
             if let Some(response) = reject_retired_openai_method(&request) {
@@ -420,7 +451,8 @@ where
             }
             handle_invocation(state, request).await
         }
-    })
+    });
+    internal_router.merge(public_router)
 }
 
 fn reject_retired_openai_method(request: &Request<Body>) -> Option<Response> {

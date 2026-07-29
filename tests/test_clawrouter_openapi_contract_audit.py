@@ -54,8 +54,8 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
                             },
                         },
                         "responses": {
-                            "200": {
-                                "description": "Successful response.",
+                            "201": {
+                                "description": "Created response.",
                                 "content": {
                                     "application/json": {
                                         "schema": {"$ref": "#/components/schemas/CreateModelVendorResult"}
@@ -781,7 +781,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             spec = self.valid_spec("app")
-            spec["paths"]["/app/v3/api/ai/model_vendors"]["post"]["responses"]["200"]["content"]["application/json"]["schema"] = {
+            spec["paths"]["/app/v3/api/ai/model_vendors"]["post"]["responses"]["201"]["content"]["application/json"]["schema"] = {
                 "$ref": "#/components/schemas/PlusApiResult"
             }
             self.write_specs(root, app_spec=spec)
@@ -790,7 +790,7 @@ class ClawRouterOpenApiContractAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "app POST /app/v3/api/ai/model_vendors 200 response must use SdkWorkApiResponse envelope, not legacy PlusApiResult",
+                "app POST /app/v3/api/ai/model_vendors 201 response must use SdkWorkApiResponse envelope, not legacy PlusApiResult",
                 result.messages,
             )
 

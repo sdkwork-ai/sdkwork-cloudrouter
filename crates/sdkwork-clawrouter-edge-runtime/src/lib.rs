@@ -1,5 +1,6 @@
 pub mod edge_server;
 mod gateway_api_key_auth;
+mod internal_gateway_replay_store;
 mod invocation_dispatcher;
 mod invocation_http;
 mod invocation_provider_adapter;

@@ -1,11 +1,11 @@
 /** ModelLimitRuleItem contract. */
 export interface ModelLimitRuleItem {
-  /** channelGroup field on ModelLimitRuleItem. */
-  channelGroup: string;
-  /** channelGroupId field on ModelLimitRuleItem. */
-  channelGroupId: string | unknown;
-  /** channelGroupName field on ModelLimitRuleItem. */
-  channelGroupName: string | unknown;
+  /** Upstream account group code. */
+  accountGroup: string;
+  /** Upstream account group identifier. */
+  accountGroupId: string | unknown;
+  /** Upstream account group display name. */
+  accountGroupName: string | unknown;
   /** id field on ModelLimitRuleItem. */
   id: string;
   /** model field on ModelLimitRuleItem. */

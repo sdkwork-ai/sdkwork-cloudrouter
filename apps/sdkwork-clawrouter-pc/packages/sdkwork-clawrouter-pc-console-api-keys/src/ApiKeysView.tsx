@@ -26,8 +26,8 @@ import { ConfirmDialog } from '@sdkwork/clawroutes-pc-commons/components/Confirm
 import { CopyButton } from '@sdkwork/clawroutes-pc-commons/components/CopyButton';
 import { CreateKeyDrawer, type ApiKeyFormValues } from './CreateKeyDrawer';
 import { createApiKeyInputsFromForm } from './apiKeyForm';
-import { ApiKeyService, type ApiKey, type ChannelGroup } from './apiKeyService';
-import { formatChannelGroupOptionLabel, resolveChannelGroupCode, resolveChannelGroupName } from './channelGroups';
+import { ApiKeyService, type AccountGroup, type ApiKey } from './apiKeyService';
+import { formatAccountGroupOptionLabel, resolveAccountGroupCode, resolveAccountGroupName } from './accountGroups';
 import { ApiKeyUsageDetailsDrawer } from './usage-details/ApiKeyUsageDetailsDrawer';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
@@ -54,7 +54,7 @@ export function ApiKeysView() {
   const { t } = useTranslation();
   const [keysData, setKeysData] = useState<ApiKey[]>([]);
   const [totalKeys, setTotalKeys] = useState(0);
-  const [groups, setGroups] = useState<ChannelGroup[]>([]);
+  const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [groupsLoaded, setGroupsLoaded] = useState(false);
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [groupSelectorKeyId, setGroupSelectorKeyId] = useState<string | null>(null);
@@ -183,7 +183,7 @@ export function ApiKeysView() {
     try {
       const updated = await ApiKeyService.updateKey(editingKey.id, {
         name: data.name,
-        channelGroup: data.channelGroup,
+        accountGroup: data.accountGroup,
         quota: data.quota,
         isUnlimitedQuota: data.isUnlimitedQuota,
         modalities: data.modalities,
@@ -200,13 +200,13 @@ export function ApiKeysView() {
   };
 
   const handleGroupChange = async (key: ApiKey, group: string) => {
-    if (group === key.channelGroup) {
+    if (group === key.accountGroup) {
       return;
     }
     setMutatingKeyId(key.id);
     setError(null);
     try {
-      const updated = await ApiKeyService.updateKey(key.id, { channelGroup: group });
+      const updated = await ApiKeyService.updateKey(key.id, { accountGroup: group });
       setKeysData((previous) => previous.map((item) => mergeUpdatedApiKey(item, updated)));
     } catch (reason) {
       setError(getApiKeyProductErrorMessage(reason, t('console.apiKeys.errors.groupUpdateFallback', 'API Key 分组更新失败。'), t));
@@ -351,15 +351,6 @@ export function ApiKeysView() {
                           <span className="font-mono text-[11px] font-medium bg-slate-100 dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/5 px-2 py-0.5 rounded-md text-slate-600 dark:text-slate-300">
                             {key.maskedKey}
                           </span>
-                          <CopyButton
-                            text={key.copyableKey ?? ''}
-                            label={t('console.apiKeys.copyKey', '复制密钥')}
-                            copiedLabel={t('console.apiKeys.keyCopied', '密钥已复制')}
-                            title={t('console.apiKeys.copyKey', '复制密钥')}
-                            disabled={!key.copyableKey}
-                            className="h-7 w-7 border border-slate-200 bg-white dark:border-white/10 dark:bg-[#1e1e1e]"
-                            iconClassName="h-3.5 w-3.5"
-                          />
                         </div>
                       </div>
                     </td>
@@ -373,7 +364,7 @@ export function ApiKeysView() {
                             <select
                               id={`channel-group-${key.id}`}
                               autoFocus
-                              value={resolveChannelGroupCode(key.channelGroup, groups)}
+                              value={resolveAccountGroupCode(key.accountGroup, groups)}
                               disabled={mutatingKeyId === key.id || groupsLoading}
                               onBlur={() => setGroupSelectorKeyId(null)}
                               onFocus={() => {
@@ -388,13 +379,13 @@ export function ApiKeysView() {
                             >
                               {groups.map((group) => (
                                 <option key={group.code} value={group.code}>
-                                  {formatChannelGroupOptionLabel(group)}
+                                  {formatAccountGroupOptionLabel(group)}
                                 </option>
                               ))}
-                              {groups.length > 0 && !groups.some((group) => group.code === key.channelGroup) && (
-                                <option value={key.channelGroup}>{displayChannelGroupName(key, groups)}</option>
+                              {groups.length > 0 && !groups.some((group) => group.code === key.accountGroup) && (
+                                <option value={key.accountGroup}>{displayAccountGroupName(key, groups)}</option>
                               )}
-                              {groups.length === 0 && <option value={key.channelGroup}>{displayChannelGroupName(key, groups)}</option>}
+                              {groups.length === 0 && <option value={key.accountGroup}>{displayAccountGroupName(key, groups)}</option>}
                             </select>
                             {groupsLoading && <Loader2 className="h-3 w-3 animate-spin text-blue-500" />}
                           </>
@@ -408,7 +399,7 @@ export function ApiKeysView() {
                             className="inline-flex max-w-[170px] items-center gap-1 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-60 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
                             title={t('console.apiKeys.changeGroup', '切换分组')}
                           >
-                            <span className="truncate">{displayChannelGroupName(key, groups)}</span>
+                            <span className="truncate">{displayAccountGroupName(key, groups)}</span>
                             <ChevronDown className="h-3 w-3 shrink-0" />
                           </button>
                         )}
@@ -695,6 +686,6 @@ function displayApiKeyStatus(status: ApiKey['status'], t: TranslationFunction): 
     : t('console.apiKeys.status.disabled', '已停用');
 }
 
-function displayChannelGroupName(key: ApiKey, groups: ChannelGroup[]): string {
-  return key.channelGroupName?.trim() || resolveChannelGroupName(key.channelGroup, groups);
+function displayAccountGroupName(key: ApiKey, groups: AccountGroup[]): string {
+  return key.accountGroupName?.trim() || resolveAccountGroupName(key.accountGroup, groups);
 }

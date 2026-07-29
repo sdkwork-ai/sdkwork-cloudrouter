@@ -90,9 +90,9 @@ function RateLimitPaginationFooter({
         itemCount={total}
         hasNextPage={page * pageSize < total}
         disabled={loading}
-        showingLabel={t('admin.group.pagination.showing')}
-        pageLabel={t('admin.group.pagination.page', { page })}
-        pageSizeLabel={t('admin.group.pagination.pageSize')}
+        showingLabel={t('common.pagination.showing')}
+        pageLabel={t('common.pagination.page', { page })}
+        pageSizeLabel={t('common.pagination.pageSize')}
         previousLabel={t('common.actions.previousPage')}
         nextLabel={t('common.actions.nextPage')}
         pageSizeOptions={[10, 20, 50, 100]}
@@ -259,7 +259,7 @@ function RiskDashboardView() {
               <div key={rule.id} className="flex items-center justify-between gap-4 text-sm">
                 <div className="min-w-0">
                   <div className="font-medium text-slate-900 dark:text-white truncate">{rule.model}</div>
-                  <div className="text-xs text-slate-500 truncate">{rule.channelGroupName ?? rule.channelGroup}</div>
+                  <div className="text-xs text-slate-500 truncate">{rule.accountGroupName ?? rule.accountGroup}</div>
                 </div>
                 <div className="font-mono text-red-600 dark:text-red-400">{rule.tpm.toLocaleString()} tpm</div>
               </div>
@@ -416,7 +416,7 @@ function IpRateLimitView() {
               </div>
               <div className="p-5 border-t border-slate-200 dark:border-white/10 flex justify-end gap-3 bg-slate-50 dark:bg-[#121212] rounded-b-2xl">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors">
-                  {t("admin.group.index.text.1589w37", "取消")}</button>
+                  {t("common.actions.cancel")}</button>
                 <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-colors">
                   {t("admin.ratelimit.index.text.1puu5bo", "确认添加")}</button>
               </div>
@@ -568,7 +568,7 @@ function TokenRateLimitView() {
                 </div>
               </div>
               <div className="p-5 border-t border-slate-200 dark:border-white/10 flex justify-end gap-3 bg-slate-50 dark:bg-[#121212]">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium bg-white dark:bg-[#1a1a1a] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-lg">{t("admin.group.index.text.1589w37", "取消")}</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium bg-white dark:bg-[#1a1a1a] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-lg">{t("common.actions.cancel")}</button>
                 <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">{t("admin.ratelimit.index.text.r7xfzl", "确定")}</button>
               </div>
             </form>
@@ -668,7 +668,7 @@ function ModelRateLimitView() {
              ) : limits.map(m => (
                <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                  <td className="px-4 py-3 font-medium font-mono text-slate-900 dark:text-slate-200"><span className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 px-2 py-1 rounded text-xs">{m.model}</span></td>
-                 <td className="px-4 py-3">{m.channelGroupName ?? m.channelGroup}</td>
+                 <td className="px-4 py-3">{m.accountGroupName ?? m.accountGroup}</td>
                  <td className="px-4 py-3 font-mono text-red-600 dark:text-red-400">{m.rpm} <span className="text-slate-400 text-xs font-sans">RPM</span></td>
                  <td className="px-4 py-3 font-mono text-red-600 dark:text-red-400">{m.tpm} <span className="text-slate-400 text-xs font-sans">TPM</span></td>
                  <td className="px-4 py-3">
@@ -698,8 +698,8 @@ function ModelRateLimitView() {
                   <input required name="model" type="text" placeholder={t("admin.ratelimit.index.text.14qa7he", "例如: gpt-4")} className="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 text-slate-900 dark:text-white font-mono" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">{t("admin.ratelimit.index.text.ev2ft0", "作用范围 (用户分组)")}</label>
-                  <input required name="group" type="text" placeholder={t("admin.ratelimit.index.text.144ztkk", "例如: 默认分组")} className="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 text-slate-900 dark:text-white" defaultValue={t("admin.ratelimit.index.text.1krzxor", "默认分组")} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">{t("admin.ratelimit.index.text.ev2ft0", "作用范围 (上游账号分组)")}</label>
+                  <input required name="accountGroup" type="text" placeholder={t("admin.ratelimit.index.text.144ztkk", "例如: 默认分组")} className="w-full bg-slate-50 dark:bg-black border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 text-slate-900 dark:text-white" defaultValue={t("admin.ratelimit.index.text.1krzxor", "默认分组")} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -713,7 +713,7 @@ function ModelRateLimitView() {
                 </div>
               </div>
               <div className="p-5 border-t border-slate-200 dark:border-white/10 flex justify-end gap-3 bg-slate-50 dark:bg-[#121212]">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium bg-white dark:bg-[#1a1a1a] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-lg">{t("admin.group.index.text.1589w37", "取消")}</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium bg-white dark:bg-[#1a1a1a] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-lg">{t("common.actions.cancel")}</button>
                 <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">{t("admin.ratelimit.index.text.r7xfzl", "确定")}</button>
               </div>
             </form>
@@ -815,7 +815,7 @@ function FirewallView() {
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.nump7a", "拦截/放行对象")}</th>
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.m8ph8q", "拦截原因 / 备注")}</th>
               <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{t("admin.ratelimit.index.text.1czrq5x", "处置时间")}</th>
-              <th className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">{t("admin.group.index.text.501w24", "操作")}</th>
+              <th className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">{t("common.actions.actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-white/5 bg-white dark:bg-transparent">
@@ -889,7 +889,7 @@ function FirewallView() {
                 </div>
               </div>
               <div className="p-5 border-t border-slate-200 dark:border-white/10 flex justify-end gap-3 bg-slate-50 dark:bg-[#121212]">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium bg-white dark:bg-[#1a1a1a] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-lg">{t("admin.group.index.text.1589w37", "取消")}</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium bg-white dark:bg-[#1a1a1a] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-lg">{t("common.actions.cancel")}</button>
                 <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">{t("admin.ratelimit.index.text.sx1x37", "确定封禁")}</button>
               </div>
             </form>

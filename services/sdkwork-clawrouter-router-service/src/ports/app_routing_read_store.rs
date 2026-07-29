@@ -83,8 +83,6 @@ pub struct AppRoutingApiKeyItem {
     pub id: String,
     pub name: String,
     pub display_key: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub copyable_key: Option<String>,
     pub status: String,
     pub total_usage: String,
     pub created_at: String,
