@@ -1,6 +1,7 @@
 use std::cmp::{Ordering, Reverse};
-use std::collections::{BTreeMap, HashMap};
-use std::sync::{Mutex, OnceLock};
+use std::collections::BTreeMap;
+use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
+use std::sync::OnceLock;
 
 use crate::domain::{
     DecimalValue, DomainError, DomainResult, UpstreamAccountFallbackMode, UpstreamAccountGroup,
@@ -351,20 +352,47 @@ fn weighted_index(
     Ok(0)
 }
 
-static ROUTING_COUNTERS: OnceLock<Mutex<HashMap<String, u64>>> = OnceLock::new();
+const ROUTING_COUNTER_SHARDS: usize = 256;
+
+static ROUTING_COUNTERS: OnceLock<Box<[AtomicU64]>> = OnceLock::new();
+static ROUTING_INSTANCE_SALT: OnceLock<u64> = OnceLock::new();
 
 fn next_offset(key: &str, modulus: u64) -> u64 {
     if modulus <= 1 {
         return 0;
     }
-    let counters = ROUTING_COUNTERS.get_or_init(|| Mutex::new(HashMap::new()));
-    let Ok(mut counters) = counters.lock() else {
-        return 0;
-    };
-    let counter = counters.entry(key.to_owned()).or_default();
-    let offset = *counter % modulus;
-    *counter = counter.wrapping_add(1);
-    offset
+    let key_hash = stable_routing_hash(key);
+    let counters = ROUTING_COUNTERS.get_or_init(|| {
+        (0..ROUTING_COUNTER_SHARDS)
+            .map(|_| AtomicU64::new(0))
+            .collect::<Vec<_>>()
+            .into_boxed_slice()
+    });
+    let shard = &counters[(key_hash as usize) % ROUTING_COUNTER_SHARDS];
+    let sequence = shard.fetch_add(1, AtomicOrdering::Relaxed);
+    sequence
+        .wrapping_add(key_hash)
+        .wrapping_add(*ROUTING_INSTANCE_SALT.get_or_init(routing_instance_salt))
+        % modulus
+}
+
+fn stable_routing_hash(value: &str) -> u64 {
+    value.as_bytes().iter().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+        (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
+    })
+}
+
+fn routing_instance_salt() -> u64 {
+    let mut bytes = [0_u8; 8];
+    if getrandom::fill(&mut bytes).is_ok() {
+        return u64::from_le_bytes(bytes);
+    }
+
+    stable_routing_hash(&format!(
+        "{}:{:p}",
+        std::process::id(),
+        &ROUTING_COUNTERS
+    ))
 }
 
 fn random_offset(modulus: usize) -> usize {
