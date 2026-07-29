@@ -9973,8 +9973,7 @@
       ],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_request_trace",
-        "ops_gateway_instance"
+        "ai_request_trace"
       ],
       "request_body_required": null,
       "request_id_header": false,

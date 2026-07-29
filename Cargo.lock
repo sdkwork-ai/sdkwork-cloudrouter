@@ -2461,6 +2461,7 @@ dependencies = [
  "sdkwork-clawrouter-router-service",
  "sdkwork-database-sqlx",
  "sdkwork-iam-bootstrap",
+ "sdkwork-models-catalog-repository-sqlx",
  "sdkwork-models-database-host",
  "serde",
  "serde_json",
@@ -2589,6 +2590,7 @@ dependencies = [
 name = "sdkwork-clawrouter-admin-analytics-repository-sqlx"
 version = "0.3.0"
 dependencies = [
+ "sdkwork-clawrouter-router-service",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-service",
  "sdkwork-utils-rust",
@@ -2600,6 +2602,7 @@ dependencies = [
 name = "sdkwork-clawrouter-admin-dashboard-repository-sqlx"
 version = "0.3.0"
 dependencies = [
+ "sdkwork-clawrouter-router-service",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-service",
  "sdkwork-utils-rust",
@@ -2630,6 +2633,7 @@ dependencies = [
 name = "sdkwork-clawrouter-admin-monitor-repository-sqlx"
 version = "0.3.0"
 dependencies = [
+ "sdkwork-clawrouter-router-service",
  "sdkwork-database-sqlx",
  "serde",
  "sqlx",
@@ -2677,6 +2681,7 @@ dependencies = [
  "sdkwork-clawrouter-router-service",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
+ "sdkwork-models-catalog-repository-sqlx",
  "sdkwork-routes-clawrouter-app-api",
  "sdkwork-routes-clawrouter-backend-api",
  "sdkwork-sdk-generator-client",
@@ -2720,26 +2725,19 @@ dependencies = [
  "sdkwork-claw-provider-adapter-registry",
  "sdkwork-claw-security",
  "sdkwork-claw-test-support",
- "sdkwork-clawrouter-admin-analytics-repository-sqlx",
- "sdkwork-clawrouter-admin-dashboard-repository-sqlx",
- "sdkwork-clawrouter-admin-monitor-repository-sqlx",
  "sdkwork-clawrouter-database-host",
- "sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
- "sdkwork-commerce-promotion-repository-sqlx",
  "sdkwork-commerce-promotion-service",
  "sdkwork-contract-service",
  "sdkwork-database-config",
  "sdkwork-database-repository",
  "sdkwork-database-sqlx",
  "sdkwork-iam-bootstrap",
- "sdkwork-iam-directory-repository-sqlx",
  "sdkwork-iam-embedded-application-bootstrap",
  "sdkwork-iam-web-adapter",
  "sdkwork-id-core",
  "sdkwork-invoice-database-bootstrap",
  "sdkwork-invoice-service",
  "sdkwork-models",
- "sdkwork-models-catalog-repository-sqlx",
  "sdkwork-models-catalog-service",
  "sdkwork-models-contract-service",
  "sdkwork-models-database-bootstrap",
@@ -2762,6 +2760,7 @@ dependencies = [
 name = "sdkwork-clawrouter-settlements-dashboard-repository-sqlx"
 version = "0.3.0"
 dependencies = [
+ "sdkwork-clawrouter-router-service",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-service",
  "serde",
@@ -3008,14 +3007,6 @@ dependencies = [
  "sqlx",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "sdkwork-iam-directory-repository-sqlx"
-version = "0.1.0"
-dependencies = [
- "sdkwork-database-config",
- "sdkwork-iam-context-service",
 ]
 
 [[package]]
@@ -3506,6 +3497,7 @@ dependencies = [
  "sdkwork-claw-observability",
  "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
+ "sdkwork-clawrouter-settlements-dashboard-repository-sqlx",
  "sdkwork-content-documents-sdk-reference",
  "sdkwork-database-lifecycle",
  "sdkwork-database-spi",
@@ -3514,6 +3506,7 @@ dependencies = [
  "sdkwork-invoice-database-host",
  "sdkwork-invoice-service-host",
  "sdkwork-membership-database-host",
+ "sdkwork-models-catalog-repository-sqlx",
  "sdkwork-payment-database-host",
  "sdkwork-payment-providers",
  "sdkwork-payment-service-host",
@@ -3543,6 +3536,9 @@ dependencies = [
  "sdkwork-claw-config",
  "sdkwork-claw-http",
  "sdkwork-claw-observability",
+ "sdkwork-clawrouter-admin-analytics-repository-sqlx",
+ "sdkwork-clawrouter-admin-dashboard-repository-sqlx",
+ "sdkwork-clawrouter-admin-monitor-repository-sqlx",
  "sdkwork-clawrouter-database-host",
  "sdkwork-clawrouter-router-service",
  "sdkwork-database-config",

@@ -65,6 +65,7 @@ use sdkwork_clawrouter_router_service::ports::{
     GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, StickyRouteStore,
     UpstreamAccountRouteCatalog, UsageSettlementStore,
 };
+use sdkwork_models_catalog_repository_sqlx::PostgresModelCatalogAdminStore;
 use sqlx::PgPool;
 use tokio::sync::Notify;
 use tokio::time::{sleep, Duration};
@@ -1107,6 +1108,7 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
         })?;
         if startup_install_mode.should_ensure() {
             DatabaseInstaller::for_postgres(pool.clone())
+                .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
                 .with_env_options()?
                 .ensure_bootstrap_data()
                 .await?;
@@ -1503,6 +1505,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         })?;
         let database_installer = Arc::new(
             DatabaseInstaller::for_postgres(pool.clone())
+                .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
                 .with_env_options()
                 .map_err(anyhow::Error::new)?,
         );

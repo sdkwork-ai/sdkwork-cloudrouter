@@ -471,8 +471,10 @@ function readMetadataString(metadata: JsonObject, key: string): string | undefin
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function compactJsonObject(value: JsonObject): JsonObject | undefined {
-  const entries = Object.entries(value).filter(([, item]) => item !== undefined);
+function compactJsonObject(value: Record<string, JsonValue | undefined>): JsonObject | undefined {
+  const entries = Object.entries(value).filter(
+    (entry): entry is [string, JsonValue] => entry[1] !== undefined,
+  );
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 

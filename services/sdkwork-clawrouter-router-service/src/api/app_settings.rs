@@ -1,18 +1,22 @@
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use axum::extract::State;
-use axum::http::HeaderMap;
+use axum::extract::rejection::JsonRejection;
+use axum::extract::{Extension, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, put};
 use axum::{Json, Router};
+use sdkwork_utils_rust::SdkWorkResultCode;
+use sdkwork_web_core::WebRequestContext;
 use serde::Deserialize;
 
 use crate::api::app_sql_subject::{
     map_optional_app_sql_subject, map_required_app_sql_subject, RequiredAppSqlScopedSubject,
     ResolvedAppSqlScopedSubject,
 };
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_response, platform_problem_for_context, validation_problem_for_context,
+};
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::infrastructure::OsApiKeySecretGenerator;
@@ -42,7 +46,7 @@ impl Clone for AppSettingsState {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct UpdateSettingsRequest {
     language: Option<String>,
     timezone: Option<String>,
@@ -51,18 +55,18 @@ struct UpdateSettingsRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct UpdateSettingsNotificationsRequest {
     bill_reminder: Option<bool>,
     quota_warning: Option<bool>,
     api_monitor: Option<bool>,
 }
 
-struct EmptySettingsStore;
+struct UnavailableSettingsStore;
 
-impl SettingsStore for EmptySettingsStore {
+impl SettingsStore for UnavailableSettingsStore {
     fn load_settings<'a>(&'a self, _subject: Option<SettingsSubject>) -> SettingsReadFuture<'a> {
-        Box::pin(async { Ok(SettingsData::standard_default()) })
+        Box::pin(async { Err(DomainError::new("settings store is not configured")) })
     }
 
     fn update_settings<'a>(&'a self, _command: UpdateSettingsCommand) -> SettingsCommandFuture<'a> {
@@ -76,7 +80,7 @@ impl SettingsStore for EmptySettingsStore {
 
 pub fn app_settings_router() -> Router {
     app_settings_router_with_state(
-        Arc::new(EmptySettingsStore),
+        Arc::new(UnavailableSettingsStore),
         Arc::new(OsApiKeySecretGenerator),
         false,
     )
@@ -107,7 +111,9 @@ fn app_settings_router_with_state(
 async fn fetch_settings(
     State(state): State<AppSettingsState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
+    request_context: Option<Extension<WebRequestContext>>,
 ) -> Response {
+    let ctx = request_context.map(|context| context.0);
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
         scoped.into()
     }) {
@@ -116,34 +122,45 @@ async fn fetch_settings(
     };
 
     match state.store.load_settings(subject).await {
-        Ok(settings) => Json(success_envelope(settings)).into_response(),
-        Err(error) => settings_system_response("settings read model is unavailable", error),
+        Ok(settings) => json_success_response(ctx.as_ref(), settings),
+        Err(_) => settings_system_response(ctx.as_ref(), "settings_read_failed"),
     }
 }
 
 async fn update_settings(
     State(state): State<AppSettingsState>,
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
-    _headers: HeaderMap,
-    Json(request): Json<UpdateSettingsRequest>,
+    request_context: Option<Extension<WebRequestContext>>,
+    request: Result<Json<UpdateSettingsRequest>, JsonRejection>,
 ) -> Response {
+    let ctx = request_context.map(|context| context.0);
+    let Json(request) = match request {
+        Ok(request) => request,
+        Err(_) => {
+            return validation_problem_for_context(
+                ctx.as_ref(),
+                "settings request body is invalid",
+            )
+            .into_response();
+        }
+    };
     let subject = map_required_app_sql_subject(subject, SettingsSubject::from);
     let settings = match validate_update_settings_request(request) {
         Ok(settings) => settings,
         Err(message) => {
-            return problem_from_wire_code("4001", message).into_response();
+            return validation_problem_for_context(ctx.as_ref(), message).into_response();
         }
     };
     let command = match build_update_settings_command(state.clone(), subject, settings) {
         Ok(command) => command,
-        Err(error) => {
-            return problem_from_wire_code("5000", error.to_string()).into_response();
+        Err(_) => {
+            return settings_system_response(ctx.as_ref(), "settings_identifier_generation_failed");
         }
     };
 
     match state.store.update_settings(command).await {
-        Ok(outcome) => Json(success_envelope(outcome)).into_response(),
-        Err(error) => settings_system_response("settings command store is unavailable", error),
+        Ok(outcome) => json_success_response(ctx.as_ref(), outcome),
+        Err(_) => settings_system_response(ctx.as_ref(), "settings_update_failed"),
     }
 }
 
@@ -254,8 +271,17 @@ fn build_update_settings_command(
     })
 }
 
-fn settings_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
+fn settings_system_response(
+    context: Option<&WebRequestContext>,
+    failure: &'static str,
+) -> Response {
+    tracing::error!(failure, "settings API operation failed");
+    platform_problem_for_context(
+        context,
+        SdkWorkResultCode::InternalError,
+        "settings service is unavailable",
+    )
+    .into_response()
 }
 
 fn current_timestamp_string() -> String {

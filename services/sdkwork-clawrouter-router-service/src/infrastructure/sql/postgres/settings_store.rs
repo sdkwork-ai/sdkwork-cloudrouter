@@ -218,7 +218,7 @@ fn string_cell(row: &sqlx::postgres::PgRow, name: &str) -> String {
 }
 
 fn sql_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(error.to_string())
+    redacted_store_error("failed to load settings", error)
 }
 
 fn store_error(context: &str, error: sqlx::Error) -> DomainError {

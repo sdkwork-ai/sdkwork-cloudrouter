@@ -158,18 +158,13 @@ async fn admin_cache_route_returns_overview_and_supports_refresh_and_delete() {
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, delete_instance_response.status());
-    let delete_instance_payload = json_payload(delete_instance_response).await;
-    assert_eq!(
-        "delete_instance",
-        delete_instance_payload["data"]["operation"]
+    assert_eq!(StatusCode::NO_CONTENT, delete_instance_response.status());
+    assert!(
+        axum::body::to_bytes(delete_instance_response.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .is_empty()
     );
-    assert_eq!(
-        "local-default",
-        delete_instance_payload["data"]["instanceName"]
-    );
-    assert_eq!(2, delete_instance_payload["data"]["deletedEntries"]);
-    assert!(delete_instance_payload["data"]["namespace"].is_null());
     assert!(manager
         .get_json("auth.qr.challenge", "qr-admin-cache-1")
         .await
@@ -200,11 +195,13 @@ async fn admin_cache_route_returns_overview_and_supports_refresh_and_delete() {
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, delete_key_response.status());
-    let delete_key_payload = json_payload(delete_key_response).await;
-    assert_eq!(1, delete_key_payload["data"]["deletedEntries"]);
-    assert_eq!("qr-admin-cache-1", delete_key_payload["data"]["cacheKey"]);
-    assert!(delete_key_payload["data"].get("key").is_none());
+    assert_eq!(StatusCode::NO_CONTENT, delete_key_response.status());
+    assert!(
+        axum::body::to_bytes(delete_key_response.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .is_empty()
+    );
     assert!(manager
         .get_json("auth.qr.challenge", "qr-admin-cache-1")
         .await
@@ -218,9 +215,13 @@ async fn admin_cache_route_returns_overview_and_supports_refresh_and_delete() {
         ))
         .await
         .unwrap();
-    assert_eq!(StatusCode::OK, delete_namespace_response.status());
-    let delete_namespace_payload = json_payload(delete_namespace_response).await;
-    assert_eq!(1, delete_namespace_payload["data"]["deletedEntries"]);
+    assert_eq!(StatusCode::NO_CONTENT, delete_namespace_response.status());
+    assert!(
+        axum::body::to_bytes(delete_namespace_response.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .is_empty()
+    );
     assert!(manager
         .get_json("auth.qr.challenge", "qr-admin-cache-2")
         .await
@@ -424,7 +425,7 @@ async fn admin_cache_route_reports_unknown_management_targets_as_not_found() {
         .clone()
         .oneshot(signed_request(
             "GET",
-            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?page_size=1",
+            "/backend/v3/api/system/cache/namespaces/auth.qr.challenge/keys?limit=1",
         ))
         .await
         .unwrap();

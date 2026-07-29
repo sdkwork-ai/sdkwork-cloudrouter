@@ -1,4 +1,4 @@
-import type { MediaResource } from '@sdkwork/clawrouter-app-sdk';
+import type { MediaResource } from '@sdkwork/assets-core';
 
 import { isBlank, trim } from './sdkwork-utils.ts';
 

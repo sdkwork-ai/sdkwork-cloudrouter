@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use sqlx::PgPool;
+use sdkwork_clawrouter_router_service::domain::DomainError;
 
 use crate::error::{store_error, RepositoryResult};
 use crate::mapping::{
@@ -128,11 +129,15 @@ impl SettlementsDashboardReadStore for PostgresSettlementsDashboardReadStore {
         subject: Option<SettlementsDashboardSubject>,
     ) -> SettlementsDashboardReadFuture<'a> {
         Box::pin(async move {
-            let subject = require_subject(subject)?;
-            let bills = load_settlement_bills(&self.pool, &query, subject).await?;
-            let chart_data = load_settlement_chart(&self.pool, &query, subject).await?;
+            let result: RepositoryResult<_> = async {
+                let subject = require_subject(subject)?;
+                let bills = load_settlement_bills(&self.pool, &query, subject).await?;
+                let chart_data = load_settlement_chart(&self.pool, &query, subject).await?;
 
-            Ok(SettlementsDashboardSnapshot { chart_data, bills })
+                Ok(SettlementsDashboardSnapshot { chart_data, bills })
+            }
+            .await;
+            result.map_err(|error| DomainError::new(error.to_string()))
         })
     }
 }

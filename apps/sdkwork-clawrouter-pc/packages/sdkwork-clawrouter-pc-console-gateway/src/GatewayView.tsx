@@ -2,11 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlignLeft, Activity, Server, Timer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel } from '@sdkwork/clawroutes-pc-commons';
-import {
-  GatewayService,
-  type GatewayTrace,
-  type GatewayTracePageInfo,
-} from './gatewayService';
+import type { GatewayTrace, PageInfo } from '@sdkwork/clawrouter-pc-console-core/sdk';
+import { GatewayService } from './gatewayService';
 
 const GATEWAY_TRACE_PAGE_SIZE = 20;
 
@@ -52,7 +49,7 @@ function summarizeTraces(traces: GatewayTrace[]): GatewaySummary {
 export function GatewayView() {
   const { t } = useTranslation();
   const [traces, setTraces] = useState<GatewayTrace[]>([]);
-  const [pageInfo, setPageInfo] = useState<GatewayTracePageInfo | null>(null);
+  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);

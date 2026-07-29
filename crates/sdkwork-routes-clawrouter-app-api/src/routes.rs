@@ -10,6 +10,7 @@ use sdkwork_claw_config::{
     UpstreamCredentialSecurityConfig,
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
+use sdkwork_clawrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretHasher,
@@ -31,10 +32,9 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminTransactionCenterStore, PostgresAppChatStore, PostgresAppGatewayTracesReadStore,
     PostgresAppNotificationStore, PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore,
     PostgresAppRuntimeStore, PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
-    PostgresGatewayApiKeyCommandStore, PostgresModelRankingRefreshStore,
-    PostgresModelRankingsReadStore, PostgresPaymentCallbackStore,
+    PostgresGatewayApiKeyCommandStore, PostgresPaymentCallbackStore,
     PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
-    PostgresSettlementsDashboardReadStore, PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
+    PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
 };
 use sdkwork_clawrouter_router_service::infrastructure::{
     AppRuntimeGatewayHttpClient, OsApiKeySecretGenerator, RedisRuntimeStreamBus,
@@ -52,6 +52,10 @@ use sdkwork_clawrouter_router_service::ports::{
 };
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
 use sdkwork_database_sqlx::DatabasePool;
+use sdkwork_models_catalog_repository_sqlx::{
+    PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
+    PostgresModelRankingsReadStore,
+};
 use sdkwork_routes_models_catalog_app_api::{
     app_model_catalog_router, app_model_rankings_router, app_model_rankings_router_with_read_store,
 };
@@ -827,6 +831,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     })?;
     if startup_install_mode.should_ensure() {
         DatabaseInstaller::for_postgres(pool.clone())
+            .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
             .with_env_options()?
             .ensure_bootstrap_data()
             .await?;

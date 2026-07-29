@@ -1,6 +1,10 @@
 import { createIdempotencyParams } from '@sdkwork/clawroutes-pc-commons/idempotency';
 import { getClawRouterBackendSdkClient } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 import type {
+  AiUpstreamAccountGroupsListParams,
+  AiUpstreamAccountsCredentialsListParams,
+  AiUpstreamAccountsListParams,
+  AiUpstreamSuppliersListParams,
   CreateUpstreamAccountCredentialRequest,
   CreateUpstreamAccountGroupRequest,
   CreateUpstreamAccountRequest,
@@ -15,36 +19,13 @@ import type {
   UpdateUpstreamAccountRequest,
   UpdateUpstreamSupplierRequest,
   UpstreamAccount,
-  UpstreamAccountCredential,
   UpstreamAccountGroup,
-  UpstreamAccountGroupMember,
-  UpstreamAccountVerification,
-  UpstreamResourceEntitlement,
   UpstreamSupplier,
-  UpstreamSupplierAuthMethod,
-  UpstreamSupplierEndpoint,
+  VerifyUpstreamAccountRequest,
 } from '@sdkwork/clawrouter-pc-admin-core/sdk';
 
-export type UpstreamListQuery = {
-  page?: number;
-  pageSize?: number;
-  q?: string;
-};
-
-export type UpstreamPage<T> = {
-  items: T[];
-  pageInfo: {
-    mode: string;
-    page: number;
-    pageSize: number;
-    totalItems: string;
-    totalPages: number;
-    hasMore: boolean;
-  };
-};
-
-export async function listUpstreamSuppliers(query: UpstreamListQuery = {}) {
-  return getClawRouterBackendSdkClient().ai.upstreamSuppliers.list(query) as Promise<UpstreamPage<UpstreamSupplier>>;
+export async function listUpstreamSuppliers(query: AiUpstreamSuppliersListParams = {}) {
+  return getClawRouterBackendSdkClient().ai.upstreamSuppliers.list(query);
 }
 
 export async function getUpstreamSupplier(supplierId: string) {
@@ -78,7 +59,7 @@ export async function deleteUpstreamSupplier(supplier: UpstreamSupplier) {
 
 export async function listUpstreamSupplierEndpoints(supplierId: string) {
   const response = await getClawRouterBackendSdkClient().ai.upstreamSuppliers.endpoints.list(supplierId);
-  return response.items as UpstreamSupplierEndpoint[];
+  return response.items;
 }
 
 export async function updateUpstreamSupplierEndpoints(
@@ -94,7 +75,7 @@ export async function updateUpstreamSupplierEndpoints(
 
 export async function listUpstreamSupplierAuthMethods(supplierId: string) {
   const response = await getClawRouterBackendSdkClient().ai.upstreamSuppliers.authMethods.list(supplierId);
-  return response.items as UpstreamSupplierAuthMethod[];
+  return response.items;
 }
 
 export async function updateUpstreamSupplierAuthMethods(
@@ -110,7 +91,7 @@ export async function updateUpstreamSupplierAuthMethods(
 
 export async function listUpstreamSupplierResources(supplierId: string) {
   const response = await getClawRouterBackendSdkClient().ai.upstreamSuppliers.resources.list(supplierId);
-  return response.items as UpstreamResourceEntitlement[];
+  return response.items;
 }
 
 export async function updateUpstreamSupplierResources(
@@ -124,8 +105,8 @@ export async function updateUpstreamSupplierResources(
   );
 }
 
-export async function listUpstreamAccounts(query: UpstreamListQuery = {}) {
-  return getClawRouterBackendSdkClient().ai.upstreamAccounts.list(query) as Promise<UpstreamPage<UpstreamAccount>>;
+export async function listUpstreamAccounts(query: AiUpstreamAccountsListParams = {}) {
+  return getClawRouterBackendSdkClient().ai.upstreamAccounts.list(query);
 }
 
 export async function getUpstreamAccount(accountId: string) {
@@ -159,13 +140,13 @@ export async function deleteUpstreamAccount(account: UpstreamAccount) {
 
 export async function listUpstreamAccountCredentials(
   accountId: string,
-  query: UpstreamListQuery = {},
+  query: AiUpstreamAccountsCredentialsListParams = {},
 ) {
   const response = await getClawRouterBackendSdkClient().ai.upstreamAccounts.credentials.list(
     accountId,
     query,
   );
-  return response.items as UpstreamAccountCredential[];
+  return response.items;
 }
 
 export async function createUpstreamAccountCredential(
@@ -188,16 +169,13 @@ export async function deleteUpstreamAccountCredential(accountId: string, credent
 
 export async function verifyUpstreamAccount(
   accountId: string,
-  input: { endpointId?: string; credentialId?: string; timeoutMs?: number },
+  input: VerifyUpstreamAccountRequest,
 ) {
-  return getClawRouterBackendSdkClient().ai.upstreamAccounts.verify(
-    accountId,
-    input,
-  ) as Promise<UpstreamAccountVerification>;
+  return getClawRouterBackendSdkClient().ai.upstreamAccounts.verify(accountId, input);
 }
 
-export async function listUpstreamAccountGroups(query: UpstreamListQuery = {}) {
-  return getClawRouterBackendSdkClient().ai.upstreamAccountGroups.list(query) as Promise<UpstreamPage<UpstreamAccountGroup>>;
+export async function listUpstreamAccountGroups(query: AiUpstreamAccountGroupsListParams = {}) {
+  return getClawRouterBackendSdkClient().ai.upstreamAccountGroups.list(query);
 }
 
 export async function getUpstreamAccountGroup(accountGroupId: string) {
@@ -231,7 +209,7 @@ export async function deleteUpstreamAccountGroup(accountGroup: UpstreamAccountGr
 
 export async function listUpstreamAccountGroupMembers(accountGroupId: string) {
   const response = await getClawRouterBackendSdkClient().ai.upstreamAccountGroups.members.list(accountGroupId);
-  return response.items as UpstreamAccountGroupMember[];
+  return response.items;
 }
 
 export async function updateUpstreamAccountGroupMembers(
@@ -247,7 +225,7 @@ export async function updateUpstreamAccountGroupMembers(
 
 export async function listUpstreamAccountGroupResources(accountGroupId: string) {
   const response = await getClawRouterBackendSdkClient().ai.upstreamAccountGroups.resources.list(accountGroupId);
-  return response.items as UpstreamResourceEntitlement[];
+  return response.items;
 }
 
 export async function updateUpstreamAccountGroupResources(

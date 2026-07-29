@@ -78,11 +78,13 @@ export function AdminCategoryManagementSidebar({
             {labels.selected.replace('{{name}}', selectedCategory?.name || labels.all)}
           </div>
         </div>
-        <IconButton
-          icon={<FolderPlus className="h-4 w-4" />}
-          onClick={onCreateRoot}
-          title={labels.create}
-        />
+        {readOnly ? null : (
+          <IconButton
+            icon={<FolderPlus className="h-4 w-4" />}
+            onClick={onCreateRoot}
+            title={labels.create}
+          />
+        )}
       </div>
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
         <button
@@ -122,6 +124,7 @@ export function AdminCategoryManagementSidebar({
               onDeleteCategory={onDeleteCategory}
               onEditCategory={onEditCategory}
               onSelect={onSelect}
+              readOnly={readOnly}
               selectedCategoryId={selectedCategoryId}
               usageCountByCategoryId={usageCountByCategoryId}
             />
@@ -142,6 +145,7 @@ function AdminCategoryTreeItem({
   onDeleteCategory,
   onEditCategory,
   onSelect,
+  readOnly,
   selectedCategoryId,
   usageCountByCategoryId,
 }: {
@@ -151,6 +155,7 @@ function AdminCategoryTreeItem({
   onDeleteCategory: (category: AdminCategoryOption) => void;
   onEditCategory: (category: AdminCategoryOption) => void;
   onSelect: (categoryId: string) => void;
+  readOnly: boolean;
   selectedCategoryId: string;
   usageCountByCategoryId?: ReadonlyMap<string, number>;
 }) {
@@ -183,11 +188,13 @@ function AdminCategoryTreeItem({
         <span className="shrink-0 rounded bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-300">
           {usageCountByCategoryId?.get(node.id) ?? 0}
         </span>
-        <div className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-          <IconButton icon={<FolderPlus className="h-3.5 w-3.5" />} onClick={() => onCreateChild(node)} title={labels.addChild} />
-          <IconButton icon={<Edit2 className="h-3.5 w-3.5" />} onClick={() => onEditCategory(node)} title={labels.edit} />
-          <IconButton danger icon={<Trash2 className="h-3.5 w-3.5" />} onClick={() => onDeleteCategory(node)} title={labels.delete} />
-        </div>
+        {readOnly ? null : (
+          <div className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <IconButton icon={<FolderPlus className="h-3.5 w-3.5" />} onClick={() => onCreateChild(node)} title={labels.addChild} />
+            <IconButton icon={<Edit2 className="h-3.5 w-3.5" />} onClick={() => onEditCategory(node)} title={labels.edit} />
+            <IconButton danger icon={<Trash2 className="h-3.5 w-3.5" />} onClick={() => onDeleteCategory(node)} title={labels.delete} />
+          </div>
+        )}
       </div>
       {node.children.map((child) => (
         <AdminCategoryTreeItem
@@ -198,6 +205,7 @@ function AdminCategoryTreeItem({
           onDeleteCategory={onDeleteCategory}
           onEditCategory={onEditCategory}
           onSelect={onSelect}
+          readOnly={readOnly}
           selectedCategoryId={selectedCategoryId}
           usageCountByCategoryId={usageCountByCategoryId}
         />

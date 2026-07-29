@@ -341,7 +341,8 @@ mod tests {
 
     #[test]
     fn managed_upstream_credentials_are_decrypted_only_at_the_loader_boundary() {
-        let codec = RingAeadCredentialSecretCodec::new("test-upstream-credential-pepper").unwrap();
+        let codec =
+            RingAeadCredentialSecretCodec::new("test-upstream-credential-pepper-32-bytes").unwrap();
         let context = UpstreamCredentialSecretContext::new(100001, 200001, 11, 12);
         let encoded = codec
             .encode_secret(context, "sk-sensitive-upstream-secret")

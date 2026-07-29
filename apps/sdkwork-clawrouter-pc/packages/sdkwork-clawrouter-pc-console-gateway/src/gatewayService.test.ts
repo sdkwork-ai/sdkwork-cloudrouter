@@ -77,4 +77,20 @@ describe('GatewayService', () => {
       'Gateway traces next cursor must advance',
     );
   });
+
+  it('rejects a continuation cursor that exceeds the server input limit', async () => {
+    sdkMocks.list.mockResolvedValue({
+      items: [trace('trace-1')],
+      pageInfo: {
+        mode: 'cursor',
+        pageSize: 20,
+        hasMore: true,
+        nextCursor: 'x'.repeat(1025),
+      },
+    });
+
+    await expect(GatewayService.fetchTraces()).rejects.toThrow(
+      'Gateway traces next cursor must be a non-empty opaque string',
+    );
+  });
 });

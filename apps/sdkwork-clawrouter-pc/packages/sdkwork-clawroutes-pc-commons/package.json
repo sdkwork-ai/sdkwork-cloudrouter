@@ -111,6 +111,7 @@
   },
   "dependencies": {
     "@sdkwork/appbase-pc-react": "workspace:*",
+    "@sdkwork/assets-core": "workspace:*",
     "@sdkwork/clawrouter-pc-core": "workspace:*",
     "@sdkwork/iam-app-sdk": "workspace:*",
     "@sdkwork/iam-backend-sdk": "workspace:*",

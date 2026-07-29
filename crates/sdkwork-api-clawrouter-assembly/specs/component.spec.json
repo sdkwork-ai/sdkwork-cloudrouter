@@ -68,7 +68,12 @@
     "providedPorts": [
       { "name": "clawrouter-api-assembly", "export": "." }
     ],
-    "requiredPorts": [],
+    "requiredPorts": [
+      {
+        "name": "iamAppApiContribution",
+        "export": "sdkwork_api_clawrouter_assembly::assemble_api_router"
+      }
+    ],
     "runtimeEntrypoints": [
       "src/lib.rs#assemble_api_router",
       "src/bootstrap/iam.rs#wire_iam_app_router"
@@ -92,6 +97,9 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone"
+        ],
         "cargoDependency": "sdkwork-routes-iam-app-api",
         "embeddedExecutableExport": "sdkwork_api_clawrouter_assembly::assemble_api_router",
         "coverageEvidence": [

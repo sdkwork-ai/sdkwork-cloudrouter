@@ -27,10 +27,6 @@ mod error;
 mod gateway_usage_recorder;
 mod loader;
 pub(crate) mod model_catalog_import;
-pub use sdkwork_models_catalog_repository_sqlx::{
-    PostgresAdminAiResourceStore, PostgresModelCatalogAdminStore as PostgresAdminModelStore,
-    PostgresModelRankingRefreshStore, PostgresModelRankingsReadStore,
-};
 mod openai_invocation_telemetry_plugin;
 mod payment_callback_store;
 mod payment_intent_runtime_store;
@@ -42,10 +38,6 @@ mod site_settings_store;
 mod usage_logs_read_store;
 mod usage_settlement_store;
 
-pub use super::admin_analytics_repository_adapter::PostgresAdminAnalyticsReadStore;
-pub use super::admin_dashboard_repository_adapter::PostgresAdminDashboardReadStore;
-pub use super::admin_monitor_repository_adapter::PostgresAdminMonitorReadStore;
-pub use super::settlements_dashboard_repository_adapter::PostgresSettlementsDashboardReadStore;
 pub use admin_announcement_store::PostgresAdminAnnouncementStore;
 pub use admin_api_key_rate_limit_store::PostgresAdminApiKeyRateLimitStore;
 pub use admin_auth_settings_store::PostgresAdminAuthSettingsStore;

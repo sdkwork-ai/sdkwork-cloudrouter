@@ -40,6 +40,7 @@ const DashboardView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-das
 const UsageView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-usage'), 'UsageView');
 const GatewayView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-gateway'), 'GatewayView');
 const ApiKeysView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-api-keys'), 'ApiKeysView');
+const MessagesView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-messages'), 'MessagesView');
 const UserView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-user'), 'UserView');
 const SettingsView = lazyRoute(() => import('@sdkwork/clawrouter-pc-console-settings'), 'SettingsView');
 const AccountView = lazyRoute(() => import('./console-business/ConsoleAccountView'), 'ConsoleAccountView');
@@ -162,6 +163,7 @@ export default function App() {
               <Route path="account" element={<AccountView />} />
               {ClawRouterConsoleBusinessHostRoutes()}
               <Route path="settlements" element={<SettlementsView />} />
+              <Route path="notifications" element={<MessagesView />} />
               <Route path="user" element={<UserView />} />
               <Route path="settings" element={<SettingsView />} />
               <Route path="*" element={<Navigate to="/console/dashboard" replace />} />

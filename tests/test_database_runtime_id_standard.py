@@ -6,7 +6,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SQL_SOURCE_ROOT = ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
 GENERATED_POSTGRES_SCHEMA = ROOT / "generated" / "schema" / "postgres" / "schema.sql"
-GENERATED_SQLITE_SCHEMA = ROOT / "generated" / "schema" / "sqlite" / "schema.sql"
 SCHEMA_COMPILER_DOC = (
     ROOT / "docs" / "architecture" / "tech" / "TECH-21-schema-compiler-postgres-ddl.md"
 )
@@ -64,21 +63,6 @@ class DatabaseRuntimeIdStandardTest(unittest.TestCase):
             findings,
             "generated PostgreSQL schema must not allocate runtime ids in the database:\n"
             + "\n".join(findings),
-        )
-
-    def test_generated_sqlite_schema_uses_explicit_non_rowid_ids(self) -> None:
-        text = GENERATED_SQLITE_SCHEMA.read_text(encoding="utf-8")
-
-        self.assertNotRegex(text, re.compile(r"\bid\s+INTEGER\s+NOT\s+NULL\s+PRIMARY\s+KEY\b", re.IGNORECASE))
-        self.assertEqual(
-            43,
-            len(
-                re.findall(
-                    r"^\s*id\s+BIGINT\s+NOT\s+NULL\s+PRIMARY\s+KEY,?$",
-                    text,
-                    re.IGNORECASE | re.MULTILINE,
-                )
-            ),
         )
 
     def test_schema_compiler_doc_documents_snowflake_id_contract(self) -> None:

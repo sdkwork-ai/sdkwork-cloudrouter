@@ -449,7 +449,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/ai/routing/usage",
         "ai",
-        "routing.usage.list",
+        "routing.usage.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

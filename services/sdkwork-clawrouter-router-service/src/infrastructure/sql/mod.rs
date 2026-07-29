@@ -1,7 +1,4 @@
-pub mod admin_analytics_repository_adapter;
-pub mod admin_dashboard_repository_adapter;
 pub(crate) mod admin_marketing_recharge;
-pub mod admin_monitor_repository_adapter;
 pub(crate) mod ai_routing_seed;
 pub mod catalog;
 pub(crate) mod commerce_bootstrap;
@@ -18,7 +15,6 @@ pub(crate) mod routing_config_change;
 pub mod rows;
 pub(crate) mod runtime_id;
 pub(crate) mod service_node_metadata;
-pub mod settlements_dashboard_repository_adapter;
 pub(crate) mod sql_admin_auth_settings;
 pub(crate) mod sql_admin_product_center;
 pub(crate) mod sql_admin_storage;

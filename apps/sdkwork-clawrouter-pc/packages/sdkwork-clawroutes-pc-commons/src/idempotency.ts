@@ -14,8 +14,13 @@ function createSecureUuid(): string {
     throw new Error('Secure random source returned an invalid token seed.');
   }
 
-  randomBytes[6] = (randomBytes[6] & 0x0f) | 0x40;
-  randomBytes[8] = (randomBytes[8] & 0x3f) | 0x80;
+  const versionByte = randomBytes[6];
+  const variantByte = randomBytes[8];
+  if (versionByte === undefined || variantByte === undefined) {
+    throw new Error('Secure random source returned an invalid token seed.');
+  }
+  randomBytes[6] = (versionByte & 0x0f) | 0x40;
+  randomBytes[8] = (variantByte & 0x3f) | 0x80;
   const hex = Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, '0'));
   return [
     hex.slice(0, 4).join(''),

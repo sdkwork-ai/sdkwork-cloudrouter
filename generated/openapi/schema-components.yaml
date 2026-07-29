@@ -206,845 +206,6 @@ components:
       - billing_mode
       - default_unit
       - default_unit_size
-    AiChannelCredentialRecord:
-      type: object
-      x-table: ai_channel_credential
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        channel_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        provider_code:
-          type: string
-          maxLength: 64
-        channel_code:
-          type: string
-          maxLength: 64
-        credential_name:
-          type: string
-          maxLength: 128
-        base_url:
-          type: string
-          maxLength: 512
-        auth_config:
-          type: object
-          additionalProperties: true
-        credential_ref:
-          type: string
-          maxLength: 256
-        credential_hash:
-          type: string
-          maxLength: 128
-        masked_label:
-          type: string
-          maxLength: 128
-        priority:
-          type: integer
-          format: int32
-        weight:
-          type: integer
-          format: int32
-        health_status:
-          type: integer
-          format: int32
-        last_latency_ms:
-          type: integer
-          format: int32
-        consecutive_error_count:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        last_verified_at:
-          type: string
-          format: date-time
-        last_used_at:
-          type: string
-          format: date-time
-    AiChannelGroupMemberRecord:
-      type: object
-      x-table: ai_channel_group_member
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        channel_group_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        channel_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        priority:
-          type: integer
-          format: int32
-        weight:
-          type: integer
-          format: int32
-        enabled:
-          type: boolean
-        effective_from:
-          type: string
-          format: date-time
-        effective_to:
-          type: string
-          format: date-time
-    AiChannelGroupMetricSnapshotRecord:
-      type: object
-      x-table: ai_channel_group_metric_snapshot
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        source_type:
-          type: string
-          maxLength: 128
-        source_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        source_version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        rebuild_version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        channel_group_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        group_code:
-          type: string
-          maxLength: 64
-        provider_code:
-          type: string
-          maxLength: 64
-        channel_available_count:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        channel_total_count:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        capacity_used:
-          type: string
-          format: decimal
-        capacity_limit:
-          type: string
-          format: decimal
-        request_count_today:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        request_count_total:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        usage_amount_today:
-          type: string
-          format: decimal
-        usage_amount_total:
-          type: string
-          format: decimal
-        health_status:
-          type: integer
-          format: int32
-        snapshot_at:
-          type: string
-          format: date-time
-    AiChannelGroupRecord:
-      type: object
-      x-table: ai_channel_group
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        group_code:
-          type: string
-          maxLength: 64
-        group_name:
-          type: string
-          maxLength: 128
-        description:
-          type: string
-          maxLength: 512
-        provider_code:
-          type: string
-          maxLength: 64
-        group_type:
-          type: string
-          maxLength: 32
-        routing_policy_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        quota_policy_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        rate_limit_policy_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        environment:
-          type: integer
-          format: int32
-        pricing_plan_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        pricing_plan_code:
-          type: string
-          maxLength: 64
-        rate_multiplier:
-          type: string
-          format: decimal
-        price_reference_mode:
-          type: integer
-          format: int32
-        official_price_multiplier:
-          type: string
-          format: decimal
-        billing_type:
-          type: integer
-          format: int32
-        capacity_limit:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        allowed_origin:
-          type: object
-          additionalProperties: true
-    AiChannelGroupResourceRecord:
-      type: object
-      x-table: ai_channel_group_resource
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        channel_group_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        resource_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        resource_code:
-          type: string
-          maxLength: 192
-        resource_group_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        resource_group_code:
-          type: string
-          maxLength: 128
-        grant_type:
-          type: string
-          maxLength: 32
-        priority:
-          type: integer
-          format: int32
-        effective_from:
-          type: string
-          format: date-time
-        effective_to:
-          type: string
-          format: date-time
-    AiChannelRecord:
-      type: object
-      x-table: ai_channel
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        provider_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        provider_code:
-          type: string
-          maxLength: 64
-        site_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        site_service_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        site_code:
-          type: string
-          maxLength: 64
-        site_service_code:
-          type: string
-          maxLength: 64
-        site_channel_role:
-          type: string
-          maxLength: 32
-        channel_code:
-          type: string
-          maxLength: 64
-        channel_name:
-          type: string
-          maxLength: 128
-        channel_type:
-          type: string
-          maxLength: 32
-        protocol_code:
-          type: string
-          maxLength: 64
-        auth_type:
-          type: integer
-          format: int32
-        credential_profile:
-          type: integer
-          format: int32
-        external_channel_id:
-          type: string
-          maxLength: 128
-        base_url:
-          type: string
-          maxLength: 512
-        auth_config:
-          type: object
-          additionalProperties: true
-        credential_ref:
-          type: string
-          maxLength: 256
-        credential_hash:
-          type: string
-          maxLength: 128
-        credential_version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        credential_rotation_policy:
-          type: object
-          additionalProperties: true
-        credential_rotation_strategy:
-          type: string
-          maxLength: 64
-        masked_label:
-          type: string
-          maxLength: 128
-        environment:
-          type: integer
-          format: int32
-        region_code:
-          type: string
-          maxLength: 64
-        quota_unit:
-          type: integer
-          format: int32
-        quota_limit:
-          type: string
-          format: decimal
-        quota_used:
-          type: string
-          format: decimal
-        upstream_balance_amount:
-          type: string
-          format: decimal
-        upstream_balance_currency:
-          type: string
-          maxLength: 10
-        last_balance_checked_at:
-          type: string
-          format: date-time
-        last_rotated_at:
-          type: string
-          format: date-time
-        next_rotate_at:
-          type: string
-          format: date-time
-        last_verified_at:
-          type: string
-          format: date-time
-        last_used_at:
-          type: string
-          format: date-time
-        priority:
-          type: integer
-          format: int32
-        weight:
-          type: integer
-          format: int32
-        rpm_limit:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        timeout_ms:
-          type: integer
-          format: int32
-        retry_policy:
-          type: object
-          additionalProperties: true
-        circuit_breaker_policy:
-          type: object
-          additionalProperties: true
-        health_status:
-          type: integer
-          format: int32
-        last_latency_ms:
-          type: integer
-          format: int32
-        consecutive_error_count:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        proxy_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        risk_level:
-          type: integer
-          format: int32
-    AiChannelResourceRecord:
-      type: object
-      x-table: ai_channel_resource
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        channel_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        provider_code:
-          type: string
-          maxLength: 64
-        channel_code:
-          type: string
-          maxLength: 64
-        resource_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        resource_code:
-          type: string
-          maxLength: 192
-        resource_group_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        resource_group_code:
-          type: string
-          maxLength: 128
-        grant_type:
-          type: string
-          maxLength: 32
-        priority:
-          type: integer
-          format: int32
-        weight:
-          type: integer
-          format: int32
-        effective_from:
-          type: string
-          format: date-time
-        effective_to:
-          type: string
-          format: date-time
     AiConfigChangeEventRecord:
       type: object
       x-table: ai_config_change_event
@@ -3533,10 +2694,10 @@ components:
         model:
           type: string
           maxLength: 256
-        provider_code:
+        supplier_code:
           type: string
           maxLength: 64
-        channel_id:
+        account_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
@@ -3792,227 +2953,6 @@ components:
         effective_to:
           type: string
           format: date-time
-    AiProviderObjectRouteRecord:
-      type: object
-      x-table: ai_provider_object_route
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        api_key_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        channel_group_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        object_type:
-          type: string
-          maxLength: 64
-        object_id:
-          type: string
-          maxLength: 256
-        object_key_hash:
-          type: string
-          maxLength: 128
-        parent_object_type:
-          type: string
-          maxLength: 64
-        parent_object_id:
-          type: string
-          maxLength: 256
-        provider_code:
-          type: string
-          maxLength: 64
-        channel_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        vendor_code:
-          type: string
-          maxLength: 64
-        api_code:
-          type: string
-          maxLength: 128
-        catalog_key:
-          type: string
-          maxLength: 256
-        provider_model:
-          type: string
-          maxLength: 256
-        region_code:
-          type: string
-          maxLength: 64
-        sticky_scope:
-          type: string
-          maxLength: 64
-        expires_at:
-          type: string
-          format: date-time
-        last_seen_at:
-          type: string
-          format: date-time
-    AiProviderRecord:
-      type: object
-      x-table: ai_provider
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        provider_code:
-          type: string
-          maxLength: 64
-        display_name:
-          type: string
-          maxLength: 128
-        description:
-          type: string
-          maxLength: 512
-        icon_drive_uri:
-          type: string
-          maxLength: 512
-        color_token:
-          type: string
-          maxLength: 64
-        docs_url:
-          type: string
-          maxLength: 512
-        website_url:
-          type: string
-          maxLength: 512
-        default_vendor_code:
-          type: string
-          maxLength: 64
-        provider_type:
-          type: string
-          maxLength: 32
-        protocol_code:
-          type: string
-          maxLength: 64
-        base_url:
-          type: string
-          maxLength: 512
-        auth_type:
-          type: integer
-          format: int32
-        resource_schema:
-          type: object
-          additionalProperties: true
-        metadata_schema_version:
-          type: string
-          maxLength: 32
-        sort_order:
-          type: integer
-          format: int32
-        icon:
-          $ref: '#/components/schemas/MediaResource'
     AiQuotaPolicyRecord:
       type: object
       x-table: ai_quota_policy
@@ -4100,7 +3040,7 @@ components:
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        channel_group_id:
+        account_group_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
@@ -4234,22 +3174,16 @@ components:
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        legacy_api_key_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
         api_key_name_snapshot:
           type: string
           maxLength: 128
-        channel_group_id:
+        account_group_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        channel_group_snapshot:
+        account_group_snapshot:
           type: string
           maxLength: 128
         owner_type:
@@ -4264,19 +3198,19 @@ components:
         owner_name_snapshot:
           type: string
           maxLength: 128
-        provider_id:
+        supplier_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        channel_id:
+        account_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        channel_name_snapshot:
+        account_name_snapshot:
           type: string
           maxLength: 128
         requested_model:
@@ -4775,12 +3709,6 @@ components:
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        legacy_api_key_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
         policy_id:
           type: string
           format: int64
@@ -4808,19 +3736,19 @@ components:
         capability:
           type: integer
           format: int32
-        selected_provider_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        selected_channel_id:
+        selected_supplier_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
         selected_account_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        selected_credential_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
@@ -5108,7 +4036,7 @@ components:
         target_model:
           type: string
           maxLength: 256
-        candidate_channels:
+        candidate_account_groups:
           type: object
           additionalProperties: true
         fallback_chain:
@@ -5129,9 +4057,9 @@ components:
         effective_to:
           type: string
           format: date-time
-    AiSiteRecord:
+    AiUpstreamAccountCredentialRecord:
       type: object
-      x-table: ai_site
+      x-table: ai_upstream_account_credential
       x-domain: ai
       x-generated-by-this-project: true
       properties:
@@ -5186,162 +4114,24 @@ components:
         metadata:
           type: object
           additionalProperties: true
-        site_code:
+        account_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        auth_method_code:
           type: string
           maxLength: 64
-        site_name:
+        credential_name:
           type: string
           maxLength: 128
-        display_name:
+        secret_ciphertext:
           type: string
-          maxLength: 128
-        description:
-          type: string
-          maxLength: 1024
-        base_url:
-          type: string
-          maxLength: 512
-        website_url:
-          type: string
-          maxLength: 512
-        docs_url:
-          type: string
-          maxLength: 512
-        logo_drive_uri:
-          type: string
-          maxLength: 512
-        color_token:
+        secret_key_id:
           type: string
           maxLength: 64
-        site_type:
-          type: string
-          maxLength: 32
-        owner_kind:
-          type: string
-          maxLength: 32
-        region_code:
-          type: string
-          maxLength: 64
-        environment:
-          type: integer
-          format: int32
-        health_status:
-          type: integer
-          format: int32
-        last_latency_ms:
-          type: integer
-          format: int32
-        consecutive_error_count:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        last_checked_at:
-          type: string
-          format: date-time
-        last_sync_at:
-          type: string
-          format: date-time
-        sort_order:
-          type: integer
-          format: int32
-        logo:
-          $ref: '#/components/schemas/MediaResource'
-    AiSiteServiceRecord:
-      type: object
-      x-table: ai_site_service
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        data_scope:
-          type: string
-          x-db-type: enum_int32
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        version:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        deleted_at:
-          type: string
-          format: date-time
-        deleted_by:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        metadata:
-          type: object
-          additionalProperties: true
-        site_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        site_code:
-          type: string
-          maxLength: 64
-        service_code:
-          type: string
-          maxLength: 64
-        service_name:
-          type: string
-          maxLength: 128
-        service_type:
-          type: string
-          maxLength: 64
-        protocol_code:
-          type: string
-          maxLength: 64
-        base_url:
-          type: string
-          maxLength: 512
-        auth_type:
-          type: integer
-          format: int32
-        credential_profile:
-          type: integer
-          format: int32
-        auth_config:
-          type: object
-          additionalProperties: true
-        credential_ref:
-          type: string
-          maxLength: 512
-        credential_hash:
+        secret_fingerprint:
           type: string
           maxLength: 128
         masked_label:
@@ -5353,12 +4143,475 @@ components:
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        region_code:
+        priority:
+          type: integer
+          format: int32
+        is_active:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+        last_rotated_at:
+          type: string
+          format: date-time
+        last_verified_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+    AiUpstreamAccountGroupMemberRecord:
+      type: object
+      x-table: ai_upstream_account_group_member
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
           type: string
           maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        account_group_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        account_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        priority:
+          type: integer
+          format: int32
+        routing_weight:
+          type: integer
+          format: int32
+        cost_multiplier_override:
+          type: string
+          format: decimal
+        enabled:
+          type: boolean
+        effective_from:
+          type: string
+          format: date-time
+        effective_to:
+          type: string
+          format: date-time
+    AiUpstreamAccountGroupMetricSnapshotRecord:
+      type: object
+      x-table: ai_upstream_account_group_metric_snapshot
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        source_type:
+          type: string
+          maxLength: 128
+        source_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        source_version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        rebuild_version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        account_group_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        group_code:
+          type: string
+          maxLength: 64
+        account_available_count:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        account_total_count:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        capacity_used:
+          type: string
+          format: decimal
+        capacity_limit:
+          type: string
+          format: decimal
+        request_count_today:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        request_count_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        usage_amount_today:
+          type: string
+          format: decimal
+        usage_amount_total:
+          type: string
+          format: decimal
+        health_status:
+          type: integer
+          format: int32
+        snapshot_at:
+          type: string
+          format: date-time
+    AiUpstreamAccountGroupRecord:
+      type: object
+      x-table: ai_upstream_account_group
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        group_code:
+          type: string
+          maxLength: 64
+        group_name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 512
+        group_type:
+          type: string
+          maxLength: 32
+        routing_strategy:
+          type: string
+          maxLength: 32
+        fallback_mode:
+          type: string
+          maxLength: 32
+        priority:
+          type: integer
+          format: int32
+        routing_policy_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        quota_policy_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        rate_limit_policy_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
         environment:
           type: integer
           format: int32
+        pricing_plan_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        pricing_plan_code:
+          type: string
+          maxLength: 64
+        cost_multiplier:
+          type: string
+          format: decimal
+        sale_multiplier:
+          type: string
+          format: decimal
+        billing_type:
+          type: integer
+          format: int32
+        capacity_limit:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        allowed_origin:
+          type: object
+          additionalProperties: true
+    AiUpstreamAccountGroupResourceRecord:
+      type: object
+      x-table: ai_upstream_account_group_resource
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        account_group_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        resource_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        resource_code:
+          type: string
+          maxLength: 192
+        resource_group_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        resource_group_code:
+          type: string
+          maxLength: 128
+        grant_type:
+          type: string
+          maxLength: 32
+        priority:
+          type: integer
+          format: int32
+        effective_from:
+          type: string
+          format: date-time
+        effective_to:
+          type: string
+          format: date-time
+    AiUpstreamAccountHealthStateRecord:
+      type: object
+      x-table: ai_upstream_account_health_state
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        account_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
         health_status:
           type: integer
           format: int32
@@ -5374,12 +4627,728 @@ components:
         last_verified_at:
           type: string
           format: date-time
-        last_sync_at:
+        last_used_at:
           type: string
           format: date-time
+        last_success_at:
+          type: string
+          format: date-time
+        last_failure_at:
+          type: string
+          format: date-time
+    AiUpstreamAccountRecord:
+      type: object
+      x-table: ai_upstream_account
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        supplier_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        supplier_code:
+          type: string
+          maxLength: 64
+        preferred_endpoint_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        account_code:
+          type: string
+          maxLength: 64
+        account_name:
+          type: string
+          maxLength: 128
+        account_type:
+          type: string
+          maxLength: 32
+        auth_method_code:
+          type: string
+          maxLength: 64
+        external_account_id:
+          type: string
+          maxLength: 128
+        credential_rotation_policy:
+          type: object
+          additionalProperties: true
+        credential_rotation_strategy:
+          type: string
+          maxLength: 64
+        environment:
+          type: integer
+          format: int32
+        region_code:
+          type: string
+          maxLength: 64
+        quota_unit:
+          type: integer
+          format: int32
+        quota_limit:
+          type: string
+          format: decimal
+        quota_used:
+          type: string
+          format: decimal
+        upstream_balance_amount:
+          type: string
+          format: decimal
+        upstream_balance_currency:
+          type: string
+          maxLength: 10
+        contract_cost_multiplier:
+          type: string
+          format: decimal
+        last_balance_checked_at:
+          type: string
+          format: date-time
+        last_rotated_at:
+          type: string
+          format: date-time
+        next_rotate_at:
+          type: string
+          format: date-time
+        rpm_limit:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        timeout_ms:
+          type: integer
+          format: int32
+        retry_policy:
+          type: object
+          additionalProperties: true
+        circuit_breaker_policy:
+          type: object
+          additionalProperties: true
+        proxy_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        risk_level:
+          type: integer
+          format: int32
+    AiUpstreamObjectRouteRecord:
+      type: object
+      x-table: ai_upstream_object_route
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        api_key_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        account_group_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        object_type:
+          type: string
+          maxLength: 64
+        object_id:
+          type: string
+          maxLength: 256
+        object_key_hash:
+          type: string
+          maxLength: 128
+        parent_object_type:
+          type: string
+          maxLength: 64
+        parent_object_id:
+          type: string
+          maxLength: 256
+        supplier_code:
+          type: string
+          maxLength: 64
+        account_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        vendor_code:
+          type: string
+          maxLength: 64
+        api_code:
+          type: string
+          maxLength: 128
+        catalog_key:
+          type: string
+          maxLength: 256
+        provider_model:
+          type: string
+          maxLength: 256
+        region_code:
+          type: string
+          maxLength: 64
+        sticky_scope:
+          type: string
+          maxLength: 64
+        expires_at:
+          type: string
+          format: date-time
+        last_seen_at:
+          type: string
+          format: date-time
+    AiUpstreamSupplierAuthMethodRecord:
+      type: object
+      x-table: ai_upstream_supplier_auth_method
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        supplier_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        supplier_code:
+          type: string
+          maxLength: 64
+        auth_method_code:
+          type: string
+          maxLength: 64
+        auth_method_name:
+          type: string
+          maxLength: 128
+        auth_type:
+          type: string
+          maxLength: 64
+        config_schema:
+          type: object
+          additionalProperties: true
+        runtime_auth_config:
+          type: object
+          additionalProperties: true
+        priority:
+          type: integer
+          format: int32
+    AiUpstreamSupplierEndpointHealthStateRecord:
+      type: object
+      x-table: ai_upstream_supplier_endpoint_health_state
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        supplier_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        endpoint_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        health_status:
+          type: integer
+          format: int32
+        last_latency_ms:
+          type: integer
+          format: int32
+        consecutive_error_count:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        last_checked_at:
+          type: string
+          format: date-time
+        last_success_at:
+          type: string
+          format: date-time
+        last_failure_at:
+          type: string
+          format: date-time
+    AiUpstreamSupplierEndpointRecord:
+      type: object
+      x-table: ai_upstream_supplier_endpoint
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        supplier_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        supplier_code:
+          type: string
+          maxLength: 64
+        endpoint_code:
+          type: string
+          maxLength: 64
+        endpoint_name:
+          type: string
+          maxLength: 128
+        base_url:
+          type: string
+          maxLength: 512
+        protocol_code:
+          type: string
+          maxLength: 64
+        region_code:
+          type: string
+          maxLength: 64
+        environment:
+          type: integer
+          format: int32
+        priority:
+          type: integer
+          format: int32
+        routing_weight:
+          type: integer
+          format: int32
+        timeout_ms:
+          type: integer
+          format: int32
+    AiUpstreamSupplierRecord:
+      type: object
+      x-table: ai_upstream_supplier
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        supplier_code:
+          type: string
+          maxLength: 64
+        supplier_name:
+          type: string
+          maxLength: 128
+        display_name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 512
+        icon_drive_uri:
+          type: string
+          maxLength: 512
+        color_token:
+          type: string
+          maxLength: 64
+        docs_url:
+          type: string
+          maxLength: 512
+        website_url:
+          type: string
+          maxLength: 512
+        default_vendor_code:
+          type: string
+          maxLength: 64
+        supplier_type:
+          type: string
+          maxLength: 32
+        adapter_code:
+          type: string
+          maxLength: 64
+        protocol_code:
+          type: string
+          maxLength: 64
+        owner_kind:
+          type: string
+          maxLength: 32
+        region_code:
+          type: string
+          maxLength: 64
+        environment:
+          type: integer
+          format: int32
+        metadata_schema_version:
+          type: string
+          maxLength: 32
         sort_order:
           type: integer
           format: int32
+        icon:
+          $ref: '#/components/schemas/MediaResource'
+    AiUpstreamSupplierResourceRecord:
+      type: object
+      x-table: ai_upstream_supplier_resource
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        supplier_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        supplier_code:
+          type: string
+          maxLength: 64
+        resource_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        resource_code:
+          type: string
+          maxLength: 192
+        resource_group_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        resource_group_code:
+          type: string
+          maxLength: 128
+        grant_type:
+          type: string
+          maxLength: 32
+        priority:
+          type: integer
+          format: int32
+        effective_from:
+          type: string
+          format: date-time
+        effective_to:
+          type: string
+          format: date-time
     AiUsageRecord:
       type: object
       x-table: ai_usage
@@ -5451,22 +5420,16 @@ components:
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        legacy_api_key_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
         api_key_name_snapshot:
           type: string
           maxLength: 128
-        channel_group_id:
+        account_group_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        channel_group_snapshot:
+        account_group_snapshot:
           type: string
           maxLength: 128
         owner_type:
@@ -5496,13 +5459,13 @@ components:
         region_code:
           type: string
           maxLength: 64
-        provider_id:
+        supplier_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        channel_id:
+        account_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
@@ -5679,152 +5642,6 @@ components:
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-    AiUsageServiceProviderEdgeRecord:
-      type: object
-      x-table: ai_usage_service_provider_edge
-      x-domain: ai
-      x-generated-by-this-project: true
-      properties:
-        id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        uuid:
-          type: string
-          maxLength: 64
-        tenant_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        organization_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        user_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        request_id:
-          type: string
-          maxLength: 128
-        trace_id:
-          type: string
-          maxLength: 128
-        payload_hash:
-          type: string
-          maxLength: 128
-        idempotency_key:
-          type: string
-          maxLength: 128
-        status:
-          type: string
-          x-db-type: enum_int32
-        created_at:
-          type: string
-          format: date-time
-        retention_until:
-          type: string
-          format: date-time
-        legal_hold:
-          type: boolean
-        metadata:
-          type: object
-          additionalProperties: true
-        usage_fact_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        edge_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        edge_depth:
-          type: integer
-          format: int32
-        seller_provider_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        buyer_provider_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        amount_role:
-          type: string
-          maxLength: 64
-        pricing_plan_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        pricing_rule_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        billing_meter_code:
-          type: string
-          maxLength: 64
-        token_kind:
-          type: string
-          maxLength: 64
-        billable_quantity:
-          type: string
-          format: decimal
-        unit_price:
-          type: string
-          format: decimal
-        unit_size:
-          type: string
-          format: decimal
-        charge_amount:
-          type: string
-          format: decimal
-        currency:
-          type: string
-          maxLength: 10
-        fx_rate_snapshot:
-          type: string
-          format: decimal
-        settlement_currency:
-          type: string
-          maxLength: 10
-        converted_charge_amount:
-          type: string
-          format: decimal
-        seller_snapshot:
-          type: object
-          additionalProperties: true
-        buyer_snapshot:
-          type: object
-          additionalProperties: true
-        price_snapshot:
-          type: object
-          additionalProperties: true
-        occurred_at:
-          type: string
-          format: date-time
-        settlement_status:
-          type: integer
-          format: int32
     AiVendorApiEndpointRecord:
       type: object
       x-table: ai_vendor_api_endpoint
@@ -6119,9 +5936,9 @@ components:
         effective_to:
           type: string
           format: date-time
-    IamGatewayApiKeyChannelGroupRecord:
+    IamGatewayApiKeyAccountGroupRecord:
       type: object
-      x-table: iam_gateway_api_key_channel_group
+      x-table: iam_gateway_api_key_account_group
       x-domain: iam_gateway
       x-generated-by-this-project: true
       properties:
@@ -6197,13 +6014,13 @@ components:
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        channel_group_id:
+        account_group_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        channel_group_code:
+        account_group_code:
           type: string
           maxLength: 64
         binding_role:
@@ -6296,13 +6113,7 @@ components:
           pattern: ^-?[0-9]+$
           x-sdkwork-int64-string: true
           x-sdkwork-rust-type: i64
-        legacy_api_key_id:
-          type: string
-          format: int64
-          pattern: ^-?[0-9]+$
-          x-sdkwork-int64-string: true
-          x-sdkwork-rust-type: i64
-        channel_group_id:
+        account_group_id:
           type: string
           format: int64
           pattern: ^-?[0-9]+$

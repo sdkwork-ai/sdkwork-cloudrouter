@@ -151,7 +151,7 @@ export function normalizeDecimalString(
   if (!/^\d+(?:\.\d+)?$/.test(source)) {
     throw new Error('decimal value is invalid');
   }
-  const [wholeRaw, fractionRaw = ''] = source.split('.');
+  const [wholeRaw = '0', fractionRaw = ''] = source.split('.');
   if (fractionRaw.length > scale) {
     throw new Error('decimal value exceeds precision');
   }

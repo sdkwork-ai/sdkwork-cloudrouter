@@ -12,3 +12,4 @@ path = "src/lib.rs"
 serde = { workspace = true, features = ["derive"] }
 sqlx = { workspace = true }
 sdkwork-database-sqlx.workspace = true
+sdkwork-clawrouter-router-service.workspace = true

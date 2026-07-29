@@ -1,3 +1,5 @@
+import type { IamAppContext } from '@sdkwork/iam-contracts';
+
 export interface PortalSessionAppContext {
   tenantId: string;
   userId: string;
@@ -17,5 +19,5 @@ export interface PortalIamBridgeSession {
   authToken?: string;
   refreshToken?: string;
   sessionId?: string;
-  context?: PortalSessionAppContext;
+  context?: IamAppContext;
 }

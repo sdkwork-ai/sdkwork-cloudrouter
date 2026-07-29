@@ -29,6 +29,28 @@
   ],
   "contracts": {
     "publicExports": ["."],
+    "requiredPorts": [
+      {
+        "name": "accountWalletAppApi",
+        "export": "sdkwork_routes_account_app_api::app_account_wallet_router_with_postgres_pool"
+      },
+      {
+        "name": "paymentAppApi",
+        "export": "sdkwork_routes_payment_app_api::routes::build_payment_app_router"
+      },
+      {
+        "name": "promotionAppApi",
+        "export": "sdkwork_routes_promotion_app_api::app_promotion_router_with_postgres_pool"
+      },
+      {
+        "name": "membershipAppApi",
+        "export": "sdkwork_routes_membership_app_api::app_membership_router_with_postgres_pool"
+      },
+      {
+        "name": "orderAppApi",
+        "export": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool"
+      }
+    ],
     "runtimeEntrypoints": [
       "src/manifest.rs#route_manifest",
       "src/routes.rs#build_sdkwork_claw_router_app_api_router",
@@ -47,6 +69,7 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
         "cargoDependency": "sdkwork_routes_account_app_api",
         "embeddedExecutableExport": "sdkwork_routes_account_app_api::app_account_wallet_router_with_postgres_pool",
         "coverageEvidence": [
@@ -62,6 +85,7 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
         "cargoDependency": "sdkwork_routes_payment_app_api",
         "embeddedExecutableExport": "sdkwork_routes_payment_app_api::routes::build_payment_app_router",
         "coverageEvidence": [
@@ -77,6 +101,7 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
         "cargoDependency": "sdkwork_routes_promotion_app_api",
         "embeddedExecutableExport": "sdkwork_routes_promotion_app_api::app_promotion_router_with_postgres_pool",
         "coverageEvidence": [
@@ -92,6 +117,7 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
         "cargoDependency": "sdkwork_routes_membership_app_api",
         "embeddedExecutableExport": "sdkwork_routes_membership_app_api::app_membership_router_with_postgres_pool",
         "coverageEvidence": [
@@ -107,6 +133,7 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
         "cargoDependency": "sdkwork_api_order_assembly",
         "embeddedExecutableExport": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool",
         "coverageEvidence": [

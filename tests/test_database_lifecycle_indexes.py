@@ -17,7 +17,6 @@ RETENTION_INDEXES = {
     "ai_config_change_event": "idx_ai_config_change_event_retention",
     "ai_pricing_import_snapshot": "idx_ai_pricing_import_snapshot_retention",
     "ai_usage": "idx_ai_usage_retention",
-    "ai_usage_service_provider_edge": "idx_ai_usage_service_provider_edge_retention",
     "ops_alert_event": "idx_ops_alert_event_retention",
     "ops_audit_log": "idx_ops_audit_log_retention",
     "ops_config_snapshot": "idx_ops_config_snapshot_retention",
@@ -29,7 +28,6 @@ CLEANUP_OWNERS = {
     "ai_config_change_event": "ai-routing-service",
     "ai_pricing_import_snapshot": "ai-pricing-service",
     "ai_usage": "router-service",
-    "ai_usage_service_provider_edge": "router-service",
     "ops_alert_event": "clawrouter-ops-runtime",
     "ops_audit_log": "clawrouter-ops-runtime",
     "ops_config_snapshot": "clawrouter-ops-runtime",
@@ -58,6 +56,12 @@ OPS_QUERY_INDEXES = {
             "id",
         ],
     ),
+}
+
+ROOT_MATERIALIZED_RETENTION_TABLES = {
+    "ai_config_change_event",
+    "ai_pricing_import_snapshot",
+    "ai_usage",
 }
 
 
@@ -175,7 +179,11 @@ class DatabaseLifecycleIndexesTest(unittest.TestCase):
         contract = yaml.safe_load(rendered.schema_yaml)
         tables = {table["name"]: table for table in contract["tables"]}
 
-        for table_name in RETENTION_INDEXES:
+        self.assertEqual(
+            ROOT_MATERIALIZED_RETENTION_TABLES,
+            set(RETENTION_INDEXES).intersection(tables),
+        )
+        for table_name in ROOT_MATERIALIZED_RETENTION_TABLES:
             with self.subTest(table=table_name):
                 self.assertEqual(
                     self.tables[table_name]["lifecycle"],

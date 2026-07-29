@@ -36,7 +36,7 @@ routes are safe until that ownership and migration gap is closed.
 This authoritative-server module is in **initialization state** for greenfield deployments:
 
 1. **Baseline** - `database/ddl/baseline/postgres/0001_clawrouter_baseline.sql` contains the complete pre-release DDL snapshot.
-2. **Migrations** - `database/migrations/postgres/` is intentionally empty until the first post-baseline schema change. Pre-release upstream schema iterations were folded into the canonical baseline.
+2. **Migrations** - `database/migrations/postgres/` contains guarded upgrade paths for pre-release installations. The folded baseline already reflects their canonical end state; fresh installs apply the baseline and record or skip compatible migrations through the lifecycle framework.
 3. **Drift** - run `pnpm db:drift:check` before release.
 
 Fresh installations must start from the generated PostgreSQL baseline. Historical pre-release schemas are not supported installation or rollback targets.

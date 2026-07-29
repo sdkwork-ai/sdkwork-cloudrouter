@@ -9,6 +9,9 @@ import {
 import type { PortalSessionAppContext } from './portal-session-types.ts';
 
 type ClawRouterIamSessionLike = SdkworkAppbasePcAuthSessionBridgeSession & {
+  accessToken?: string;
+  authToken?: string;
+  refreshToken?: string;
   user?: unknown;
   userInfo?: unknown;
   context?: unknown;

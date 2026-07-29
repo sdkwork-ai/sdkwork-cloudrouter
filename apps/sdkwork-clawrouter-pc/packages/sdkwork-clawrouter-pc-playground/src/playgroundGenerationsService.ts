@@ -13,7 +13,6 @@ import type {
   SdkworkGenerationCommandInput,
   SdkworkGenerationCommandModality,
   SdkworkGenerationOperationType,
-  SdkworkGenerationRecord,
   SdkworkGenerationRun,
   SdkworkGenerationService,
 } from '@sdkwork/generations-pc-workspace/generation-service';
@@ -272,51 +271,6 @@ function readDurationSeconds(value: Record<string, unknown>): number | undefined
   }
   const durationMs = readOptionalNumber(value.durationMs ?? value.duration_ms);
   return durationMs === undefined ? undefined : durationMs / 1000;
-}
-
-function mapGenerationRecordToHistoryItem(
-  record: SdkworkGenerationRecord,
-  artifacts: readonly PlaygroundGenerationArtifact[],
-  targetType: PlaygroundGenerationTargetType | undefined,
-): PlaygroundHistoryItem {
-  const status = mapGenerationRecordStatus(record.status);
-  const timestamp = record.updatedAt || record.createdAt;
-  const prompt = trim(record.promptPreview ?? '') || record.operationType || record.id;
-  const media = targetType
-    ? mapSdkworkGenerationArtifactsToHistoryMedia(artifacts, targetType)
-    : { images: [], videos: [] };
-  return {
-    createdAt: record.createdAt,
-    date: record.createdAt.slice(0, 10),
-    durationSeconds: media.durationSeconds,
-    id: record.id,
-    asset: media.asset,
-    images: media.images,
-    modelCatalogKey: record.sourceProvider,
-    modelInfo: record.sourceProvider,
-    prompt,
-    status,
-    type: mapSdkworkGenerationModalityToHistoryType(targetType),
-    updatedAt: record.updatedAt,
-    videos: media.videos,
-  };
-}
-
-function mapRecordModalityToTargetType(
-  modality: string,
-): PlaygroundGenerationTargetType | undefined {
-  switch (modality) {
-    case 'image':
-    case 'video':
-    case 'music':
-    case 'audio':
-    case 'sfx':
-      return modality;
-    case 'voice':
-      return 'audio';
-    default:
-      return undefined;
-  }
 }
 
 function mapGenerationCommandToHistoryItem({

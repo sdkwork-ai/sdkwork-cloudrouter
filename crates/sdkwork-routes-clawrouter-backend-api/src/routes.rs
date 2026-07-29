@@ -15,6 +15,9 @@ use sdkwork_claw_config::{
     UpstreamCredentialSecurityConfig,
 };
 use sdkwork_claw_http::TrustedRequestSubject;
+use sdkwork_clawrouter_admin_analytics_repository_sqlx::PostgresAdminAnalyticsReadStore;
+use sdkwork_clawrouter_admin_dashboard_repository_sqlx::PostgresAdminDashboardReadStore;
+use sdkwork_clawrouter_admin_monitor_repository_sqlx::PostgresAdminMonitorReadStore;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, default_service_cache_manager,
@@ -33,12 +36,12 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
-    PostgresAdminAnalyticsReadStore, PostgresAdminAnnouncementStore,
-    PostgresAdminApiKeyRateLimitStore, PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore,
-    PostgresAdminDashboardReadStore, PostgresAdminFinanceStore, PostgresAdminFirewallRuleStore,
+    PostgresAdminAnnouncementStore, PostgresAdminApiKeyRateLimitStore,
+    PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore, PostgresAdminFinanceStore,
+    PostgresAdminFirewallRuleStore,
     PostgresAdminInventoryStore, PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore,
-    PostgresAdminMcpStore, PostgresAdminModelRateLimitStore, PostgresAdminMonitorReadStore,
-    PostgresAdminRecordStore, PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
+    PostgresAdminMcpStore, PostgresAdminModelRateLimitStore, PostgresAdminRecordStore,
+    PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
     PostgresAdminTransactionCenterStore, PostgresAdminUpstreamAccountVerifier,
     PostgresAdminUpstreamStore, PostgresCatalogLoadError, PostgresGatewayApiKeyCommandStore,
     PostgresPricingCatalogLoader, PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
@@ -897,8 +900,11 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
     let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
         ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
     })?;
-    let database_installer =
-        Arc::new(DatabaseInstaller::for_postgres(pool.clone()).with_env_options()?);
+    let database_installer = Arc::new(
+        DatabaseInstaller::for_postgres(pool.clone())
+            .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
+            .with_env_options()?,
+    );
     if startup_install_mode.should_ensure() {
         database_installer.ensure_bootstrap_data().await?;
     }

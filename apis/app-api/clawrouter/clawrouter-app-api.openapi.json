@@ -3263,7 +3263,7 @@
     },
     "/app/v3/api/ai/gateway/traces": {
       "get": {
-        "description": "List traces. Reads ai_request_trace, ops_gateway_instance. Writes none. File targets none.",
+        "description": "List traces. Reads ai_request_trace. Writes none. File targets none.",
         "operationId": "gateway.traces.list",
         "parameters": [
           {
@@ -3364,8 +3364,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_request_trace",
-          "ops_gateway_instance"
+          "ai_request_trace"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "intelligence",

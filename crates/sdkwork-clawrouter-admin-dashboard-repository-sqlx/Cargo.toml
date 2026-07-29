@@ -14,3 +14,4 @@ sqlx = { workspace = true }
 sdkwork-database-sqlx.workspace = true
 sdkwork-utils-rust.workspace = true
 sdkwork_models_catalog_service.workspace = true
+sdkwork-clawrouter-router-service.workspace = true

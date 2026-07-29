@@ -16,6 +16,7 @@ import {
   bindClawRouterIamSessionProjection,
   patchClawRouterIamContextStore,
 } from './iam-runtime-session-projection.ts';
+import type { PortalIamBridgeSession } from './portal-session-types.ts';
 import {
   APP_API_PREFIX,
   getClawRouterAppSdkClient,
@@ -112,10 +113,10 @@ function clearClawRouterIamRuntimeSession(): void {
   resetClawRouterSdkClients();
 }
 
-function commitClawRouterIamRuntimeSession(session: unknown): ReturnType<typeof storeAppSessionFromResult> {
+function commitClawRouterIamRuntimeSession(session: unknown): PortalIamBridgeSession | undefined {
   const stored = storeAppSessionFromResult(session);
   resetClawRouterSdkClients();
-  return stored;
+  return toPortalIamBridgeSession(stored) ?? undefined;
 }
 
 function resolveAppbaseAppApiBaseUrl(): string {

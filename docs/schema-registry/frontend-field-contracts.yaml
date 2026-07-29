@@ -7901,20 +7901,6 @@ frontend_models:
   data_sources:
   - ai_model_rank_snapshot
   - ai_usage
-- route: /console/gateway
-  source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-gateway/src/gatewayService.ts
-  interface: GatewayTrace
-  fields:
-  - id
-  - time
-  - ip
-  - endpoint
-  - method
-  - status
-  - duration
-  - upstreamAccount
-  data_sources:
-  - ai_request_trace
 - route: /console/settings
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-settings/src/settingsService.ts
   interface: SettingsData

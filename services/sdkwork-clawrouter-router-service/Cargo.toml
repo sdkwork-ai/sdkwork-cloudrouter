@@ -32,7 +32,6 @@ url.workspace = true
 sdkwork-models.workspace = true
 sdkwork_models_contract_service.workspace = true
 sdkwork_models_catalog_service.workspace = true
-sdkwork_models_catalog_repository_sqlx.workspace = true
 sdkwork_models_database_bootstrap.workspace = true
 sdkwork-claw-contract.workspace = true
 sdkwork-claw-config.workspace = true
@@ -43,7 +42,6 @@ sdkwork-claw-provider-adapter-contract.workspace = true
 sdkwork-claw-provider-adapter-http.workspace = true
 sdkwork-claw-provider-adapter-registry.workspace = true
 sdkwork-id-core.workspace = true
-sdkwork_iam_directory_repository_sqlx.workspace = true
 sdkwork_contract_service.workspace = true
 sdkwork_invoice_service.workspace = true
 sdkwork_invoice_database_bootstrap.workspace = true
@@ -59,14 +57,9 @@ sdkwork-clawrouter-database-host = { path = "../../crates/sdkwork-clawrouter-dat
 sdkwork-utils-rust.workspace = true
 sdkwork-web-core.workspace = true
 sdkwork-web-store-redis.workspace = true
-sdkwork-clawrouter-admin-monitor-repository-sqlx.workspace = true
-sdkwork-clawrouter-admin-dashboard-repository-sqlx.workspace = true
-sdkwork-clawrouter-admin-analytics-repository-sqlx.workspace = true
-sdkwork-clawrouter-settlements-dashboard-repository-sqlx.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
 tower.workspace = true
 sdkwork-claw-test-support.workspace = true
-sdkwork_commerce_promotion_repository_sqlx.workspace = true
 sdkwork_commerce_promotion_service.workspace = true

@@ -18,16 +18,16 @@ sdkwork-iam-database-host.workspace = true
 sdkwork-iam-embedded-application-bootstrap.workspace = true
 sdkwork-routes-iam-app-api.workspace = true
 tower.workspace = true
-sdkwork-routes-agent-open-api = { path = "../sdkwork-routes-agent-open-api" }
-sdkwork-routes-audio-open-api = { path = "../sdkwork-routes-audio-open-api" }
+sdkwork-routes-agent-open-api.workspace = true
+sdkwork-routes-audio-open-api.workspace = true
 sdkwork-routes-clawrouter-app-api.workspace = true
 sdkwork-routes-clawrouter-backend-api.workspace = true
-sdkwork-routes-clawrouter-drive-open-api = { path = "../sdkwork-routes-clawrouter-drive-open-api" }
-sdkwork-routes-clawrouter-knowledgebase-open-api = { path = "../sdkwork-routes-clawrouter-knowledgebase-open-api" }
-sdkwork-routes-clawrouter-llm-open-api = { path = "../sdkwork-routes-clawrouter-llm-open-api" }
-sdkwork-routes-clawrouter-memory-open-api = { path = "../sdkwork-routes-clawrouter-memory-open-api" }
-sdkwork-routes-iaas-open-api = { path = "../sdkwork-routes-iaas-open-api" }
-sdkwork-routes-image-open-api = { path = "../sdkwork-routes-image-open-api" }
-sdkwork-routes-paas-open-api = { path = "../sdkwork-routes-paas-open-api" }
-sdkwork-routes-payment-open-api = { path = "../sdkwork-routes-payment-open-api" }
-sdkwork-routes-video-open-api = { path = "../sdkwork-routes-video-open-api" }
+sdkwork-routes-clawrouter-drive-open-api.workspace = true
+sdkwork-routes-clawrouter-knowledgebase-open-api.workspace = true
+sdkwork-routes-clawrouter-llm-open-api.workspace = true
+sdkwork-routes-clawrouter-memory-open-api.workspace = true
+sdkwork-routes-iaas-open-api.workspace = true
+sdkwork-routes-image-open-api.workspace = true
+sdkwork-routes-paas-open-api.workspace = true
+sdkwork-routes-payment-open-api.workspace = true
+sdkwork-routes-video-open-api.workspace = true

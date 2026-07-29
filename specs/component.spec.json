@@ -114,6 +114,12 @@
       "@sdkwork/clawrouter-backend-sdk",
       "@sdkwork/clawrouter-open-sdk"
     ],
+    "requiredPorts": [
+      {
+        "name": "clawrouterApiAssembly",
+        "export": "sdkwork_api_clawrouter_assembly::assemble_api_router"
+      }
+    ],
     "runtimeEntrypoints": [
       "crates/sdkwork-clawrouter-standalone-gateway/src/main.rs",
       "crates/sdkwork-clawrouter-edge-runtime/src/main.rs",
@@ -162,6 +168,9 @@
         "connectivityPlane": "application",
         "runtimeMode": "same-origin-mounted",
         "mountStatus": "verified",
+        "profileCoverage": [
+          "standalone"
+        ],
         "cargoDependency": "sdkwork-api-clawrouter-assembly",
         "embeddedExecutableExport": "sdkwork_api_clawrouter_assembly::assemble_api_router",
         "coverageEvidence": [

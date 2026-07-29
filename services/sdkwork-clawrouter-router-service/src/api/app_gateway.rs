@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -10,13 +11,11 @@ use sdkwork_web_core::WebRequestContext;
 use serde::{Deserialize, Serialize};
 
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
-use crate::api::response::{
-    json_success_list_response, platform_problem_for_context, validation_problem_for_context,
-};
+use crate::api::response::{json_success_list_response, platform_problem_for_context};
 use crate::domain::DomainError;
 use crate::ports::{
-    AppGatewayTracesCursor, AppGatewayTracesPage, AppGatewayTracesQuery,
-    AppGatewayTracesReadFuture, AppGatewayTracesReadStore, AppGatewayTracesSubject,
+    AppGatewayTracesCursor, AppGatewayTracesQuery, AppGatewayTracesReadFuture,
+    AppGatewayTracesReadStore, AppGatewayTracesSubject,
 };
 
 const DEFAULT_GATEWAY_TRACES_PAGE_SIZE: i64 = 20;
@@ -32,6 +31,7 @@ struct AppGatewayTracesState {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AppGatewayTracesListQuery {
     cursor: Option<String>,
     page_size: Option<i64>,
@@ -44,25 +44,24 @@ struct GatewayTracesCursorPayload {
     id: i64,
 }
 
-struct EmptyAppGatewayTracesReadStore;
+struct UnavailableAppGatewayTracesReadStore;
 
-impl AppGatewayTracesReadStore for EmptyAppGatewayTracesReadStore {
+impl AppGatewayTracesReadStore for UnavailableAppGatewayTracesReadStore {
     fn load_gateway_traces<'a>(
         &'a self,
-        query: AppGatewayTracesQuery,
+        _query: AppGatewayTracesQuery,
         _subject: Option<AppGatewayTracesSubject>,
     ) -> AppGatewayTracesReadFuture<'a> {
-        Box::pin(async move {
-            Ok(AppGatewayTracesPage {
-                page_size: query.page_size,
-                ..AppGatewayTracesPage::default()
-            })
+        Box::pin(async {
+            Err(DomainError::new(
+                "gateway traces read store is not configured",
+            ))
         })
     }
 }
 
 pub fn app_gateway_traces_router() -> Router {
-    app_gateway_traces_router_with_state(Arc::new(EmptyAppGatewayTracesReadStore), false)
+    app_gateway_traces_router_with_state(Arc::new(UnavailableAppGatewayTracesReadStore), false)
 }
 
 pub fn app_gateway_traces_router_with_read_store(
@@ -87,9 +86,20 @@ async fn fetch_gateway_traces(
     State(state): State<AppGatewayTracesState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
     request_context: Option<Extension<WebRequestContext>>,
-    Query(query): Query<AppGatewayTracesListQuery>,
+    query: Result<Query<AppGatewayTracesListQuery>, QueryRejection>,
 ) -> Response {
     let ctx = request_context.map(|context| context.0);
+    let Query(query) = match query {
+        Ok(query) => query,
+        Err(_) => {
+            return platform_problem_for_context(
+                ctx.as_ref(),
+                SdkWorkResultCode::InvalidParameter,
+                "gateway traces query parameters are invalid",
+            )
+            .into_response();
+        }
+    };
     let subject = match map_optional_app_sql_subject(subject, state.require_subject, Into::into) {
         Ok(subject) => subject,
         Err(response) => return response,
@@ -97,7 +107,12 @@ async fn fetch_gateway_traces(
     let query = match validate_gateway_traces_query(query) {
         Ok(query) => query,
         Err(message) => {
-            return validation_problem_for_context(ctx.as_ref(), message).into_response();
+            return platform_problem_for_context(
+                ctx.as_ref(),
+                SdkWorkResultCode::InvalidParameter,
+                message,
+            )
+            .into_response();
         }
     };
 
@@ -105,8 +120,8 @@ async fn fetch_gateway_traces(
         Ok(page) => {
             let next_cursor = match page.next_cursor.as_ref().map(encode_gateway_traces_cursor) {
                 Some(Ok(cursor)) => Some(cursor),
-                Some(Err(error)) => {
-                    tracing::error!(error = %error, "gateway traces cursor encoding failed");
+                Some(Err(_)) => {
+                    tracing::error!("gateway traces cursor encoding failed");
                     return platform_problem_for_context(
                         ctx.as_ref(),
                         SdkWorkResultCode::InternalError,
@@ -123,8 +138,8 @@ async fn fetch_gateway_traces(
                 cursor_window_page_info(page_size, next_cursor, page.has_more),
             )
         }
-        Err(error) => {
-            tracing::error!(error = %error, "gateway traces read model failed");
+        Err(_) => {
+            tracing::error!("gateway traces read model failed");
             platform_problem_for_context(
                 ctx.as_ref(),
                 SdkWorkResultCode::InternalError,

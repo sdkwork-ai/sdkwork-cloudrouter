@@ -1,4 +1,5 @@
 use sqlx::{PgPool, Row};
+use sdkwork_clawrouter_router_service::domain::DomainError;
 
 use crate::error::{row_error, store_error, RepositoryError, RepositoryResult};
 use crate::types::{
@@ -22,21 +23,33 @@ impl AdminMonitorReadStore for PostgresAdminMonitorReadStore {
         &'a self,
         query: AdminMonitorQuery,
     ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorNode>> {
-        Box::pin(async move { list_monitor_nodes(&self.pool, query).await })
+        Box::pin(async move {
+            list_monitor_nodes(&self.pool, query)
+                .await
+                .map_err(|error| DomainError::new(error.to_string()))
+        })
     }
 
     fn list_monitor_alerts<'a>(
         &'a self,
         query: AdminMonitorQuery,
     ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorAlert>> {
-        Box::pin(async move { list_monitor_alerts(&self.pool, query).await })
+        Box::pin(async move {
+            list_monitor_alerts(&self.pool, query)
+                .await
+                .map_err(|error| DomainError::new(error.to_string()))
+        })
     }
 
     fn list_monitor_performance<'a>(
         &'a self,
         query: AdminMonitorQuery,
     ) -> AdminMonitorReadFuture<'a, AdminMonitorCollection<AdminMonitorPerformanceDatum>> {
-        Box::pin(async move { list_monitor_performance(&self.pool, query).await })
+        Box::pin(async move {
+            list_monitor_performance(&self.pool, query)
+                .await
+                .map_err(|error| DomainError::new(error.to_string()))
+        })
     }
 }
 

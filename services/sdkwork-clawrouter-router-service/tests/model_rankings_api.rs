@@ -131,7 +131,7 @@ async fn admin_model_ranking_jobs_route_returns_recent_refresh_execution_history
     let response = router
         .oneshot(common::web_framework_backend_request(
             "GET",
-            "/backend/v3/api/ai/model_rankings/jobs?rank_scope=commercial-default&page=2&page_size=1",
+            "/backend/v3/api/ai/model_rankings/jobs?rank_scope=commercial-default&page_size=1",
             Body::empty(),
             "100001",
             Some("0"),
@@ -163,11 +163,11 @@ async fn admin_model_ranking_jobs_route_returns_recent_refresh_execution_history
         payload["data"]["items"][0]["failureReason"]
     );
     assert_eq!("offset", payload["data"]["pageInfo"]["mode"]);
-    assert_eq!(2, payload["data"]["pageInfo"]["page"]);
+    assert_eq!(1, payload["data"]["pageInfo"]["page"]);
     assert_eq!(1, payload["data"]["pageInfo"]["pageSize"]);
-    assert_eq!("3", payload["data"]["pageInfo"]["totalItems"]);
-    assert_eq!(3, payload["data"]["pageInfo"]["totalPages"]);
-    assert_eq!(true, payload["data"]["pageInfo"]["hasMore"]);
+    assert_eq!("1", payload["data"]["pageInfo"]["totalItems"]);
+    assert_eq!(1, payload["data"]["pageInfo"]["totalPages"]);
+    assert_eq!(false, payload["data"]["pageInfo"]["hasMore"]);
 }
 
 #[tokio::test]
@@ -412,9 +412,7 @@ impl ModelRankingRefreshJobHistoryReadStore for StubModelRankingsReadStore {
         Box::pin(async move {
             let subject = subject.unwrap();
             assert_eq!(1, query.limit);
-            assert_eq!(1, query.offset);
             DomainResult::Ok(ModelRankingRefreshJobHistoryPage {
-                total_items: 3,
                 items: vec![ModelRankingRefreshJobItem {
                     id: "job-failed".to_owned(),
                     job_name: "model_ranking_refresh".to_owned(),

@@ -36,7 +36,7 @@ function decimalUnits(value: string, digits: number): bigint {
 
   const sign = trimmed.startsWith('-') ? -1n : 1n;
   const unsigned = sign < 0n ? trimmed.slice(1) : trimmed;
-  const [whole, fraction = ''] = unsigned.split('.');
+  const [whole = '0', fraction = ''] = unsigned.split('.');
   const scale = 10n ** BigInt(normalizedDigits);
   const fractionUnits =
     normalizedDigits === 0 || fraction === ''

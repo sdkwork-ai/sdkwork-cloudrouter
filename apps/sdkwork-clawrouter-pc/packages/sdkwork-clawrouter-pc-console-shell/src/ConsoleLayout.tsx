@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
+  Bell,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -64,6 +65,7 @@ const consoleSidebarGroups = [
     itemBlock({ path: '/console/usage', labelKey: 'console.menu.usage', fallbackLabel: 'Call statistics', icon: Activity }),
   ]),
   groupBlock('console.menu.group.notificationsSettings', 'Notifications & Settings', [
+    itemBlock({ path: '/console/notifications', labelKey: 'console.menu.notifications', fallbackLabel: 'Message Center', icon: Bell }),
     itemBlock({ path: '/console/settings', labelKey: 'console.menu.settings', fallbackLabel: 'Configuration center', icon: Settings }),
   ]),
 ];

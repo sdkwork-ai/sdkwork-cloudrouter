@@ -10,11 +10,13 @@ use sdkwork_iam_bootstrap::{
     DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_IAM_TENANT_ID,
 };
 use sdkwork_models_database_host::connect_models_database;
+use sdkwork_models_catalog_repository_sqlx::PostgresModelCatalogAdminStore;
 use serde::Serialize;
 use sqlx::PgPool;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::process::ExitCode;
+use std::sync::Arc;
 
 const SDKWORK_CLAW_ADMIN_RESET_PASSWORD_ENV: &str = "SDKWORK_CLAW_ADMIN_RESET_PASSWORD";
 
@@ -69,7 +71,9 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
         return run_reset_admin_postgres(&pool, options).await;
     }
     run_command(
-        DatabaseInstaller::for_postgres(pool).with_env_options()?,
+        DatabaseInstaller::for_postgres(pool.clone())
+            .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool)))
+            .with_env_options()?,
         command,
     )
     .await

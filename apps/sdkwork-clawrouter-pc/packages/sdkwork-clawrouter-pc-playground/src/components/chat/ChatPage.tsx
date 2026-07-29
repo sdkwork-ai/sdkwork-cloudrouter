@@ -339,6 +339,10 @@ export function ChatPage() {
     let pendingAssistantDelta = '';
     let pendingAssistantDeltaFrame = 0;
 
+    function readActiveStreamRecord(): StoredChatInFlightStream | null {
+      return activeStreamRecord;
+    }
+
     function flushPendingAssistantDelta(): void {
       if (!pendingAssistantDelta) {
         return;
@@ -523,8 +527,9 @@ export function ChatPage() {
         ...priorMessagesBySessionId,
         [sessionId]: nextMessages,
       };
-      if (activeStreamRecord) {
-        clearStoredChatInFlightStream(chatStoreScope, activeStreamRecord.id);
+      const completedStreamRecord = readActiveStreamRecord();
+      if (completedStreamRecord) {
+        clearStoredChatInFlightStream(chatStoreScope, completedStreamRecord.id);
       }
       if (sessionChanged) {
         saveStoredChatConversation(chatStoreScope, nextSessions, nextMessagesBySessionId);
@@ -578,8 +583,9 @@ export function ChatPage() {
         selectedSessionId: activeSessionId || selectedSessionIdSnapshot,
         updateState: !sessionChanged,
       });
-      if (activeStreamRecord) {
-        clearStoredChatInFlightStream(chatStoreScope, activeStreamRecord.id);
+      const failedStreamRecord = readActiveStreamRecord();
+      if (failedStreamRecord) {
+        clearStoredChatInFlightStream(chatStoreScope, failedStreamRecord.id);
       }
       if (sessionChanged) {
         return false;
@@ -616,7 +622,8 @@ export function ChatPage() {
         window.cancelAnimationFrame(pendingAssistantDeltaFrame);
       }
       pendingAssistantDeltaFrame = 0;
-      if (activeStreamRecord && activeChatStreamRef.current?.id === activeStreamRecord.id) {
+      const finishedStreamRecord = readActiveStreamRecord();
+      if (finishedStreamRecord && activeChatStreamRef.current?.id === finishedStreamRecord.id) {
         activeChatStreamRef.current = null;
       }
       stopRequestedBeforeStreamRef.current = false;

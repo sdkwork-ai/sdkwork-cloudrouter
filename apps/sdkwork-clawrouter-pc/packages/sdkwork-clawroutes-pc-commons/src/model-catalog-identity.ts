@@ -13,8 +13,12 @@ export function parseModelCatalogIdentity(value: string): ModelCatalogIdentity |
   if (parts.length < 2 || parts.some((part) => part.length === 0) || isModelRegionSegment(parts[1] ?? '')) {
     return null;
   }
+  const vendorCode = parts[0];
+  if (!vendorCode) {
+    return null;
+  }
   return {
-    vendorCode: parts[0],
+    vendorCode,
     modelId: parts.slice(1).join('/'),
     modelParts: parts.slice(1),
   };

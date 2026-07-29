@@ -796,7 +796,7 @@ test("portal css stabilizes navbar notification dropdown empty state dimensions"
   }
 });
 
-test("navbar localizes notification unread counter and uses runtime site branding", () => {
+test("navbar localizes notification controls and uses runtime site branding", () => {
   const navbarSource = readFileSync(
     new URL("./packages/sdkwork-clawroutes-pc-commons/src/components/Navbar.tsx", import.meta.url),
     "utf8",
@@ -811,8 +811,14 @@ test("navbar localizes notification unread counter and uses runtime site brandin
     "siteBranding.siteName",
     "siteBranding.shortName",
     "siteBranding.logo",
-    "unreadCount: t('commons.navbar.unreadCount'",
-    "0 ? t('commons.navbar.unreadCountZero'",
+    "acknowledge: t('commons.navbar.acknowledge'",
+    "ariaLabel: t('commons.navbar.notificationCenter'",
+    "detailsTitle: t('commons.navbar.notificationDetails'",
+    "empty: t('commons.navbar.emptyNotifications'",
+    "loading: t('commons.navbar.loadingNotifications'",
+    "retry: t('commons.navbar.retryNotifications'",
+    "source: t('commons.navbar.notificationSourceGateway'",
+    "viewAll: t('commons.navbar.viewAllNotifications'",
     "applySiteBrandingToDocument",
   ]) {
     assert.ok(navbarSource.includes(marker) || siteBrandingSource.includes(marker), `missing site branding marker: ${marker}`);

@@ -1,4 +1,5 @@
 use sqlx::{PgPool, Row};
+use sdkwork_clawrouter_router_service::domain::DomainError;
 
 use crate::error::{store_error, RepositoryError, RepositoryResult};
 use crate::modality;
@@ -210,7 +211,11 @@ impl AdminAnalyticsReadStore for PostgresAdminAnalyticsReadStore {
         &'a self,
         query: AdminAnalyticsQuery,
     ) -> AdminAnalyticsReadFuture<'a> {
-        Box::pin(async move { load_snapshot(&self.pool, query).await })
+        Box::pin(async move {
+            load_snapshot(&self.pool, query)
+                .await
+                .map_err(|error| DomainError::new(error.to_string()))
+        })
     }
 }
 

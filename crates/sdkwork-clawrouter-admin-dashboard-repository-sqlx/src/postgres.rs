@@ -1,4 +1,5 @@
 use sqlx::{PgPool, Row};
+use sdkwork_clawrouter_router_service::domain::DomainError;
 
 use crate::error::{store_error, RepositoryError, RepositoryResult};
 use crate::modality;
@@ -166,30 +167,36 @@ impl PostgresAdminDashboardReadStore {
 impl AdminDashboardReadStore for PostgresAdminDashboardReadStore {
     fn load_dashboard<'a>(&'a self, query: AdminDashboardQuery) -> AdminDashboardReadFuture<'a> {
         Box::pin(async move {
-            let subject = query.subject;
-            let active_users =
-                load_active_users(&self.pool, subject.tenant_id, subject.organization_id).await?;
-            let user_consumption =
-                load_user_consumption(&self.pool, subject.tenant_id, subject.organization_id)
-                    .await?;
-            let multimodal =
-                load_multimodal(&self.pool, subject.tenant_id, subject.organization_id).await?;
-            let traffic =
-                load_traffic(&self.pool, subject.tenant_id, subject.organization_id).await?;
-            let model_distribution =
-                load_model_distribution(&self.pool, subject.tenant_id, subject.organization_id)
-                    .await?;
-            let recent_usage =
-                load_recent_usage(&self.pool, subject.tenant_id, subject.organization_id).await?;
+            let result: RepositoryResult<_> = async {
+                let subject = query.subject;
+                let active_users =
+                    load_active_users(&self.pool, subject.tenant_id, subject.organization_id)
+                        .await?;
+                let user_consumption =
+                    load_user_consumption(&self.pool, subject.tenant_id, subject.organization_id)
+                        .await?;
+                let multimodal =
+                    load_multimodal(&self.pool, subject.tenant_id, subject.organization_id).await?;
+                let traffic =
+                    load_traffic(&self.pool, subject.tenant_id, subject.organization_id).await?;
+                let model_distribution =
+                    load_model_distribution(&self.pool, subject.tenant_id, subject.organization_id)
+                        .await?;
+                let recent_usage =
+                    load_recent_usage(&self.pool, subject.tenant_id, subject.organization_id)
+                        .await?;
 
-            Ok(AdminDashboardSnapshot {
-                active_users,
-                user_consumption,
-                multimodal,
-                traffic,
-                model_distribution,
-                recent_usage,
-            })
+                Ok(AdminDashboardSnapshot {
+                    active_users,
+                    user_consumption,
+                    multimodal,
+                    traffic,
+                    model_distribution,
+                    recent_usage,
+                })
+            }
+            .await;
+            result.map_err(|error| DomainError::new(error.to_string()))
         })
     }
 }

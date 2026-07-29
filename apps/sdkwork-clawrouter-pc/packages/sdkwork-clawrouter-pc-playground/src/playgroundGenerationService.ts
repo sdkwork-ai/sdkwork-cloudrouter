@@ -46,7 +46,6 @@ const PLAYGROUND_AGENT_NAME = 'Playground Generation Agent';
 const PLAYGROUND_SOURCE_SURFACE = 'playground';
 const RUNTIME_ADAPTER = 'openai_compatible';
 const RUNTIME_ENDPOINT = 'agent.stream';
-const TITLE_MAX_LENGTH = 96;
 
 interface AgentRunItem {
   cachedTokens?: number | null;
@@ -429,6 +428,9 @@ function readGenerationArtifact(
     return null;
   }
   const resource = readGenerationArtifactResource(value);
+  if (!resource) {
+    return null;
+  }
   const url = readMediaResourceUrl(resource);
   if (!url) {
     return null;
@@ -846,12 +848,6 @@ function mapPlaygroundGenerationStatus(status: AgentRunItem['status']): Playgrou
     default:
       return 'failed';
   }
-}
-
-function createGenerationTitle(prompt: string): string {
-  return prompt.length <= TITLE_MAX_LENGTH
-    ? prompt
-    : `${prompt.slice(0, TITLE_MAX_LENGTH - 3).trimEnd()}...`;
 }
 
 function readProviderFromModel(model: string): string | undefined {

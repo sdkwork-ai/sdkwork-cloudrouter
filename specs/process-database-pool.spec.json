@@ -19,7 +19,8 @@
       "productionSourceRoots": ["services/sdkwork-clawrouter-standalone-gateway/src"],
       "consumers": [
         {"module": "clawrouter app routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/routes.rs"]},
-        {"module": "invoice and commerce", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs"]}
+        {"module": "invoice runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/invoice_runtime.rs"]},
+        {"module": "commerce runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs"]}
       ],
       "temporaryDriverExceptions": []
     },
@@ -34,8 +35,7 @@
       "maxConnectionsEnv": "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
       "productionSourceRoots": ["services/sdkwork-clawrouter-admin-gateway/src"],
       "consumers": [
-        {"module": "clawrouter backend routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs"]},
-        {"module": "invoice runtime", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-backend-api/src/invoice_runtime.rs"]}
+        {"module": "clawrouter backend routes", "poolMode": "installed-process-pool", "evidence": ["crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs"]}
       ],
       "temporaryDriverExceptions": []
     },

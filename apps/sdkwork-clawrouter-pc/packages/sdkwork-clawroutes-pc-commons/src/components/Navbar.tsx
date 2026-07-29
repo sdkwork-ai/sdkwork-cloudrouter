@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import { SdkworkNotificationBell } from '@sdkwork/notification-pc-react';
 import {
   Check,
   ChevronDown,
@@ -20,6 +21,11 @@ import {
 } from '../portal-auth.ts';
 import { useSiteBranding } from '../siteBranding.ts';
 import { readMediaResourceUrl } from '../media-resource.ts';
+import {
+  createPortalNotificationService,
+  getPortalNotificationAppId,
+  getPortalNotificationClient,
+} from '../notificationService.ts';
 
 interface NavbarProps {
   authenticatedActionsStart?: ReactNode;
@@ -52,12 +58,15 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
   const [isPortalSessionStored, setIsPortalSessionStored] = useState(() => hasStoredPortalSession());
   const langMenuRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+  const notificationBellRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const isConsolePath = location.pathname.startsWith('/console');
   const shouldShowAuthenticatedActions = isPortalSessionStored || isConsolePath;
   const displaySiteName = siteBranding.shortName || siteBranding.siteName;
   const logoSource = readMediaResourceUrl(siteBranding.logo);
+  const notificationClient = useMemo(() => getPortalNotificationClient(), []);
+  const notificationService = useMemo(() => createPortalNotificationService(), []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -88,6 +97,24 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleNotificationPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || !notificationBellRef.current || notificationBellRef.current.contains(target)) {
+        return;
+      }
+      const menu = notificationBellRef.current.querySelector('[role="menu"]');
+      if (!menu) {
+        return;
+      }
+      const toggleButton = notificationBellRef.current.querySelector<HTMLButtonElement>('button[aria-label]');
+      toggleButton?.click();
+    };
+
+    document.addEventListener('pointerdown', handleNotificationPointerDown, true);
+    return () => document.removeEventListener('pointerdown', handleNotificationPointerDown, true);
   }, []);
 
   useEffect(() => {
@@ -279,6 +306,35 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
           </div>
         </nav>
 
+        {shouldShowAuthenticatedActions ? (
+          <div
+            className="ml-auto shrink-0 lg:ml-0"
+            data-claw-notification-bell
+            ref={notificationBellRef}
+          >
+            <SdkworkNotificationBell
+              appId={getPortalNotificationAppId()}
+              centerPath="/console/notifications"
+              className="claw-router-navbar-notification-bell"
+              client={notificationClient}
+              labels={{
+                acknowledge: t('commons.navbar.acknowledge', 'Got It'),
+                ariaLabel: t('commons.navbar.notificationCenter', 'Notification Center'),
+                centerTitle: t('commons.navbar.notificationCenter', 'Notification Center'),
+                detailsTitle: t('commons.navbar.notificationDetails', 'Notification Details'),
+                empty: t('commons.navbar.emptyNotifications', 'No notifications'),
+                errorFallback: t('commons.navbar.notificationLoadError', 'Failed to load notifications.'),
+                loading: t('commons.navbar.loadingNotifications', 'Loading notifications...'),
+                retry: t('commons.navbar.retryNotifications', 'Retry'),
+                source: t('commons.navbar.notificationSourceGateway', 'From: System Gateway'),
+                viewAll: t('commons.navbar.viewAllNotifications', 'View all in Notification Center'),
+              }}
+              onNavigate={(href) => navigate(href)}
+              service={notificationService}
+            />
+          </div>
+        ) : null}
+
         <div className="hidden shrink-0 items-center gap-1.5 lg:flex xl:gap-3">
           <div className="relative" ref={langMenuRef}>
             <button
@@ -366,7 +422,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
           )}
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2 lg:hidden">
+        <div className={`${shouldShowAuthenticatedActions ? '' : 'ml-auto'} flex shrink-0 items-center gap-2 lg:hidden`}>
           <button
             onClick={toggleTheme}
             className={`rounded-md ${NAVBAR_HEADER_ACTION_CLASS}`}

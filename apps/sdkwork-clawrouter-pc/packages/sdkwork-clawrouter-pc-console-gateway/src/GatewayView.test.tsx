@@ -3,12 +3,12 @@
 import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type {
+  GatewayTrace,
+  GatewayTracesPage,
+} from '@sdkwork/clawrouter-pc-console-core/sdk';
 import { GatewayView } from './GatewayView';
-import {
-  GatewayService,
-  type GatewayTrace,
-  type GatewayTracePage,
-} from './gatewayService';
+import { GatewayService } from './gatewayService';
 
 vi.mock('react-i18next', () => {
   const t = (key: string) => key;
@@ -78,7 +78,7 @@ function page(
   items: GatewayTrace[],
   hasMore: boolean,
   nextCursor: string | null,
-): GatewayTracePage {
+): GatewayTracesPage {
   return {
     items,
     pageInfo: {
@@ -101,8 +101,8 @@ beforeEach(() => {
 
 describe('GatewayView cursor pagination', () => {
   it('keeps the current page visible, prevents duplicate continuation requests, and preserves repeated trace identifiers', async () => {
-    const firstRequest = deferred<GatewayTracePage>();
-    const continuationRequest = deferred<GatewayTracePage>();
+    const firstRequest = deferred<GatewayTracesPage>();
+    const continuationRequest = deferred<GatewayTracesPage>();
     const fetchTraces = vi.spyOn(GatewayService, 'fetchTraces')
       .mockImplementationOnce(() => firstRequest.promise)
       .mockImplementationOnce(() => continuationRequest.promise);

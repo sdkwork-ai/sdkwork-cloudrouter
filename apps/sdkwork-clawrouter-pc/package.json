@@ -218,6 +218,7 @@
     "@sdkwork/clawrouter-pc-console-shell": "workspace:*",
     "@sdkwork/clawrouter-pc-console-dashboard": "workspace:*",
     "@sdkwork/clawrouter-pc-console-gateway": "workspace:*",
+    "@sdkwork/clawrouter-pc-console-messages": "workspace:*",
     "@sdkwork/clawrouter-pc-console-settings": "workspace:*",
     "@sdkwork/clawrouter-pc-console-usage": "workspace:*",
     "@sdkwork/clawrouter-pc-console-user": "workspace:*",

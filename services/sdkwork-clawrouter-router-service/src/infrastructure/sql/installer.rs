@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 
 use sdkwork_models::ModelCatalog;
 use sdkwork_utils_rust as sdkwork_utils;
@@ -207,6 +208,7 @@ pub struct CatalogRefreshReport {
 pub struct DatabaseInstaller {
     pool: PgPool,
     options: DatabaseInstallOptions,
+    admin_model_store: Option<Arc<dyn AdminModelStore + Send + Sync>>,
 }
 
 impl DatabaseInstaller {
@@ -214,7 +216,16 @@ impl DatabaseInstaller {
         Self {
             pool,
             options: DatabaseInstallOptions::commercial(),
+            admin_model_store: None,
         }
+    }
+
+    pub fn with_admin_model_store(
+        mut self,
+        store: Arc<dyn AdminModelStore + Send + Sync>,
+    ) -> Self {
+        self.admin_model_store = Some(store);
+        self
     }
 
     pub fn with_options(
@@ -345,11 +356,15 @@ impl DatabaseInstaller {
             requested_at: sdkwork_utils::format_datetime(sdkwork_utils::now(), None),
         };
 
-        let item =
-            crate::infrastructure::sql::postgres::PostgresAdminModelStore::new(self.pool.clone())
-                .sync_catalog(command)
-                .await
-                .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
+        let admin_model_store = self.admin_model_store.as_ref().ok_or_else(|| {
+            DatabaseInstallError::InvalidState(
+                "model catalog admin store is not configured for database installation".to_owned(),
+            )
+        })?;
+        let item = admin_model_store
+            .sync_catalog(command)
+            .await
+            .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
 
         if item.synced {
             import_postgres_ai_routing_seed(&self.pool).await?;

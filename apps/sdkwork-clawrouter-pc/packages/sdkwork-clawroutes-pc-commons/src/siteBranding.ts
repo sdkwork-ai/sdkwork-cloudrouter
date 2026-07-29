@@ -62,32 +62,20 @@ export async function fetchSiteBranding(): Promise<SiteBranding> {
     return pendingSiteBranding;
   }
   const appSdkClient = getClawRouterAppSdkClient();
-  const sitesRuntime = appSdkClient.sites?.runtime;
-  if (!sitesRuntime?.retrieve) {
-    pendingSiteBranding = loadDefaultSiteBranding().finally(() => {
+  pendingSiteBranding = appSdkClient.system.site.runtime
+    .list()
+    .then((result) => {
+      ensureSdkworkApiSuccess(result, 'Unable to load site branding');
+      const branding = normalizeSiteBranding(readApiRecord(result));
+      cachedSiteBranding = branding;
+      applySiteBrandingToDocument(branding);
+      notifySiteBrandingChanged();
+      return branding;
+    })
+    .catch(() => loadDefaultSiteBranding())
+    .finally(() => {
       pendingSiteBranding = null;
     });
-  } else {
-    pendingSiteBranding = sitesRuntime
-      .retrieve()
-      .then((result) => {
-        ensureSdkworkApiSuccess(result, 'Unable to load site branding');
-        const branding = normalizeSiteBranding(readApiRecord(result));
-        cachedSiteBranding = branding;
-        applySiteBrandingToDocument(branding);
-        notifySiteBrandingChanged();
-        return branding;
-      })
-      .catch(() => {
-        cachedSiteBranding = DEFAULT_SITE_BRANDING;
-        applySiteBrandingToDocument(DEFAULT_SITE_BRANDING);
-        notifySiteBrandingChanged();
-        return DEFAULT_SITE_BRANDING;
-      })
-      .finally(() => {
-        pendingSiteBranding = null;
-      });
-  }
   return pendingSiteBranding;
 }
 

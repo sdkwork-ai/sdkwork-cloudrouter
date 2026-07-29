@@ -118,8 +118,13 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   showSectionNavigation = true,
   tableViewportDataAttribute,
 }: AdminResourceCenterProps<TSectionId, TGroup>) {
+  const firstSection = sections[0];
+  if (!firstSection) {
+    throw new Error('AdminResourceCenter requires at least one section.');
+  }
+
   const [uncontrolledActiveTab, setUncontrolledActiveTab] = useState<TSectionId>(
-    activeSectionId ?? initialSectionId ?? sections[0].id,
+    activeSectionId ?? initialSectionId ?? firstSection.id,
   );
   const [search, setSearch] = useState('');
   const [stateByTab, setStateByTab] = useState<Record<TSectionId, AdminResourceState>>(
@@ -139,7 +144,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
     ),
   );
   const requestedActiveTab = activeSectionId ?? uncontrolledActiveTab;
-  const activeSection = sections.find((section) => section.id === requestedActiveTab) ?? sections[0];
+  const activeSection = sections.find((section) => section.id === requestedActiveTab) ?? firstSection;
   const activeTab = activeSection.id;
   const activeState = stateByTab[activeTab] ?? INITIAL_STATE;
   const activeActions = activeSection.actions ?? (activeSection.action ? [activeSection.action] : []);

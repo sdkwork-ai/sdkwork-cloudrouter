@@ -252,7 +252,7 @@
     {
       "method": "GET",
       "path": "/app/v3/api/ai/routing/usage",
-      "operationId": "routing.usage.list",
+      "operationId": "routing.usage.retrieve",
       "tags": [
         "ai"
       ],

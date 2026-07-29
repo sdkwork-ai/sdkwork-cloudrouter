@@ -1,14 +1,70 @@
 use std::future::Future;
 use std::pin::Pin;
 
-pub use sdkwork_clawrouter_admin_monitor_repository_sqlx::{
-    AdminMonitorAlert, AdminMonitorCollection, AdminMonitorNode, AdminMonitorPerformanceDatum,
-    AdminMonitorQuery, AdminMonitorSubject,
-};
+use serde::Serialize;
 
 use crate::domain::DomainResult;
 
 pub type AdminMonitorReadFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AdminMonitorSubject {
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub operator_id: i64,
+    pub operator_type: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminMonitorQuery {
+    pub subject: AdminMonitorSubject,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+    pub q: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminMonitorCollection<T> {
+    pub items: Vec<T>,
+    pub total: i64,
+    pub page_no: i64,
+    pub page_size: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminMonitorNode {
+    pub id: String,
+    pub name: String,
+    pub region: String,
+    pub status: String,
+    pub cpu: f64,
+    pub memory: f64,
+    pub uptime: String,
+    pub ip: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminMonitorAlert {
+    pub id: String,
+    pub severity: String,
+    pub title: String,
+    pub message: String,
+    pub time: String,
+    pub status: String,
+    pub source: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminMonitorPerformanceDatum {
+    pub time: String,
+    pub cpu: f64,
+    pub memory: f64,
+    pub network: f64,
+}
 
 pub trait AdminMonitorReadStore {
     fn list_monitor_nodes<'a>(

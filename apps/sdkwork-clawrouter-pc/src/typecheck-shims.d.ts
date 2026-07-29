@@ -1881,16 +1881,21 @@ declare module '@sdkwork/models-pc-admin-catalog/vendorPickerModal' {
 declare module '@sdkwork/iam-contracts' {
   export interface IamAppContext {
     appId: string;
-    authLevel?: 'anonymous' | 'password' | 'mfa' | 'system';
-    dataScope?: string[];
+    authLevel: 'anonymous' | 'password' | 'mfa' | 'system';
+    dataScope: string[];
     deploymentMode: 'local' | 'private' | 'saas';
     environment: 'dev' | 'prod' | 'test';
+    loginScope?: string;
     organizationId?: string;
-    permissionScope?: string[];
-    platform?: string;
-    sessionId?: string;
-    tenantId?: string;
-    userId?: string;
+    permissionScope: string[];
+    sessionId: string;
+    standardRoleCodes?: readonly string[];
+    tenantId: string;
+    userId: string;
+    userSurface?: {
+      app: boolean;
+      organizationMember: boolean;
+    };
   }
 
   export function hasPermissionInScope(grantedCodes: readonly string[], required: string): boolean;
