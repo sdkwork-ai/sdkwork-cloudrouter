@@ -118,6 +118,16 @@ impl From<SqlScopedSubject> for crate::ports::UsageLogsSubject {
     }
 }
 
+impl From<SqlScopedSubject> for crate::ports::AppGatewayTracesSubject {
+    fn from(subject: SqlScopedSubject) -> Self {
+        Self {
+            tenant_id: subject.tenant_id,
+            organization_id: subject.organization_id,
+            user_id: subject.user_id,
+        }
+    }
+}
+
 impl From<SqlScopedSubject> for crate::ports::SettlementsDashboardSubject {
     fn from(subject: SqlScopedSubject) -> Self {
         Self {

@@ -24,6 +24,7 @@ mod admin_user_store;
 mod api_key_command_store;
 mod api_key_management_read_store;
 mod app_chat_store;
+mod app_gateway_traces_read_store;
 mod app_generation_history_read_store;
 mod app_notification_store;
 mod app_routing_read_store;
@@ -215,6 +216,10 @@ pub use app_chat_store::{
     AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem, AppChatTurnOutcome,
     AppChatUsageSnapshot, CompleteAppChatTurnCommand, CreateAppChatConversationCommand,
     CreateAppChatTurnCommand,
+};
+pub use app_gateway_traces_read_store::{
+    AppGatewayTraceItem, AppGatewayTracesCursor, AppGatewayTracesPage, AppGatewayTracesQuery,
+    AppGatewayTracesReadFuture, AppGatewayTracesReadStore, AppGatewayTracesSubject,
 };
 pub use app_generation_history_read_store::{
     AppGenerationHistoryItem, AppGenerationHistoryItems, AppGenerationHistoryListPage,

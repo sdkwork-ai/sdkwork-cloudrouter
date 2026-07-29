@@ -17,6 +17,7 @@ mod admin_upstream_store;
 mod admin_user_store;
 mod api_key_command_store;
 mod app_chat_store;
+mod app_gateway_traces_read_store;
 mod app_notification_store;
 mod app_routing_read_store;
 mod app_routing_strategy_store;
@@ -64,6 +65,7 @@ pub use admin_upstream_store::{PostgresAdminUpstreamAccountVerifier, PostgresAdm
 pub use admin_user_store::PostgresAdminUserStore;
 pub use api_key_command_store::PostgresGatewayApiKeyCommandStore;
 pub use app_chat_store::PostgresAppChatStore;
+pub use app_gateway_traces_read_store::PostgresAppGatewayTracesReadStore;
 pub use app_notification_store::PostgresAppNotificationStore;
 pub use app_routing_read_store::PostgresAppRoutingReadStore;
 pub use app_routing_strategy_store::PostgresAppRoutingStrategyStore;
