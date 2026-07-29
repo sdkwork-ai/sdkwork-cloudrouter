@@ -44,25 +44,23 @@ class AdminRecordRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("readRequiredNonNegativeNumber(data, 'total'", record_service)
 
     def test_admin_record_read_models_reject_missing_or_invalid_trace_latency(self) -> None:
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_record_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs",
-        ]:
-            store = (ROOT / relative).read_text(encoding="utf-8")
-            compact_store = " ".join(store.split())
-            with self.subTest(store=relative):
-                self.assertNotIn("COALESCE(t.latency_ms, 0) AS latency_ms", store)
-                self.assertIn("t.latency_ms AS latency_ms", store)
-                self.assertNotIn(
-                    'total_time: duration_label(integer_cell(&row, "latency_ms"))',
-                    compact_store,
-                )
-                self.assertIn(
-                    'total_time: duration_label(required_latency_cell(&row, "latency_ms")?)',
-                    compact_store,
-                )
-                self.assertIn("missing admin record latency_ms from database row", store)
-                self.assertIn("invalid admin record latency_ms from database row", store)
+        store = (
+            ROOT
+            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
+        ).read_text(encoding="utf-8")
+        compact_store = " ".join(store.split())
+        self.assertNotIn("COALESCE(t.latency_ms, 0) AS latency_ms", store)
+        self.assertIn("t.latency_ms AS latency_ms", store)
+        self.assertNotIn(
+            'total_time: duration_label(integer_cell(&row, "latency_ms"))',
+            compact_store,
+        )
+        self.assertIn(
+            'total_time: duration_label(required_latency_cell(&row, "latency_ms")?)',
+            compact_store,
+        )
+        self.assertIn("missing admin record latency_ms from database row", store)
+        self.assertIn("invalid admin record latency_ms from database row", store)
 
     def test_admin_record_log_modality_preserves_unknown_values(self) -> None:
         modality_source = (
@@ -70,14 +68,12 @@ class AdminRecordRuntimeStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn('_ => "unknown"', modality_source)
         self.assertNotIn('_ => "text"', modality_source)
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_record_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs",
-        ]:
-            store = (ROOT / relative).read_text(encoding="utf-8")
-            with self.subTest(store=relative):
-                self.assertIn("model_modality::label(value).to_owned()", store)
-                self.assertNotIn("_ => \"text\"", store)
+        store = (
+            ROOT
+            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("model_modality::label(value).to_owned()", store)
+        self.assertNotIn("_ => \"text\"", store)
 
 
 if __name__ == "__main__":

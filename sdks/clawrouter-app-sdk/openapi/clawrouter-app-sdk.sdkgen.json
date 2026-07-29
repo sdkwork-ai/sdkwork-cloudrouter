@@ -2581,6 +2581,208 @@
         ],
         "type": "object"
       },
+      "UsageLogItem": {
+        "additionalProperties": false,
+        "description": "Usage log item schema exposed by Claw Router.",
+        "properties": {
+          "baseInputPrice": {
+            "description": "Base input price field on usage log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "baseOutputPrice": {
+            "description": "Base output price field on usage log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "cacheReadPrice": {
+            "description": "Cache read price field on usage log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "cacheReadTokens": {
+            "description": "Cache read tokens field on usage log item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "cost": {
+            "description": "Cost field on usage log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+            "type": "string"
+          },
+          "errorCode": {
+            "description": "Error code field on usage log item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "errorMessage": {
+            "description": "Error message field on usage log item.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "errorType": {
+            "description": "Error type field on usage log item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "gatewayRequestId": {
+            "description": "Gateway request id field on usage log item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "group": {
+            "description": "Group field on usage log item.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "httpStatus": {
+            "description": "Http status field on usage log item.",
+            "format": "int32",
+            "maximum": 599,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "description": "Id field on usage log item.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "inputTokens": {
+            "description": "Input tokens field on usage log item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "ip": {
+            "description": "Ip field on usage log item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "isStream": {
+            "description": "Is stream field on usage log item.",
+            "type": "boolean"
+          },
+          "model": {
+            "description": "Model field on usage log item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "multiplier": {
+            "description": "Multiplier field on usage log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "outputTokens": {
+            "description": "Output tokens field on usage log item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "path": {
+            "description": "Path field on usage log item.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "providerNativeModel": {
+            "description": "Provider native model field on usage log item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "reasoningEffort": {
+            "description": "Reasoning effort field on usage log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "regionCode": {
+            "description": "Region code field on usage log item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "requestedModelCatalogKey": {
+            "description": "Requested model catalog key field on usage log item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on usage log item.",
+            "enum": [
+              "success",
+              "error"
+            ],
+            "type": "string"
+          },
+          "time": {
+            "description": "Time field on usage log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "tokenName": {
+            "description": "Token name field on usage log item.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "totalTime": {
+            "description": "Total time field on usage log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "ttft": {
+            "description": "Ttft field on usage log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "type": {
+            "description": "Type field on usage log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "userAgent": {
+            "description": "User agent field on usage log item.",
+            "maxLength": 2048,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "gatewayRequestId",
+          "time",
+          "tokenName",
+          "group",
+          "type",
+          "model",
+          "providerNativeModel",
+          "requestedModelCatalogKey",
+          "regionCode",
+          "status",
+          "httpStatus",
+          "errorCode",
+          "errorType",
+          "errorMessage",
+          "totalTime",
+          "ttft",
+          "isStream",
+          "inputTokens",
+          "cacheReadTokens",
+          "outputTokens",
+          "cost",
+          "multiplier",
+          "baseInputPrice",
+          "baseOutputPrice",
+          "cacheReadPrice",
+          "path",
+          "reasoningEffort",
+          "ip",
+          "userAgent"
+        ],
+        "type": "object"
+      },
       "UsageLogsListResult": {
         "allOf": [
           {
@@ -2593,10 +2795,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/UsageLogsResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on usage logs list result."
               }
             },
             "required": [
@@ -2607,6 +2809,33 @@
         ],
         "description": "Usage logs list result schema exposed by Claw Router.",
         "x-operation-id": "usage.logs.list"
+      },
+      "UsageLogsResponse": {
+        "additionalProperties": false,
+        "description": "Usage logs response schema exposed by Claw Router.",
+        "name": "UsageLogsResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on usage logs response.",
+            "items": {
+              "$ref": "#/components/schemas/UsageLogItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on usage logs response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
       },
       "UsersSettingsRetrieveResult": {
         "allOf": [
@@ -3590,7 +3819,78 @@
       "get": {
         "description": "List logs. Reads ai_request_trace, ai_usage, ai_routing_decision_log. Writes none. File targets none.",
         "operationId": "usage.logs.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Status query parameter.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "success",
+                "error"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start time query parameter.",
+            "in": "query",
+            "name": "start_time",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "description": "End time query parameter.",
+            "in": "query",
+            "name": "end_time",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {

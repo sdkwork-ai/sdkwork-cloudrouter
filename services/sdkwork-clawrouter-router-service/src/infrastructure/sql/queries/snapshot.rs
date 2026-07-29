@@ -461,6 +461,8 @@ matched_resource_scope AS (
      )
 )
 SELECT
+    c.tenant_id,
+    c.organization_id,
     c.supplier_code,
     c.id AS account_id,
     cc.id AS credential_id,
@@ -488,7 +490,8 @@ SELECT
     END AS endpoint_health_status,
     e.base_url,
     'managed://upstream-account-credential/' || cc.id::text AS secret_ref,
-    cc.credential_ref AS secret_ciphertext,
+    cc.secret_ciphertext,
+    cc.secret_key_id,
     am.auth_type,
     am.runtime_auth_config::text AS runtime_auth_config_json,
     COALESCE(c.timeout_ms, e.timeout_ms) AS timeout_ms,
@@ -671,7 +674,7 @@ WHERE c.deleted_at IS NULL
         AND (member.effective_from IS NULL OR member.effective_from <= CURRENT_TIMESTAMP)
         AND (member.effective_to IS NULL OR member.effective_to > CURRENT_TIMESTAMP)
   )
-  AND NULLIF(cc.credential_ref, '') IS NOT NULL
+  AND NULLIF(cc.secret_ciphertext, '') IS NOT NULL
   AND NULLIF(e.base_url, '') IS NOT NULL
 ORDER BY CASE WHEN e.id = c.preferred_endpoint_id THEN 0 ELSE 1 END ASC,
          COALESCE(e.priority, 100) ASC,

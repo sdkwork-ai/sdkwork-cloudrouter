@@ -143,7 +143,7 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
                 .uri("/backend/v3/api/ai/route_explain")
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"apiKeyId":"100","channelGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-4o-mini","model":"gpt-4o-mini","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_input_token"}"#,
+                    r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-4o-mini","model":"gpt-4o-mini","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_input_token"}"#,
                 ))
                 .unwrap(),
         )
@@ -207,7 +207,7 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
                 .uri("/backend/v3/api/ai/route_explain")
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"apiKeyId":"100","channelGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-not-configured","model":"gpt-not-configured","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_input_token"}"#,
+                    r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-not-configured","model":"gpt-not-configured","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_input_token"}"#,
                 ))
                 .unwrap(),
         )
@@ -246,7 +246,7 @@ async fn runtime_route_explain_reports_selector_route_blocking_reason() {
                 .uri("/backend/v3/api/ai/route_explain")
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"apiKeyId":"100","channelGroupId":"10","resourceCode":"api.openai.embeddings","routeKey":"openai.embeddings","apiCode":"openai.embeddings","capability":"embedding","billingMeter":"llm_input_token"}"#,
+                    r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.embeddings","routeKey":"openai.embeddings","apiCode":"openai.embeddings","capability":"embedding","billingMeter":"llm_input_token"}"#,
                 ))
                 .unwrap(),
         )

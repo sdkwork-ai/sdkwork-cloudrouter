@@ -1,6 +1,6 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredentialCreated, UpstreamAccountCredentialListResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountVerification, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
+import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountVerification, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
 export interface AiUpstreamSuppliersResourcesUpdateParams {
   ifMatch: string;
 }
@@ -198,14 +198,14 @@ export class AiUpstreamAccountsCredentialsApi {
   }
 
 /** Create upstream account credential */
-  async create(accountId: string, body: CreateUpstreamAccountCredentialRequest, params: AiUpstreamAccountsCredentialsCreateParams, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountCredentialCreated> {
+  async create(accountId: string, body: CreateUpstreamAccountCredentialRequest, params: AiUpstreamAccountsCredentialsCreateParams, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountCredential> {
     const requestHeaders = buildRequestHeaders(
       {
         'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
       },
       {}
     );
-    return this.client.request<UpstreamAccountCredentialCreated>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+    return this.client.request<UpstreamAccountCredential>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Delete upstream account credential */

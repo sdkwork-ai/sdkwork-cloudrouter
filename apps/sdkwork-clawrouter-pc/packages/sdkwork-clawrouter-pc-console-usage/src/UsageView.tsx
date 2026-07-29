@@ -18,7 +18,7 @@ import {
   formatUserAgentDeviceLabel,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import { useTranslation } from 'react-i18next';
-import { UsageService, UsageLog } from './usageService';
+import { UsageService, type UsageLog, type UsageLogListParams } from './usageService';
 import { formatUsageLogLocalTime } from './usageFormatting';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -67,8 +67,8 @@ function getUsageLoadErrorMessage(error: unknown, fallback: string, t: Translati
   return fallback;
 }
 
-function buildUsageLogQuery(query: UsageLogQueryState): Record<string, string | number> {
-  const params: Record<string, string | number> = {
+function buildUsageLogQuery(query: UsageLogQueryState): UsageLogListParams {
+  const params: UsageLogListParams = {
     page: query.page,
     pageSize: query.pageSize,
   };
@@ -77,7 +77,7 @@ function buildUsageLogQuery(query: UsageLogQueryState): Record<string, string | 
   const endTime = query.endTime.trim();
 
   if (searchQuery) {
-    params.searchQuery = searchQuery;
+    params.q = searchQuery;
   }
   if (query.status !== 'all') {
     params.status = query.status;
@@ -96,11 +96,21 @@ function toSafeNumber(value: string | number): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function toTokenCount(value: string): bigint {
+  return BigInt(value);
+}
+
+function formatTokenCount(value: string): string {
+  return toTokenCount(value).toLocaleString();
+}
+
 export function UsageView() {
   const { t } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
-  const [totalLogs, setTotalLogs] = useState(0);
+  const [totalLogs, setTotalLogs] = useState('0');
+  const [pageCount, setPageCount] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [query, setQuery] = useState<UsageLogQueryState>(defaultUsageLogQuery);
   const [draftQuery, setDraftQuery] = useState<UsageLogQueryState>(defaultUsageLogQuery);
   const [loading, setLoading] = useState(true);
@@ -108,23 +118,22 @@ export function UsageView() {
 
   const page = query.page;
   const pageSize = query.pageSize;
-  const pageCount = Math.max(1, Math.ceil(totalLogs / pageSize));
   const visibleStart = usageLogs.length > 0 ? (page - 1) * pageSize + 1 : 0;
   const visibleEnd = usageLogs.length > 0 ? visibleStart + usageLogs.length - 1 : 0;
 
   const pageStats = useMemo(() => {
     if (usageLogs.length === 0) {
-      return { pageCost: 0, errorCount: 0, errorRate: 0, inputTokens: 0, outputTokens: 0 };
+      return { pageCost: 0, errorCount: 0, errorRate: 0, inputTokens: 0n, outputTokens: 0n };
     }
     let pageCost = 0;
     let errorCount = 0;
-    let inputTokens = 0;
-    let outputTokens = 0;
+    let inputTokens = 0n;
+    let outputTokens = 0n;
     for (const log of usageLogs) {
       pageCost += toSafeNumber(log.cost);
       if (log.status === 'error') errorCount += 1;
-      inputTokens += log.inputTokens || 0;
-      outputTokens += log.outputTokens || 0;
+      inputTokens += toTokenCount(log.inputTokens);
+      outputTokens += toTokenCount(log.outputTokens);
     }
     return {
       pageCost,
@@ -141,14 +150,18 @@ export function UsageView() {
     try {
       const data = await UsageService.fetchLogs(buildUsageLogQuery(query));
       if (isActive()) {
-        setUsageLogs(data.logs);
-        setTotalLogs(data.total);
+        setUsageLogs(data.items);
+        setTotalLogs(data.pageInfo.totalItems);
+        setPageCount(Math.max(1, data.pageInfo.totalPages));
+        setHasMore(data.pageInfo.hasMore);
         setExpandedIds([]);
       }
     } catch (error) {
       if (isActive()) {
         setUsageLogs([]);
-        setTotalLogs(0);
+        setTotalLogs('0');
+        setPageCount(1);
+        setHasMore(false);
         setExpandedIds([]);
         setLoadError(getUsageLoadErrorMessage(error, t('console.usage.loadErrorFallback', '使用日志加载失败。'), t));
       }
@@ -230,7 +243,7 @@ export function UsageView() {
               {t('console.usage.stat.total', '总记录')}
             </span>
             <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 font-mono">
-              {totalLogs.toLocaleString()}
+              {formatTokenCount(totalLogs)}
             </span>
           </div>
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
@@ -466,17 +479,17 @@ export function UsageView() {
                         {/* Input */}
                         <td className="px-4 py-3 align-middle text-right">
                           <div className="flex flex-col items-end gap-0.5">
-                            <span className="font-mono text-slate-800 dark:text-slate-200">{log.inputTokens.toLocaleString()}</span>
-                            {log.cacheReadTokens > 0 && (
+                            <span className="font-mono text-slate-800 dark:text-slate-200">{formatTokenCount(log.inputTokens)}</span>
+                            {toTokenCount(log.cacheReadTokens) > 0n && (
                               <span className="text-[10px] text-slate-400 font-mono">
-                                {t('console.usage.metric.cache', 'cache')} {log.cacheReadTokens.toLocaleString()}
+                                {t('console.usage.metric.cache', 'cache')} {formatTokenCount(log.cacheReadTokens)}
                               </span>
                             )}
                           </div>
                         </td>
                         {/* Output */}
                         <td className="px-4 py-3 align-middle text-right font-mono text-slate-800 dark:text-slate-200">
-                          {log.outputTokens.toLocaleString()}
+                          {formatTokenCount(log.outputTokens)}
                         </td>
                         {/* Cost */}
                         <td className="px-4 py-3 align-middle text-right">
@@ -522,11 +535,11 @@ export function UsageView() {
                               <div className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-xs">
                                 {/* Request ID */}
                                 <div className="text-right font-medium text-slate-500 dark:text-slate-400 self-center">{t('console.usage.detail.requestId', 'Request ID')}</div>
-                                <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 self-center">{log.requestId}</div>
+                                <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 self-center">{log.gatewayRequestId}</div>
 
                                 {/* Cache tokens */}
                                 <div className="text-right font-medium text-slate-500 dark:text-slate-400 self-center">{t('console.usage.detail.cacheTokens', 'Cache tokens')}</div>
-                                <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 self-center">{log.cacheReadTokens.toLocaleString()}</div>
+                                <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 self-center">{formatTokenCount(log.cacheReadTokens)}</div>
 
                                 {/* Pricing */}
                                 <div className="text-right font-medium text-slate-500 dark:text-slate-400 self-start pt-1">{t('console.usage.detail.pricing', 'Pricing')}</div>
@@ -564,9 +577,9 @@ export function UsageView() {
                                       {t('console.usage.detail.cachePrice', 'cache price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cacheReadPrice)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2.5 rounded leading-relaxed break-all">
-                                      {`(${t('console.usage.metric.input', 'input')} ${(log.inputTokens - log.cacheReadTokens).toLocaleString()} / 1M × ${formatDisplayAmount(log.baseInputPrice)}`}
-                                      {` + ${t('console.usage.metric.cache', 'cache')} ${log.cacheReadTokens.toLocaleString()} / 1M × ${formatDisplayAmount(log.cacheReadPrice)}`}
-                                      {` + ${t('console.usage.metric.output', 'output')} ${log.outputTokens.toLocaleString()} / 1M × ${formatDisplayAmount(log.baseOutputPrice)})`}
+                                      {`(${t('console.usage.metric.input', 'input')} ${(toTokenCount(log.inputTokens) - toTokenCount(log.cacheReadTokens)).toLocaleString()} / 1M × ${formatDisplayAmount(log.baseInputPrice)}`}
+                                      {` + ${t('console.usage.metric.cache', 'cache')} ${formatTokenCount(log.cacheReadTokens)} / 1M × ${formatDisplayAmount(log.cacheReadPrice)}`}
+                                      {` + ${t('console.usage.metric.output', 'output')} ${formatTokenCount(log.outputTokens)} / 1M × ${formatDisplayAmount(log.baseOutputPrice)})`}
                                       {` × ${formatDisplayAmount(log.multiplier)} = `}
                                       <span className="font-bold text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cost)}</span>
                                     </div>
@@ -644,7 +657,7 @@ export function UsageView() {
             <span className="text-slate-600 dark:text-slate-300 font-medium px-1">{pageCount}</span>
             <button
               type="button"
-              disabled={page >= pageCount || loading}
+              disabled={!hasMore || loading}
               onClick={() => void goToPage(page + 1)}
               className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               aria-label={t('console.usage.pagination.next', '下一页')}

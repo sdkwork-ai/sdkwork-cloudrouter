@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { CheckCircle2, Edit3, KeyRound, Plus, RefreshCw, Settings2, Trash2, XCircle } from 'lucide-react';
-import { AdminTableShell, ConfirmDialog, CopyButton } from '@sdkwork/clawroutes-pc-commons';
+import { CheckCircle2, Edit3, Plus, RefreshCw, Settings2, Trash2, XCircle } from 'lucide-react';
+import { AdminTableShell, ConfirmDialog } from '@sdkwork/clawroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import type {
   CreateUpstreamAccountRequest,
   UpstreamAccount,
   UpstreamAccountCredential,
-  UpstreamAccountCredentialCreated,
   UpstreamAccountVerification,
   UpstreamSupplier,
   UpstreamSupplierAuthMethod,
@@ -184,7 +183,6 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [created, setCreated] = useState<UpstreamAccountCredentialCreated | null>(null);
   const [verification, setVerification] = useState<UpstreamAccountVerification | null>(null);
   const [credentialId, setCredentialId] = useState('');
   const [endpointId, setEndpointId] = useState('');
@@ -216,14 +214,13 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
     setError(null);
     try {
       const form = new FormData(event.currentTarget);
-      const result = await upstreamService.accounts.createCredential(account.id, {
+      await upstreamService.accounts.createCredential(account.id, {
         credentialName: required(form, 'credentialName', t('admin.upstream.account.credentials.name'), t),
         secret: required(form, 'secret', t('admin.upstream.account.credentials.secret'), t),
         expiresAt: optional(form, 'expiresAt'),
         priority: numeric(form, 'priority', 100),
       });
       setCreateOpen(false);
-      setCreated(result);
       await load();
       onAccountChanged(await upstreamService.accounts.retrieve(account.id));
     } catch (cause) {
@@ -289,7 +286,6 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
         </Section>
       </div>
       {createOpen ? <Modal title={t('admin.upstream.account.credentials.createTitle')} busy={busy} submitLabel={t('admin.upstream.account.credentials.store')} onSubmit={createCredential} onClose={() => setCreateOpen(false)}><div className="grid gap-4"><Field label={t('admin.upstream.account.credentials.name')} required><input name="credentialName" className={inputClass} required /></Field><Field label={t('admin.upstream.account.credentials.secret')} required hint={t('admin.upstream.account.credentials.secretHint')}><input name="secret" type="password" autoComplete="new-password" className={inputClass} required /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label={t('admin.upstream.common.fields.priority')}><input name="priority" type="number" min="0" className={inputClass} defaultValue="100" /></Field><Field label={t('admin.upstream.account.credentials.expiresAt')}><input name="expiresAt" type="datetime-local" className={inputClass} /></Field></div></div></Modal> : null}
-      {created ? <Modal title={t('admin.upstream.account.credentials.createdTitle')} description={t('admin.upstream.account.credentials.createdDescription')} busy={false} submitLabel={t('admin.upstream.account.credentials.createdAction')} onSubmit={(event) => { event.preventDefault(); setCreated(null); }} onClose={() => setCreated(null)}><div className="rounded-md border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10"><div className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-200"><KeyRound className="h-4 w-4" />{t('admin.upstream.account.credentials.oneTimeSecret')}</div><div className="flex items-center gap-2 rounded-md bg-white p-2 font-mono text-sm text-slate-900 dark:bg-black dark:text-white"><code className="min-w-0 flex-1 break-all">{created.rawSecret}</code><CopyButton text={created.rawSecret} /></div></div></Modal> : null}
     </SidePanel>
   );
 }

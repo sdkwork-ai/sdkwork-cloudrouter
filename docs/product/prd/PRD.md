@@ -1,194 +1,165 @@
 # SDKWork Claw Router PRD
 
-Status: active
-Owner: SDKWork maintainers
-Application: sdkwork-clawrouter
-Updated: 2026-07-14
-Specs: REQUIREMENTS_SPEC.md, DOCUMENTATION_SPEC.md
-
-## Document Map
-
-This file is the PRD index. Detailed requirements live in the linked shards:
-
-- [PRD-UPSTREAM-SUPPLIER.md](PRD-UPSTREAM-SUPPLIER.md) - canonical upstream supplier, account, account-group, routing, credential, and settlement requirements
-
-- [PRD-00-design.md](PRD-00-design.md) — design rationale and capability surface
-- [PRD-01-prd-sdkwork-clawrouter.md](PRD-01-prd-sdkwork-clawrouter.md) — detailed product requirements
-
-- [REQ-2026-0001 Commercial Production Readiness](../requirements/REQ-2026-0001-commercial-production-readiness.md) - active critical readiness requirement
-
-## Current Production-Readiness State
-
-Status: pre-launch. This PRD describes the intended product scope; it is not a
-release approval or evidence that a commercial production service is ready.
-
-The active engineering iteration is limited to relay and relay control-plane
-correctness. Chat product persistence, UI, and chat-specific contract semantics
-are not being changed in this iteration; their open gates remain part of the
-whole-product release decision.
-
-The current release gate is
-[REQ-2026-0001 Commercial Production Readiness](../requirements/REQ-2026-0001-commercial-production-readiness.md).
-Its acceptance criteria require verified security, streaming, financial,
-contract, PostgreSQL/SQLite, operational, and supply-chain evidence from a
-clean candidate commit before any production or commercial claim is made.
-
-Until that requirement is closed, product capabilities, high-availability
-topology, SLO targets, pricing, and service terms described elsewhere are
-planning inputs rather than proof of an active managed-service commitment.
-The historical [standard alignment audit](../standard-alignment-audit.md) is
-not current readiness evidence.
-
-The current factual revalidation is
-[REVIEW-20260714 Production Readiness Revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md).
-It records open release blockers and must be read with the active requirement;
-neither document grants a production, high-availability, or commercial launch
-approval.
+Status: active  
+Owner: SDKWork maintainers  
+Application: sdkwork-clawrouter  
+Updated: 2026-07-29  
+Specs: `REQUIREMENTS_SPEC.md`, `DOCUMENTATION_SPEC.md`
 
 ## 1. Background And Problem
 
-Developers and enterprises integrating AI capabilities today face fragmented
-provider APIs (OpenAI, Anthropic, Google, Alibaba, Tencent, ByteDance, ...),
-inconsistent authentication, uneven rate limits, opaque billing, and no unified
-observability across vendors. Existing gateways either lock customers into a
-single cloud (AWS Bedrock, Azure OpenAI) or lack commercial-grade tenant
-isolation, billing, and SLA controls (self-hosted LiteLLM).
+AI applications must integrate suppliers with different protocols, Base URLs,
+credentials, resource catalogs, quotas, reliability, and billing rules. Direct
+integration spreads those differences across every application and makes
+failover, tenant isolation, settlement, audit, and cost reconciliation hard to
+operate consistently.
 
-SDKWork Claw Router is intended to become an enterprise-grade, multi-tenant AI
-API aggregation gateway with an OpenAI-compatible `/v1` surface plus admin and
-app surfaces. Circuit breaking, idempotency, tenant-scoped billing, and
-production-grade observability remain release requirements whose current
-implementation and evidence are governed by REQ-2026-0001.
+Claw Router is a pre-launch, multi-tenant AI gateway. It provides a stable
+OpenAI-compatible invocation surface, standardized upstream supplier control
+plane, account-group routing, usage accounting, and generated management SDKs.
+This document defines intended product behavior; it is not production-release
+evidence.
 
 ## 2. Target Users
 
-| Persona | Description | Primary Need |
-| --- | --- | --- |
-| Application developer | Integrates `/v1` chat / embeddings / generations | One API key, OpenAI-compatible, failover across providers |
-| Platform operator | Runs Claw Router for an internal team | Tenant isolation, audit, quota, rate limit, observability |
-| Finance / procurement | Owns AI spend | Per-tenant billing, usage settlement, cost allocation |
-| Security engineer | Owns compliance | Per-tenant signing keys, supply chain integrity, SBOM, audit log |
+| Persona | Primary need |
+| --- | --- |
+| Application developer | One stable API and API key across supported AI resources |
+| Platform operator | Supplier onboarding, account lifecycle, routing, failover, audit, and observability |
+| Finance and procurement | Traceable supplier cost, customer charge, settlement, and reconciliation |
+| Security engineer | Tenant isolation, write-only credentials, controlled egress, and auditable operations |
+| SRE | Bounded traffic, health-aware routing, graceful degradation, and recoverable PostgreSQL operations |
 
-## 3. Success Metrics
+## 3. Goals And Non-Goals
+
+### Goals
+
+- Present one consistent invocation surface while preserving provider-specific
+  behavior behind adapters.
+- Model upstream control-plane concepts unambiguously as supplier, account, and
+  account group.
+- Route deterministically from a captured, immutable candidate snapshot.
+- Keep resource authorization, routing weight, procurement cost, and sale price
+  as separate dimensions.
+- Protect credentials from database, API, SDK, UI, logs, traces, and error-body
+  disclosure.
+- Use PostgreSQL as the only authoritative server database and support
+  high-concurrency transaction semantics explicitly.
+- Generate app, backend, and open SDK families from reviewed API authorities.
+- Produce usage, routing-decision, health, audit, and settlement facts required
+  for commercial reconciliation.
+
+### Non-Goals
+
+- A server-side SQLite fallback or a PostgreSQL schema mirror in SQLite.
+- Supplier-specific columns or conditionals in the core routing domain.
+- A second provider-account or service-provider aggregate alongside the
+  upstream domain.
+- Advertising OAuth support before authorization, refresh, revocation,
+  encrypted persistence, audit, and failure recovery are implemented end to
+  end.
+- Claiming commercial production readiness from static checks or unit tests
+  alone.
+
+## 4. Scope
+
+### Invocation Plane
+
+- OpenAI-compatible inference entrypoints under `/v1`.
+- Authentication, tenant and organization resolution, entitlement checks,
+  request normalization, route planning, adapter dispatch, streaming, usage
+  capture, and normalized error handling.
+- Bounded request/response handling, timeout, retry, circuit-breaker, quota, and
+  concurrency policies.
+
+### Upstream Control Plane
+
+- Official suppliers and relay suppliers.
+- Multiple Base URLs and supplier-declared authentication methods.
+- Supplier resource and resource-group allowlists.
+- Upstream accounts with credentials, financial state, quota, and health.
+- Account groups with members, routing strategy, fallback, resource allowlist,
+  cost multiplier, and sale multiplier.
+- Route explanation with eligibility and rejection reasons but no secrets.
+
+The detailed product contract is
+[PRD-UPSTREAM-SUPPLIER.md](PRD-UPSTREAM-SUPPLIER.md). The architecture decision
+is
+[ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md).
+
+### Product Surfaces
+
+- Backend management API and `@sdkwork/clawrouter-backend-sdk` for operators.
+- App API and `@sdkwork/clawrouter-app-sdk` for authenticated product clients.
+- Open API and `@sdkwork/clawrouter-open-sdk` for public gateway consumers.
+- PC console and admin application using generated SDK boundaries.
+- Usage, finance, notification, settings, monitoring, and audit capabilities
+  required to operate the gateway.
+
+## 5. User Scenarios
+
+1. An operator creates an official or relay supplier, configures its Base URLs,
+   authentication methods, and allowed resources.
+2. The operator creates one or more supplier accounts, writes credentials, and
+   verifies that list/detail APIs expose only masked metadata.
+3. The operator creates an account group, assigns accounts, sets routing and
+   financial multipliers independently, and publishes resource eligibility.
+4. A client invokes a supported API. Claw Router authenticates the request,
+   resolves entitlements, selects an eligible group/account/endpoint, dispatches
+   through an adapter, and records a redacted decision and usage fact.
+5. When an endpoint or account is unhealthy, routing applies the declared
+   strategy and fallback policy without crossing tenant or resource boundaries.
+6. Finance reconciles supplier costs, customer charges, account balances, and
+   settlement ledger entries from immutable usage facts.
+
+## 6. Success Metrics
+
+These are launch targets and require production-like evidence.
 
 | Metric | Target |
 | --- | --- |
-| `/v1/chat/completions` p95 latency overhead vs direct provider | < 50 ms |
-| Provider outage failover time (circuit breaker open → next candidate) | < 1 s |
-| Idempotency cache hit ratio for retried requests | > 99% |
-| Tenant isolation test coverage | 100% of cross-tenant paths |
-| Release artifact signature coverage | 100% of 24-package matrix |
-| SBOM completeness (Rust + npm trees) | 100% |
-| Portal i18n locale coverage | 7 locales (en-US, zh-CN, de-DE, fr-FR, ja-JP, ko-KR, ru-RU) |
+| Cross-tenant authorization paths with negative tests | 100% |
+| Raw upstream credential occurrences in read APIs, SDK DTOs, logs, and traces | 0 |
+| Server persistence engines | PostgreSQL only |
+| List/search operations using bounded store-level pagination | 100% |
+| Retired upstream aggregates in production code and current contracts | 0 |
+| API operations traceable to authority OpenAPI and generated SDK | 100% |
+| Usage and settlement writes covered by transaction/idempotency evidence | 100% |
+| Release artifacts with checksum, signature, and SBOM | 100% |
 
-## 4. Capability Surface
+Latency, throughput, recovery time, failover time, and memory ceilings must be
+set and accepted from reproducible production-like load, soak, fault-injection,
+backup/restore, and multi-replica tests. They are not inferred from design.
 
-- OpenAI-compatible gateway: `/v1/chat/completions`, `/v1/embeddings`,
-  `/v1/images/generations`, `/v1/audio/*`, `/v1/generations`, `/v1/models`
-- Admin API (`/backend/v3/api`): tenant, user, channel, provider secret,
-  rate limit, firewall, finance, inventory, messaging, runtime region
-- App API (`/app/v3/api`): dashboard, usage, gateway, generations,
-  settlements, notifications, settings, providers, routing, chat, runtime,
-  payment, API keys
-- Open API (`/open/v1`): public developer SDK surface
-- Portal (`/console`, `/admin`, `/auth`, `/playground`, `/public`)
+## 7. Phases
 
-## 5. Non-Functional Requirements
-
-The following are release requirements, not claims about the current deployed
-or commercially supported implementation. Their current evidence state is
-tracked by REQ-2026-0001 and REVIEW-20260714.
-
-- **HA**: circuit breaker + idempotency + graceful drain + Redis failover +
-  PostgreSQL streaming replication
-- **Security**: per-tenant signing keys, IAM-issued principal, SQL scoped
-  subjects, HSTS default on, CSP strict, artifact signature required
-- **Observability**: Prometheus RED/USE metrics with route/method/status/
-  operation_id labels, OpenTelemetry tracing, structured JSON logs, SLO/SLI
-  dashboard
-- **Performance**: the unified invocation path forwards supported streams
-  incrementally without full-body buffering; direct Adapter streaming is not a
-  completed commercial capability until it has terminal metering, cancellation,
-  idempotency, and bounded-concurrency evidence. The p95 TTFT target remains
-  unproven until it is measured in a production-like benchmark.
-- **Multi-tenancy**: tenant isolation enforced at IAM, SQL, and schema layers
-
-## 6. Release Milestones
-
-| Milestone | Target | Status |
+| Phase | Exit condition | Status |
 | --- | --- | --- |
-| 0.3.x commercial beta | Private beta with circuit breaker + idempotency + signing + observability | In progress |
-| 0.4.x public preview | Public SaaS preview with 7-locale i18n + complete K8s HA | Planned |
-| 0.5.x GA | Commercial GA with SLA, SBOM, signed artifacts, SOC2 prep | Planned |
+| Domain convergence | Supplier/account/account-group model, PostgreSQL schema, APIs, SDKs, UI, tests, and docs agree | In progress |
+| Production hardening | Security, streaming, financial, load, recovery, observability, and HA gates pass | Planned |
+| Commercial beta | Clean release candidate, signed artifacts, runbooks, support controls, and reviewed evidence | Planned |
+| General availability | Accepted SLO/SLA, operational history, recovery drills, and supply-chain evidence | Planned |
 
-No milestone may be promoted to public preview or GA until REQ-2026-0001 is
-accepted with the complete production evidence bundle. Current implementation
-claims in detailed shards are targets unless backed by the verification matrix.
+No phase may be promoted from documentation claims alone. The application
+manifest remains `preLaunch: true` until the release gate is accepted.
 
-## 7. Target Risk Controls
+## 8. Linked Requirements
 
-The controls below are desired safeguards. They are not verified mitigations
-until the active readiness gate records corresponding passing evidence.
-
-- Provider upstream instability → mitigated by circuit breaker + failover
-- Tenant signing key compromise → mitigated by 90-day rotation + key ID
-- Schema drift between baseline and migrations → mitigated by migration chain
-  + drift policy + CI gate
-- Supply chain attack → mitigated by signed artifacts + SBOM + cargo-deny +
-  pnpm audit + Trivy
-
-## 8. Current Release Blockers
-
-The current factual state is maintained in
-[REVIEW-20260714](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md).
-The following categories are release blockers as of the review date:
-
-| Category | Current state | Required before a release claim |
-| --- | --- | --- |
-| Tenant signing | In-memory immediate rotation is repaired, but durable IAM storage, cross-replica coordination, persisted grace/revocation, and recovery evidence are absent. | Security/IAM-approved durable rotation, key recovery, revocation/grace behavior, and passing multi-replica tests. |
-| Provider egress | Production transport is HTTPS-only and validates targets before credentials are forwarded, but resolver pinning, host allowlists, DNS-rebinding defenses, redirect policy, and cluster egress enforcement are absent. | Approved egress policy and negative SSRF/DNS-rebinding evidence. |
-| Streaming | The unified invocation route streams incrementally with a bounded terminal lifecycle. Direct authenticated Adapter streams still bypass the formal Adapter contract and terminal financial accounting. | Approved Adapter stream contract or a reviewed fail-closed gate, followed by incremental terminal accounting and measured backpressure/RSS evidence. |
-| Public relay boundary | The public OpenAI-compatible contract is limited to inference/media/file/batch runtime operations. Provider control-plane paths, model deletion, their classifiers, taxonomy entries, seeds, and generated SDK surfaces were removed. Provider-native wildcard mounts now enforce the embedded OpenAPI provider/path/method allowlist before authentication or forwarding. | Keep positive and negative contract/runtime/classifier/SDK boundary checks in the clean-candidate release gate. |
-| Financial ingestion | The shared command rejects DDL-width trace/usage text and overlong decimal input, snapshot validation avoids a second JSON DOM, retry claims are capped, and Adapter usage lines have a hard maximum of 64. PostgreSQL and SQLite SQL recorders validate all lines and persist a batch in one transaction; production wrappers preserve the batch boundary and fail closed rather than splitting failed batches into retry entries. Snapshot bytes, retry envelopes, queue/DLQ capacity, durable batch outbox, and two-engine failure evidence remain unresolved. | Reviewed finance/privacy contract, bounded projections, durable atomic outbox, queue backpressure/retention policy, and PostgreSQL/SQLite recovery evidence. |
-| API contracts | Operation-pattern, response-envelope, route-collision, OpenAPI generator, and generated-SDK guardian checks pass for the current worktree. This is contract evidence only; clean-candidate SDK builds and unrelated federation ownership remain release requirements. | Re-run the full API/SDK matrix from the clean release candidate and retain immutable evidence. |
-| Tenant authorization | `route_explain` now requires a typed admin subject, scopes API keys and channel groups to the caller tenant/organization, returns the same `404` for absent and cross-tenant objects, and omits credential identifiers/rotation metadata. | Retain the two-tenant, missing-subject, and redaction tests in the clean-candidate security evidence. |
-| App chat API | The narrow `app_chat_api` suite now passes `9/9` after stale status/subject assertions were aligned to existing behavior/OpenAPI. The added safe-input coverage rejects canonical alias/duplicate input and redacts unavailable-store `503` responses. It does not prove installed schema, API field-contract/SDK parity, server pagination, concurrency, or production behavior. | Close the owned persistence, API/SDK, pagination, and concurrency gates with complete evidence. |
-| Persistence | Authored PostgreSQL/SQLite schema inputs do not declare the runtime `ai_chat_*` tables; no current PostgreSQL integration URL is configured. | Paired database ownership/migrations plus clean-install, upgrade, restore, and transaction evidence. |
-| Readiness | `/readyz` verifies configured dependency checks, not generic migration/drift or all enabled feature tables. | Reviewed readiness semantics and route/schema admission evidence. |
-| Concurrency | Chat sequence values use `COUNT(*) + 1` in both stores. | Atomic allocation and PostgreSQL/SQLite contention evidence. |
-| Settlement capacity | Worker batch count is constrained to `1..=200`, but per-row payload, retry queue, DLQ retention, backlog policy, and capacity evidence are unbounded or absent. | Finance/SRE-approved byte/count bounds, observability, overload policy, and two-engine load/recovery tests. |
-| Runtime identity | Cloud Gateway, app-api, and backend-api now validate an explicit Snowflake node ID before database bootstrap in server/container mode. Current two-replica Kubernetes Deployments still do not provide unique allocated IDs, and the upstream Snowflake clock-backward path can repeat IDs. | Reviewed allocator/fencing, logical-clock repair, duplicate-node/rollback/sequence-exhaustion tests, and multi-replica failure evidence. |
+- [Upstream supplier PRD](PRD-UPSTREAM-SUPPLIER.md)
+- [Commercial production readiness](../requirements/REQ-2026-0001-commercial-production-readiness.md)
+- [Technical architecture](../../architecture/tech/TECH_ARCHITECTURE.md)
+- [Upstream supplier architecture decision](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
+- [Production-readiness revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md)
+- [Security policy](../../SECURITY.md)
+- [Commercial pricing](../../commercial/PRICING.md)
+- [Edition tier matrix](../../legal/TIER_MATRIX.md)
 
 ## 9. Open Questions
 
-### Resolved
-
-- ~~What is the pricing model for commercial license tiers (per-seat,
-  per-token, flat)?~~ **Resolved (2026-06-27):** Claw Router uses a hybrid
-  model of recurring subscription base fee plus metered per-token usage.
-  Four tiers are defined: Community (AGPL, free), Pro (subscription + token),
-  Enterprise (subscription + token, higher SLA), and OEM (one-time + royalty).
-  See [docs/commercial/PRICING.md](../../commercial/PRICING.md) and the
-  edition tier matrix at [docs/legal/TIER_MATRIX.md](../../legal/TIER_MATRIX.md).
-- ~~Should Claw Router offer a managed cloud offering, or remain self-hosted +
-  licensed?~~ **Resolved (2026-06-27):** The product direction supports both
-  deployment models after the production-readiness gate closes. The primary
-  commercial model is self-hosted + licensed. A SDKWork-managed SaaS offering
-  remains a planned add-on for Pro and Enterprise editions; this does not
-  represent a currently available managed service. See
-  the "Deployment And Customization" section of
-  [docs/legal/TIER_MATRIX.md](../../legal/TIER_MATRIX.md).
-
-### Open
-
-- Should the OpenAI-compatible surface support streaming for all generation
-  types, or only chat completions?
-
-## 10. References
-
-- [PRD-00-design.md](PRD-00-design.md)
-- [PRD-01-prd-sdkwork-clawrouter.md](PRD-01-prd-sdkwork-clawrouter.md)
-- [Technical architecture](../architecture/tech/TECH_ARCHITECTURE.md)
-- [Production-readiness revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md)
-- [Historical standard alignment audit](../standard-alignment-audit.md)
-- [Security policy](../../SECURITY.md)
+- Which provider-specific OAuth flows should be implemented first after the
+  common authorization, refresh, revocation, encryption, audit, and recovery
+  contract is approved?
+- Which routing strategies require distributed coordination instead of a
+  read-only candidate snapshot plus health state?
+- What measured throughput, p95/p99 latency overhead, stream concurrency, and
+  process RSS ceilings are required for the first commercial beta topology?

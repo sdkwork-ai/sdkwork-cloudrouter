@@ -96,9 +96,6 @@ struct AuthMethodRequestItem {
     auth_type: String,
     config_schema: serde_json::Value,
     runtime_auth_config: serde_json::Value,
-    authorization_url: Option<String>,
-    token_url: Option<String>,
-    scopes: Option<serde_json::Value>,
     priority: Option<i32>,
     status: Option<i32>,
 }
@@ -168,9 +165,6 @@ struct AuthMethodResponse {
     auth_type: String,
     config_schema: serde_json::Value,
     runtime_auth_config: serde_json::Value,
-    authorization_url: Option<String>,
-    token_url: Option<String>,
-    scopes: Option<serde_json::Value>,
     priority: i32,
     status: i32,
 }
@@ -649,12 +643,6 @@ fn auth_method_inputs(
                     "runtimeAuthConfig must be a JSON object",
                 ));
             }
-            if item.scopes.as_ref().is_some_and(|value| !value.is_array()) {
-                return Err(problem(
-                    SdkWorkResultCode::InvalidParameter,
-                    "scopes must be a JSON array",
-                ));
-            }
             Ok(AdminUpstreamSupplierAuthMethodInput {
                 auth_method_code: required_text(
                     item.auth_method_code,
@@ -669,13 +657,6 @@ fn auth_method_inputs(
                 auth_type: auth_type(item.auth_type)?,
                 config_schema: item.config_schema,
                 runtime_auth_config: item.runtime_auth_config,
-                authorization_url: optional_text(
-                    item.authorization_url,
-                    "authorizationUrl",
-                    MAX_URL_LENGTH,
-                )?,
-                token_url: optional_text(item.token_url, "tokenUrl", MAX_URL_LENGTH)?,
-                scopes: item.scopes,
                 priority: non_negative(item.priority.unwrap_or(0), "priority")?,
                 status: status(item.status.unwrap_or(1))?,
             })
@@ -736,15 +717,7 @@ fn supplier_type(value: String) -> Result<String, Response> {
 
 fn auth_type(value: String) -> Result<String, Response> {
     let value = required_text(value, "authType", 64)?;
-    if !matches!(
-        value.as_str(),
-        "api_key"
-            | "bearer_token"
-            | "oauth2_client_credentials"
-            | "oauth2_authorization_code"
-            | "aws_sigv4"
-            | "custom"
-    ) {
+    if !matches!(value.as_str(), "api_key" | "bearer_token" | "custom") {
         return Err(problem(
             SdkWorkResultCode::InvalidParameter,
             "authType is not supported",
@@ -846,9 +819,6 @@ impl From<AdminUpstreamSupplierAuthMethodItem> for AuthMethodResponse {
             auth_type: item.auth_type,
             config_schema: item.config_schema,
             runtime_auth_config: item.runtime_auth_config,
-            authorization_url: item.authorization_url,
-            token_url: item.token_url,
-            scopes: item.scopes,
             priority: item.priority,
             status: item.status,
         }

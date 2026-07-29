@@ -1,10 +1,10 @@
 use std::env;
 use std::sync::Arc;
 
-use sdkwork_clawrouter_router_service::application::CredentialSecretCodec;
-use sdkwork_clawrouter_router_service::infrastructure::crypto::{
-    HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
+use sdkwork_clawrouter_router_service::application::{
+    UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
 };
+use sdkwork_clawrouter_router_service::infrastructure::crypto::RingAeadCredentialSecretCodec;
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::PostgresAdminUpstreamStore;
 use sdkwork_clawrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sdkwork_clawrouter_router_service::ports::{
@@ -29,11 +29,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         RingAeadCredentialSecretCodec::new("0123456789abcdef0123456789abcdef")
             .expect("credential codec"),
     );
-    let hasher = Arc::new(
-        HmacSha256ApiKeySecretHasher::new("abcdef0123456789abcdef0123456789")
-            .expect("credential hasher"),
-    );
-    let store = PostgresAdminUpstreamStore::new(context.pool.clone(), codec.clone(), hasher);
+    let store = PostgresAdminUpstreamStore::new(context.pool.clone(), codec.clone());
     let subject = upstream_subject(100001, 200001);
 
     let supplier = store
@@ -75,9 +71,6 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
                     "credentialTransport": "bearer",
                     "defaultHeaders": {}
                 }),
-                authorization_url: None,
-                token_url: None,
-                scopes: None,
                 priority: 10,
                 status: 1,
             }],
@@ -174,21 +167,35 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
     );
 
     let stored = sqlx::query(
-        "SELECT credential_ref, credential_hash FROM ai_upstream_account_credential WHERE id = $1",
+        "SELECT secret_ciphertext, secret_key_id, secret_fingerprint FROM ai_upstream_account_credential WHERE id = $1",
     )
     .bind(credential.id)
     .fetch_one(&context.pool)
     .await
     .expect("read encrypted credential evidence");
-    let credential_ref: String = stored.try_get("credential_ref").expect("credential_ref");
-    let credential_hash: String = stored.try_get("credential_hash").expect("credential_hash");
-    assert!(credential_ref.len() > 256);
-    assert_ne!(long_secret, credential_ref);
-    assert_ne!(long_secret, credential_hash);
+    let secret_ciphertext: String = stored
+        .try_get("secret_ciphertext")
+        .expect("secret_ciphertext");
+    let secret_key_id: String = stored.try_get("secret_key_id").expect("secret_key_id");
+    let secret_fingerprint: String = stored
+        .try_get("secret_fingerprint")
+        .expect("secret_fingerprint");
+    assert!(secret_ciphertext.len() > 256);
+    assert_ne!(long_secret, secret_ciphertext);
+    assert_ne!(long_secret, secret_fingerprint);
     assert_eq!(
         long_secret,
         codec
-            .decode_secret(&credential_ref)
+            .decode_secret(
+                UpstreamCredentialSecretContext::new(
+                    subject.tenant_id,
+                    subject.organization_id,
+                    account.id,
+                    credential.id,
+                ),
+                &secret_key_id,
+                &secret_ciphertext,
+            )
             .expect("decrypt stored credential")
     );
 
@@ -262,7 +269,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             .expect("managed secret ref")
     );
     assert_eq!(
-        credential_ref,
+        secret_ciphertext,
         runtime_row
             .try_get::<String, _>("secret_ciphertext")
             .expect("encrypted secret material")
@@ -369,7 +376,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
     for event in config_events {
         let payload: String = event.try_get("event_payload").expect("event payload");
         assert!(!payload.contains(&long_secret));
-        assert!(!payload.contains(&credential_ref));
+        assert!(!payload.contains(&secret_ciphertext));
     }
 
     context.cleanup().await;

@@ -287,11 +287,7 @@ class RustRouteOverlapAudit:
             return True
         if (
             method == "GET"
-            and path
-            in {
-                "/app/v3/api/ai/channel_groups",
-                "/app/v3/api/iam/api_keys",
-            }
+            and path == "/app/v3/api/iam/api_keys"
             and source_paths == {"services/sdkwork-clawrouter-router-service/src/api/app_api_keys.rs"}
         ):
             return True

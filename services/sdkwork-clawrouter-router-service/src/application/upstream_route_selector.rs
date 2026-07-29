@@ -12,7 +12,7 @@ use crate::domain::{
     RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
     UpstreamAccountGroupBinding, UpstreamAccountRoute,
 };
-use crate::ports::PricingCatalog;
+use crate::ports::UpstreamAccountRouteCatalog;
 
 #[derive(Debug, Clone, Default)]
 struct UpstreamAccountGroupBindings {
@@ -50,7 +50,7 @@ impl UpstreamAccountGroupBindings {
     }
 }
 
-pub struct UpstreamRouteSelector<'a, C: PricingCatalog> {
+pub struct UpstreamRouteSelector<'a, C: UpstreamAccountRouteCatalog> {
     catalog: &'a C,
 }
 
@@ -174,7 +174,7 @@ enum CandidateUpstreamAccountRouteEvaluation {
     NoCallableCandidate,
 }
 
-impl<'a, C: PricingCatalog> UpstreamRouteSelector<'a, C> {
+impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
     pub fn new(catalog: &'a C) -> Self {
         Self { catalog }
     }
@@ -227,7 +227,7 @@ impl<'a, C: PricingCatalog> UpstreamRouteSelector<'a, C> {
         &self,
         query: SelectUpstreamModelRouteQuery,
     ) -> Result<SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError> {
-        let account_routes = self.catalog.list_upstream_account_routes();
+        let account_routes = self.catalog.shared_upstream_account_routes();
         let account_routes_loaded = account_routes.len();
         let api_scope_keys = [query.api_code.as_str()];
         let account_group_bindings = upstream_account_group_bindings(
@@ -241,7 +241,7 @@ impl<'a, C: PricingCatalog> UpstreamRouteSelector<'a, C> {
         let routes =
             self.group_scoped_model_routes(model_routes, &account_routes, &account_group_bindings);
         let account_routes =
-            self.group_scoped_account_routes(account_routes, &account_group_bindings);
+            self.group_scoped_account_routes(&account_routes, &account_group_bindings);
         if routes.is_empty() && account_routes.is_empty() {
             log_unavailable_model_route_diagnostics(
                 &query,
@@ -328,7 +328,7 @@ impl<'a, C: PricingCatalog> UpstreamRouteSelector<'a, C> {
         &self,
         query: SelectUpstreamAccountRouteQuery,
     ) -> Result<SelectedUpstreamAccountRoute, UpstreamRouteSelectionError> {
-        let account_routes = self.catalog.list_upstream_account_routes();
+        let account_routes = self.catalog.shared_upstream_account_routes();
         let api_scope_keys = [query.api_code.as_str()];
         let account_group_bindings = upstream_account_group_bindings(
             &account_routes,
@@ -336,7 +336,7 @@ impl<'a, C: PricingCatalog> UpstreamRouteSelector<'a, C> {
             &api_scope_keys,
             query.capability,
         );
-        let routes = self.group_scoped_account_routes(account_routes, &account_group_bindings);
+        let routes = self.group_scoped_account_routes(&account_routes, &account_group_bindings);
         if routes.is_empty() {
             return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
                 "upstream route is not available for configured upstream account route: no upstream account routes are configured",
@@ -932,12 +932,13 @@ impl<'a, C: PricingCatalog> UpstreamRouteSelector<'a, C> {
 
     fn group_scoped_account_routes(
         &self,
-        routes: Vec<UpstreamAccountRoute>,
+        routes: &[UpstreamAccountRoute],
         account_group_bindings: &UpstreamAccountGroupBindings,
     ) -> Vec<UpstreamAccountRoute> {
         routes
-            .into_iter()
+            .iter()
             .filter(|route| account_group_bindings.contains_account(route.account_id))
+            .cloned()
             .collect()
     }
 

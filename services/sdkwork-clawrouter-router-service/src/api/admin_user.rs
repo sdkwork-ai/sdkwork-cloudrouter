@@ -34,8 +34,8 @@ const MAX_USERNAME_LEN: usize = 168;
 const MAX_EMAIL_LEN: usize = 255;
 const MAX_GROUP_LEN: usize = 64;
 const MAX_API_KEY_NAME_LEN: usize = 128;
-const DEFAULT_CHANNEL_GROUP_CODE: &str = "default";
-const DEFAULT_CHANNEL_GROUP_NAME: &str = "Default";
+const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default";
+const DEFAULT_ACCOUNT_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
 
 #[derive(Debug, Serialize)]
@@ -563,8 +563,8 @@ async fn create_backend_api_key(
             group_uuid,
             tenant_id: subject.tenant_id,
             organization_id: subject.organization_id,
-            code: DEFAULT_CHANNEL_GROUP_CODE.to_owned(),
-            name: DEFAULT_CHANNEL_GROUP_NAME.to_owned(),
+            code: DEFAULT_ACCOUNT_GROUP_CODE.to_owned(),
+            name: DEFAULT_ACCOUNT_GROUP_NAME.to_owned(),
             pricing_plan_code: DEFAULT_PRICING_PLAN_CODE.to_owned(),
             rate_multiplier: DecimalValue::ONE,
             official_price_multiplier: DecimalValue::ONE,

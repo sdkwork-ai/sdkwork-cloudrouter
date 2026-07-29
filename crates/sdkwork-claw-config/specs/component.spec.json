@@ -99,7 +99,13 @@
     ],
     "sdkClients": [],
     "events": [],
-    "configKeys": [],
+    "configKeys": [
+      "SDKWORK_CLAW_CONFIG_FILE",
+      "SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING",
+      "SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING_FILE",
+      "security.upstream_credential_key_ring",
+      "security.upstream_credential_key_ring_file"
+    ],
     "routeManifest": null
   },
   "integration": {

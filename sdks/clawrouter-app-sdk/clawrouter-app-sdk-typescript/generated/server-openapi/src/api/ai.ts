@@ -1,6 +1,15 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse } from '../types';
+import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse, UsageLogsResponse } from '../types';
+export interface AiUsageLogsListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  status?: 'success' | 'error';
+  startTime?: string;
+  endTime?: string;
+}
+
 export class AiUsageLogsApi {
   private client: HttpClient;
 
@@ -10,8 +19,16 @@ export class AiUsageLogsApi {
 
 
 /** List logs */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(appApiPath(`/ai/usage/logs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  async list(params?: AiUsageLogsListParams, requestOptions?: ApiRequestOptions): Promise<UsageLogsResponse> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'start_time', value: params?.startTime, style: 'form', explode: true, allowReserved: false },
+      { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<UsageLogsResponse>(appendQueryString(appApiPath(`/ai/usage/logs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 

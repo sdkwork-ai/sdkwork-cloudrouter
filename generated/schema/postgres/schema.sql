@@ -1,8 +1,8 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: 1f05fc8e334b2917d256499704b0ea4f431842f8439d0104fc5916fd007f1326.
+-- Registry SHA-256: c872990b357d6563de3d619d809502c74c55bf057ef4418218c046af721f4533.
 -- Dialect: postgres.
--- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
+-- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
 
 CREATE TABLE IF NOT EXISTS ai_config_change_event (
@@ -737,13 +737,10 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier_auth_method (
     auth_type VARCHAR(64) NOT NULL,
     config_schema JSONB NOT NULL DEFAULT '{}'::jsonb,
     runtime_auth_config JSONB NOT NULL,
-    authorization_url VARCHAR(512),
-    token_url VARCHAR(512),
-    scopes JSONB,
     priority INTEGER NOT NULL DEFAULT 100,
     CONSTRAINT ck_ai_upstream_supplier_auth_method_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
     CONSTRAINT fk_ai_upstream_supplier_auth_method_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id, supplier_code) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id, supplier_code) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_upstream_supplier_auth_method_type CHECK (auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4', 'custom') AND priority >= 0),
+    CONSTRAINT ck_ai_upstream_supplier_auth_method_type CHECK (auth_type IN ('api_key', 'bearer_token', 'custom') AND priority >= 0),
     CONSTRAINT ck_ai_upstream_supplier_auth_method_runtime_auth_config CHECK (jsonb_typeof(runtime_auth_config) = 'object')
 );
 
@@ -823,8 +820,9 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_credential (
     account_id BIGINT NOT NULL,
     auth_method_code VARCHAR(64) NOT NULL,
     credential_name VARCHAR(128) NOT NULL,
-    credential_ref TEXT NOT NULL,
-    credential_hash VARCHAR(128) NOT NULL,
+    secret_ciphertext TEXT NOT NULL,
+    secret_key_id VARCHAR(64) NOT NULL,
+    secret_fingerprint VARCHAR(128) NOT NULL,
     masked_label VARCHAR(128),
     credential_version BIGINT NOT NULL DEFAULT 1,
     priority INTEGER NOT NULL DEFAULT 100,

@@ -5,7 +5,9 @@ use crate::domain::{
     RoutingPolicy, RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
     UpstreamAccountRoute,
 };
-use crate::ports::PricingCatalog;
+use std::sync::Arc;
+
+use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 
 #[derive(Debug, Default, Clone)]
 pub struct InMemoryPricingCatalog {
@@ -319,6 +321,12 @@ impl PricingCatalog for InMemoryPricingCatalog {
                     && option_matches(price.pricing_plan_code.as_deref(), pricing_plan_code)
             })
             .cloned()
+    }
+}
+
+impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
+    fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
+        self.upstream_account_routes.clone().into()
     }
 }
 

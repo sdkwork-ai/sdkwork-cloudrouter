@@ -223,10 +223,6 @@ class ApiContractManifestGenerator:
         "oss": "oss",
         "site": "sites",
         "sites": "sites",
-        "aiSite": "sites",
-        "aiSites": "sites",
-        "ai_site": "sites",
-        "ai_sites": "sites",
         "objectStorage": "oss",
         "objectstorage": "oss",
         "object_storage": "oss",
@@ -343,8 +339,6 @@ class ApiContractManifestGenerator:
         "user": "users",
     }
     TABLE_TAG_RULES = (
-        ("integration_service_provider_", "serviceProviders"),
-        ("integration_service_provider", "serviceProviders"),
         ("ai_usage_service_provider_", "serviceProviders"),
         ("commerce_usage_service_provider_", "serviceProviders"),
         ("commerce_service_provider_", "serviceProviders"),
@@ -354,8 +348,6 @@ class ApiContractManifestGenerator:
         ("ai_mcp", "mcp"),
         ("ai_prompt_", "prompts"),
         ("ai_prompt", "prompts"),
-        ("ai_site_", "sites"),
-        ("ai_site", "sites"),
         ("ai_", "ai"),
         ("promotion_", "promotions"),
         ("commerce_", "commerce"),

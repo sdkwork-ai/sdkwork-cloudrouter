@@ -24,8 +24,8 @@ use sdkwork_clawrouter_router_service::application::{
     TraceTelemetryInterceptor, UsageExtractionInterceptor, UsageRecordingInterceptor,
 };
 use sdkwork_clawrouter_router_service::ports::{
-    GatewayUsageRecorder, InvocationDispatcher, PricingCatalog, ProviderAdapterRouteResolver,
-    ProviderSecretResolver, StickyRouteStore,
+    GatewayUsageRecorder, InvocationDispatcher, ProviderAdapterRouteResolver,
+    ProviderSecretResolver, StickyRouteStore, UpstreamAccountRouteCatalog,
 };
 
 use crate::invocation_http::handle_invocation;
@@ -34,7 +34,7 @@ use crate::invocation_stream::DEFAULT_STREAM_TOTAL_TIMEOUT;
 
 pub(crate) struct InvocationRouterState<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     pub(crate) catalog: Arc<C>,
     pub(crate) api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
@@ -49,7 +49,7 @@ where
 
 impl<C> Clone for InvocationRouterState<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     fn clone(&self) -> Self {
         Self {
@@ -113,7 +113,7 @@ fn invocation_router_state<C>(
     query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> InvocationRouterState<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     InvocationRouterState {
         catalog,
@@ -130,7 +130,7 @@ where
 
 impl<C> InvocationRouterState<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     fn with_internal_gateway_verifier(
         mut self,
@@ -148,7 +148,7 @@ pub fn invocation_router_with_catalog_api_key_hasher_dispatcher_and_secret_resol
     secret_resolver: Arc<dyn ProviderSecretResolver + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     invocation_router_with_state(invocation_router_state(
         Arc::clone(&catalog),
@@ -168,7 +168,7 @@ pub fn invocation_router_with_catalog_api_key_hasher_and_dispatcher<C>(
     dispatcher: Arc<dyn InvocationDispatcher>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     invocation_router_with_state(invocation_router_state(
         Arc::clone(&catalog),
@@ -192,7 +192,7 @@ pub fn invocation_router_with_catalog_api_key_hasher_dispatcher_secret_resolver_
     sticky_store: Arc<dyn StickyRouteStore>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     invocation_router_with_state(invocation_router_state(
         Arc::clone(&catalog),
@@ -222,7 +222,7 @@ pub fn invocation_router_with_full_pipeline<C>(
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     invocation_router_with_full_pipeline_and_query_string_api_key_policy(
         catalog,
@@ -245,7 +245,7 @@ pub fn invocation_router_with_full_pipeline_and_query_string_api_key_policy<C>(
     query_string_api_key_policy: QueryStringApiKeyPolicy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     invocation_router_with_state(invocation_router_state(
         Arc::clone(&catalog),
@@ -277,7 +277,7 @@ pub fn invocation_router_with_full_pipeline_and_provider_adapter_config<C>(
     invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight(
         catalog,
@@ -316,7 +316,7 @@ pub fn invocation_router_with_full_pipeline_provider_adapter_and_tenant_inflight
     body_limit_bytes: usize,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy(
         catalog,
@@ -355,7 +355,7 @@ pub(crate) fn invocation_router_with_full_pipeline_provider_adapter_tenant_infli
     internal_gateway_verifier: Option<Arc<InternalGatewayRequestVerifier>>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
@@ -405,7 +405,7 @@ pub fn invocation_router_with_full_pipeline_and_trust_forwarded_headers<C>(
     body_limit_bytes: usize,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
@@ -433,7 +433,7 @@ where
 
 fn invocation_router_with_state<C>(state: InvocationRouterState<C>) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let internal_state = state.clone();
     let internal_router = Router::new().route(
@@ -482,7 +482,7 @@ fn invocation_pipeline<C>(
     adapter_resolver: Option<Arc<dyn ProviderAdapterRouteResolver>>,
 ) -> InvocationPipeline
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     invocation_pipeline_with_redis(
         catalog,
@@ -507,7 +507,7 @@ fn invocation_pipeline_with_redis<C>(
     tenant_inflight_config: Option<TenantInflightConfig>,
 ) -> InvocationPipeline
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let idempotency = IdempotencyInterceptor::try_with_redis_config(
         sdkwork_clawrouter_router_service::application::IdempotencyConfig::default(),

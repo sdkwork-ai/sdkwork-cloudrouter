@@ -39,7 +39,7 @@ use crate::ports::{
     AppRuntimeInvocationQuery, AppRuntimeStore, AppRuntimeSubject, ChatCompletionRelayRequest,
     ChatCompletionStreamRelay, CompleteAppRuntimeInvocationCommand,
     CreateAppRuntimeArtifactCommand, CreateAppRuntimeEventCommand,
-    CreateAppRuntimeInvocationCommand, PricingCatalog,
+    CreateAppRuntimeInvocationCommand, UpstreamAccountRouteCatalog,
 };
 
 const RUNTIME_EVENTS_FETCH_PAGE_SIZE: i64 = 100;
@@ -455,7 +455,7 @@ pub fn app_runtime_router_with_store_and_chat_stream_relay<C>(
     chat_stream_relay: Arc<dyn ChatCompletionStreamRelay + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let executor: Arc<dyn AppRuntimeExecutor + Send + Sync> =
         Arc::new(OpenAiCompatibleRuntimeExecutor {
@@ -478,7 +478,7 @@ pub fn app_runtime_router_with_store_and_chat_stream_relay_and_runtime_stream_bu
     stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let executor: Arc<dyn AppRuntimeExecutor + Send + Sync> =
         Arc::new(OpenAiCompatibleRuntimeExecutor {
@@ -495,7 +495,7 @@ pub fn app_runtime_router_with_store_and_gateway_client<C>(
     gateway_client: Arc<dyn AppRuntimeGatewayClient + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let executor: Arc<dyn AppRuntimeExecutor + Send + Sync> = Arc::new(GatewayRuntimeExecutor {
         catalog,
@@ -517,7 +517,7 @@ pub fn app_runtime_router_with_store_and_gateway_client_chat_stream_relay<C>(
     _chat_stream_relay: Arc<dyn ChatCompletionStreamRelay + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let executor: Arc<dyn AppRuntimeExecutor + Send + Sync> = Arc::new(GatewayRuntimeExecutor {
         catalog,
@@ -539,7 +539,7 @@ pub fn app_runtime_router_with_store_and_gateway_client_and_runtime_stream_bus<C
     stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let executor: Arc<dyn AppRuntimeExecutor + Send + Sync> = Arc::new(GatewayRuntimeExecutor {
         catalog,
@@ -559,7 +559,7 @@ pub fn app_runtime_router_with_store_and_gateway_client_chat_stream_relay_and_ru
     stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let executor: Arc<dyn AppRuntimeExecutor + Send + Sync> = Arc::new(GatewayRuntimeExecutor {
         catalog,
@@ -1668,7 +1668,7 @@ fn runtime_gateway_stream_sse_response(
 
 impl<C> AppRuntimeExecutor for GatewayRuntimeExecutor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     fn execute_streaming_invocation<'a>(
         &'a self,
@@ -1718,7 +1718,7 @@ async fn execute_gateway_streaming_invocation<C>(
     execution: AppRuntimeInvocationExecution,
 ) -> Result<Response, DomainError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     if !is_executable_gateway_stream(&execution.item) {
         return Err(DomainError::new(format!(
@@ -1913,7 +1913,7 @@ fn build_runtime_gateway_request<C>(
     context: &AuthenticatedApiKeyContext,
 ) -> Result<RuntimeGatewayRequestPlan, DomainError>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     let requested_model_key = execution.item.model.as_deref().ok_or_else(|| {
         DomainError::new("runtime invocation model is required for gateway execution")
@@ -2108,7 +2108,7 @@ fn runtime_gateway_api(
 
 fn find_runtime_catalog_model<C>(catalog: &C, model: &str) -> Option<AiModel>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     let model = model.trim();
     catalog.find_model(model).or_else(|| {
@@ -3436,7 +3436,7 @@ async fn execute_openai_compatible_streaming_invocation<C>(
     execution: AppRuntimeInvocationExecution,
 ) -> Result<Response, DomainError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     if !is_executable_openai_compatible_stream(&execution.item) {
         return Err(DomainError::new(format!(
@@ -3505,7 +3505,7 @@ where
 
 impl<C> AppRuntimeExecutor for OpenAiCompatibleRuntimeExecutor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     fn execute_streaming_invocation<'a>(
         &'a self,
@@ -3549,7 +3549,7 @@ fn runtime_authenticated_context<C>(
     execution: &AppRuntimeInvocationExecution,
 ) -> Result<AuthenticatedApiKeyContext, DomainError>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     let api_key = select_runtime_api_key(catalog, subject, execution)?;
     if api_key.tenant_id != subject.tenant_id
@@ -3579,7 +3579,7 @@ where
 }
 
 fn select_runtime_api_key(
-    catalog: &impl PricingCatalog,
+    catalog: &impl UpstreamAccountRouteCatalog,
     subject: AppRuntimeSubject,
     execution: &AppRuntimeInvocationExecution,
 ) -> Result<GatewayApiKey, DomainError> {
@@ -3796,7 +3796,7 @@ fn runtime_api_key_gateway_route_probe<C>(
     api_key: &GatewayApiKey,
 ) -> Result<RuntimeGatewayRouteProbeStatus, RuntimeGatewayRouteProbeFailure>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     let Some(requested_model_key) = execution
         .item
@@ -3960,7 +3960,7 @@ fn runtime_gateway_route_probe_required<C>(
     execution: &AppRuntimeInvocationExecution,
 ) -> bool
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     let Some(requested_model_key) = execution
         .item
@@ -4031,9 +4031,9 @@ fn runtime_gateway_route_probe_failure(
 
 fn runtime_route_probe_has_empty_route_snapshot<C>(catalog: &C, catalog_key: &str) -> bool
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
-    catalog.list_upstream_account_routes().is_empty()
+    catalog.shared_upstream_account_routes().is_empty()
         && catalog.list_model_upstream_routes(catalog_key).is_empty()
 }
 

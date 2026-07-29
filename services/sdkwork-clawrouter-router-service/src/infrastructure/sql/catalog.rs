@@ -1,4 +1,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::Arc;
+
+use arc_swap::ArcSwap;
 
 use crate::domain::{
     AiModel, BillingMeter, DecimalValue, DomainResult, GatewayAccessPolicy, GatewayApiKey,
@@ -13,8 +16,7 @@ use crate::infrastructure::sql::rows::{
     RoutingPolicyRow, RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow,
     UpstreamAccountGroupRow, UpstreamAccountRouteRow,
 };
-use crate::ports::PricingCatalog;
-use std::sync::{Arc, RwLock};
+use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 
 #[derive(Default)]
 pub struct PricingCatalogRows {
@@ -97,7 +99,7 @@ pub struct SqlPricingCatalogSnapshot {
     vendors: Vec<ModelVendorDefinition>,
     models: Vec<AiModel>,
     model_upstream_routes: Vec<ModelUpstreamRoute>,
-    upstream_account_routes: Vec<UpstreamAccountRoute>,
+    upstream_account_routes: Arc<[UpstreamAccountRoute]>,
     routing_policies: Vec<RoutingPolicy>,
     routing_rules: Vec<RoutingRule>,
     model_mappings: Vec<ModelMappingRule>,
@@ -142,7 +144,8 @@ impl SqlPricingCatalogSnapshot {
             upstream_account_routes: map_rows(
                 rows.upstream_account_routes,
                 UpstreamAccountRouteRow::try_into_domain,
-            )?,
+            )?
+            .into(),
             routing_policies: map_rows(rows.routing_policies, RoutingPolicyRow::try_into_domain)?,
             routing_rules: map_rows(rows.routing_rules, RoutingRuleRow::try_into_domain)?,
             model_mappings: map_rows(rows.model_mappings, ModelMappingRuleRow::try_into_domain)?,
@@ -362,32 +365,28 @@ impl SqlPricingCatalogSnapshot {
 }
 
 pub struct RefreshableSqlPricingCatalog {
-    snapshot: RwLock<Arc<SqlPricingCatalogSnapshot>>,
+    snapshot: ArcSwap<SqlPricingCatalogSnapshot>,
 }
 
 impl RefreshableSqlPricingCatalog {
     pub fn new(snapshot: SqlPricingCatalogSnapshot) -> Self {
         Self {
-            snapshot: RwLock::new(Arc::new(snapshot)),
+            snapshot: ArcSwap::from_pointee(snapshot),
         }
     }
 
     pub fn replace_snapshot(&self, snapshot: SqlPricingCatalogSnapshot) {
-        match self.snapshot.write() {
-            Ok(mut current) => {
-                *current = Arc::new(snapshot);
-            }
-            Err(poisoned) => {
-                *poisoned.into_inner() = Arc::new(snapshot);
-            }
-        }
+        self.snapshot.store(Arc::new(snapshot));
     }
 
     fn current_snapshot(&self) -> Arc<SqlPricingCatalogSnapshot> {
-        match self.snapshot.read() {
-            Ok(snapshot) => Arc::clone(&snapshot),
-            Err(poisoned) => Arc::clone(&poisoned.into_inner()),
-        }
+        self.snapshot.load_full()
+    }
+}
+
+impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
+    fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
+        Arc::clone(&self.current_snapshot().upstream_account_routes)
     }
 }
 
@@ -604,7 +603,7 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
     }
 
     fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
-        self.upstream_account_routes.clone()
+        self.upstream_account_routes.to_vec()
     }
 
     fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
@@ -792,6 +791,12 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         })
         .into_iter()
         .next()
+    }
+}
+
+impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
+    fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
+        Arc::clone(&self.upstream_account_routes)
     }
 }
 

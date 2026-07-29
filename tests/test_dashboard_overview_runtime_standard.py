@@ -374,27 +374,18 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
             / "postgres"
             / "dashboard_overview_read_store.rs"
         ).read_text(encoding="utf-8")
-        sqlite_store = (
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "dashboard_overview_read_store.rs"
-        ).read_text(encoding="utf-8")
-
         self.assertIn("pub total_used_credits: f64", ports)
         self.assertIn("pub total_request_count: i64", ports)
-        for store in (postgres_store, sqlite_store):
-            self.assertIn("LOAD_USAGE_TOTALS", store)
-            self.assertIn("load_usage_totals", store)
-            self.assertIn("total_used_credits", store)
-            self.assertIn("total_request_count", store)
-            self.assertIn("let (total_request_count, total_used_credits) = load_usage_totals", store)
-            self.assertIn("total_used_credits,", store)
-            self.assertIn("total_request_count,", store)
+        self.assertIn("LOAD_USAGE_TOTALS", postgres_store)
+        self.assertIn("load_usage_totals", postgres_store)
+        self.assertIn("total_used_credits", postgres_store)
+        self.assertIn("total_request_count", postgres_store)
+        self.assertIn(
+            "let (total_request_count, total_used_credits) = load_usage_totals",
+            postgres_store,
+        )
+        self.assertIn("total_used_credits,", postgres_store)
+        self.assertIn("total_request_count,", postgres_store)
 
     def test_backend_app_router_exposes_real_dashboard_overview_route(self) -> None:
         product_api = (ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "mod.rs").read_text(
@@ -488,16 +479,6 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
             / "postgres"
             / "dashboard_overview_read_store.rs"
         ).read_text(encoding="utf-8")
-        sqlite_store = (
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "dashboard_overview_read_store.rs"
-        ).read_text(encoding="utf-8")
         sql_mod = (
             ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "mod.rs"
         ).read_text(encoding="utf-8")
@@ -510,14 +491,13 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
         self.assertIn("request_count as f64 / minutes", metrics)
         self.assertIn("total_tokens / minutes", metrics)
 
-        for store in (postgres_store, sqlite_store):
-            self.assertIn("derive_dashboard_summary_rates", store)
-            self.assertIn("let total_tokens = decimal_cell(&row, \"total_tokens\")", store)
-            self.assertIn("let (rpm, tpm) = derive_dashboard_summary_rates", store)
-            self.assertIn("rpm,", store)
-            self.assertIn("tpm,", store)
-            self.assertNotIn("rpm: 0.0", store)
-            self.assertNotIn("tpm: decimal_cell(&row, \"total_tokens\")", store)
+        self.assertIn("derive_dashboard_summary_rates", postgres_store)
+        self.assertIn("let total_tokens = decimal_cell(&row, \"total_tokens\")", postgres_store)
+        self.assertIn("let (rpm, tpm) = derive_dashboard_summary_rates", postgres_store)
+        self.assertIn("rpm,", postgres_store)
+        self.assertIn("tpm,", postgres_store)
+        self.assertNotIn("rpm: 0.0", postgres_store)
+        self.assertNotIn("tpm: decimal_cell(&row, \"total_tokens\")", postgres_store)
 
     def test_dashboard_overview_error_count_is_read_from_request_trace(self) -> None:
         postgres_store = (
@@ -530,30 +510,18 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
             / "postgres"
             / "dashboard_overview_read_store.rs"
         ).read_text(encoding="utf-8")
-        sqlite_store = (
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "dashboard_overview_read_store.rs"
-        ).read_text(encoding="utf-8")
-
-        for store in (postgres_store, sqlite_store):
-            self.assertIn("LOAD_ERROR_COUNT", store)
-            self.assertIn("FROM ai_request_trace", store)
-            self.assertIn("COUNT(DISTINCT", store)
-            self.assertIn("COALESCE(NULLIF(request_id, ''), CAST(id AS TEXT))", store)
-            self.assertIn("http_status >= 400", store)
-            self.assertIn("error_type IS NOT NULL", store)
-            self.assertIn("provider_error_code", store)
-            self.assertIn("started_at", store)
-            self.assertIn("load_error_count", store)
-            self.assertIn("let error_count = load_error_count", store)
-            self.assertIn("error_count,", store)
-            self.assertNotIn("error_count: 0", store)
+        self.assertIn("LOAD_ERROR_COUNT", postgres_store)
+        self.assertIn("FROM ai_request_trace", postgres_store)
+        self.assertIn("COUNT(DISTINCT", postgres_store)
+        self.assertIn("COALESCE(NULLIF(request_id, ''), CAST(id AS TEXT))", postgres_store)
+        self.assertIn("http_status >= 400", postgres_store)
+        self.assertIn("error_type IS NOT NULL", postgres_store)
+        self.assertIn("provider_error_code", postgres_store)
+        self.assertIn("started_at", postgres_store)
+        self.assertIn("load_error_count", postgres_store)
+        self.assertIn("let error_count = load_error_count", postgres_store)
+        self.assertIn("error_count,", postgres_store)
+        self.assertNotIn("error_count: 0", postgres_store)
 
     def test_dashboard_overview_top_model_modality_preserves_unknown_values(self) -> None:
         dashboard_service = (
@@ -566,15 +534,13 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
 
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/dashboard_overview_read_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs",
-        ]:
-            store = (ROOT / relative).read_text(encoding="utf-8")
-            with self.subTest(store=relative):
-                self.assertIn("None => \"unknown\"", store)
-                self.assertIn("Some(_) => \"unknown\"", store)
-                self.assertNotIn("_ => \"text\"", store)
+        store = (
+            ROOT
+            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("None => \"unknown\"", store)
+        self.assertIn("Some(_) => \"unknown\"", store)
+        self.assertNotIn("_ => \"text\"", store)
 
         self.assertIn("normalized === 'unknown'", dashboard_service)
         self.assertIn("return 'unknown';", dashboard_service)
@@ -591,16 +557,14 @@ class DashboardOverviewRuntimeStandardTest(unittest.TestCase):
             / "dashboardService.ts"
         ).read_text(encoding="utf-8")
 
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/dashboard_overview_read_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs",
-        ]:
-            store = (ROOT / relative).read_text(encoding="utf-8")
-            with self.subTest(store=relative):
-                self.assertIn('Some(1) => "info"', store)
-                self.assertIn("None => \"unknown\"", store)
-                self.assertIn("Some(_) => \"unknown\"", store)
-                self.assertNotIn("_ => \"info\"", store)
+        store = (
+            ROOT
+            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/dashboard_overview_read_store.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn('Some(1) => "info"', store)
+        self.assertIn("None => \"unknown\"", store)
+        self.assertIn("Some(_) => \"unknown\"", store)
+        self.assertNotIn("_ => \"info\"", store)
 
         self.assertIn("type: 'success' | 'info' | 'warning' | 'error' | 'unknown';", dashboard_service)
         self.assertIn("normalized === 'unknown'", dashboard_service)

@@ -16,7 +16,6 @@ import type {
   UpdateUpstreamSupplierRequest,
   UpstreamAccount,
   UpstreamAccountCredential,
-  UpstreamAccountCredentialCreated,
   UpstreamAccountGroup,
   UpstreamAccountGroupMember,
   UpstreamAccountVerification,
@@ -177,7 +176,7 @@ export async function createUpstreamAccountCredential(
     accountId,
     input,
     createIdempotencyParams('create-upstream-account-credential'),
-  ) as Promise<UpstreamAccountCredentialCreated>;
+  );
 }
 
 export async function deleteUpstreamAccountCredential(accountId: string, credentialId: string) {

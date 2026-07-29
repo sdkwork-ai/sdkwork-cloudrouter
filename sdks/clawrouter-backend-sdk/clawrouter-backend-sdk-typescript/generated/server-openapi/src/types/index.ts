@@ -89,8 +89,7 @@ export type { UpdateUpstreamAccountRequest } from './update-upstream-account-req
 export type { UpdateUpstreamSupplierRequest } from './update-upstream-supplier-request';
 export type { UpstreamAccount } from './upstream-account';
 export type { UpstreamAccountCredential } from './upstream-account-credential';
-export type { UpstreamAccountCredentialCreated } from './upstream-account-credential-created';
-export type { UpstreamAccountCredentialCreatedResponse } from './upstream-account-credential-created-response';
+export type { UpstreamAccountCredentialItemResponse } from './upstream-account-credential-item-response';
 export type { UpstreamAccountCredentialListResponse } from './upstream-account-credential-list-response';
 export type { UpstreamAccountGroup } from './upstream-account-group';
 export type { UpstreamAccountGroupItemResponse } from './upstream-account-group-item-response';

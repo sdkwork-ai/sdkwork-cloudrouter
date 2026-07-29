@@ -1,4 +1,4 @@
-# Claw Router database configuration example.
+# Claw Router server runtime configuration example.
 # Copy this file to the runtime config location or pass it with:
 #   pnpm db:status -- --config-file ./etc/clawrouter.database.example.toml
 #
@@ -15,3 +15,9 @@ username = "sdkwork_ai_prod"
 password_file = "./database.secret"
 ssl_mode = "require"
 max_connections = 16
+
+# Store both files outside source control with owner-only read permissions.
+# The upstream key ring JSON shape is documented in etc/README.md.
+[security]
+api_key_pepper_file = "./secrets/api-key-pepper"
+upstream_credential_key_ring_file = "./secrets/upstream-credential-key-ring.json"

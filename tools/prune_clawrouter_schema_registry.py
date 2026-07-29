@@ -105,7 +105,7 @@ def update_assembly_guardrails(assembly: dict) -> None:
     guard = schema.setdefault("legacy_compatibility_guardrails", {})
     guard["rule"] = (
         "Claw-router generated ownership is limited to gateway routing, metering, pricing, "
-        "integration provider accounts, commerce usage projections, gateway IAM extensions, "
+        "upstream suppliers, accounts, account groups, commerce usage projections, gateway IAM extensions, "
         "ops telemetry, and system installation metadata. Agent/chat/MCP/runtime/prompt tables "
         "are owned by sdkwork-kernel. Model catalog dictionary tables are owned by sdkwork-models "
         "and composed at install time. Notification tables are owned by sdkwork-appbase-messaging. "
@@ -145,13 +145,6 @@ def update_assembly_guardrails(assembly: dict) -> None:
             "registry_path": "docs/schema-registry/sdkwork-models.tables.yaml",
             "order": 35,
             "ownership": "compose_at_install",
-        },
-        {
-            "module_id": "sdkwork-kernel",
-            "locator": "../sdkwork-kernel",
-            "registry_path": "docs/schema-registry/sdkwork-kernel.tables.yaml",
-            "order": 40,
-            "ownership": "read_only",
         },
     ]
 

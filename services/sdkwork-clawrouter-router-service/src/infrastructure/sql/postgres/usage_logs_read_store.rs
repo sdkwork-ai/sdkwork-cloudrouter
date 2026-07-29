@@ -307,7 +307,7 @@ async fn load_usage_logs_total(
 fn row_to_usage_log(row: sqlx::postgres::PgRow) -> Result<UsageLogItem, DomainError> {
     Ok(UsageLogItem {
         id: string_cell(&row, "id"),
-        request_id: string_cell(&row, "request_id"),
+        gateway_request_id: string_cell(&row, "request_id"),
         time: string_cell(&row, "started_at"),
         token_name: string_cell(&row, "api_key_name_snapshot"),
         group: string_cell(&row, "upstream_account_group_display_name"),
@@ -321,12 +321,27 @@ fn row_to_usage_log(row: sqlx::postgres::PgRow) -> Result<UsageLogItem, DomainEr
         error_code: string_cell(&row, "error_code"),
         error_type: string_cell(&row, "error_type"),
         error_message: string_cell(&row, "error_message"),
-        total_time: duration_label(latency_cell(&row, "latency_ms")?),
+        total_time: duration_label(required_latency_cell(&row, "latency_ms")?),
         ttft: duration_label(integer_cell(&row, "ttft_ms")),
         is_stream: integer_cell(&row, "is_stream") != 0,
-        input_tokens: integer_cell(&row, "prompt_tokens"),
-        cache_read_tokens: integer_cell(&row, "cached_tokens"),
-        output_tokens: integer_cell(&row, "completion_tokens"),
+        input_tokens: required_nonnegative_integer_cell(
+            &row,
+            "prompt_tokens",
+            "usage log input tokens",
+        )?
+        .to_string(),
+        cache_read_tokens: required_nonnegative_integer_cell(
+            &row,
+            "cached_tokens",
+            "usage log cache read tokens",
+        )?
+        .to_string(),
+        output_tokens: required_nonnegative_integer_cell(
+            &row,
+            "completion_tokens",
+            "usage log output tokens",
+        )?
+        .to_string(),
         cost: decimal_string_cell(
             &row,
             "customer_charge_amount",
@@ -390,16 +405,42 @@ fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> i64 {
     optional_integer_cell(row, column).unwrap_or(0)
 }
 
-fn latency_cell(row: &sqlx::postgres::PgRow, column: &str) -> Result<i64, DomainError> {
-    let value = integer_cell(row, column);
-    if value < 0 {
-        if column == "latency_ms" {
-            return Err(DomainError::new(format!(
-                "invalid usage log latency_ms from database row: {value}"
-            )));
+fn required_latency_cell(row: &sqlx::postgres::PgRow, column: &str) -> Result<i64, DomainError> {
+    required_nonnegative_integer_cell(row, column, "usage log latency_ms")
+}
+
+fn required_nonnegative_integer_cell(
+    row: &sqlx::postgres::PgRow,
+    column: &str,
+    field_name: &str,
+) -> Result<i64, DomainError> {
+    let numeric_value = row
+        .try_get::<Option<i64>, _>(column)
+        .ok()
+        .flatten()
+        .or_else(|| {
+            row.try_get::<Option<i32>, _>(column)
+                .ok()
+                .flatten()
+                .map(i64::from)
+        });
+    let value = match numeric_value {
+        Some(value) => value,
+        None => {
+            let raw = string_cell(row, column);
+            if raw.trim().is_empty() {
+                return Err(DomainError::new(format!(
+                    "missing {field_name} from database row"
+                )));
+            }
+            raw.parse::<i64>().map_err(|_| {
+                DomainError::new(format!("invalid {field_name} from database row: {raw}"))
+            })?
         }
+    };
+    if value < 0 {
         return Err(DomainError::new(format!(
-            "invalid usage log {column} from database row: {value}"
+            "invalid {field_name} from database row: {value}"
         )));
     }
     Ok(value)

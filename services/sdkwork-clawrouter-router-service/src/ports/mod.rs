@@ -49,6 +49,7 @@ mod settings_store;
 mod settlements_dashboard_read_store;
 mod site_settings_store;
 mod sticky_route_store;
+mod upstream_account_route_catalog;
 mod usage_logs_read_store;
 mod usage_settlement_store;
 
@@ -327,6 +328,7 @@ pub use sticky_route_store::{
     StickyObjectRouteBinding, StickyObjectRouteLookup, StickyObjectRouteUpsert, StickyRouteStore,
     StickyRouteStoreFuture,
 };
+pub use upstream_account_route_catalog::UpstreamAccountRouteCatalog;
 pub use usage_logs_read_store::{
     UsageLogItem, UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture, UsageLogsReadStore,
     UsageLogsStatus, UsageLogsSubject,

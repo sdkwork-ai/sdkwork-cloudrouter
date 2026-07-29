@@ -13,6 +13,7 @@ use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use sdkwork_claw_http::OutboundDnsResolver;
 use sdkwork_claw_security::{validate_outbound_url, OutboundTargetPolicy};
 use sdkwork_clawrouter_router_service::application::{
     Invocation, InvocationAccount, InvocationBody, InvocationDispatchResponse,
@@ -26,7 +27,7 @@ const INVOCATION_UPSTREAM_BODY_LIMIT_BYTES: usize = 32 * 1024 * 1024;
 const DEFAULT_DISPATCH_TIMEOUT_MS: u64 = 30_000;
 
 type InvocationHttpBody = Full<Bytes>;
-type InvocationHttpConnector = HttpsConnector<HttpConnector>;
+type InvocationHttpConnector = HttpsConnector<HttpConnector<OutboundDnsResolver>>;
 type InvocationHttpClient = Client<InvocationHttpConnector, InvocationHttpBody>;
 
 #[derive(Clone)]
@@ -325,7 +326,7 @@ fn build_invocation_http_client(
     policy: OutboundTargetPolicy,
     pool_config: ProviderRelayHttpPoolConfig,
 ) -> InvocationHttpClient {
-    let mut http_connector = HttpConnector::new();
+    let mut http_connector = HttpConnector::new_with_resolver(OutboundDnsResolver::new(policy));
     http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
     http_connector.enforce_http(false);
     let connector = match policy {

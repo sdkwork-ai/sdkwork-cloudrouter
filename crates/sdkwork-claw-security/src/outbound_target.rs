@@ -5,6 +5,8 @@
 //! not claim to solve DNS rebinding: production callers still need a resolver
 //! and egress policy that validate the address selected at connection time.
 
+use std::net::IpAddr;
+
 use url::{Host, Url};
 
 /// Controls the target types that an outbound client may use.
@@ -38,6 +40,8 @@ pub enum OutboundTargetValidationError {
     UnspecifiedIpForbidden,
     #[error("production outbound target host is reserved for local or internal networking")]
     InternalHostForbidden,
+    #[error("production outbound target resolved to a non-public IP address")]
+    NonPublicAddressForbidden,
     #[error("configured outbound base URL must not include a query string")]
     BaseUrlQueryForbidden,
 }
@@ -66,6 +70,64 @@ pub fn validate_outbound_base_url(
         return Err(OutboundTargetValidationError::BaseUrlQueryForbidden);
     }
     Ok(url)
+}
+
+/// Validates an address returned by the DNS resolver immediately before a
+/// connection is attempted. Production callers must use this in addition to
+/// URL validation so a hostname cannot pass configuration validation and then
+/// rebind to an internal address.
+pub fn validate_resolved_outbound_ip(
+    address: IpAddr,
+    policy: OutboundTargetPolicy,
+) -> Result<(), OutboundTargetValidationError> {
+    if policy == OutboundTargetPolicy::Development {
+        return if address.is_unspecified() {
+            Err(OutboundTargetValidationError::UnspecifiedIpForbidden)
+        } else {
+            Ok(())
+        };
+    }
+    if is_public_outbound_ip(address) {
+        Ok(())
+    } else {
+        Err(OutboundTargetValidationError::NonPublicAddressForbidden)
+    }
+}
+
+fn is_public_outbound_ip(address: IpAddr) -> bool {
+    match address {
+        IpAddr::V4(address) => {
+            let [first, second, third, fourth] = address.octets();
+            !(address.is_unspecified()
+                || address.is_loopback()
+                || address.is_private()
+                || address.is_link_local()
+                || address.is_multicast()
+                || address.is_broadcast()
+                || first == 0
+                || (first == 100 && (second & 0xc0) == 64)
+                || (first == 192 && second == 0 && third == 0)
+                || (first == 192 && second == 0 && third == 2)
+                || (first == 198 && (second == 18 || second == 19))
+                || (first == 198 && second == 51 && third == 100)
+                || (first == 203 && second == 0 && third == 113)
+                || first >= 240
+                || (first == 169 && second == 254 && third == 169 && fourth == 254))
+        }
+        IpAddr::V6(address) => {
+            if let Some(address) = address.to_ipv4_mapped() {
+                return is_public_outbound_ip(IpAddr::V4(address));
+            }
+            let segments = address.segments();
+            !(address.is_unspecified()
+                || address.is_loopback()
+                || address.is_multicast()
+                || (segments[0] & 0xfe00) == 0xfc00
+                || (segments[0] & 0xffc0) == 0xfe80
+                || (segments[0] & 0xffc0) == 0xfec0
+                || (segments[0] == 0x2001 && segments[1] == 0x0db8))
+        }
+    }
 }
 
 fn validate_url(
@@ -126,8 +188,8 @@ fn is_internal_host(host: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_outbound_base_url, validate_outbound_url, OutboundTargetPolicy,
-        OutboundTargetValidationError,
+        validate_outbound_base_url, validate_outbound_url, validate_resolved_outbound_ip,
+        OutboundTargetPolicy, OutboundTargetValidationError,
     };
 
     #[test]
@@ -193,5 +255,41 @@ mod tests {
                 OutboundTargetPolicy::Production,
             )
         );
+    }
+
+    #[test]
+    fn production_rejects_non_public_dns_answers() {
+        for value in [
+            "127.0.0.1",
+            "10.0.0.1",
+            "100.64.0.1",
+            "169.254.169.254",
+            "192.0.2.1",
+            "198.18.0.1",
+            "198.51.100.1",
+            "203.0.113.1",
+            "224.0.0.1",
+            "240.0.0.1",
+            "::1",
+            "fc00::1",
+            "fe80::1",
+            "2001:db8::1",
+            "::ffff:127.0.0.1",
+        ] {
+            let address = value.parse().expect("test address must be valid");
+            assert_eq!(
+                Err(OutboundTargetValidationError::NonPublicAddressForbidden),
+                validate_resolved_outbound_ip(address, OutboundTargetPolicy::Production),
+                "{value} should be rejected"
+            );
+        }
+
+        validate_resolved_outbound_ip("8.8.8.8".parse().unwrap(), OutboundTargetPolicy::Production)
+            .unwrap();
+        validate_resolved_outbound_ip(
+            "2606:4700:4700::1111".parse().unwrap(),
+            OutboundTargetPolicy::Production,
+        )
+        .unwrap();
     }
 }

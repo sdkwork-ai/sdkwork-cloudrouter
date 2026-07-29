@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "f8a034d15445734263ded46909de25f3884b18fe156749029af9cbdcbdc548d6",
+  "changeFingerprint": "4e2dacc02f2529ae20db379d5344fe4ec6453354544d1887814ad8411ad97cf2",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -121,8 +121,7 @@
           "src/types/update-upstream-account-group-request.ts",
           "src/types/update-upstream-account-request.ts",
           "src/types/update-upstream-supplier-request.ts",
-          "src/types/upstream-account-credential-created-response.ts",
-          "src/types/upstream-account-credential-created.ts",
+          "src/types/upstream-account-credential-item-response.ts",
           "src/types/upstream-account-credential-list-response.ts",
           "src/types/upstream-account-credential.ts",
           "src/types/upstream-account-group-item-response.ts",
@@ -331,10 +330,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 279,
-    "models": 249,
+    "totalFiles": 278,
+    "models": 248,
     "apis": 7,
-    "types": 251
+    "types": 250
   },
   "warnings": [
     {
@@ -397,12 +396,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 146,
+    "writtenFiles": 145,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "f8a034d15445734263ded46909de25f3884b18fe156749029af9cbdcbdc548d6",
+    "changeFingerprint": "4e2dacc02f2529ae20db379d5344fe4ec6453354544d1887814ad8411ad97cf2",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -505,8 +504,7 @@
         "src/types/update-upstream-account-group-request.ts",
         "src/types/update-upstream-account-request.ts",
         "src/types/update-upstream-supplier-request.ts",
-        "src/types/upstream-account-credential-created-response.ts",
-        "src/types/upstream-account-credential-created.ts",
+        "src/types/upstream-account-credential-item-response.ts",
         "src/types/upstream-account-credential-list-response.ts",
         "src/types/upstream-account-credential.ts",
         "src/types/upstream-account-group-item-response.ts",
@@ -668,8 +666,7 @@
             "src/types/update-upstream-account-group-request.ts",
             "src/types/update-upstream-account-request.ts",
             "src/types/update-upstream-supplier-request.ts",
-            "src/types/upstream-account-credential-created-response.ts",
-            "src/types/upstream-account-credential-created.ts",
+            "src/types/upstream-account-credential-item-response.ts",
             "src/types/upstream-account-credential-list-response.ts",
             "src/types/upstream-account-credential.ts",
             "src/types/upstream-account-group-item-response.ts",

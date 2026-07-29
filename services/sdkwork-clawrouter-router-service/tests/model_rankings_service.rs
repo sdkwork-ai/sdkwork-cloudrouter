@@ -378,7 +378,6 @@ async fn model_rankings_service_normalizes_subject_before_read_store() {
             ModelRankingRefreshJobHistoryQuery {
                 rank_scope: None,
                 limit: 20,
-                offset: 0,
             },
             Some(ModelRankingsSubject {
                 tenant_id: 0,
@@ -432,7 +431,6 @@ async fn model_rankings_service_normalizes_filter_query_before_cache_and_read_st
         modality: Some(" TEXT ".to_owned()),
         search_query: Some(" GPT-4 ".to_owned()),
         limit: 200,
-        offset: 20,
     };
     let normalized_query = ModelRankingsQuery {
         rank_scope: Some("commercial-default".to_owned()),
@@ -440,7 +438,6 @@ async fn model_rankings_service_normalizes_filter_query_before_cache_and_read_st
         modality: Some("text".to_owned()),
         search_query: Some("gpt-4".to_owned()),
         limit: 200,
-        offset: 20,
     };
 
     let first = service
@@ -510,7 +507,6 @@ async fn model_rankings_service_normalizes_refresh_job_scope_and_rejects_invalid
             ModelRankingRefreshJobHistoryQuery {
                 rank_scope: Some(" Commercial-Default ".to_owned()),
                 limit: 20,
-                offset: 20,
             },
             None,
         )
@@ -521,7 +517,6 @@ async fn model_rankings_service_normalizes_refresh_job_scope_and_rejects_invalid
             ModelRankingRefreshJobHistoryQuery {
                 rank_scope: Some("commercial-default".to_owned()),
                 limit: 0,
-                offset: 0,
             },
             None,
         )
@@ -533,7 +528,6 @@ async fn model_rankings_service_normalizes_refresh_job_scope_and_rejects_invalid
         vec![ModelRankingRefreshJobHistoryQuery {
             rank_scope: Some("commercial-default".to_owned()),
             limit: 20,
-            offset: 20,
         }],
         store.recorded_job_history_queries()
     );
@@ -605,7 +599,6 @@ impl ModelRankingsReadStore for CountingModelRankingsReadStore {
             self.subjects.lock().unwrap().push(subject);
             let call = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
             DomainResult::Ok(ModelRankingsSnapshot {
-                total_items: 0,
                 source: ModelRankingsSource {
                     observed_at: format!("snapshot-{call}"),
                     cache_max_age_seconds: self.cache_max_age_seconds,
@@ -650,10 +643,7 @@ impl ModelRankingRefreshJobHistoryReadStore for CountingModelRankingsReadStore {
             self.job_history_queries.lock().unwrap().push(query);
             self.job_history_subjects.lock().unwrap().push(subject);
             self.job_history_calls.fetch_add(1, Ordering::SeqCst);
-            DomainResult::Ok(ModelRankingRefreshJobHistoryPage {
-                total_items: 0,
-                items: Vec::new(),
-            })
+            DomainResult::Ok(ModelRankingRefreshJobHistoryPage { items: Vec::new() })
         })
     }
 }

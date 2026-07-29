@@ -13,14 +13,14 @@ use hyper_util::rt::TokioExecutor;
 use sdkwork_claw_config::{
     ProviderPassthroughAuth, ProviderPassthroughAuthType, ProviderPassthroughHeader,
 };
-use sdkwork_claw_http::upsert_query_parameter;
+use sdkwork_claw_http::{upsert_query_parameter, OutboundDnsResolver};
 use sdkwork_claw_security::{validate_outbound_url, OutboundTargetPolicy};
 use sdkwork_clawrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
 use std::collections::HashSet;
 use std::time::Duration;
 
 pub(crate) type PassthroughBody = Full<Bytes>;
-pub(crate) type PassthroughConnector = HttpsConnector<HttpConnector>;
+pub(crate) type PassthroughConnector = HttpsConnector<HttpConnector<OutboundDnsResolver>>;
 pub(crate) type PassthroughClient = Client<PassthroughConnector, PassthroughBody>;
 
 #[derive(Clone)]
@@ -108,7 +108,8 @@ pub(crate) fn build_provider_passthrough_client(
     outbound_target_policy: OutboundTargetPolicy,
     pool_config: ProviderRelayHttpPoolConfig,
 ) -> PassthroughClient {
-    let mut http_connector = HttpConnector::new();
+    let mut http_connector =
+        HttpConnector::new_with_resolver(OutboundDnsResolver::new(outbound_target_policy));
     http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
     http_connector.enforce_http(false);
     let connector = match outbound_target_policy {

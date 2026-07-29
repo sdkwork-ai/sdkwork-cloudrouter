@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "cc3dece37d4915dd3295b25aacc217aa2995c4cddf67aaa872edfa986d65805d"
+      "sha256": "44eb5776796b6eb8bc00222a6f977c523b07d843cc4f890fd501ef4ce7723a89"
     },
     {
       "path": "src/api/base.ts",
@@ -256,7 +256,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "f69d56b67e0cdde847af0158b06d1969099d0b3456963f7ffed0655828ae1cdb"
+      "sha256": "43c4ccc8a20148779184691b3c65ef08d9c88c04c6645f055effabb59549ca90"
     },
     {
       "path": "src/types/ip-limit-rule-item.ts",
@@ -411,12 +411,8 @@
       "sha256": "6cfcb58647a92cdf37648bb13636f15abcfc414455fadd0575c493b2109dbd55"
     },
     {
-      "path": "src/types/upstream-account-credential-created-response.ts",
-      "sha256": "0a54a47e4447620f2eea0f32b0abd6e1b4ab287cad71e7e15192aaa9f91d7fb2"
-    },
-    {
-      "path": "src/types/upstream-account-credential-created.ts",
-      "sha256": "0639e9f9d4b72e91669f91fd000d5a94876113e72e203e479cad7598063813a1"
+      "path": "src/types/upstream-account-credential-item-response.ts",
+      "sha256": "065d27b55f698241f8a8b24dc09c8884e427816485b793af894904494075c629"
     },
     {
       "path": "src/types/upstream-account-credential-list-response.ts",
@@ -524,7 +520,7 @@
     },
     {
       "path": "src/types/upstream-supplier-auth-method-input.ts",
-      "sha256": "538c9f95e9c52ae89db13580e4cdc2747ec30b6f46caf6024dacd690f8d554b3"
+      "sha256": "fd494a8458f1a0f494e13fdc32dc383280f68f3aca97d2704a0d413b215a8a42"
     },
     {
       "path": "src/types/upstream-supplier-auth-method-list-response.ts",
@@ -532,7 +528,7 @@
     },
     {
       "path": "src/types/upstream-supplier-auth-method.ts",
-      "sha256": "63f96d141bd343c1232341ae4164cd80264f0fee5e389aa8ad79e1101a573332"
+      "sha256": "0a9398bfd2a9cba6bf4249b259fba39eaca8ef8d1834d9a2467d9c6a1d52c20a"
     },
     {
       "path": "src/types/upstream-supplier-endpoint-collection-response.ts",

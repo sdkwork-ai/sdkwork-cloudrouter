@@ -12,6 +12,7 @@ pub mod request_limits;
 pub mod runtime;
 pub mod startup_install;
 pub mod trusted_subject;
+pub mod upstream_credential;
 
 pub use api_key::ApiKeySecurityConfig;
 pub use app_session::AppSessionConfig;
@@ -49,3 +50,4 @@ pub use startup_install::{
     StartupInstallMode,
 };
 pub use trusted_subject::TrustedSubjectConfig;
+pub use upstream_credential::UpstreamCredentialSecurityConfig;

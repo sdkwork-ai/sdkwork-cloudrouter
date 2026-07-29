@@ -129,9 +129,8 @@ impl fmt::Display for InternalGatewayAuthError {
 
 impl std::error::Error for InternalGatewayAuthError {}
 
-pub type InternalGatewayReplayStoreFuture<'a> = Pin<
-    Box<dyn Future<Output = Result<(), InternalGatewayAuthError>> + Send + 'a>,
->;
+pub type InternalGatewayReplayStoreFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<(), InternalGatewayAuthError>> + Send + 'a>>;
 
 pub trait InternalGatewayReplayStore: Send + Sync {
     fn consume<'a>(
@@ -246,10 +245,7 @@ impl InternalGatewayRequestVerifier {
         }
     }
 
-    pub fn with_replay_store(
-        mut self,
-        replay_store: Arc<dyn InternalGatewayReplayStore>,
-    ) -> Self {
+    pub fn with_replay_store(mut self, replay_store: Arc<dyn InternalGatewayReplayStore>) -> Self {
         self.replay_store = replay_store;
         self
     }

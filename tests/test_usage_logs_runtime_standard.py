@@ -13,16 +13,18 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         product_api_mod = (
             ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "mod.rs"
         ).read_text(encoding="utf-8")
-        app_api = (ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "src" / "lib.rs").read_text(
-            encoding="utf-8"
-        )
+        app_api = (
+            ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("operation: fetchLogs", contract)
         self.assertIn("api_path: /app/v3/api/ai/usage/logs", contract)
-        self.assertIn(
-            "read_sources: [ai_request_trace, ai_usage, ai_routing_decision_log]",
-            contract,
-        )
+        for read_source in [
+            "- ai_request_trace",
+            "- ai_usage",
+            "- ai_routing_decision_log",
+        ]:
+            self.assertIn(read_source, contract)
 
         self.assertTrue(
             (ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "app_usage_logs.rs").exists()
@@ -32,9 +34,9 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         self.assertIn("app_usage_logs_router()", app_api)
         self.assertIn("app_usage_logs_router_with_read_store", app_api)
         self.assertIn("UsageLogsReadStore", app_api)
-        self.assertIn("SqliteUsageLogsReadStore", app_api)
         self.assertIn("PostgresUsageLogsReadStore", app_api)
-        self.assertIn("app_request_subject_boundary", app_api)
+        self.assertNotIn("SqliteUsageLogsReadStore", app_api)
+        self.assertIn("merge_web_framework_scoped_app_read_router", app_api)
 
     def test_usage_logs_api_validates_query_and_empty_runtime_returns_standard_page(self) -> None:
         app_usage_logs = (
@@ -48,17 +50,19 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn('"/app/v3/api/ai/usage/logs"', app_usage_logs)
-        self.assertIn("MAX_USAGE_LOGS_PAGE_SIZE", app_usage_logs)
+        self.assertIn("parse_offset_list_query", app_usage_logs)
         self.assertIn("UsageLogsQueryValidationError", app_usage_logs)
         self.assertIn("validate_usage_logs_query", app_usage_logs)
         self.assertIn("parse_usage_logs_timestamp", app_usage_logs)
-        self.assertIn("usage logs page must be greater than or equal to 1", app_usage_logs)
-        self.assertIn("usage logs page_size must be between 1 and", app_usage_logs)
+        self.assertIn("parse_offset_list_query(query.page, query.page_size)", app_usage_logs)
+        self.assertIn('message.starts_with("page ")', app_usage_logs)
+        self.assertIn('message.starts_with("page_size ")', app_usage_logs)
+        self.assertIn('format!("usage logs {message}")', app_usage_logs)
         self.assertIn("usage logs status must be one of all, success, error", app_usage_logs)
         self.assertIn("usage logs q must not exceed", app_usage_logs)
         self.assertIn("usage logs start_time must be a valid UTC timestamp", app_usage_logs)
         self.assertIn("usage logs end_time must be greater than or equal to start_time", app_usage_logs)
-        self.assertIn('problem_from_wire_code("4001"', app_usage_logs)
+        self.assertIn("validation_problem_for_context", app_usage_logs)
         self.assertNotIn("PlusApiResult", app_usage_logs)
         self.assertIn("EmptyUsageLogsReadStore", app_usage_logs)
         self.assertIn("UsageLogsPage::default()", app_usage_logs)
@@ -73,66 +77,69 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         self.assertIn("total", usage_port)
 
     def test_usage_logs_read_stores_use_trace_usage_join_with_tenant_scope_and_pagination(self) -> None:
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/usage_logs_read_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs",
+        store = (
+            ROOT
+            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
+        ).read_text(encoding="utf-8")
+        for expected in [
+            "FROM ai_request_trace",
+            "ai_usage",
+            "ai_routing_decision_log",
+            "MAX(modality) AS modality",
+            ") AS modality",
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "started_at",
+            "LIMIT",
+            "OFFSET",
+            "request_id",
+            "api_key_name_snapshot",
+            "account_group_snapshot",
+            "requested_model",
+            "client_ip_masked",
+            "rate_multiplier",
+            "base_input_unit_price",
+            "base_output_unit_price",
+            "cache_read_unit_price",
+            "load_usage_logs",
+            "load_usage_logs_total",
         ]:
-            store = (ROOT / relative).read_text(encoding="utf-8")
-            self.assertIn("FROM ai_request_trace", store)
-            self.assertIn("ai_usage", store)
-            self.assertIn("ai_routing_decision_log", store)
-            self.assertIn("u.modality AS modality", store)
-            self.assertNotIn("t.owner_type) AS modality", store)
-            self.assertIn("tenant_id", store)
-            self.assertIn("organization_id", store)
-            self.assertIn("user_id", store)
-            self.assertIn("started_at", store)
-            self.assertIn("LIMIT", store)
-            self.assertIn("OFFSET", store)
-            self.assertIn("request_id", store)
-            self.assertIn("api_key_name_snapshot", store)
-            self.assertIn("channel_group_snapshot", store)
-            self.assertIn("requested_model", store)
-            self.assertIn("client_ip_masked", store)
-            self.assertIn("rate_multiplier", store)
-            self.assertIn("base_input_unit_price", store)
-            self.assertIn("base_output_unit_price", store)
-            self.assertIn("cache_read_unit_price", store)
-            self.assertIn("load_usage_logs", store)
-            self.assertIn("load_usage_logs_total", store)
+            self.assertIn(expected, store)
+        self.assertNotIn("t.owner_type) AS modality", store)
 
     def test_usage_logs_read_models_reject_missing_or_invalid_trace_latency(self) -> None:
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/usage_logs_read_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs",
-        ]:
-            store = (ROOT / relative).read_text(encoding="utf-8")
-            compact_store = " ".join(store.split())
-            with self.subTest(store=relative):
-                self.assertNotIn("COALESCE(t.latency_ms, 0) AS latency_ms", store)
-                self.assertIn("t.latency_ms AS latency_ms", store)
-                self.assertNotIn(
-                    'total_time: duration_label(integer_cell(&row, "latency_ms"))',
-                    compact_store,
-                )
-                self.assertIn(
-                    'total_time: duration_label(required_latency_cell(&row, "latency_ms")?)',
-                    compact_store,
-                )
-                self.assertIn("missing usage log latency_ms from database row", store)
-                self.assertIn("invalid usage log latency_ms from database row", store)
+        store = (
+            ROOT
+            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
+        ).read_text(encoding="utf-8")
+        compact_store = " ".join(store.split())
+        self.assertNotIn("COALESCE(t.latency_ms, 0) AS latency_ms", store)
+        self.assertIn("t.latency_ms AS latency_ms", store)
+        self.assertNotIn(
+            'total_time: duration_label(integer_cell(&row, "latency_ms"))',
+            compact_store,
+        )
+        self.assertIn(
+            'total_time: duration_label(required_latency_cell(&row, "latency_ms")?)',
+            compact_store,
+        )
+        self.assertIn(
+            'required_nonnegative_integer_cell(row, column, "usage log latency_ms")',
+            compact_store,
+        )
+        self.assertIn('"missing {field_name} from database row"', store)
+        self.assertIn('"invalid {field_name} from database row: {raw}"', store)
 
     def test_usage_logs_read_models_do_not_default_missing_modality_to_text(self) -> None:
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/usage_logs_read_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs",
-        ]:
-            store = (ROOT / relative).read_text(encoding="utf-8")
-            compact_store = " ".join(store.split())
-            with self.subTest(store=relative):
-                self.assertIn('log_type: modality_label(optional_integer_cell(&row, "modality"))', compact_store)
-                self.assertIn("model_modality::label(value).to_owned()", store)
-                self.assertNotIn("_ => \"text\"", store)
+        store = (
+            ROOT
+            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
+        ).read_text(encoding="utf-8")
+        compact_store = " ".join(store.split())
+        self.assertIn('log_type: modality_label(optional_integer_cell(&row, "modality"))', compact_store)
+        self.assertIn("model_modality::label(value).to_owned()", store)
+        self.assertNotIn("_ => \"text\"", store)
         modality_helper = (
             ROOT
             / "services"
@@ -158,7 +165,7 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
 
         self.assertIn("usageLogs", usage_view)
         self.assertIn("setUsageLogs", usage_view)
-        self.assertIn("loadedCostTotal", usage_view)
+        self.assertIn("pageStats.pageCost", usage_view)
         self.assertIn("log.ip", usage_view)
         self.assertIn("pageSize", usage_view)
         self.assertIn("pageCount", usage_view)
@@ -205,15 +212,19 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             / "src"
             / "usageService.ts"
         ).read_text(encoding="utf-8")
-        i18n = (
+        i18n_root = (
             ROOT
             / "apps"
             / "sdkwork-clawrouter-pc"
             / "packages"
             / "sdkwork-clawrouter-pc-i18n"
             / "src"
-            / "index.ts"
-        ).read_text(encoding="utf-8")
+            / "resources"
+        )
+        i18n = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(i18n_root.rglob("*.ts"))
+        )
 
         for marker in [
             "console.usage.title",
@@ -236,7 +247,6 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             "Usage logs could not be loaded",
             "No usage logs found",
             "Search key, model, request, path...",
-            "Details",
         ]:
             self.assertNotIn(hardcoded_copy, usage_view)
             self.assertNotIn(hardcoded_copy, usage_service)
@@ -264,13 +274,13 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
         ).read_text(encoding="utf-8")
         usage_operation_marker = (
-            "  - route: /console/usage\n"
-            "    source: apps/sdkwork-clawrouter-pc/packages/"
+            "- route: /console/usage\n"
+            "  source: apps/sdkwork-clawrouter-pc/packages/"
             "sdkwork-clawrouter-pc-console-usage/src/usageService.ts\n"
-            "    operation: fetchLogs"
+            "  operation: fetchLogs"
         )
         usage_operation_start = contract.index(usage_operation_marker)
-        next_operation_start = contract.index("\n  - route:", usage_operation_start + 1)
+        next_operation_start = contract.index("\n- route:", usage_operation_start + 1)
         usage_operation_contract = contract[usage_operation_start:next_operation_start]
 
         self.assertNotIn("readOnlyUsageActions", usage_view)
@@ -330,28 +340,33 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
 
         self.assertIn("name: UsageLogsResponse", contract)
         self.assertIn('"UsageLogsResponse"', openapi)
-        self.assertIn('"UsageLogsListResult"', openapi)
         self.assertIn('"$ref": "#/components/schemas/UsageLogsResponse"', openapi)
-        self.assertIn("async list(params?: AiUsageLogsListParams): Promise<UsageLogsListResult>", sdk_ai)
-        self.assertIn("get<UsageLogsListResult>", sdk_ai)
+        self.assertIn("async list(params?: AiUsageLogsListParams", sdk_ai)
+        self.assertIn("Promise<UsageLogsResponse>", sdk_ai)
+        self.assertIn("request<UsageLogsResponse>", sdk_ai)
+        self.assertIn("{ name: 'page_size', value: params?.pageSize", sdk_ai)
         self.assertIn("{ name: 'q', value: params?.q", sdk_ai)
         self.assertNotIn("search_query", sdk_ai)
 
         response_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "usage-logs-response.ts"
         item_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "usage-log-item.ts"
-        result_path = ROOT / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src" / "types" / "usage-logs-list-result.ts"
         self.assertTrue(response_path.exists())
         self.assertTrue(item_path.exists())
-        self.assertTrue(result_path.exists())
-        self.assertIn("logs: UsageLogItem[];", response_path.read_text(encoding="utf-8"))
-        self.assertIn("total: number;", response_path.read_text(encoding="utf-8"))
-        self.assertIn("page: number;", response_path.read_text(encoding="utf-8"))
-        self.assertNotIn("pageNo: number;", response_path.read_text(encoding="utf-8"))
-        self.assertIn("data?: UsageLogsResponse;", result_path.read_text(encoding="utf-8"))
+        response = response_path.read_text(encoding="utf-8")
+        item = item_path.read_text(encoding="utf-8")
+        self.assertIn("items: UsageLogItem[];", response)
+        self.assertIn("pageInfo: PageInfo;", response)
+        self.assertNotIn("logs: UsageLogItem[];", response)
+        self.assertIn("gatewayRequestId: string;", item)
+        self.assertNotIn("requestId: string;", item)
+        for token_field in ["inputTokens", "cacheReadTokens", "outputTokens"]:
+            self.assertIn(f"{token_field}: string;", item)
 
         self.assertIn("UsageLogsResponse as SdkUsageLogsResponse", service)
-        self.assertIn("id: SdkUsageLogsResponse['logs'][number]['id'];", service)
-        self.assertIn("total: SdkUsageLogsResponse['total']", service)
+        self.assertIn("type UsageLogItem as SdkUsageLogItem", service)
+        self.assertIn("items: page.items.map(normalizeUsageLog)", service)
+        self.assertIn("pageInfo: {", service)
+        self.assertIn("readRequiredUnsignedInt64String", service)
 
 
 if __name__ == "__main__":

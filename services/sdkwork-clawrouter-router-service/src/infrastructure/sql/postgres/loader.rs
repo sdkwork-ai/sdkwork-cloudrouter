@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use sqlx::PgPool;
 
-use crate::application::CredentialSecretCodec;
+use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
 use crate::domain::{
     DomainError, DomainResult, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
 };
@@ -22,7 +22,8 @@ use crate::ports::{
 
 pub struct PostgresPricingCatalogLoader {
     pool: PgPool,
-    credential_secret_codec: Option<std::sync::Arc<dyn CredentialSecretCodec + Send + Sync>>,
+    credential_secret_codec:
+        Option<std::sync::Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>>,
     circuit_breaker_recovery_window_seconds: i64,
 }
 
@@ -38,7 +39,7 @@ impl PostgresPricingCatalogLoader {
 
     pub fn with_credential_secret_codec(
         pool: PgPool,
-        credential_secret_codec: std::sync::Arc<dyn CredentialSecretCodec + Send + Sync>,
+        credential_secret_codec: std::sync::Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
     ) -> Self {
         Self {
             pool,
@@ -65,6 +66,10 @@ impl PostgresPricingCatalogLoader {
         let mut tx = self
             .pool
             .begin()
+            .await
+            .map_err(PostgresCatalogLoadError::from)?;
+        sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+            .execute(&mut *tx)
             .await
             .map_err(PostgresCatalogLoadError::from)?;
         let api_keys = self.load_api_key_rows(&mut *tx).await?;
@@ -201,17 +206,32 @@ fn default_circuit_breaker_recovery_window_seconds() -> i64 {
 
 fn managed_provider_secrets_from_rows(
     upstream_account_routes: &[crate::infrastructure::sql::rows::UpstreamAccountRouteRow],
-    credential_secret_codec: Option<&(dyn CredentialSecretCodec + Send + Sync)>,
+    credential_secret_codec: Option<&(dyn UpstreamCredentialSecretCodec + Send + Sync)>,
 ) -> DomainResult<BTreeMap<String, String>> {
     let mut secrets = BTreeMap::new();
-    for (secret_ref, ciphertext) in upstream_account_routes.iter().filter_map(|row| {
-        row.secret_ref
-            .as_deref()
-            .zip(row.secret_ciphertext.as_deref())
-    }) {
+    for row in upstream_account_routes {
+        let Some(credential_id) = row.credential_id else {
+            continue;
+        };
+        let Some(secret_ref) = row.secret_ref.as_deref() else {
+            continue;
+        };
+        let Some(ciphertext) = row.secret_ciphertext.as_deref() else {
+            continue;
+        };
+        let Some(key_id) = row.secret_key_id.as_deref() else {
+            continue;
+        };
         collect_managed_provider_secret(
             &mut secrets,
             secret_ref,
+            UpstreamCredentialSecretContext::new(
+                row.tenant_id,
+                row.organization_id,
+                row.account_id,
+                credential_id,
+            ),
+            key_id,
             ciphertext,
             credential_secret_codec,
         )?;
@@ -222,8 +242,10 @@ fn managed_provider_secrets_from_rows(
 fn collect_managed_provider_secret(
     secrets: &mut BTreeMap<String, String>,
     secret_ref: &str,
+    context: UpstreamCredentialSecretContext,
+    key_id: &str,
     ciphertext: &str,
-    credential_secret_codec: Option<&(dyn CredentialSecretCodec + Send + Sync)>,
+    credential_secret_codec: Option<&(dyn UpstreamCredentialSecretCodec + Send + Sync)>,
 ) -> DomainResult<()> {
     let Some(credential_secret_codec) = credential_secret_codec else {
         return Err(DomainError::new(
@@ -232,7 +254,7 @@ fn collect_managed_provider_secret(
     };
     secrets.insert(
         secret_ref.trim().to_owned(),
-        credential_secret_codec.decode_secret(ciphertext)?,
+        credential_secret_codec.decode_secret(context, key_id, ciphertext)?,
     );
     Ok(())
 }
@@ -313,15 +335,20 @@ fn gateway_api_keys_base_sql() -> String {
 #[cfg(test)]
 mod tests {
     use super::managed_provider_secrets_from_rows;
-    use crate::application::CredentialSecretCodec;
+    use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
     use crate::infrastructure::crypto::RingAeadCredentialSecretCodec;
     use crate::infrastructure::sql::rows::UpstreamAccountRouteRow;
 
     #[test]
     fn managed_upstream_credentials_are_decrypted_only_at_the_loader_boundary() {
         let codec = RingAeadCredentialSecretCodec::new("test-upstream-credential-pepper").unwrap();
-        let ciphertext = codec.encode_secret("sk-sensitive-upstream-secret").unwrap();
+        let context = UpstreamCredentialSecretContext::new(100001, 200001, 11, 12);
+        let encoded = codec
+            .encode_secret(context, "sk-sensitive-upstream-secret")
+            .unwrap();
         let rows = vec![UpstreamAccountRouteRow {
+            tenant_id: 100001,
+            organization_id: 200001,
             supplier_code: "openai".to_owned(),
             account_id: 11,
             credential_id: Some(12),
@@ -340,7 +367,8 @@ mod tests {
             endpoint_health_status: 1,
             base_url: Some("https://api.openai.com/v1".to_owned()),
             secret_ref: Some("managed://upstream-account-credential/12".to_owned()),
-            secret_ciphertext: Some(ciphertext.clone()),
+            secret_ciphertext: Some(encoded.ciphertext.clone()),
+            secret_key_id: Some(encoded.key_id.clone()),
             auth_type: Some("api_key".to_owned()),
             runtime_auth_config_json: r#"{"credentialTransport":"bearer","defaultHeaders":{}}"#
                 .to_owned(),
@@ -357,7 +385,7 @@ mod tests {
             Some(&"sk-sensitive-upstream-secret".to_owned()),
             secrets.get("managed://upstream-account-credential/12")
         );
-        assert!(!secrets.contains_key(&ciphertext));
+        assert!(!secrets.contains_key(&encoded.ciphertext));
         assert!(managed_provider_secrets_from_rows(&rows, None).is_err());
     }
 }

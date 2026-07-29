@@ -1,6 +1,7 @@
 use crate::DeploymentMode;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::io::Read;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 
@@ -179,6 +180,8 @@ pub struct RedisSectionConfig {
 pub struct SecuritySectionConfig {
     pub api_key_pepper: Option<String>,
     pub api_key_pepper_file: Option<String>,
+    pub upstream_credential_key_ring: Option<String>,
+    pub upstream_credential_key_ring_file: Option<String>,
     pub internal_gateway_signing_secret: Option<String>,
     pub internal_gateway_signing_secret_file: Option<String>,
     pub internal_gateway_request_ttl_seconds: Option<u64>,
@@ -469,6 +472,24 @@ pub fn config_secret_value(
     Ok(normalize_optional_string(config_value))
 }
 
+pub fn config_secret_value_with_max_bytes(
+    name: &str,
+    file_name: &str,
+    config_value: Option<&str>,
+    config_file: Option<&str>,
+    max_bytes: usize,
+) -> Result<Option<String>, String> {
+    if let Some(value) = env_optional(name) {
+        return validate_max_bytes(name, value, max_bytes).map(Some);
+    }
+    if let Some(path) = env_optional(file_name).or_else(|| normalize_optional_string(config_file)) {
+        return read_secret_file_with_max_bytes(file_name, &path, max_bytes).map(Some);
+    }
+    normalize_optional_string(config_value)
+        .map(|value| validate_max_bytes(name, value, max_bytes))
+        .transpose()
+}
+
 pub fn config_file_value(
     name: &str,
     file_name: &str,
@@ -532,6 +553,27 @@ pub fn read_secret_file(label: &str, path: &str) -> Result<String, String> {
     read_nonblank_file(label, path)
 }
 
+pub fn read_secret_file_with_max_bytes(
+    label: &str,
+    path: &str,
+    max_bytes: usize,
+) -> Result<String, String> {
+    let path = PathBuf::from(expand_runtime_path_variables(path.trim()));
+    let file = std::fs::File::open(&path)
+        .map_err(|error| format!("failed to read {label} {}: {error}", path.display()))?;
+    let read_limit = u64::try_from(max_bytes)
+        .unwrap_or(u64::MAX)
+        .saturating_add(1);
+    let mut value = String::new();
+    file.take(read_limit)
+        .read_to_string(&mut value)
+        .map_err(|error| format!("failed to read {label} {}: {error}", path.display()))?;
+    validate_max_bytes(label, value, max_bytes).and_then(|value| {
+        normalize_optional_string(Some(value.as_str()))
+            .ok_or_else(|| format!("{label} {} must not be blank", path.display()))
+    })
+}
+
 pub fn read_config_file(label: &str, path: &str) -> Result<String, String> {
     read_nonblank_file(label, path)
 }
@@ -548,6 +590,13 @@ fn normalize_optional_string(value: Option<&str>) -> Option<String> {
     value
         .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty())
+}
+
+fn validate_max_bytes(label: &str, value: String, max_bytes: usize) -> Result<String, String> {
+    if value.len() > max_bytes {
+        return Err(format!("{label} must not exceed {max_bytes} bytes"));
+    }
+    Ok(value)
 }
 
 fn parse_bool(name: &str, value: &str) -> Result<bool, String> {

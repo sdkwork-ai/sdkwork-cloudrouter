@@ -9,11 +9,10 @@ use sdkwork_clawrouter_router_service::domain::{
 };
 use sdkwork_clawrouter_router_service::ports::{
     ApiKeyCommandStoreFuture, ApiKeyManagementReadFuture, CreateGatewayApiKeyCommand,
-    CreatedGatewayApiKey, DeleteGatewayApiKeyCommand,
-    DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
-    GatewayApiKeyCommandStore, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
-    GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery, UpdateGatewayApiKeyCommand,
-    UpdatedGatewayApiKey,
+    CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
+    EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore, GatewayApiKeyListPage,
+    GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
+    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -131,7 +130,10 @@ async fn app_api_key_list_never_returns_raw_key_material() {
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["items"][0]["id"]);
     assert!(payload["data"]["items"][0].get("rawKey").is_none());
-    assert_eq!("sk-claw-test********CRET", payload["data"]["items"][0]["maskedKey"]);
+    assert_eq!(
+        "sk-claw-test********CRET",
+        payload["data"]["items"][0]["maskedKey"]
+    );
     assert_eq!("default", payload["data"]["items"][0]["accountGroup"]);
     assert_eq!(
         "Default customers",
@@ -313,7 +315,6 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
             })
         })
     }
-
 }
 
 #[derive(Default)]

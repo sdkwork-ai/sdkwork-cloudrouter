@@ -7,9 +7,7 @@ export interface UpstreamSupplierAuthMethod {
   /** Auth method name field on upstream supplier auth method. */
   authMethodName: string;
   /** Auth type field on upstream supplier auth method. */
-  authType: 'api_key' | 'bearer_token' | 'oauth2_client_credentials' | 'oauth2_authorization_code' | 'aws_sigv4' | 'custom';
-  /** Authorization url field on upstream supplier auth method. */
-  authorizationUrl: string | null;
+  authType: 'api_key' | 'bearer_token' | 'custom';
   /** Config schema field on upstream supplier auth method. */
   configSchema: Record<string, JsonValue>;
   /** Id field on upstream supplier auth method. */
@@ -17,11 +15,7 @@ export interface UpstreamSupplierAuthMethod {
   /** Priority field on upstream supplier auth method. */
   priority: number;
   /** Runtime auth config field on upstream supplier auth method. */
-  runtimeAuthConfig: { adapterOptions?: Record<string, JsonValue> | null; adapterScheme?: string | null; credentialParameter?: string | null; credentialTransport: 'bearer' | 'header' | 'query' | 'provider_adapter'; defaultHeaders?: Record<string, string>; };
-  /** Scopes field on upstream supplier auth method. */
-  scopes: string[] | null;
+  runtimeAuthConfig: { credentialParameter?: string | null; credentialTransport: 'bearer' | 'header' | 'query'; defaultHeaders?: Record<string, string>; };
   /** Status field on upstream supplier auth method. */
   status: number;
-  /** Token url field on upstream supplier auth method. */
-  tokenUrl: string | null;
 }

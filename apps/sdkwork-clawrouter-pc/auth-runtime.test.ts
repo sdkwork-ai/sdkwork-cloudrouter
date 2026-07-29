@@ -119,6 +119,8 @@ function readI18nResourceSource(): string {
   return [
     readPortalFile("./packages/sdkwork-clawrouter-pc-i18n/src/index.ts"),
     ...readI18nResourceFiles().map((file) => file.source),
+    ...readPortalSourceFiles("./packages/sdkwork-clawrouter-pc-admin-upstream/src/i18n/")
+      .map((file) => file.source),
   ].join("\n");
 }
 
@@ -183,7 +185,7 @@ function findI18nLocaleKeys(source: string, locale: string): Set<string> {
 
   for (const match of source.matchAll(localePattern)) {
     const localeSource = findObjectBlockAt(source, match.index ?? 0);
-    for (const key of findOrderedMatches(localeSource, /"([^"]+)"\s*:/g)) {
+    for (const key of findOrderedMatches(localeSource, /["']([^"']+)["']\s*:/g)) {
       if (key.includes(".")) {
         keys.add(key);
       }
@@ -1547,7 +1549,7 @@ test("generated SDK auth errors clear the app session and redirect protected pag
 
     assert.equal(loadStoredAppSessionToken(), null);
     assert.deepEqual(redirects, [
-      "/auth/login?redirect=%2Fadmin%2Fchannel%3Fprovider_id%3D2%23risk",
+      "/auth/login?redirect=%2Fadmin%2Fupstream%3Fprovider_id%3D2%23risk",
     ]);
   } finally {
     clearStoredAppSessionToken();
@@ -2041,7 +2043,7 @@ test("generated SDK request boundary clears sessions for invalid IAM session Pro
 
     await assert.rejects(
       () => client.http.get("/ai/dashboard/overview"),
-      /HTTP 401/,
+      /invalid or expired IAM session/,
     );
     assert.equal(loadStoredAppSessionToken(), null);
     assert.deepEqual(redirects, ["/auth/login?redirect=%2Fconsole%2Fdashboard"]);
@@ -2152,7 +2154,7 @@ test("admin sidebar labels are resolved through i18n keys", () => {
 
   assert.match(adminLayoutSource, /useTranslation/);
   assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.modelManagement'/);
-  assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.accountPoolManagement'/);
+  assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.upstreamManagement'/);
   assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.dataManagement'/);
   assert.match(adminRegistrySource, /labelKey:\s*'admin\.menu\.analytics'/);
   assert.match(adminRegistrySource, /labelKey:\s*'admin\.menu\.authSettings'/);
@@ -2168,7 +2170,7 @@ test("admin sidebar labels are resolved through i18n keys", () => {
 
   for (const key of [
     "admin.menu.home.modelManagement",
-    "admin.menu.home.accountPoolManagement",
+    "admin.menu.home.upstreamManagement",
     "admin.menu.home.dataManagement",
     "admin.menu.analytics",
     "admin.menu.authSettings",
@@ -2314,14 +2316,14 @@ test("upstream administration has one canonical navigation entry", () => {
   assert.match(i18nSource, /"admin\.menu\.home\.upstreamManagement":\s*"\u4e0a\u6e38\u7ba1\u7406"/);
 });
 
-test("upstream credentials reveal plaintext only in the create response dialog", () => {
+test("upstream credentials never expose plaintext after submission", () => {
   const accountSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-upstream/src/accountTab.tsx");
   const serviceSource = readPortalFile("./packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts");
 
-  assert.match(accountSource, /created\.rawSecret/);
-  assert.match(accountSource, /<CopyButton text=\{created\.rawSecret\}/);
-  assert.doesNotMatch(accountSource, /credential\.rawSecret|credential\.secret/);
+  assert.doesNotMatch(accountSource, /rawSecret|credential\.secret|oneTimeSecret/);
+  assert.match(accountSource, /name="secret" type="password" autoComplete="new-password"/);
   assert.match(serviceSource, /createCredential/);
+  assert.doesNotMatch(serviceSource, /rawSecret/);
   assert.doesNotMatch(serviceSource, /fetch\(|axios|authorization/i);
 });
 

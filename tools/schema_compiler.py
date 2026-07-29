@@ -159,7 +159,7 @@ class SchemaCompiler:
             f"-- Registry version: {registry_version}.\n"
             f"-- Registry SHA-256: {registry_hash}.\n"
             f"-- Dialect: {dialect}.\n"
-            "-- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.\n"
+            f"-- Materialize: python -B -m tools.schema_compiler --dialect {dialect} --materialize.\n"
             "-- Do not edit by hand; update Schema Registry and regenerate."
         ]
 

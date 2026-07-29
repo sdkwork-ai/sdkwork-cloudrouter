@@ -33,13 +33,18 @@ runtime usage-link tables required by the wired app-chat stores. A successful
 `db:init`, `db:validate`, or `/readyz` must not be presented as proof that chat
 routes are safe until that ownership and migration gap is closed.
 
-This module is in **initialization state** for greenfield deployments:
+This authoritative-server module is in **initialization state** for greenfield deployments:
 
-1. **Baseline** - `database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql` contains the complete pre-release DDL snapshot.
-2. **Migrations** - `database/migrations/{engine}/` is intentionally empty until the first post-baseline schema change. Pre-release provider, site, channel, and channel-group upgrade scripts have been folded into the canonical baseline and removed.
+1. **Baseline** - `database/ddl/baseline/postgres/0001_clawrouter_baseline.sql` contains the complete pre-release DDL snapshot.
+2. **Migrations** - `database/migrations/postgres/` is intentionally empty until the first post-baseline schema change. Pre-release upstream schema iterations were folded into the canonical baseline.
 3. **Drift** - run `pnpm db:drift:check` before release.
 
 Fresh installations must start from the generated PostgreSQL baseline. Historical pre-release schemas are not supported installation or rollback targets.
+
+SQLite is not a server engine for this module. A desktop client that needs local cache,
+offline projection, draft, preference, local search, or a resumable queue must own a separate
+`client-local` contract and migration history; it must not materialize this PostgreSQL authority
+as an interchangeable SQLite mirror.
 
 ## Commands
 

@@ -20,7 +20,7 @@ pub use internal_gateway::{
     X_SDKWORK_INTERNAL_SIGNATURE, X_SDKWORK_INTERNAL_TENANT_ID, X_SDKWORK_INTERNAL_USER_ID,
 };
 pub use outbound_target::{
-    validate_outbound_base_url, validate_outbound_url, OutboundTargetPolicy,
-    OutboundTargetValidationError,
+    validate_outbound_base_url, validate_outbound_url, validate_resolved_outbound_ip,
+    OutboundTargetPolicy, OutboundTargetValidationError,
 };
 pub use redaction::{redact_error_message, redact_secret, redact_url, REDACTED};

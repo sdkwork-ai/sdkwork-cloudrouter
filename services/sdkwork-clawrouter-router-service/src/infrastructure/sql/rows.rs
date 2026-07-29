@@ -134,6 +134,8 @@ pub struct ModelUpstreamRouteRow {
 }
 
 pub struct UpstreamAccountRouteRow {
+    pub tenant_id: i64,
+    pub organization_id: i64,
     pub supplier_code: String,
     pub account_id: i64,
     pub credential_id: Option<i64>,
@@ -153,6 +155,7 @@ pub struct UpstreamAccountRouteRow {
     pub base_url: Option<String>,
     pub secret_ref: Option<String>,
     pub secret_ciphertext: Option<String>,
+    pub secret_key_id: Option<String>,
     pub auth_type: Option<String>,
     pub runtime_auth_config_json: String,
     pub timeout_ms: Option<i64>,
@@ -495,7 +498,6 @@ impl GatewayApiKeyRow {
             )?,
         })
     }
-
 }
 
 fn parse_gateway_api_key_upstream_account_group_bindings(

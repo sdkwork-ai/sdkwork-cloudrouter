@@ -1,11 +1,9 @@
-const SQLITE_ADMIN_MARKETING_STORE: &str =
-    include_str!("../src/infrastructure/sql/sqlite/admin_marketing_store.rs");
 const POSTGRES_ADMIN_MARKETING_STORE: &str =
     include_str!("../src/infrastructure/sql/postgres/admin_marketing_store.rs");
 
 #[test]
 fn admin_marketing_exchange_rule_uses_appbase_exchange_rule_table() {
-    for source in [SQLITE_ADMIN_MARKETING_STORE, POSTGRES_ADMIN_MARKETING_STORE] {
+    for source in [POSTGRES_ADMIN_MARKETING_STORE] {
         let exchange_sections = format!(
             "{}{}{}",
             source_section(
@@ -46,7 +44,7 @@ fn admin_marketing_exchange_rule_uses_appbase_exchange_rule_table() {
 
 #[test]
 fn admin_marketing_recharge_catalog_uses_appbase_catalog_tables() {
-    for source in [SQLITE_ADMIN_MARKETING_STORE, POSTGRES_ADMIN_MARKETING_STORE] {
+    for source in [POSTGRES_ADMIN_MARKETING_STORE] {
         let recharge_catalog_sections = format!(
             "{}{}{}",
             source_section(
@@ -90,7 +88,7 @@ fn admin_marketing_recharge_catalog_uses_appbase_catalog_tables() {
 
 #[test]
 fn admin_marketing_promotion_coupon_uses_appbase_coupon_tables() {
-    for source in [SQLITE_ADMIN_MARKETING_STORE, POSTGRES_ADMIN_MARKETING_STORE] {
+    for source in [POSTGRES_ADMIN_MARKETING_STORE] {
         let coupon_sections = source_section(
             source,
             "async fn list_promotion_offers",
@@ -168,7 +166,7 @@ fn admin_marketing_promotion_coupon_uses_appbase_coupon_tables() {
 
 #[test]
 fn admin_marketing_recharge_records_use_appbase_order_payment_tables() {
-    for source in [SQLITE_ADMIN_MARKETING_STORE, POSTGRES_ADMIN_MARKETING_STORE] {
+    for source in [POSTGRES_ADMIN_MARKETING_STORE] {
         let recharge_record_sections = source_section(
             source,
             "async fn list_recharge_records",
@@ -191,7 +189,7 @@ fn admin_marketing_recharge_records_use_appbase_order_payment_tables() {
 
 #[test]
 fn admin_marketing_payment_attempts_use_appbase_payment_tables() {
-    for source in [SQLITE_ADMIN_MARKETING_STORE, POSTGRES_ADMIN_MARKETING_STORE] {
+    for source in [POSTGRES_ADMIN_MARKETING_STORE] {
         let payment_sections = source_section(
             source,
             "async fn list_payment_attempts",

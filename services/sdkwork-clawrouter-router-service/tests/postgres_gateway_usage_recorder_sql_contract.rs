@@ -1,7 +1,5 @@
 const POSTGRES_GATEWAY_USAGE_RECORDER: &str =
     include_str!("../src/infrastructure/sql/postgres/gateway_usage_recorder.rs");
-const SQLITE_GATEWAY_USAGE_RECORDER: &str =
-    include_str!("../src/infrastructure/sql/sqlite/gateway_usage_recorder.rs");
 
 fn compact_sql(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
@@ -64,7 +62,7 @@ fn gateway_usage_recorder_upserts_trace_and_usage_fact_by_business_unique_keys()
 }
 
 #[test]
-fn gateway_trace_upsert_placeholder_order_matches_all_bindings_in_both_dialects() {
+fn gateway_trace_upsert_placeholder_order_matches_all_postgres_bindings() {
     let postgres_sql = function_block(
         POSTGRES_GATEWAY_USAGE_RECORDER,
         "const UPSERT_TRACE: &str = r#\"",
@@ -84,25 +82,10 @@ fn gateway_trace_upsert_placeholder_order_matches_all_bindings_in_both_dialects(
         postgres_sql,
         "$28, to_timestamp($29::double precision / 1000.0), to_timestamp($30::double precision / 1000.0), $31",
     );
-
-    let sqlite_upsert = function_block(
-        SQLITE_GATEWAY_USAGE_RECORDER,
-        "async fn upsert_trace(",
-        "async fn upsert_usage_fact(",
-    );
-    assert_eq!(
-        (1..=42).collect::<std::collections::BTreeSet<_>>(),
-        numbered_placeholders(sqlite_upsert, '?')
-    );
-    assert_eq!(42, sqlite_upsert.matches(".bind(").count());
-    assert_sql_contains(
-        sqlite_upsert,
-        "?28, strftime('%Y-%m-%dT%H:%M:%fZ', ?29 / 1000.0, 'unixepoch'), strftime('%Y-%m-%dT%H:%M:%fZ', ?30 / 1000.0, 'unixepoch'), ?31",
-    );
 }
 
 #[test]
-fn gateway_usage_upsert_placeholder_order_matches_all_bindings_in_both_dialects() {
+fn gateway_usage_upsert_placeholder_order_matches_all_postgres_bindings() {
     let postgres_sql = function_block(
         POSTGRES_GATEWAY_USAGE_RECORDER,
         "const UPSERT_USAGE_FACT: &str = r#\"",
@@ -122,33 +105,11 @@ fn gateway_usage_upsert_placeholder_order_matches_all_bindings_in_both_dialects(
         postgres_sql,
         "$43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48",
     );
-
-    let sqlite_upsert = function_block(
-        SQLITE_GATEWAY_USAGE_RECORDER,
-        "async fn upsert_usage_fact(",
-        "fn trace_uuid(",
-    );
-    let sqlite_sql = sqlite_upsert
-        .split_once("r#\"")
-        .expect("missing SQLite usage SQL start")
-        .1
-        .split_once("\"#,")
-        .expect("missing SQLite usage SQL end")
-        .0;
-    assert_eq!(48, sqlite_sql.matches('?').count());
-    assert_eq!(48, sqlite_upsert.matches(".bind(").count());
-    assert_sql_contains(
-        sqlite_sql,
-        "?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', ? / 1000.0, 'unixepoch'), ?, ?",
-    );
 }
 
 #[test]
 fn gateway_trace_upsert_preserves_text_error_types_and_never_persists_raw_user_agent() {
-    for source in [
-        POSTGRES_GATEWAY_USAGE_RECORDER,
-        SQLITE_GATEWAY_USAGE_RECORDER,
-    ] {
+    for source in [POSTGRES_GATEWAY_USAGE_RECORDER] {
         let upsert = function_block(
             source,
             "async fn upsert_trace(",

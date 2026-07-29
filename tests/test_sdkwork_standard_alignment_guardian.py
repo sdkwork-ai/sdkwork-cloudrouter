@@ -17,6 +17,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
         "specs/topology.spec.json",
         "specs/application-env-standard.md",
         "specs/database-store-migration.manifest.json",
+        "specs/process-database-pool.spec.json",
     )
 
     REQUIRED_SHELLS = (
@@ -126,7 +127,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
 
             def lstat_with_reparse_point(path: Path):
                 result = real_lstat(path)
-                if path == root / "configs":
+                if path == root / "etc":
                     return SimpleNamespace(
                         st_mode=result.st_mode,
                         st_file_attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT,
@@ -194,324 +195,108 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
         self,
         root: Path,
         *,
-        legacy_paths: list[str],
-        legacy_store_files: int,
+        store_paths: list[str],
+        active_store_files: int,
+        tables: list[str] | None = None,
     ) -> None:
         self.write_json(
             root,
             "specs/database-store-migration.manifest.json",
             {
-                "schemaVersion": 2,
+                "schemaVersion": 3,
                 "kind": "sdkwork.database-store-migration",
                 "application": "sdkwork-clawrouter",
                 "authority": "../sdkwork-specs/DATABASE_SPEC.md",
-                "legacyInventory": {
-                    "path": "services/sdkwork-clawrouter-router-service/src/infrastructure/sql",
+                "databaseRole": "authoritative-server",
+                "engines": ["postgres"],
+                "storeInventory": {
+                    "path": "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres",
                     "glob": "**/*_store.rs",
                 },
                 "capabilities": [
                     {
                         "capability": "example",
-                        "crate": "crates/sdkwork-clawrouter-example-repository-sqlx",
-                        "portPaths": [
-                            "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-                        ],
-                        "legacyPaths": legacy_paths,
-                        "tables": ["example_item"],
-                        "status": "PENDING",
+                        "targetCrate": "crates/sdkwork-clawrouter-example-repository-sqlx",
+                        "storePaths": store_paths,
+                        "tables": tables or ["example_item"],
                         "priority": "HIGH",
                         "migrationOrder": 1,
-                        "parityTests": ["tests/example_store_parity.rs"],
-                        "rollback": "restore composition to the legacy port adapter before deleting it",
                     }
                 ],
-                "migrationStats": {
-                    "legacyStoreFiles": legacy_store_files,
-                    "coveredLegacyStoreFiles": len(legacy_paths),
-                    "currentDialectPairs": legacy_store_files // 2,
-                    "migratedCapabilities": 0,
-                    "pendingCapabilities": 1,
-                    "pendingCapabilityGroups": 1,
-                    "pendingLogicalStores": 1,
-                    "migratedLogicalStores": 0,
-                    "totalLogicalStores": 1,
-                    "completionPercentage": 0.0,
+                "inventoryStats": {
+                    "activeStoreFiles": active_store_files,
+                    "coveredStoreFiles": len(store_paths),
+                    "capabilityGroups": 1,
+                    "logicalStores": active_store_files,
                 },
             },
         )
 
-    def write_empty_store_migration_manifest(self, root: Path) -> None:
-        (
-            root
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql"
-        ).mkdir(parents=True, exist_ok=True)
-        self.write_json(
-            root,
-            "specs/database-store-migration.manifest.json",
-            {
-                "schemaVersion": 2,
-                "kind": "sdkwork.database-store-migration",
-                "application": "sdkwork-clawrouter",
-                "authority": "../sdkwork-specs/DATABASE_SPEC.md",
-                "legacyInventory": {
-                    "path": "services/sdkwork-clawrouter-router-service/src/infrastructure/sql",
-                    "glob": "**/*_store.rs",
-                },
-                "capabilities": [],
-                "migrationStats": {
-                    "legacyStoreFiles": 0,
-                    "coveredLegacyStoreFiles": 0,
-                    "currentDialectPairs": 0,
-                    "migratedCapabilities": 0,
-                    "pendingCapabilities": 0,
-                    "pendingCapabilityGroups": 0,
-                    "pendingLogicalStores": 0,
-                    "migratedLogicalStores": 0,
-                    "totalLogicalStores": 0,
-                    "completionPercentage": 100.0,
-                },
-            },
+    def write_postgres_store(self, root: Path, name: str = "example_store.rs") -> str:
+        relative = (
+            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/"
+            + name
         )
-
-    def write_active_repository_crate(self, root: Path, capability: str = "example") -> str:
-        package_name = f"sdkwork-clawrouter-{capability}-repository-sqlx"
-        relative = f"crates/{package_name}"
-        crate = root / relative
-        crate.mkdir(parents=True, exist_ok=True)
-        (crate / "Cargo.toml").write_text(
-            f'[package]\nname = "{package_name}"\nversion = "0.1.0"\nedition = "2021"\n',
-            encoding="utf-8",
-        )
-        (crate / "src").mkdir()
-        (crate / "src/lib.rs").write_text("// repository fixture\n", encoding="utf-8")
-        (root / "Cargo.toml").write_text(
-            "[workspace]\n"
-            f'members = ["{relative}", "services/sdkwork-clawrouter-router-service"]\n'
-            "[workspace.dependencies]\n"
-            f'{package_name} = {{ path = "{relative}" }}\n',
-            encoding="utf-8",
-        )
-        service_manifest = root / "services/sdkwork-clawrouter-router-service/Cargo.toml"
-        service_manifest.parent.mkdir(parents=True, exist_ok=True)
-        service_manifest.write_text(
-            '[package]\nname = "sdkwork-clawrouter-router-service"\nversion = "0.1.0"\n'
-            "[dependencies]\n"
-            f"{package_name}.workspace = true\n",
-            encoding="utf-8",
-        )
-        (service_manifest.parent / "src").mkdir()
-        (service_manifest.parent / "src/lib.rs").write_text(
-            "// service fixture\n", encoding="utf-8"
-        )
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("// PostgreSQL store fixture\n", encoding="utf-8")
         return relative
 
-    def cargo_metadata_result(
-        self, root: Path, capability: str = "example"
-    ) -> subprocess.CompletedProcess[str]:
-        repository_name = f"sdkwork-clawrouter-{capability}-repository-sqlx"
-        repository_id = f"path+file:///{repository_name}#0.1.0"
-        service_name = "sdkwork-clawrouter-router-service"
-        service_id = f"path+file:///{service_name}#0.1.0"
-        repository_root = root / "crates" / repository_name
-        service_root = root / "services/sdkwork-clawrouter-router-service"
-        metadata = {
-            "packages": [
-                {
-                    "id": repository_id,
-                    "name": repository_name,
-                    "manifest_path": str(repository_root / "Cargo.toml"),
-                    "dependencies": [],
-                    "targets": [],
-                },
-                {
-                    "id": service_id,
-                    "name": service_name,
-                    "manifest_path": str(service_root / "Cargo.toml"),
-                    "dependencies": [
-                        {
-                            "name": repository_name,
-                            "kind": None,
-                            "path": str(repository_root),
-                        }
-                    ],
-                    "targets": [],
-                },
-            ],
-            "workspace_members": [repository_id, service_id],
-        }
-        return subprocess.CompletedProcess(
-            args=[], returncode=0, stdout=json.dumps(metadata), stderr=""
-        )
-
-    def write_repository_component_spec(
-        self,
-        root: Path,
-        crate_relative: str,
-        *,
-        capability: str = "example",
-        component_overrides: dict[str, object] | None = None,
-        contract_overrides: dict[str, object] | None = None,
-    ) -> None:
-        package_name = f"sdkwork-clawrouter-{capability}-repository-sqlx"
-        component = {
-            "name": package_name,
-            "displayName": f"SDKWork Claw Router {capability} Repository SQLx",
-            "version": "0.1.0",
-            "type": "rust-crate",
-            "root": f"sdkwork-clawrouter/{crate_relative}",
-            "domain": "platform",
-            "capability": capability,
-            "surface": "repository",
-            "languages": ["rust"],
-            "generated": False,
-            "private": True,
-            "manifests": ["Cargo.toml"],
-        }
-        component.update(component_overrides or {})
-        contracts = {
-            "layerRole": "backend-repository",
-            "publicExports": ["."],
-            "providedPorts": [],
-            "requiredPorts": [],
-            "runtimeEntrypoints": [],
-            "routeManifest": None,
-            "sdkClients": [],
-            "sdkDependencies": [],
-            "dependencyApiExports": [],
-            "dependencyApiSurfaces": [],
-            "events": [],
-            "configKeys": [],
-        }
-        contracts.update(contract_overrides or {})
-        required_specs = (
-            "COMPONENT_SPEC.md",
-            "CODE_STYLE_SPEC.md",
-            "NAMING_SPEC.md",
-            "RUST_CODE_SPEC.md",
-            "DATABASE_SPEC.md",
-            "TEST_SPEC.md",
-        )
-        self.write_json(
-            root,
-            f"{crate_relative}/specs/component.spec.json",
-            {
-                "schemaVersion": 1,
-                "kind": "sdkwork.component.spec",
-                "component": component,
-                "canonicalSpecs": [
-                    {
-                        "file": file,
-                        "path": f"../../../../sdkwork-specs/{file}",
-                        "purpose": "Repository ownership and verification authority.",
-                    }
-                    for file in required_specs
-                ],
-                "contracts": contracts,
-                "verification": {
-                    "commands": [
-                        f"cargo test -p {package_name} --test dialect_parity"
-                    ]
-                },
-            },
-        )
-
-    def write_legacy_store_pair(self, root: Path) -> tuple[str, str]:
-        base = "services/sdkwork-clawrouter-router-service/src/infrastructure/sql"
-        postgres = f"{base}/postgres/example_store.rs"
-        sqlite = f"{base}/sqlite/example_store.rs"
-        for relative in (postgres, sqlite):
-            path = root / relative
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("// legacy store\n", encoding="utf-8")
-        port = root / "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-        port.parent.mkdir(parents=True, exist_ok=True)
-        port.write_text("// port\n", encoding="utf-8")
-        return postgres, sqlite
-
-    def test_database_store_manifest_rejects_untracked_legacy_path(self) -> None:
+    def test_database_store_manifest_rejects_untracked_postgres_store(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            postgres, sqlite = self.write_legacy_store_pair(root)
+            tracked = self.write_postgres_store(root)
+            self.write_postgres_store(root, "untracked_store.rs")
             self.write_store_migration_manifest(
-                root,
-                legacy_paths=[postgres],
-                legacy_store_files=2,
+                root, store_paths=[tracked], active_store_files=2
             )
 
             checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-            coverage = next(
-                check
-                for check in checks
-                if check.id == "database-store-migration-inventory-coverage"
-            )
 
-            self.assertEqual("fail", coverage.status)
-            self.assertEqual("blocking", coverage.severity)
-            self.assertIn(sqlite, coverage.message)
+            self.assertEqual("fail", checks[0].status)
+            self.assertIn("untracked PostgreSQL stores", checks[0].message)
 
-    def test_database_store_manifest_accepts_exact_unique_coverage(self) -> None:
+    def test_database_store_manifest_accepts_exact_postgres_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            postgres, sqlite = self.write_legacy_store_pair(root)
+            store = self.write_postgres_store(root)
             self.write_store_migration_manifest(
-                root,
-                legacy_paths=[postgres, sqlite],
-                legacy_store_files=2,
+                root, store_paths=[store], active_store_files=1
             )
 
             checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-            coverage = next(
-                check
-                for check in checks
-                if check.id == "database-store-migration-inventory-coverage"
-            )
 
-            self.assertEqual("pass", coverage.status)
-            self.assertIn("2/2", coverage.message)
+            self.assertEqual("pass", checks[0].status)
 
-    def test_database_store_manifest_rejects_duplicate_legacy_path(self) -> None:
+    def test_database_store_manifest_rejects_duplicate_store_path(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            postgres, sqlite = self.write_legacy_store_pair(root)
+            store = self.write_postgres_store(root)
             self.write_store_migration_manifest(
-                root,
-                legacy_paths=[postgres, sqlite, sqlite],
-                legacy_store_files=2,
+                root, store_paths=[store, store], active_store_files=1
             )
 
             checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-            coverage = next(
-                check
-                for check in checks
-                if check.id == "database-store-migration-inventory-coverage"
-            )
 
-            self.assertEqual("fail", coverage.status)
-            self.assertIn("duplicate", coverage.message)
+            self.assertEqual("fail", checks[0].status)
+            self.assertIn("duplicate store paths", checks[0].message)
 
     def test_database_store_manifest_rejects_noncanonical_inventory_scope(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            postgres, sqlite = self.write_legacy_store_pair(root)
+            store = self.write_postgres_store(root)
             self.write_store_migration_manifest(
-                root,
-                legacy_paths=[postgres, sqlite],
-                legacy_store_files=2,
+                root, store_paths=[store], active_store_files=1
             )
             manifest_path = root / "specs/database-store-migration.manifest.json"
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["legacyInventory"] = {"path": "empty", "glob": "**/*.rs"}
-            manifest_path.write_text(
-                json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
-            )
+            manifest["storeInventory"]["path"] = "services"
+            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
 
             checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-            manifest_check = next(
-                check for check in checks if check.id == "database-store-migration-manifest"
-            )
 
-            self.assertEqual("fail", manifest_check.status)
-            self.assertIn("legacyInventory", manifest_check.message)
+            self.assertEqual("fail", checks[0].status)
+            self.assertIn("storeInventory.path", checks[0].message)
 
     def test_database_store_manifest_rejects_non_object_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -525,466 +310,57 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             self.assertEqual("fail", checks[0].status)
             self.assertIn("JSON object", checks[0].message)
 
-    def test_database_store_manifest_rejects_non_list_nested_fields(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            postgres, sqlite = self.write_legacy_store_pair(root)
-            self.write_store_migration_manifest(
-                root,
-                legacy_paths=[postgres, sqlite],
-                legacy_store_files=2,
-            )
-            manifest_path = root / "specs/database-store-migration.manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["capabilities"][0]["legacyPaths"] = 1
-            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
-
-            checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-
-            self.assertEqual("fail", checks[0].status)
-            self.assertIn("legacyPaths", checks[0].message)
-
     def test_database_store_manifest_rejects_boolean_statistics(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            postgres, sqlite = self.write_legacy_store_pair(root)
+            store = self.write_postgres_store(root)
+            self.write_store_migration_manifest(
+                root, store_paths=[store], active_store_files=1
+            )
+            manifest_path = root / "specs/database-store-migration.manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["inventoryStats"]["activeStoreFiles"] = True
+            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
+
+            checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
+
+            self.assertEqual("fail", checks[0].status)
+            self.assertIn("inventoryStats", checks[0].message)
+
+    def test_database_store_manifest_rejects_sqlite_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = self.write_postgres_store(root)
+            self.write_store_migration_manifest(
+                root, store_paths=[store], active_store_files=1
+            )
+            manifest_path = root / "specs/database-store-migration.manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["engines"] = ["postgres", "sqlite"]
+            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
+
+            checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
+
+            self.assertEqual("fail", checks[0].status)
+            self.assertIn("engines", checks[0].message)
+
+    def test_database_store_manifest_rejects_retired_upstream_tables(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            store = self.write_postgres_store(root)
             self.write_store_migration_manifest(
                 root,
-                legacy_paths=[postgres, sqlite],
-                legacy_store_files=2,
+                store_paths=[store],
+                active_store_files=1,
+                tables=["ai_channel"],
             )
-            manifest_path = root / "specs/database-store-migration.manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["migrationStats"]["pendingCapabilities"] = True
-            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
 
             checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
 
             self.assertEqual("fail", checks[0].status)
-            self.assertIn("migrationStats.pendingCapabilities", checks[0].message)
+            self.assertIn("retired upstream tables", checks[0].message)
 
-    def test_database_store_manifest_rejects_invalid_logical_store_count(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            postgres, sqlite = self.write_legacy_store_pair(root)
-            self.write_store_migration_manifest(
-                root,
-                legacy_paths=[postgres, sqlite],
-                legacy_store_files=2,
-            )
-            manifest_path = root / "specs/database-store-migration.manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["capabilities"][0]["logicalStoreCount"] = "invalid"
-            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
-
-            checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-
-            self.assertEqual("fail", checks[0].status)
-            self.assertIn("logicalStoreCount", checks[0].message)
-
-    def test_database_store_manifest_rejects_undeclared_active_repository_crate(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            active_crate = self.write_active_repository_crate(root)
-            self.write_empty_store_migration_manifest(root)
-
-            checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-            closure = next(
-                check
-                for check in checks
-                if check.id == "database-store-migration-repository-closure"
-            )
-
-            self.assertEqual("fail", closure.status)
-            self.assertIn(active_crate, closure.message)
-
-    def test_repository_closure_uses_cargo_metadata_as_package_authority(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / "Cargo.toml").write_text("[workspace]\n", encoding="utf-8")
-            package_name = "sdkwork-clawrouter-example-repository-sqlx"
-            package_root = root / "crates" / package_name
-            package_root.mkdir(parents=True)
-            manifest_path = package_root / "Cargo.toml"
-            manifest_path.write_text(
-                f'[package]\nname = "{package_name}"\nversion = "0.1.0"\n',
-                encoding="utf-8",
-            )
-            package_id = f"path+file:///{package_name}#0.1.0"
-            metadata = {
-                "packages": [
-                    {
-                        "id": package_id,
-                        "name": package_name,
-                        "manifest_path": str(manifest_path),
-                        "dependencies": [],
-                        "targets": [],
-                    }
-                ],
-                "workspace_members": [package_id],
-            }
-            completed = subprocess.CompletedProcess(
-                args=[],
-                returncode=0,
-                stdout=json.dumps(metadata),
-                stderr="",
-            )
-
-            with patch(
-                "tools.sdkwork_standard_alignment_guardian.subprocess.run",
-                return_value=completed,
-            ) as run:
-                issues = SdkworkStandardAlignmentGuardian(
-                    root
-                )._repository_sqlx_closure_issues({})
-
-            self.assertTrue(
-                any("absent from" in issue and package_name in issue for issue in issues),
-                issues,
-            )
-            run.assert_called_once_with(
-                ["cargo", "metadata", "--no-deps", "--format-version", "1"],
-                cwd=root.resolve(),
-                capture_output=True,
-                text=True,
-                timeout=60,
-                check=False,
-            )
-
-    def test_migrated_store_requires_existing_parity_evidence(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (
-                root
-                / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql"
-            ).mkdir(parents=True, exist_ok=True)
-            crate = root / "crates/sdkwork-clawrouter-example-repository-sqlx"
-            (crate / "specs").mkdir(parents=True, exist_ok=True)
-            (crate / "Cargo.toml").write_text("[package]\nname='example'\n", encoding="utf-8")
-            (crate / "specs/component.spec.json").write_text("{}\n", encoding="utf-8")
-            port = root / "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-            port.parent.mkdir(parents=True, exist_ok=True)
-            port.write_text("// port\n", encoding="utf-8")
-            self.write_json(
-                root,
-                "specs/database-store-migration.manifest.json",
-                {
-                    "schemaVersion": 2,
-                    "kind": "sdkwork.database-store-migration",
-                    "application": "sdkwork-clawrouter",
-                    "authority": "../sdkwork-specs/DATABASE_SPEC.md",
-                    "legacyInventory": {
-                        "path": "services/sdkwork-clawrouter-router-service/src/infrastructure/sql",
-                        "glob": "**/*_store.rs",
-                    },
-                    "capabilities": [
-                        {
-                            "capability": "example",
-                            "crate": "crates/sdkwork-clawrouter-example-repository-sqlx",
-                            "portPaths": [
-                                "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-                            ],
-                            "legacyPaths": [
-                                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/example_store.rs",
-                                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/example_store.rs",
-                            ],
-                            "tables": ["example_item"],
-                            "status": "MIGRATED",
-                            "priority": "HIGH",
-                            "migrationOrder": 1,
-                            "parityTests": [
-                                "crates/sdkwork-clawrouter-example-repository-sqlx/tests/dialect_parity.rs"
-                            ],
-                            "rollback": "revert the isolated capability migration",
-                            "verificationStatus": "COMPLETE",
-                        }
-                    ],
-                    "migrationStats": {
-                        "legacyStoreFiles": 0,
-                        "coveredLegacyStoreFiles": 0,
-                        "currentDialectPairs": 0,
-                        "migratedCapabilities": 1,
-                        "pendingCapabilities": 0,
-                        "pendingCapabilityGroups": 0,
-                        "pendingLogicalStores": 0,
-                        "migratedLogicalStores": 1,
-                        "totalLogicalStores": 1,
-                        "completionPercentage": 100.0,
-                    },
-                },
-            )
-
-            checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-            migrated = next(
-                check for check in checks if check.id == "database-store-migration-example"
-            )
-
-            self.assertEqual("fail", migrated.status)
-            self.assertIn("parity", migrated.message)
-
-    def test_migrated_store_rejects_forged_repository_component_identity(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            crate_relative = self.write_active_repository_crate(root)
-            crate = root / crate_relative
-            self.write_repository_component_spec(
-                root,
-                crate_relative,
-                component_overrides={
-                    "name": "sdkwork-clawrouter-forged-repository-sqlx",
-                    "root": "sdkwork-clawrouter/crates/forged",
-                    "generated": True,
-                },
-                contract_overrides={"layerRole": "backend-service"},
-            )
-            parity = crate / "tests/dialect_parity.rs"
-            parity.parent.mkdir(parents=True, exist_ok=True)
-            parity.write_text("#[test]\nfn parity() {}\n", encoding="utf-8")
-            port = root / "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-            port.parent.mkdir(parents=True, exist_ok=True)
-            port.write_text("// port\n", encoding="utf-8")
-            self.write_empty_store_migration_manifest(root)
-            manifest_path = root / "specs/database-store-migration.manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["capabilities"] = [
-                {
-                    "capability": "example",
-                    "crate": crate_relative,
-                    "portPaths": [
-                        "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-                    ],
-                    "legacyPaths": [
-                        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/example_store.rs",
-                        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/example_store.rs",
-                    ],
-                    "tables": ["example_item"],
-                    "status": "MIGRATED",
-                    "priority": "HIGH",
-                    "migrationOrder": 1,
-                    "parityTests": [f"{crate_relative}/tests/dialect_parity.rs"],
-                    "rollback": "revert the isolated extraction",
-                    "verificationStatus": "COMPLETE",
-                }
-            ]
-            manifest["migrationStats"].update(
-                {
-                    "migratedCapabilities": 1,
-                    "migratedLogicalStores": 1,
-                    "totalLogicalStores": 1,
-                    "completionPercentage": 100.0,
-                }
-            )
-            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
-            metadata = self.cargo_metadata_result(root)
-
-            with patch(
-                "tools.sdkwork_standard_alignment_guardian.subprocess.run",
-                return_value=metadata,
-            ) as run:
-                checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-
-            migrated = next(
-                check for check in checks if check.id == "database-store-migration-example"
-            )
-            self.assertEqual("fail", migrated.status)
-            self.assertIn("component spec identity", migrated.message)
-            run.assert_called_once()
-
-    def test_store_manifest_rejects_arbitrary_freshness_commands(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            crate_relative = self.write_active_repository_crate(root)
-            crate = root / crate_relative
-            self.write_repository_component_spec(root, crate_relative)
-            port = root / "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-            port.parent.mkdir(parents=True, exist_ok=True)
-            port.write_text("// port\n", encoding="utf-8")
-            self.write_empty_store_migration_manifest(root)
-            manifest_path = root / "specs/database-store-migration.manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["capabilities"] = [
-                {
-                    "capability": "example",
-                    "crate": crate_relative,
-                    "portPaths": [
-                        "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-                    ],
-                    "legacyPaths": [
-                        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/example_store.rs",
-                        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/example_store.rs",
-                    ],
-                    "tables": ["example_item"],
-                    "status": "MIGRATED",
-                    "priority": "HIGH",
-                    "migrationOrder": 1,
-                    "parityTests": [f"{crate_relative}/Cargo.toml"],
-                    "freshnessCommands": ["echo forged"],
-                    "rollback": "revert the isolated extraction",
-                    "verificationStatus": "COMPLETE",
-                    "ownerReviewRequired": True,
-                    "ownerReview": {
-                        "status": "APPROVED",
-                        "evidence": f"{crate_relative}/Cargo.toml",
-                    },
-                }
-            ]
-            manifest["migrationStats"].update(
-                {
-                    "migratedCapabilities": 1,
-                    "migratedLogicalStores": 1,
-                    "totalLogicalStores": 1,
-                    "completionPercentage": 100.0,
-                }
-            )
-            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
-
-            checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-
-            self.assertEqual("fail", checks[0].status)
-            self.assertIn("freshnessCommands is not allowed", checks[0].message)
-
-    def test_migrated_store_executes_canonical_component_verification_command(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            crate_relative = self.write_active_repository_crate(root)
-            crate = root / crate_relative
-            self.write_repository_component_spec(root, crate_relative)
-            parity = crate / "tests/dialect_parity.rs"
-            parity.parent.mkdir(parents=True, exist_ok=True)
-            parity.write_text("#[test]\nfn parity() {}\n", encoding="utf-8")
-            port = root / "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-            port.parent.mkdir(parents=True, exist_ok=True)
-            port.write_text("// port\n", encoding="utf-8")
-            self.write_empty_store_migration_manifest(root)
-            manifest_path = root / "specs/database-store-migration.manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["capabilities"] = [
-                {
-                    "capability": "example",
-                    "crate": crate_relative,
-                    "portPaths": [
-                        "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-                    ],
-                    "legacyPaths": [
-                        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/example_store.rs",
-                        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/example_store.rs",
-                    ],
-                    "tables": ["example_item"],
-                    "status": "MIGRATED",
-                    "priority": "HIGH",
-                    "migrationOrder": 1,
-                    "parityTests": [f"{crate_relative}/tests/dialect_parity.rs"],
-                    "rollback": "revert the isolated extraction",
-                    "verificationStatus": "COMPLETE",
-                }
-            ]
-            manifest["migrationStats"].update(
-                {
-                    "migratedCapabilities": 1,
-                    "migratedLogicalStores": 1,
-                    "totalLogicalStores": 1,
-                    "completionPercentage": 100.0,
-                }
-            )
-            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
-            failed = subprocess.CompletedProcess(
-                args=[], returncode=1, stdout="", stderr="parity failed"
-            )
-            metadata = self.cargo_metadata_result(root)
-
-            with patch(
-                "tools.sdkwork_standard_alignment_guardian.subprocess.run",
-                side_effect=[metadata, failed],
-            ) as run:
-                checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-
-            migrated = next(
-                check for check in checks if check.id == "database-store-migration-example"
-            )
-            self.assertEqual("fail", migrated.status)
-            self.assertIn("component verification command", migrated.message)
-            self.assertEqual(2, run.call_count)
-            self.assertEqual(
-                ["cargo", "metadata", "--no-deps", "--format-version", "1"],
-                run.call_args_list[0].args[0],
-            )
-            self.assertEqual(
-                [
-                    "cargo",
-                    "test",
-                    "-p",
-                    "sdkwork-clawrouter-example-repository-sqlx",
-                    "--test",
-                    "dialect_parity",
-                ],
-                run.call_args_list[1].args[0],
-            )
-
-    def test_migrated_store_does_not_accept_self_declared_owner_review(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            crate_relative = self.write_active_repository_crate(root)
-            crate = root / crate_relative
-            self.write_repository_component_spec(root, crate_relative)
-            parity = crate / "tests/dialect_parity.rs"
-            parity.parent.mkdir(parents=True, exist_ok=True)
-            parity.write_text("#[test]\nfn parity() {}\n", encoding="utf-8")
-            port = root / "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-            port.parent.mkdir(parents=True, exist_ok=True)
-            port.write_text("// port\n", encoding="utf-8")
-            self.write_empty_store_migration_manifest(root)
-            manifest_path = root / "specs/database-store-migration.manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            manifest["capabilities"] = [
-                {
-                    "capability": "example",
-                    "crate": crate_relative,
-                    "portPaths": [
-                        "services/sdkwork-clawrouter-router-service/src/ports/example_store.rs"
-                    ],
-                    "legacyPaths": [
-                        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/example_store.rs",
-                        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/example_store.rs",
-                    ],
-                    "tables": ["example_item"],
-                    "status": "MIGRATED",
-                    "priority": "HIGH",
-                    "migrationOrder": 1,
-                    "parityTests": [f"{crate_relative}/tests/dialect_parity.rs"],
-                    "rollback": "revert the isolated extraction",
-                    "verificationStatus": "COMPLETE",
-                    "ownerReviewRequired": True,
-                    "ownerReview": {
-                        "status": "APPROVED",
-                        "evidence": f"{crate_relative}/Cargo.toml",
-                    },
-                }
-            ]
-            manifest["migrationStats"].update(
-                {
-                    "migratedCapabilities": 1,
-                    "migratedLogicalStores": 1,
-                    "totalLogicalStores": 1,
-                    "completionPercentage": 100.0,
-                }
-            )
-            manifest_path.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
-            succeeded = subprocess.CompletedProcess(
-                args=[], returncode=0, stdout="", stderr=""
-            )
-            metadata = self.cargo_metadata_result(root)
-
-            with patch(
-                "tools.sdkwork_standard_alignment_guardian.subprocess.run",
-                side_effect=[metadata, succeeded],
-            ) as run:
-                checks = SdkworkStandardAlignmentGuardian(root)._check_database_store_migration()
-
-            self.assertEqual("fail", checks[0].status)
-            self.assertIn("ownerReview is not allowed", checks[0].message)
-            run.assert_not_called()
-
-    def test_accepts_v4_standalone_production_profile_from_topology_authority(self) -> None:
+    def test_accepts_v5_standalone_production_profile_from_topology_authority(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.write_minimal_pc_packages(root)
@@ -992,7 +368,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                 root,
                 "specs/topology.spec.json",
                 {
-                    "schemaVersion": 4,
+                    "schemaVersion": 5,
                     "kind": "sdkwork.app.topology",
                     "defaults": {"productionProfileId": "cloud.production"},
                     "profileFiles": {
@@ -1023,7 +399,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                 root,
                 "specs/topology.spec.json",
                 {
-                    "schemaVersion": 4,
+                    "schemaVersion": 5,
                     "kind": "sdkwork.app.topology",
                     "profileFiles": {
                         "standalone.production": "etc/topology/standalone.production.env"
@@ -1054,7 +430,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                 root,
                 "specs/topology.spec.json",
                 {
-                    "schemaVersion": 4,
+                    "schemaVersion": 5,
                     "kind": "sdkwork.app.topology",
                     "profileFiles": {
                         "standalone.unified-process.production": legacy_relative
@@ -1082,7 +458,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                 root,
                 "specs/topology.spec.json",
                 {
-                    "schemaVersion": 4,
+                    "schemaVersion": 5,
                     "kind": "sdkwork.app.topology",
                     "profileFiles": {
                         "standalone.production": "etc/topology/standalone.production.env"
@@ -1123,7 +499,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                 root,
                 "specs/topology.spec.json",
                 {
-                    "schemaVersion": 4,
+                    "schemaVersion": 5,
                     "kind": "sdkwork.app.topology",
                     "profileFiles": {
                         "standalone.production": "etc/topology/standalone.production.env"

@@ -32,7 +32,6 @@ export type {
   UpdateUpstreamSupplierRequest,
   UpstreamAccount,
   UpstreamAccountCredential,
-  UpstreamAccountCredentialCreated,
   UpstreamAccountGroup,
   UpstreamAccountGroupMember,
   UpstreamAccountGroupMemberInput,

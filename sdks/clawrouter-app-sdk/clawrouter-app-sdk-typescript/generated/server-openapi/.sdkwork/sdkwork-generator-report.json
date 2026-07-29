@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "96e455315a916f9e3fdce87525392fb5b733443f6e472c6617af9a3c6510ffad",
+  "changeFingerprint": "a05026128603a3638ccde190271ae406307ae0121a411a4adf89e88c0a197546",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -84,7 +84,9 @@
           "src/types/sdk-work-resource-data.ts",
           "src/types/sdk-work-resource-response.ts",
           "src/types/update-api-key-request.ts",
-          "src/types/update-api-key-response.ts"
+          "src/types/update-api-key-response.ts",
+          "src/types/usage-log-item.ts",
+          "src/types/usage-logs-response.ts"
         ]
       },
       {
@@ -252,10 +254,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 108,
-    "models": 78,
+    "totalFiles": 110,
+    "models": 80,
     "apis": 7,
-    "types": 80
+    "types": 82
   },
   "warnings": [
     {
@@ -318,12 +320,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 67,
+    "writtenFiles": 69,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "96e455315a916f9e3fdce87525392fb5b733443f6e472c6617af9a3c6510ffad",
+    "changeFingerprint": "a05026128603a3638ccde190271ae406307ae0121a411a4adf89e88c0a197546",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -390,6 +392,8 @@
         "src/types/sdk-work-resource-response.ts",
         "src/types/update-api-key-request.ts",
         "src/types/update-api-key-response.ts",
+        "src/types/usage-log-item.ts",
+        "src/types/usage-logs-response.ts",
         "tsconfig.json"
       ],
       "updatedGeneratedFiles": [],
@@ -473,7 +477,9 @@
             "src/types/sdk-work-resource-data.ts",
             "src/types/sdk-work-resource-response.ts",
             "src/types/update-api-key-request.ts",
-            "src/types/update-api-key-response.ts"
+            "src/types/update-api-key-response.ts",
+            "src/types/usage-log-item.ts",
+            "src/types/usage-logs-response.ts"
           ]
         },
         {

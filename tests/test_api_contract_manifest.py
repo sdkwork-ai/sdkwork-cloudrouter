@@ -93,7 +93,7 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
             self.assertEqual("admin", admin_operation["route_scope"])
             self.assertEqual("ai", admin_operation["tag"])
             self.assertEqual("intelligence", admin_operation["sdk_domain"])
-            self.assertEqual("models.refresh", admin_operation["operation_id"])
+            self.assertEqual("models.sync", admin_operation["operation_id"])
 
             openai_operation = operations[
                 operation_key(
@@ -550,9 +550,9 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
             manifest = ApiContractManifestGenerator(root=root, contract_path=contract).generate()
             operations = {operation["operation_id"]: operation for operation in manifest["operations"]}
 
-            self.assertEqual("commerce", operations["catalog.products.list"]["tag"])
+            self.assertEqual("catalog", operations["catalog.products.list"]["tag"])
             self.assertEqual("commerce", operations["catalog.products.list"]["sdk_domain"])
-            self.assertEqual("commerce", operations["inventory.stocks.list"]["tag"])
+            self.assertEqual("inventory", operations["inventory.stocks.list"]["tag"])
             self.assertEqual("commerce", operations["inventory.stocks.list"]["sdk_domain"])
 
     def test_standard_commerce_paths_are_not_rewritten_under_billing(self) -> None:
@@ -613,13 +613,13 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
             operations = {operation["operation_id"]: operation for operation in manifest["operations"]}
 
             self.assertEqual("/app/v3/api/memberships/current", operations["memberships.current.retrieve"]["api_path"])
-            self.assertEqual("commerce", operations["memberships.current.retrieve"]["tag"])
+            self.assertEqual("memberships", operations["memberships.current.retrieve"]["tag"])
             self.assertEqual("commerce", operations["memberships.current.retrieve"]["sdk_domain"])
             self.assertEqual("/app/v3/api/wallet/accounts", operations["wallet.accounts.list"]["api_path"])
-            self.assertEqual("commerce", operations["wallet.accounts.list"]["tag"])
+            self.assertEqual("wallet", operations["wallet.accounts.list"]["tag"])
             self.assertEqual("commerce", operations["wallet.accounts.list"]["sdk_domain"])
             self.assertEqual("/backend/v3/api/payments/attempts", operations["payments.attempts.list"]["api_path"])
-            self.assertEqual("commerce", operations["payments.attempts.list"]["tag"])
+            self.assertEqual("payments", operations["payments.attempts.list"]["tag"])
             self.assertEqual("commerce", operations["payments.attempts.list"]["sdk_domain"])
             self.assertNotIn("/billing/", str(manifest))
 
@@ -666,10 +666,10 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
             operations = {operation["operation_id"]: operation for operation in manifest["operations"]}
 
             self.assertEqual("/app/v3/api/billing/payments/checkout/{orderNo}", operations["payments.checkout.retrieve"]["api_path"])
-            self.assertEqual("commerce", operations["payments.checkout.retrieve"]["tag"])
+            self.assertEqual("billing", operations["payments.checkout.retrieve"]["tag"])
             self.assertEqual("commerce", operations["payments.checkout.retrieve"]["sdk_domain"])
             self.assertEqual("/backend/v3/api/billing/payments/attempts", operations["payments.attempts.list"]["api_path"])
-            self.assertEqual("commerce", operations["payments.attempts.list"]["tag"])
+            self.assertEqual("billing", operations["payments.attempts.list"]["tag"])
             self.assertEqual("commerce", operations["payments.attempts.list"]["sdk_domain"])
             self.assertNotIn("/commerce/billing/", str(manifest))
 
@@ -731,7 +731,7 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
                     api_surface: app
                     api_method: POST
                     api_path: /app/v3/api/iam/api_keys
-                    read_sources: [ai_channel_group]
+                    read_sources: [ai_upstream_account_group]
                     write_tables: [iam_gateway_api_key, ops_audit_log]
                     request_schema:
                       name: CreateApiKeyRequest
@@ -1107,13 +1107,17 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
         manifest = ApiContractManifestGenerator(root=root).generate()
         operations = {operation["key"]: operation for operation in manifest["operations"]}
         expected = {
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts#fetchChannels@/admin/channel": (
-                "/backend/v3/api/integration/channels",
-                "channels.list",
+            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts#listUpstreamSuppliers@/admin/upstream": (
+                "/backend/v3/api/ai/upstream_suppliers",
+                "upstreamSuppliers.list",
             ),
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-channel/src/channelService.ts#fetchProviderSecrets@/admin/channel": (
-                "/backend/v3/api/integration/provider_secrets",
-                "providerSecrets.list",
+            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts#listUpstreamAccounts@/admin/upstream": (
+                "/backend/v3/api/ai/upstream_accounts",
+                "upstreamAccounts.list",
+            ),
+            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts#listUpstreamAccountGroups@/admin/upstream": (
+                "/backend/v3/api/ai/upstream_account_groups",
+                "upstreamAccountGroups.list",
             ),
             "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts#fetchModels@/admin/model": (
                 "/backend/v3/api/ai/models",
@@ -1122,14 +1126,6 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
             "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-record/src/recordService.ts#fetchLogs@/admin/record": (
                 "/backend/v3/api/system/records",
                 "records.list",
-            ),
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts#fetchApiKeysMap@/admin/user": (
-                "/backend/v3/api/iam/api_keys",
-                "apiKeys.list",
-            ),
-            "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-user/src/userService.ts#fetchUsers@/admin/user": (
-                "/backend/v3/api/iam/users",
-                "users.list",
             ),
         }
 
@@ -1215,16 +1211,16 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
 
         create_operation = operations.get(
             operation_key(
-                "tools/bootstrap_frontend_contract_from_route_manifest.py",
-                "create",
-                "/console/iam/api_keys",
+                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
+                "createKey",
+                "/console/api-keys",
             )
         )
         update_operation = operations.get(
             operation_key(
-                "tools/bootstrap_frontend_contract_from_route_manifest.py",
-                "update",
-                "/console/iam/api_keys/{apiKeyId}",
+                "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-api-keys/src/apiKeyService.ts",
+                "updateKey",
+                "/console/api-keys",
             )
         )
 
@@ -1241,7 +1237,7 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
         self.assertIn("ops_audit_log", create_operation["write_tables"])
         self.assertEqual("CreateApiKeyRequest", create_operation["request_schema"]["name"])
         self.assertEqual(
-            ["name", "channelGroup", "quota", "isUnlimitedQuota", "modalities", "ipLimit", "expires"],
+            ["name", "accountGroup", "quota", "isUnlimitedQuota", "modalities", "ipLimit", "expires"],
             create_operation["request_schema"]["schema"]["required"],
         )
         self.assertEqual("CreateApiKeyResponse", create_operation["response_schema"]["name"])
@@ -1261,88 +1257,71 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
         operations = {operation["key"]: operation for operation in manifest["operations"]}
 
         expected = {
-            "/admin/integration/channels#create": (
-                "channels.create",
-                "AdminChannelCreateRequest",
-                "AdminChannelMutationResponse",
+            "createUpstreamSupplier": (
+                "upstreamSuppliers.create",
+                "CreateUpstreamSupplierRequest",
+                "UpstreamSupplierItemResponse",
                 ["item"],
+                "POST",
             ),
-            "/admin/integration/channels#update": (
-                "channels.update",
-                "AdminChannelUpdateRequest",
-                "AdminChannelMutationResponse",
+            "updateUpstreamSupplier": (
+                "upstreamSuppliers.update",
+                "UpdateUpstreamSupplierRequest",
+                "UpstreamSupplierItemResponse",
                 ["item"],
+                "PATCH",
             ),
-            "/admin/integration/provider_secrets#create": (
-                "providerSecrets.create",
-                "AdminProviderSecretCreateRequest",
-                "AdminProviderSecretMutationResponse",
+            "createUpstreamAccount": (
+                "upstreamAccounts.create",
+                "CreateUpstreamAccountRequest",
+                "UpstreamAccountItemResponse",
                 ["item"],
+                "POST",
             ),
-            "/admin/integration/provider_secrets#update": (
-                "providerSecrets.update",
-                "AdminProviderSecretUpdateRequest",
-                "AdminProviderSecretMutationResponse",
+            "createUpstreamAccountCredential": (
+                "upstreamAccounts.credentials.create",
+                "CreateUpstreamAccountCredentialRequest",
+                "UpstreamAccountCredentialItemResponse",
                 ["item"],
+                "POST",
             ),
-            "/admin/ai/channel_groups#create": (
-                "channelGroups.create",
-                "AdminChannelGroupCreateRequest",
-                "AdminChannelGroupMutationResponse",
+            "createUpstreamAccountGroup": (
+                "upstreamAccountGroups.create",
+                "CreateUpstreamAccountGroupRequest",
+                "UpstreamAccountGroupItemResponse",
                 ["item"],
+                "POST",
             ),
-            "/admin/ai/channel_groups/{channelGroupId}#update": (
-                "channelGroups.update",
-                "AdminChannelGroupUpdateRequest",
-                "AdminChannelGroupMutationResponse",
+            "updateUpstreamAccountGroupMembers": (
+                "upstreamAccountGroups.members.update",
+                "ReplaceUpstreamAccountGroupMembersRequest",
+                "UpstreamAccountGroupMemberCollectionResponse",
                 ["item"],
+                "PUT",
             ),
-            "/admin/ai/channel_groups/{channelGroupId}/channel_bindings#update": (
-                "channelGroups.channelBindings.update",
-                "ChannelGroupChannelBindingsUpdateRequest",
-                "ChannelGroupChannelBindingsUpdateResponse",
-                ["items"],
-            ),
-            "/admin/ai/resources#create": (
-                "aiResources.create",
-                "AdminAiResourceCreateRequest",
-                "AdminAiResourceMutationResponse",
+            "explainUpstreamAccountGroupRoute": (
+                "upstreamAccountGroups.explain",
+                "ExplainUpstreamAccountGroupRouteRequest",
+                "UpstreamAccountGroupRouteExplanationResponse",
                 ["item"],
-            ),
-            "/admin/ai/resources/{resourceId}#update": (
-                "aiResources.update",
-                "AdminAiResourceUpdateRequest",
-                "AdminAiResourceMutationResponse",
-                ["item"],
-            ),
-            "/admin/ai/route_explain#explain": (
-                "routeExplain.explain",
-                "AdminRuntimeRouteExplainRequest",
-                "AdminRuntimeRouteExplainResponse",
-                ["source", "ready", "candidateCount", "selectedCandidates", "blockedReasons", "warnings"],
-            ),
-            "/admin/sites#create": (
-                "site.create",
-                "AdminSiteCreateRequest",
-                "AdminSiteMutationResponse",
-                ["item"],
-            ),
-            "/admin/sites/{siteId}#update": (
-                "site.update",
-                "AdminSiteUpdateRequest",
-                "AdminSiteMutationResponse",
-                ["item"],
+                "POST",
             ),
         }
 
-        for route_and_operation, (operation_id, request_schema, response_schema, response_required) in expected.items():
-            route, operation_name = route_and_operation.split("#", 1)
-            with self.subTest(route=route, operation=operation_name):
+        source = "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts"
+        for operation_name, (
+            operation_id,
+            request_schema,
+            response_schema,
+            response_required,
+            api_method,
+        ) in expected.items():
+            with self.subTest(operation=operation_name):
                 operation = operations.get(
                     operation_key(
-                        "tools/bootstrap_frontend_contract_from_route_manifest.py",
+                        source,
                         operation_name,
-                        route,
+                        "/admin/upstream",
                     )
                 )
 
@@ -1350,7 +1329,7 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
                 self.assertEqual("backend", operation["api_surface"])
                 self.assertEqual(operation_id, operation["operation_id"])
                 self.assertEqual("SdkworkBackendClient", operation["sdk_client"])
-                self.assertIn(operation["api_method"], {"POST", "PUT", "PATCH"})
+                self.assertEqual(api_method, operation["api_method"])
                 self.assertEqual(request_schema, operation["request_schema"]["name"])
                 self.assertEqual(response_schema, operation["response_schema"]["name"])
                 self.assertEqual(response_required, operation["response_schema"]["schema"]["required"])

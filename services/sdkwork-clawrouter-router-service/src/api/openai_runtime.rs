@@ -12,7 +12,7 @@ use crate::domain::{
     AiModel, BillingMeter, ModelMappingRule, ProviderAuthProfile, ProviderRetryPolicy,
     ResolveModelMappingContext, RoutingCapability,
 };
-use crate::ports::PricingCatalog;
+use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 
 pub(crate) type OpenAiRouteError = Box<Response>;
 
@@ -190,7 +190,7 @@ pub(super) fn resolve_openai_upstream_route<C>(
     billing_meter: BillingMeter,
 ) -> Result<ResolvedOpenAiUpstreamRoute, OpenAiRouteError>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     Ok(resolve_openai_upstream_route_plan(
         catalog,
@@ -222,7 +222,7 @@ pub(crate) fn resolve_openai_upstream_route_plan<C>(
     billing_meter: BillingMeter,
 ) -> Result<ResolvedOpenAiUpstreamRoutePlan, OpenAiRouteError>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     let global_mapping = catalog.resolve_model_mapping(model, &ResolveModelMappingContext::new());
     let global_effective_model = global_mapping
@@ -260,7 +260,7 @@ where
             billing_meter,
         })
         .map_err(upstream_route_selection_error)?;
-    let account_routes = catalog.list_upstream_account_routes();
+    let account_routes = catalog.shared_upstream_account_routes();
     let routes = model_plan
         .routes
         .into_iter()

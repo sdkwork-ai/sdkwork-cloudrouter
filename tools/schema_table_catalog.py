@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Counter, OrderedDict, defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -10,551 +10,103 @@ from tools.schema_registry_loader import load_schema_registry
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
 OUTPUT_PATH = ROOT / "docs" / "schema-registry" / "table-catalog.md"
+REGISTRY_DISPLAY_PATH = "docs/schema-registry/sdkwork-clawrouter.tables.yaml"
 
 
-DOMAIN_LABELS = {
-    "ai": "AI 涓浆涓庢ā鍨嬫湇鍔?,
-    "commerce": "浜ゆ槗銆佽璐逛笌缁撶畻",
-    "content": "鍐呭銆佹枃妗ｄ笌瀵硅薄瀛樺偍",
-    "iam": "韬唤銆佽闂笌瀹夊叏",
-    "integration": "澶栭儴闆嗘垚涓庢湇鍔″晢",
-    "legacy": "Java Plus 鍏煎",
-    "messaging": "娑堟伅瑙﹁揪",
-    "ops": "杩愮淮娌荤悊",
-    "promotion": "钀ラ攢淇冮攢",
-    "studio": "宸ヤ綔鍙颁笌搴旂敤甯傚満",
-    "system": "绯荤粺瀹夎",
+TABLE_DESCRIPTIONS = {
+    "ai_upstream_supplier": "Upstream supplier identity and supplier classification.",
+    "ai_upstream_supplier_endpoint": "Supplier Base URL endpoint, region, priority, and routing weight.",
+    "ai_upstream_supplier_endpoint_health_state": "Current health and latency state for a supplier endpoint.",
+    "ai_upstream_supplier_auth_method": "Authentication methods supported by a supplier, with runtime injection policy.",
+    "ai_upstream_supplier_resource": "Resource and resource-group capabilities exposed by a supplier.",
+    "ai_upstream_account": "Tenant-scoped upstream account linked to one supplier and authentication method.",
+    "ai_upstream_account_credential": "Encrypted, versioned credential material for an upstream account.",
+    "ai_upstream_account_health_state": "Current health, usage, and failure state for an upstream account.",
+    "ai_upstream_account_group": "Routing and settlement group for one or more upstream accounts.",
+    "ai_upstream_account_group_member": "Weighted membership of upstream accounts in an account group.",
+    "ai_upstream_account_group_resource": "Resource grants and denials applied to an account group.",
+    "ai_upstream_account_group_metric_snapshot": "Rebuildable capacity and usage projection for an account group.",
+    "ai_upstream_object_route": "Runtime object-storage route resolved through an upstream account.",
+    "iam_gateway_api_key_account_group": "Authorized account-group binding for a gateway API key.",
+    "ai_request_trace": "Append-only request execution trace for routing and operations.",
+    "ai_usage": "Idempotent billable usage fact used for settlement and reconciliation.",
 }
 
 
-PROFILE_LABELS = {
-    "appbase_standard": "鏍囧噯涓氬姟涓绘暟锟?,
-    "audit_log": "瀹¤鏃ュ織",
-    "catalog_source": "鐩綍鏉ユ簮璁板綍",
-    "commercial_provider_adjustment": "鏈嶅姟鍟嗚处鍔¤皟锟?,
-    "commercial_provider_contract": "鏈嶅姟鍟嗗悎锟?,
-    "commercial_provider_contract_edge": "鏈嶅姟鍟嗗悎鍚岃竟",
-    "commercial_provider_daily_projection": "鏈嶅姟鍟嗘棩缁熻鎶曞奖",
-    "commercial_provider_edge_daily_projection": "鏈嶅姟鍟嗗叧绯绘棩缁熻鎶曞奖",
-    "commercial_provider_exposure_snapshot": "鏈嶅姟鍟嗛闄╂暈鍙ｅ揩锟?,
-    "commercial_provider_finance_profile": "鏈嶅姟鍟嗚储鍔￠厤锟?,
-    "commercial_provider_member": "鏈嶅姟鍟嗘垚鍛樺叧锟?,
-    "commercial_provider_price_plan": "鏈嶅姟鍟嗕环鏍兼柟锟?,
-    "commercial_provider_price_rule": "鏈嶅姟鍟嗕环鏍艰锟?,
-    "commercial_provider_reconciliation_item": "鏈嶅姟鍟嗗璐︽槑锟?,
-    "commercial_provider_reconciliation_run": "鏈嶅姟鍟嗗璐︽壒锟?,
-    "commercial_provider_statement": "鏈嶅姟鍟嗚处锟?,
-    "commercial_provider_subject": "鏈嶅姟鍟嗕富锟?,
-    "commercial_provider_subject_binding": "鏈嶅姟鍟嗕富浣撶粦锟?,
-    "commercial_provider_tree_closure": "鏈嶅姟鍟嗗眰绾ч棴锟?,
-    "commercial_usage_edge_fact": "鍟嗕笟鐢ㄩ噺鍏崇郴浜嬪疄",
-    "content_entity": "鍐呭涓绘暟锟?,
-    "core_entity": "鏍稿績涓绘暟锟?,
-    "credential_index": "鍑瘉绱㈠紩",
-    "credential_ref": "鍑瘉寮曠敤閰嶇疆",
-    "delivery_event": "鎶曢€掍簨锟?,
-    "dictionary_entity": "瀛楀吀涓绘暟锟?,
-    "event_log": "浜嬩欢鏃ュ織",
-    "export_audit": "瀵煎嚭瀹¤",
-    "external_operation_log": "澶栭儴鎿嶄綔鏃ュ織",
-    "global_entity": "鍏ㄥ眬涓绘暟锟?,
-    "installation_migration_log": "瀹夎杩佺Щ鏃ュ織",
-    "installation_state": "瀹夎鐘讹拷?,
-    "ledger_projection": "璐﹀姟鎶曞奖",
-    "ledger_source_fact": "璐﹀姟鏉ユ簮浜嬪疄",
-    "legacy_compatible": "澶栭儴鍏煎锟?,
-    "notification": "閫氱煡娑堟伅",
-    "notification_delivery": "閫氱煡鎶曪拷?,
-    "notification_preference": "閫氱煡鍋忓ソ",
-    "notification_recipient": "閫氱煡鏀朵欢锟?,
-    "object_blob": "瀵硅薄鏂囦欢",
-    "object_storage_bucket": "瀵硅薄瀛樺偍锟?,
-    "object_storage_provider": "瀵硅薄瀛樺偍渚涘簲锟?,
-    "object_storage_routing_policy": "瀵硅薄瀛樺偍璺敱绛栫暐",
-    "object_tag": "瀵硅薄鏍囩",
-    "object_upload_completion_attempt": "涓婁紶瀹屾垚灏濊瘯",
-    "object_upload_part": "鍒嗙墖涓婁紶",
-    "object_upload_presign_grant": "棰勭鎺堟潈",
-    "object_upload_session": "涓婁紶浼氳瘽",
-    "outbox_event": "浜嬪姟鍙戜欢绠变簨锟?,
-    "payment_provider": "鏀粯渚涘簲锟?,
-    "provider_account": "渚涘簲鍟嗚处锟?,
-    "provider_account_secret_ref": "渚涘簲鍟嗚处鍙峰嚟璇佸紩锟?,
-    "provider_capability": "渚涘簲鍟嗚兘锟?,
-    "provider_dictionary": "渚涘簲鍟嗗瓧锟?,
-    "projection": "鎶曞奖蹇収",
-    "read_model": "璇诲彇妯″瀷",
-    "relation_entity": "鍏崇郴缁戝畾",
-    "retired_projection": "宸查€€褰规姇锟?,
-    "route_rule": "璺敱瑙勫垯",
-    "route_rule_target": "璺敱鐩爣",
-    "rule_entity": "瑙勫垯涓绘暟锟?,
-    "runtime_binding": "杩愯鏃剁粦锟?,
-    "runtime_coordination": "杩愯鏃跺崗锟?,
-    "runtime_coordination_event": "杩愯鏃跺崗璋冧簨锟?,
-    "security_hash": "瀹夊叏鍝堝笇",
-    "sender_identity": "鍙戦€佽韩锟?,
-    "send_attempt": "鍙戦€佸皾锟?,
-    "send_request": "鍙戦€佽锟?,
-    "snapshot": "蹇収",
-    "storage_garbage_collection_job": "瀛樺偍娓呯悊浠诲姟",
-    "storage_quota_policy": "瀛樺偍閰嶉绛栫暐",
-    "storage_quota_reservation": "瀛樺偍閰嶉棰勭暀",
-    "storage_reconciliation_item": "瀛樺偍瀵硅处鏄庣粏",
-    "storage_reconciliation_run": "瀛樺偍瀵硅处鎵规",
-    "storage_usage_counter": "瀛樺偍鐢ㄩ噺璁℃暟锟?,
-    "storage_usage_ledger": "瀛樺偍鐢ㄩ噺娴佹按",
-    "storage_usage_snapshot": "瀛樺偍鐢ㄩ噺蹇収",
-    "suppression": "瑙﹁揪鎶戝埗",
-    "template": "娑堟伅妯℃澘",
-    "template_binding": "妯℃澘缁戝畾",
-    "template_variant": "妯℃澘鍙樹綋",
-    "template_version": "妯℃澘鐗堟湰",
-    "tenant_entity": "绉熸埛绾т富鏁版嵁",
-    "tenant_root": "绉熸埛鏍规暟锟?,
-    "upstream_provider_invoice_import": "涓婃父璐﹀崟瀵煎叆鎵规",
-    "upstream_provider_invoice_item": "涓婃父璐﹀崟鏄庣粏",
-    "user_content_application": "鐢ㄦ埛鍐呭鐢宠",
-    "user_entity": "鐢ㄦ埛绾ф暟锟?,
-    "verification_attempt": "楠岃瘉灏濊瘯",
-    "verification_challenge": "楠岃瘉鎸戞垬",
-    "verification_policy": "楠岃瘉绛栫暐",
-    "webhook": "Webhook 閰嶇疆",
-}
-
-
-DIRECT_DESCRIPTIONS = {
-    "system_installation_state": "璁板綍搴旂敤鏁版嵁搴撳畨瑁呯姸鎬併€佺瀛愮増鏈拰瀹夎閿侊紝鐢ㄤ簬 installer 骞傜瓑鎵ц锟?,
-    "system_schema_migration": "璁板綍 schema registry 鎴栧畨瑁呭櫒鎵ц杩囩殑鏁版嵁搴撹縼绉绘壒娆★拷?,
-    "iam_gateway_api_key": "涓浆绔欏锟?API Key 绱㈠紩锛屼繚瀛樺瘑閽ュ搱甯屻€侀粯璁ゅ垎缁勩€佺瓥鐣ュ拰闄愰寮曠敤锟?,
-    "ai_channel_group": "涓浆绔欓潰鍚戠敤锟?API Key 鐨勮矾鐢变笌璁¤垂鍒嗙粍锛岀粦瀹氫环鏍艰鍒掑拰鍊嶇巼锟?,
-    "ai_channel_group_member": "缁存姢鍒嗙粍鍙闂殑涓婃父璐﹀彿姹犳垚鍛樺強浼樺厛绾с€佹潈閲嶏拷?,
-    "ai_channel_group_resource": "缁存姢鍒嗙粍鍙闂殑璧勬簮鎴栬祫婧愮粍锛屾槸 API Key 鍒拌祫婧愭巿鏉冪殑鏍稿績杈癸拷?,
-    "ai_channel_group_metric_snapshot": "淇濆瓨鍒嗙粍瀹归噺銆侀搴﹀拰鐢ㄩ噺鐨勬寚鏍囧揩鐓э拷?,
-    "iam_gateway_access_policy": "淇濆瓨缃戝叧 API Key 鐨勮闂兘鍔涖€両P 鐧藉悕鍗曠瓑璁块棶鎺у埗绛栫暐锟?,
-    "ai_provider": "瀹氫箟涓婃父闆嗘垚渚涘簲鍟嗙被鍨嬶紝琛ㄧず瀹樻柟鍘傚晢銆佷簯鍘傚晢銆佽仛鍚堝晢鎴栬嚜寤轰腑杞兘鍔涳拷?,
-    "ai_site": "涓婃父鏈嶅姟鍟嗙珯锟?璐﹀彿涓讳綋锛屾壙杞戒笂娓告湇鍔″晢鍩虹淇℃伅銆丩ogo銆佸煙鍚嶅拰璁よ瘉鍏ュ彛锟?,
-    "ai_site_service": "涓婃父鏈嶅姟鍟嗘寜鍖哄煙鎴栨湇鍔＄淮搴︾殑閮ㄧ讲閰嶇疆锛屼富瑕佸尯锟?base URL 鍜屽嚟璇佸紩鐢拷?,
-    "ai_channel": "涓婃父璐﹀彿/娓犻亾杩愯鏃堕厤缃紝杩炴帴 provider銆乻ite銆佽璇佹柟寮忋€佸尯鍩熷拰璋冨害鏉冮噸锟?,
-    "ai_channel_credential": "涓婃父璐﹀彿鐨勫叿浣撳嚟璇佽疆鎹㈠崟鍏冿紝淇濆瓨 base URL銆乻ecret ref銆佹潈閲嶅拰鍋ュ悍鐘舵€侊拷?,
-    "ai_model_vendor": "绋冲畾鐨勬ā鍨嬫垨鑳藉姏渚涘簲鍟嗗瓧鍏革紝渚嬪 OpenAI銆丄nthropic銆丟oogle銆並ling锟?,
-    "ai_modality": "AI 鑳藉姏妯℃€佸瓧鍏革紝渚嬪 LLM銆佸浘鍍忋€佽棰戙€侀煶棰戙€侀煶涔愬拰闊虫晥锟?,
-    "ai_api_endpoint": "瀵瑰寮€锟?API 璧勬簮瀛楀吀锛岀敤浜庢妸璇锋眰璺緞鎶借薄涓哄彲鎺堟潈銆佸彲璁¤垂璧勬簮锟?,
-    "ai_vendor_modality": "渚涘簲鍟嗕笌鑳藉姏妯℃€佺殑鍏崇郴锛屾弿杩版煇 vendor 鏀寔鍝簺鑳藉姏锟?,
-    "ai_vendor_api_endpoint": "渚涘簲鍟嗕笌 API 璧勬簮鐨勫叧绯伙紝鎻忚堪锟?vendor 鏀寔鍝簺 API锟?,
-    "ai_modality_api_endpoint": "鑳藉姏妯℃€佷笌 API 璧勬簮鐨勫叧绯伙紝鏀寔鎸夋ā鎬佺瓫锟?API 鑳藉姏锟?,
-    "ai_model_modality": "妯″瀷涓庢ā鎬佺殑鍏崇郴锛屾弿杩版ā鍨嬭緭鍏ヨ緭鍑鸿兘鍔涘垎绫伙拷?,
-    "ai_model_api_endpoint": "妯″瀷锟?API 璧勬簮鐨勫叧绯伙紝鎻忚堪妯″瀷鍙鍝簺 API 璋冪敤锟?,
-    "ai_resource": "涓浆绔欑粺涓€璧勬簮鎶借薄锛岃鐩栨ā鍨嬨€丄PI銆佸浘鐗囥€佽棰戙€侀煶棰戙€侀煶涔愩€侀煶鏁堝拰鎸夋璧勬簮锟?,
-    "ai_resource_group": "缁熶竴璧勬簮鍒嗙粍锛岀敤浜庣淮锟?OpenAI銆丆laude銆丟emini銆並ling 锟?API 璧勬簮闆嗗悎锟?,
-    "ai_resource_group_item": "璧勬簮鍒嗙粍鎴愬憳鍏崇郴锛屾敮鎸佽祫婧愮粍宓屽鍜岃祫婧愰泦鍚堝畨瑁呯瀛愶拷?,
-    "ai_channel_resource": "涓婃父璐﹀彿/娓犻亾鏀寔鐨勮祫婧愭巿鏉冿紝鏄处鍙疯兘鍔涚瓫閫夊拰璺敱鍊欓€夌敓鎴愮殑鏍稿績杈癸拷?,
-    "ai_upstream_object_route": "瀵硅薄绫绘垨闈炴ā锟?API 鐨勪笂娓歌矾鐢辩粦瀹氾紝鏀寔鏃犳ā鍨嬪弬鏁扮殑 API 璋冪敤锟?,
-    "ai_config_version": "AI 璺敱閰嶇疆鐗堟湰锛岀敤浜庡揩鐓х紦瀛樺埛鏂板拰鍒嗗竷寮忓疄渚嬪崗璋冿拷?,
-    "ai_config_change_event": "AI 閰嶇疆鍙樻洿浜嬩欢锛岀敤浜庤Е鍙戣繍琛屾椂缂撳瓨鍜岃矾鐢卞揩鐓у埛鏂帮拷?,
-    "ai_model_family": "妯″瀷瀹舵棌瀛楀吀锛岀敤浜庡綊绫诲悓绯诲垪妯″瀷鍜屽睍绀虹瓫閫夛拷?,
-    "ai_model": "鏍囧噯妯″瀷鐩綍涓昏〃锛屼繚瀛樻ā锟?catalog key銆乿endor銆佽兘鍔涖€佷笂涓嬫灦鍜屽睍绀轰俊鎭拷?,
-    "ai_model_capability": "妯″瀷鑳藉姏琛ュ厖琛紝淇濆瓨 chat銆乪mbedding銆乼ools 绛夎兘鍔涙爣绛撅拷?,
-    "ai_model_catalog_source": "妯″瀷鐩綍鏉ユ簮閰嶇疆锛岀敤浜庡鍏ュ畼鏂规垨绗笁鏂规ā鍨嬬洰褰曪拷?,
-    "ai_model_catalog_sync_run": "妯″瀷鐩綍鍚屾浠诲姟鎵ц璁板綍锟?,
-    "ai_billing_meter": "璁¤垂璁￠噺鍗曚綅瀛楀吀锛岃锟?token銆佽姹傛鏁般€佸浘鐗囧紶鏁般€侀煶瑙嗛鏃堕暱绛夛拷?,
-    "ai_model_pricing": "妯″瀷涓庤祫婧愪环鏍艰〃锛屼繚瀛樺畼鏂瑰弬鑰冧环銆佹帴鍏ユ垚鏈环銆侀攢鍞环绛変环鏍间晶锟?,
-    "ai_pricing_plan": "浠锋牸璁″垝涓昏〃锛屽畾涔夐粯璁ゅ€嶇巼銆佸姞浠峰拰浠锋牸鍩哄噯锟?,
-    "ai_pricing_plan_binding": "浠锋牸璁″垝缁戝畾鍏崇郴锛岀敤浜庡皢璐﹀彿銆佸垎缁勩€佺鎴锋垨 SKU 缁戝畾鍒颁环鏍艰鍒掞拷?,
-    "ai_pricing_rule": "浠锋牸瑙勫垯琛紝鏀寔鍊嶇巼銆佸浐瀹氫环鏍笺€侀樁姊环鍜岃〃杈惧紡璁¤垂锟?,
-    "ai_pricing_tier": "浠锋牸闃舵琛紝淇濆瓨鍒嗘璁¤垂闃堝€煎拰鍗曚环锟?,
-    "ai_pricing_import_snapshot": "浠锋牸瀵煎叆蹇収锛岃褰曞畼鏂逛环鏍兼垨渚涘簲鍟嗚处鍗曚环鏍煎悓姝ヨ繃绋嬶拷?,
-    "ai_model_rank_snapshot": "妯″瀷鎺掕鍜岃川锟?鎴愭湰/寤惰繜鎸囨爣鎶曞奖锛岀敤浜庢ā鍨嬪競鍦哄拰鎺ㄨ崘锟?,
-    "ai_routing_policy": "璺敱绛栫暐涓昏〃锛屽畾涔夊叏灞€銆佺鎴枫€佺粍缁囥€丄PI Key 鎴栧垎缁勪綔鐢ㄥ煙锟?,
-    "ai_routing_profile": "璺敱绛栫暐閰嶇疆妗ｏ紝鎵胯浇涓€缁勮鍒欑増鏈拷?,
-    "ai_routing_rule": "璺敱瑙勫垯琛紝淇濆瓨鍖归厤鏉′欢銆佸€欓€夎处鍙枫€乫allback 鍜岀害鏉燂拷?,
-    "ai_routing_decision_log": "杩愯鏃惰矾鐢卞喅绛栨棩蹇楋紝璁板綍璇锋眰閫夋嫨浜嗗摢涓笂娓歌处鍙峰強鍘熷洜锟?,
-    "ai_request_trace": "缃戝叧璇锋眰閾捐矾璺熻釜琛紝璁板綍 API Key銆佸垎缁勩€佹ā鍨嬨€佽处鍙枫€佺姸鎬佺爜銆乀TFT 鍜岃€楁椂锟?,
-    "ai_usage": "AI 鐢ㄩ噺浜嬪疄琛紝璁板綍璁¤垂鍗曚綅銆佺敤閲忋€佸崟浠峰揩鐓у拰涓婃父鎴愭湰锟?,
-    "ai_quota_policy": "AI 鐢ㄩ噺鎴栨ā鍨嬭闂檺棰濈瓥鐣ワ拷?,
-    "ai_model_mapping_rule": "妯″瀷鏄犲皠瑙勫垯涓昏〃锛屽畾涔夊叏灞€銆乿endor銆佽处鍙锋垨鍒嗙粍绾фā鍨嬪埆鍚嶆槧灏勶拷?,
-    "ai_model_mapping_rule_item": "妯″瀷鏄犲皠瑙勫垯鏉＄洰锛屼繚瀛樻簮妯″瀷鍒扮洰鏍囨ā鍨嬬殑鍏蜂綋鏄犲皠锟?,
-    "ai_model_mapping_rule_binding": "妯″瀷鏄犲皠瑙勫垯缁戝畾锛屽畾涔夋槧灏勮鍒欓€傜敤鐨勮处鍙枫€佸垎缁勩€乿endor 鎴栧叏灞€鑼冨洿锟?,
-    "ai_usage_service_provider_edge": "锟?AI 鐢ㄩ噺浜嬪疄鍏宠仈鍒版湇鍔″晢閾捐矾锛岀敤浜庢湇鍔″晢缁撶畻鍜屾垚鏈垎鎽婏拷?,
-}
-
-
-PHRASES = OrderedDict(
-    [
-        ("service_provider_reconciliation_item", "鏈嶅姟鍟嗗璐︽槑锟?),
-        ("service_provider_reconciliation_run", "鏈嶅姟鍟嗗璐︽壒锟?),
-        ("service_provider_exposure_snapshot", "鏈嶅姟鍟嗛闄╂暈鍙ｅ揩锟?),
-        ("service_provider_edge_daily", "鏈嶅姟鍟嗗叧绯绘棩缁熻"),
-        ("service_provider_daily", "鏈嶅姟鍟嗘棩缁熻"),
-        ("service_provider_price_plan", "鏈嶅姟鍟嗕环鏍兼柟锟?),
-        ("service_provider_price_rule", "鏈嶅姟鍟嗕环鏍艰锟?),
-        ("service_provider_finance_profile", "鏈嶅姟鍟嗚储鍔￠厤锟?),
-        ("service_provider_subject_binding", "鏈嶅姟鍟嗕富浣撶粦锟?),
-        ("service_provider_contract", "鏈嶅姟鍟嗗悎锟?),
-        ("service_provider_closure", "鏈嶅姟鍟嗗眰绾ч棴锟?),
-        ("service_provider_member", "鏈嶅姟鍟嗘垚锟?),
-        ("service_provider_edge", "鏈嶅姟鍟嗗叧绯昏竟"),
-        ("service_provider", "鏈嶅姟锟?),
-        ("gateway_api_key", "缃戝叧 API Key"),
-        ("channel_group_metric_snapshot", "娓犻亾鍒嗙粍鎸囨爣蹇収"),
-        ("channel_group_resource", "娓犻亾鍒嗙粍璧勬簮鎺堟潈"),
-        ("channel_group_member", "娓犻亾鍒嗙粍鎴愬憳"),
-        ("channel_group", "娓犻亾鍒嗙粍"),
-        ("channel_credential", "娓犻亾鍑瘉"),
-        ("channel_resource", "娓犻亾璧勬簮鎺堟潈"),
-        ("model_mapping_rule_binding", "妯″瀷鏄犲皠瑙勫垯缁戝畾"),
-        ("model_mapping_rule_item", "妯″瀷鏄犲皠瑙勫垯鏉＄洰"),
-        ("model_mapping_rule", "妯″瀷鏄犲皠瑙勫垯"),
-        ("model_catalog_sync_run", "妯″瀷鐩綍鍚屾鎵规"),
-        ("model_catalog_source", "妯″瀷鐩綍鏉ユ簮"),
-        ("model_rank_snapshot", "妯″瀷鎺掕蹇収"),
-        ("model_capability", "妯″瀷鑳藉姏"),
-        ("model_api_endpoint", "妯″瀷 API 鑳藉姏"),
-        ("model_modality", "妯″瀷妯★拷?),
-        ("model_pricing", "妯″瀷浠锋牸"),
-        ("model_family", "妯″瀷瀹舵棌"),
-        ("model_vendor", "妯″瀷渚涘簲锟?),
-        ("api_endpoint", "API 璧勬簮绔偣"),
-        ("resource_group_item", "璧勬簮鍒嗙粍鏉＄洰"),
-        ("resource_group", "璧勬簮鍒嗙粍"),
-        ("billing_meter", "璁¤垂璁￠噺鍗曚綅"),
-        ("pricing_plan_binding", "浠锋牸璁″垝缁戝畾"),
-        ("pricing_import_snapshot", "浠锋牸瀵煎叆蹇収"),
-        ("pricing_plan", "浠锋牸璁″垝"),
-        ("pricing_rule", "浠锋牸瑙勫垯"),
-        ("pricing_tier", "浠锋牸闃舵"),
-        ("request_trace", "璇锋眰閾捐矾璺熻釜"),
-        ("routing_decision_log", "璺敱鍐崇瓥鏃ュ織"),
-        ("routing_policy", "璺敱绛栫暐"),
-        ("routing_profile", "璺敱閰嶇疆锟?),
-        ("routing_rule", "璺敱瑙勫垯"),
-        ("runtime_invocation_event", "杩愯鏃惰皟鐢ㄤ簨锟?),
-        ("runtime_invocation", "杩愯鏃惰皟锟?),
-        ("runtime_usage_link", "杩愯鏃剁敤閲忓叧锟?),
-        ("runtime_artifact", "杩愯鏃朵骇锟?),
-        ("generation_asset_action", "鐢熸垚璧勪骇鎿嶄綔"),
-        ("generation_session", "鐢熸垚浼氳瘽"),
-        ("generation_asset", "鐢熸垚璧勪骇"),
-        ("generation_job", "鐢熸垚浠诲姟"),
-        ("agent_tool_binding", "Agent 宸ュ叿缁戝畾"),
-        ("agent_mcp_server", "Agent MCP 鏈嶅姟缁戝畾"),
-        ("agent_run_step", "Agent 杩愯姝ラ"),
-        ("agent_session", "Agent 浼氳瘽"),
-        ("agent_version", "Agent 鐗堟湰"),
-        ("agent_memory", "Agent 璁板繂"),
-        ("agent_run", "Agent 杩愯"),
-        ("chat_context_snapshot", "鑱婂ぉ涓婁笅鏂囧揩锟?),
-        ("chat_conversation", "鑱婂ぉ浼氳瘽"),
-        ("chat_message_part", "鑱婂ぉ娑堟伅鐗囨"),
-        ("chat_message", "鑱婂ぉ娑堟伅"),
-        ("chat_item", "鑱婂ぉ鏉＄洰"),
-        ("chat_turn", "鑱婂ぉ杞"),
-        ("memory_space_binding", "璁板繂绌洪棿缁戝畾"),
-        ("memory_embedding", "璁板繂鍚戦噺"),
-        ("memory_entry", "璁板繂鏉＄洰"),
-        ("memory_event", "璁板繂浜嬩欢"),
-        ("memory_link", "璁板繂閾炬帴"),
-        ("memory_space", "璁板繂绌洪棿"),
-        ("mcp_server_revision", "MCP 鏈嶅姟淇"),
-        ("mcp_server", "MCP 鏈嶅姟"),
-        ("mcp_binding", "MCP 缁戝畾"),
-        ("mcp_tool", "MCP 宸ュ叿"),
-        ("prompt_version", "鎻愮ず璇嶇増锟?),
-        ("prompt_binding", "鎻愮ず璇嶇粦锟?),
-        ("quota_policy", "闄愰绛栫暐"),
-        ("config_change_event", "閰嶇疆鍙樻洿浜嬩欢"),
-        ("config_version", "閰嶇疆鐗堟湰"),
-        ("upstream_object_route", "涓婃父瀵硅薄璺敱锟?),
-        ("site_service", "涓婃父绔欑偣鏈嶅姟"),
-        ("site", "涓婃父鏈嶅姟鍟嗙珯锟?),
-        ("provider_invoice_import", "渚涘簲鍟嗚处鍗曞鍏ユ壒锟?),
-        ("provider_invoice_item", "渚涘簲鍟嗚处鍗曟槑锟?),
-        ("provider_health_snapshot", "渚涘簲鍟嗗仴搴峰揩锟?),
-        ("provider_account", "渚涘簲鍟嗚处锟?),
-        ("provider_capability", "渚涘簲鍟嗚兘锟?),
-        ("webhook_endpoint", "Webhook 绔偣"),
-        ("openapi_snapshot", "OpenAPI 蹇収"),
-        ("sdk_release", "SDK 鍙戝竷"),
-        ("doc_page", "鏂囨。椤甸潰"),
-        ("announcement", "鍏憡"),
-        ("forum_comment", "璁哄潧璇勮"),
-        ("forum_post", "璁哄潧甯栧瓙"),
-        ("object_provider", "瀵硅薄瀛樺偍渚涘簲锟?),
-        ("default_bucket_policy", "榛樿妗剁瓥锟?),
-        ("quota_reservation", "閰嶉棰勭暀"),
-        ("usage_counter", "鐢ㄩ噺璁℃暟锟?),
-        ("usage_ledger", "鐢ㄩ噺娴佹按"),
-        ("usage_snapshot", "鐢ㄩ噺蹇収"),
-        ("reconciliation_item", "瀵硅处鏄庣粏"),
-        ("reconciliation_run", "瀵硅处鎵规"),
-        ("upload_completion_attempt", "涓婁紶瀹屾垚灏濊瘯"),
-        ("upload_presign_grant", "涓婁紶棰勭鎺堟潈"),
-        ("upload_session", "涓婁紶浼氳瘽"),
-        ("upload_part", "涓婁紶鍒嗙墖"),
-        ("media_resource", "濯掍綋璧勬簮"),
-        ("object_bucket", "瀵硅薄瀛樺偍锟?),
-        ("object_blob", "瀵硅薄鏂囦欢"),
-        ("object_tag", "瀵硅薄鏍囩"),
-        ("gc_job", "鍨冨溇娓呯悊浠诲姟"),
-        ("idempotency_key", "骞傜瓑锟?),
-        ("account_ledger_entry", "璐︽埛娴佹按"),
-        ("account_hold", "璐︽埛鍐荤粨"),
-        ("billing_history", "璁¤垂鍘嗗彶"),
-        ("product_spu_category", "鍟嗗搧 SPU 鍒嗙被"),
-        ("product_category_attribute", "鍟嗗搧鍒嗙被灞烇拷?),
-        ("product_attribute_value", "鍟嗗搧灞炴€э拷?),
-        ("product_sku_attribute", "鍟嗗搧 SKU 灞烇拷?),
-        ("product_category", "鍟嗗搧鍒嗙被"),
-        ("product_attribute", "鍟嗗搧灞烇拷?),
-        ("product_media", "鍟嗗搧濯掍綋"),
-        ("product_spu", "鍟嗗搧 SPU"),
-        ("product_sku", "鍟嗗搧 SKU"),
-        ("price_list_item", "浠锋牸琛ㄦ潯锟?),
-        ("price_list", "浠锋牸锟?),
-        ("inventory_reservation", "搴撳瓨棰勭暀"),
-        ("inventory_ledger", "搴撳瓨娴佹按"),
-        ("inventory_stock", "搴撳瓨"),
-        ("cart_item", "璐墿杞︽潯锟?),
-        ("checkout_session", "缁撶畻浼氳瘽"),
-        ("checkout_line", "缁撶畻锟?),
-        ("checkout_quote", "缁撶畻鎶ヤ环"),
-        ("membership_package_group", "浼氬憳濂楅锟?),
-        ("membership_entitlement_usage", "浼氬憳鏉冪泭鐢ㄩ噺"),
-        ("membership_entitlement", "浼氬憳鏉冪泭"),
-        ("membership_package", "浼氬憳濂楅"),
-        ("membership_plan", "浼氬憳璁″垝"),
-        ("recharge_package", "鍏呭€煎锟?),
-        ("order_amount_breakdown", "璁㈠崟閲戦鎷嗗垎"),
-        ("order_address_snapshot", "璁㈠崟鍦板潃蹇収"),
-        ("order_cancellation", "璁㈠崟鍙栨秷"),
-        ("order_event", "璁㈠崟浜嬩欢"),
-        ("order_item", "璁㈠崟鏄庣粏"),
-        ("payment_provider_account", "鏀粯渚涘簲鍟嗚处锟?),
-        ("payment_provider_capability", "鏀粯渚涘簲鍟嗚兘锟?),
-        ("payment_operation_attempt", "鏀粯鎿嶄綔灏濊瘯"),
-        ("payment_route_decision", "鏀粯璺敱鍐崇瓥"),
-        ("payment_webhook_delivery", "鏀粯 Webhook 鎶曪拷?),
-        ("payment_statement_item", "鏀粯璐﹀崟鏄庣粏"),
-        ("payment_reconciliation_item", "鏀粯瀵硅处鏄庣粏"),
-        ("payment_reconciliation_run", "鏀粯瀵硅处鎵规"),
-        ("payment_dispute_event", "鏀粯浜夎浜嬩欢"),
-        ("payment_webhook_event", "鏀粯 Webhook 浜嬩欢"),
-        ("payment_route_rule", "鏀粯璺敱瑙勫垯"),
-        ("payment_channel", "鏀粯娓犻亾"),
-        ("payment_capture", "鏀粯鎵ｆ"),
-        ("payment_statement", "鏀粯璐﹀崟"),
-        ("payment_dispute", "鏀粯浜夎"),
-        ("payment_intent", "鏀粯鎰忓浘"),
-        ("payment_attempt", "鏀粯灏濊瘯"),
-        ("payment_method", "鏀粯鏂瑰紡"),
-        ("payment_fee", "鏀粯璐圭敤"),
-        ("refund_attempt", "閫€娆惧皾锟?),
-        ("refund_event", "閫€娆句簨锟?),
-        ("refund_item", "閫€娆炬槑锟?),
-        ("fulfillment_order", "灞ョ害锟?),
-        ("fulfillment_item", "灞ョ害鏄庣粏"),
-        ("shipment_tracking_event", "鐗╂祦璺熻釜浜嬩欢"),
-        ("shipment", "鐗╂祦鍙戣揣"),
-        ("digital_delivery", "鏁板瓧浜や粯"),
-        ("exchange_rule", "鎹㈣揣瑙勫垯"),
-        ("invoice_provider_attempt", "鍙戠エ鏈嶅姟灏濊瘯"),
-        ("invoice_title", "鍙戠エ鎶ご"),
-        ("invoice_event", "鍙戠エ浜嬩欢"),
-        ("invoice_item", "鍙戠エ鏄庣粏"),
-        ("usage_pricing_plan", "鐢ㄩ噺浠锋牸璁″垝"),
-        ("usage_statement_item", "鐢ㄩ噺璐﹀崟鏄庣粏"),
-        ("usage_statement", "鐢ㄩ噺璐﹀崟"),
-        ("usage_settlement", "鐢ㄩ噺缁撶畻"),
-        ("settlement_export", "缁撶畻瀵煎嚭"),
-        ("offer_presentation", "浼樻儬灞曠ず閰嶇疆"),
-        ("offer_audience_rule", "浼樻儬浜虹兢瑙勫垯"),
-        ("offer_time_window", "浼樻儬鏃堕棿绐楀彛"),
-        ("offer_version", "浼樻儬鐗堟湰"),
-        ("offer_scope", "浼樻儬閫傜敤鑼冨洿"),
-        ("budget_ledger_entry", "棰勭畻娴佹按"),
-        ("budget_account", "棰勭畻璐︽埛"),
-        ("coupon_ledger_entry", "浼樻儬鍒告祦锟?),
-        ("coupon_stock", "浼樻儬鍒稿簱锟?),
-        ("code_redemption", "浼樻儬鐮佹牳閿€"),
-        ("discount_application", "浼樻儬搴旂敤"),
-        ("discount_allocation", "浼樻儬鍒嗘憡"),
-        ("external_operation", "澶栭儴鎿嶄綔"),
-        ("external_binding", "澶栭儴缁戝畾"),
-        ("event_outbox", "浜嬩欢鍙戜欢锟?),
-        ("user_coupon", "鐢ㄦ埛浼樻儬锟?),
-        ("security_event", "瀹夊叏浜嬩欢"),
-        ("audit_event", "瀹¤浜嬩欢"),
-        ("organization_member", "缁勭粐鎴愬憳"),
-        ("user_identity", "鐢ㄦ埛韬唤"),
-        ("user_preference", "鐢ㄦ埛鍋忓ソ"),
-        ("user_security_setting", "鐢ㄦ埛瀹夊叏璁剧疆"),
-        ("user_login_event", "鐢ㄦ埛鐧诲綍浜嬩欢"),
-        ("verification_scene_policy", "楠岃瘉鍦烘櫙绛栫暐"),
-        ("verification_challenge", "楠岃瘉鎸戞垬"),
-        ("verification_attempt", "楠岃瘉灏濊瘯"),
-        ("role_permission", "瑙掕壊鏉冮檺"),
-        ("user_role", "鐢ㄦ埛瑙掕壊"),
-        ("mfa_factor", "MFA 鍥犲瓙"),
-        ("tenant", "绉熸埛"),
-        ("organization", "缁勭粐"),
-        ("credential", "鍑瘉"),
-        ("session", "浼氳瘽"),
-        ("device", "璁惧"),
-        ("permission", "鏉冮檺"),
-        ("policy", "绛栫暐"),
-        ("role", "瑙掕壊"),
-        ("api_key", "API Key"),
-        ("sender_identity", "鍙戦€佽韩锟?),
-        ("template_version", "妯℃澘鐗堟湰"),
-        ("template_variant", "妯℃澘鍙樹綋"),
-        ("template_binding", "妯℃澘缁戝畾"),
-        ("route_rule_target", "璺敱鐩爣"),
-        ("send_request", "鍙戦€佽锟?),
-        ("send_attempt", "鍙戦€佸皾锟?),
-        ("delivery_event", "鎶曢€掍簨锟?),
-        ("rate_limit_bucket", "闄愭祦锟?),
-        ("suppression", "瑙﹁揪鎶戝埗"),
-        ("provider", "渚涘簲锟?),
-        ("template", "妯℃澘"),
-        ("proxy", "浠ｇ悊"),
-        ("manifest", "娓呭崟"),
-        ("account", "璐︽埛"),
-        ("entry", "鍏ュ彛"),
-        ("pay_binding", "鏀粯缁戝畾"),
-        ("gateway_instance", "缃戝叧瀹炰緥"),
-        ("gateway_heartbeat", "缃戝叧蹇冭烦"),
-        ("config_snapshot", "閰嶇疆蹇収"),
-        ("audit_log", "瀹¤鏃ュ織"),
-        ("outbox_event", "鍙戜欢绠变簨锟?),
-        ("inbox_event", "鏀朵欢绠变簨锟?),
-        ("job_execution", "浠诲姟鎵ц"),
-        ("alert_event", "鍛婅浜嬩欢"),
-        ("notification_message", "閫氱煡娑堟伅"),
-        ("notification_recipient", "閫氱煡鏀朵欢锟?),
-        ("notification_delivery", "閫氱煡鎶曪拷?),
-        ("notification_preference", "閫氱煡鍋忓ソ"),
-        ("metric_snapshot", "鎸囨爣蹇収"),
-        ("catalog_action", "甯傚満琛屼负"),
-        ("catalog_artifact", "甯傚満鍒跺搧"),
-        ("catalog_asset", "甯傚満璧勪骇"),
-        ("app_template_version", "搴旂敤妯℃澘鐗堟湰"),
-        ("app_template_usage", "搴旂敤妯℃澘鐢ㄩ噺"),
-        ("app_template", "搴旂敤妯℃澘"),
-        ("agent_skill_package", "Agent 鎶€鑳藉寘"),
-        ("agent_skill", "Agent 鎶€锟?),
-        ("user_agent_skill", "鐢ㄦ埛 Agent 鎶€锟?),
-        ("content_vote", "鍐呭鎶曠エ"),
-        ("user_address", "鐢ㄦ埛鍦板潃"),
-        ("member_level", "浼氬憳绛夌骇"),
-        ("member_card", "浼氬憳锟?),
-        ("card_template", "鍗℃ā锟?),
-        ("user_card", "鐢ㄦ埛锟?),
-        ("invitation_code", "閭€璇风爜"),
-        ("invitation_relation", "閭€璇峰叧锟?),
-        ("referral_stat_snapshot", "鎺ㄨ崘缁熻蹇収"),
-    ]
-)
-
-
-def render_table_catalog(
-    registry_path: Path = REGISTRY_PATH,
-) -> str:
+def render_table_catalog(registry_path: Path = REGISTRY_PATH) -> str:
     registry = load_schema_registry(registry_path)
-    tables = [
-        table
-        for table in registry.get("tables", [])
-        if isinstance(table, dict) and isinstance(table.get("table"), str)
-    ]
-    domain_counts = Counter(table.get("domain") or "unknown" for table in tables)
-    generated_count = sum(1 for table in tables if table.get("generated_by_this_project") is not False)
+    tables = sorted(
+        (
+            table
+            for table in registry.get("tables", [])
+            if isinstance(table, dict) and isinstance(table.get("table"), str)
+        ),
+        key=lambda table: (str(table.get("domain") or "unknown"), table["table"]),
+    )
+    domain_counts = Counter(str(table.get("domain") or "unknown") for table in tables)
+    generated_count = sum(
+        1 for table in tables if table.get("generated_by_this_project") is not False
+    )
 
     lines = [
-        "# 鏁版嵁搴撹〃鐩綍涓庤〃璇存槑",
+        "# Claw Router Database Table Catalog",
         "",
-        f"鐢熸垚鏉ユ簮锛歚docs/schema-registry/sdkwork-clawrouter.tables.yaml`",
-        f"source: docs/schema-registry/sdkwork-clawrouter.tables.yaml",
-        f"琛ㄦ€绘暟锛歿len(tables)}",
-        f"table-count: {len(tables)}",
-        f"鏈」鐩敓鎴愯〃锛歿generated_count}",
+        f"Generated from `{REGISTRY_DISPLAY_PATH}`. Do not edit this file manually.",
         "",
-        "鏈枃鍒楀嚭褰撳墠搴旂敤 schema registry 涓櫥璁扮殑鍏ㄩ儴鏁版嵁搴撹〃锛屽苟缁欏嚭涓枃涓氬姟璇存槑銆俙generated = no` 琛ㄧず鐗╃悊缁撴瀯鐢卞閮ㄧ郴缁熸垨 Java 鍏煎瀹炰綋鎷ユ湁锛屽綋鍓嶅簲鐢ㄥ彧鐧昏鍜岃鍙栧绾︼拷?,
+        f"- Table count: {len(tables)}",
+        f"- Project-generated table count: {generated_count}",
+        "- Server authority: PostgreSQL",
         "",
-        "## Domain 姹囷拷?,
+        "## Domain Summary",
         "",
-        "| domain | 琛ㄦ暟锟?| 璇存槑 |",
-        "| --- | ---: | --- |",
+        "| Domain | Tables |",
+        "| --- | ---: |",
     ]
     for domain, count in sorted(domain_counts.items()):
-        lines.append(f"| `{domain}` | {count} | {DOMAIN_LABELS.get(domain, domain)} |")
+        lines.append(f"| `{escape_cell(domain)}` | {count} |")
 
     by_domain: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for table in tables:
-        by_domain[table.get("domain") or "unknown"].append(table)
+        by_domain[str(table.get("domain") or "unknown")].append(table)
 
-    for domain in sorted(by_domain):
+    for domain, domain_tables in sorted(by_domain.items()):
         lines.extend(
             [
                 "",
-                f"## {DOMAIN_LABELS.get(domain, domain)}",
+                f"## {domain}",
                 "",
-                "| 琛ㄥ悕 | 璇存槑 | profile | write_owner | generated |",
+                "| Table | Purpose | Profile | Write owner | Generated here |",
                 "| --- | --- | --- | --- | --- |",
             ]
         )
-        for table in by_domain[domain]:
+        for table in domain_tables:
             table_name = table["table"]
-            profile = table.get("profile") or ""
-            owner = table.get("write_owner") or ""
+            profile = str(table.get("profile") or "")
+            owner = str(table.get("write_owner") or "")
             generated = "yes" if table.get("generated_by_this_project") is not False else "no"
             lines.append(
-                f"| `{table_name}` | {describe_table(table)} | `{profile}` | `{owner}` | {generated} |"
+                f"| `{table_name}` | {escape_cell(describe_table(table))} | "
+                f"`{escape_cell(profile)}` | `{escape_cell(owner)}` | {generated} |"
             )
+
     return "\n".join(lines).rstrip() + "\n"
 
 
 def describe_table(table: dict[str, Any]) -> str:
     table_name = table["table"]
-    if table_name in DIRECT_DESCRIPTIONS:
-        return DIRECT_DESCRIPTIONS[table_name]
+    direct_description = TABLE_DESCRIPTIONS.get(table_name)
+    if direct_description is not None:
+        return direct_description
 
-    domain = table.get("domain") or "unknown"
-    domain_label = DOMAIN_LABELS.get(domain, domain)
-    profile = table.get("profile") or ""
-    profile_label = PROFILE_LABELS.get(profile, profile.replace("_", " "))
-    subject = subject_label(table_name)
+    subject = table_name.replace("_", " ")
+    profile = str(table.get("profile") or "table").replace("_", " ")
     if table.get("generated_by_this_project") is False:
-        return f"{domain_label}鐨勫閮ㄥ吋瀹硅〃锛岀櫥锟?{subject} 鐨勭幇鏈夌墿鐞嗙粨鏋勪緵褰撳墠搴旂敤璇诲彇鎴栨槧灏勶拷?
-    return f"{domain_label}鐨剓profile_label}锛岃锟?{subject}锟?
+        return f"Referenced {profile} for {subject}; owned by a dependency registry."
+    return f"{profile.capitalize()} for {subject}."
 
 
-def subject_label(table_name: str) -> str:
-    normalized = table_name
-    for prefix in [
-        "analytics_",
-        "ai_",
-        "commerce_",
-        "content_",
-        "iam_",
-        "integration_",
-        "messaging_",
-        "object_",
-        "ops_",
-        "plus_",
-        "promotion_",
-        "studio_",
-        "storage_",
-        "system_",
-        "upload_",
-    ]:
-        if normalized.startswith(prefix):
-            normalized = normalized[len(prefix) :]
-            break
-
-    for phrase, label in PHRASES.items():
-        if normalized == phrase:
-            return label
-    parts = [PHRASES.get(part, part) for part in normalized.split("_") if part]
-    return "".join(parts) if parts else table_name
+def escape_cell(value: str) -> str:
+    return value.replace("|", "\\|").replace("\n", " ").strip()
 
 
 def main() -> int:

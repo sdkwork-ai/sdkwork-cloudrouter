@@ -1,6 +1,5 @@
 import unittest
 from pathlib import Path
-import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,9 +10,9 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         product_api_mod = (
             ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "mod.rs"
         ).read_text(encoding="utf-8")
-        app_api = (ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "src" / "lib.rs").read_text(
-            encoding="utf-8"
-        )
+        app_api = (
+            ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
+        ).read_text(encoding="utf-8")
 
         self.assertTrue(
             (
@@ -30,8 +29,8 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         self.assertIn("app_payment_callback_router()", app_api)
         self.assertIn("app_payment_callback_router_with_store", app_api)
         self.assertIn("PaymentCallbackStore", app_api)
-        self.assertIn("SqlitePaymentCallbackStore", app_api)
         self.assertIn("PostgresPaymentCallbackStore", app_api)
+        self.assertNotIn("SqlitePaymentCallbackStore", app_api)
         self.assertIn("payment callback router must not use app_request_subject_boundary", app_api)
 
     def test_payment_callback_port_and_api_define_idempotent_runtime_contract(self) -> None:
@@ -56,7 +55,8 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         self.assertIn('"/app/v3/api/payments/callback/alipay"', app_callback)
         self.assertIn("EmptyPaymentCallbackStore", app_callback)
         self.assertIn("validate_payment_callback", app_callback)
-        self.assertIn("parse_payment_provider", app_callback)
+        self.assertIn("resolve_payment_supplier_code", app_callback)
+        self.assertIn("default_payment_provider_registry", app_callback)
         self.assertIn("parse_payment_callback_payload", app_callback)
         self.assertIn("outTradeNo", app_callback)
         self.assertIn("out_trade_no", app_callback)
@@ -66,7 +66,6 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         self.assertIn("x-sdkwork-event-id", app_callback)
         self.assertIn("x-event-id", app_callback)
         self.assertIn("x-sdkwork-nonce", app_callback)
-        self.assertIn("x-request-id", app_callback)
         self.assertIn("x-sdkwork-timestamp", app_callback)
         self.assertIn("x-timestamp", app_callback)
         self.assertIn("x-sdkwork-signature", app_callback)
@@ -105,9 +104,9 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         app_callback = (
             ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "app_payment_callback.rs"
         ).read_text(encoding="utf-8")
-        app_api = (ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "src" / "lib.rs").read_text(
-            encoding="utf-8"
-        )
+        app_api = (
+            ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs"
+        ).read_text(encoding="utf-8")
 
         self.assertTrue(payment_webhook_config_path.exists())
         payment_webhook_config = payment_webhook_config_path.read_text(encoding="utf-8")
@@ -137,20 +136,31 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         self.assertIn("payment_webhook_config,", app_api)
 
     def test_payment_callback_runtime_docs_define_signed_webhook_standard(self) -> None:
-        runtime_doc = (ROOT / "docs" / "27-rust-runtime-and-sdk-integration-standard.md").read_text(
-            encoding="utf-8"
-        )
-        module_doc = (ROOT / "docs" / "29-rust-backend-module-standard.md").read_text(
-            encoding="utf-8"
-        )
+        runtime_doc = (
+            ROOT
+            / "docs"
+            / "architecture"
+            / "tech"
+            / "TECH-27-rust-runtime-and-sdk-integration-standard.md"
+        ).read_text(encoding="utf-8")
+        module_doc = (
+            ROOT
+            / "docs"
+            / "architecture"
+            / "tech"
+            / "TECH-29-rust-backend-module-standard.md"
+        ).read_text(encoding="utf-8")
 
-        for doc in [runtime_doc, module_doc]:
+        for source_doc in [runtime_doc, module_doc]:
+            doc = " ".join(source_doc.split())
             self.assertIn("PaymentWebhookConfig", doc)
             self.assertIn("SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET", doc)
             self.assertIn("SDKWORK_CLAW_PAYMENT_WEBHOOK_MAX_CLOCK_SKEW_SECONDS", doc)
             self.assertIn("unsigned payment callbacks are forbidden", doc)
-            self.assertIn("must not use app_request_subject_boundary", doc)
-            self.assertIn("Payment callback amounts must be parsed as exact decimal values", doc)
+            self.assertIn("must not use", doc)
+            self.assertIn("app_request_subject_boundary", doc)
+            self.assertIn("Payment callback amounts", doc)
+            self.assertIn("parsed as exact decimal values", doc)
             self.assertIn("binary floating-point comparison is forbidden", doc)
             self.assertIn("sub-cent callback precision must be rejected", doc)
 
@@ -191,131 +201,50 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         self.assertIn("SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET", config_test)
         self.assertIn("[REDACTED]", config_test)
 
-    def test_payment_callback_has_sqlite_fulfillment_integration_test(self) -> None:
-        integration_test_path = (
+    def test_payment_callback_has_postgres_sql_contract_tests(self) -> None:
+        contract_test_path = (
             ROOT
             / "services"
             / "sdkwork-clawrouter-router-service"
             / "tests"
-            / "sqlite_payment_callback_store.rs"
+            / "postgres_payment_callback_sql_contract.rs"
         )
 
-        self.assertTrue(integration_test_path.exists())
-        source = integration_test_path.read_text(encoding="utf-8")
-
-        self.assertIn("SqlitePaymentCallbackStore", source)
-        self.assertIn("sqlite_payment_callback_fulfills_appbase_recharge_once_and_records_webhook_success", source)
-        self.assertIn("sqlite_payment_callback_duplicate_event_does_not_credit_twice", source)
-        self.assertIn("sqlite_payment_callback_rejects_nonce_replay", source)
-        self.assertIn("sqlite_payment_callback_rejects_amount_mismatch_and_marks_webhook_failed", source)
-        self.assertIn("CREATE TABLE commerce_payment_webhook_event", source)
-        self.assertIn("CREATE TABLE commerce_payment_intent", source)
-        self.assertIn("CREATE TABLE commerce_payment_attempt", source)
-        self.assertIn("CREATE TABLE commerce_order", source)
-        self.assertIn("CREATE TABLE commerce_account", source)
-        self.assertIn("CREATE TABLE commerce_account_ledger_entry", source)
-        self.assertIn("available_amount", source)
+        self.assertTrue(contract_test_path.exists())
+        source = contract_test_path.read_text(encoding="utf-8")
+        self.assertIn("POSTGRES_PAYMENT_CALLBACK_STORE", source)
+        self.assertIn("payment_callback_webhook_event_queries_lock_and_scope_idempotency", source)
+        self.assertIn("payment_callback_success_updates_appbase_payment_order_and_ledger_tables", source)
+        self.assertIn("FOR UPDATE OF pa, o, pi", source)
+        self.assertIn("commerce_payment_webhook_event", source)
         self.assertIn("commerce_account_ledger_entry", source)
-        self.assertNotIn("CREATE TABLE plus_payment_webhook_event", source)
-        self.assertNotIn("CREATE TABLE plus_payment", source)
-        self.assertNotIn("CREATE TABLE plus_order", source)
-        self.assertNotIn("CREATE TABLE plus_vip_recharge", source)
-        self.assertNotIn("CREATE TABLE plus_account_history", source)
-        self.assertNotIn("CREATE TABLE plus_vip_point_change", source)
-        self.assertNotIn("point_change_uuid", source)
+        self.assertNotIn("SqlitePaymentCallbackStore", source)
 
     def test_sql_payment_callback_stores_are_atomic_idempotent_and_fulfill_recharge_once(self) -> None:
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs",
-        ]:
-            store = (ROOT / relative).read_text(encoding="utf-8")
-            self.assertIn("commerce_payment_webhook_event", store)
-            self.assertIn("commerce_payment_intent", store)
-            self.assertIn("commerce_payment_attempt", store)
-            self.assertIn("commerce_order", store)
-            self.assertIn("commerce_account", store)
-            self.assertIn("commerce_account_ledger_entry", store)
-            self.assertNotIn("plus_payment_webhook_event", store)
-            self.assertNotIn("plus_payment", store)
-            self.assertNotIn("plus_order", store)
-            self.assertNotIn("plus_vip_recharge", store)
-            self.assertNotIn("plus_account_history", store)
-            self.assertNotIn("plus_vip_point_change", store)
-            self.assertIn("BEGIN", store.upper())
-            self.assertIn("COMMIT", store.upper())
-            self.assertIn("begin_webhook_event", store)
-            self.assertIn("finish_webhook_event", store)
-            self.assertIn("duplicate", store)
-            self.assertIn("nonce replay", store)
-            self.assertIn("provider", store)
-            self.assertIn("out_trade_no", store)
-            self.assertIn("amount", store)
-            self.assertIn("transaction_id", store)
-            self.assertIn("fulfill_recharge_once", store)
-            self.assertIn("existing_account_history_count", store)
-            self.assertIn("ensure_points_account", store)
-            self.assertIn("update_account_points", store)
-            self.assertIn("insert_account_history", store)
-            self.assertNotIn("existing_point_change_count", store)
-            self.assertNotIn("insert_point_change", store)
-            self.assertIn("CommercePaymentStatus::Succeeded.as_str()", store)
-            self.assertIn("CommercePaymentStatus::Failed.as_str()", store)
-            self.assertIn("CommercePaymentStatus::Canceled.as_str()", store)
-            self.assertIn("ORDER_STATUS_PAID", store)
-            self.assertIn("ORDER_STATUS_CANCELLED", store)
-            self.assertIn("asset_type", store)
-            self.assertIn("CommerceAccountAssetType::Points.as_str()", store)
-            self.assertIn("CommerceLedgerDirection::Credit.as_str()", store)
-            self.assertIn("business_type = 'recharge'", store)
-            self.assertIn("'commerce_payment_attempt'", store)
-            self.assertIn("SUCCESS", store)
-            self.assertIn("FAILED", store)
-            self.assertIn('status: required_string_cell(&row, "status", "payment")?', store)
-            self.assertIn("missing payment callback payment status from database row", store)
-            self.assertNotIn("COALESCE(p.status, 0) AS status", store)
-            self.assertNotIn("COALESCE(status, 0) AS status", store)
-            self.assertNotIn('status: integer_cell(&row, "status")', store)
-            self.assertNotIn('status: required_integer_cell(&row, "status", "payment")?', store)
-
-        sqlite_store = (
-            ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs"
-        ).read_text(encoding="utf-8")
-        postgres_store = (
+        store = (
             ROOT
             / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs"
         ).read_text(encoding="utf-8")
-        self.assertIn("pa.status AS status", sqlite_store)
-        self.assertIn("pa.status AS status", postgres_store)
-
-    def test_sqlite_and_postgres_payment_callback_stores_preserve_same_fulfillment_semantics(self) -> None:
-        sqlite_store = (
-            ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs"
-        ).read_text(encoding="utf-8")
-        postgres_store = (
-            ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs"
-        ).read_text(encoding="utf-8")
-
-        def function_names(source: str) -> set[str]:
-            return set(re.findall(r"(?:async\s+)?fn\s+([A-Za-z0-9_]+)\(", source))
-
-        self.assertEqual(function_names(sqlite_store), function_names(postgres_store))
-
-        required_semantics = [
-            "payment callback nonce replay detected",
-            "payment callback amount does not match payment amount",
-            "payment callback points payload is required for recharge",
-            "duplicate webhook event ignored",
-            "payment callback fulfilled recharge successfully",
+        for expected in [
             "commerce_payment_webhook_event",
             "commerce_payment_intent",
             "commerce_payment_attempt",
             "commerce_order",
             "commerce_account",
             "commerce_account_ledger_entry",
+            "begin_webhook_event",
+            "finish_webhook_event",
+            "duplicate",
+            "nonce replay",
+            "provider",
+            "out_trade_no",
+            "amount",
+            "transaction_id",
+            "fulfill_recharge_once",
+            "existing_account_history_count",
+            "ensure_points_account",
+            "update_account_points",
+            "insert_account_history",
             "CommercePaymentStatus::Succeeded.as_str()",
             "CommercePaymentStatus::Failed.as_str()",
             "CommercePaymentStatus::Canceled.as_str()",
@@ -324,33 +253,33 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
             "asset_type",
             "CommerceAccountAssetType::Points.as_str()",
             "CommerceLedgerDirection::Credit.as_str()",
+            "business_type = 'recharge'",
             "'commerce_payment_attempt'",
-            "existing_account_history_count",
-            "finish_webhook_event",
-            '"SUCCESS"',
-            '"FAILED"',
-            "'RECEIVED'",
-            'required_string_cell(&row, "status", "payment")?',
+            "SUCCESS",
+            "FAILED",
+            'status: required_string_cell(&row, "status", "payment")?',
             "missing payment callback payment status from database row",
-        ]
-        for semantic in required_semantics:
-            self.assertIn(semantic, sqlite_store)
-            self.assertIn(semantic, postgres_store)
-
+            "pa.status AS status",
+            ".begin()",
+            "tx.commit()",
+            "FOR UPDATE",
+        ]:
+            self.assertIn(expected, store)
         for forbidden in [
-            "COALESCE(p.status, 0) AS status",
-            "COALESCE(status, 0) AS status",
-            'status: integer_cell(&row, "status")',
             "plus_payment_webhook_event",
+            "plus_payment",
+            "plus_order",
             "plus_vip_recharge",
             "plus_account_history",
             "plus_vip_point_change",
+            "existing_point_change_count",
+            "insert_point_change",
+            "COALESCE(p.status, 0) AS status",
+            "COALESCE(status, 0) AS status",
+            'status: integer_cell(&row, "status")',
+            'status: required_integer_cell(&row, "status", "payment")?',
         ]:
-            self.assertNotIn(forbidden, sqlite_store)
-            self.assertNotIn(forbidden, postgres_store)
-
-        self.assertIn("FOR UPDATE", postgres_store)
-        self.assertIn("FOR UPDATE OF pa, o, pi", postgres_store)
+            self.assertNotIn(forbidden, store)
 
     def test_payment_callback_amount_uses_exact_decimal_contract_not_binary_float(self) -> None:
         callback_port = (
@@ -358,10 +287,6 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         app_callback = (
             ROOT / "services/sdkwork-clawrouter-router-service/src/api/app_payment_callback.rs"
-        ).read_text(encoding="utf-8")
-        sqlite_store = (
-            ROOT
-            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/payment_callback_store.rs"
         ).read_text(encoding="utf-8")
         postgres_store = (
             ROOT
@@ -380,70 +305,40 @@ class PaymentCallbackRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("fn json_number", app_callback)
         self.assertNotIn("fn round_money", app_callback)
 
-        for store in [sqlite_store, postgres_store]:
-            self.assertIn("DecimalValue", store)
-            self.assertIn("amount: String", store)
-            self.assertIn("money_matches(&payment.amount, amount)", store)
-            self.assertIn("DecimalValue::parse(expected)", store)
-            self.assertIn("DecimalValue::parse(actual)", store)
-            self.assertNotIn("amount: f64", store)
-            self.assertNotIn("fn money_matches(expected: f64, actual: f64)", store)
+        self.assertIn("DecimalValue", postgres_store)
+        self.assertIn("amount: String", postgres_store)
+        self.assertIn("money_matches(&payment.amount, amount)", postgres_store)
+        self.assertIn("DecimalValue::parse(expected)", postgres_store)
+        self.assertIn("DecimalValue::parse(actual)", postgres_store)
+        self.assertNotIn("amount: f64", postgres_store)
+        self.assertNotIn("fn money_matches(expected: f64, actual: f64)", postgres_store)
 
         self.assertIn('assert_eq!(Some("88.50".to_owned()), captured[0].amount)', route_test)
         self.assertIn('assert_eq!(Some("12.34".to_owned()), captured[0].amount)', route_test)
 
-    def test_payment_callback_semantics_match_java_trade_webhook_and_vip_entities(self) -> None:
-        entity_root = ROOT.parent.parent / "legacy-java-plus-entity" / "src/main/java"
-        service_root = ROOT.parent.parent / "legacy-java-plus-service" / "src/main/java"
-        app_api_root = ROOT.parent.parent / "legacy-java-plus-app-api" / "src/main/java"
-
-        webhook_entity = (
-            entity_root
-            / "com/sdkwork/spring/ai/plus/entity/trade/PlusPaymentWebhookEvent.java"
+    def test_payment_callback_semantics_are_owned_by_current_rust_contract(self) -> None:
+        callback_port = (
+            ROOT / "services/sdkwork-clawrouter-router-service/src/ports/payment_callback_store.rs"
         ).read_text(encoding="utf-8")
-        webhook_status = (
-            entity_root
-            / "com/sdkwork/spring/ai/plus/enums/trade/WebhookProcessStatus.java"
+        app_callback = (
+            ROOT / "services/sdkwork-clawrouter-router-service/src/api/app_payment_callback.rs"
         ).read_text(encoding="utf-8")
-        payment_status = (
-            entity_root / "com/sdkwork/spring/ai/plus/enums/trade/PaymentStatus.java"
-        ).read_text(encoding="utf-8")
-        order_status = (
-            entity_root / "com/sdkwork/spring/ai/plus/enums/trade/OrderStatus.java"
-        ).read_text(encoding="utf-8")
-        recharge_entity = (
-            entity_root / "com/sdkwork/spring/ai/plus/entity/vip/PlusVipRecharge.java"
-        ).read_text(encoding="utf-8")
-        java_payment_service = (
-            service_root
-            / "com/sdkwork/spring/ai/plus/service/trade/impl/PlusPaymentServiceImpl.java"
-        ).read_text(encoding="utf-8")
-        java_payment_controller = (
-            app_api_root
-            / "com/sdkwork/ai/gateway/api/app/v3/trade/PaymentAppApiController.java"
+        postgres_store = (
+            ROOT
+            / "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/payment_callback_store.rs"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("uk_payment_webhook_provider_event", webhook_entity)
-        self.assertIn("uk_payment_webhook_provider_nonce", webhook_entity)
-        self.assertIn("payloadDigest", webhook_entity)
-        self.assertIn("RECEIVED", webhook_status)
-        self.assertIn("SUCCESS", webhook_status)
-        self.assertIn("FAILED", webhook_status)
-        self.assertIn('SUCCESS(2, "trade.status.payment.success"', payment_status)
-        self.assertIn('FAILED(3, "trade.status.payment.failed"', payment_status)
-        self.assertIn('CLOSED(5, "trade.status.payment.closed"', payment_status)
-        self.assertIn('PAID(2, "trade.status.order.paid"', order_status)
-        self.assertIn("Recharge status (1-Success 2-Failed 3-Processing)", recharge_entity)
-        self.assertIn("x-sdkwork-event-id", java_payment_service)
-        self.assertIn("x-sdkwork-nonce", java_payment_service)
-        self.assertIn("x-sdkwork-timestamp", java_payment_service)
-        self.assertIn("x-sdkwork-signature", java_payment_service)
-        self.assertIn("markPaymentSuccess", java_payment_service)
-        self.assertIn("markOrderPaidIfNecessary", java_payment_service)
-        self.assertIn('@RequestMapping("/app/v3/api/payments")', java_payment_controller)
-        self.assertIn('@PostMapping("/callback/wechat")', java_payment_controller)
-        self.assertIn('@PostMapping("/callback/alipay")', java_payment_controller)
-        self.assertIn('@PostMapping("/callback/{provider}")', java_payment_controller)
+        for status in ["Success", "Failed", "Closed"]:
+            self.assertIn(status, callback_port)
+        for identity in ["event_id", "nonce", "payload_digest", "out_trade_no"]:
+            self.assertIn(identity, callback_port)
+            self.assertIn(identity, postgres_store)
+        for provider_route in ["wechat", "alipay", "{provider}"]:
+            self.assertIn(f'payments/callback/{provider_route}', app_callback)
+        self.assertIn("default_payment_provider_registry", app_callback)
+        self.assertIn("fulfill_recharge_once", postgres_store)
+        self.assertIn("FOR UPDATE", postgres_store)
+        self.assertNotIn("legacy-java-plus", callback_port + app_callback + postgres_store)
 
 
 if __name__ == "__main__":

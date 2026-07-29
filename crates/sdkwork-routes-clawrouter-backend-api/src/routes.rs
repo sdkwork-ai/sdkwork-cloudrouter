@@ -12,15 +12,17 @@ use axum::Router;
 use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
     RedisConfig, RequestLimitsConfig, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
+    UpstreamCredentialSecurityConfig,
 };
 use sdkwork_claw_http::TrustedRequestSubject;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     default_desktop_cache_manager, default_service_cache_manager,
     AiRoutingCacheInvalidatingAdminAiResourceStore, AiRoutingCacheInvalidatingAdminModelStore,
-    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretHasher, CredentialSecretCodec,
-    ModelRankingsService, RedisCacheBackend, RuntimeCacheManager, DEFAULT_CACHE_KEY_PREFIX,
-    DEFAULT_REDIS_CONNECTION_PROFILE_NAME, DEFAULT_SERVICE_CACHE_INSTANCE_NAME,
+    AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretHasher, ModelRankingsService,
+    RedisCacheBackend, RuntimeCacheManager, UpstreamCredentialSecretCodec,
+    DEFAULT_CACHE_KEY_PREFIX, DEFAULT_REDIS_CONNECTION_PROFILE_NAME,
+    DEFAULT_SERVICE_CACHE_INSTANCE_NAME,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
@@ -49,8 +51,8 @@ use sdkwork_clawrouter_router_service::ports::{
     AdminMcpStore, AdminModelRateLimitStore, AdminMonitorReadStore, AdminRecordStore,
     AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
     AdminUpstreamAccountVerifier, AdminUpstreamStore, GatewayApiKeyCommandStore,
-    ModelRankingRefreshStore, ModelRankingsReadModelStore, PricingCatalog,
-    RuntimeRegionSettingsStore, SiteSettingsStore,
+    ModelRankingRefreshStore, ModelRankingsReadModelStore, RuntimeRegionSettingsStore,
+    SiteSettingsStore, UpstreamAccountRouteCatalog,
 };
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
@@ -79,7 +81,7 @@ pub struct RouterApiRouteModule {
 
 pub const SERVICE_NAME: &str = "sdkwork-clawrouter-admin-gateway";
 type ApiKeyHasher = Arc<dyn ApiKeySecretHasher + Send + Sync>;
-type CredentialCodec = Arc<dyn CredentialSecretCodec + Send + Sync>;
+type CredentialCodec = Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>;
 type AdminAnnouncementRuntimeStore = Arc<dyn AdminAnnouncementStore + Send + Sync>;
 type AdminAuthSettingsRuntimeStore = Arc<dyn AdminAuthSettingsStore + Send + Sync>;
 type ApiKeyCommandRuntimeStore = Arc<dyn GatewayApiKeyCommandStore + Send + Sync>;
@@ -263,7 +265,7 @@ fn is_messaging_dependency_contract_path(path: &str) -> bool {
 
 pub fn router_with_product_catalog<C>(catalog: Arc<C>) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     router_with_product_catalog_and_runtime(catalog, AdminRouterRuntime::default())
 }
@@ -273,7 +275,7 @@ fn router_with_product_catalog_and_runtime<C>(
     runtime: AdminRouterRuntime<'_>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let AdminRouterRuntime {
         database_config,
@@ -666,6 +668,7 @@ pub fn router_with_postgres_shared_runtime(
     pool: PgPool,
     catalog: Arc<RefreshableSqlPricingCatalog>,
     api_key_security_config: ApiKeySecurityConfig,
+    upstream_credential_security_config: UpstreamCredentialSecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
     deployment_mode: DeploymentMode,
@@ -675,7 +678,8 @@ pub fn router_with_postgres_shared_runtime(
     models_catalog_root: Option<String>,
 ) -> Result<Router, ProductCatalogRouterError> {
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
-    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
+    let credential_secret_codec =
+        credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let announcement_store: AdminAnnouncementRuntimeStore =
         Arc::new(PostgresAdminAnnouncementStore::new(pool.clone()));
     let auth_settings_store: AdminAuthSettingsRuntimeStore =
@@ -695,7 +699,6 @@ pub fn router_with_postgres_shared_runtime(
     let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
         pool.clone(),
         credential_secret_codec.clone(),
-        api_key_hasher.clone(),
     ));
     let upstream_store =
         ai_routing_cache_invalidating_upstream_store(upstream_store, Some(cache_manager.clone()));
@@ -869,7 +872,12 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
     let cache_manager = cache_manager_from_env_or_toml(runtime_toml)?;
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
-    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
+    let upstream_credential_security_config = require_upstream_credential_security_config(
+        UpstreamCredentialSecurityConfig::from_env_or_runtime_toml(runtime_toml)
+            .map_err(ProductCatalogRouterError::Config)?,
+    )?;
+    let credential_secret_codec =
+        credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let trusted_subject_config = require_trusted_subject_config(trusted_subject_config)?;
     let app_session_config = require_app_session_config(app_session_config)?;
     if !matches!(config.engine, DatabaseEngine::Postgres) {
@@ -919,7 +927,6 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
     let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
         pool.clone(),
         credential_secret_codec.clone(),
-        api_key_hasher.clone(),
     ));
     let upstream_store =
         ai_routing_cache_invalidating_upstream_store(upstream_store, Some(cache_manager.clone()));
@@ -1161,11 +1168,16 @@ fn build_api_key_hasher(
 }
 
 fn credential_secret_codec_from_config(
-    config: &ApiKeySecurityConfig,
+    config: &UpstreamCredentialSecurityConfig,
 ) -> Result<CredentialCodec, ProductCatalogRouterError> {
     Ok(Arc::new(
-        RingAeadCredentialSecretCodec::new(config.pepper_secret())
-            .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?,
+        RingAeadCredentialSecretCodec::with_key_ring(
+            config.active_key_id(),
+            config.active_key(),
+            config.fingerprint_key(),
+            config.decryption_keys().to_vec(),
+        )
+        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?,
     ))
 }
 
@@ -1339,6 +1351,18 @@ fn require_api_key_security_config(
         ProductCatalogRouterError::Config(format!(
             "{} is required when SDKWORK_CLAW_DATABASE_URL is configured",
             ApiKeySecurityConfig::ENV_API_KEY_PEPPER
+        ))
+    })
+}
+
+fn require_upstream_credential_security_config(
+    config: Option<UpstreamCredentialSecurityConfig>,
+) -> Result<UpstreamCredentialSecurityConfig, ProductCatalogRouterError> {
+    config.ok_or_else(|| {
+        ProductCatalogRouterError::Config(format!(
+            "one of {} or {} is required when PostgreSQL upstream routing is enabled",
+            UpstreamCredentialSecurityConfig::ENV_KEY_RING,
+            UpstreamCredentialSecurityConfig::ENV_KEY_RING_FILE
         ))
     })
 }

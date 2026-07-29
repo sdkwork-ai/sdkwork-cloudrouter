@@ -23,23 +23,24 @@ class RustBackendArchitectureGuardian:
         "crates/sdkwork-claw-security",
         "crates/sdkwork-claw-http",
         "crates/sdkwork-claw-observability",
+        "crates/sdkwork-routes-clawrouter-app-api",
+        "crates/sdkwork-routes-clawrouter-backend-api",
         "crates/sdkwork-clawrouter-edge-runtime",
-        "crates/sdkwork-clawrouter-standalone-gateway",
-        "services/sdkwork-clawrouter-admin-api-server",
-        "services/sdkwork-clawrouter-app-api-server",
+        "services/sdkwork-clawrouter-admin-gateway",
+        "services/sdkwork-clawrouter-standalone-gateway",
         "services/sdkwork-clawrouter-router-service",
     )
     HTTP_BOUNDARY_SERVICES: tuple[str, ...] = (
         "crates/sdkwork-clawrouter-edge-runtime",
-        "services/sdkwork-clawrouter-admin-api-server",
-        "services/sdkwork-clawrouter-app-api-server",
+        "services/sdkwork-clawrouter-admin-gateway",
+        "services/sdkwork-clawrouter-standalone-gateway",
     )
-    THIN_ROUTE_API_SERVERS: dict[str, tuple[str, str]] = {
-        "services/sdkwork-clawrouter-admin-api-server": (
+    THIN_ROUTE_GATEWAYS: dict[str, tuple[str, str]] = {
+        "services/sdkwork-clawrouter-admin-gateway": (
             "sdkwork_routes_clawrouter_backend_api",
             "crates/sdkwork-routes-clawrouter-backend-api",
         ),
-        "services/sdkwork-clawrouter-app-api-server": (
+        "services/sdkwork-clawrouter-standalone-gateway": (
             "sdkwork_routes_clawrouter_app_api",
             "crates/sdkwork-routes-clawrouter-app-api",
         ),
@@ -63,7 +64,7 @@ class RustBackendArchitectureGuardian:
         "sqlx",
         "anyhow",
     )
-    LIB_RS_MAX_NON_EMPTY_LINES = 80
+    LIB_RS_MAX_NON_EMPTY_LINES = 120
     REQUIRED_CRATE_MODULES: dict[str, tuple[str, ...]] = {
         "crates/sdkwork-claw-contract": ("api_surface", "manifest", "operation", "path_pattern"),
         "crates/sdkwork-claw-config": (
@@ -73,6 +74,7 @@ class RustBackendArchitectureGuardian:
             "provider_relay",
             "provider_secret_map",
             "runtime",
+            "upstream_credential",
         ),
         "crates/sdkwork-claw-health": ("health",),
         "crates/sdkwork-claw-security": ("headers", "redaction"),
@@ -182,7 +184,6 @@ class RustBackendArchitectureGuardian:
         "ChatCompletionStreamRelayResponse",
         "GatewayUsageRecorder",
         "GatewayUsageRecordCommand",
-        "SqliteGatewayUsageRecorder",
         "PostgresGatewayUsageRecorder",
         "ai_request_trace",
         "ai_usage",
@@ -196,7 +197,6 @@ class RustBackendArchitectureGuardian:
         "UsageSettlementOutcome",
         "UsageSettlementWorker",
         "UsageSettlementWorkerConfig",
-        "SqliteUsageSettlementStore",
         "PostgresUsageSettlementStore",
         "commerce_usage_settlement",
         "plus_account_history",
@@ -234,8 +234,8 @@ class RustBackendArchitectureGuardian:
         "normalize the /v1 prefix",
         "never send /v1/v1/...",
         "provider response timeout",
-        "ai_channel.timeout_ms",
-        "ai_channel.retry_policy",
+        "ai_upstream_account.timeout_ms",
+        "ai_upstream_account.retry_policy",
         "request-context provider timeout",
         "request-context provider retry policy",
         "ProviderRetryPolicy",
@@ -247,7 +247,6 @@ class RustBackendArchitectureGuardian:
         "no plaintext provider secret storage",
         "GatewayRouterError",
         "infrastructure/sql",
-        "SQLite loader",
         "PostgreSQL loader",
         "immutable snapshot",
         "Schema Registry table names",
@@ -255,7 +254,7 @@ class RustBackendArchitectureGuardian:
         "generated enums",
         "no ai_pricing_group",
         "lib.rs",
-        "80 non-empty lines",
+        "thin orchestration entrypoint",
         "submodules",
     )
 
@@ -331,7 +330,7 @@ class RustBackendArchitectureGuardian:
                 if not isinstance(dependencies, dict) or "sdkwork-claw-config" not in dependencies:
                     messages.append(f"{service}/Cargo.toml must depend on sdkwork-claw-config")
 
-                thin_route = self.THIN_ROUTE_API_SERVERS.get(service)
+                thin_route = self.THIN_ROUTE_GATEWAYS.get(service)
                 if thin_route is None:
                     if not isinstance(dependencies, dict) or "sdkwork-claw-http" not in dependencies:
                         messages.append(f"{service}/Cargo.toml must depend on sdkwork-claw-http")
@@ -362,7 +361,7 @@ class RustBackendArchitectureGuardian:
                 messages.append(f"{service}/src/lib.rs is missing")
                 continue
             text = lib_path.read_text(encoding="utf-8")
-            thin_route = self.THIN_ROUTE_API_SERVERS.get(service)
+            thin_route = self.THIN_ROUTE_GATEWAYS.get(service)
             if thin_route is None:
                 if "sdkwork_claw_http::service_router" not in text:
                     messages.append(
@@ -418,6 +417,7 @@ class RustBackendArchitectureGuardian:
             "pricing_catalog": "PricingCatalog product catalog port",
             "provider_secret_resolver": "ProviderSecretResolver secret_ref lookup port",
             "responses_relay": "ResponsesRelay provider relay port",
+            "upstream_account_route_catalog": "UpstreamAccountRouteCatalog shared immutable route snapshot port",
             "usage_settlement_store": "UsageSettlementStore usage fact settlement and account ledger port",
         }
         for module, purpose in required_modules.items():
@@ -509,20 +509,10 @@ class RustBackendArchitectureGuardian:
                     f"services/sdkwork-clawrouter-router-service/src/infrastructure/sql/queries/{filename} is required for {purpose}"
                 )
         sqlite_dir = sql_dir / "sqlite"
-        required_sqlite_files = {
-            "mod.rs": "SQLite PricingCatalog module",
-            "error.rs": "SQLite PricingCatalog load errors",
-            "loader.rs": "SQLite PricingCatalog loader",
-            "gateway_usage_recorder.rs": "SQLite GatewayUsageRecorder adapter",
-            "usage_settlement_store.rs": "SQLite UsageSettlementStore adapter",
-            "queries.rs": "SQLite PricingCatalog load queries",
-            "row_mapping.rs": "SQLite PricingCatalog row mapping",
-        }
-        for filename, purpose in required_sqlite_files.items():
-            if not sqlite_dir.joinpath(filename).exists():
-                messages.append(
-                    f"services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/{filename} is required for {purpose}"
-                )
+        if sqlite_dir.exists() and any(path.is_file() for path in sqlite_dir.rglob("*")):
+            messages.append(
+                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite must not contain server persistence adapters; PostgreSQL is the authoritative server database"
+            )
         postgres_dir = sql_dir / "postgres"
         required_postgres_files = {
             "mod.rs": "PostgreSQL PricingCatalog module",

@@ -25,6 +25,7 @@ mod runtime_stream_bus;
 mod stripe_payment_adapter;
 mod upstream_account_route_planner;
 mod upstream_cache_invalidation;
+mod upstream_credential_secret_codec;
 mod upstream_route_selector;
 mod usage_settlement_config;
 mod usage_settlement_worker;
@@ -158,11 +159,11 @@ pub use paypal_payment_adapter::{
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
-    CredentialSecretCodec, ListModelCatalogQuery, ModelCatalogGroup, ModelCatalogItem,
-    ModelCatalogPage, ModelCatalogPriceView, ModelCatalogQueryService,
-    ModelCatalogReferencePriceView, ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig,
-    ModelRankingsService, PriceAvailability, PricingResolver, ResolveModelPriceQuery,
-    ResolvedModelPrice, ResolvedPriceSource, MODEL_RANKING_REFRESH_TRIGGER_MANUAL,
+    ListModelCatalogQuery, ModelCatalogGroup, ModelCatalogItem, ModelCatalogPage,
+    ModelCatalogPriceView, ModelCatalogQueryService, ModelCatalogReferencePriceView,
+    ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig, ModelRankingsService,
+    PriceAvailability, PricingResolver, ResolveModelPriceQuery, ResolvedModelPrice,
+    ResolvedPriceSource, MODEL_RANKING_REFRESH_TRIGGER_MANUAL,
     MODEL_RANKING_REFRESH_TRIGGER_SCHEDULED,
 };
 pub use stripe_payment_adapter::{
@@ -170,6 +171,9 @@ pub use stripe_payment_adapter::{
     StripePaymentProviderConfig,
 };
 pub use upstream_cache_invalidation::AiRoutingCacheInvalidatingAdminUpstreamStore;
+pub use upstream_credential_secret_codec::{
+    EncodedUpstreamCredentialSecret, UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
+};
 pub use upstream_route_selector::{
     SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute,
     SelectedUpstreamModelRoute, SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError,

@@ -380,31 +380,23 @@ frontend_operations:
           name: UpstreamSupplierAuthMethod
           type: object
           additionalProperties: false
-          required: [id, authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, authorizationUrl, tokenUrl, scopes, priority, status]
+          required: [id, authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, priority, status]
           properties:
             id: { type: string, maxLength: 32 }
             authMethodCode: { type: string, maxLength: 128 }
             authMethodName: { type: string, maxLength: 200 }
-            authType: { type: string, enum: [api_key, bearer_token, oauth2_client_credentials, oauth2_authorization_code, aws_sigv4, custom] }
+            authType: { type: string, enum: [api_key, bearer_token, custom] }
             configSchema: { type: object, additionalProperties: true }
             runtimeAuthConfig:
               type: object
               additionalProperties: false
               required: [credentialTransport]
               properties:
-                credentialTransport: { type: string, enum: [bearer, header, query, provider_adapter] }
+                credentialTransport: { type: string, enum: [bearer, header, query] }
                 credentialParameter: { type: string, maxLength: 128, nullable: true }
                 defaultHeaders:
                   type: object
                   additionalProperties: { type: string, maxLength: 2048 }
-                adapterScheme: { type: string, maxLength: 64, nullable: true }
-                adapterOptions: { type: object, additionalProperties: true, nullable: true }
-            authorizationUrl: { type: string, maxLength: 2048, nullable: true }
-            tokenUrl: { type: string, maxLength: 2048, nullable: true }
-            scopes:
-              type: array
-              items: { type: string, maxLength: 256 }
-              nullable: true
             priority: { type: integer, format: int32, minimum: 0 }
             status: { type: integer, format: int32 }
       pageInfo:
@@ -455,26 +447,18 @@ frontend_operations:
           properties:
             authMethodCode: { type: string, maxLength: 128 }
             authMethodName: { type: string, maxLength: 200 }
-            authType: { type: string, enum: [api_key, bearer_token, oauth2_client_credentials, oauth2_authorization_code, aws_sigv4, custom] }
+            authType: { type: string, enum: [api_key, bearer_token, custom] }
             configSchema: { type: object, additionalProperties: true }
             runtimeAuthConfig:
               type: object
               additionalProperties: false
               required: [credentialTransport]
               properties:
-                credentialTransport: { type: string, enum: [bearer, header, query, provider_adapter] }
+                credentialTransport: { type: string, enum: [bearer, header, query] }
                 credentialParameter: { type: string, maxLength: 128, nullable: true }
                 defaultHeaders:
                   type: object
                   additionalProperties: { type: string, maxLength: 2048 }
-                adapterScheme: { type: string, maxLength: 64, nullable: true }
-                adapterOptions: { type: object, additionalProperties: true, nullable: true }
-            authorizationUrl: { type: string, maxLength: 2048, nullable: true }
-            tokenUrl: { type: string, maxLength: 2048, nullable: true }
-            scopes:
-              type: array
-              items: { type: string, maxLength: 256 }
-              nullable: true
             priority: { type: integer, format: int32, minimum: 0, nullable: true }
             status: { type: integer, format: int32, nullable: true }
         maxItems: 200
@@ -834,16 +818,16 @@ frontend_operations:
   - ai_upstream_account
   - ai_upstream_account_credential
   response_schema:
-    name: UpstreamAccountCredentialCreatedResponse
+    name: UpstreamAccountCredentialItemResponse
     type: object
     additionalProperties: false
     required: [item]
     properties:
       item:
-        name: UpstreamAccountCredentialCreated
+        name: UpstreamAccountCredential
         type: object
         additionalProperties: false
-        required: [id, authMethodCode, credentialName, maskedLabel, credentialVersion, priority, isActive, expiresAt, lastRotatedAt, lastVerifiedAt, lastUsedAt, status, rawSecret]
+        required: [id, authMethodCode, credentialName, maskedLabel, credentialVersion, priority, isActive, expiresAt, lastRotatedAt, lastVerifiedAt, lastUsedAt, status]
         properties:
           id: { type: string, maxLength: 32 }
           authMethodCode: { type: string, maxLength: 128 }
@@ -857,11 +841,6 @@ frontend_operations:
           lastVerifiedAt: { type: string, format: date-time, nullable: true }
           lastUsedAt: { type: string, format: date-time, nullable: true }
           status: { type: integer, format: int32 }
-          rawSecret:
-            type: string
-            minLength: 1
-            maxLength: 65536
-            description: One-time plaintext credential returned only by this create response.
   request_schema:
     name: CreateUpstreamAccountCredentialRequest
     type: object
@@ -1902,7 +1881,7 @@ frontend_operations:
 - route: /console/usage
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-console-usage/src/usageService.ts
   operation: fetchLogs
-  operation_id: ai.usage.logs.get
+  operation_id: usage.logs.list
   kind: read
   api_surface: app
   api_method: GET
@@ -1913,9 +1892,64 @@ frontend_operations:
   - ai_usage
   - ai_routing_decision_log
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: UsageLogsResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: UsageLogItem
+          type: object
+          additionalProperties: false
+          required: [id, gatewayRequestId, time, tokenName, group, type, model, providerNativeModel, requestedModelCatalogKey, regionCode, status, httpStatus, errorCode, errorType, errorMessage, totalTime, ttft, isStream, inputTokens, cacheReadTokens, outputTokens, cost, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, path, reasoningEffort, ip, userAgent]
+          properties:
+            id: { type: string, maxLength: 32 }
+            gatewayRequestId: { type: string, maxLength: 128 }
+            time: { type: string, maxLength: 64 }
+            tokenName: { type: string, maxLength: 200 }
+            group: { type: string, maxLength: 200 }
+            type: { type: string, maxLength: 64 }
+            model: { type: string, maxLength: 256 }
+            providerNativeModel: { type: string, maxLength: 256 }
+            requestedModelCatalogKey: { type: string, maxLength: 256 }
+            regionCode: { type: string, maxLength: 128 }
+            status: { type: string, enum: [success, error] }
+            httpStatus: { type: integer, format: int32, minimum: 0, maximum: 599 }
+            errorCode: { type: string, maxLength: 256 }
+            errorType: { type: string, maxLength: 128 }
+            errorMessage: { type: string, maxLength: 4096 }
+            totalTime: { type: string, maxLength: 64 }
+            ttft: { type: string, maxLength: 64 }
+            isStream: { type: boolean }
+            inputTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            cacheReadTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            outputTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            cost: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,9})?$' }
+            multiplier: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            baseInputPrice: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            baseOutputPrice: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            cacheReadPrice: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            path: { type: string, maxLength: 2048 }
+            reasoningEffort: { type: string, maxLength: 64 }
+            ip: { type: string, maxLength: 128 }
+            userAgent: { type: string, maxLength: 2048 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
+  - name: status
+    schema: { type: string, enum: [success, error] }
+  - name: start_time
+    schema: { type: string, format: date-time, maxLength: 64 }
+  - name: end_time
+    schema: { type: string, format: date-time, maxLength: 64 }
 - route: /auth/forgot-password
   source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthController.ts
   operation: requestPasswordReset
@@ -7604,7 +7638,7 @@ frontend_models:
   fields:
   - id
   - user
-  - requestId
+  - gatewayRequestId
   - time
   - tokenName
   - group

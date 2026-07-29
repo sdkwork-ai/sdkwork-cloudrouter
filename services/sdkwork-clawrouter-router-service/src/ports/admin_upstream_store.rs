@@ -112,9 +112,6 @@ pub struct AdminUpstreamSupplierAuthMethodItem {
     pub auth_type: String,
     pub config_schema: serde_json::Value,
     pub runtime_auth_config: serde_json::Value,
-    pub authorization_url: Option<String>,
-    pub token_url: Option<String>,
-    pub scopes: Option<serde_json::Value>,
     pub priority: i32,
     pub status: i32,
 }
@@ -126,9 +123,6 @@ pub struct AdminUpstreamSupplierAuthMethodInput {
     pub auth_type: String,
     pub config_schema: serde_json::Value,
     pub runtime_auth_config: serde_json::Value,
-    pub authorization_url: Option<String>,
-    pub token_url: Option<String>,
-    pub scopes: Option<serde_json::Value>,
     pub priority: i32,
     pub status: i32,
 }

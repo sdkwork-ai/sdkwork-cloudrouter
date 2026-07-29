@@ -11639,73 +11639,73 @@
       "column_types": {},
       "columns": [
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "id",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "uuid",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "tenant_id",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "organization_id",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "data_scope",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "status",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "created_at",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "updated_at",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "version",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "deleted_at",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "deleted_by",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "metadata",
           "source": "common",
           "type": "common"
@@ -11726,12 +11726,17 @@
           "type": "string(128)"
         },
         {
-          "name": "credential_ref",
+          "name": "secret_ciphertext",
           "source": "explicit",
           "type": "text"
         },
         {
-          "name": "credential_hash",
+          "name": "secret_key_id",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "secret_fingerprint",
           "source": "explicit",
           "type": "string(128)"
         },
@@ -11778,73 +11783,73 @@
       ],
       "common_columns": [
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "id",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "uuid",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "tenant_id",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "organization_id",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "data_scope",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "status",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "created_at",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "updated_at",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "version",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "deleted_at",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "deleted_by",
           "source": "common",
           "type": "common"
         },
         {
-          "group": "credential_ref",
+          "group": "secret_entity",
           "name": "metadata",
           "source": "common",
           "type": "common"
@@ -11890,7 +11895,7 @@
       "lifecycle": null,
       "not_null_columns": [],
       "physical_columns": null,
-      "profile": "credential_ref",
+      "profile": "secret_entity",
       "projection_policy": null,
       "security": null,
       "source_refs": [],
@@ -14025,21 +14030,6 @@
         },
         {
           "name": "runtime_auth_config",
-          "source": "explicit",
-          "type": "json"
-        },
-        {
-          "name": "authorization_url",
-          "source": "explicit",
-          "type": "string(512)"
-        },
-        {
-          "name": "token_url",
-          "source": "explicit",
-          "type": "string(512)"
-        },
-        {
-          "name": "scopes",
           "source": "explicit",
           "type": "json"
         },

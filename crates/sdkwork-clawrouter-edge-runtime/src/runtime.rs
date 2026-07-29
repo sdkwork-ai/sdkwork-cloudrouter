@@ -7,7 +7,7 @@ use sdkwork_claw_config::{
     DeploymentRuntime, InternalGatewaySecurityConfig, PaymentWebhookConfig, ProviderAdapterConfig,
     ProviderAdapterManifestDiscoveryConfig, ProviderRelayConfig, ProviderSecretMapConfig,
     RedisConfig, RequestLimitsConfig, RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode,
-    TrustedSubjectConfig,
+    TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
 };
 use sdkwork_claw_http::QueryStringApiKeyPolicy;
 use sdkwork_claw_provider_adapter_contract::AdapterRouteStatus;
@@ -22,9 +22,9 @@ use sdkwork_clawrouter_router_service::api::{
     OpenAiInvocationPluginRef, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
 use sdkwork_clawrouter_router_service::application::{
-    resolve_usage_settlement_worker_config, ApiKeySecretHasher, CredentialSecretCodec,
-    GatewayAccountingRetryHealth, GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig,
-    RetryingGatewayUsageRecorder, RuntimeCacheManager, RuntimeStreamBus, TenantInflightConfig,
+    resolve_usage_settlement_worker_config, ApiKeySecretHasher, GatewayAccountingRetryHealth,
+    GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig, RetryingGatewayUsageRecorder,
+    RuntimeCacheManager, RuntimeStreamBus, TenantInflightConfig, UpstreamCredentialSecretCodec,
     UsageSettlementWorker, UsageSettlementWorkerConfig,
 };
 use sdkwork_clawrouter_router_service::domain::{
@@ -43,7 +43,7 @@ use sdkwork_clawrouter_router_service::infrastructure::provider::{
     SecretRefOpenAiCompatibleChatCompletionStreamRelay, SecretRefOpenAiCompatibleEmbeddingsRelay,
     SecretRefOpenAiCompatibleResponsesRelay, UpstreamProviderEndpoint,
     DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
-    DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
+    DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS, MAX_PROVIDER_RESPONSE_MAX_BYTES,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
@@ -62,8 +62,8 @@ use sdkwork_clawrouter_router_service::ports::{
     ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
     GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
-    GatewayUsageRecorder, PricingCatalog, ProviderSecretResolver, ResponsesRelay, StickyRouteStore,
-    UsageSettlementStore,
+    GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, StickyRouteStore,
+    UpstreamAccountRouteCatalog, UsageSettlementStore,
 };
 use sqlx::PgPool;
 use tokio::sync::Notify;
@@ -77,7 +77,7 @@ use crate::router_with_database_status_and_passthrough_placeholder;
 use crate::InvocationHttpDispatcher;
 
 type ApiKeyHasher = Arc<dyn ApiKeySecretHasher + Send + Sync>;
-type CredentialCodec = Arc<dyn CredentialSecretCodec + Send + Sync>;
+type CredentialCodec = Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>;
 type ChatRelay = Arc<dyn ChatCompletionRelay + Send + Sync>;
 type ChatStreamRelay = Arc<dyn ChatCompletionStreamRelay + Send + Sync>;
 type EmbeddingRelay = Arc<dyn EmbeddingsRelay + Send + Sync>;
@@ -171,7 +171,7 @@ fn router_with_invocation_runtime_routes<C>(
     internal_gateway_verifier: Arc<InternalGatewayRequestVerifier>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let secret_resolver = provider_secret_resolver.map(|resolver| {
         let resolver: Arc<dyn ProviderSecretResolver + Send + Sync> = resolver;
@@ -221,7 +221,7 @@ fn merge_relay_authenticated_openai_passthrough<C>(
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     if secret_resolver_configured {
         return router;
@@ -259,7 +259,7 @@ fn router_with_database_runtime_routes<C>(
     request_limits_config: RequestLimitsConfig,
 ) -> Result<Router, GatewayRouterError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let internal_gateway_verifier = build_internal_gateway_request_verifier(runtime_toml)?;
     let dispatcher_response_max_bytes =
@@ -409,6 +409,11 @@ fn gateway_invocation_body_max_bytes(request_limits_config: RequestLimitsConfig)
 }
 
 fn invocation_response_max_bytes(value: u64) -> Result<NonZeroUsize, GatewayRouterError> {
+    if value > MAX_PROVIDER_RESPONSE_MAX_BYTES {
+        return Err(GatewayRouterError::Config(format!(
+            "SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES must not exceed {MAX_PROVIDER_RESPONSE_MAX_BYTES}"
+        )));
+    }
     let value = usize::try_from(value).map_err(|_| {
         GatewayRouterError::Config(
             "SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES exceeds this platform's addressable memory"
@@ -555,6 +560,7 @@ struct AllInOneRuntimeContext {
     database_installer: Arc<DatabaseInstaller>,
     catalog: Arc<RefreshableSqlPricingCatalog>,
     api_key_security_config: ApiKeySecurityConfig,
+    upstream_credential_security_config: UpstreamCredentialSecurityConfig,
     provider_relay_config: Option<ProviderRelayConfig>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
     provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
@@ -588,7 +594,7 @@ pub fn router_with_product_catalog_and_api_key_hasher<C>(
     api_key_hasher: ApiKeyHasher,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     router_with_openai_runtime_routes(
         router(),
@@ -614,7 +620,7 @@ pub fn router_with_product_catalog_api_key_hasher_and_chat_completion_relay<C>(
     chat_relay: ChatRelay,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     router_with_openai_runtime_routes(
         router(),
@@ -645,7 +651,7 @@ pub fn router_with_product_catalog_api_key_hasher_and_chat_completion_streaming_
     chat_stream_relay: ChatStreamRelay,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     router_with_openai_runtime_routes(
         router(),
@@ -676,7 +682,7 @@ pub fn router_with_product_catalog_api_key_hasher_and_embeddings_relay<C>(
     embeddings_relay: EmbeddingRelay,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     router_with_openai_runtime_routes(
         router(),
@@ -707,7 +713,7 @@ pub fn router_with_product_catalog_api_key_hasher_and_responses_relay<C>(
     responses_relay: ResponseRelay,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     router_with_openai_runtime_routes(
         router(),
@@ -749,7 +755,7 @@ fn router_with_openai_runtime_routes<C>(
     include_openai_models_router: bool,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let chat_router = match (relays.chat, relays.chat_stream) {
         (Some(relay), Some(stream_relay)) => {
@@ -1066,7 +1072,12 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
     require_postgres_server_database(&config)?;
     let api_key_security_config = require_api_key_security_config(api_key_config)?;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
-    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
+    let upstream_credential_security_config = require_upstream_credential_security_config(
+        UpstreamCredentialSecurityConfig::from_env_or_runtime_toml(runtime_toml)
+            .map_err(GatewayRouterError::Config)?,
+    )?;
+    let credential_secret_codec =
+        credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
         .map_err(GatewayRouterError::Config)?;
     let provider_passthrough_config = provider_relay_config.clone();
@@ -1313,6 +1324,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             pool.clone(),
             Arc::clone(&context.catalog),
             context.api_key_security_config.clone(),
+            context.upstream_credential_security_config.clone(),
             context.trusted_subject_config.clone(),
             context.app_session_config.clone(),
             context.deployment_mode,
@@ -1327,6 +1339,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         pool,
         Arc::clone(&context.catalog),
         context.api_key_security_config.clone(),
+        context.upstream_credential_security_config.clone(),
         context.trusted_subject_config.clone(),
         context.app_session_config.clone(),
         context.payment_webhook_config.clone(),
@@ -1374,6 +1387,11 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
     sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&database_config);
     let api_key_security_config = require_api_key_security_config(
         ApiKeySecurityConfig::from_env_or_runtime_toml(runtime_toml_ref)
+            .map_err(GatewayRouterError::Config)?,
+    )
+    .map_err(anyhow::Error::new)?;
+    let upstream_credential_security_config = require_upstream_credential_security_config(
+        UpstreamCredentialSecurityConfig::from_env_or_runtime_toml(runtime_toml_ref)
             .map_err(GatewayRouterError::Config)?,
     )
     .map_err(anyhow::Error::new)?;
@@ -1457,7 +1475,8 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         .catalog_refresh_interval
         .min(app_catalog_refresh_interval);
     let credential_secret_codec =
-        credential_secret_codec_from_config(&api_key_security_config).map_err(anyhow::Error::new)?;
+        credential_secret_codec_from_config(&upstream_credential_security_config)
+            .map_err(anyhow::Error::new)?;
 
     {
         let database_pool =
@@ -1527,6 +1546,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
             database_installer,
             catalog,
             api_key_security_config,
+            upstream_credential_security_config,
             provider_relay_config,
             provider_adapter_config,
             provider_secret_resolver,
@@ -1835,7 +1855,7 @@ fn spawn_postgres_catalog_refresh_worker(
     pool: &PgPool,
     catalog: Arc<RefreshableSqlPricingCatalog>,
     provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
-    credential_secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>,
+    credential_secret_codec: Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
     interval: Duration,
     circuit_breaker_recovery_window_seconds: u64,
 ) -> tokio::task::JoinHandle<()> {
@@ -2026,11 +2046,16 @@ fn build_api_key_hasher(config: &ApiKeySecurityConfig) -> Result<ApiKeyHasher, G
 }
 
 fn credential_secret_codec_from_config(
-    config: &ApiKeySecurityConfig,
+    config: &UpstreamCredentialSecurityConfig,
 ) -> Result<CredentialCodec, GatewayRouterError> {
     Ok(Arc::new(
-        RingAeadCredentialSecretCodec::new(config.pepper_secret())
-            .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
+        RingAeadCredentialSecretCodec::with_key_ring(
+            config.active_key_id(),
+            config.active_key(),
+            config.fingerprint_key(),
+            config.decryption_keys().to_vec(),
+        )
+        .map_err(|error| GatewayRouterError::Config(error.to_string()))?,
     ))
 }
 
@@ -2041,6 +2066,18 @@ fn require_api_key_security_config(
         GatewayRouterError::Config(
             "SDKWORK_CLAW_API_KEY_PEPPER is required for OpenAI runtime routes".to_owned(),
         )
+    })
+}
+
+fn require_upstream_credential_security_config(
+    config: Option<UpstreamCredentialSecurityConfig>,
+) -> Result<UpstreamCredentialSecurityConfig, GatewayRouterError> {
+    config.ok_or_else(|| {
+        GatewayRouterError::Config(format!(
+            "one of {} or {} is required for PostgreSQL upstream routing",
+            UpstreamCredentialSecurityConfig::ENV_KEY_RING,
+            UpstreamCredentialSecurityConfig::ENV_KEY_RING_FILE
+        ))
     })
 }
 
@@ -2642,6 +2679,16 @@ mod tests {
     fn invocation_response_budget_rejects_zero_runtime_config() {
         let error = invocation_response_max_bytes(0)
             .expect_err("zero provider response budget must fail during gateway assembly");
+
+        assert!(error
+            .to_string()
+            .contains("SDKWORK_CLAW_PROVIDER_RESPONSE_MAX_BYTES"));
+    }
+
+    #[test]
+    fn invocation_response_budget_rejects_oom_scale_runtime_config() {
+        let error = invocation_response_max_bytes(MAX_PROVIDER_RESPONSE_MAX_BYTES + 1)
+            .expect_err("provider response budget above the hard cap must fail");
 
         assert!(error
             .to_string()

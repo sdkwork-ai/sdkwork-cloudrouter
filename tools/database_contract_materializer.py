@@ -47,6 +47,10 @@ COMMON_LOGICAL_TYPES = {
 
 DATABASE_ROLE = "authoritative-server"
 DATABASE_ENGINE = "postgres"
+RETIRED_SERVER_SCHEMA_PATHS = (
+    "database/ddl/baseline/sqlite/0001_clawrouter_baseline.sql",
+    "generated/schema/sqlite/schema.sql",
+)
 
 
 class IndentedSafeDumper(yaml.SafeDumper):
@@ -267,6 +271,12 @@ class DatabaseContractMaterializer:
 
     def check(self) -> list[str]:
         messages: list[str] = []
+        if self.module_spec == ROOT_MODULE:
+            for relative in RETIRED_SERVER_SCHEMA_PATHS:
+                if (self.root / relative).exists():
+                    messages.append(
+                        f"retired server SQLite schema must be removed: {relative}"
+                    )
         if self.module_spec == ROOT_MODULE:
             messages.extend(self.composite_compiler.check_dialect(DATABASE_ENGINE).messages)
             messages.extend(

@@ -1,7 +1,5 @@
 const POSTGRES_STORE: &str =
     include_str!("../src/infrastructure/sql/postgres/admin_transaction_center_store.rs");
-const SQLITE_STORE: &str =
-    include_str!("../src/infrastructure/sql/sqlite/admin_transaction_center_store.rs");
 const API: &str = include_str!("../src/api/admin_transaction_center.rs");
 const PAYMENT_ACCOUNT_RESOLVER: &str =
     include_str!("../src/application/payment_provider_account_resolver.rs");
@@ -38,7 +36,7 @@ fn transaction_center_postgres_provider_json_projection_tolerates_blank_text_col
 
 #[test]
 fn transaction_center_sql_stores_keep_tenant_rows_before_global_seed_fallback() {
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         assert!(
             source.contains("tenant_id IN (CAST(") && source.contains(", '0')"),
             "{label} transaction center store must query tenant rows plus global seed rows"
@@ -54,7 +52,7 @@ fn transaction_center_sql_stores_keep_tenant_rows_before_global_seed_fallback() 
 
 #[test]
 fn transaction_center_sql_stores_do_not_hide_missing_standard_tables() {
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         assert!(
             !source.contains("table_exists("),
             "{label} transaction center store must fail fast when a standard table is missing"
@@ -68,7 +66,7 @@ fn transaction_center_sql_stores_do_not_hide_missing_standard_tables() {
 
 #[test]
 fn transaction_center_provider_account_create_uses_command_scoped_idempotency() {
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         assert!(
             source.contains("payment_provider_account_idempotency_id"),
             "{label} store must isolate provider account command idempotency in a named helper"
@@ -208,7 +206,7 @@ fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract
 
 #[test]
 fn transaction_center_sql_stores_persist_rotated_at_from_provider_account_command() {
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         assert!(
             source.contains("command.rotated_at.as_deref()"),
             "{label} store must persist rotatedAt from the provider account command"
@@ -223,28 +221,20 @@ fn transaction_center_sql_stores_persist_rotated_at_from_provider_account_comman
 #[test]
 fn transaction_center_provider_account_projection_exposes_sdk_note_from_audit_summary() {
     assert!(
-        SQLITE_STORE.contains("json_extract(audit.change_summary, '$.note')"),
-        "sqlite provider account projection must expose SDK note from audit change_summary"
-    );
-    assert!(
         POSTGRES_STORE.contains("audit.change_summary->>'note'"),
         "postgres provider account projection must expose SDK note from audit change_summary"
     );
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         assert!(
             source.contains("'payments.provider_account.create'"),
             "{label} provider account note projection must scope audit reads to create events"
         );
     }
-    assert!(
-        SQLITE_STORE.contains("Field::OptionalString(\"note\")"),
-        "sqlite provider account record mapping must include optional SDK note"
-    );
 }
 
 #[test]
 fn transaction_center_provider_account_create_writes_ops_audit_log() {
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         assert!(
             source.contains("PAYMENT_PROVIDER_ACCOUNT_AUDIT_ACTION"),
             "{label} store must name the provider account audit action"
@@ -292,7 +282,7 @@ fn transaction_center_provider_account_create_writes_ops_audit_log() {
 
 #[test]
 fn transaction_center_payment_route_rule_projection_matches_generated_item_contract() {
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         assert!(
             source.contains("fallbackChannelId"),
             "{label} store must expose fallbackChannelId for CommercePaymentRouteRuleItem"
@@ -302,19 +292,11 @@ fn transaction_center_payment_route_rule_projection_matches_generated_item_contr
             "{label} store must expose fallbackEnabled for CommercePaymentRouteRuleItem"
         );
     }
-    assert!(
-        SQLITE_STORE.contains("Field::OptionalString(\"fallbackChannelId\")"),
-        "sqlite route rule record mapping must include optional fallbackChannelId"
-    );
-    assert!(
-        SQLITE_STORE.contains("Field::Boolean(\"fallbackEnabled\")"),
-        "sqlite route rule record mapping must include required fallbackEnabled"
-    );
 }
 
 #[test]
 fn transaction_center_payment_provider_and_method_projections_match_generated_item_contracts() {
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         for field in [
             "supportedCountries",
             "supportedCurrencies",
@@ -328,22 +310,7 @@ fn transaction_center_payment_provider_and_method_projections_match_generated_it
             );
         }
     }
-    for field in [
-        "supportedCountries",
-        "supportedCurrencies",
-        "capabilities",
-        "checkoutScenes",
-    ] {
-        assert!(
-            SQLITE_STORE.contains(&format!("Field::JsonString(\"{field}\")")),
-            "sqlite payment projection must decode {field} as JSON"
-        );
-    }
-    assert!(
-        SQLITE_STORE.contains("Field::String(\"methodType\")"),
-        "sqlite payment method projection must include methodType as a required string"
-    );
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         assert!(
             source.contains("NULLIF(provider, 'wallet_balance')"),
             "{label} payment method projection must expose wallet_balance providerCode as null to match the SDK enum"
@@ -353,7 +320,7 @@ fn transaction_center_payment_provider_and_method_projections_match_generated_it
 
 #[test]
 fn transaction_center_payment_runtime_projection_standardizes_method_provider_and_subject_codes() {
-    for (label, source) in [("postgres", POSTGRES_STORE), ("sqlite", SQLITE_STORE)] {
+    for (label, source) in [("postgres", POSTGRES_STORE)] {
         for expected in [
             "WHEN pi.provider = 'stripe' THEN 'card'",
             "WHEN pa.provider = 'stripe' THEN 'card'",

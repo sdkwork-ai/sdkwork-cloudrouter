@@ -77,7 +77,15 @@ test('declares v5 topology spec and profile env files for sdkwork-clawrouter', a
     const profileEnv = await read(profilePath);
     assert.match(profileEnv, /SDKWORK_CLAW_ROUTER_PROFILE_ID=/);
     assert.match(profileEnv, /VITE_SDKWORK_CLAW_ROUTER_APPLICATION_PUBLIC_HTTP_URL=/);
-    assert.match(profileEnv, /VITE_SDKWORK_CLAW_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL=/);
+    if (profileId.startsWith('standalone.')) {
+      assert.doesNotMatch(
+        profileEnv,
+        /^(?:VITE_)?SDKWORK_CLAW_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL=/m,
+      );
+    } else {
+      assert.match(profileEnv, /^SDKWORK_CLAW_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL=/m);
+      assert.match(profileEnv, /^VITE_SDKWORK_CLAW_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL=/m);
+    }
   }
 });
 
@@ -206,11 +214,11 @@ test('bridgeTopologyBindEnvToLegacyRustEnv maps topology binds to Rust service e
   assert.equal(bridged.SDKWORK_CLAW_PORTAL_BIND, '127.0.0.1:3901');
 });
 
-test('claw-router dev dry-run resolves surface URLs from profile env', async () => {
+test('claw-router dev dry-run omits cloud-only surfaces from standalone env', async () => {
   const { loadTopologyProfileForWorkspace, resolveSurfaceHttpUrl, REPO_ROOT } = await import('./lib/claw-router-topology.mjs');
   const { env } = loadTopologyProfileForWorkspace();
   assert.equal(resolveSurfaceHttpUrl(env, 'application.public-ingress'), 'http://127.0.0.1:3900');
-  assert.equal(resolveSurfaceHttpUrl(env, 'platform.api-gateway'), 'http://127.0.0.1:3902');
+  assert.equal(resolveSurfaceHttpUrl(env, 'platform.api-gateway'), undefined);
   assert.equal(env.SDKWORK_APP_ROOT, REPO_ROOT);
   assert.equal(env.SDKWORK_CLAW_ROUTER_APP_ROOT, REPO_ROOT);
   assert.equal(env.SDKWORK_IAM_APP_ROOT, path.resolve(REPO_ROOT, '..', 'sdkwork-iam'));

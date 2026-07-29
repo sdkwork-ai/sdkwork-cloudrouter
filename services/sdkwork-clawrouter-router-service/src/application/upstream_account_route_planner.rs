@@ -377,9 +377,12 @@ fn next_offset(key: &str, modulus: u64) -> u64 {
 }
 
 fn stable_routing_hash(value: &str) -> u64 {
-    value.as_bytes().iter().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
-        (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
-    })
+    value
+        .as_bytes()
+        .iter()
+        .fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+            (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
+        })
 }
 
 fn routing_instance_salt() -> u64 {
@@ -388,11 +391,7 @@ fn routing_instance_salt() -> u64 {
         return u64::from_le_bytes(bytes);
     }
 
-    stable_routing_hash(&format!(
-        "{}:{:p}",
-        std::process::id(),
-        &ROUTING_COUNTERS
-    ))
+    stable_routing_hash(&format!("{}:{:p}", std::process::id(), &ROUTING_COUNTERS))
 }
 
 fn random_offset(modulus: usize) -> usize {

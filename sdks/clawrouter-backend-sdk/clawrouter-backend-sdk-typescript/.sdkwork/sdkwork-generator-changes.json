@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/clawrouter-backend-sdk"
   },
-  "changeFingerprint": "f8a034d15445734263ded46909de25f3884b18fe156749029af9cbdcbdc548d6",
+  "changeFingerprint": "4e2dacc02f2529ae20db379d5344fe4ec6453354544d1887814ad8411ad97cf2",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -112,8 +112,7 @@
       "src/types/update-upstream-account-group-request.ts",
       "src/types/update-upstream-account-request.ts",
       "src/types/update-upstream-supplier-request.ts",
-      "src/types/upstream-account-credential-created-response.ts",
-      "src/types/upstream-account-credential-created.ts",
+      "src/types/upstream-account-credential-item-response.ts",
       "src/types/upstream-account-credential-list-response.ts",
       "src/types/upstream-account-credential.ts",
       "src/types/upstream-account-group-item-response.ts",
@@ -275,8 +274,7 @@
           "src/types/update-upstream-account-group-request.ts",
           "src/types/update-upstream-account-request.ts",
           "src/types/update-upstream-supplier-request.ts",
-          "src/types/upstream-account-credential-created-response.ts",
-          "src/types/upstream-account-credential-created.ts",
+          "src/types/upstream-account-credential-item-response.ts",
           "src/types/upstream-account-credential-list-response.ts",
           "src/types/upstream-account-credential.ts",
           "src/types/upstream-account-group-item-response.ts",

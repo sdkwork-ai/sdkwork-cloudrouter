@@ -1,16 +1,16 @@
 # Upstream Supplier Management
 
-Status: active
-Owner: claw-router-platform
-Updated: 2026-07-28
-Decision: `ADR-20260728-standardize-upstream-supplier-routing.md`
+Status: active  
+Owner: claw-router-platform  
+Updated: 2026-07-29  
+Decision: [ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
 
 ## Product Goal
 
-Claw Router provides one standardized operator workflow for configuring any
-official AI provider or relay supplier, attaching one or more credentialed
-accounts, grouping those accounts for routing and settlement, and explaining
-exactly why an API request selected or rejected each candidate.
+Claw Router provides one standardized operator workflow for configuring an
+official AI provider or relay supplier, attaching credentialed accounts,
+grouping those accounts for routing and settlement, and explaining why an API
+request selected or rejected each candidate.
 
 ## Product Dictionary
 
@@ -18,93 +18,106 @@ exactly why an API request selected or rejected each candidate.
 | --- | --- | --- |
 | Upstream supplier | Official provider or relay business integration | Adapter implementation, account, endpoint |
 | Supplier endpoint | One Base URL belonging to a supplier | Supplier identity |
-| Authentication method | A supplier-supported auth protocol and its non-secret schema | Stored account credential |
+| Authentication method | Supplier-supported auth policy and non-secret schema | Stored account credential |
 | Upstream account | One credentialed, billable account at one supplier | Supplier or account group |
-| Account group | A routable group of accounts with pricing and fallback policy | Pool, supplier |
-| Resource | A model/API/capability that may be routed | Supplier adapter |
+| Account group | Routable group of accounts with routing and financial policy | Pool or supplier |
+| Resource | Model, API, or capability that may be routed | Supplier adapter |
 
-The Chinese UI uses “上游供应商”, “上游账号”, “账号分组”, “Base URL”,
-“认证方式”, “资源”, and “资源分组”. It does not expose “站点”, “渠道”,
-“供应商密钥”, “服务商”, or “池” for this capability.
+The Chinese UI uses "上游供应商", "上游账号", "账号分组", "Base URL",
+"认证方式", "资源", and "资源分组". It does not use "站点", "渠道",
+"供应商密钥", "服务商", or "池" for this capability.
 
 ## Supplier Workflow
 
 An operator creates a supplier with a stable code, display name, supplier type
 (`official` or `relay`), adapter, protocol, status, and optional website/docs
-metadata. The supplier is not routable until it has at least one active
-endpoint, one active authentication method, one allowed resource/resource
-group, and one active account with a valid credential.
+metadata. A supplier is not routable until it has an active endpoint, supported
+authentication method, allowed resource or resource group, and an eligible
+account with an active credential.
 
-Supplier detail has Overview, Base URLs, Authentication, Resources, Accounts,
-Health, and Audit tabs. Base URLs have independent region, environment,
-priority, weight, timeout, and health. Authentication entries declare the
-method and safe field schema; they never store a real credential.
+Supplier detail contains Overview, Base URLs, Authentication, Resources,
+Accounts, Health, and Audit views. Each Base URL has independent region,
+environment, priority, weight, timeout, and health. Authentication entries
+declare safe configuration schemas; they never store real credential material.
 
 ## Account Workflow
 
-An account selects exactly one supplier and one supported authentication
-method. It may prefer one active endpoint from that supplier. The account owns
-external account identity, encrypted credential reference, masked label,
-credential expiry/rotation, quota, balance/currency, contract cost multiplier,
-timeout/retry/circuit-breaker policy, health, and status.
+An account selects exactly one supplier and one authentication method supported
+by that supplier. It may prefer one active endpoint. It owns external account
+identity, credential lifecycle, masked label, quota, balance/currency, contract
+cost multiplier, timeout/retry/circuit policy, health, and status.
 
-Create and rotate forms accept secrets as write-only fields. Details and list
-views never display or rehydrate raw credential material. Rotating creates a
-new credential version atomically, makes it active only after validation, and
-keeps audit facts without secret values.
+Credential create and rotate forms accept secret material as write-only input.
+List, detail, create, and rotate responses never display or rehydrate the raw
+secret. Rotation creates a new encrypted credential version atomically, changes
+the active version only after command validation, and writes audit facts without
+secret values.
+
+The implemented credential policies are `api_key`, `bearer_token`, and
+`custom`. OAuth is an extension point, not a working capability. A future OAuth
+policy must implement authorization, callback validation, token refresh,
+revocation, encrypted token persistence, audit, failure recovery, and safe
+operator states before it is added to the supported registry.
 
 ## Account Group Workflow
 
 An account group declares a stable code/name, routing strategy, priority,
-fallback mode, cost multiplier, sale multiplier, optional capacity, status,
-and resource/resource-group allowlist. Members must reference active accounts
-in the same tenant and organization. Each member has a priority, routing
-weight, effective interval, and optional cost multiplier override.
+fallback mode, cost multiplier, sale multiplier, optional capacity, status, and
+resource/resource-group allowlist. Members reference accounts in the same tenant
+and organization. Each member has priority, routing weight, effective interval,
+and an optional cost multiplier override.
 
-Changing routing weight never changes settlement cost. Changing a multiplier
-never changes routing probability. The route-explain view displays effective
-resources, eligible/rejected members, endpoint/auth compatibility, health and
-quota reasons, selected strategy, fallback chain, and redacted decision facts.
+Routing weight changes traffic distribution only. Cost and sale multipliers
+change financial calculations only. Route explanation displays effective
+resources, eligible and rejected members, endpoint/auth compatibility, health
+and quota reasons, selected strategy, fallback chain, and redacted decision
+facts.
 
 ## API Request Lifecycle
 
-1. Authenticate and resolve tenant/API-key entitlement.
+1. Authenticate and resolve tenant, organization, API key, and entitlements.
 2. Normalize API operation and requested resource/model.
-3. Select candidate account groups from routing policy.
+3. Resolve ordered account groups from routing policy.
 4. Intersect supplier, group, and entitlement resources.
-5. Filter by status, time window, region, auth, credential, quota, and health.
-6. Apply strategy and fallback from a captured candidate snapshot.
-7. Choose endpoint and credential version, then dispatch through the adapter.
-8. Record result, usage, cost, sale amount, health feedback, and audit-safe
-   route explanation.
+5. Filter by lifecycle, time window, protocol, region, auth, credential, quota,
+   health, and circuit state.
+6. Apply the group strategy and fallback from one immutable candidate snapshot.
+7. Select a compatible endpoint and active credential version, validate egress,
+   and dispatch through the adapter.
+8. Record result, usage, cost, sale amount, health feedback, settlement, and an
+   audit-safe route explanation.
 
-No request may fall back across tenants, use a credential from another
-account, route a resource absent from any of the three allowlists, or forward a
-secret to an endpoint that did not pass egress validation.
+No request may fall back across tenants, use another account's credential,
+route a resource absent from the effective allowlist, or attach a secret before
+the target passes egress validation.
 
 ## Roles And Permissions
 
 | Capability | Read | Mutate | Sensitive action |
 | --- | --- | --- | --- |
-| Suppliers | `ai.upstream-suppliers.read` | `ai.upstream-suppliers.write` | endpoint test/sync requires write and audit |
-| Accounts | `ai.upstream-accounts.read` | `ai.upstream-accounts.write` | credential create/rotate/revoke requires `ai.upstream-accounts.credentials.write` and rate limiting |
-| Account groups | `ai.upstream-account-groups.read` | `ai.upstream-account-groups.write` | route explain requires read; publish/change requires write and audit |
+| Suppliers | `ai.upstream-suppliers.read` | `ai.upstream-suppliers.write` | Endpoint test/sync requires write permission and audit |
+| Accounts | `ai.upstream-accounts.read` | `ai.upstream-accounts.write` | Credential create/rotate/revoke requires credential-write permission and rate limiting |
+| Account groups | `ai.upstream-account-groups.read` | `ai.upstream-account-groups.write` | Route explain requires read; publish/change requires write and audit |
 
-All repository queries are tenant/organization scoped from typed request
+Repository queries derive tenant and organization scope from typed request
 context. Cross-tenant and absent objects return the same not-found response.
 
 ## API Contract Rules
 
-Lists use standard `page`, `pageSize`, `items`, and page metadata. Identifiers
-are string-encoded Snowflake values at JSON boundaries. Inputs declare length,
-format, enum, numeric range, and unknown-field behavior. Success responses use
-the standard envelope; failures use RFC 9457 Problem Details with stable
-numeric codes, `traceId`, optional `i18nKey`, and safe field errors.
+List HTTP queries use `page` and `page_size`. JSON responses and generated SDK
+models use camelCase, including `pageSize`, with `items` and standard page
+metadata. Pagination is executed in the repository query, not by materializing
+an unbounded collection in process.
 
-Credential input fields are write-only in OpenAPI. Supplier/account/group
-responses are separate summary and detail DTOs. Provider error bodies,
-internal endpoint hostnames not intended for operators, SQL errors, and stack
-traces never cross the API boundary.
+Identifiers are string-encoded Snowflake values at JSON boundaries. Inputs
+declare length, format, enum, numeric range, and unknown-field behavior. Success
+responses use the standard envelope; failures use RFC 9457 Problem Details with
+stable numeric codes, `traceId`, optional `i18nKey`, and safe field errors.
+
+Credential fields are `writeOnly` in OpenAPI. Supplier, account, and group
+responses use explicit DTOs. Provider error bodies, internal-only endpoint
+details, SQL errors, stack traces, and secret material never cross the API
+boundary.
 
 ## Settlement Formula
 
@@ -116,41 +129,40 @@ procurement_cost = reference_cost
 sale_amount = sale_reference_price * group.sale_multiplier
 ```
 
-Currency conversion, rounding, minimum charge, and taxes remain owned by the
-pricing/settlement policies. Every result records the pricing version and
-multiplier snapshot used for reconciliation.
+Currency conversion, rounding, minimum charge, and tax policy remain owned by
+pricing and settlement. Every result records the pricing version and multiplier
+snapshot used for reconciliation.
 
 ## Operational Requirements
 
-- Supplier/account/group configuration changes are transactional, audited,
-  versioned, and invalidate the routing snapshot after commit.
-- Routing reads use an immutable cached snapshot; request hot paths do not
-  perform N+1 control-plane queries.
-- Health checks have bounded concurrency, timeout, redacted errors, and
-  endpoint-level circuit state.
-- Active configuration supports deterministic export, restore, and drift
-  comparison without exporting secret material.
-- Metrics have bounded labels and expose eligible-candidate count, rejection
-  reason, selection strategy, fallback count, endpoint health, credential
-  expiry horizon, and settlement failures.
+- Supplier, account, and group mutations are transactional, audited, versioned,
+  and invalidate the routing snapshot only after commit.
+- Routing reads use an immutable cached snapshot and avoid N+1 control-plane
+  queries and per-request route deep copies.
+- Health checks have bounded concurrency and timeout, redacted errors, and
+  dedicated account/endpoint health-state authorities.
+- Configuration export, restore, and drift comparison exclude secret material.
+- Metrics use bounded labels and expose candidate count, rejection reason,
+  strategy, fallback count, health, credential expiry, and settlement failure.
+- PostgreSQL is the only authoritative server database. Server runtime never
+  falls back to SQLite.
 
 ## Acceptance Criteria
 
-- The database, Rust types, SQL, API, generated Backend SDK, UI, tests, and
-  canonical docs contain the same three product concepts and nine table names.
-- Official suppliers and relay suppliers both support multiple Base URLs and
-  multiple authentication methods.
-- API Key and OAuth credentials can be created/rotated without any read API
-  exposing raw material.
+- Database contracts, PostgreSQL DDL, Rust types, SQL, API, generated Backend
+  SDK, UI, tests, and Canon docs use the same supplier/account/account-group
+  ownership model.
+- Official and relay suppliers support multiple Base URLs and declared
+  authentication methods.
+- `api_key`, `bearer_token`, and `custom` credentials can be created and rotated
+  without any read response exposing raw material.
 - Supplier/group/entitlement resource intersection is enforced and explained.
 - Weighted, round-robin, least-latency, least-cost, and failover strategies are
   deterministic and covered by tests.
 - Cost and sale multipliers are independently configurable and reconciled from
   immutable snapshots.
-- No `integration_provider_account`, `integration_service_provider*`, provider
-  secret API, site API, channel API, or pool entity remains in executable or
-  canonical contract surfaces.
-- Clean PostgreSQL installation, legacy migration verification, OpenAPI/SDK
-  generation, Rust tests, frontend typecheck/tests, security scans, and
-  documentation scans pass before release consideration.
-
+- No retired provider/site/channel/pool or duplicate integration aggregate
+  remains in executable or current contract surfaces.
+- Clean PostgreSQL installation, contract generation, Rust tests, frontend
+  checks, security scans, pagination validation, and documentation scans pass
+  before release consideration.

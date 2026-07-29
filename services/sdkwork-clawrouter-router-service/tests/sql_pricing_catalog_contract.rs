@@ -1,10 +1,16 @@
+use std::sync::{Arc, Barrier};
+
 use sdkwork_clawrouter_router_service::domain::{
     DecimalValue, RouteCandidate, UpstreamAccountFallbackMode, UpstreamAccountRoutingStrategy,
+};
+use sdkwork_clawrouter_router_service::infrastructure::sql::catalog::{
+    PricingCatalogRows, RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshot,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::rows::{
     ModelMappingRuleRow, RoutingRuleRow, UpstreamAccountGroupRow, UpstreamAccountRouteRow,
 };
 use sdkwork_clawrouter_router_service::infrastructure::sql::PricingCatalogSql;
+use sdkwork_clawrouter_router_service::ports::UpstreamAccountRouteCatalog;
 
 const CANONICAL_UPSTREAM_TABLES: [&str; 11] = [
     "ai_upstream_supplier",
@@ -69,7 +75,8 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
         "e.id AS endpoint_id",
         "e.base_url",
         "cc.id AS credential_id",
-        "cc.credential_ref AS secret_ciphertext",
+        "cc.secret_ciphertext",
+        "cc.secret_key_id",
         "am.auth_type",
         "account_group_bindings_json",
         "endpoint_health_status",
@@ -85,7 +92,7 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
     assert!(sql.contains("JOIN supplier_resource_scope sr"));
     assert!(sql.contains("sr.tenant_id = gr.tenant_id"));
     assert!(sql.contains("sr.organization_id = gr.organization_id"));
-    assert!(sql.contains("NULLIF(cc.credential_ref, '') IS NOT NULL"));
+    assert!(sql.contains("NULLIF(cc.secret_ciphertext, '') IS NOT NULL"));
     assert!(sql.contains("NULLIF(e.base_url, '') IS NOT NULL"));
     assert!(sql.contains("member.account_id = c.id"));
     assert!(sql.contains("COALESCE(member.enabled, true)"));
@@ -254,41 +261,7 @@ fn model_mapping_rows_reject_retired_binding_types() {
 
 #[test]
 fn upstream_account_route_rows_preserve_endpoint_credential_and_group_identity() {
-    let route = UpstreamAccountRouteRow {
-        supplier_code: "openai".to_owned(),
-        account_id: 3001,
-        credential_id: Some(7001),
-        credential_rotation: "priority".to_owned(),
-        credential_priority: 10,
-        credential_weight: 100,
-        contract_cost_multiplier: "0.950000".to_owned(),
-        last_latency_ms: Some(125),
-        account_code: Some("openai-primary".to_owned()),
-        region_code: "global".to_owned(),
-        supplier_id: 5001,
-        endpoint_id: Some(6001),
-        endpoint_code: Some("global-primary".to_owned()),
-        endpoint_priority: 10,
-        endpoint_weight: 100,
-        endpoint_health_status: 1,
-        base_url: Some("https://api.openai.com/v1".to_owned()),
-        secret_ref: Some("managed://upstream-account-credential/7001".to_owned()),
-        secret_ciphertext: Some("encrypted-value".to_owned()),
-        auth_type: Some("api_key".to_owned()),
-        runtime_auth_config_json:
-            r#"{"credentialTransport":"bearer","defaultHeaders":{}}"#.to_owned(),
-        timeout_ms: Some(30_000),
-        retry_policy_json: Some(
-            r#"{"max_attempts":2,"retryable_status_codes":[429,503],"backoff_ms":25}"#
-                .to_owned(),
-        ),
-        account_group_bindings_json:
-            r#"[{"accountGroupId":10,"priority":10,"weight":100,"costMultiplierOverride":"1.020000","apiScope":["openai.chat_completions"],"capabilities":["llm"]}]"#.to_owned(),
-        account_health_status: 1,
-        credential_health_status: 1,
-    }
-    .try_into_domain()
-    .unwrap();
+    let route = upstream_account_route_row(3001).try_into_domain().unwrap();
 
     assert_eq!(3001, route.account_id);
     assert_eq!(Some(7001), route.credential_id);
@@ -304,6 +277,113 @@ fn upstream_account_route_rows_preserve_endpoint_credential_and_group_identity()
         Some(DecimalValue::parse("1.020000").unwrap()),
         route.account_group_bindings[0].cost_multiplier_override
     );
+}
+
+#[test]
+fn refreshable_catalog_reuses_the_same_route_allocation_between_reads() {
+    let catalog = RefreshableSqlPricingCatalog::new(sql_snapshot_with_account(3001));
+
+    let first = catalog.shared_upstream_account_routes();
+    let second = catalog.shared_upstream_account_routes();
+
+    assert!(Arc::ptr_eq(&first, &second));
+    assert_eq!(3001, first[0].account_id);
+}
+
+#[test]
+fn refreshable_catalog_replacement_is_visible_without_invalidating_existing_readers() {
+    let catalog = RefreshableSqlPricingCatalog::new(sql_snapshot_with_account(3001));
+    let previous = catalog.shared_upstream_account_routes();
+
+    catalog.replace_snapshot(sql_snapshot_with_account(3002));
+    let current = catalog.shared_upstream_account_routes();
+
+    assert!(!Arc::ptr_eq(&previous, &current));
+    assert_eq!(3001, previous[0].account_id);
+    assert_eq!(3002, current[0].account_id);
+}
+
+#[test]
+fn refreshable_catalog_supports_concurrent_route_reads_and_snapshot_replacement() {
+    const READER_COUNT: usize = 4;
+    const ITERATIONS: usize = 500;
+
+    let catalog = Arc::new(RefreshableSqlPricingCatalog::new(
+        sql_snapshot_with_account(3001),
+    ));
+    let start = Arc::new(Barrier::new(READER_COUNT + 1));
+    let readers = (0..READER_COUNT)
+        .map(|_| {
+            let catalog = Arc::clone(&catalog);
+            let start = Arc::clone(&start);
+            std::thread::spawn(move || {
+                start.wait();
+                for _ in 0..ITERATIONS {
+                    let routes = catalog.shared_upstream_account_routes();
+                    assert!(matches!(routes[0].account_id, 3001 | 3002));
+                }
+            })
+        })
+        .collect::<Vec<_>>();
+
+    start.wait();
+    for index in 0..ITERATIONS {
+        let account_id = if index % 2 == 0 { 3002 } else { 3001 };
+        catalog.replace_snapshot(sql_snapshot_with_account(account_id));
+    }
+
+    for reader in readers {
+        reader
+            .join()
+            .expect("concurrent catalog reader must not panic");
+    }
+}
+
+fn sql_snapshot_with_account(account_id: i64) -> SqlPricingCatalogSnapshot {
+    SqlPricingCatalogSnapshot::from_rows(PricingCatalogRows {
+        upstream_account_routes: vec![upstream_account_route_row(account_id)],
+        ..PricingCatalogRows::default()
+    })
+    .expect("test catalog snapshot must be valid")
+}
+
+fn upstream_account_route_row(account_id: i64) -> UpstreamAccountRouteRow {
+    UpstreamAccountRouteRow {
+        tenant_id: 100001,
+        organization_id: 0,
+        supplier_code: "openai".to_owned(),
+        account_id,
+        credential_id: Some(7001),
+        credential_rotation: "priority".to_owned(),
+        credential_priority: 10,
+        credential_weight: 100,
+        contract_cost_multiplier: "0.950000".to_owned(),
+        last_latency_ms: Some(125),
+        account_code: Some(format!("openai-{account_id}")),
+        region_code: "global".to_owned(),
+        supplier_id: 5001,
+        endpoint_id: Some(6001),
+        endpoint_code: Some("global-primary".to_owned()),
+        endpoint_priority: 10,
+        endpoint_weight: 100,
+        endpoint_health_status: 1,
+        base_url: Some("https://api.openai.com/v1".to_owned()),
+        secret_ref: Some("managed://upstream-account-credential/7001".to_owned()),
+        secret_ciphertext: Some("encrypted-value".to_owned()),
+        secret_key_id: Some("test-active".to_owned()),
+        auth_type: Some("api_key".to_owned()),
+        runtime_auth_config_json:
+            r#"{"credentialTransport":"bearer","defaultHeaders":{}}"#.to_owned(),
+        timeout_ms: Some(30_000),
+        retry_policy_json: Some(
+            r#"{"max_attempts":2,"retryable_status_codes":[429,503],"backoff_ms":25}"#
+                .to_owned(),
+        ),
+        account_group_bindings_json:
+            r#"[{"accountGroupId":10,"priority":10,"weight":100,"costMultiplierOverride":"1.020000","apiScope":["openai.chat_completions"],"capabilities":["llm"]}]"#.to_owned(),
+        account_health_status: 1,
+        credential_health_status: 1,
+    }
 }
 
 fn model_mapping_row(binding_type: &str) -> ModelMappingRuleRow {

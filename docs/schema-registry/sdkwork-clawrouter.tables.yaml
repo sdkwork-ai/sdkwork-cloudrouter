@@ -46,7 +46,7 @@ schema_registry:
     - retention_until
     - legal_hold
     - metadata
-    credential_ref:
+    secret_entity:
     - id
     - uuid
     - tenant_id
@@ -166,7 +166,7 @@ schema_registry:
     relation_entity:
       tenant_scope: tenant_with_global_fallback
       soft_delete_policy: active_unique
-    credential_ref:
+    secret_entity:
       tenant_scope: tenant_with_global_fallback
       soft_delete_policy: active_unique
     pricing:
@@ -378,17 +378,6 @@ registry_dependencies:
   - commerce_discount
   ownership: independent
   access: api_event
-- module_id: sdkwork-kernel
-  locator: ../sdkwork-kernel
-  registry_path: docs/schema-registry/sdkwork-kernel.tables.yaml
-  description: "AI\u5185\u6838\u3001Agent\u7BA1\u7406\u3001\u63D0\u793A\u8BCD\u3001\u6280\u80FD\u3001\u63D2\u4EF6\n\n\u884C\
-    \u4E1A\u5BF9\u6807: OpenAI Platform\n"
-  tables_count: 2
-  tables:
-  - ai_provider
-  - ai_provider_health
-  ownership: independent
-  access: sdk
 - module_id: sdkwork-models
   locator: ../sdkwork-models
   registry_path: docs/schema-registry/sdkwork-models.tables.yaml

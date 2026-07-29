@@ -1,11 +1,9 @@
-const SQLITE_ADMIN_FINANCE_STORE: &str =
-    include_str!("../src/infrastructure/sql/sqlite/admin_finance_store.rs");
 const POSTGRES_ADMIN_FINANCE_STORE: &str =
     include_str!("../src/infrastructure/sql/postgres/admin_finance_store.rs");
 
 #[test]
 fn admin_finance_store_uses_appbase_commerce_finance_tables() {
-    for source in [SQLITE_ADMIN_FINANCE_STORE, POSTGRES_ADMIN_FINANCE_STORE] {
+    for source in [POSTGRES_ADMIN_FINANCE_STORE] {
         assert!(source.contains("commerce_account_ledger_entry"));
         assert!(source.contains("commerce_statement"));
         assert!(source.contains("commerce_settlement"));
@@ -19,7 +17,7 @@ fn admin_finance_store_uses_appbase_commerce_finance_tables() {
 
 #[test]
 fn admin_finance_store_has_no_legacy_account_transaction_dependency() {
-    for source in [SQLITE_ADMIN_FINANCE_STORE, POSTGRES_ADMIN_FINANCE_STORE] {
+    for source in [POSTGRES_ADMIN_FINANCE_STORE] {
         for forbidden in [
             "plus_account",
             "plus_account_history",

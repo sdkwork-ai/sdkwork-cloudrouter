@@ -144,37 +144,35 @@ class AdminAnnouncementRuntimeStandardTest(unittest.TestCase):
         self.assertIn("admin-announcement-runtime.test.ts", verifier)
 
     def test_admin_announcement_read_model_fails_closed_for_target_and_status(self) -> None:
-        store_paths = [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_announcement_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_announcement_store.rs",
-        ]
+        relative_path = (
+            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/"
+            "postgres/admin_announcement_store.rs"
+        )
+        store = (ROOT / relative_path).read_text(encoding="utf-8")
+        compact_store = " ".join(store.split())
 
-        for relative_path in store_paths:
-            store = (ROOT / relative_path).read_text(encoding="utf-8")
-            compact_store = " ".join(store.split())
-            with self.subTest(store=relative_path):
-                self.assertIn(
-                    'target: target_label( required_integer_cell(row, "recipient_type")?, &string_cell(row, "recipient_value"), optional_non_empty_string_cell(row, "recipient_role_code").as_deref(), )?',
-                    compact_store,
-                )
-                self.assertIn(
-                    'status: status_label(required_integer_cell(row, "status")?)?',
-                    compact_store,
-                )
-                self.assertIn(
-                    "fn target_label( recipient_type: i64, recipient_value: &str, recipient_role_code: Option<&str>, ) -> DomainResult<String>",
-                    compact_store,
-                )
-                self.assertIn(
-                    "fn status_label(value: i64) -> DomainResult<String>",
-                    compact_store,
-                )
-                self.assertIn("missing admin announcement {column} from database row", store)
-                self.assertIn("invalid admin announcement target from database row", store)
-                self.assertIn("invalid admin announcement recipient type from database row", store)
-                self.assertIn("invalid admin announcement status from database row", store)
-                self.assertNotIn('target_label(optional_integer_cell(&row, "target_scope"))', store)
-                self.assertNotIn('status_label(optional_integer_cell(&row, "status"))', store)
+        self.assertIn(
+            'target: target_label( required_integer_cell(row, "recipient_type")?, &string_cell(row, "recipient_value"), optional_non_empty_string_cell(row, "recipient_role_code").as_deref(), )?',
+            compact_store,
+        )
+        self.assertIn(
+            'status: status_label(required_integer_cell(row, "status")?)?',
+            compact_store,
+        )
+        self.assertIn(
+            "fn target_label( recipient_type: i64, recipient_value: &str, recipient_role_code: Option<&str>, ) -> DomainResult<String>",
+            compact_store,
+        )
+        self.assertIn(
+            "fn status_label(value: i64) -> DomainResult<String>",
+            compact_store,
+        )
+        self.assertIn("missing admin announcement {column} from database row", store)
+        self.assertIn("invalid admin announcement target from database row", store)
+        self.assertIn("invalid admin announcement recipient type from database row", store)
+        self.assertIn("invalid admin announcement status from database row", store)
+        self.assertNotIn('target_label(optional_integer_cell(&row, "target_scope"))', store)
+        self.assertNotIn('status_label(optional_integer_cell(&row, "status"))', store)
 
 
 if __name__ == "__main__":

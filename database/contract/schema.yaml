@@ -4053,7 +4053,7 @@ tables:
     semantic_contracts: null
   - name: ai_upstream_account_credential
     domain: ai
-    profile: credential_ref
+    profile: secret_entity
     compliance_level: L2
     write_owner: ai-routing-service
     system_of_record: true
@@ -4135,12 +4135,17 @@ tables:
         required: true
         postgres_type: VARCHAR(128)
         constraints: NOT NULL
-      credential_ref:
+      secret_ciphertext:
         type: text
         required: true
         postgres_type: TEXT
         constraints: NOT NULL
-      credential_hash:
+      secret_key_id:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      secret_fingerprint:
         type: string(128)
         required: true
         postgres_type: VARCHAR(128)
@@ -5805,21 +5810,6 @@ tables:
         required: true
         postgres_type: JSONB
         constraints: NOT NULL
-      authorization_url:
-        type: string(512)
-        required: false
-        postgres_type: VARCHAR(512)
-        constraints: ''
-      token_url:
-        type: string(512)
-        required: false
-        postgres_type: VARCHAR(512)
-        constraints: ''
-      scopes:
-        type: json
-        required: false
-        postgres_type: JSONB
-        constraints: ''
       priority:
         type: int32
         required: true
@@ -5866,8 +5856,7 @@ tables:
       - name: ck_ai_upstream_supplier_auth_method_type
         type: check
         columns: []
-        expression: auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials', 'oauth2_authorization_code', 'aws_sigv4',
-          'custom') AND priority >= 0
+        expression: auth_type IN ('api_key', 'bearer_token', 'custom') AND priority >= 0
       - name: ck_ai_upstream_supplier_auth_method_runtime_auth_config
         type: check
         columns: []

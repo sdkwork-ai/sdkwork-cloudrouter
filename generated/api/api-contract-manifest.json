@@ -5244,14 +5244,14 @@
         }
       },
       "response_schema": {
-        "name": "UpstreamAccountCredentialCreatedResponse",
+        "name": "UpstreamAccountCredentialItemResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "UpstreamAccountCredentialCreatedResponse",
+          "name": "UpstreamAccountCredentialItemResponse",
           "properties": {
             "item": {
               "additionalProperties": false,
-              "name": "UpstreamAccountCredentialCreated",
+              "name": "UpstreamAccountCredential",
               "properties": {
                 "authMethodCode": {
                   "maxLength": 128,
@@ -5302,12 +5302,6 @@
                   "minimum": 0,
                   "type": "integer"
                 },
-                "rawSecret": {
-                  "description": "One-time plaintext credential returned only by this create response.",
-                  "maxLength": 65536,
-                  "minLength": 1,
-                  "type": "string"
-                },
                 "status": {
                   "format": "int32",
                   "type": "integer"
@@ -5325,8 +5319,7 @@
                 "lastRotatedAt",
                 "lastVerifiedAt",
                 "lastUsedAt",
-                "status",
-                "rawSecret"
+                "status"
               ],
               "type": "object"
             }
@@ -7100,16 +7093,8 @@
                     "enum": [
                       "api_key",
                       "bearer_token",
-                      "oauth2_client_credentials",
-                      "oauth2_authorization_code",
-                      "aws_sigv4",
                       "custom"
                     ],
-                    "type": "string"
-                  },
-                  "authorizationUrl": {
-                    "maxLength": 2048,
-                    "nullable": true,
                     "type": "string"
                   },
                   "configSchema": {
@@ -7128,16 +7113,6 @@
                   "runtimeAuthConfig": {
                     "additionalProperties": false,
                     "properties": {
-                      "adapterOptions": {
-                        "additionalProperties": true,
-                        "nullable": true,
-                        "type": "object"
-                      },
-                      "adapterScheme": {
-                        "maxLength": 64,
-                        "nullable": true,
-                        "type": "string"
-                      },
                       "credentialParameter": {
                         "maxLength": 128,
                         "nullable": true,
@@ -7147,8 +7122,7 @@
                         "enum": [
                           "bearer",
                           "header",
-                          "query",
-                          "provider_adapter"
+                          "query"
                         ],
                         "type": "string"
                       },
@@ -7165,22 +7139,9 @@
                     ],
                     "type": "object"
                   },
-                  "scopes": {
-                    "items": {
-                      "maxLength": 256,
-                      "type": "string"
-                    },
-                    "nullable": true,
-                    "type": "array"
-                  },
                   "status": {
                     "format": "int32",
                     "type": "integer"
-                  },
-                  "tokenUrl": {
-                    "maxLength": 2048,
-                    "nullable": true,
-                    "type": "string"
                   }
                 },
                 "required": [
@@ -7190,9 +7151,6 @@
                   "authType",
                   "configSchema",
                   "runtimeAuthConfig",
-                  "authorizationUrl",
-                  "tokenUrl",
-                  "scopes",
                   "priority",
                   "status"
                 ],
@@ -8323,16 +8281,8 @@
                     "enum": [
                       "api_key",
                       "bearer_token",
-                      "oauth2_client_credentials",
-                      "oauth2_authorization_code",
-                      "aws_sigv4",
                       "custom"
                     ],
-                    "type": "string"
-                  },
-                  "authorizationUrl": {
-                    "maxLength": 2048,
-                    "nullable": true,
                     "type": "string"
                   },
                   "configSchema": {
@@ -8348,16 +8298,6 @@
                   "runtimeAuthConfig": {
                     "additionalProperties": false,
                     "properties": {
-                      "adapterOptions": {
-                        "additionalProperties": true,
-                        "nullable": true,
-                        "type": "object"
-                      },
-                      "adapterScheme": {
-                        "maxLength": 64,
-                        "nullable": true,
-                        "type": "string"
-                      },
                       "credentialParameter": {
                         "maxLength": 128,
                         "nullable": true,
@@ -8367,8 +8307,7 @@
                         "enum": [
                           "bearer",
                           "header",
-                          "query",
-                          "provider_adapter"
+                          "query"
                         ],
                         "type": "string"
                       },
@@ -8385,23 +8324,10 @@
                     ],
                     "type": "object"
                   },
-                  "scopes": {
-                    "items": {
-                      "maxLength": 256,
-                      "type": "string"
-                    },
-                    "nullable": true,
-                    "type": "array"
-                  },
                   "status": {
                     "format": "int32",
                     "nullable": true,
                     "type": "integer"
-                  },
-                  "tokenUrl": {
-                    "maxLength": 2048,
-                    "nullable": true,
-                    "type": "string"
                   }
                 },
                 "required": [
@@ -10269,7 +10195,72 @@
       "operation": "fetchLogs",
       "operation_id": "usage.logs.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "success",
+              "error"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "start_time",
+          "required": false,
+          "schema": {
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "end_time",
+          "required": false,
+          "schema": {
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_request_trace",
@@ -10279,11 +10270,194 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "UsageLogsResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "UsageLogsResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "UsageLogItem",
+                "properties": {
+                  "baseInputPrice": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "baseOutputPrice": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "cacheReadPrice": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "cacheReadTokens": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "cost": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+                    "type": "string"
+                  },
+                  "errorCode": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "errorMessage": {
+                    "maxLength": 4096,
+                    "type": "string"
+                  },
+                  "errorType": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "gatewayRequestId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "group": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "httpStatus": {
+                    "format": "int32",
+                    "maximum": 599,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "inputTokens": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "ip": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "isStream": {
+                    "type": "boolean"
+                  },
+                  "model": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "multiplier": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "outputTokens": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "path": {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  "providerNativeModel": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "reasoningEffort": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "regionCode": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "requestedModelCatalogKey": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "success",
+                      "error"
+                    ],
+                    "type": "string"
+                  },
+                  "time": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "tokenName": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "totalTime": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "ttft": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "type": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "userAgent": {
+                    "maxLength": 2048,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "gatewayRequestId",
+                  "time",
+                  "tokenName",
+                  "group",
+                  "type",
+                  "model",
+                  "providerNativeModel",
+                  "requestedModelCatalogKey",
+                  "regionCode",
+                  "status",
+                  "httpStatus",
+                  "errorCode",
+                  "errorType",
+                  "errorMessage",
+                  "totalTime",
+                  "ttft",
+                  "isStream",
+                  "inputTokens",
+                  "cacheReadTokens",
+                  "outputTokens",
+                  "cost",
+                  "multiplier",
+                  "baseInputPrice",
+                  "baseOutputPrice",
+                  "cacheReadPrice",
+                  "path",
+                  "reasoningEffort",
+                  "ip",
+                  "userAgent"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },

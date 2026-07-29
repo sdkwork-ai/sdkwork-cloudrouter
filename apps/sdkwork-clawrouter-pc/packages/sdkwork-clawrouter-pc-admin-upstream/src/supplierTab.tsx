@@ -49,7 +49,7 @@ const emptyAuthMethod = (): UpstreamSupplierAuthMethodInput => ({
   configSchema: {},
   runtimeAuthConfig: {
     credentialTransport: 'bearer',
-    credentialParameter: 'Authorization',
+    credentialParameter: null,
     defaultHeaders: {},
   },
 });
@@ -249,7 +249,7 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
         upstreamService.suppliers.listResources(supplier.id),
       ]);
       setEndpoints(nextEndpoints.map(({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status }) => ({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status })));
-      setAuthMethods(nextAuthMethods.map(({ authMethodCode, authMethodName, authType, authorizationUrl, tokenUrl, scopes, configSchema, runtimeAuthConfig, priority, status }) => ({ authMethodCode, authMethodName, authType, authorizationUrl, tokenUrl, scopes, configSchema, runtimeAuthConfig, priority, status })));
+      setAuthMethods(nextAuthMethods.map(({ authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, priority, status }) => ({ authMethodCode, authMethodName, authType, configSchema, runtimeAuthConfig, priority, status })));
       setResources(nextResources.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status })));
     } catch (cause) {
       setError(errorMessage(cause, t('admin.upstream.common.errors.operationFailed')));
@@ -309,10 +309,12 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
                 <input aria-label={t('admin.upstream.supplier.auth.code')} placeholder={t('admin.upstream.supplier.auth.code')} className={inputClass} value={method.authMethodCode} onChange={(event) => setAuthMethods(updateAt(authMethods, index, { authMethodCode: event.currentTarget.value }))} />
                 <input aria-label={t('admin.upstream.supplier.auth.name')} placeholder={t('admin.upstream.supplier.auth.name')} className={inputClass} value={method.authMethodName} onChange={(event) => setAuthMethods(updateAt(authMethods, index, { authMethodName: event.currentTarget.value }))} />
                 <select aria-label={t('admin.upstream.supplier.auth.type')} className={selectClass} value={method.authType} onChange={(event) => setAuthMethods(updateAt(authMethods, index, authTypePatch(event.currentTarget.value as UpstreamSupplierAuthMethodInput['authType'])))}>
-                  <option value="api_key">{t('admin.upstream.supplier.auth.type.apiKey')}</option><option value="bearer_token">{t('admin.upstream.supplier.auth.type.bearerToken')}</option><option value="oauth2_client_credentials">{t('admin.upstream.supplier.auth.type.clientCredentials')}</option><option value="oauth2_authorization_code">{t('admin.upstream.supplier.auth.type.authorizationCode')}</option><option value="aws_sigv4">{t('admin.upstream.supplier.auth.type.awsSigv4')}</option><option value="custom">{t('admin.upstream.supplier.auth.type.custom')}</option>
+                  <option value="api_key">{t('admin.upstream.supplier.auth.type.apiKey')}</option><option value="bearer_token">{t('admin.upstream.supplier.auth.type.bearerToken')}</option><option value="custom">{t('admin.upstream.supplier.auth.type.custom')}</option>
                 </select>
-                <input aria-label={t('admin.upstream.supplier.auth.credentialParameter')} placeholder={t('admin.upstream.supplier.auth.credentialParameter')} className={inputClass} value={method.runtimeAuthConfig.credentialParameter ?? ''} onChange={(event) => setAuthMethods(updateAt(authMethods, index, { runtimeAuthConfig: { ...method.runtimeAuthConfig, credentialParameter: emptyToNull(event.currentTarget.value) } }))} />
-                {method.authType.startsWith('oauth2_') ? <><input aria-label={t('admin.upstream.supplier.auth.authorizationUrl')} placeholder={t('admin.upstream.supplier.auth.authorizationUrl')} className={inputClass} value={method.authorizationUrl ?? ''} onChange={(event) => setAuthMethods(updateAt(authMethods, index, { authorizationUrl: emptyToNull(event.currentTarget.value) }))} /><input aria-label={t('admin.upstream.supplier.auth.tokenUrl')} placeholder={t('admin.upstream.supplier.auth.tokenUrl')} className={inputClass} value={method.tokenUrl ?? ''} onChange={(event) => setAuthMethods(updateAt(authMethods, index, { tokenUrl: emptyToNull(event.currentTarget.value) }))} /></> : null}
+                <select aria-label={t('admin.upstream.supplier.auth.transport')} className={selectClass} value={method.runtimeAuthConfig.credentialTransport} disabled={method.authType === 'bearer_token'} onChange={(event) => setAuthMethods(updateAt(authMethods, index, { runtimeAuthConfig: authTransportConfig(event.currentTarget.value as 'bearer' | 'header' | 'query') }))}>
+                  <option value="bearer">{t('admin.upstream.supplier.auth.transport.bearer')}</option><option value="header">{t('admin.upstream.supplier.auth.transport.header')}</option><option value="query">{t('admin.upstream.supplier.auth.transport.query')}</option>
+                </select>
+                {method.runtimeAuthConfig.credentialTransport !== 'bearer' ? <input aria-label={t('admin.upstream.supplier.auth.credentialParameter')} placeholder={t('admin.upstream.supplier.auth.credentialParameter')} className={inputClass} value={method.runtimeAuthConfig.credentialParameter ?? ''} onChange={(event) => setAuthMethods(updateAt(authMethods, index, { runtimeAuthConfig: { ...method.runtimeAuthConfig, credentialParameter: emptyToNull(event.currentTarget.value) } }))} /> : null}
                 <div className="flex items-center justify-end sm:col-span-2"><button type="button" className={dangerButtonClass} onClick={() => setAuthMethods(removeAt(authMethods, index))}><Trash2 className="h-4 w-4" />{t('admin.upstream.common.actions.remove')}</button></div>
               </div>
             ))}
@@ -358,8 +360,16 @@ function supplierInput(form: FormData, t: TranslationFunction): CreateUpstreamSu
 }
 
 function authTypePatch(authType: UpstreamSupplierAuthMethodInput['authType']): Partial<UpstreamSupplierAuthMethodInput> {
-  const credentialTransport = authType === 'aws_sigv4' || authType === 'custom' ? 'provider_adapter' : authType.startsWith('oauth2_') ? 'bearer' : 'bearer';
-  return { authType, runtimeAuthConfig: { credentialTransport, credentialParameter: credentialTransport === 'bearer' ? 'Authorization' : null, defaultHeaders: {} } };
+  return { authType, runtimeAuthConfig: authTransportConfig('bearer') };
+}
+
+function authTransportConfig(credentialTransport: 'bearer' | 'header' | 'query') {
+  const credentialParameter = credentialTransport === 'header'
+    ? 'x-api-key'
+    : credentialTransport === 'query'
+      ? 'key'
+      : null;
+  return { credentialTransport, credentialParameter, defaultHeaders: {} };
 }
 
 function updateAt<T>(items: T[], index: number, patch: Partial<T>): T[] {

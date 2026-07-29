@@ -70,6 +70,8 @@ pub async fn load_upstream_account_routes(
 ) -> Result<Vec<UpstreamAccountRouteRow>, sqlx::Error> {
     let mapper = map_query(sql, |row| {
         Ok(UpstreamAccountRouteRow {
+            tenant_id: row.try_get("tenant_id")?,
+            organization_id: row.try_get("organization_id")?,
             supplier_code: row.try_get("supplier_code")?,
             account_id: row.try_get("account_id")?,
             credential_id: row.try_get("credential_id")?,
@@ -89,6 +91,7 @@ pub async fn load_upstream_account_routes(
             base_url: row.try_get("base_url")?,
             secret_ref: row.try_get("secret_ref")?,
             secret_ciphertext: row.try_get("secret_ciphertext")?,
+            secret_key_id: row.try_get("secret_key_id")?,
             auth_type: row.try_get("auth_type")?,
             runtime_auth_config_json: row.try_get("runtime_auth_config_json")?,
             timeout_ms: row.try_get("timeout_ms")?,

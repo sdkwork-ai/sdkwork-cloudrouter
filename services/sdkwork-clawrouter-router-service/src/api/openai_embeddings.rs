@@ -32,7 +32,9 @@ use crate::api::openai_usage::{
 };
 use crate::application::{ApiKeySecretHasher, AuthenticatedApiKeyContext};
 use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
-use crate::ports::{EmbeddingsRelay, EmbeddingsRelayRequest, GatewayUsageRecorder, PricingCatalog};
+use crate::ports::{
+    EmbeddingsRelay, EmbeddingsRelayRequest, GatewayUsageRecorder, UpstreamAccountRouteCatalog,
+};
 
 struct OpenAiEmbeddingsState<C> {
     catalog: Arc<C>,
@@ -70,7 +72,7 @@ pub fn openai_embeddings_router<C>(
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay(catalog, api_key_hasher, None, None, Vec::new())
 }
@@ -81,7 +83,7 @@ pub fn openai_embeddings_router_with_relay<C>(
     relay: Arc<dyn EmbeddingsRelay + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay(
         catalog,
@@ -99,7 +101,7 @@ pub fn openai_embeddings_router_with_relay_and_plugins<C>(
     plugins: Vec<OpenAiInvocationPluginRef>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay(
         catalog,
@@ -118,7 +120,7 @@ pub fn openai_embeddings_router_with_relay_plugins_and_failure_strategy<C>(
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay_and_failure_strategy(
         catalog,
@@ -137,7 +139,7 @@ pub fn openai_embeddings_router_with_relay_and_usage_recorder<C>(
     usage_recorder: Arc<dyn GatewayUsageRecorder + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay(
         catalog,
@@ -156,7 +158,7 @@ pub fn openai_embeddings_router_with_relay_and_usage_recorder_and_plugins<C>(
     plugins: Vec<OpenAiInvocationPluginRef>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_relay_usage_recorder_plugins_and_failure_strategy(
         catalog,
@@ -177,7 +179,7 @@ pub fn openai_embeddings_router_with_relay_usage_recorder_plugins_and_failure_st
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay_and_failure_strategy(
         catalog,
@@ -198,7 +200,7 @@ pub fn openai_embeddings_router_with_relay_usage_recorder_plugins_and_runtime_co
     runtime_config: OpenAiRuntimeRouteConfig,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay_and_runtime_config(
         catalog,
@@ -218,7 +220,7 @@ fn openai_embeddings_router_with_optional_relay<C>(
     plugins: Vec<OpenAiInvocationPluginRef>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay_and_failure_strategy(
         catalog,
@@ -239,7 +241,7 @@ fn openai_embeddings_router_with_optional_relay_and_failure_strategy<C>(
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_embeddings_router_with_optional_relay_and_runtime_config(
         catalog,
@@ -260,7 +262,7 @@ fn openai_embeddings_router_with_optional_relay_and_runtime_config<C>(
     runtime_config: OpenAiRuntimeRouteConfig,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let usage_recording = usage_recorder.as_ref().map(|usage_recorder| {
         Arc::new(OpenAiUsageRecorder::new(
@@ -290,7 +292,7 @@ async fn create_embeddings<C>(
     body: Bytes,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let request = match parse_request(&body) {
         Ok(request) => request,
@@ -474,7 +476,7 @@ fn validate_embeddings_model<C>(
     model: &str,
 ) -> Result<ResolvedOpenAiUpstreamRoutePlan, OpenAiRouteError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     resolve_openai_upstream_route_plan(
         state.catalog.as_ref(),
@@ -490,7 +492,9 @@ where
 async fn relay_embedding(
     relay: &(dyn EmbeddingsRelay + Send + Sync),
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<Arc<OpenAiUsageRecorder<impl PricingCatalog + Send + Sync + 'static>>>,
+    usage_recording: Option<
+        Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
+    >,
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: AuthenticatedApiKeyContext,
@@ -558,7 +562,9 @@ fn elapsed_millis(started_at: Instant) -> i64 {
 async fn relay_embedding_route(
     relay: &(dyn EmbeddingsRelay + Send + Sync),
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<&Arc<OpenAiUsageRecorder<impl PricingCatalog + Send + Sync + 'static>>>,
+    usage_recording: Option<
+        &Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
+    >,
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,

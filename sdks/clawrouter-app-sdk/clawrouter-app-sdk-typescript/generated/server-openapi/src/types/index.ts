@@ -44,3 +44,6 @@ export type { SdkWorkResourceResponse } from './sdk-work-resource-response';
 
 export type { UpdateApiKeyRequest } from './update-api-key-request';
 export type { UpdateApiKeyResponse } from './update-api-key-response';
+export type { UsageLogItem } from './usage-log-item';
+
+export type { UsageLogsResponse } from './usage-logs-response';

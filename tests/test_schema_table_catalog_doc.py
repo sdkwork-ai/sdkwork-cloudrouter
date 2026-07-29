@@ -31,16 +31,7 @@ class SchemaTableCatalogDocTest(unittest.TestCase):
             if table_name:
                 documented_tables.add(table_name)
 
-        missing = sorted(registry_tables - documented_tables)
-        extra = sorted(documented_tables - registry_tables)
-        self.assertFalse(
-            missing,
-            "table catalog is missing schema tables: " + ", ".join(missing),
-        )
-        self.assertFalse(
-            extra,
-            "table catalog documents unknown tables: " + ", ".join(extra),
-        )
+        self.assertEqual(registry_tables, documented_tables)
 
     def test_table_catalog_doc_records_schema_summary(self) -> None:
         registry = load_schema_registry(REGISTRY_PATH)
@@ -52,11 +43,12 @@ class SchemaTableCatalogDocTest(unittest.TestCase):
             ]
         )
         content = CATALOG_PATH.read_text(encoding="utf-8")
-        self.assertIn(f"表总数：{table_count}", content)
+        self.assertIn(f"- Table count: {table_count}", content)
         self.assertIn(
-            "生成来源：`docs/schema-registry/sdkwork-clawrouter.tables.yaml`",
+            "Generated from `docs/schema-registry/sdkwork-clawrouter.tables.yaml`.",
             content,
         )
+        self.assertIn("- Server authority: PostgreSQL", content)
 
     def test_table_catalog_doc_adds_a_description_for_every_table(self) -> None:
         content = CATALOG_PATH.read_text(encoding="utf-8")
@@ -77,6 +69,18 @@ class SchemaTableCatalogDocTest(unittest.TestCase):
             "table catalog rows must include table descriptions: "
             + ", ".join(undocumented),
         )
+
+    def test_table_catalog_doc_excludes_retired_upstream_vocabulary(self) -> None:
+        content = CATALOG_PATH.read_text(encoding="utf-8")
+        for retired_name in (
+            "ai_channel",
+            "ai_provider",
+            "ai_site",
+            "ai_upstream_pool",
+            "integration_provider_account",
+            "integration_service_provider",
+        ):
+            self.assertNotIn(retired_name, content)
 
 
 if __name__ == "__main__":

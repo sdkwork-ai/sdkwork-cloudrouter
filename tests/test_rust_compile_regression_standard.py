@@ -19,34 +19,6 @@ class RustCompileRegressionStandardTest(unittest.TestCase):
             create_body.index("let requested_modalities = normalize_modalities(request.modalities)?;"),
         )
 
-    def test_admin_channel_create_request_preserves_multimodal_flag_for_command(self) -> None:
-        source = (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "admin_channel.rs"
-        ).read_text(encoding="utf-8")
-        struct_body = source.split("struct NormalizedCreateRequest", 1)[1].split("}", 1)[0]
-        normalize_body = source.split("fn normalize_create_request", 1)[1].split(
-            "fn normalize_update_request", 1
-        )[0]
-
-        self.assertIn("is_multimodal: bool", struct_body)
-        self.assertIn("let is_multimodal = capabilities.iter().any", normalize_body)
-        self.assertIn("is_multimodal,", normalize_body)
-
-    def test_admin_model_capability_sql_does_not_shadow_capability_code_function(self) -> None:
-        for relative in [
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/admin_model_store.rs",
-            "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/admin_model_store.rs",
-        ]:
-            source = (ROOT / relative).read_text(encoding="utf-8")
-            with self.subTest(path=relative):
-                capability_body = source.split("async fn insert_model_capability", 1)[1].split(
-                    "async fn insert_model_pricing", 1
-                )[0]
-                self.assertIn("let capability_code_text = model_capability_code", capability_body)
-                self.assertIn(".bind(capability_code(&command.model_type))", capability_body)
-                self.assertIn(".bind(capability_code_text)", capability_body)
-                self.assertNotIn("let capability_code = model_capability_code", capability_body)
-
     def test_usage_logs_timestamp_parsing_uses_concrete_validation_error_helper(self) -> None:
         source = (
             ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "api" / "app_usage_logs.rs"
@@ -56,18 +28,18 @@ class RustCompileRegressionStandardTest(unittest.TestCase):
         self.assertNotIn("invalid_usage_logs_timestamp(field_name).unwrap_err()", source)
 
     def test_invoice_routes_reuse_the_process_database_identity_without_iam_env_rewrites(self) -> None:
+        app_crate = ROOT / "crates" / "sdkwork-routes-clawrouter-app-api"
+        app_source = (app_crate / "src" / "invoice_runtime.rs").read_text(encoding="utf-8")
+        self.assertIn("bootstrap_invoice_database_from_env()", app_source)
+        self.assertNotIn("apply_unified_claw_postgres_env", app_source)
+        self.assertNotIn("sdkwork_iam_database_host", app_source)
+
         for crate in [
             "sdkwork-routes-clawrouter-app-api",
             "sdkwork-routes-clawrouter-backend-api",
         ]:
-            crate_root = ROOT / "crates" / crate
-            source = (crate_root / "src" / "invoice_runtime.rs").read_text(encoding="utf-8")
-            cargo = (crate_root / "Cargo.toml").read_text(encoding="utf-8")
-
+            cargo = (ROOT / "crates" / crate / "Cargo.toml").read_text(encoding="utf-8")
             with self.subTest(crate=crate):
-                self.assertIn("bootstrap_invoice_database_from_env()", source)
-                self.assertNotIn("apply_unified_claw_postgres_env", source)
-                self.assertNotIn("sdkwork_iam_database_host", source)
                 self.assertNotIn("sdkwork-iam-database-host", cargo)
                 self.assertNotIn("sdkwork-iam-embedded-application-bootstrap", cargo)
 
@@ -81,14 +53,10 @@ class RustCompileRegressionStandardTest(unittest.TestCase):
             "materialize_federated_database_env_from_claw_config(&database_config)",
             context_body,
         )
-        iam_embedded = (
-            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "iam_embedded.rs"
-        ).read_text(encoding="utf-8")
-        self.assertIn("process_shared_database_pool()", iam_embedded)
-        self.assertIn("bootstrap_iam_database(process_pool)", iam_embedded)
-        self.assertIn("if sqlite_runtime", iam_embedded)
-        self.assertNotIn("bootstrap_iam_database_from_env", iam_embedded)
-        self.assertNotIn("apply_unified_claw_postgres_env", iam_embedded)
+        self.assertIn("server_runtime_rejects_sqlite_before_database_initialization", runtime)
+        self.assertIn('DatabaseConfig::from_url("sqlite::memory:")', runtime)
+        self.assertNotIn("bootstrap_iam_database_from_env", runtime)
+        self.assertNotIn("apply_unified_claw_postgres_env", runtime)
 
 
 if __name__ == "__main__":

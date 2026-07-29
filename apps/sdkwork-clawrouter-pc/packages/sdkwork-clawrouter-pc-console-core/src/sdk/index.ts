@@ -1,5 +1,6 @@
 export { getClawRouterAppSdkClient } from '@sdkwork/clawroutes-pc-commons/runtime';
 export type {
+  AiUsageLogsListParams,
   AppApiKeyListResponse,
   CreateApiKeyRequest,
   DashboardConfigurationDomain,
@@ -7,5 +8,6 @@ export type {
   GatewayTrace,
   SettingsDataResponse,
   UpdateApiKeyRequest,
+  UsageLogItem,
   UsageLogsResponse,
 } from '@sdkwork/clawrouter-app-sdk';

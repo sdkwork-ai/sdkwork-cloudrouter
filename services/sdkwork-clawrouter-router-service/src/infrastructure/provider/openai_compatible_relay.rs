@@ -8,9 +8,9 @@ use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use sdkwork_claw_config::ProviderRelayHttpPoolSectionConfig;
-use sdkwork_claw_security::redact_url;
+use sdkwork_claw_http::OutboundDnsResolver;
+use sdkwork_claw_security::{redact_url, validate_outbound_base_url, OutboundTargetPolicy};
 use serde_json::Value;
-use std::net::{IpAddr, ToSocketAddrs};
 use std::time::Duration;
 
 use crate::domain::{
@@ -26,7 +26,7 @@ use crate::ports::{
 };
 
 type RequestBody = Full<Bytes>;
-type ProviderConnector = HttpsConnector<HttpConnector>;
+type ProviderConnector = HttpsConnector<HttpConnector<OutboundDnsResolver>>;
 type ProviderClient = Client<ProviderConnector, RequestBody>;
 /// Default non-streaming provider response timeout (60 seconds).
 ///
@@ -37,6 +37,9 @@ pub const DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS: u64 = 60_000;
 pub const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS: u64 = 120_000;
 /// Default cap on a non-streaming provider response body (64 MiB).
 pub const DEFAULT_PROVIDER_RESPONSE_MAX_BYTES: u64 = 64 * 1024 * 1024;
+/// Hard cap for configurable non-streaming provider responses (256 MiB).
+/// Streaming responses are relayed incrementally and do not use this buffer.
+pub const MAX_PROVIDER_RESPONSE_MAX_BYTES: u64 = 256 * 1024 * 1024;
 const UPSTREAM_VERIFICATION_RESPONSE_MAX_BYTES: usize = 1024 * 1024;
 const DEFAULT_PROVIDER_RESPONSE_TIMEOUT: Duration =
     Duration::from_millis(DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS);
@@ -169,10 +172,19 @@ pub struct UpstreamProviderEndpoint {
 
 impl UpstreamProviderEndpoint {
     pub fn new(base_url: impl Into<String>, bearer_token: impl Into<String>) -> DomainResult<Self> {
-        let base_url = base_url.into().trim().trim_end_matches('/').to_owned();
-        if base_url.is_empty() {
+        let base_url = base_url.into();
+        if base_url.trim().is_empty() {
             return Err(DomainError::new("upstream provider base URL is required"));
         }
+        let validated_url =
+            validate_outbound_base_url(&base_url, OutboundTargetPolicy::Production).map_err(
+                |error| {
+                    DomainError::new(format!(
+                        "ssrf_blocked: upstream provider base URL violates the outbound target policy: {error}"
+                    ))
+                },
+            )?;
+        let base_url = validated_url.as_str().trim_end_matches('/').to_owned();
         let uri = base_url.parse::<Uri>().map_err(|error| {
             DomainError::new(format!(
                 "upstream provider base URL must be an absolute https provider URL: {error}"
@@ -186,9 +198,6 @@ impl UpstreamProviderEndpoint {
                 "upstream provider base URL must be an absolute https provider URL",
             ));
         }
-        // SSRF defense: reject hosts that resolve to private/loopback/link-local
-        // or cloud-metadata addresses before any upstream request is attempted.
-        validate_upstream_host_ssrf(&uri)?;
         let uri_path = uri.path().trim_end_matches('/');
         let includes_openai_v1_prefix = uri_path == "/v1" || uri_path.ends_with("/v1");
         let bearer_token = bearer_token.into().trim().to_owned();
@@ -422,82 +431,6 @@ fn append_query_pair(uri: Uri, name: &str, value: &str) -> DomainResult<Uri> {
             "provider account query auth URI is invalid: {error}"
         ))
     })
-}
-
-/// Validate that an upstream provider host does not resolve to a private,
-/// loopback, link-local, unspecified, carrier-grade NAT, or IPv6 ULA address.
-///
-/// Uses `to_socket_addrs` to resolve every IP for the host (including DNS
-/// results) and rejects the endpoint if any resolved IP is in a blocked range.
-/// This blocks SSRF attempts pointing the gateway at internal services or
-/// cloud metadata endpoints (e.g. `169.254.169.254`).
-fn validate_upstream_host_ssrf(uri: &Uri) -> DomainResult<()> {
-    let host = uri
-        .host()
-        .ok_or_else(|| DomainError::new("ssrf_blocked: upstream provider URL must have a host"))?;
-    // `to_socket_addrs` requires a `host:port` pair; the port is irrelevant
-    // for IP classification but a port is required by the resolver.
-    let resolver_target = format!("{host}:443");
-    let addresses = resolver_target.to_socket_addrs().map_err(|error| {
-        DomainError::new(format!(
-            "ssrf_blocked: upstream provider host {host} could not be resolved: {error}"
-        ))
-    })?;
-    for address in addresses {
-        let ip = address.ip();
-        if let Some(reason) = ssrf_block_reason(&ip) {
-            return Err(DomainError::new(format!(
-                "ssrf_blocked: upstream provider host {host} resolves to {reason} ({ip})"
-            )));
-        }
-    }
-    Ok(())
-}
-
-/// Return the human-readable block reason for an IP, or `None` if the IP is
-/// publicly routable and therefore allowed.
-fn ssrf_block_reason(ip: &IpAddr) -> Option<&'static str> {
-    match ip {
-        IpAddr::V4(v4) => {
-            if v4.is_loopback() {
-                return Some("loopback address 127.0.0.0/8");
-            }
-            if v4.is_private() {
-                return Some("private address 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16");
-            }
-            if v4.is_link_local() {
-                // 169.254.0.0/16 includes the cloud metadata service.
-                return Some("link-local address 169.254.0.0/16");
-            }
-            if v4.is_unspecified() {
-                return Some("unspecified address 0.0.0.0/8");
-            }
-            let octets = v4.octets();
-            // Carrier-grade NAT 100.64.0.0/10 (not covered by std is_private).
-            if octets[0] == 100 && (octets[1] & 0xc0) == 64 {
-                return Some("carrier-grade NAT address 100.64.0.0/10");
-            }
-            None
-        }
-        IpAddr::V6(v6) => {
-            if v6.is_loopback() {
-                return Some("IPv6 loopback address ::1/128");
-            }
-            if v6.is_unspecified() {
-                return Some("IPv6 unspecified address ::/128");
-            }
-            let segments = v6.segments();
-            // IPv6 unique local addresses fc00::/7.
-            if (segments[0] & 0xfe00) == 0xfc00 {
-                return Some("IPv6 unique local address fc00::/7");
-            }
-            // IPv6 link-local addresses fe80::/10.
-            if (segments[0] & 0xffc0) == 0xfe80 {
-                return Some("IPv6 link-local address fe80::/10");
-            }
-            None
-        }
-    }
 }
 
 fn percent_encode_query_component(value: &str) -> String {
@@ -1358,7 +1291,9 @@ async fn send_openai_json_with_runtime(
             runtime.response_timeout,
             Limited::new(
                 response.into_body(),
-                usize::try_from(runtime.response_max_bytes).unwrap_or(usize::MAX),
+                usize::try_from(runtime.response_max_bytes)
+                    .unwrap_or(usize::MAX)
+                    .min(MAX_PROVIDER_RESPONSE_MAX_BYTES as usize),
             )
             .collect(),
         )
@@ -1422,7 +1357,9 @@ fn build_provider_client(pool_config: ProviderRelayHttpPoolConfig) -> ProviderCl
     // HTTP/2 keep-alive fields are kept in the config for forward compatibility
     // but are not applied here because the workspace does not enable the
     // `http2` feature on hyper/hyper-util/hyper-rustls.
-    let mut http_connector = HttpConnector::new();
+    let mut http_connector = HttpConnector::new_with_resolver(OutboundDnsResolver::new(
+        OutboundTargetPolicy::Production,
+    ));
     http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
     http_connector.enforce_http(false);
     let connector = hyper_rustls::HttpsConnectorBuilder::new()
@@ -1484,90 +1421,22 @@ mod tests {
     }
 
     #[test]
-    fn ssrf_blocks_ipv4_private_10() {
-        let error = endpoint_for("https://10.0.0.1/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-        assert!(error.to_string().contains("private"));
-    }
-
-    #[test]
-    fn ssrf_blocks_ipv4_private_172_16() {
-        let error = endpoint_for("https://172.16.0.1/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-    }
-
-    #[test]
-    fn ssrf_blocks_ipv4_private_192_168() {
-        let error = endpoint_for("https://192.168.1.1/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-    }
-
-    #[test]
-    fn ssrf_blocks_cloud_metadata_link_local() {
-        // 169.254.169.254 is the cloud IMDS endpoint.
-        let error = endpoint_for("https://169.254.169.254/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-        assert!(error.to_string().contains("link-local"));
-    }
-
-    #[test]
-    fn ssrf_blocks_ipv4_unspecified() {
-        let error = endpoint_for("https://0.0.0.0/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-        assert!(error.to_string().contains("unspecified"));
-    }
-
-    #[test]
-    fn ssrf_blocks_carrier_grade_nat() {
-        let error = endpoint_for("https://100.64.0.1/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-        assert!(error.to_string().contains("carrier-grade NAT"));
-    }
-
-    #[test]
-    fn ssrf_allows_public_address_adjacent_to_cgn() {
-        // 100.63.x.x and 100.128.x.x are outside the CGN range and must pass.
-        let result = endpoint_for("https://100.63.0.1/v1");
-        // Resolution may fail in sandboxed CI; only assert non-SSRF when it resolves.
-        if let Err(error) = &result {
+    fn upstream_base_url_policy_rejects_unsafe_authorities_and_components() {
+        for value in [
+            "https://10.0.0.1/v1",
+            "https://169.254.169.254/v1",
+            "https://[::1]/v1",
+            "https://localhost/v1",
+            "https://token@api.openai.com/v1",
+            "https://api.openai.com/v1?api_key=secret",
+            "https://api.openai.com/v1#fragment",
+        ] {
+            let error = endpoint_for(value).unwrap_err();
             assert!(
-                !error.to_string().contains("carrier-grade NAT"),
-                "100.63.0.1 must not be classified as CGN: {error}"
+                error.to_string().contains("ssrf_blocked"),
+                "{value} should be rejected: {error}"
             );
         }
-    }
-
-    #[test]
-    fn ssrf_blocks_ipv6_loopback() {
-        let error = endpoint_for("https://[::1]/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-        assert!(error.to_string().contains("loopback"));
-    }
-
-    #[test]
-    fn ssrf_blocks_ipv6_unique_local() {
-        let error = endpoint_for("https://[fc00::1]/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-        assert!(error.to_string().contains("unique local"));
-    }
-
-    #[test]
-    fn ssrf_blocks_ipv6_link_local() {
-        let error = endpoint_for("https://[fe80::1]/v1").unwrap_err();
-        assert!(error.to_string().contains("ssrf_blocked"));
-        assert!(error.to_string().contains("link-local"));
-    }
-
-    #[test]
-    fn ssrf_block_reason_classification() {
-        assert!(ssrf_block_reason(&"127.0.0.1".parse().unwrap()).is_some());
-        assert!(ssrf_block_reason(&"169.254.1.1".parse().unwrap()).is_some());
-        assert!(ssrf_block_reason(&"100.64.0.1".parse().unwrap()).is_some());
-        assert!(ssrf_block_reason(&"8.8.8.8".parse().unwrap()).is_none());
-        assert!(ssrf_block_reason(&"::1".parse().unwrap()).is_some());
-        assert!(ssrf_block_reason(&"fc00::1".parse().unwrap()).is_some());
-        assert!(ssrf_block_reason(&"fe80::1".parse().unwrap()).is_some());
-        assert!(ssrf_block_reason(&"2606:4700:4700::1111".parse().unwrap()).is_none());
     }
 
     #[test]
@@ -1579,9 +1448,8 @@ mod tests {
 
     #[test]
     fn http_upstream_url_is_rejected_by_scheme_check() {
-        // Plain HTTP upstreams are rejected before SSRF resolution.
         let error = endpoint_for("http://127.0.0.1/v1").unwrap_err();
-        assert!(error.to_string().contains("absolute https"));
+        assert!(error.to_string().contains("must use HTTPS"));
     }
 
     #[test]

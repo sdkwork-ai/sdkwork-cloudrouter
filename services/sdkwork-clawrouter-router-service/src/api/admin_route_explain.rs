@@ -15,7 +15,7 @@ use crate::application::{
     UpstreamRouteSelector,
 };
 use crate::domain::{BillingMeter, GatewayApiKey, RoutingCapability, UpstreamAccountGroup};
-use crate::ports::PricingCatalog;
+use crate::ports::UpstreamAccountRouteCatalog;
 
 struct AdminRouteExplainState<C> {
     catalog: Arc<C>,
@@ -101,7 +101,7 @@ struct AdminRouteExplainIssueResponse {
 
 pub fn admin_route_explain_router<C>(catalog: Arc<C>) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     Router::new()
         .route(
@@ -118,7 +118,7 @@ async fn explain_route<C>(
     body: Bytes,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let request = match parse_json_body::<AdminRouteExplainRequest>(&body, "route explain") {
         Ok(request) => request,
@@ -240,7 +240,7 @@ fn normalize_route_explain_request<C>(
     request: AdminRouteExplainRequest,
 ) -> Result<NormalizedRouteExplainRequest, RouteExplainRequestError>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog,
 {
     let invalid = RouteExplainRequestError::BadRequest;
     let api_key_id =

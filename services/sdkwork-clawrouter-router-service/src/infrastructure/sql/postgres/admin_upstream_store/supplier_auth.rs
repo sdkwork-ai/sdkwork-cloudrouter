@@ -1,9 +1,5 @@
 use std::collections::HashSet;
 
-use sqlx::postgres::PgRow;
-use sqlx::{PgPool, Postgres, Transaction};
-use url::Url;
-
 use super::shared::{
     column, conflict, ensure_bounded_collection, generated_uuid, record_routing_change,
     store_error, DEFAULT_DATA_SCOPE, MAX_NESTED_ITEMS,
@@ -14,10 +10,12 @@ use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
     AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
 };
+use sqlx::postgres::PgRow;
+use sqlx::{PgPool, Postgres, Transaction};
 
 const AUTH_COLUMNS: &str = r#"
     id, auth_method_code, auth_method_name, auth_type, config_schema, runtime_auth_config,
-    authorization_url, token_url, scopes, priority, status
+    priority, status
 "#;
 
 pub(super) async fn list(
@@ -74,13 +72,12 @@ pub(super) async fn replace(
                 id, uuid, tenant_id, organization_id, data_scope, status,
                 created_at, updated_at, version, metadata,
                 supplier_id, supplier_code, auth_method_code, auth_method_name,
-                auth_type, config_schema, runtime_auth_config,
-                authorization_url, token_url, scopes, priority
+                auth_type, config_schema, runtime_auth_config, priority
             ) VALUES (
                 $1, $2, $3, $4, $5, $6,
                 $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
                 $8, $9, $10, $11,
-                $12, $13::jsonb, $14::jsonb, $15, $16, $17::jsonb, $18
+                $12, $13::jsonb, $14::jsonb, $15
             )
             ON CONFLICT (tenant_id, organization_id, supplier_id, auth_method_code)
             DO UPDATE SET
@@ -88,9 +85,6 @@ pub(super) async fn replace(
                 auth_type = EXCLUDED.auth_type,
                 config_schema = EXCLUDED.config_schema,
                 runtime_auth_config = EXCLUDED.runtime_auth_config,
-                authorization_url = EXCLUDED.authorization_url,
-                token_url = EXCLUDED.token_url,
-                scopes = EXCLUDED.scopes,
                 priority = EXCLUDED.priority,
                 status = EXCLUDED.status,
                 deleted_at = NULL,
@@ -116,9 +110,6 @@ pub(super) async fn replace(
             canonical_upstream_runtime_auth_config(&item.auth_type, &item.runtime_auth_config)?
                 .to_string(),
         )
-        .bind(item.authorization_url.as_deref().map(str::trim))
-        .bind(item.token_url.as_deref().map(str::trim))
-        .bind(item.scopes.as_ref().map(serde_json::Value::to_string))
         .bind(item.priority)
         .execute(&mut *tx)
         .await
@@ -253,12 +244,7 @@ fn validate_inputs(items: &[AdminUpstreamSupplierAuthMethodInput]) -> DomainResu
         }
         if !matches!(
             item.auth_type.as_str(),
-            "api_key"
-                | "bearer_token"
-                | "oauth2_client_credentials"
-                | "oauth2_authorization_code"
-                | "aws_sigv4"
-                | "custom"
+            "api_key" | "bearer_token" | "custom"
         ) {
             return Err(DomainError::new("authType is not supported"));
         }
@@ -266,55 +252,11 @@ fn validate_inputs(items: &[AdminUpstreamSupplierAuthMethodInput]) -> DomainResu
             return Err(DomainError::new("configSchema must be a JSON object"));
         }
         canonical_upstream_runtime_auth_config(&item.auth_type, &item.runtime_auth_config)?;
-        if item.scopes.as_ref().is_some_and(|value| !value.is_array()) {
-            return Err(DomainError::new("scopes must be a JSON array"));
-        }
-        validate_https_url(item.authorization_url.as_deref(), "authorizationUrl")?;
-        validate_https_url(item.token_url.as_deref(), "tokenUrl")?;
-        if matches!(
-            item.auth_type.as_str(),
-            "oauth2_client_credentials" | "oauth2_authorization_code"
-        ) && item
-            .token_url
-            .as_deref()
-            .is_none_or(|value| value.trim().is_empty())
-        {
-            return Err(DomainError::new(
-                "tokenUrl is required for OAuth2 authentication methods",
-            ));
-        }
-        if item.auth_type == "oauth2_authorization_code"
-            && item
-                .authorization_url
-                .as_deref()
-                .is_none_or(|value| value.trim().is_empty())
-        {
-            return Err(DomainError::new(
-                "authorizationUrl is required for OAuth2 authorization code methods",
-            ));
-        }
         if item.priority < 0 {
             return Err(DomainError::new(
                 "auth method priority must be non-negative",
             ));
         }
-    }
-    Ok(())
-}
-
-fn validate_https_url(value: Option<&str>, field: &str) -> DomainResult<()> {
-    let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
-        return Ok(());
-    };
-    let url = Url::parse(value)
-        .map_err(|_| DomainError::new(format!("{field} must be an absolute URL")))?;
-    if url.scheme() != "https" {
-        return Err(DomainError::new(format!("{field} must use HTTPS")));
-    }
-    if !url.username().is_empty() || url.password().is_some() {
-        return Err(DomainError::new(format!(
-            "{field} must not contain embedded credentials"
-        )));
     }
     Ok(())
 }
@@ -343,17 +285,6 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierAuthMethodItem> {
             "runtime_auth_config",
             "failed to map upstream auth method runtime auth config",
         )?,
-        authorization_url: column(
-            &row,
-            "authorization_url",
-            "failed to map upstream auth method authorization URL",
-        )?,
-        token_url: column(
-            &row,
-            "token_url",
-            "failed to map upstream auth method token URL",
-        )?,
-        scopes: column(&row, "scopes", "failed to map upstream auth method scopes")?,
         priority: column(
             &row,
             "priority",

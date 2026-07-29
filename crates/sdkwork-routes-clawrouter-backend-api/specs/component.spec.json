@@ -37,7 +37,11 @@
     "dependencyApiExports": [],
     "dependencyApiSurfaces": [],
     "events": [],
-    "configKeys": []
+    "configKeys": [
+      "SDKWORK_CLAW_CONFIG_FILE",
+      "SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING",
+      "SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING_FILE"
+    ]
   },
   "verification": { "commands": ["cargo check -p sdkwork-routes-clawrouter-backend-api"] }
 }

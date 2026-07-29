@@ -128,14 +128,6 @@ struct CredentialResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct CredentialCreatedResponse {
-    #[serde(flatten)]
-    credential: CredentialResponse,
-    raw_secret: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct AccountVerificationResponse {
     account_id: String,
     supplier_code: String,
@@ -357,19 +349,12 @@ async fn create_credential(
         Ok(value) => value,
         Err(response) => return response,
     };
-    let raw_secret = payload.secret.clone();
     let command = match credential_command(scoped, account_id, uuid, payload) {
         Ok(value) => value,
         Err(response) => return response,
     };
     match state.store.create_account_credential(command).await {
-        Ok(item) => item_response(
-            StatusCode::CREATED,
-            CredentialCreatedResponse {
-                credential: CredentialResponse::from(item),
-                raw_secret,
-            },
-        ),
+        Ok(item) => item_response(StatusCode::CREATED, CredentialResponse::from(item)),
         Err(error) => domain_error(error),
     }
 }
@@ -773,6 +758,31 @@ mod tests {
         assert_eq!("13", payload["credentialId"]);
         assert!(!serialized.contains("credentialRef"));
         assert!(!serialized.contains("rawSecret"));
+        assert!(!serialized.contains("\"secret\""));
+    }
+
+    #[test]
+    fn credential_response_exposes_only_masked_secret_metadata() {
+        let response = CredentialResponse::from(AdminUpstreamAccountCredentialItem {
+            id: 13,
+            auth_method_code: "api-key".to_owned(),
+            credential_name: "primary".to_owned(),
+            masked_label: Some("sk-****1234".to_owned()),
+            credential_version: 1,
+            priority: 100,
+            is_active: true,
+            expires_at: None,
+            last_rotated_at: None,
+            last_verified_at: None,
+            last_used_at: None,
+            status: 1,
+        });
+        let payload = serde_json::to_value(response).unwrap();
+        let serialized = payload.to_string();
+
+        assert_eq!("sk-****1234", payload["maskedLabel"]);
+        assert!(!serialized.contains("rawSecret"));
+        assert!(!serialized.contains("secretCiphertext"));
         assert!(!serialized.contains("\"secret\""));
     }
 }

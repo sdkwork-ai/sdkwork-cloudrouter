@@ -13,19 +13,19 @@ use crate::domain::{
     provider_native_model_id, AiModel, BillingMeter, ModelUpstreamRoute, ProviderAuthProfile,
     ResolveModelMappingContext, UpstreamAccountRoute,
 };
-use crate::ports::PricingCatalog;
+use crate::ports::UpstreamAccountRouteCatalog;
 
 #[derive(Clone)]
 pub struct RoutePlanningInterceptor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     catalog: Arc<C>,
 }
 
 impl<C> RoutePlanningInterceptor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     pub fn new(catalog: Arc<C>) -> Self {
         Self { catalog }
@@ -34,7 +34,7 @@ where
 
 impl<C> InvocationInterceptor for RoutePlanningInterceptor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     fn name(&self) -> &str {
         "route_planning"
@@ -73,7 +73,7 @@ fn plan_model_route<C>(
     context: AuthenticatedApiKeyContext,
 ) -> Result<(), InvocationError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let requested_model = invocation
         .resource
@@ -122,7 +122,7 @@ fn plan_upstream_account_route<C>(
     context: AuthenticatedApiKeyContext,
 ) -> Result<(), InvocationError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let selection = UpstreamRouteSelector::new(catalog)
         .select_account_route(SelectUpstreamAccountRouteQuery {
@@ -148,7 +148,7 @@ fn sticky_candidate<C>(
     sticky_route: StickyRouteConstraint,
 ) -> InvocationRouteCandidate
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let account_route = matching_upstream_account_route(catalog, &sticky_route);
     let group = sticky_route
@@ -216,10 +216,10 @@ fn mapped_model_candidate<C>(
     context: &AuthenticatedApiKeyContext,
 ) -> InvocationRouteCandidate
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let route = &selection.route;
-    let account_routes = catalog.list_upstream_account_routes();
+    let account_routes = catalog.shared_upstream_account_routes();
     let account_metadata = find_upstream_account_route_metadata(route, &account_routes);
     let vendor_code = catalog
         .find_model(&route.catalog_key)
@@ -418,7 +418,7 @@ fn resolve_catalog_key<C>(
     requested_model: &str,
 ) -> Result<String, InvocationError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     if let Some(catalog_key) = invocation
         .resource
@@ -457,10 +457,10 @@ fn matching_upstream_account_route<C>(
     sticky_route: &StickyRouteConstraint,
 ) -> Option<UpstreamAccountRoute>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     catalog
-        .list_upstream_account_routes()
+        .shared_upstream_account_routes()
         .into_iter()
         .filter(|route| {
             route.supplier_code == sticky_route.supplier_code
@@ -472,6 +472,7 @@ where
                     .unwrap_or(true)
         })
         .next()
+        .cloned()
 }
 
 fn same_region(left: &str, right: &str) -> bool {

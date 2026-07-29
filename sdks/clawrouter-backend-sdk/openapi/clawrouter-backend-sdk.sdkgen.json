@@ -6355,111 +6355,18 @@
         ],
         "type": "object"
       },
-      "UpstreamAccountCredentialCreated": {
+      "UpstreamAccountCredentialItemResponse": {
         "additionalProperties": false,
-        "description": "Upstream account credential created schema exposed by Claw Router.",
-        "properties": {
-          "authMethodCode": {
-            "description": "Auth method code field on upstream account credential created.",
-            "maxLength": 128,
-            "type": "string"
-          },
-          "credentialName": {
-            "description": "Credential name field on upstream account credential created.",
-            "maxLength": 200,
-            "type": "string"
-          },
-          "credentialVersion": {
-            "description": "Credential version field on upstream account credential created.",
-            "maxLength": 32,
-            "type": "string"
-          },
-          "expiresAt": {
-            "description": "Expires at field on upstream account credential created.",
-            "format": "date-time",
-            "nullable": true,
-            "type": "string"
-          },
-          "id": {
-            "description": "Id field on upstream account credential created.",
-            "maxLength": 32,
-            "type": "string"
-          },
-          "isActive": {
-            "description": "Is active field on upstream account credential created.",
-            "type": "boolean"
-          },
-          "lastRotatedAt": {
-            "description": "Last rotated at field on upstream account credential created.",
-            "format": "date-time",
-            "nullable": true,
-            "type": "string"
-          },
-          "lastUsedAt": {
-            "description": "Last used at field on upstream account credential created.",
-            "format": "date-time",
-            "nullable": true,
-            "type": "string"
-          },
-          "lastVerifiedAt": {
-            "description": "Last verified at field on upstream account credential created.",
-            "format": "date-time",
-            "nullable": true,
-            "type": "string"
-          },
-          "maskedLabel": {
-            "description": "Masked label field on upstream account credential created.",
-            "maxLength": 256,
-            "nullable": true,
-            "type": "string"
-          },
-          "priority": {
-            "description": "Priority field on upstream account credential created.",
-            "format": "int32",
-            "minimum": 0,
-            "type": "integer"
-          },
-          "rawSecret": {
-            "description": "One-time plaintext credential returned only by this create response.",
-            "maxLength": 65536,
-            "minLength": 1,
-            "type": "string"
-          },
-          "status": {
-            "description": "Status field on upstream account credential created.",
-            "format": "int32",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "authMethodCode",
-          "credentialName",
-          "maskedLabel",
-          "credentialVersion",
-          "priority",
-          "isActive",
-          "expiresAt",
-          "lastRotatedAt",
-          "lastVerifiedAt",
-          "lastUsedAt",
-          "status",
-          "rawSecret"
-        ],
-        "type": "object"
-      },
-      "UpstreamAccountCredentialCreatedResponse": {
-        "additionalProperties": false,
-        "description": "Upstream account credential created response schema exposed by Claw Router.",
-        "name": "UpstreamAccountCredentialCreatedResponse",
+        "description": "Upstream account credential item response schema exposed by Claw Router.",
+        "name": "UpstreamAccountCredentialItemResponse",
         "properties": {
           "item": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/UpstreamAccountCredentialCreated"
+                "$ref": "#/components/schemas/UpstreamAccountCredential"
               }
             ],
-            "description": "Item field on upstream account credential created response."
+            "description": "Item field on upstream account credential item response."
           }
         },
         "required": [
@@ -7452,7 +7359,7 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/UpstreamAccountCredentialCreatedResponse"
+                    "$ref": "#/components/schemas/UpstreamAccountCredentialItemResponse"
                   }
                 ],
                 "description": "Data field on upstream accounts credentials create result."
@@ -7965,17 +7872,8 @@
             "enum": [
               "api_key",
               "bearer_token",
-              "oauth2_client_credentials",
-              "oauth2_authorization_code",
-              "aws_sigv4",
               "custom"
             ],
-            "type": "string"
-          },
-          "authorizationUrl": {
-            "description": "Authorization url field on upstream supplier auth method.",
-            "maxLength": 2048,
-            "nullable": true,
             "type": "string"
           },
           "configSchema": {
@@ -8005,25 +7903,6 @@
             "additionalProperties": false,
             "description": "Runtime auth config field on upstream supplier auth method.",
             "properties": {
-              "adapterOptions": {
-                "additionalProperties": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/JsonValue"
-                    }
-                  ],
-                  "description": "Runtime auth config field on upstream supplier auth method."
-                },
-                "description": "Adapter options field on upstream supplier auth method.",
-                "nullable": true,
-                "type": "object"
-              },
-              "adapterScheme": {
-                "description": "Adapter scheme field on upstream supplier auth method.",
-                "maxLength": 64,
-                "nullable": true,
-                "type": "string"
-              },
               "credentialParameter": {
                 "description": "Credential parameter field on upstream supplier auth method.",
                 "maxLength": 128,
@@ -8035,8 +7914,7 @@
                 "enum": [
                   "bearer",
                   "header",
-                  "query",
-                  "provider_adapter"
+                  "query"
                 ],
                 "type": "string"
               },
@@ -8055,26 +7933,10 @@
             ],
             "type": "object"
           },
-          "scopes": {
-            "description": "Scopes field on upstream supplier auth method.",
-            "items": {
-              "description": "Scopes field on upstream supplier auth method.",
-              "maxLength": 256,
-              "type": "string"
-            },
-            "nullable": true,
-            "type": "array"
-          },
           "status": {
             "description": "Status field on upstream supplier auth method.",
             "format": "int32",
             "type": "integer"
-          },
-          "tokenUrl": {
-            "description": "Token url field on upstream supplier auth method.",
-            "maxLength": 2048,
-            "nullable": true,
-            "type": "string"
           }
         },
         "required": [
@@ -8084,9 +7946,6 @@
           "authType",
           "configSchema",
           "runtimeAuthConfig",
-          "authorizationUrl",
-          "tokenUrl",
-          "scopes",
           "priority",
           "status"
         ],
@@ -8147,17 +8006,8 @@
             "enum": [
               "api_key",
               "bearer_token",
-              "oauth2_client_credentials",
-              "oauth2_authorization_code",
-              "aws_sigv4",
               "custom"
             ],
-            "type": "string"
-          },
-          "authorizationUrl": {
-            "description": "Authorization url field on upstream supplier auth method input.",
-            "maxLength": 2048,
-            "nullable": true,
             "type": "string"
           },
           "configSchema": {
@@ -8183,25 +8033,6 @@
             "additionalProperties": false,
             "description": "Runtime auth config field on upstream supplier auth method input.",
             "properties": {
-              "adapterOptions": {
-                "additionalProperties": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/JsonValue"
-                    }
-                  ],
-                  "description": "Runtime auth config field on upstream supplier auth method input."
-                },
-                "description": "Adapter options field on upstream supplier auth method input.",
-                "nullable": true,
-                "type": "object"
-              },
-              "adapterScheme": {
-                "description": "Adapter scheme field on upstream supplier auth method input.",
-                "maxLength": 64,
-                "nullable": true,
-                "type": "string"
-              },
               "credentialParameter": {
                 "description": "Credential parameter field on upstream supplier auth method input.",
                 "maxLength": 128,
@@ -8213,8 +8044,7 @@
                 "enum": [
                   "bearer",
                   "header",
-                  "query",
-                  "provider_adapter"
+                  "query"
                 ],
                 "type": "string"
               },
@@ -8233,27 +8063,11 @@
             ],
             "type": "object"
           },
-          "scopes": {
-            "description": "Scopes field on upstream supplier auth method input.",
-            "items": {
-              "description": "Scopes field on upstream supplier auth method input.",
-              "maxLength": 256,
-              "type": "string"
-            },
-            "nullable": true,
-            "type": "array"
-          },
           "status": {
             "description": "Status field on upstream supplier auth method input.",
             "format": "int32",
             "nullable": true,
             "type": "integer"
-          },
-          "tokenUrl": {
-            "description": "Token url field on upstream supplier auth method input.",
-            "maxLength": 2048,
-            "nullable": true,
-            "type": "string"
           }
         },
         "required": [

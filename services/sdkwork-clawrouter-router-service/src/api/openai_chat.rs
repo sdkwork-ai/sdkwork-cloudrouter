@@ -41,7 +41,7 @@ use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
 use crate::ports::GatewayUsageRecordFuture;
 use crate::ports::{
     ChatCompletionRelay, ChatCompletionRelayRequest, ChatCompletionStreamRelay,
-    GatewayUsageRecorder, PricingCatalog,
+    GatewayUsageRecorder, UpstreamAccountRouteCatalog,
 };
 
 struct OpenAiChatState<C> {
@@ -83,7 +83,7 @@ pub fn openai_chat_completions_router<C>(
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -102,7 +102,7 @@ pub fn openai_chat_completions_router_with_relay<C>(
     relay: Arc<dyn ChatCompletionRelay + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -122,7 +122,7 @@ pub fn openai_chat_completions_router_with_relay_and_plugins<C>(
     plugins: Vec<OpenAiInvocationPluginRef>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -143,7 +143,7 @@ pub fn openai_chat_completions_router_with_relay_plugins_and_failure_strategy<C>
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -163,7 +163,7 @@ pub fn openai_chat_completions_router_with_relay_and_usage_recorder<C>(
     usage_recorder: Arc<dyn GatewayUsageRecorder + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -184,7 +184,7 @@ pub fn openai_chat_completions_router_with_relay_and_usage_recorder_and_plugins<
     plugins: Vec<OpenAiInvocationPluginRef>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_relay_usage_recorder_plugins_and_failure_strategy(
         catalog,
@@ -205,7 +205,7 @@ pub fn openai_chat_completions_router_with_relay_usage_recorder_plugins_and_fail
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -227,7 +227,7 @@ pub fn openai_chat_completions_router_with_relay_usage_recorder_plugins_and_runt
     runtime_config: OpenAiRuntimeRouteConfig,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays_and_runtime_config(
         catalog,
@@ -246,7 +246,7 @@ pub fn openai_chat_completions_router_with_streaming_relay<C>(
     stream_relay: Arc<dyn ChatCompletionStreamRelay + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -266,7 +266,7 @@ pub fn openai_chat_completions_router_with_streaming_relay_and_failure_strategy<
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -286,7 +286,7 @@ pub fn openai_chat_completions_router_with_relays<C>(
     stream_relay: Arc<dyn ChatCompletionStreamRelay + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -307,7 +307,7 @@ pub fn openai_chat_completions_router_with_relays_and_failure_strategy<C>(
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -328,7 +328,7 @@ pub fn openai_chat_completions_router_with_relays_and_usage_recorder<C>(
     usage_recorder: Arc<dyn GatewayUsageRecorder + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -350,7 +350,7 @@ pub fn openai_chat_completions_router_with_relays_and_usage_recorder_and_plugins
     plugins: Vec<OpenAiInvocationPluginRef>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_relays_usage_recorder_plugins_and_failure_strategy(
         catalog,
@@ -373,7 +373,7 @@ pub fn openai_chat_completions_router_with_relays_usage_recorder_plugins_and_fai
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays(
         catalog,
@@ -396,7 +396,7 @@ pub fn openai_chat_completions_router_with_relays_usage_recorder_plugins_and_run
     runtime_config: OpenAiRuntimeRouteConfig,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays_and_runtime_config(
         catalog,
@@ -419,7 +419,7 @@ fn openai_chat_completions_router_with_optional_relays<C>(
     failure_strategy: OpenAiRuntimeFailureStrategy,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_chat_completions_router_with_optional_relays_and_runtime_config(
         catalog,
@@ -442,7 +442,7 @@ fn openai_chat_completions_router_with_optional_relays_and_runtime_config<C>(
     runtime_config: OpenAiRuntimeRouteConfig,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let usage_recording = usage_recorder.as_ref().map(|usage_recorder| {
         Arc::new(OpenAiUsageRecorder::new(
@@ -473,7 +473,7 @@ async fn create_chat_completion<C>(
     body: Bytes,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let request = match parse_request(&body) {
         Ok(request) => request,
@@ -719,9 +719,11 @@ fn parse_request(body: &[u8]) -> Result<ParsedOpenAiChatCompletionRequest, Strin
 
 async fn relay_chat_completion_stream(
     relay: &(dyn ChatCompletionStreamRelay + Send + Sync),
-    catalog: &(impl PricingCatalog + Send + Sync),
+    catalog: &(impl UpstreamAccountRouteCatalog + Send + Sync),
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<Arc<OpenAiUsageRecorder<impl PricingCatalog + Send + Sync + 'static>>>,
+    usage_recording: Option<
+        Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
+    >,
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: AuthenticatedApiKeyContext,
@@ -781,9 +783,11 @@ async fn relay_chat_completion_stream(
 
 async fn relay_chat_completion_stream_route(
     relay: &(dyn ChatCompletionStreamRelay + Send + Sync),
-    catalog: &(impl PricingCatalog + Send + Sync),
+    catalog: &(impl UpstreamAccountRouteCatalog + Send + Sync),
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<&Arc<OpenAiUsageRecorder<impl PricingCatalog + Send + Sync + 'static>>>,
+    usage_recording: Option<
+        &Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
+    >,
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,
@@ -1009,7 +1013,9 @@ async fn relay_chat_completion_stream_route(
 async fn relay_chat_completion(
     relay: &(dyn ChatCompletionRelay + Send + Sync),
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<Arc<OpenAiUsageRecorder<impl PricingCatalog + Send + Sync + 'static>>>,
+    usage_recording: Option<
+        Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
+    >,
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: AuthenticatedApiKeyContext,
@@ -1080,7 +1086,9 @@ fn elapsed_millis(started_at: Instant) -> i64 {
 async fn relay_chat_completion_route(
     relay: &(dyn ChatCompletionRelay + Send + Sync),
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
-    usage_recording: Option<&Arc<OpenAiUsageRecorder<impl PricingCatalog + Send + Sync + 'static>>>,
+    usage_recording: Option<
+        &Arc<OpenAiUsageRecorder<impl UpstreamAccountRouteCatalog + Send + Sync + 'static>>,
+    >,
     plugins: &[OpenAiInvocationPluginRef],
     invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,

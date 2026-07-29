@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use sqlx::PgPool;
 
-use crate::application::{ApiKeySecretHasher, CredentialSecretCodec};
+use crate::application::UpstreamCredentialSecretCodec;
 use crate::ports::{
     AdminUpstreamAccountCredentialItem, AdminUpstreamAccountGroupItem,
     AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
@@ -31,8 +31,7 @@ pub use verifier::PostgresAdminUpstreamAccountVerifier;
 #[derive(Clone)]
 pub struct PostgresAdminUpstreamStore {
     pool: PgPool,
-    secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>,
-    secret_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    secret_codec: Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
 }
 
 impl std::fmt::Debug for PostgresAdminUpstreamStore {
@@ -41,7 +40,6 @@ impl std::fmt::Debug for PostgresAdminUpstreamStore {
             .debug_struct("PostgresAdminUpstreamStore")
             .field("pool", &self.pool)
             .field("secret_codec", &"[configured]")
-            .field("secret_hasher", &"[configured]")
             .finish()
     }
 }
@@ -49,14 +47,9 @@ impl std::fmt::Debug for PostgresAdminUpstreamStore {
 impl PostgresAdminUpstreamStore {
     pub fn new(
         pool: PgPool,
-        secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>,
-        secret_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+        secret_codec: Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
     ) -> Self {
-        Self {
-            pool,
-            secret_codec,
-            secret_hasher,
-        }
+        Self { pool, secret_codec }
     }
 }
 
@@ -243,13 +236,7 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
         command: CreateAdminUpstreamAccountCredentialCommand,
     ) -> AdminUpstreamFuture<'a, AdminUpstreamAccountCredentialItem> {
         Box::pin(async move {
-            account::create_credential(
-                &self.pool,
-                self.secret_codec.as_ref(),
-                self.secret_hasher.as_ref(),
-                command,
-            )
-            .await
+            account::create_credential(&self.pool, self.secret_codec.as_ref(), command).await
         })
     }
 

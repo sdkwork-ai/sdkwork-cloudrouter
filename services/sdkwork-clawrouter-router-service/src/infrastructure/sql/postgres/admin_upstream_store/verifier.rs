@@ -4,7 +4,7 @@ use std::time::Duration;
 use sqlx::{PgPool, Row};
 
 use super::shared::store_error;
-use crate::application::CredentialSecretCodec;
+use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
 use crate::domain::{
     resolve_upstream_runtime_auth_profile, DomainError, DomainResult, ProviderAuthProfile,
 };
@@ -21,7 +21,7 @@ const UNHEALTHY: i32 = 2;
 #[derive(Clone)]
 pub struct PostgresAdminUpstreamAccountVerifier {
     pool: PgPool,
-    secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>,
+    secret_codec: Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
 }
 
 impl std::fmt::Debug for PostgresAdminUpstreamAccountVerifier {
@@ -35,7 +35,10 @@ impl std::fmt::Debug for PostgresAdminUpstreamAccountVerifier {
 }
 
 impl PostgresAdminUpstreamAccountVerifier {
-    pub fn new(pool: PgPool, secret_codec: Arc<dyn CredentialSecretCodec + Send + Sync>) -> Self {
+    pub fn new(
+        pool: PgPool,
+        secret_codec: Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
+    ) -> Self {
         Self { pool, secret_codec }
     }
 }
@@ -58,20 +61,31 @@ struct VerificationTarget {
     endpoint_id: i64,
     base_url: String,
     credential_id: i64,
-    credential_ref: String,
+    secret_ciphertext: String,
+    secret_key_id: String,
     auth_type: String,
     runtime_auth_config_json: String,
 }
 
 async fn verify_account(
     pool: &PgPool,
-    secret_codec: &(dyn CredentialSecretCodec + Send + Sync),
+    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
     command: VerifyAdminUpstreamAccountCommand,
 ) -> Result<AdminUpstreamAccountVerificationItem, AdminUpstreamAccountVerificationError> {
     let target = load_verification_target(pool, &command).await?;
     ensure_openai_compatible_protocol(&target.protocol_code)?;
+    let secret_context = UpstreamCredentialSecretContext::new(
+        command.subject.tenant_id,
+        command.subject.organization_id,
+        command.account_id,
+        target.credential_id,
+    );
     let secret = secret_codec
-        .decode_secret(&target.credential_ref)
+        .decode_secret(
+            secret_context,
+            &target.secret_key_id,
+            &target.secret_ciphertext,
+        )
         .map_err(|_| AdminUpstreamAccountVerificationError::InvalidConfiguration)?;
     let auth_profile = verification_auth_profile(&target)?;
     let endpoint = UpstreamProviderEndpoint::new(&target.base_url, secret)
@@ -119,7 +133,8 @@ async fn load_verification_target(
             endpoint.id AS endpoint_id,
             endpoint.base_url,
             credential.id AS credential_id,
-            credential.credential_ref,
+            credential.secret_ciphertext,
+            credential.secret_key_id,
             auth_method.auth_type,
             auth_method.runtime_auth_config::text AS runtime_auth_config_json
         FROM ai_upstream_account account
@@ -163,7 +178,7 @@ async fn load_verification_target(
             LIMIT 1
         ) endpoint ON TRUE
         JOIN LATERAL (
-            SELECT candidate.id, candidate.credential_ref
+            SELECT candidate.id, candidate.secret_ciphertext, candidate.secret_key_id
             FROM ai_upstream_account_credential candidate
             WHERE candidate.tenant_id = account.tenant_id
               AND candidate.organization_id = account.organization_id
@@ -214,8 +229,11 @@ async fn load_verification_target(
         credential_id: row
             .try_get("credential_id")
             .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
-        credential_ref: row
-            .try_get("credential_ref")
+        secret_ciphertext: row
+            .try_get("secret_ciphertext")
+            .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
+        secret_key_id: row
+            .try_get("secret_key_id")
             .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
         auth_type: row
             .try_get("auth_type")
@@ -402,15 +420,6 @@ mod tests {
     use super::*;
 
     fn target(auth_type: &str) -> VerificationTarget {
-        let runtime_auth_config_json = match auth_type {
-            "aws_sigv4" => {
-                r#"{"credentialTransport":"provider_adapter","defaultHeaders":{},"adapterScheme":"aws_sigv4"}"#
-            }
-            "oauth2_client_credentials" | "oauth2_authorization_code" => {
-                r#"{"credentialTransport":"provider_adapter","defaultHeaders":{},"adapterScheme":"oauth2"}"#
-            }
-            _ => r#"{"credentialTransport":"bearer","defaultHeaders":{}}"#,
-        };
         VerificationTarget {
             supplier_id: 1,
             supplier_code: "openai".to_owned(),
@@ -418,9 +427,11 @@ mod tests {
             endpoint_id: 2,
             base_url: "https://api.openai.com".to_owned(),
             credential_id: 3,
-            credential_ref: "encrypted-credential".to_owned(),
+            secret_ciphertext: "encrypted-credential".to_owned(),
+            secret_key_id: "test-key".to_owned(),
             auth_type: auth_type.to_owned(),
-            runtime_auth_config_json: runtime_auth_config_json.to_owned(),
+            runtime_auth_config_json: r#"{"credentialTransport":"bearer","defaultHeaders":{}}"#
+                .to_owned(),
         }
     }
 
@@ -437,19 +448,13 @@ mod tests {
 
     #[test]
     fn verification_auth_types_are_explicitly_registered() {
-        for auth_type in ["api_key", "bearer_token"] {
+        for auth_type in ["api_key", "bearer_token", "custom"] {
             assert!(verification_auth_profile(&target(auth_type)).is_ok());
         }
-        for auth_type in [
-            "oauth2_client_credentials",
-            "oauth2_authorization_code",
-            "aws_sigv4",
-        ] {
-            assert_eq!(
-                AdminUpstreamAccountVerificationError::InvalidConfiguration,
-                verification_auth_profile(&target(auth_type)).unwrap_err()
-            );
-        }
+        assert_eq!(
+            AdminUpstreamAccountVerificationError::InvalidConfiguration,
+            verification_auth_profile(&target("unsupported")).unwrap_err()
+        );
     }
 
     #[test]

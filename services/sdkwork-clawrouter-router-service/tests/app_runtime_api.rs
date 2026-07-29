@@ -1602,7 +1602,14 @@ async fn app_runtime_gateway_executor_routes_openai_chat_invocations_to_gateway_
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!("/v1/chat/completions", gateway_requests[0].path);
     assert!(gateway_requests[0].authorization.is_empty());
-    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
+    assert_eq!(
+        101,
+        gateway_requests[0]
+            .internal_principal
+            .as_ref()
+            .unwrap()
+            .api_key_id
+    );
     assert_eq!(Some("req-1"), gateway_requests[0].request_id.as_deref());
     assert_eq!(Some("trace-1"), gateway_requests[0].trace_id.as_deref());
     assert_eq!("gpt-4o-mini", gateway_requests[0].body["model"]);
@@ -1757,7 +1764,14 @@ async fn app_runtime_gateway_executor_prefers_console_default_api_key_without_fr
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert!(gateway_requests[0].authorization.is_empty());
-    assert_eq!(202, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
+    assert_eq!(
+        202,
+        gateway_requests[0]
+            .internal_principal
+            .as_ref()
+            .unwrap()
+            .api_key_id
+    );
     assert!(gateway_requests[0].body.get("routeKeyId").is_none());
 }
 
@@ -1810,7 +1824,14 @@ async fn app_runtime_gateway_executor_selects_lowest_route_capable_api_key_when_
         let gateway_requests = gateway_requests.lock().unwrap();
         assert_eq!(1, gateway_requests.len());
         assert!(gateway_requests[0].authorization.is_empty());
-        assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
+        assert_eq!(
+            101,
+            gateway_requests[0]
+                .internal_principal
+                .as_ref()
+                .unwrap()
+                .api_key_id
+        );
     }
 }
 
@@ -1863,7 +1884,14 @@ async fn app_runtime_gateway_executor_prefers_request_route_key_over_console_def
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert!(gateway_requests[0].authorization.is_empty());
-    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
+    assert_eq!(
+        101,
+        gateway_requests[0]
+            .internal_principal
+            .as_ref()
+            .unwrap()
+            .api_key_id
+    );
     assert!(gateway_requests[0].body.get("routeKeyId").is_none());
 }
 
@@ -1957,7 +1985,14 @@ async fn app_runtime_gateway_executor_prefers_route_capable_api_key_over_unrouta
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert!(gateway_requests[0].authorization.is_empty());
-    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
+    assert_eq!(
+        101,
+        gateway_requests[0]
+            .internal_principal
+            .as_ref()
+            .unwrap()
+            .api_key_id
+    );
 }
 
 #[tokio::test]
@@ -2045,7 +2080,14 @@ async fn app_runtime_gateway_executor_defers_empty_route_snapshot_probe_to_gatew
     assert_eq!(1, gateway_requests.len());
     assert_eq!("/v1/chat/completions", gateway_requests[0].path);
     assert!(gateway_requests[0].authorization.is_empty());
-    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
+    assert_eq!(
+        101,
+        gateway_requests[0]
+            .internal_principal
+            .as_ref()
+            .unwrap()
+            .api_key_id
+    );
     assert_eq!("gpt-5.5", gateway_requests[0].body["model"]);
 }
 
@@ -2707,7 +2749,14 @@ async fn app_runtime_gateway_executor_routes_image_generation_to_gateway_images_
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!("/v1/images/generations", gateway_requests[0].path);
     assert!(gateway_requests[0].authorization.is_empty());
-    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
+    assert_eq!(
+        101,
+        gateway_requests[0]
+            .internal_principal
+            .as_ref()
+            .unwrap()
+            .api_key_id
+    );
     assert_eq!("openai/gpt-image-2", gateway_requests[0].body["model"]);
     assert_eq!("brand launch poster", gateway_requests[0].body["prompt"]);
     assert_eq!(2, gateway_requests[0].body["n"]);
@@ -2951,7 +3000,14 @@ async fn app_runtime_gateway_executor_routes_suno_music_generation_to_provider_m
         gateway_requests[0].path
     );
     assert!(gateway_requests[0].authorization.is_empty());
-    assert_eq!(101, gateway_requests[0].internal_principal.as_ref().unwrap().api_key_id);
+    assert_eq!(
+        101,
+        gateway_requests[0]
+            .internal_principal
+            .as_ref()
+            .unwrap()
+            .api_key_id
+    );
     assert_eq!("suno-v5", gateway_requests[0].body["model"]);
     assert_eq!(
         "upbeat synthwave launch theme",
@@ -4268,6 +4324,17 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
                 sdkwork_clawrouter_router_service::domain::Money::usd("0.150000").unwrap(),
             ),
         )
+    }
+}
+
+impl sdkwork_clawrouter_router_service::ports::UpstreamAccountRouteCatalog for TestRuntimeCatalog {
+    fn shared_upstream_account_routes(
+        &self,
+    ) -> Arc<[sdkwork_clawrouter_router_service::domain::UpstreamAccountRoute]> {
+        <Self as sdkwork_clawrouter_router_service::ports::PricingCatalog>::list_upstream_account_routes(
+            self,
+        )
+        .into()
     }
 }
 

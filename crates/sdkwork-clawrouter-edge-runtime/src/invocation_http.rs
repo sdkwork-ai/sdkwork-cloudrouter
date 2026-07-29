@@ -15,7 +15,7 @@ use sdkwork_clawrouter_router_service::application::{
     InvocationRequest, InvocationResourceClassifier, InvocationSubject, InvocationSurface,
     OpenAiResourceClassifier, ProviderNativeResourceClassifier, ResourceType,
 };
-use sdkwork_clawrouter_router_service::ports::PricingCatalog;
+use sdkwork_clawrouter_router_service::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 use serde_json::{json, Value};
 
 use crate::gateway_api_key_auth::{
@@ -31,7 +31,7 @@ pub(crate) async fn handle_invocation<C>(
     request: Request<Body>,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let (mut parts, body) = request.into_parts();
     let auth_context = match authenticate_gateway_api_key(
@@ -56,7 +56,7 @@ pub(crate) async fn handle_internal_invocation<C>(
     request: Request<Body>,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let Some(verifier) = state.internal_gateway_verifier.as_ref() else {
         return response_from_invocation_error(&InvocationError::new(
@@ -127,7 +127,7 @@ async fn handle_authenticated_invocation<C>(
     auth_context: sdkwork_clawrouter_router_service::application::AuthenticatedApiKeyContext,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let (parts, body) = request.into_parts();
     let preclassified_openai = if is_openai_prefixed_path(parts.uri.path()) {

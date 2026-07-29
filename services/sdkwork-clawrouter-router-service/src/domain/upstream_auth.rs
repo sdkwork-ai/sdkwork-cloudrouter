@@ -25,12 +25,9 @@ pub fn canonical_upstream_runtime_auth_config(
     reject_unknown_fields(object)?;
 
     let credential_transport = required_string(object, "credentialTransport")?.to_ascii_lowercase();
-    if !matches!(
-        credential_transport.as_str(),
-        "bearer" | "header" | "query" | "provider_adapter"
-    ) {
+    if !matches!(credential_transport.as_str(), "bearer" | "header" | "query") {
         return Err(runtime_config_error(
-            "credentialTransport must be bearer, header, query, or provider_adapter",
+            "credentialTransport must be bearer, header, or query",
         ));
     }
     validate_auth_type_transport(auth_type, &credential_transport)?;
@@ -66,19 +63,6 @@ pub fn canonical_upstream_runtime_auth_config(
         }
     }
 
-    let adapter_scheme = optional_string(object, "adapterScheme")?;
-    let adapter_options = canonical_adapter_options(object.get("adapterOptions"))?;
-    if credential_transport == "provider_adapter" {
-        let scheme = adapter_scheme.as_deref().ok_or_else(|| {
-            runtime_config_error("adapterScheme is required for provider_adapter transport")
-        })?;
-        validate_code(scheme, "adapterScheme")?;
-    } else if adapter_scheme.is_some() || adapter_options.is_some() {
-        return Err(runtime_config_error(
-            "adapterScheme and adapterOptions require provider_adapter transport",
-        ));
-    }
-
     let mut canonical = Map::new();
     canonical.insert(
         "credentialTransport".to_owned(),
@@ -88,12 +72,6 @@ pub fn canonical_upstream_runtime_auth_config(
         canonical.insert("credentialParameter".to_owned(), Value::String(parameter));
     }
     canonical.insert("defaultHeaders".to_owned(), Value::Object(default_headers));
-    if let Some(scheme) = adapter_scheme {
-        canonical.insert("adapterScheme".to_owned(), Value::String(scheme));
-    }
-    if let Some(options) = adapter_options {
-        canonical.insert("adapterOptions".to_owned(), Value::Object(options));
-    }
     Ok(Value::Object(canonical))
 }
 
@@ -108,11 +86,6 @@ pub fn resolve_upstream_runtime_auth_profile(
         .as_object()
         .ok_or_else(|| runtime_config_error("must be a JSON object"))?;
     let transport = required_string(object, "credentialTransport")?;
-    if transport == "provider_adapter" {
-        return Err(runtime_config_error(
-            "provider_adapter transport requires a registered supplier adapter and cannot use the direct relay",
-        ));
-    }
     let parameter = optional_string(object, "credentialParameter")?;
     let mut profile = match transport.as_str() {
         "bearer" => ProviderAuthProfile::bearer(),
@@ -144,11 +117,7 @@ fn reject_unknown_fields(object: &Map<String, Value>) -> DomainResult<()> {
     for field in object.keys() {
         if !matches!(
             field.as_str(),
-            "credentialTransport"
-                | "credentialParameter"
-                | "defaultHeaders"
-                | "adapterScheme"
-                | "adapterOptions"
+            "credentialTransport" | "credentialParameter" | "defaultHeaders"
         ) {
             return Err(runtime_config_error(format!(
                 "contains unsupported field: {field}"
@@ -163,14 +132,7 @@ fn validate_auth_type_transport(auth_type: &str, transport: &str) -> DomainResul
     let valid = match auth_type.as_str() {
         "api_key" => matches!(transport, "bearer" | "header" | "query"),
         "bearer_token" => transport == "bearer",
-        "oauth2_client_credentials" | "oauth2_authorization_code" => {
-            transport == "provider_adapter"
-        }
-        "aws_sigv4" => transport == "provider_adapter",
-        "custom" => matches!(
-            transport,
-            "bearer" | "header" | "query" | "provider_adapter"
-        ),
+        "custom" => matches!(transport, "bearer" | "header" | "query"),
         _ => false,
     };
     if valid {
@@ -219,42 +181,6 @@ fn canonical_default_headers(value: Option<&Value>) -> DomainResult<Map<String, 
     Ok(canonical)
 }
 
-fn canonical_adapter_options(value: Option<&Value>) -> DomainResult<Option<Map<String, Value>>> {
-    let Some(value) = value else {
-        return Ok(None);
-    };
-    let options = value
-        .as_object()
-        .ok_or_else(|| runtime_config_error("adapterOptions must be a JSON object"))?;
-    reject_sensitive_option_fields(options, "adapterOptions")?;
-    Ok(Some(options.clone()))
-}
-
-fn reject_sensitive_option_fields(object: &Map<String, Value>, path: &str) -> DomainResult<()> {
-    for (name, value) in object {
-        let normalized = name.to_ascii_lowercase().replace(['-', '_'], "");
-        if [
-            "secret",
-            "password",
-            "credential",
-            "accesstoken",
-            "refreshtoken",
-            "apikey",
-        ]
-        .iter()
-        .any(|marker| normalized.contains(marker))
-        {
-            return Err(runtime_config_error(format!(
-                "{path}.{name} is sensitive and must be stored in ai_upstream_account_credential"
-            )));
-        }
-        if let Some(nested) = value.as_object() {
-            reject_sensitive_option_fields(nested, &format!("{path}.{name}"))?;
-        }
-    }
-    Ok(())
-}
-
 fn required_string(object: &Map<String, Value>, field: &str) -> DomainResult<String> {
     optional_string(object, field)?
         .ok_or_else(|| runtime_config_error(format!("{field} is required")))
@@ -294,20 +220,6 @@ fn validate_query_parameter_name(value: &str) -> DomainResult<()> {
         return Err(runtime_config_error(
             "credentialParameter must be a safe query parameter name",
         ));
-    }
-    Ok(())
-}
-
-fn validate_code(value: &str, field: &str) -> DomainResult<()> {
-    if value.is_empty()
-        || value.len() > 64
-        || !value
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_')
-    {
-        return Err(runtime_config_error(format!(
-            "{field} must use lowercase snake_case and contain at most 64 characters"
-        )));
     }
     Ok(())
 }
@@ -369,19 +281,21 @@ mod tests {
     }
 
     #[test]
-    fn requires_provider_adapter_for_aws_sigv4() {
-        let config = canonical_upstream_runtime_auth_config(
-            "aws_sigv4",
-            &json!({
-                "credentialTransport": "provider_adapter",
-                "adapterScheme": "aws_sigv4",
-                "adapterOptions": {"service": "bedrock", "region": "us-east-1"}
-            }),
+    fn rejects_unknown_auth_types_and_transports() {
+        let error = canonical_upstream_runtime_auth_config(
+            "unsupported",
+            &json!({"credentialTransport": "bearer"}),
         )
-        .unwrap();
+        .unwrap_err();
+        assert!(error.to_string().contains("incompatible"));
 
-        let error =
-            resolve_upstream_runtime_auth_profile("aws_sigv4", &config.to_string()).unwrap_err();
-        assert!(error.to_string().contains("registered supplier adapter"));
+        let error = canonical_upstream_runtime_auth_config(
+            "custom",
+            &json!({"credentialTransport": "signed"}),
+        )
+        .unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("must be bearer, header, or query"));
     }
 }

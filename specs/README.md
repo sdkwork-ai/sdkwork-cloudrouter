@@ -8,12 +8,14 @@ This directory does not copy global `*_SPEC.md` bodies.
 
 - [component.spec.json](component.spec.json): repository/application component identity,
   public surfaces, SDK dependencies, and verification entrypoints.
-- [topology.spec.json](topology.spec.json): v4 standalone/cloud runtime topology.
+- [topology.spec.json](topology.spec.json): v5 standalone/cloud runtime topology.
 - [application-env-standard.md](application-env-standard.md): current v4 application
   lifecycle namespaces, profile values, visibility boundaries, and verification rules.
 - [database-store-migration.manifest.json](database-store-migration.manifest.json): active
-  repository extraction inventory until all router-service SQL stores are moved to their
-  owning repository crates.
+  PostgreSQL store extraction inventory until the remaining router-service stores move to
+  their owning repository crates. It does not track a server-side SQLite implementation.
+- [process-database-pool.spec.json](process-database-pool.spec.json): PostgreSQL process pool
+  ownership and injection evidence for each executable runtime.
 
 Generated application composition is materialized at
 `generated/composition.resolved.json`; it is not duplicated as a hand-maintained contract here.

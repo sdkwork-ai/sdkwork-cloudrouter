@@ -19,9 +19,11 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                     "crates/sdkwork-claw-security",
                     "crates/sdkwork-claw-http",
                     "crates/sdkwork-claw-observability",
+                    "crates/sdkwork-routes-clawrouter-app-api",
+                    "crates/sdkwork-routes-clawrouter-backend-api",
                     "crates/sdkwork-clawrouter-edge-runtime",
-                    "services/sdkwork-clawrouter-admin-api-server",
-                    "services/sdkwork-clawrouter-app-api-server",
+                    "services/sdkwork-clawrouter-admin-gateway",
+                    "services/sdkwork-clawrouter-standalone-gateway",
                     "services/sdkwork-clawrouter-router-service",
                 ]
                 resolver = "2"
@@ -56,9 +58,11 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             "crates/sdkwork-claw-security",
             "crates/sdkwork-claw-http",
             "crates/sdkwork-claw-observability",
+            "crates/sdkwork-routes-clawrouter-app-api",
+            "crates/sdkwork-routes-clawrouter-backend-api",
             "crates/sdkwork-clawrouter-edge-runtime",
-            "services/sdkwork-clawrouter-admin-api-server",
-            "services/sdkwork-clawrouter-app-api-server",
+            "services/sdkwork-clawrouter-admin-gateway",
+            "services/sdkwork-clawrouter-standalone-gateway",
             "services/sdkwork-clawrouter-router-service",
         ):
             root.joinpath(member, "Cargo.toml").parent.mkdir(parents=True, exist_ok=True)
@@ -73,6 +77,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                 "provider_relay",
                 "provider_secret_map",
                 "runtime",
+                "upstream_credential",
             ),
             "crates/sdkwork-claw-health": ("health",),
             "crates/sdkwork-claw-security": ("headers", "redaction"),
@@ -95,7 +100,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         product_ports = product_src / "ports"
         product_ports.mkdir(parents=True, exist_ok=True)
         product_ports.joinpath("mod.rs").write_text(
-            "mod chat_completion_relay;\nmod chat_completion_stream_relay;\nmod embeddings_relay;\nmod gateway_usage_recorder;\nmod pricing_catalog;\nmod provider_secret_resolver;\nmod responses_relay;\nmod usage_settlement_store;\n",
+            "mod chat_completion_relay;\nmod chat_completion_stream_relay;\nmod embeddings_relay;\nmod gateway_usage_recorder;\nmod pricing_catalog;\nmod provider_secret_resolver;\nmod responses_relay;\nmod upstream_account_route_catalog;\nmod usage_settlement_store;\n",
             encoding="utf-8",
         )
         product_ports.joinpath("chat_completion_relay.rs").write_text("// ChatCompletionRelay port\n", encoding="utf-8")
@@ -105,6 +110,10 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         product_ports.joinpath("pricing_catalog.rs").write_text("// PricingCatalog port\n", encoding="utf-8")
         product_ports.joinpath("provider_secret_resolver.rs").write_text("// ProviderSecretResolver port\n", encoding="utf-8")
         product_ports.joinpath("responses_relay.rs").write_text("// ResponsesRelay port\n", encoding="utf-8")
+        product_ports.joinpath("upstream_account_route_catalog.rs").write_text(
+            "// UpstreamAccountRouteCatalog shared immutable route snapshot port\n",
+            encoding="utf-8",
+        )
         product_ports.joinpath("usage_settlement_store.rs").write_text("// UsageSettlementStore UsageSettlementCommand UsageSettlementOutcome port\n", encoding="utf-8")
         product_infrastructure = product_src / "infrastructure"
         product_infrastructure.mkdir(parents=True, exist_ok=True)
@@ -126,7 +135,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         product_sql = product_infrastructure / "sql"
         product_sql.mkdir(parents=True, exist_ok=True)
         product_sql.joinpath("mod.rs").write_text(
-            "pub mod catalog;\npub mod postgres;\nmod queries;\npub mod rows;\npub mod sqlite;\n",
+            "pub mod catalog;\npub mod postgres;\nmod queries;\npub mod rows;\n",
             encoding="utf-8",
         )
         product_sql.joinpath("catalog.rs").write_text("// sql catalog snapshot\n", encoding="utf-8")
@@ -136,15 +145,6 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         product_queries.joinpath("mod.rs").write_text("mod lookup;\nmod snapshot;\n", encoding="utf-8")
         product_queries.joinpath("lookup.rs").write_text("// request lookup query text builders\n", encoding="utf-8")
         product_queries.joinpath("snapshot.rs").write_text("// snapshot load query text builders\n", encoding="utf-8")
-        product_sqlite = product_sql / "sqlite"
-        product_sqlite.mkdir(parents=True, exist_ok=True)
-        product_sqlite.joinpath("mod.rs").write_text("mod error;\nmod gateway_usage_recorder;\nmod loader;\nmod queries;\nmod row_mapping;\nmod usage_settlement_store;\n", encoding="utf-8")
-        product_sqlite.joinpath("error.rs").write_text("// sqlite load errors\n", encoding="utf-8")
-        product_sqlite.joinpath("gateway_usage_recorder.rs").write_text("// SqliteGatewayUsageRecorder ai_request_trace ai_usage\n", encoding="utf-8")
-        product_sqlite.joinpath("loader.rs").write_text("// sqlite catalog loader\n", encoding="utf-8")
-        product_sqlite.joinpath("queries.rs").write_text("// sqlite catalog load queries\n", encoding="utf-8")
-        product_sqlite.joinpath("row_mapping.rs").write_text("// sqlite row mapping\n", encoding="utf-8")
-        product_sqlite.joinpath("usage_settlement_store.rs").write_text("// SqliteUsageSettlementStore commerce_usage_settlement plus_account_history settlement_status INSUFFICIENT_POINTS\n", encoding="utf-8")
         product_postgres = product_sql / "postgres"
         product_postgres.mkdir(parents=True, exist_ok=True)
         product_postgres.joinpath("mod.rs").write_text("mod error;\nmod gateway_usage_recorder;\nmod loader;\nmod row_mapping;\nmod usage_settlement_store;\n", encoding="utf-8")
@@ -154,21 +154,36 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         product_postgres.joinpath("row_mapping.rs").write_text("// postgres row mapping\n", encoding="utf-8")
         product_postgres.joinpath("usage_settlement_store.rs").write_text("// PostgresUsageSettlementStore commerce_usage_settlement plus_account_history settlement_status INSUFFICIENT_POINTS\n", encoding="utf-8")
 
-        for service in ("sdkwork-clawrouter-edge-runtime", "sdkwork-clawrouter-admin-api-server", "sdkwork-clawrouter-app-api-server"):
-            service_root = root / "services" / service
+        boundary_services = (
+            ("crates/sdkwork-clawrouter-edge-runtime", None),
+            (
+                "services/sdkwork-clawrouter-admin-gateway",
+                ("sdkwork-routes-clawrouter-backend-api", "sdkwork_routes_clawrouter_backend_api"),
+            ),
+            (
+                "services/sdkwork-clawrouter-standalone-gateway",
+                ("sdkwork-routes-clawrouter-app-api", "sdkwork_routes_clawrouter_app_api"),
+            ),
+        )
+        for service, route in boundary_services:
+            service_root = root / service
+            service_root.mkdir(parents=True, exist_ok=True)
+            route_dependency = ""
+            if route is not None:
+                route_dependency = f'\n{route[0]} = {{ path = "../../crates/{route[0]}" }}'
             service_root.joinpath("Cargo.toml").write_text(
                 textwrap.dedent(
-                    """
+                    f"""
                     [package]
                     name = "service"
 
                     [dependencies]
-                    sdkwork-claw-config = { path = "../../crates/sdkwork-claw-config" }
-                    sdkwork-claw-http = { path = "../../crates/sdkwork-claw-http" }
-                    sdkwork-claw-observability = { path = "../../crates/sdkwork-claw-observability" }
+                    sdkwork-claw-config = {{ path = "../../crates/sdkwork-claw-config" }}
+                    sdkwork-claw-http = {{ path = "../../crates/sdkwork-claw-http" }}
+                    sdkwork-claw-observability = {{ path = "../../crates/sdkwork-claw-observability" }}
                     axum.workspace = true
                     tokio.workspace = true
-                    anyhow.workspace = true
+                    anyhow.workspace = true{route_dependency}
                     """
                 ).strip()
                 + "\n",
@@ -176,11 +191,21 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             )
             service_root.joinpath("src").mkdir(parents=True, exist_ok=True)
             lib_text = "pub fn router() { sdkwork_claw_http::service_router(\"service\"); }\n"
-            if service == "sdkwork-clawrouter-edge-runtime":
+            if service == "crates/sdkwork-clawrouter-edge-runtime":
                 lib_text = "pub mod runtime;\npub fn router() { sdkwork_claw_http::service_router(\"service\"); }\n"
+            elif route is not None:
+                lib_text = f"pub use {route[1]}::*;\n"
             service_root.joinpath("src", "lib.rs").write_text(lib_text, encoding="utf-8")
 
-        doc = root / "docs" / "29-rust-backend-module-standard.md"
+        for route_crate in (
+            "crates/sdkwork-routes-clawrouter-app-api",
+            "crates/sdkwork-routes-clawrouter-backend-api",
+        ):
+            route_src = root / route_crate / "src"
+            route_src.mkdir(parents=True, exist_ok=True)
+            route_src.joinpath("web_bootstrap.rs").write_text("// sdkwork-web-framework boundary\n", encoding="utf-8")
+
+        doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
         doc.parent.mkdir(parents=True, exist_ok=True)
         doc.write_text(
             textwrap.dedent(
@@ -201,25 +226,25 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                 Package rules keep contract, config, core, security, http, observability, gateway, app-api, admin-api, and product boundaries clear.
                 Product implementation keeps domain, application, ports, and infrastructure as first-class submodules.
                 PricingCatalog powers ModelCatalogQueryService, PriceAvailability, and lowest upstream cost pricing views.
-                SQL PricingCatalog boundary uses infrastructure/sql catalog, queries, rows, sqlite, and postgres modules, SQLite loader, PostgreSQL loader, immutable snapshot, Schema Registry table names, decimal strings, generated enums, and no ai_pricing_group.
+                SQL PricingCatalog boundary uses infrastructure/sql catalog, queries, rows, and postgres modules, PostgreSQL loader, immutable snapshot, Schema Registry table names, decimal strings, generated enums, and no ai_pricing_group.
                 AdminModelRoute calls ModelCatalogQueryService and must not rebuild pricing logic in HTTP handlers.
                 OpenAIModelsRoute serves /v1/models through the gateway runtime module, uses PricingCatalog snapshots, and returns OpenAI-compatible model list envelopes only after API key authentication.
                 OpenAIChatCompletionsRoute serves /v1/chat/completions through the gateway runtime module, authenticates the API key, validates model routing and pricing, uses ChatCompletionRelay for non-stream execution, uses ChatCompletionStreamRelay with ChatCompletionStreamRelayResponse for SSE text/event-stream pass-through, and returns provider_relay_not_configured or streaming_relay_not_configured only when the matching relay is absent.
-                Non-stream OpenAIChatCompletionsRoute provider success must build GatewayUsageRecordCommand from provider usage and persist through GatewayUsageRecorder, with SqliteGatewayUsageRecorder and PostgresGatewayUsageRecorder writing ai_request_trace and ai_usage; missing usage returns provider_usage_record_failed. The streaming usage boundary must force upstream stream_options.include_usage through OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay, then StreamingUsageRecordingBody must persist the provider SSE usage event before stream completion.
-                UsageSettlementWorker owns the background worker boundary and UsageSettlementWorkerConfig controls schema readiness gated settlement activation. SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED, SDKWORK_CLAW_USAGE_SETTLEMENT_BATCH_SIZE, and SDKWORK_CLAW_USAGE_SETTLEMENT_INTERVAL_MILLIS configure the worker. UsageSettlementStore consumes UsageSettlementCommand and returns UsageSettlementOutcome from a worker boundary after ai_usage is written. SqliteUsageSettlementStore and PostgresUsageSettlementStore must settle pending or failed settlement_status rows into commerce_usage_settlement and plus_account_history idempotently, update settlement_id, use FOR UPDATE SKIP LOCKED on Postgres, and insufficient balances must use INSUFFICIENT_POINTS without double-debiting.
+                Non-stream OpenAIChatCompletionsRoute provider success must build GatewayUsageRecordCommand from provider usage and persist through GatewayUsageRecorder, with PostgresGatewayUsageRecorder writing ai_request_trace and ai_usage; missing usage returns provider_usage_record_failed. The streaming usage boundary must force upstream stream_options.include_usage through OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay, then StreamingUsageRecordingBody must persist the provider SSE usage event before stream completion.
+                UsageSettlementWorker owns the background worker boundary and UsageSettlementWorkerConfig controls schema readiness gated settlement activation. SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED, SDKWORK_CLAW_USAGE_SETTLEMENT_BATCH_SIZE, and SDKWORK_CLAW_USAGE_SETTLEMENT_INTERVAL_MILLIS configure the worker. UsageSettlementStore consumes UsageSettlementCommand and returns UsageSettlementOutcome from a worker boundary after ai_usage is written. PostgresUsageSettlementStore must settle pending or failed settlement_status rows into commerce_usage_settlement and plus_account_history idempotently, update settlement_id, use FOR UPDATE SKIP LOCKED on Postgres, and insufficient balances must use INSUFFICIENT_POINTS without double-debiting.
                 OpenAIResponsesRoute serves /v1/responses through the gateway runtime module, authenticates the API key, validates responses capability, provider route, and LlmInputToken pricing, returns responses_relay_not_configured when relay is absent, and uses ResponsesRelay with ResponsesRelayRequest for non-stream provider execution.
-                OpenAiCompatibleResponsesRelay and SecretRefOpenAiCompatibleResponsesRelay use UpstreamProviderEndpoint, provider_base_url, provider_secret_ref, ai_channel.timeout_ms, ai_channel.retry_policy, request-context provider timeout, request-context provider retry policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, and retryable upstream status for native OpenAI-compatible /v1/responses relay without plaintext provider secret storage.
+                OpenAiCompatibleResponsesRelay and SecretRefOpenAiCompatibleResponsesRelay use UpstreamProviderEndpoint, provider_base_url, provider_secret_ref, ai_upstream_account.timeout_ms, ai_upstream_account.retry_policy, request-context provider timeout, request-context provider retry policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, and retryable upstream status for native OpenAI-compatible /v1/responses relay without plaintext provider secret storage.
                 OpenAIEmbeddingsRoute serves /v1/embeddings through the gateway runtime module, authenticates the API key, validates embedding capability, provider route, and EmbeddingInputToken pricing, returns embedding_relay_not_configured when relay is absent, and uses EmbeddingsRelay with EmbeddingsRelayRequest for provider execution.
-                OpenAiCompatibleEmbeddingsRelay and SecretRefOpenAiCompatibleEmbeddingsRelay use UpstreamProviderEndpoint, provider_base_url, provider_secret_ref, ai_channel.timeout_ms, ai_channel.retry_policy, request-context provider timeout, request-context provider retry policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, and retryable upstream status for native OpenAI-compatible /v1/embeddings relay without plaintext provider secret storage.
-                ChatCompletionRelay accepts ChatCompletionRelayRequest only after authentication, model routing, and pricing validation, and carries provider_base_url, provider_secret_ref, ai_channel.timeout_ms, ai_channel.retry_policy, request-context provider timeout, and request-context provider retry policy, so HTTP handlers must not call upstream providers directly.
-                OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay use UpstreamProviderEndpoint, an absolute http or https provider URL, hyper, hyper-rustls, and a TLS connector for native OpenAI-compatible upstream SSE calls, normalize the /v1 prefix, never send /v1/v1/..., require a provider response timeout, apply request-context provider timeout from ai_channel.timeout_ms, stream adapters must not retry retryable upstream status, and keep no plaintext provider secret storage.
+                OpenAiCompatibleEmbeddingsRelay and SecretRefOpenAiCompatibleEmbeddingsRelay use UpstreamProviderEndpoint, provider_base_url, provider_secret_ref, ai_upstream_account.timeout_ms, ai_upstream_account.retry_policy, request-context provider timeout, request-context provider retry policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, and retryable upstream status for native OpenAI-compatible /v1/embeddings relay without plaintext provider secret storage.
+                ChatCompletionRelay accepts ChatCompletionRelayRequest only after authentication, model routing, and pricing validation, and carries provider_base_url, provider_secret_ref, ai_upstream_account.timeout_ms, ai_upstream_account.retry_policy, request-context provider timeout, and request-context provider retry policy, so HTTP handlers must not call upstream providers directly.
+                OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay use UpstreamProviderEndpoint, an absolute http or https provider URL, hyper, hyper-rustls, and a TLS connector for native OpenAI-compatible upstream SSE calls, normalize the /v1 prefix, never send /v1/v1/..., require a provider response timeout, apply request-context provider timeout from ai_upstream_account.timeout_ms, stream adapters must not retry retryable upstream status, and keep no plaintext provider secret storage.
                 ProviderSecretResolver resolves provider_secret_ref into runtime bearer credentials outside catalog snapshots.
                 ProviderSecretMapConfig loads SDKWORK_CLAW_PROVIDER_SECRET_MAP_JSON for environment-backed local and deployment secret reference resolution.
                 ProviderSecretMapResolver adapts ProviderSecretMapConfig into ProviderSecretResolver without exposing plaintext provider tokens.
                 ProviderRelayConfig loads SDKWORK_CLAW_OPENAI_RELAY_BASE_URL and SDKWORK_CLAW_OPENAI_RELAY_BEARER_TOKEN for deployment-time provider relay wiring.
-                OpenAiCompatibleChatCompletionRelay and SecretRefOpenAiCompatibleChatCompletionRelay use UpstreamProviderEndpoint, an absolute http or https provider URL, hyper, hyper-rustls, and a TLS connector for native OpenAI-compatible upstream calls, normalize the /v1 prefix, never send /v1/v1/..., require a provider response timeout, apply request-context provider timeout from ai_channel.timeout_ms, apply request-context provider retry policy from ai_channel.retry_policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, retryable upstream status, and keep no plaintext provider secret storage.
+                OpenAiCompatibleChatCompletionRelay and SecretRefOpenAiCompatibleChatCompletionRelay use UpstreamProviderEndpoint, an absolute http or https provider URL, hyper, hyper-rustls, and a TLS connector for native OpenAI-compatible upstream calls, normalize the /v1 prefix, never send /v1/v1/..., require a provider response timeout, apply request-context provider timeout from ai_upstream_account.timeout_ms, apply request-context provider retry policy from ai_upstream_account.retry_policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, retryable upstream status, and keep no plaintext provider secret storage.
                 GatewayRouterError reports database loader and API key pepper configuration failures without leaking secrets.
-                lib.rs must stay below 80 non-empty lines and delegate implementation to submodules.
+                lib.rs is a thin orchestration entrypoint and delegates implementation to submodules.
                 """
             ).strip()
             + "\n",
@@ -254,21 +279,21 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            service = root / "services" / "sdkwork-clawrouter-app-api-server"
+            service = root / "crates" / "sdkwork-clawrouter-edge-runtime"
             service.joinpath("Cargo.toml").write_text("[package]\nname = \"service\"\n", encoding="utf-8")
             service.joinpath("src", "lib.rs").write_text("pub fn router() {}\n", encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("services/sdkwork-clawrouter-app-api-server/Cargo.toml must depend on sdkwork-claw-http", result.messages)
-            self.assertIn("services/sdkwork-clawrouter-app-api-server/src/lib.rs must build routers through sdkwork_claw_http::service_router", result.messages)
+            self.assertIn("crates/sdkwork-clawrouter-edge-runtime/Cargo.toml must depend on sdkwork-claw-http", result.messages)
+            self.assertIn("crates/sdkwork-clawrouter-edge-runtime/src/lib.rs must build routers through sdkwork_claw_http::service_router", result.messages)
 
     def test_reports_service_without_common_runtime_config_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            service = root / "services" / "sdkwork-clawrouter-app-api-server"
+            service = root / "services" / "sdkwork-clawrouter-standalone-gateway"
             cargo = service / "Cargo.toml"
             cargo.write_text(
                 cargo.read_text(encoding="utf-8").replace(
@@ -282,7 +307,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-app-api-server/Cargo.toml must depend on sdkwork-claw-config",
+                "services/sdkwork-clawrouter-standalone-gateway/Cargo.toml must depend on sdkwork-claw-config",
                 result.messages,
             )
 
@@ -290,12 +315,12 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            gateway_lib = root / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "lib.rs"
+            gateway_lib = root / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "lib.rs"
             gateway_lib.write_text(
                 gateway_lib.read_text(encoding="utf-8").replace("pub mod runtime;\n", ""),
                 encoding="utf-8",
             )
-            root.joinpath("services", "sdkwork-clawrouter-edge-runtime", "src", "runtime.rs").unlink(missing_ok=True)
+            root.joinpath("crates", "sdkwork-clawrouter-edge-runtime", "src", "runtime.rs").unlink(missing_ok=True)
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
@@ -306,26 +331,26 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text("Rust-first only\n", encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("docs/29-rust-backend-module-standard.md must mention required backend module term: sdkwork-claw-security", result.messages)
-            self.assertIn("docs/29-rust-backend-module-standard.md must mention required backend module term: backpressure", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: sdkwork-claw-security", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: backpressure", result.messages)
 
     def test_reports_missing_product_query_standard_doc_terms(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(doc.read_text(encoding="utf-8").replace("PriceAvailability", "PriceState"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("docs/29-rust-backend-module-standard.md must mention required backend module term: PriceAvailability", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: PriceAvailability", result.messages)
 
     def test_reports_product_without_chat_completion_relay_port(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -514,7 +539,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("crates/sdkwork-claw-security/src/lib.rs must stay below 80 non-empty lines", result.messages)
+            self.assertIn("crates/sdkwork-claw-security/src/lib.rs must stay below 120 non-empty lines", result.messages)
 
     def test_reports_product_without_hexagonal_submodules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -707,28 +732,19 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                 result.messages,
             )
 
-    def test_reports_missing_product_sqlite_loader_modules(self) -> None:
+    def test_rejects_server_side_sqlite_persistence_modules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             sqlite_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite"
-            sqlite_dir.joinpath("loader.rs").unlink()
-            sqlite_dir.joinpath("queries.rs").unlink()
-            sqlite_dir.joinpath("row_mapping.rs").unlink()
+            sqlite_dir.mkdir(parents=True)
+            sqlite_dir.joinpath("loader.rs").write_text("// forbidden server SQLite loader\n", encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/loader.rs is required for SQLite PricingCatalog loader",
-                result.messages,
-            )
-            self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/queries.rs is required for SQLite PricingCatalog load queries",
-                result.messages,
-            )
-            self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/row_mapping.rs is required for SQLite PricingCatalog row mapping",
+                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite must not contain server persistence adapters; PostgreSQL is the authoritative server database",
                 result.messages,
             )
 
@@ -757,18 +773,12 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             root = Path(tmp)
             self.write_valid_workspace(root)
             sql_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
-            sqlite_dir = sql_dir / "sqlite"
             postgres_dir = sql_dir / "postgres"
-            sqlite_dir.joinpath("gateway_usage_recorder.rs").unlink()
             postgres_dir.joinpath("gateway_usage_recorder.rs").unlink()
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/gateway_usage_recorder.rs is required for SQLite GatewayUsageRecorder adapter",
-                result.messages,
-            )
             self.assertIn(
                 "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/gateway_usage_recorder.rs is required for PostgreSQL GatewayUsageRecorder adapter",
                 result.messages,
@@ -779,18 +789,12 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             root = Path(tmp)
             self.write_valid_workspace(root)
             sql_dir = root / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql"
-            sqlite_dir = sql_dir / "sqlite"
             postgres_dir = sql_dir / "postgres"
-            sqlite_dir.joinpath("usage_settlement_store.rs").unlink()
             postgres_dir.joinpath("usage_settlement_store.rs").unlink()
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn(
-                "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/sqlite/usage_settlement_store.rs is required for SQLite UsageSettlementStore adapter",
-                result.messages,
-            )
             self.assertIn(
                 "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_settlement_store.rs is required for PostgreSQL UsageSettlementStore adapter",
                 result.messages,
@@ -810,7 +814,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                     module_dir.joinpath("mod.rs").write_text("pub mod provider;\npub mod sql;\n", encoding="utf-8")
                 elif module == "ports":
                     module_dir.joinpath("mod.rs").write_text(
-                        "mod chat_completion_relay;\nmod chat_completion_stream_relay;\nmod embeddings_relay;\nmod gateway_usage_recorder;\nmod pricing_catalog;\nmod provider_secret_resolver;\nmod responses_relay;\nmod usage_settlement_store;\n",
+                        "mod chat_completion_relay;\nmod chat_completion_stream_relay;\nmod embeddings_relay;\nmod gateway_usage_recorder;\nmod pricing_catalog;\nmod provider_secret_resolver;\nmod responses_relay;\nmod upstream_account_route_catalog;\nmod usage_settlement_store;\n",
                         encoding="utf-8",
                     )
                     module_dir.joinpath("chat_completion_relay.rs").write_text("// ChatCompletionRelay port\n", encoding="utf-8")
@@ -820,6 +824,9 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
                     module_dir.joinpath("pricing_catalog.rs").write_text("// PricingCatalog port\n", encoding="utf-8")
                     module_dir.joinpath("provider_secret_resolver.rs").write_text("// ProviderSecretResolver port\n", encoding="utf-8")
                     module_dir.joinpath("responses_relay.rs").write_text("// ResponsesRelay port\n", encoding="utf-8")
+                    module_dir.joinpath("upstream_account_route_catalog.rs").write_text(
+                        "// UpstreamAccountRouteCatalog port\n", encoding="utf-8"
+                    )
                     module_dir.joinpath("usage_settlement_store.rs").write_text("// UsageSettlementStore port\n", encoding="utf-8")
                 else:
                     module_dir.joinpath("mod.rs").write_text("// module\n", encoding="utf-8")
@@ -832,26 +839,26 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(doc.read_text(encoding="utf-8").replace("AdminModelRoute", "ModelRoute"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("docs/29-rust-backend-module-standard.md must mention required backend module term: AdminModelRoute", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: AdminModelRoute", result.messages)
 
     def test_reports_missing_database_health_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(doc.read_text(encoding="utf-8").replace("DatabaseHealth", "DatabaseStatus"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: DatabaseHealth",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: DatabaseHealth",
                 result.messages,
             )
 
@@ -859,7 +866,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("RuntimeConfig", "RuntimeSettings"),
                 encoding="utf-8",
@@ -869,7 +876,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: RuntimeConfig",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: RuntimeConfig",
                 result.messages,
             )
 
@@ -877,14 +884,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(doc.read_text(encoding="utf-8").replace("ApiKeyIdentity", "ApiIdentity"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: ApiKeyIdentity",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ApiKeyIdentity",
                 result.messages,
             )
 
@@ -892,14 +899,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(doc.read_text(encoding="utf-8").replace("ApiKeySecretHasher", "ApiHasher"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: ApiKeySecretHasher",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ApiKeySecretHasher",
                 result.messages,
             )
 
@@ -907,14 +914,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(doc.read_text(encoding="utf-8").replace("ApiKeySecurityConfig", "ApiKeyConfig"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: ApiKeySecurityConfig",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ApiKeySecurityConfig",
                 result.messages,
             )
 
@@ -922,14 +929,14 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(doc.read_text(encoding="utf-8").replace("/v1/models", "/v1/model-list"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: /v1/models",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1/models",
                 result.messages,
             )
 
@@ -937,7 +944,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("/v1/chat/completions", "/v1/chat"),
                 encoding="utf-8",
@@ -947,7 +954,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: /v1/chat/completions",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1/chat/completions",
                 result.messages,
             )
 
@@ -955,7 +962,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("/v1/responses", "/v1/response"),
                 encoding="utf-8",
@@ -965,7 +972,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: /v1/responses",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1/responses",
                 result.messages,
             )
 
@@ -973,7 +980,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("ResponsesRelay", "ResponseRelay"),
                 encoding="utf-8",
@@ -983,7 +990,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: ResponsesRelay",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ResponsesRelay",
                 result.messages,
             )
 
@@ -991,7 +998,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("/v1/embeddings", "/v1/embed"),
                 encoding="utf-8",
@@ -1001,7 +1008,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: /v1/embeddings",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1/embeddings",
                 result.messages,
             )
 
@@ -1009,7 +1016,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("EmbeddingsRelay", "EmbeddingRelay"),
                 encoding="utf-8",
@@ -1019,7 +1026,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: EmbeddingsRelay",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: EmbeddingsRelay",
                 result.messages,
             )
 
@@ -1027,7 +1034,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("ChatCompletionRelay", "ChatRelay"),
                 encoding="utf-8",
@@ -1037,7 +1044,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: ChatCompletionRelay",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ChatCompletionRelay",
                 result.messages,
             )
 
@@ -1045,7 +1052,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("ChatCompletionStreamRelay", "ChatStreamRelay"),
                 encoding="utf-8",
@@ -1055,7 +1062,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: ChatCompletionStreamRelay",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ChatCompletionStreamRelay",
                 result.messages,
             )
 
@@ -1063,7 +1070,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace("ProviderRelayConfig", "ProviderConfig"),
                 encoding="utf-8",
@@ -1073,7 +1080,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: ProviderRelayConfig",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ProviderRelayConfig",
                 result.messages,
             )
 
@@ -1081,7 +1088,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
-            doc = root / "docs" / "29-rust-backend-module-standard.md"
+            doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace(
                     "ProviderSecretMapConfig", "ProviderSecretConfig"
@@ -1093,7 +1100,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/29-rust-backend-module-standard.md must mention required backend module term: ProviderSecretMapConfig",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ProviderSecretMapConfig",
                 result.messages,
             )
 

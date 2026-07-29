@@ -1,8 +1,8 @@
 -- Generated from docs/schema-registry/sdkwork-clawrouter.tables.yaml.
 -- Registry version: 0.3.0.
--- Registry SHA-256: 1f05fc8e334b2917d256499704b0ea4f431842f8439d0104fc5916fd007f1326.
+-- Registry SHA-256: c872990b357d6563de3d619d809502c74c55bf057ef4418218c046af721f4533.
 -- Dialect: postgres.
--- Materialize: python -B -m tools.schema_compiler --dialect all --materialize.
+-- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
 
 CREATE TABLE IF NOT EXISTS iam_gateway_access_policy (

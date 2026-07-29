@@ -7,14 +7,15 @@ use sdkwork_claw_config::{
     ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
     InternalGatewaySecurityConfig, PaymentWebhookConfig, RedisConfig, RequestLimitsConfig,
     RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
+    UpstreamCredentialSecurityConfig,
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretHasher,
-    CredentialSecretCodec, EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
+    EntityUuidGenerator, InMemoryRuntimeStreamBus, ModelRankingRefreshWorker,
     ModelRankingRefreshWorkerConfig, ModelRankingsService, PaymentAggregateRuntimeStore,
-    PaymentProviderRegistry, RuntimeStreamBus,
+    PaymentProviderRegistry, RuntimeStreamBus, UpstreamCredentialSecretCodec,
 };
 use sdkwork_clawrouter_router_service::infrastructure::crypto::{
     HmacSha256ApiKeySecretHasher, RingAeadCredentialSecretCodec,
@@ -40,7 +41,7 @@ use sdkwork_clawrouter_router_service::infrastructure::{
 };
 use sdkwork_clawrouter_router_service::ports::AdminTransactionCenterSubject;
 use sdkwork_clawrouter_router_service::ports::ChatCompletionStreamRelay;
-use sdkwork_clawrouter_router_service::ports::PricingCatalog;
+use sdkwork_clawrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_clawrouter_router_service::ports::{
     AppChatStore, AppNotificationStore, AppRoutingReadStore, AppRoutingStrategyStore,
     AppRuntimeStore, DashboardOverviewReadStore, GatewayApiKeyCommandStore,
@@ -67,7 +68,7 @@ pub struct RouterApiRouteModule {
 
 pub const SERVICE_NAME: &str = "sdkwork-clawrouter-standalone-gateway";
 const DEFAULT_APP_RUNTIME_CATALOG_REFRESH_INTERVAL_MILLIS: u64 = 60_000;
-type CredentialCodec = Arc<dyn CredentialSecretCodec + Send + Sync>;
+type CredentialCodec = Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>;
 
 struct AppApiKeyRuntimeDeps {
     read_store: Arc<dyn GatewayApiKeyManagementReadStore + Send + Sync>,
@@ -236,7 +237,7 @@ fn is_commerce_dependency_contract_path(path: &str) -> bool {
 
 pub fn router_with_product_catalog<C>(catalog: Arc<C>) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     router_with_product_catalog_and_database_status(catalog, None)
 }
@@ -246,7 +247,7 @@ fn router_with_product_catalog_and_database_status<C>(
     config: Option<&DatabaseConfig>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     merge_app_sdk_reference_router(router_with_database_status(config, None, None))
         .merge(sdkwork_clawrouter_router_service::api::app_site_settings_router())
@@ -504,12 +505,14 @@ pub async fn router_with_postgres_product_catalog(
     pool: PgPool,
     database_config: DatabaseConfig,
     api_key_security_config: ApiKeySecurityConfig,
+    upstream_credential_security_config: UpstreamCredentialSecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
     let deployment_mode = DeploymentMode::from_env().map_err(ProductCatalogRouterError::Config)?;
-    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
+    let credential_secret_codec =
+        credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let read_store = Arc::new(PostgresPricingCatalogLoader::with_credential_secret_codec(
         pool.clone(),
         credential_secret_codec.clone(),
@@ -588,6 +591,7 @@ pub async fn router_with_postgres_shared_runtime(
     pool: PgPool,
     catalog: Arc<RefreshableSqlPricingCatalog>,
     api_key_security_config: ApiKeySecurityConfig,
+    upstream_credential_security_config: UpstreamCredentialSecurityConfig,
     trusted_subject_config: TrustedSubjectConfig,
     app_session_config: AppSessionConfig,
     payment_webhook_config: PaymentWebhookConfig,
@@ -599,7 +603,8 @@ pub async fn router_with_postgres_shared_runtime(
     app_runtime_stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
     model_ranking_refresh_worker_config: ModelRankingRefreshWorkerConfig,
 ) -> Result<Router, ProductCatalogRouterError> {
-    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
+    let credential_secret_codec =
+        credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let model_rankings_store =
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
     maybe_spawn_postgres_model_ranking_refresh_worker(
@@ -776,7 +781,12 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         .map_err(ProductCatalogRouterError::Config)?;
     let app_runtime_stream_bus =
         build_app_runtime_stream_bus(runtime_toml, deployment_mode).await?;
-    let credential_secret_codec = credential_secret_codec_from_config(&api_key_security_config)?;
+    let upstream_credential_security_config = require_upstream_credential_security_config(
+        UpstreamCredentialSecurityConfig::from_env_or_runtime_toml(runtime_toml)
+            .map_err(ProductCatalogRouterError::Config)?,
+    )?;
+    let credential_secret_codec =
+        credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let app_runtime_catalog_refresh_interval =
         app_runtime_catalog_refresh_interval_from_env_or_toml(runtime_toml)
             .map_err(ProductCatalogRouterError::Config)?;
@@ -995,12 +1005,29 @@ fn ensure_server_safe_deployment_mode(
 }
 
 fn credential_secret_codec_from_config(
-    config: &ApiKeySecurityConfig,
+    config: &UpstreamCredentialSecurityConfig,
 ) -> Result<CredentialCodec, ProductCatalogRouterError> {
     Ok(Arc::new(
-        RingAeadCredentialSecretCodec::new(config.pepper_secret())
-            .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?,
+        RingAeadCredentialSecretCodec::with_key_ring(
+            config.active_key_id(),
+            config.active_key(),
+            config.fingerprint_key(),
+            config.decryption_keys().to_vec(),
+        )
+        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?,
     ))
+}
+
+fn require_upstream_credential_security_config(
+    config: Option<UpstreamCredentialSecurityConfig>,
+) -> Result<UpstreamCredentialSecurityConfig, ProductCatalogRouterError> {
+    config.ok_or_else(|| {
+        ProductCatalogRouterError::Config(format!(
+            "one of {} or {} is required when PostgreSQL upstream routing is enabled",
+            UpstreamCredentialSecurityConfig::ENV_KEY_RING,
+            UpstreamCredentialSecurityConfig::ENV_KEY_RING_FILE
+        ))
+    })
 }
 
 fn build_app_runtime_gateway_client(

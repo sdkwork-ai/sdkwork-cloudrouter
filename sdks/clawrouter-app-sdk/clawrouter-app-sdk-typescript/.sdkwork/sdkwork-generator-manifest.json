@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "ce6bce16867e8be79bae079dd78b10094c96788f9f8cd0da87396286dd9f10ed"
+      "sha256": "f8e6f52f772fe1f36dee037e8d76b89e88362c9bb5622adc200ea538ba422ef0"
     },
     {
       "path": "src/api/base.ts",
@@ -204,7 +204,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "7267ff5f03d76e69d011bc519d5b99f20cd4dee42a89891823bd71c8da6b38e4"
+      "sha256": "5fb808ac444cef7f285e9b7f1a4b7f0f9fca3a14c6cb55f4ae56e625fdac6f2f"
     },
     {
       "path": "src/types/json-null.ts",
@@ -265,6 +265,14 @@
     {
       "path": "src/types/update-api-key-response.ts",
       "sha256": "fde6446a43f4c9025a73fad67501f7533ee77a83d7c51a92c3402a797b8741ca"
+    },
+    {
+      "path": "src/types/usage-log-item.ts",
+      "sha256": "3d6915024ed7be7adf5268e3c42824bb335fd306448f4e39974469b13ca20fb0"
+    },
+    {
+      "path": "src/types/usage-logs-response.ts",
+      "sha256": "a3fe3b7431ff3d703cef3b609f791c676194983410c157beaad768f118fa9145"
     },
     {
       "path": "tsconfig.json",

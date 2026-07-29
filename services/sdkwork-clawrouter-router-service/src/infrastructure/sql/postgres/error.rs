@@ -7,7 +7,7 @@ use crate::infrastructure::sql::model_catalog_import::CatalogImportError;
 #[derive(Debug)]
 pub enum PostgresCatalogLoadError {
     Database(sqlx::Error),
-    Dictionary(CatalogImportError),
+    Dictionary(String),
     Domain(DomainError),
 }
 
@@ -23,7 +23,7 @@ impl Display for PostgresCatalogLoadError {
 
 impl From<CatalogImportError> for PostgresCatalogLoadError {
     fn from(value: CatalogImportError) -> Self {
-        Self::Dictionary(value)
+        Self::Dictionary(value.to_string())
     }
 }
 

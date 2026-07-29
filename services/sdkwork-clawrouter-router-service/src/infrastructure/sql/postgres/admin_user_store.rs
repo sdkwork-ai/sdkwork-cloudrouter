@@ -19,8 +19,8 @@ const API_KEY_STATUS_REVOKED: i32 = 4;
 const TARGET_TYPE_USER: i32 = 61;
 const TARGET_TYPE_API_KEY: i32 = 62;
 const TARGET_TYPE_ACCOUNT: i32 = 63;
-const DEFAULT_CHANNEL_GROUP_CODE: &str = "default";
-const DEFAULT_CHANNEL_GROUP_NAME: &str = "Default";
+const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default";
+const DEFAULT_ACCOUNT_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
 const CASH_CURRENCY_CODE: &str = "USD";
 
@@ -899,10 +899,10 @@ async fn find_default_upstream_account_group(
     )
     .bind(tenant_id)
     .bind(organization_id)
-    .bind(DEFAULT_CHANNEL_GROUP_CODE)
+    .bind(DEFAULT_ACCOUNT_GROUP_CODE)
     .fetch_optional(&mut **tx)
     .await
-    .map_err(|error| store_error("failed to load default channel group", error))
+    .map_err(|error| store_error("failed to load default upstream account group", error))
 }
 
 async fn ensure_default_upstream_account_group(
@@ -944,8 +944,8 @@ async fn ensure_default_upstream_account_group(
     .bind(tenant_id)
     .bind(organization_id)
     .bind(requested_at)
-    .bind(DEFAULT_CHANNEL_GROUP_NAME)
-    .bind(DEFAULT_CHANNEL_GROUP_CODE)
+    .bind(DEFAULT_ACCOUNT_GROUP_NAME)
+    .bind(DEFAULT_ACCOUNT_GROUP_CODE)
     .bind(pricing_plan_id)
     .bind(DEFAULT_PRICING_PLAN_CODE)
     .bind(id)

@@ -46,7 +46,7 @@ schema_registry:
     - retention_until
     - legal_hold
     - metadata
-    credential_ref:
+    secret_entity:
     - id
     - uuid
     - tenant_id
@@ -166,7 +166,7 @@ schema_registry:
     relation_entity:
       tenant_scope: tenant_with_global_fallback
       soft_delete_policy: active_unique
-    credential_ref:
+    secret_entity:
       tenant_scope: tenant_with_global_fallback
       soft_delete_policy: active_unique
     pricing:
@@ -3310,12 +3310,12 @@ tables:
   imported: false
 - table: ai_upstream_account_credential
   domain: ai
-  profile: credential_ref
+  profile: secret_entity
   soft_delete_policy: full_lifecycle_unique
   compliance_level: L2
   system_of_record: true
   write_owner: ai-routing-service
-  common_columns: credential_ref
+  common_columns: secret_entity
   api_surfaces:
   - app
   - backend
@@ -3330,10 +3330,13 @@ tables:
     credential_name:
       type: string(128)
       constraints: NOT NULL
-    credential_ref:
+    secret_ciphertext:
       type: text
       constraints: NOT NULL
-    credential_hash:
+    secret_key_id:
+      type: string(64)
+      constraints: NOT NULL
+    secret_fingerprint:
       type: string(128)
       constraints: NOT NULL
     masked_label: string(128)
@@ -4001,9 +4004,6 @@ tables:
     runtime_auth_config:
       type: json
       constraints: NOT NULL
-    authorization_url: string(512)
-    token_url: string(512)
-    scopes: json
     priority:
       type: int32
       constraints: NOT NULL DEFAULT 100
@@ -4033,8 +4033,8 @@ tables:
     on_delete: RESTRICT
   check_constraints:
   - name: ck_ai_upstream_supplier_auth_method_type
-    expression: auth_type IN ('api_key', 'bearer_token', 'oauth2_client_credentials',
-      'oauth2_authorization_code', 'aws_sigv4', 'custom') AND priority >= 0
+    expression: auth_type IN ('api_key', 'bearer_token', 'custom') AND priority >=
+      0
   - name: ck_ai_upstream_supplier_auth_method_runtime_auth_config
     expression: jsonb_typeof(runtime_auth_config) = 'object'
   indexes:

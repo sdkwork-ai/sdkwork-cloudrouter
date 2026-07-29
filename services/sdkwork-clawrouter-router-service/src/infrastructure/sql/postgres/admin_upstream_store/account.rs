@@ -5,7 +5,7 @@ use super::shared::{
     column, conflict, masked_secret, not_found, record_routing_change, search_pattern, store_error,
     DEFAULT_DATA_SCOPE,
 };
-use crate::application::{ApiKeySecretHasher, CredentialSecretCodec};
+use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::ports::{
@@ -340,8 +340,7 @@ pub(super) async fn list_credentials(
 
 pub(super) async fn create_credential(
     pool: &PgPool,
-    secret_codec: &(dyn CredentialSecretCodec + Send + Sync),
-    secret_hasher: &(dyn ApiKeySecretHasher + Send + Sync),
+    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
     command: CreateAdminUpstreamAccountCredentialCommand,
 ) -> DomainResult<AdminUpstreamAccountCredentialItem> {
     if command.secret.trim().is_empty() {
@@ -358,8 +357,14 @@ pub(super) async fn create_credential(
     if command.priority < 0 {
         return Err(DomainError::new("credential priority must be non-negative"));
     }
-    let credential_ref = secret_codec.encode_secret(&command.secret)?;
-    let credential_hash = secret_hasher.hash_secret(&command.secret)?;
+    let credential_id = next_claw_runtime_id("upstream account credential")?;
+    let secret_context = UpstreamCredentialSecretContext::new(
+        command.subject.tenant_id,
+        command.subject.organization_id,
+        command.account_id,
+        credential_id,
+    );
+    let encoded_secret = secret_codec.encode_secret(secret_context, &command.secret)?;
     let masked_label = masked_secret(&command.secret);
     let mut tx = pool
         .begin()
@@ -399,21 +404,20 @@ pub(super) async fn create_credential(
     .fetch_one(&mut *tx)
     .await
     .map_err(|error| store_error("failed to allocate credential version", error))?;
-    let credential_id = next_claw_runtime_id("upstream account credential")?;
     let result = sqlx::query(
         r#"
         INSERT INTO ai_upstream_account_credential (
             id, uuid, tenant_id, organization_id, data_scope, status,
             created_at, updated_at, version, metadata,
             account_id, auth_method_code, credential_name,
-            credential_ref, credential_hash, masked_label,
+            secret_ciphertext, secret_key_id, secret_fingerprint, masked_label,
             credential_version, priority, is_active, expires_at, last_rotated_at
         ) VALUES (
             $1, $2, $3, $4, $5, 1,
             $6::timestamptz, $6::timestamptz, 0, '{}'::jsonb,
             $7, $8, $9,
-            $10, $11, $12,
-            $13, $14, TRUE, $15::timestamptz, $6::timestamptz
+            $10, $11, $12, $13,
+            $14, $15, TRUE, $16::timestamptz, $6::timestamptz
         )
         ON CONFLICT (uuid) DO NOTHING
         "#,
@@ -427,8 +431,9 @@ pub(super) async fn create_credential(
     .bind(command.account_id)
     .bind(&auth_method_code)
     .bind(command.credential_name.trim())
-    .bind(&credential_ref)
-    .bind(&credential_hash)
+    .bind(&encoded_secret.ciphertext)
+    .bind(&encoded_secret.key_id)
+    .bind(&encoded_secret.fingerprint)
     .bind(&masked_label)
     .bind(credential_version)
     .bind(command.priority)
@@ -439,11 +444,11 @@ pub(super) async fn create_credential(
 
     let created = result.rows_affected() == 1;
     let (resolved_id, existing_hash) = if created {
-        (credential_id, credential_hash.clone())
+        (credential_id, encoded_secret.fingerprint.clone())
     } else {
         let replay = sqlx::query(
             r#"
-            SELECT id, credential_hash
+            SELECT id, secret_fingerprint
             FROM ai_upstream_account_credential
             WHERE uuid = $1 AND tenant_id = $2 AND organization_id = $3
               AND account_id = $4 AND deleted_at IS NULL
@@ -461,12 +466,12 @@ pub(super) async fn create_credential(
             column(&replay, "id", "failed to map replayed credential id")?,
             column(
                 &replay,
-                "credential_hash",
-                "failed to map replayed credential hash",
+                "secret_fingerprint",
+                "failed to map replayed credential fingerprint",
             )?,
         )
     };
-    if existing_hash != credential_hash {
+    if existing_hash != encoded_secret.fingerprint {
         return Err(conflict(
             "credential idempotency key was already used with a different secret",
         ));

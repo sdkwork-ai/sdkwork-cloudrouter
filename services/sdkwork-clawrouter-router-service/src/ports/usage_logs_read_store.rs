@@ -48,7 +48,7 @@ pub struct UsageLogsPage {
 #[serde(rename_all = "camelCase")]
 pub struct UsageLogItem {
     pub id: String,
-    pub request_id: String,
+    pub gateway_request_id: String,
     pub time: String,
     pub token_name: String,
     pub group: String,
@@ -66,9 +66,9 @@ pub struct UsageLogItem {
     pub total_time: String,
     pub ttft: String,
     pub is_stream: bool,
-    pub input_tokens: i64,
-    pub cache_read_tokens: i64,
-    pub output_tokens: i64,
+    pub input_tokens: String,
+    pub cache_read_tokens: String,
+    pub output_tokens: String,
     pub cost: String,
     pub multiplier: String,
     pub base_input_price: String,

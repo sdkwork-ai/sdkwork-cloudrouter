@@ -1,160 +1,105 @@
 import {
-  ensureSdkworkApiSuccess,
   isRecord,
-  optionalBoundedPositiveInteger,
-  optionalPositiveInteger,
-  optionalText,
-  pruneUndefinedQueryParams,
-  readApiRecord,
   readDecimalString,
-  readRequiredApiItems,
   readRequiredNonNegativeNumber,
   readRequiredString,
   type ApiRecord,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import {
   getClawRouterAppSdkClient,
+  type AiUsageLogsListParams,
+  type UsageLogItem as SdkUsageLogItem,
   type UsageLogsResponse as SdkUsageLogsResponse,
 } from '@sdkwork/clawrouter-pc-console-core/sdk';
 
-const MAX_USAGE_LOG_PAGE_SIZE = 200;
-const MAX_USAGE_LOG_QUERY_TEXT_LENGTH = 128;
-const MAX_USAGE_LOG_TIMESTAMP_LENGTH = 64;
 const SPEND_DECIMAL_DIGITS = 9;
 const DEFAULT_DECIMAL_DIGITS = 6;
 
-type UsageLogStatus = 'all' | 'success' | 'error';
 type UsageLogResultStatus = 'success' | 'error';
 
-export interface UsageLog {
-  id: SdkUsageLogsResponse['logs'][number]['id'];
-  requestId: SdkUsageLogsResponse['logs'][number]['requestId'];
-  time: SdkUsageLogsResponse['logs'][number]['time'];
-  tokenName: SdkUsageLogsResponse['logs'][number]['tokenName'];
-  group: SdkUsageLogsResponse['logs'][number]['group'];
-  type: SdkUsageLogsResponse['logs'][number]['type'];
-  model: SdkUsageLogsResponse['logs'][number]['model'];
-  providerNativeModel: SdkUsageLogsResponse['logs'][number]['providerNativeModel'];
-  requestedModelCatalogKey: SdkUsageLogsResponse['logs'][number]['requestedModelCatalogKey'];
-  regionCode: SdkUsageLogsResponse['logs'][number]['regionCode'];
-  status: UsageLogResultStatus;
-  httpStatus: number;
-  errorCode: string;
-  errorType: string;
-  errorMessage: string;
-  totalTime: SdkUsageLogsResponse['logs'][number]['totalTime'];
-  ttft: SdkUsageLogsResponse['logs'][number]['ttft'];
-  isStream: SdkUsageLogsResponse['logs'][number]['isStream'];
-  inputTokens: number;
-  cacheReadTokens: number;
-  outputTokens: number;
-  cost: string & SdkUsageLogsResponse['logs'][number]['cost'];
-  multiplier: string & SdkUsageLogsResponse['logs'][number]['multiplier'];
-  baseInputPrice: string & SdkUsageLogsResponse['logs'][number]['baseInputPrice'];
-  baseOutputPrice: string & SdkUsageLogsResponse['logs'][number]['baseOutputPrice'];
-  cacheReadPrice: string & SdkUsageLogsResponse['logs'][number]['cacheReadPrice'];
-  path: SdkUsageLogsResponse['logs'][number]['path'];
-  reasoningEffort: SdkUsageLogsResponse['logs'][number]['reasoningEffort'];
-  ip: SdkUsageLogsResponse['logs'][number]['ip'];
-  userAgent: SdkUsageLogsResponse['logs'][number]['userAgent'];
-}
+export type UsageLog = SdkUsageLogItem;
+export type UsageLogListParams = AiUsageLogsListParams;
 
-type UsageLogPage = {
-  logs: UsageLog[];
-  total: number;
-};
+export interface UsageLogPage {
+  items: UsageLog[];
+  pageInfo: {
+    mode: 'offset';
+    page: number;
+    pageSize: number;
+    totalItems: string;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
 
 export class UsageService {
-  static async fetchLogs(params?: Record<string, unknown>): Promise<UsageLogPage> {
-    const query = toUsageLogQueryParams(params);
-    const result = await getClawRouterAppSdkClient().ai.usage.logs.list(query);
-    ensureSdkworkApiSuccess(result, 'console.usage.errors.fetchFallback');
-
-    const data = readApiRecord(result);
-    const logs = readRequiredApiItems(data, 'console.usage.errors.fetchFallback', ['logs', 'items', 'records', 'list'])
-      .map(normalizeUsageLog);
-
-    return {
-      logs,
-      total: readUsageLogPageTotal(data),
-    };
+  static async fetchLogs(params: AiUsageLogsListParams = {}): Promise<UsageLogPage> {
+    const page = await getClawRouterAppSdkClient().ai.usage.logs.list(params);
+    return normalizeUsageLogPage(page);
   }
 }
 
-function readUsageLogPageTotal(data: ApiRecord): number {
-  if (data.total !== undefined && data.total !== null && data.total !== '') {
-    return readRequiredNonNegativeNumber(data, 'total', 'Usage log total is required');
+function normalizeUsageLogPage(value: SdkUsageLogsResponse): UsageLogPage {
+  const page = readRequiredRecord(value, 'Usage logs page is required');
+  if (!Array.isArray(page.items)) {
+    throw new Error('Usage log items are required');
+  }
+  const pageInfo = readRequiredRecord(page.pageInfo, 'Usage logs page info is required');
+  if (pageInfo.mode !== 'offset') {
+    throw new Error('Usage logs must use offset pagination');
+  }
+  if (pageInfo.nextCursor !== undefined && pageInfo.nextCursor !== null) {
+    throw new Error('Usage logs offset pagination must not return nextCursor');
   }
 
-  const pageInfo = data.pageInfo;
-  if (isRecord(pageInfo)) {
-    for (const key of ['totalItems', 'total_items'] as const) {
-      const value = pageInfo[key];
-      if (value === undefined || value === null || value === '') {
-        continue;
-      }
-      const parsed = typeof value === 'number' ? value : Number(String(value).trim());
-      if (Number.isFinite(parsed) && parsed >= 0) {
-        return parsed;
-      }
-      throw new Error('Usage log total must be a non-negative number');
-    }
+  const pageNumber = readRequiredNonNegativeSafeInteger(pageInfo, 'page', 'Usage log page is required');
+  const pageSize = readRequiredNonNegativeSafeInteger(pageInfo, 'pageSize', 'Usage log page size is required');
+  const totalPages = readRequiredNonNegativeSafeInteger(pageInfo, 'totalPages', 'Usage log total pages are required');
+  if (pageNumber < 1) {
+    throw new Error('Usage log page must be greater than or equal to 1');
+  }
+  if (pageSize < 1 || pageSize > 200) {
+    throw new Error('Usage log page size must be between 1 and 200');
   }
 
-  throw new Error('Usage log total is required');
-}
-
-function toUsageLogQueryParams(params: Record<string, unknown> = {}): {
-  page?: string;
-  pageSize?: string;
-  q?: string;
-  status?: string;
-  startTime?: string;
-  endTime?: string;
-} {
-  const page = optionalPositiveInteger(params.page, 'page');
-  const pageSize = optionalBoundedPositiveInteger(params.pageSize, 'pageSize', MAX_USAGE_LOG_PAGE_SIZE);
-
-  const searchQuery = optionalText(params.searchQuery, 'searchQuery', MAX_USAGE_LOG_QUERY_TEXT_LENGTH);
-  const status = optionalUsageLogStatus(params.status);
-  const startTime = optionalText(params.startTime, 'startTime', MAX_USAGE_LOG_TIMESTAMP_LENGTH);
-  const endTime = optionalText(params.endTime, 'endTime', MAX_USAGE_LOG_TIMESTAMP_LENGTH);
-
-  return pruneUndefinedQueryParams({
-    page,
-    pageSize,
-    q: searchQuery,
-    status: status === 'all' ? undefined : status,
-    startTime,
-    endTime,
-  });
-}
-
-function optionalUsageLogStatus(value: unknown): UsageLogStatus | undefined {
-  const normalized = optionalText(value, 'status', MAX_USAGE_LOG_QUERY_TEXT_LENGTH);
-  if (normalized === undefined) {
-    return undefined;
-  }
-  const status = normalized.toLowerCase();
-  if (status === 'all' || status === 'success' || status === 'error') {
-    return status;
-  }
-  throw new Error('status must be one of all, success, error');
+  return {
+    items: page.items.map(normalizeUsageLog),
+    pageInfo: {
+      mode: 'offset',
+      page: pageNumber,
+      pageSize,
+      totalItems: readRequiredUnsignedInt64String(pageInfo, 'totalItems', 'Usage log total items are required'),
+      totalPages,
+      hasMore: readRequiredBoolean(pageInfo, 'hasMore', 'Usage log hasMore flag is required'),
+    },
+  };
 }
 
 function normalizeUsageLog(value: unknown): UsageLog {
   const item = readRequiredRecord(value, 'Usage log record is required');
-  const httpStatus = readOptionalNonNegativeNumber(item, 'httpStatus');
+  const httpStatus = readRequiredNonNegativeSafeInteger(item, 'httpStatus', 'Usage log HTTP status is required');
+  if (httpStatus > 599) {
+    throw new Error('Usage log HTTP status must be between 0 and 599');
+  }
   const errorCode = readOptionalString(item, 'errorCode');
   const errorType = readOptionalString(item, 'errorType');
   const errorMessage = readOptionalString(item, 'errorMessage');
-  const status = readOptionalUsageLogResultStatus(item, 'status')
-    ?? ((httpStatus >= 400 || errorCode || errorType || errorMessage) ? 'error' : 'success');
+  const status = readRequiredUsageLogResultStatus(item, 'status');
   const model = readRequiredString(item, 'model', 'Usage log model is required');
   const providerNativeModel = readOptionalString(item, 'providerNativeModel') || model;
+  const inputTokens = readRequiredUnsignedInt64String(item, 'inputTokens', 'Usage log input tokens are required');
+  const cacheReadTokens = readRequiredUnsignedInt64String(item, 'cacheReadTokens', 'Usage log cache read tokens are required');
+  const outputTokens = readRequiredUnsignedInt64String(item, 'outputTokens', 'Usage log output tokens are required');
+  if (BigInt(cacheReadTokens) > BigInt(inputTokens)) {
+    throw new Error('Usage log cache read tokens must not exceed input tokens');
+  }
   return {
     id: readRequiredString(item, 'id', 'Usage log id is required'),
-    requestId: readRequiredString(item, 'requestId', 'Usage log request id is required'),
+    gatewayRequestId: readRequiredString(
+      item,
+      'gatewayRequestId',
+      'Usage log gateway request id is required',
+    ),
     time: readRequiredString(item, 'time', 'Usage log time is required'),
     tokenName: readRequiredString(item, 'tokenName', 'Usage log token name is required'),
     group: readRequiredString(item, 'group', 'Usage log group is required'),
@@ -171,9 +116,9 @@ function normalizeUsageLog(value: unknown): UsageLog {
     totalTime: readRequiredString(item, 'totalTime', 'Usage log total time is required'),
     ttft: readRequiredString(item, 'ttft', 'Usage log TTFT is required'),
     isStream: readRequiredBoolean(item, 'isStream', 'Usage log stream flag is required'),
-    inputTokens: readRequiredNonNegativeNumber(item, 'inputTokens', 'Usage log input tokens are required'),
-    cacheReadTokens: readRequiredNonNegativeNumber(item, 'cacheReadTokens', 'Usage log cache read tokens are required'),
-    outputTokens: readRequiredNonNegativeNumber(item, 'outputTokens', 'Usage log output tokens are required'),
+    inputTokens,
+    cacheReadTokens,
+    outputTokens,
     cost: readRequiredDecimalString(
       item,
       'cost',
@@ -220,23 +165,8 @@ function readOptionalString(record: ApiRecord, key: string): string {
   return String(value).trim();
 }
 
-function readOptionalNonNegativeNumber(record: ApiRecord, key: string): number {
-  const value = record[key];
-  if (value === undefined || value === null || value === '') {
-    return 0;
-  }
-  const parsed = typeof value === 'number' ? value : Number(String(value).trim());
-  if (Number.isFinite(parsed) && parsed >= 0) {
-    return parsed;
-  }
-  throw new Error(`Usage log ${key} must be a non-negative number`);
-}
-
-function readOptionalUsageLogResultStatus(record: ApiRecord, key: string): UsageLogResultStatus | undefined {
+function readRequiredUsageLogResultStatus(record: ApiRecord, key: string): UsageLogResultStatus {
   const value = readOptionalString(record, key).toLowerCase();
-  if (!value) {
-    return undefined;
-  }
   if (value === 'success' || value === 'error') {
     return value;
   }
@@ -264,6 +194,22 @@ function readRequiredBoolean(record: ApiRecord, key: string, message: string): b
     }
   }
   throw new Error(message);
+}
+
+function readRequiredNonNegativeSafeInteger(record: ApiRecord, key: string, message: string): number {
+  const value = readRequiredNonNegativeNumber(record, key, message);
+  if (!Number.isSafeInteger(value)) {
+    throw new Error(message);
+  }
+  return value;
+}
+
+function readRequiredUnsignedInt64String(record: ApiRecord, key: string, message: string): string {
+  const value = record[key];
+  if (typeof value !== 'string' || !/^[0-9]+$/.test(value)) {
+    throw new Error(message);
+  }
+  return value;
 }
 
 function readRequiredDecimalString(
