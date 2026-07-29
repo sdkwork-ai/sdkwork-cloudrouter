@@ -349,8 +349,8 @@ async fn postgres_default_admin_upstream_topology_complete(
                  AND supplier_resource.grant_type = 'allow'
                  AND supplier_resource.status = 1
                  AND supplier_resource.deleted_at IS NULL
-                WHERE supplier.tenant_id = $1
-                  AND supplier.organization_id = $2
+                WHERE supplier.tenant_id = $1::bigint
+                  AND supplier.organization_id = $2::bigint
                   AND supplier.supplier_code = $3
                   AND supplier.status = 1
                   AND supplier.deleted_at IS NULL
@@ -398,8 +398,8 @@ async fn postgres_default_admin_upstream_topology_complete(
                  AND group_resource.grant_type = 'allow'
                  AND group_resource.status = 1
                  AND group_resource.deleted_at IS NULL
-                WHERE account_group.tenant_id = $1
-                  AND account_group.organization_id = $2
+                WHERE account_group.tenant_id = $1::bigint
+                  AND account_group.organization_id = $2::bigint
                   AND account_group.group_code = $3
                   AND account_group.status = 1
                   AND account_group.deleted_at IS NULL
