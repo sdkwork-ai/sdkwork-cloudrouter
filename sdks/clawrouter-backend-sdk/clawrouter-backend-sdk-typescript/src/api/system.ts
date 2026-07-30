@@ -582,6 +582,13 @@ export class SystemAuthApi {
 
 }
 
+export interface SystemAnalyticsAdminOverviewRetrieveParams {
+  timeRange?: 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  startTime?: string;
+  endTime?: string;
+  rankingSize?: number;
+}
+
 export class SystemAnalyticsAdminOverviewApi {
   private client: HttpClient;
 
@@ -591,8 +598,14 @@ export class SystemAnalyticsAdminOverviewApi {
 
 
 /** List overview */
-  async list(requestOptions?: ApiRequestOptions): Promise<AdminAnalyticsOverview> {
-    return this.client.request<AdminAnalyticsOverview>(backendApiPath(`/system/analytics/admin/overview`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  async retrieve(params?: SystemAnalyticsAdminOverviewRetrieveParams, requestOptions?: ApiRequestOptions): Promise<AdminAnalyticsOverview> {
+    const query = buildQueryString([
+      { name: 'time_range', value: params?.timeRange, style: 'form', explode: true, allowReserved: false },
+      { name: 'start_time', value: params?.startTime, style: 'form', explode: true, allowReserved: false },
+      { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
+      { name: 'ranking_size', value: params?.rankingSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminAnalyticsOverview>(appendQueryString(backendApiPath(`/system/analytics/admin/overview`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 

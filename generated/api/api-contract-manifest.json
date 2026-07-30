@@ -1989,9 +1989,58 @@
       "module": "pc-admin-analytics",
       "openapi_exposed": true,
       "operation": "fetchOverview",
-      "operation_id": "analytics.admin.overview.list",
+      "operation_id": "analytics.admin.overview.retrieve",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "time_range",
+          "required": false,
+          "schema": {
+            "default": "daily",
+            "enum": [
+              "hourly",
+              "daily",
+              "weekly",
+              "monthly",
+              "yearly"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "start_time",
+          "required": false,
+          "schema": {
+            "format": "date-time",
+            "maxLength": 35,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "end_time",
+          "required": false,
+          "schema": {
+            "format": "date-time",
+            "maxLength": 35,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "ranking_size",
+          "required": false,
+          "schema": {
+            "default": 10,
+            "format": "int32",
+            "maximum": 50,
+            "minimum": 3,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_usage",
@@ -2000,11 +2049,479 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminAnalyticsOverview",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminAnalyticsOverview",
+          "properties": {
+            "endTime": {
+              "format": "date-time",
+              "maxLength": 35,
+              "type": "string"
+            },
+            "insights": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAnalyticsInsight",
+                "properties": {
+                  "detail": {
+                    "maxLength": 512,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "key": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "severity": {
+                    "enum": [
+                      "info",
+                      "warning",
+                      "critical"
+                    ],
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "value": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key",
+                  "title",
+                  "value",
+                  "severity",
+                  "detail"
+                ],
+                "type": "object"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            "modalityDistribution": {
+              "items": {
+                "$ref": "#/components/schemas/AdminAnalyticsPieItem"
+              },
+              "maxItems": 8,
+              "type": "array"
+            },
+            "modelDistribution": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAnalyticsPieItem",
+                "properties": {
+                  "color": {
+                    "pattern": "^#[0-9A-Fa-f]{6}$",
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "value": {
+                    "maxLength": 64,
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "value",
+                  "color"
+                ],
+                "type": "object"
+              },
+              "maxItems": 9,
+              "type": "array"
+            },
+            "modelRankings": {
+              "additionalProperties": false,
+              "name": "AdminAnalyticsModelRankings",
+              "properties": {
+                "points": {
+                  "items": {
+                    "additionalProperties": false,
+                    "name": "AdminAnalyticsModelRankItem",
+                    "properties": {
+                      "averageTokensPerRequest": {
+                        "maxLength": 64,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                        "type": "string"
+                      },
+                      "catalogKey": {
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "errorRate": {
+                        "maxLength": 64,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                        "type": "string"
+                      },
+                      "modality": {
+                        "maxLength": 32,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "model": {
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "points": {
+                        "maxLength": 64,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                        "type": "string"
+                      },
+                      "rank": {
+                        "format": "int32",
+                        "maximum": 50,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "requestCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "maxLength": 64,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                        "type": "string"
+                      },
+                      "upstreamCost": {
+                        "maxLength": 64,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                        "type": "string"
+                      },
+                      "userCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "vendor": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "rank",
+                      "model",
+                      "catalogKey",
+                      "vendor",
+                      "modality",
+                      "requestCount",
+                      "totalTokens",
+                      "points",
+                      "upstreamCost",
+                      "userCount",
+                      "averageTokensPerRequest",
+                      "errorRate"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 50,
+                  "type": "array"
+                },
+                "requests": {
+                  "items": {
+                    "$ref": "#/components/schemas/AdminAnalyticsModelRankItem"
+                  },
+                  "maxItems": 50,
+                  "type": "array"
+                },
+                "tokens": {
+                  "items": {
+                    "$ref": "#/components/schemas/AdminAnalyticsModelRankItem"
+                  },
+                  "maxItems": 50,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "points",
+                "tokens",
+                "requests"
+              ],
+              "type": "object"
+            },
+            "rankingSize": {
+              "format": "int32",
+              "maximum": 50,
+              "minimum": 3,
+              "type": "integer"
+            },
+            "startTime": {
+              "format": "date-time",
+              "maxLength": 35,
+              "type": "string"
+            },
+            "summary": {
+              "additionalProperties": false,
+              "name": "AdminAnalyticsSummary",
+              "properties": {
+                "activeModels": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "activeUsers": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "averagePointsPerRequest": {
+                  "maxLength": 64,
+                  "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                  "type": "string"
+                },
+                "averageTokensPerRequest": {
+                  "maxLength": 64,
+                  "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                  "type": "string"
+                },
+                "errorRate": {
+                  "maxLength": 64,
+                  "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                  "type": "string"
+                },
+                "failedRequests": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "successfulRequests": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalPoints": {
+                  "maxLength": 64,
+                  "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                  "type": "string"
+                },
+                "totalRequests": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalTokens": {
+                  "maxLength": 64,
+                  "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                  "type": "string"
+                },
+                "totalUsers": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "upstreamCost": {
+                  "maxLength": 64,
+                  "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "totalUsers",
+                "activeUsers",
+                "activeModels",
+                "totalRequests",
+                "successfulRequests",
+                "failedRequests",
+                "totalTokens",
+                "totalPoints",
+                "upstreamCost",
+                "averageTokensPerRequest",
+                "averagePointsPerRequest",
+                "errorRate"
+              ],
+              "type": "object"
+            },
+            "timeRange": {
+              "enum": [
+                "hourly",
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly"
+              ],
+              "type": "string"
+            },
+            "trend": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAnalyticsTrendPoint",
+                "properties": {
+                  "points": {
+                    "maxLength": 64,
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                    "type": "string"
+                  },
+                  "requests": {
+                    "maxLength": 64,
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                    "type": "string"
+                  },
+                  "time": {
+                    "maxLength": 32,
+                    "minLength": 4,
+                    "type": "string"
+                  },
+                  "tokens": {
+                    "maxLength": 64,
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                    "type": "string"
+                  },
+                  "users": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "time",
+                  "requests",
+                  "tokens",
+                  "points",
+                  "users"
+                ],
+                "type": "object"
+              },
+              "maxItems": 30,
+              "type": "array"
+            },
+            "userRankings": {
+              "additionalProperties": false,
+              "name": "AdminAnalyticsUserRankings",
+              "properties": {
+                "points": {
+                  "items": {
+                    "additionalProperties": false,
+                    "name": "AdminAnalyticsUserRankItem",
+                    "properties": {
+                      "email": {
+                        "maxLength": 320,
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "modelDistribution": {
+                        "items": {
+                          "$ref": "#/components/schemas/AdminAnalyticsPieItem"
+                        },
+                        "maxItems": 6,
+                        "type": "array"
+                      },
+                      "points": {
+                        "maxLength": 64,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                        "type": "string"
+                      },
+                      "rank": {
+                        "format": "int32",
+                        "maximum": 50,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "requestCount": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "maxLength": 64,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                        "type": "string"
+                      },
+                      "userId": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "userName": {
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "rank",
+                      "userId",
+                      "userName",
+                      "requestCount",
+                      "totalTokens",
+                      "points",
+                      "modelDistribution"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 50,
+                  "type": "array"
+                },
+                "requests": {
+                  "items": {
+                    "$ref": "#/components/schemas/AdminAnalyticsUserRankItem"
+                  },
+                  "maxItems": 50,
+                  "type": "array"
+                },
+                "tokens": {
+                  "items": {
+                    "$ref": "#/components/schemas/AdminAnalyticsUserRankItem"
+                  },
+                  "maxItems": 50,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "points",
+                "tokens",
+                "requests"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "timeRange",
+            "startTime",
+            "endTime",
+            "rankingSize",
+            "summary",
+            "trend",
+            "userRankings",
+            "modelRankings",
+            "modelDistribution",
+            "modalityDistribution",
+            "insights"
+          ],
           "type": "object"
         }
       },

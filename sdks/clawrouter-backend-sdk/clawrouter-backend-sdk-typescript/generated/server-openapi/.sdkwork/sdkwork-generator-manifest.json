@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "63c5266ccef823244b1e8a730d60a727bf243756490976824838b40173f2b7fe"
+      "sha256": "b83827dfde18496532d0a5f56063389b1b9dc9b8f26af459b37b018d1a945e39"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -60,11 +60,7 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "0835ad9dc8bdfe960b94018b407250717a229ac0bfe802918334b44d40d4a90e"
-    },
-    {
-      "path": "src/api/memberships.ts",
-      "sha256": "edc2f27213226f6d369e8c3c96dbcb1057d1669ad407cc9b3b9103df070e109a"
+      "sha256": "0b1e67be354625b22dcb293a94a23a60151451e4e52bddf05c6634953f0ae7a6"
     },
     {
       "path": "src/api/paths.ts",
@@ -72,11 +68,7 @@
     },
     {
       "path": "src/api/payments.ts",
-      "sha256": "b547939bdfc9eef0f30f65a1f54f34a2d5e08352576e23b49350d850fd4b468c"
-    },
-    {
-      "path": "src/api/promotions.ts",
-      "sha256": "08ca3d63f2ddba63fa32f010ae4586fd74aa2710243c667f9627d18bd2ff06a8"
+      "sha256": "9166ebd698240da1b0e5614ab1171d5d74cf800a38f970de90400f3f7f7b9715"
     },
     {
       "path": "src/api/recharges.ts",
@@ -88,7 +80,7 @@
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "fbe932e51d1c5b69126673213ec86f7ab5e3a82f963ccd19defaf3b1961e41ed"
+      "sha256": "1767747e3d600c9a4748f0788875ace4a78d6f0f16514ea05af150c0a09935e6"
     },
     {
       "path": "src/auth/index.ts",
@@ -108,11 +100,43 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "5aefa6a0d5d509f03ef008d6cab75eea50a338960042019228dcf6aa82681631"
+      "sha256": "5a20dcc73a3778d4244e36159c58a8478dce3810fd7a2f100dab91bf0f01dd55"
+    },
+    {
+      "path": "src/types/admin-analytics-insight.ts",
+      "sha256": "a2792ea66a2bdc82fb7fa7ef4530c0a099cd251c1ee0c804c61ff1ad227d2c19"
+    },
+    {
+      "path": "src/types/admin-analytics-model-rank-item.ts",
+      "sha256": "762155f822c36acbe5bdfb7d0e66d249f20c77e02beb35fd50789142a9c0c21a"
+    },
+    {
+      "path": "src/types/admin-analytics-model-rankings.ts",
+      "sha256": "2dbdc6d26dabafbf0f0b26fdf8e50bcf2641bad2df7e928b74a6e10b827add93"
     },
     {
       "path": "src/types/admin-analytics-overview.ts",
-      "sha256": "051310851170867d31a36a20e9656766079a411b39e655c084e79b12fca47f45"
+      "sha256": "7c00aa2b664e34a108c54209cfe09f244017790040b306fc5755dfd1590a5941"
+    },
+    {
+      "path": "src/types/admin-analytics-pie-item.ts",
+      "sha256": "9dde6c2777b83a83d7a53bfdc06dda36ab0847dcf22e5a1bf9739ce3f737704c"
+    },
+    {
+      "path": "src/types/admin-analytics-summary.ts",
+      "sha256": "ab2e05842ebb3f23456db9647625c54650f07c71d835c56c358fd4a20d2fa741"
+    },
+    {
+      "path": "src/types/admin-analytics-trend-point.ts",
+      "sha256": "18e4b34a9531c7786c3f53b62e3ccdb600c619617fe8f51370718d6a22e0d872"
+    },
+    {
+      "path": "src/types/admin-analytics-user-rank-item.ts",
+      "sha256": "55f478ad2ceb9d5291ab26017522f98d8ca18061d5018e8592dfccf46feddfd0"
+    },
+    {
+      "path": "src/types/admin-analytics-user-rankings.ts",
+      "sha256": "7d6d780aa5f9545c11339c345d8b3c4c08f29233dcd8557746b97ad9f4701643"
     },
     {
       "path": "src/types/admin-auth-settings-response.ts",
@@ -256,7 +280,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "09c6804e262c705cd8f01c06f7df38e56f8d5430d545b93286fb16be2afd6ff7"
+      "sha256": "00a498837e8d8e77ec887f09841666eff40dbbd1c66ac8c08301295b84d42019"
     },
     {
       "path": "src/types/ip-limit-rule-item.ts",
@@ -303,22 +327,6 @@
       "sha256": "4d269f884f9eab8cbef6e905a62d3cabea0b4a84bc617c0ee40ced9b23f03d43"
     },
     {
-      "path": "src/types/membership-package-group-mutation-request.ts",
-      "sha256": "cc3c49b189a28cf8cd0ed66cc41831c836467f7c5ab826417193c237d2b8cd4d"
-    },
-    {
-      "path": "src/types/membership-package-mutation-request.ts",
-      "sha256": "71a9bfebcb3a262f201ec1d5b81fc0dfb4a850246bce587f1150d35bf3c207c1"
-    },
-    {
-      "path": "src/types/membership-plan-mutation-request.ts",
-      "sha256": "1f4a5764aecc0a77c4b9ecadc89dfae71c42c34b3ba20aac173566ad9301bc47"
-    },
-    {
-      "path": "src/types/membership-status-update-request.ts",
-      "sha256": "6ddb636391898d8c5da1db2a9a30713dfcb9b02ebf9c34afc386bf0069b48480"
-    },
-    {
       "path": "src/types/model-limit-rule-item.ts",
       "sha256": "9915aafa10319a9ed824970ee3b6433c1676a660a1df908a65e1cbcd9006d441"
     },
@@ -341,14 +349,6 @@
     {
       "path": "src/types/page-info.ts",
       "sha256": "bd3b491ded2459bc73241f8e5f27473c488a59c448e5b955516ba1aaa76a5e42"
-    },
-    {
-      "path": "src/types/payment-provider-account-mutation-request.ts",
-      "sha256": "5ab854f749ee55a049eb31ae7e1cede576de0c27325249c163808145da5bdc1e"
-    },
-    {
-      "path": "src/types/payment-provider-account-status-update-request.ts",
-      "sha256": "0015f535dd2456cb66c8b411c0aeb5b8b65b5b9fb2c6cd2b54e696199b785190"
     },
     {
       "path": "src/types/problem-detail.ts",

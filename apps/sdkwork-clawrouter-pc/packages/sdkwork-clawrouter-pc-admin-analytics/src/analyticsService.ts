@@ -3,6 +3,7 @@ import {
   readNullableString,
   readNumber,
   readRequiredNonNegativeInt64String,
+  readRequiredNonNegativeNumber,
   readRequiredString,
   readString,
   type ApiRecord,

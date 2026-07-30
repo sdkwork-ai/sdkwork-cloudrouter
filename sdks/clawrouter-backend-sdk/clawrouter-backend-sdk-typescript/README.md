@@ -56,9 +56,7 @@ const client = new SdkworkBackendClient({
 
 - `client.ai` - ai API
 - `client.system` - system API
-- `client.memberships` - memberships API
 - `client.payments` - payments API
-- `client.promotions` - promotions API
 - `client.recharges` - recharges API
 - `client.storage` - storage API
 
@@ -74,20 +72,8 @@ const result = await client.ai.modelMappingOptions.list();
 ### system
 
 ```typescript
-// List overview
-const result = await client.system.analytics.admin.overview.list();
-```
-
-### memberships
-
-```typescript
-// List
-const params = {
-  page: 1,
-  page_size: 2,
-  status: 'status',
-};
-const result = await client.memberships.packageGroups.management.list(params);
+// List claw router auth settings
+const result = await client.system.auth.settings.retrieve();
 ```
 
 ### payments
@@ -95,17 +81,6 @@ const result = await client.memberships.packageGroups.management.list(params);
 ```typescript
 // Retrieve
 const result = await client.payments.runtime.snapshot.retrieve();
-```
-
-### promotions
-
-```typescript
-// List
-const params = {
-  page: 1,
-  page_size: 2,
-};
-const result = await client.promotions.budgetLedgerEntries.list(params);
 ```
 
 ### recharges

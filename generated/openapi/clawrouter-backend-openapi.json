@@ -1,6 +1,579 @@
 {
   "components": {
     "schemas": {
+      "AdminAnalyticsInsight": {
+        "additionalProperties": false,
+        "description": "Admin analytics insight schema exposed by Claw Router.",
+        "properties": {
+          "detail": {
+            "description": "Detail field on admin analytics insight.",
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "key": {
+            "description": "Key field on admin analytics insight.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "severity": {
+            "description": "Severity field on admin analytics insight.",
+            "enum": [
+              "info",
+              "warning",
+              "critical"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "description": "Title field on admin analytics insight.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "value": {
+            "description": "Value field on admin analytics insight.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "value",
+          "severity",
+          "detail"
+        ],
+        "type": "object"
+      },
+      "AdminAnalyticsModelRankItem": {
+        "additionalProperties": false,
+        "description": "Admin analytics model rank item schema exposed by Claw Router.",
+        "properties": {
+          "averageTokensPerRequest": {
+            "description": "Average tokens per request field on admin analytics model rank item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "catalogKey": {
+            "description": "Catalog key field on admin analytics model rank item.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "errorRate": {
+            "description": "Error rate field on admin analytics model rank item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "modality": {
+            "description": "Modality field on admin analytics model rank item.",
+            "maxLength": 32,
+            "minLength": 1,
+            "type": "string"
+          },
+          "model": {
+            "description": "Model field on admin analytics model rank item.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "points": {
+            "description": "Points field on admin analytics model rank item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "rank": {
+            "description": "Rank field on admin analytics model rank item.",
+            "format": "int32",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "requestCount": {
+            "description": "Request count field on admin analytics model rank item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "totalTokens": {
+            "description": "Total tokens field on admin analytics model rank item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "upstreamCost": {
+            "description": "Upstream cost field on admin analytics model rank item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "userCount": {
+            "description": "User count field on admin analytics model rank item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "vendor": {
+            "description": "Vendor field on admin analytics model rank item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "model",
+          "catalogKey",
+          "vendor",
+          "modality",
+          "requestCount",
+          "totalTokens",
+          "points",
+          "upstreamCost",
+          "userCount",
+          "averageTokensPerRequest",
+          "errorRate"
+        ],
+        "type": "object"
+      },
+      "AdminAnalyticsModelRankings": {
+        "additionalProperties": false,
+        "description": "Admin analytics model rankings schema exposed by Claw Router.",
+        "properties": {
+          "points": {
+            "description": "Points field on admin analytics model rankings.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsModelRankItem"
+            },
+            "maxItems": 50,
+            "type": "array"
+          },
+          "requests": {
+            "description": "Requests field on admin analytics model rankings.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsModelRankItem"
+            },
+            "maxItems": 50,
+            "type": "array"
+          },
+          "tokens": {
+            "description": "Tokens field on admin analytics model rankings.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsModelRankItem"
+            },
+            "maxItems": 50,
+            "type": "array"
+          }
+        },
+        "required": [
+          "points",
+          "tokens",
+          "requests"
+        ],
+        "type": "object"
+      },
+      "AdminAnalyticsOverview": {
+        "additionalProperties": false,
+        "description": "Admin analytics overview schema exposed by Claw Router.",
+        "name": "AdminAnalyticsOverview",
+        "properties": {
+          "endTime": {
+            "description": "End time field on admin analytics overview.",
+            "format": "date-time",
+            "maxLength": 35,
+            "type": "string"
+          },
+          "insights": {
+            "description": "Insights field on admin analytics overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsInsight"
+            },
+            "maxItems": 3,
+            "type": "array"
+          },
+          "modalityDistribution": {
+            "description": "Modality distribution field on admin analytics overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsPieItem"
+            },
+            "maxItems": 8,
+            "type": "array"
+          },
+          "modelDistribution": {
+            "description": "Model distribution field on admin analytics overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsPieItem"
+            },
+            "maxItems": 9,
+            "type": "array"
+          },
+          "modelRankings": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminAnalyticsModelRankings"
+              }
+            ],
+            "description": "Model rankings field on admin analytics overview."
+          },
+          "rankingSize": {
+            "description": "Ranking size field on admin analytics overview.",
+            "format": "int32",
+            "maximum": 50,
+            "minimum": 3,
+            "type": "integer"
+          },
+          "startTime": {
+            "description": "Start time field on admin analytics overview.",
+            "format": "date-time",
+            "maxLength": 35,
+            "type": "string"
+          },
+          "summary": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminAnalyticsSummary"
+              }
+            ],
+            "description": "Summary field on admin analytics overview."
+          },
+          "timeRange": {
+            "description": "Time range field on admin analytics overview.",
+            "enum": [
+              "hourly",
+              "daily",
+              "weekly",
+              "monthly",
+              "yearly"
+            ],
+            "type": "string"
+          },
+          "trend": {
+            "description": "Trend field on admin analytics overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsTrendPoint"
+            },
+            "maxItems": 30,
+            "type": "array"
+          },
+          "userRankings": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminAnalyticsUserRankings"
+              }
+            ],
+            "description": "User rankings field on admin analytics overview."
+          }
+        },
+        "required": [
+          "timeRange",
+          "startTime",
+          "endTime",
+          "rankingSize",
+          "summary",
+          "trend",
+          "userRankings",
+          "modelRankings",
+          "modelDistribution",
+          "modalityDistribution",
+          "insights"
+        ],
+        "type": "object"
+      },
+      "AdminAnalyticsPieItem": {
+        "additionalProperties": false,
+        "description": "Admin analytics pie item schema exposed by Claw Router.",
+        "properties": {
+          "color": {
+            "description": "Color field on admin analytics pie item.",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on admin analytics pie item.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "value": {
+            "description": "Value field on admin analytics pie item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "color"
+        ],
+        "type": "object"
+      },
+      "AdminAnalyticsSummary": {
+        "additionalProperties": false,
+        "description": "Admin analytics summary schema exposed by Claw Router.",
+        "properties": {
+          "activeModels": {
+            "description": "Active models field on admin analytics summary.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "activeUsers": {
+            "description": "Active users field on admin analytics summary.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "averagePointsPerRequest": {
+            "description": "Average points per request field on admin analytics summary.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "averageTokensPerRequest": {
+            "description": "Average tokens per request field on admin analytics summary.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "errorRate": {
+            "description": "Error rate field on admin analytics summary.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "failedRequests": {
+            "description": "Failed requests field on admin analytics summary.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "successfulRequests": {
+            "description": "Successful requests field on admin analytics summary.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "totalPoints": {
+            "description": "Total points field on admin analytics summary.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "totalRequests": {
+            "description": "Total requests field on admin analytics summary.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "totalTokens": {
+            "description": "Total tokens field on admin analytics summary.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "totalUsers": {
+            "description": "Total users field on admin analytics summary.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "upstreamCost": {
+            "description": "Upstream cost field on admin analytics summary.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "totalUsers",
+          "activeUsers",
+          "activeModels",
+          "totalRequests",
+          "successfulRequests",
+          "failedRequests",
+          "totalTokens",
+          "totalPoints",
+          "upstreamCost",
+          "averageTokensPerRequest",
+          "averagePointsPerRequest",
+          "errorRate"
+        ],
+        "type": "object"
+      },
+      "AdminAnalyticsTrendPoint": {
+        "additionalProperties": false,
+        "description": "Admin analytics trend point schema exposed by Claw Router.",
+        "properties": {
+          "points": {
+            "description": "Points field on admin analytics trend point.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "requests": {
+            "description": "Requests field on admin analytics trend point.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "time": {
+            "description": "Time field on admin analytics trend point.",
+            "maxLength": 32,
+            "minLength": 4,
+            "type": "string"
+          },
+          "tokens": {
+            "description": "Tokens field on admin analytics trend point.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "users": {
+            "description": "Users field on admin analytics trend point.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "time",
+          "requests",
+          "tokens",
+          "points",
+          "users"
+        ],
+        "type": "object"
+      },
+      "AdminAnalyticsUserRankItem": {
+        "additionalProperties": false,
+        "description": "Admin analytics user rank item schema exposed by Claw Router.",
+        "properties": {
+          "email": {
+            "description": "Email field on admin analytics user rank item.",
+            "maxLength": 320,
+            "nullable": true,
+            "type": "string"
+          },
+          "modelDistribution": {
+            "description": "Model distribution field on admin analytics user rank item.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsPieItem"
+            },
+            "maxItems": 6,
+            "type": "array"
+          },
+          "points": {
+            "description": "Points field on admin analytics user rank item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "rank": {
+            "description": "Rank field on admin analytics user rank item.",
+            "format": "int32",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "requestCount": {
+            "description": "Request count field on admin analytics user rank item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "totalTokens": {
+            "description": "Total tokens field on admin analytics user rank item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "userId": {
+            "description": "User id field on admin analytics user rank item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "userName": {
+            "description": "User name field on admin analytics user rank item.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "userId",
+          "userName",
+          "requestCount",
+          "totalTokens",
+          "points",
+          "modelDistribution"
+        ],
+        "type": "object"
+      },
+      "AdminAnalyticsUserRankings": {
+        "additionalProperties": false,
+        "description": "Admin analytics user rankings schema exposed by Claw Router.",
+        "properties": {
+          "points": {
+            "description": "Points field on admin analytics user rankings.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsUserRankItem"
+            },
+            "maxItems": 50,
+            "type": "array"
+          },
+          "requests": {
+            "description": "Requests field on admin analytics user rankings.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsUserRankItem"
+            },
+            "maxItems": 50,
+            "type": "array"
+          },
+          "tokens": {
+            "description": "Tokens field on admin analytics user rankings.",
+            "items": {
+              "$ref": "#/components/schemas/AdminAnalyticsUserRankItem"
+            },
+            "maxItems": 50,
+            "type": "array"
+          }
+        },
+        "required": [
+          "points",
+          "tokens",
+          "requests"
+        ],
+        "type": "object"
+      },
       "AdminAuthSettingsResponse": {
         "additionalProperties": false,
         "description": "AdminAuthSettingsResponse contract.",
@@ -1249,22 +1822,22 @@
         ],
         "type": "object"
       },
-      "AnalyticsAdminOverviewListResult": {
+      "AnalyticsAdminOverviewRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by analytics admin overview list result.",
+            "description": "Object schema used by analytics admin overview retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AdminAnalyticsOverview"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on analytics admin overview retrieve result."
               }
             },
             "required": [
@@ -1273,8 +1846,8 @@
             "type": "object"
           }
         ],
-        "description": "Analytics admin overview list result schema exposed by Claw Router.",
-        "x-operation-id": "analytics.admin.overview.list"
+        "description": "Analytics admin overview retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "analytics.admin.overview.retrieve"
       },
       "AuthSettingsRetrieveResult": {
         "allOf": [
@@ -7444,11 +8017,7 @@
         "x-sdkwork-resource": "modelMappingOptions",
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-permission": "clawrouter.modelMappingOptions.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_account_groups": {
@@ -7564,14 +8133,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account group. Reads ai_upstream_account_group. Writes ai_upstream_account_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -7677,14 +8239,7 @@
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}": {
@@ -7782,14 +8337,7 @@
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "get": {
         "description": "Get upstream account group. Reads ai_upstream_account_group. Writes none. File targets none.",
@@ -7877,14 +8425,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream account group. Reads ai_upstream_account_group. Writes ai_upstream_account_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -7998,14 +8539,7 @@
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/members": {
@@ -8097,14 +8631,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups.members",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups_members.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream account group members. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account. Writes ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -8222,14 +8749,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups_members.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources": {
@@ -8322,14 +8842,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups.resources",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups_resources.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream account group resources. Reads ai_upstream_account_group, ai_upstream_account_group_resource, ai_resource, ai_resource_group. Writes ai_upstream_account_group, ai_upstream_account_group_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -8449,14 +8962,7 @@
           "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups_resources.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain": {
@@ -8566,14 +9072,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccountGroups.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_accounts": {
@@ -8690,14 +9189,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes ai_upstream_supplier, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -8805,14 +9297,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}": {
@@ -8914,14 +9399,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "get": {
         "description": "Get upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes none. File targets none.",
@@ -9010,14 +9488,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes ai_upstream_supplier, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -9133,14 +9604,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials": {
@@ -9266,14 +9730,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamAccounts.credentials",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts_credentials.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account credential. Reads ai_upstream_account, ai_upstream_account_credential. Writes ai_upstream_account, ai_upstream_account_credential, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -9390,14 +9847,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts_credentials.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}": {
@@ -9495,14 +9945,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts_credentials.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/verify": {
@@ -9612,14 +10055,7 @@
           "ai_upstream_supplier_endpoint",
           "ai_upstream_account_credential",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamAccounts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers": {
@@ -9735,14 +10171,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream supplier. Reads ai_upstream_supplier. Writes ai_upstream_supplier, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -9848,14 +10277,7 @@
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}": {
@@ -9953,14 +10375,7 @@
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "get": {
         "description": "Get upstream supplier. Reads ai_upstream_supplier. Writes none. File targets none.",
@@ -10048,14 +10463,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream supplier. Reads ai_upstream_supplier. Writes ai_upstream_supplier, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -10169,14 +10577,7 @@
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/auth_methods": {
@@ -10267,14 +10668,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.authMethods",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers_authMethods.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier auth methods. Reads ai_upstream_supplier, ai_upstream_supplier_auth_method. Writes ai_upstream_supplier, ai_upstream_supplier_auth_method, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -10390,14 +10784,7 @@
           "ai_upstream_supplier_auth_method",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers_authMethods.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/endpoints": {
@@ -10488,14 +10875,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.endpoints",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers_endpoints.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier endpoints. Reads ai_upstream_supplier, ai_upstream_supplier_endpoint. Writes ai_upstream_supplier, ai_upstream_supplier_endpoint, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -10611,14 +10991,7 @@
           "ai_upstream_supplier_endpoint",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers_endpoints.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/resources": {
@@ -10711,14 +11084,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "upstreamSuppliers.resources",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers_resources.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier resources. Reads ai_upstream_supplier, ai_upstream_supplier_resource, ai_resource, ai_resource_group. Writes ai_upstream_supplier, ai_upstream_supplier_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -10838,14 +11204,7 @@
           "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.upstreamSuppliers_resources.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/marketing/referral_stats": {
@@ -10947,14 +11306,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "system.marketing.referralStats",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.system_marketing_referralStats.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/payments/runtime/snapshot": {
@@ -11034,14 +11386,7 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "payments.runtime.snapshot",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.payments_runtime_snapshot.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/recharges/orders": {
@@ -11121,14 +11466,7 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "recharges.orders.management",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.recharges_orders_management.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/recharges/orders/{orderId}": {
@@ -11218,14 +11556,7 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "recharges.orders.management",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.recharges_orders_management.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/recharges/packages": {
@@ -11336,14 +11667,7 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "recharges.packages.management",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.recharges_packages_management.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create. Reads recharges. Writes ops_audit_log. File targets none.",
@@ -11434,14 +11758,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.recharges_packages.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/recharges/packages/{packageId}": {
@@ -11526,14 +11843,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.recharges_packages.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "patch": {
         "description": "Update. Reads recharges. Writes ops_audit_log. File targets none.",
@@ -11634,14 +11944,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.recharges_packages.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/recharges/settings": {
@@ -11721,14 +12024,7 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-resource": "recharges.settings.management",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.recharges_settings_management.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update. Reads recharges. Writes ops_audit_log. File targets none.",
@@ -11819,14 +12115,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.recharges_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/buckets": {
@@ -11972,14 +12261,7 @@
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "oss.buckets",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_buckets.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage bucket create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -12083,14 +12365,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_buckets.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/buckets/{bucketId}": {
@@ -12193,14 +12468,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_buckets.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/default_buckets": {
@@ -12346,14 +12614,7 @@
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "defaultBuckets",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.defaultBuckets.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/storage/default_buckets/{logicalScope}": {
@@ -12456,14 +12717,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.defaultBuckets.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/gc_jobs": {
@@ -12609,14 +12863,7 @@
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "gcJobs",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.gcJobs.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage garbage collection job create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -12720,14 +12967,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.gcJobs.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/providers": {
@@ -12873,14 +13113,7 @@
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "oss.providers",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_providers.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage provider create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -12984,14 +13217,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_providers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/providers/{providerId}": {
@@ -13094,14 +13320,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_providers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/providers/{providerId}/health_check": {
@@ -13193,14 +13412,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.providers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/quotas": {
@@ -13346,14 +13558,7 @@
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "oss.quotas",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_quotas.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage quota create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -13457,14 +13662,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_quotas.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/reconciliation_runs": {
@@ -13610,14 +13808,7 @@
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "oss.storageReconciliationRuns",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_storageReconciliationRuns.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage reconciliation run create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -13721,14 +13912,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_storageReconciliationRuns.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/usage": {
@@ -13874,27 +14058,73 @@
         "x-sdkwork-domain": "storage",
         "x-sdkwork-resource": "oss.usage",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.oss_usage.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/analytics/admin/overview": {
       "get": {
         "description": "List overview. Reads ai_usage, ai_request_trace. Writes none. File targets none.",
-        "operationId": "analytics.admin.overview.list",
-        "parameters": [],
+        "operationId": "analytics.admin.overview.retrieve",
+        "parameters": [
+          {
+            "description": "Time range query parameter.",
+            "in": "query",
+            "name": "time_range",
+            "required": false,
+            "schema": {
+              "default": "daily",
+              "enum": [
+                "hourly",
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start time query parameter.",
+            "in": "query",
+            "name": "start_time",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "maxLength": 35,
+              "type": "string"
+            }
+          },
+          {
+            "description": "End time query parameter.",
+            "in": "query",
+            "name": "end_time",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "maxLength": 35,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Ranking size query parameter.",
+            "in": "query",
+            "name": "ranking_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "format": "int32",
+              "maximum": 50,
+              "minimum": 3,
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AnalyticsAdminOverviewListResult"
+                  "$ref": "#/components/schemas/AnalyticsAdminOverviewRetrieveResult"
                 }
               }
             },
@@ -13962,14 +14192,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "analytics.admin.overview",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.analytics_admin_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/auth/settings": {
@@ -14049,14 +14272,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "auth.settings",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.auth_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update claw router auth settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -14147,14 +14363,7 @@
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.auth_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/instances/{instanceName}": {
@@ -14240,14 +14449,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.cache_instances.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/instances/{instanceName}/refresh": {
@@ -14340,14 +14542,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.cache_instances.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}": {
@@ -14433,14 +14628,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.cache_namespaces.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/keys": {
@@ -14554,14 +14742,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "cache.namespaces.keys",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.cache_namespaces_keys.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/keys/{key}": {
@@ -14656,14 +14837,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.cache_namespaces_keys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/refresh": {
@@ -14756,14 +14930,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.cache_namespaces.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/overview": {
@@ -14844,14 +15011,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "cache.overview",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.cache_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/cache/refresh": {
@@ -14934,14 +15094,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.cache.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/dashboard/admin/overview": {
@@ -15025,14 +15178,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "dashboard.admin.overview",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.dashboard_admin_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/firewalls/rules": {
@@ -15148,14 +15294,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.gateway.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create firewall. Reads iam_gateway_risk_rule. Writes iam_gateway_risk_rule, ops_audit_log. File targets none.",
@@ -15246,14 +15385,7 @@
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.gateway.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/firewalls/rules/{ruleId}": {
@@ -15339,14 +15471,7 @@
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.gateway.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/installation/status": {
@@ -15427,14 +15552,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "installation.status",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.installation_status.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/alerts": {
@@ -15550,14 +15668,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "monitor.alerts",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.system.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/nodes": {
@@ -15674,14 +15785,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "monitor.nodes",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.system.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/performance": {
@@ -15797,14 +15901,7 @@
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-resource": "monitor.performance",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.system.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/rate_limits/api_keys": {
@@ -15921,14 +16018,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "rateLimits.apiKeys",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.gateway.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create token limit. Reads ai_quota_policy, iam_gateway_api_key. Writes ai_quota_policy, ops_audit_log. File targets none.",
@@ -16020,14 +16110,7 @@
         "x-write-tables": [
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.gateway.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/rate_limits/ip": {
@@ -16143,14 +16226,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "rateLimits.ip",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.rateLimits_ip.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create IP limit. Reads iam_gateway_risk_rule. Writes iam_gateway_risk_rule, ops_audit_log. File targets none.",
@@ -16241,14 +16317,7 @@
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.rateLimits_ip.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/rate_limits/models": {
@@ -16365,14 +16434,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "rateLimits.models",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.rateLimits_models.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create model limit. Reads ai_quota_policy, ai_upstream_account_group. Writes ai_quota_policy, ops_audit_log. File targets none.",
@@ -16464,14 +16526,7 @@
         "x-write-tables": [
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.rateLimits_models.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/records": {
@@ -16607,14 +16662,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "records",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-record/src/recordService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.records.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/runtime_region/settings": {
@@ -16694,14 +16742,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "runtimeRegion.settings",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.runtimeRegion_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -16792,14 +16833,7 @@
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.runtimeRegion_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes": {
@@ -16926,14 +16960,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "serviceNodes",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.serviceNodes.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create node. Reads ops_gateway_instance. Writes ops_gateway_instance. File targets none.",
@@ -17023,14 +17050,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.serviceNodes.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes/{nodeId}": {
@@ -17115,14 +17135,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.serviceNodes.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "put": {
         "description": "Update node. Reads ops_gateway_instance. Writes ops_gateway_instance. File targets none.",
@@ -17222,14 +17235,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.serviceNodes.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes/{nodeId}/status": {
@@ -17331,14 +17337,7 @@
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.serviceNodes_status.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/site/settings": {
@@ -17418,14 +17417,7 @@
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "site.settings",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.site_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -17516,14 +17508,7 @@
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-owner": "sdkwork-clawrouter",
-        "x-sdkwork-api-authority": "sdkwork-clawrouter-backend-api",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-clawrouter-backend-api",
-        "x-sdkwork-permission": "clawrouter.site_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     }
   },
