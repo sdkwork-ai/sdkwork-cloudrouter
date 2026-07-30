@@ -13,7 +13,6 @@ mod admin_marketing;
 mod admin_mcp;
 mod admin_model_rate_limit;
 mod admin_monitor;
-mod admin_payment_runtime;
 mod admin_record;
 mod admin_route_explain;
 mod admin_runtime_region_settings;
@@ -68,9 +67,6 @@ pub use admin_marketing::admin_marketing_router_with_store;
 pub use admin_mcp::admin_mcp_router_with_store;
 pub use admin_model_rate_limit::admin_model_rate_limit_router_with_store;
 pub use admin_monitor::admin_monitor_router_with_read_store;
-pub use admin_payment_runtime::{
-    admin_payment_runtime_router, admin_payment_runtime_router_with_snapshot_store,
-};
 pub use admin_record::admin_record_router_with_store;
 pub use admin_route_explain::admin_route_explain_router;
 pub use admin_runtime_region_settings::admin_runtime_region_settings_router_with_store;

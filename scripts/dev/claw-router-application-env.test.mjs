@@ -144,6 +144,7 @@ test('ensureClawRouterBrowserDevelopmentEnv writes .env.development and preserve
       JSON.stringify({
         app: { key: 'sdkwork-clawrouter' },
         backend: {
+          appId: 'sdkwork-clawrouter',
           tenantId: '100001',
           organizationId: '0',
           accessTokenPermissionScope: ['iam.users.read'],
@@ -226,7 +227,7 @@ test('ensureClawRouterReleaseEnv writes a token-free .env.release from example d
       path.join(tempRoot, 'sdkwork.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-clawrouter' },
-        backend: { tenantId: '100001', organizationId: '0' },
+        backend: { appId: 'sdkwork-clawrouter', tenantId: '100001', organizationId: '0' },
       }),
       'utf8',
     );
@@ -277,7 +278,7 @@ test('ensureClawRouterBrowserProductionEnv omits token state and production boot
       path.join(tempRoot, 'sdkwork.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-clawrouter' },
-        backend: { tenantId: '100001', organizationId: '0' },
+        backend: { appId: 'sdkwork-clawrouter', tenantId: '100001', organizationId: '0' },
       }),
       'utf8',
     );
@@ -336,7 +337,7 @@ test('ensureClawRouterReleaseEnv migrates legacy private edge keys to canonical 
       path.join(tempRoot, 'sdkwork.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-clawrouter' },
-        backend: { tenantId: '100001', organizationId: '0' },
+        backend: { appId: 'sdkwork-clawrouter', tenantId: '100001', organizationId: '0' },
       }),
       'utf8',
     );
@@ -382,7 +383,7 @@ test('ensureClawRouterReleaseEnv replaces retired lifecycle keys and the release
       path.join(tempRoot, 'sdkwork.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-clawrouter' },
-        backend: { tenantId: '100001', organizationId: '0' },
+        backend: { appId: 'sdkwork-clawrouter', tenantId: '100001', organizationId: '0' },
       }),
       'utf8',
     );
@@ -470,7 +471,7 @@ test('ensureClawRouterReleaseEnv writes comment-prefixed edge key documentation'
       path.join(tempRoot, 'sdkwork.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-clawrouter' },
-        backend: { tenantId: '100001', organizationId: '0' },
+        backend: { appId: 'sdkwork-clawrouter', tenantId: '100001', organizationId: '0' },
       }),
       'utf8',
     );
@@ -584,7 +585,7 @@ test('ensureClawRouterBrowserDevelopmentEnv refreshes stale bootstrap access tok
     path.join(tempRoot, 'sdkwork.app.config.json'),
     JSON.stringify({
       app: { key: 'sdkwork-clawrouter' },
-      backend: { tenantId: '100001', organizationId: '0' },
+      backend: { appId: 'sdkwork-clawrouter', tenantId: '100001', organizationId: '0' },
     }),
     'utf8',
   );

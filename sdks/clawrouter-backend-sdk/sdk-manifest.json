@@ -60,6 +60,50 @@
         "go": "github.com/sdkwork/sdkwork-models-backend-sdk",
         "python": "sdkwork-models-backend-sdk"
       }
+    },
+    {
+      "workspace": "sdkwork-membership-backend-sdk",
+      "role": "membership-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/membership-backend-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-payment-backend-sdk",
+      "role": "payment-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/payment-backend-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-promotion-backend-sdk",
+      "role": "promotion-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/promotion-backend-sdk"
+      }
+    },
+    {
+      "workspace": "sdkwork-drive-backend-sdk",
+      "role": "drive-backend-management-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/backend/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/drive-backend-sdk"
+      }
     }
   ],
   "languages": [

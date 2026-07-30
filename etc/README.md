@@ -52,3 +52,11 @@ placeholders are operator-provided random secrets and are never committed:
 window for old ciphertext. `fingerprintKey` is independent and remains stable across encryption-key
 rotation so credential idempotency does not drift. The file is limited to 128 KiB, each key to
 4 KiB, and at most 16 historical decryption keys.
+
+For local development only, `pnpm dev` creates random host-local security files at
+`.sdkwork/secrets/upstream-credential-key-ring.development.json` and
+`.sdkwork/secrets/internal-gateway-signing.development.secret` when their corresponding inline or
+file inputs are not configured. The ignored files are reused across restarts so encrypted
+development credentials remain readable and internal request signatures remain stable. Explicit
+environment or operator-managed file configuration always takes precedence; staging and production
+never use these development fallbacks.

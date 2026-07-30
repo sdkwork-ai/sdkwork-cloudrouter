@@ -206,6 +206,651 @@ components:
       - billing_mode
       - default_unit
       - default_unit_size
+    AiChatContextSnapshotRecord:
+      type: object
+      x-table: ai_chat_context_snapshot
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          maxLength: 32
+        conversation_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        turn_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        runtime_invocation_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        snapshot_no:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        strategy:
+          type: string
+          maxLength: 64
+        included_item_ids:
+          type: object
+          additionalProperties: true
+        excluded_item_ids:
+          type: object
+          additionalProperties: true
+        included_memory_ids:
+          type: object
+          additionalProperties: true
+        excluded_memory_ids:
+          type: object
+          additionalProperties: true
+        memory_pack:
+          type: object
+          additionalProperties: true
+        memory_token_count:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        provider_conversation_id:
+          type: string
+          maxLength: 128
+        previous_response_id:
+          type: string
+          maxLength: 128
+        input_token_estimate:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        truncation_reason:
+          type: string
+          maxLength: 128
+        context_json:
+          type: object
+          additionalProperties: true
+    AiChatConversationRecord:
+      type: object
+      x-table: ai_chat_conversation
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        data_scope:
+          type: integer
+          format: int32
+        status:
+          type: string
+          maxLength: 32
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        conversation_code:
+          type: string
+          maxLength: 64
+        title:
+          type: string
+          maxLength: 256
+        source_surface:
+          type: string
+          maxLength: 64
+        default_provider:
+          type: string
+          maxLength: 128
+        default_model:
+          type: string
+          maxLength: 128
+        agent_id:
+          type: string
+          maxLength: 128
+        agent_session_id:
+          type: string
+          maxLength: 128
+        memory_space_id:
+          type: string
+          maxLength: 128
+        last_message_preview:
+          type: string
+          maxLength: 1024
+        message_count:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        turn_count:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        item_count:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        input_token_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        output_token_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        cached_token_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        reasoning_token_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        cost_amount_total:
+          type: string
+          format: decimal
+        currency:
+          type: string
+          maxLength: 10
+        last_turn_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        last_item_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+    AiChatItemRecord:
+      type: object
+      x-table: ai_chat_item
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        conversation_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        turn_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        sequence_no:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        item_type:
+          type: string
+          maxLength: 64
+        role:
+          type: string
+          maxLength: 32
+        direction:
+          type: string
+          maxLength: 16
+        status:
+          type: string
+          maxLength: 32
+        content_text:
+          type: string
+        content_json:
+          type: object
+          additionalProperties: true
+        provider:
+          type: string
+          maxLength: 128
+        model:
+          type: string
+          maxLength: 128
+        runtime_invocation_id:
+          type: string
+          maxLength: 128
+        completed_at:
+          type: string
+          format: date-time
+    AiChatMessagePartRecord:
+      type: object
+      x-table: ai_chat_message_part
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        message_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        item_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        part_no:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        part_type:
+          type: string
+          maxLength: 64
+        text_content:
+          type: string
+        json_content:
+          type: object
+          additionalProperties: true
+    AiChatMessageRecord:
+      type: object
+      x-table: ai_chat_message
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        conversation_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        turn_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        item_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        message_no:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        role:
+          type: string
+          maxLength: 32
+        message_kind:
+          type: string
+          maxLength: 64
+        direction:
+          type: string
+          maxLength: 16
+        status:
+          type: string
+          maxLength: 32
+        content_text:
+          type: string
+        content_json:
+          type: object
+          additionalProperties: true
+        model:
+          type: string
+          maxLength: 128
+        provider:
+          type: string
+          maxLength: 128
+        runtime:
+          type: string
+          maxLength: 128
+        runtime_invocation_id:
+          type: string
+          maxLength: 128
+        usage_link_id:
+          type: string
+          maxLength: 64
+    AiChatTurnRecord:
+      type: object
+      x-table: ai_chat_turn
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        conversation_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        turn_no:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        mode:
+          type: string
+          maxLength: 64
+        status:
+          type: string
+          maxLength: 32
+        completed_at:
+          type: string
+          format: date-time
+        provider:
+          type: string
+          maxLength: 128
+        model:
+          type: string
+          maxLength: 128
+        agent_id:
+          type: string
+          maxLength: 128
+        agent_session_id:
+          type: string
+          maxLength: 128
+        final_output_item_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        input_token_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        output_token_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        cached_token_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        reasoning_token_total:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        cost_amount:
+          type: string
+          format: decimal
+        currency:
+          type: string
+          maxLength: 10
+        response_snapshot:
+          type: object
+          additionalProperties: true
+        usage_snapshot:
+          type: object
+          additionalProperties: true
+        context_snapshot_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        context_snapshot_count:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
     AiConfigChangeEventRecord:
       type: object
       x-table: ai_config_change_event
@@ -4057,6 +4702,287 @@ components:
         effective_to:
           type: string
           format: date-time
+    AiRuntimeInvocationRecord:
+      type: object
+      x-table: ai_runtime_invocation
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        conversation_id:
+          type: string
+          maxLength: 128
+        chat_turn_id:
+          type: string
+          maxLength: 128
+        chat_item_id:
+          type: string
+          maxLength: 128
+        agent_session_id:
+          type: string
+          maxLength: 128
+        agent_run_id:
+          type: string
+          maxLength: 128
+        agent_run_step_id:
+          type: string
+          maxLength: 128
+        invocation_no:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        invocation_type:
+          type: string
+          maxLength: 128
+        runtime:
+          type: string
+          maxLength: 128
+        endpoint:
+          type: string
+          maxLength: 128
+        attempt_no:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        status:
+          type: string
+          maxLength: 32
+        request_id:
+          type: string
+          maxLength: 128
+        trace_id:
+          type: string
+          maxLength: 128
+        provider_response_id:
+          type: string
+          maxLength: 128
+        provider_session_id:
+          type: string
+          maxLength: 128
+        provider_conversation_id:
+          type: string
+          maxLength: 128
+        provider_step_id:
+          type: string
+          maxLength: 128
+        model:
+          type: string
+          maxLength: 128
+        provider:
+          type: string
+          maxLength: 128
+        tool_name:
+          type: string
+          maxLength: 128
+        tool_call_id:
+          type: string
+          maxLength: 128
+        cwd:
+          type: string
+          maxLength: 2048
+        sandbox_policy:
+          type: string
+          maxLength: 128
+        approval_policy:
+          type: string
+          maxLength: 128
+        permission_mode:
+          type: string
+          maxLength: 128
+        streaming:
+          type: boolean
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        latency_ms:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        ttft_ms:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        exit_code:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        finish_reason:
+          type: string
+          maxLength: 128
+        error_type:
+          type: string
+          maxLength: 128
+        error_code:
+          type: string
+          maxLength: 128
+        error_message_masked:
+          type: string
+          maxLength: 1024
+        request_json:
+          type: object
+          additionalProperties: true
+        response_json:
+          type: object
+          additionalProperties: true
+        usage_json:
+          type: object
+          additionalProperties: true
+    AiRuntimeUsageLinkRecord:
+      type: object
+      x-table: ai_runtime_usage_link
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        conversation_id:
+          type: string
+          maxLength: 128
+        chat_turn_id:
+          type: string
+          maxLength: 128
+        message_id:
+          type: string
+          maxLength: 128
+        runtime_invocation_id:
+          type: string
+          maxLength: 128
+        usage_fact_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        usage_type:
+          type: string
+          maxLength: 64
+        provider:
+          type: string
+          maxLength: 128
+        model:
+          type: string
+          maxLength: 128
+        input_tokens:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        output_tokens:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        cached_tokens:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        reasoning_tokens:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        total_tokens:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        cost_amount:
+          type: string
+          format: decimal
+        currency:
+          type: string
+          maxLength: 10
+        occurred_at:
+          type: string
+          format: date-time
     AiUpstreamAccountCredentialRecord:
       type: object
       x-table: ai_upstream_account_credential
@@ -6529,6 +7455,7 @@ components:
     MediaSource:
       type: string
       enum:
+      - drive
       - object_storage
       - external_url
       - data_url

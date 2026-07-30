@@ -2,7 +2,7 @@
 
 SDK consumption, API boundaries, and integration examples for partners building on SDKWork Claw Router.
 
-Specs: `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../sdkwork-specs/SDK_SPEC.md`, `../../sdkwork-specs/API_SPEC.md`.
+Specs: `../../../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../../../sdkwork-specs/SDK_SPEC.md`, `../../../../sdkwork-specs/API_SPEC.md`.
 
 ## 1. API Surfaces
 
@@ -131,5 +131,5 @@ Example requests and responses live in `apis/<surface>/clawrouter/examples/`. Th
 - [App API OpenAPI](../../apis/app-api/clawrouter/clawrouter-app-api.openapi.json)
 - [Backend API OpenAPI](../../apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json)
 - [Open API OpenAPI](../../apis/open-api/clawrouter/clawrouter-open-api.openapi.json)
-- [API spec](../../specs/API_SPEC.md)
+- [API spec](../../../../sdkwork-specs/API_SPEC.md)
 - [Developer guide](../developer/README.md)

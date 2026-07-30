@@ -2733,12 +2733,12 @@ dependencies = [
  "sdkwork-commerce-promotion-service",
  "sdkwork-contract-service",
  "sdkwork-database-config",
+ "sdkwork-database-id",
  "sdkwork-database-repository",
  "sdkwork-database-sqlx",
  "sdkwork-iam-bootstrap",
  "sdkwork-iam-embedded-application-bootstrap",
  "sdkwork-iam-web-adapter",
- "sdkwork-id-core",
  "sdkwork-invoice-database-bootstrap",
  "sdkwork-invoice-service",
  "sdkwork-models",
@@ -3124,6 +3124,7 @@ dependencies = [
  "sdkwork-database-lifecycle",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
+ "sqlx",
 ]
 
 [[package]]
@@ -3155,6 +3156,36 @@ dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "sdkwork-membership-database-host",
+ "sqlx",
+]
+
+[[package]]
+name = "sdkwork-merchandise-repository-sqlx"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "sdkwork-contract-service",
+ "sdkwork-database-id",
+ "sdkwork-database-sqlx",
+ "sdkwork-merchandise-service",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "uuid",
+]
+
+[[package]]
+name = "sdkwork-merchandise-service"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "sdkwork-contract-service",
+ "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]
@@ -3256,14 +3287,10 @@ dependencies = [
 name = "sdkwork-order-integration-membership"
 version = "0.1.0"
 dependencies = [
- "reqwest",
  "sdkwork-contract-service",
  "sdkwork-database-sqlx",
  "sdkwork-membership-repository-sqlx",
  "sdkwork-order-service",
- "sdkwork-utils-rust",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -3278,6 +3305,25 @@ dependencies = [
  "sdkwork-payment-providers",
  "sdkwork-payment-repository-sqlx",
  "sdkwork-payment-service",
+ "serde_json",
+ "sqlx",
+]
+
+[[package]]
+name = "sdkwork-order-integration-physical-commerce"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-contract-service",
+ "sdkwork-database-config",
+ "sdkwork-database-history",
+ "sdkwork-database-id",
+ "sdkwork-database-sqlx",
+ "sdkwork-merchandise-repository-sqlx",
+ "sdkwork-merchandise-service",
+ "sdkwork-order-service",
+ "sdkwork-shop-repository-sqlx",
+ "sdkwork-shop-service",
+ "serde_json",
  "sqlx",
 ]
 
@@ -3330,6 +3376,7 @@ dependencies = [
  "sdkwork-order-integration-account",
  "sdkwork-order-integration-membership",
  "sdkwork-order-integration-payment",
+ "sdkwork-order-integration-physical-commerce",
  "sdkwork-order-integration-promotion",
  "sdkwork-order-service",
  "sqlx",
@@ -3687,7 +3734,6 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "sdkwork-contract-service",
- "sdkwork-database-sqlx",
  "sdkwork-iam-web-adapter",
  "sdkwork-membership-repository-sqlx",
  "sdkwork-membership-service",
@@ -3695,6 +3741,7 @@ dependencies = [
  "sdkwork-utils-rust",
  "sdkwork-web-axum",
  "sdkwork-web-bootstrap",
+ "sdkwork-web-build",
  "sdkwork-web-core",
  "serde",
  "serde_json",
@@ -3859,6 +3906,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-shop-repository-sqlx"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "sdkwork-contract-service",
+ "sdkwork-database-sqlx",
+ "sdkwork-shop-service",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "uuid",
+]
+
+[[package]]
+name = "sdkwork-shop-service"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "sdkwork-contract-service",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "uuid",
+]
+
+[[package]]
 name = "sdkwork-utils-rust"
 version = "0.10.0"
 dependencies = [
@@ -3899,6 +3974,7 @@ dependencies = [
  "async-trait",
  "axum",
  "http",
+ "sdkwork-database-sqlx",
  "sdkwork-web-axum",
  "sdkwork-web-contract",
  "sdkwork-web-core",
@@ -3909,6 +3985,13 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "sdkwork-web-build"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
 ]
 
 [[package]]

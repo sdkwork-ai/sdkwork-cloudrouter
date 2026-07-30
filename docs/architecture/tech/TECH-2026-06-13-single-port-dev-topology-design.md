@@ -87,7 +87,7 @@ Pros:
 Cons:
 
 - requires coordinated edits across two repositories
-- some tests and docs need to be rewritten to distinguish “default dev�?from “internal validation�?
+- some tests and docs need to be rewritten to distinguish “default dev”from “internal validation”
 Recommended.
 
 ### Option C: Hard-delete split support entirely
@@ -105,7 +105,7 @@ Rejected for now.
 
 ## Architecture
 
-The new architecture is “single entrypoint first, split hidden behind validation boundaries�?
+The new architecture is “single entrypoint first, split hidden behind validation boundaries”
 
 For `sdkwork-clawrouter`, the all-in-one edge runtime at one port remains the public local
 contract. Product-facing scripts and docs should describe only that path. For `sdkwork-api-cloud-gateway`,
@@ -135,7 +135,7 @@ validation commands, not `pnpm dev`.
 ## Error Handling And Compatibility
 
 - If a split-only internal command remains, it must be explicitly named as validation/internal and
-  must not appear as the standard “Run�?path.
+  must not appear as the standard “Run”path.
 - Existing split implementation support may remain for tests, but user-facing docs must not imply
   that developers should manage dozens of ports during normal work.
 - The change must fail closed if a script still relies on removed default split assumptions.

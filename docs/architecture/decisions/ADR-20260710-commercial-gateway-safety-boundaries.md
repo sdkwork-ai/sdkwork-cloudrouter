@@ -40,6 +40,9 @@ direct standards alignment with no legacy debt.
    permissions, and documentation are treated as one parity-checked contract.
 8. Release and deployment evidence is fail-closed and tied to the same source commit
    and immutable artifact digest.
+9. Server runtime IDs use the canonical database-backed process generator. PostgreSQL
+   owns node allocation and versioned leases; lease loss fences writes and readiness.
+   Static node IDs are limited to single-process desktop development.
 
 ## Alternatives
 
@@ -65,6 +68,9 @@ direct standards alignment with no legacy debt.
 - Wallet/ledger availability becomes a dispatch precondition for billable operations.
 - Release workflows become stricter and may initially fail until real signing,
   artifact, environment, and disaster-recovery evidence is configured.
+- Every server process needs PostgreSQL access to the shared Snowflake registry at
+  startup and for lease heartbeats. Loss of lease removes the replica from readiness
+  and prevents new runtime IDs until fenced recovery succeeds.
 
 ## Verification
 
@@ -74,6 +80,8 @@ direct standards alignment with no legacy debt.
 - Streaming first-frame, backpressure, cancellation, timeout, and usage reconciliation tests.
 - Concurrent reservation/settlement, failure injection, idempotency, and reconciliation tests.
 - Cryptographic key-domain, key-ID rotation, and write-only API response tests.
+- Concurrent node allocation, lease-token theft, expiry/reallocation, clock rollback,
+  sequence exhaustion, and multi-replica readiness/fencing tests.
 - Same-commit release gate, checksum, signature, SBOM, provenance, OCI digest, and DR tests.
 - The command matrix in `PLAN-2026-0001-commercial-production-readiness.md`.
 

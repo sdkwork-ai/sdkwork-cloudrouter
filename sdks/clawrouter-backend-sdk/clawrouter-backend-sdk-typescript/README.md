@@ -56,7 +56,6 @@ const client = new SdkworkBackendClient({
 
 - `client.ai` - ai API
 - `client.system` - system API
-- `client.payments` - payments API
 - `client.recharges` - recharges API
 - `client.storage` - storage API
 
@@ -74,13 +73,6 @@ const result = await client.ai.modelMappingOptions.list();
 ```typescript
 // List claw router auth settings
 const result = await client.system.auth.settings.retrieve();
-```
-
-### payments
-
-```typescript
-// Retrieve
-const result = await client.payments.runtime.snapshot.retrieve();
 ```
 
 ### recharges

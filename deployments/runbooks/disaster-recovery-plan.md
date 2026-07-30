@@ -1,7 +1,7 @@
 # SDKWork Claw Router - Disaster Recovery Plan
 
 **Document Version:** 1.0
-**Last Updated:** 2026-07-14
+**Last Updated:** 2026-07-30
 **Owner:** Platform Engineering
 **Review Frequency:** Quarterly
 **Status:** Target recovery design only. It has not been exercised for the
@@ -98,7 +98,7 @@ for open PostgreSQL, Redis, identity, accounting, and recovery blockers.
 | PostgreSQL | Not established | Not established | No current-candidate PITR/restore evidence |
 | Redis | Not established | Not established | Accounting retry/DLQ retention and recovery policy unapproved |
 | Application Config | Not established | Not established | Inventory and restore drill unverified |
-| Signing Keys | Not established | Not established | Durable key-store and recovery design incomplete |
+| Signing Keys | Not established | Not established | IAM PostgreSQL authority exists; backup and full rotation recovery remain unproven |
 
 ### SLO Targets
 
@@ -165,11 +165,13 @@ kubectl get secret -n clawrouter -o yaml > backups/secrets.yaml
 
 ### Signing Key Backup
 
-No durable tenant signing-key store, cross-replica lifecycle, encrypted backup
-source, or restore drill is currently approved. Do not treat an in-memory key
-map or an arbitrary Kubernetes Secret export as a complete signing-key backup.
-The Security/IAM owner must first define the canonical key store, access
-controls, encryption, retention, grace/revocation behavior, and recovery test.
+IAM PostgreSQL persistence in `iam_tenant_signing_key` is the canonical tenant
+signing-key store. Primary-key provisioning and `kid` lookup exist, but no
+approved encrypted backup source, full rotation/grace/revocation lifecycle, or
+restore drill is available. Do not treat an in-memory key map or an arbitrary
+Kubernetes Secret export as a complete signing-key backup. The Security/IAM
+owner must define access controls, encryption, retention, rotation coordination,
+grace/revocation behavior, and the recovery test.
 
 ---
 
@@ -323,8 +325,9 @@ signed artifacts may be invalidated
 1. **Assess Key Loss Scope**
 
    Do not infer a canonical key store or backup from an arbitrary Kubernetes
-   Secret. The current signing-key lifecycle is not a durable, cross-replica
-   recovery design. Escalate to the Security/IAM owner and preserve incident
+   Secret. Resolve the affected `iam_tenant_signing_key` rows and `kid` values
+   through the IAM owner; the persisted primary-key store does not yet provide
+   a complete cross-replica rotation and recovery procedure. Preserve incident
    evidence without exporting raw key material.
 
 2. **Restore from Backup**
@@ -601,7 +604,7 @@ Detailed explanation of the root cause.
 | Full Database | Not established | No approved backup inventory |
 | WAL Archives | Not established | No approved archive or restore inventory |
 | Configuration | Not established | Restore source and drill unverified |
-| Signing Keys | Not established | Durable key-store and retention design incomplete |
+| Signing Keys | Not established | IAM store exists; backup, retention, and rotation recovery unproven |
 
 ### B. Recovery Time Estimates
 

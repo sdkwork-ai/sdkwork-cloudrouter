@@ -3,6 +3,54 @@
   "kind": "sdkwork.database.table-registry",
   "tables": [
     {
+      "table_name": "ai_chat_context_snapshot",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_chat_conversation",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_chat_item",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_chat_message",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_chat_message_part",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_chat_turn",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_config_change_event",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -128,6 +176,22 @@
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_runtime_invocation",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_runtime_usage_link",
+      "owner": "router-service",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "user_entity",
       "system_of_record": true
     },
     {

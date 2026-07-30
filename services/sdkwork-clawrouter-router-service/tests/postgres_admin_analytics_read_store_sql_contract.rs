@@ -21,31 +21,75 @@ fn postgres_admin_analytics_read_store_uses_usage_fact_aligned_failed_request_wi
         "COUNT(DISTINCT CASE WHEN failed_request.request_id IS NULL THEN NULL ELSE usage.request_id END) AS failed_requests",
         "AND NULLIF(request_id, '') IS NOT NULL",
         "AND started_at IS NOT NULL",
-        "AND ($3::text IS NULL OR started_at >= $3::timestamptz)",
-        "AND ($4::text IS NULL OR started_at <= $4::timestamptz)",
+        "AND started_at >= $3::timestamptz",
+        "AND started_at <= $4::timestamptz",
         "AND failed_request.request_id = usage.request_id",
-        "AND ($3::text IS NULL OR usage.occurred_at >= $3::timestamptz)",
-        "AND ($4::text IS NULL OR usage.occurred_at <= $4::timestamptz)",
+        "AND failed_request.organization_id IS NOT DISTINCT FROM usage.organization_id",
+        "AND usage.occurred_at >= $3::timestamptz",
+        "AND usage.occurred_at <= $4::timestamptz",
     ] {
         assert_sql_contains(POSTGRES_ADMIN_ANALYTICS_READ_STORE, expected);
     }
+
+    let actual = compact_sql(POSTGRES_ADMIN_ANALYTICS_READ_STORE);
+    assert!(
+        !actual.contains("$3::text IS NULL") && !actual.contains("$4::text IS NULL"),
+        "Postgres analytics SQL must always execute within an API-validated bounded time window"
+    );
 }
 
 #[test]
 fn postgres_admin_analytics_read_store_buckets_trend_by_requested_time_range() {
     for expected in [
         "fn postgres_period_expression(time_range: AdminAnalyticsTimeRange) -> &'static str",
-        "AdminAnalyticsTimeRange::Hourly => \"to_char(occurred_at, 'YYYY-MM-DD HH24:00')\"",
-        "AdminAnalyticsTimeRange::Weekly => \"to_char(occurred_at, 'IYYY-\\\"W\\\"IW')\"",
-        "AdminAnalyticsTimeRange::Monthly => \"to_char(occurred_at, 'YYYY-MM')\"",
-        "AdminAnalyticsTimeRange::Yearly => \"to_char(occurred_at, 'YYYY')\"",
-        "AdminAnalyticsTimeRange::Daily => \"to_char(occurred_at, 'YYYY-MM-DD')\"",
+        "to_char(occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:00')",
+        "to_char(occurred_at AT TIME ZONE 'UTC', 'IYYY-\\\"W\\\"IW')",
+        "to_char(occurred_at AT TIME ZONE 'UTC', 'YYYY-MM')",
+        "to_char(occurred_at AT TIME ZONE 'UTC', 'YYYY')",
+        "to_char(occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD')",
         "let period_expr = postgres_period_expression(time_range);",
         "GROUP BY time_bucket",
+        "ORDER BY time_bucket DESC",
         "LIMIT 30",
+        ") recent_buckets ORDER BY time_bucket ASC",
     ] {
         assert_sql_contains(POSTGRES_ADMIN_ANALYTICS_READ_STORE, expected);
     }
+}
+
+#[test]
+fn postgres_admin_analytics_read_store_uses_one_bounded_read_only_snapshot() {
+    for expected in [
+        "let mut transaction = pool .begin()",
+        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
+        "let start_time = query.start_time.as_str();",
+        "let end_time = query.end_time.as_str();",
+        "transaction .commit()",
+    ] {
+        assert_sql_contains(POSTGRES_ADMIN_ANALYTICS_READ_STORE, expected);
+    }
+}
+
+#[test]
+fn postgres_admin_analytics_read_store_bounds_rankings_and_user_distributions() {
+    for expected in [
+        "if !(3..=50).contains(&query.limit)",
+        "ORDER BY {order_by} LIMIT $5",
+        ".collect::<BTreeSet<_>>()",
+        "if user_ids.is_empty() { return Ok(Vec::new()); }",
+        "= ANY($5::text[])",
+        "ROW_NUMBER() OVER ( PARTITION BY user_id ORDER BY value DESC, name ASC ) AS rn",
+    ] {
+        assert_sql_contains(POSTGRES_ADMIN_ANALYTICS_READ_STORE, expected);
+    }
+
+    let actual = compact_sql(POSTGRES_ADMIN_ANALYTICS_READ_STORE);
+    assert!(
+        actual.contains("points_sort DESC")
+            && actual.contains("total_tokens_sort DESC")
+            && actual.contains("request_count_sort DESC"),
+        "Postgres analytics rankings must sort by numeric aggregate aliases, not text projections"
+    );
 }
 
 #[test]

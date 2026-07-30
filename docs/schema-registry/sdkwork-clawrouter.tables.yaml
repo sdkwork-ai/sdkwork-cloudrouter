@@ -3,7 +3,7 @@ kind: sdkwork.database.schema-registry
 owner: claw-router-platform
 schema_registry:
   name: sdkwork-clawrouter
-  version: 0.3.0
+  version: 0.4.0
   standard: ../../../sdkwork-specs/DATABASE_SPEC.md
   common_column_groups:
     tenant_entity:
@@ -159,6 +159,15 @@ schema_registry:
     - deleted_at
     - deleted_by
     - metadata
+    user_runtime_entity:
+    - id
+    - uuid
+    - tenant_id
+    - organization_id
+    - user_id
+    - created_at
+    - updated_at
+    - metadata
   table_profile_policies:
     tenant_entity:
       tenant_scope: tenant_with_global_fallback
@@ -205,6 +214,7 @@ table_fragments:
 - tables/ai-pricing.yaml
 - tables/iam-gateway.yaml
 - tables/ops-runtime.yaml
+- tables/ai-chat-runtime.yaml
 modules:
   ai-routing:
     owner: claw-router-platform
@@ -286,6 +296,21 @@ modules:
     - ops_notification_message
     - ops_notification_recipient
     - ops_notification_delivery
+    ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
+  ai-chat-runtime:
+    owner: claw-router-platform
+    description: User-scoped chat transcript, context snapshot, runtime invocation, and usage-link persistence.
+    compliance_level: L2
+    tables_count: 8
+    tables:
+    - ai_chat_conversation
+    - ai_chat_turn
+    - ai_chat_item
+    - ai_chat_message
+    - ai_chat_message_part
+    - ai_chat_context_snapshot
+    - ai_runtime_invocation
+    - ai_runtime_usage_link
     ddl_location: database/ddl/baseline/{engine}/0001_clawrouter_baseline.sql
 registry_dependencies:
 - module_id: sdkwork-iam
@@ -461,21 +486,22 @@ data_flow:
     - "ops-runtime\u672C\u5730\u8868\u63D0\u4F9B\u53EF\u5206\u9875\u7684\u76D1\u63A7\u3001\u901A\u77E5\u548C\u5BA1\u8BA1\u8BFB\u6A21\u578B"
     - "ops_metric_snapshot\u3001ops_job_execution\u3001ops_audit_log\u5199\u5165\uFF08claw-router\u672C\u5730\uFF09"
 statistics:
-  claw_router_local_tables: 45
+  claw_router_local_tables: 52
   composed_dependency_tables: 19
-  total_tables: 64
+  total_tables: 71
   table_prefix_distribution:
-    ai_: 50
+    ai_: 57
     iam_: 4
     ops_: 10
   module_distribution:
-    claw-router: 43
+    claw-router: 52
     sdkwork-models: 19
     ai-routing: 23
-    ai-metering: 3
+    ai-metering: 2
     ai-pricing: 5
     iam-gateway: 4
     ops-runtime: 10
+    ai-chat-runtime: 8
 compliance:
   financial_tables:
   - ai_usage

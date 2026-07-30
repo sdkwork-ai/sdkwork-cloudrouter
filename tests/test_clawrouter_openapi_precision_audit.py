@@ -201,7 +201,7 @@ class ClawRouterOpenApiPrecisionAuditTest(unittest.TestCase):
 
             self.assertEqual(
                 {"$ref": "#/components/schemas/ApiKeysCreateResult"},
-                spec["paths"]["/app/v3/api/iam/api_keys"]["post"]["responses"]["200"]["content"]["application/json"]["schema"],
+                spec["paths"]["/app/v3/api/iam/api_keys"]["post"]["responses"]["201"]["content"]["application/json"]["schema"],
             )
 
             result = ClawRouterOpenApiPrecisionAudit(root=root).run()
@@ -215,7 +215,7 @@ class ClawRouterOpenApiPrecisionAuditTest(unittest.TestCase):
             spec = self.read_app_spec(root)
             self.assertEqual(
                 {"$ref": "#/components/schemas/ModelVendorsCreateResult"},
-                spec["paths"]["/app/v3/api/model-vendors"]["post"]["responses"]["200"]["content"]["application/json"]["schema"],
+                spec["paths"]["/app/v3/api/model-vendors"]["post"]["responses"]["201"]["content"]["application/json"]["schema"],
             )
             self.assertIn("ModelVendorsCreateResult", spec["components"]["schemas"])
             self.assertIn("NoData", spec["components"]["schemas"])
@@ -283,7 +283,7 @@ class ClawRouterOpenApiPrecisionAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.write_generated_openapi(root)
             spec = self.read_app_spec(root)
-            spec["paths"]["/app/v3/api/iam/api_keys"]["post"]["responses"]["200"]["content"]["application/json"]["schema"] = {
+            spec["paths"]["/app/v3/api/iam/api_keys"]["post"]["responses"]["201"]["content"]["application/json"]["schema"] = {
                 "$ref": "#/components/schemas/PlusApiResult"
             }
             self.write_app_spec(root, spec)
@@ -292,7 +292,7 @@ class ClawRouterOpenApiPrecisionAuditTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "app apiKeys.create 200 response must reference #/components/schemas/ApiKeysCreateResult",
+                "app apiKeys.create success response must reference #/components/schemas/ApiKeysCreateResult",
                 result.messages,
             )
 

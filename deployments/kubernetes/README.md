@@ -50,6 +50,32 @@ SDKWORK_CLAW_ROUTER_RUNTIME_TARGET=container
 - **Liveness**: `GET /healthz` — process is running; `timeoutSeconds=3` so a wedged process is restarted quickly
 - **Readiness**: `GET /readyz` — returns `503` until database, Redis (when required), and settlement prerequisites are healthy; `timeoutSeconds=5` on edge to tolerate brief DB/Redis network partitions without flipping the pod to not-ready. Readiness must only depend on internal dependencies (PostgreSQL, Redis), never on upstream AI provider reachability.
 
+## Snowflake Node Leases
+
+Every server replica acquires a fenced Snowflake node lease from the shared PostgreSQL
+`sdkwork_node_registry` authority during startup. Startup fails closed when PostgreSQL is
+unavailable or a lease cannot be acquired. The generator is fenced immediately when lease
+ownership is lost or its last successful heartbeat expires; `/readyz` then returns `503` while a
+bounded-backoff recovery worker acquires a new lease.
+
+The metrics endpoint exports `clawrouter_runtime_id_generator_ready` and
+`clawrouter_runtime_id_failures_total{operation,reason}` for this lifecycle. Scrape them per Pod;
+the labels are bounded operational codes and never contain Pod identity, lease tokens, or raw
+database errors. Production alert rules and their failure-series tests remain part of the release
+evidence gate and must be reviewed before rollout.
+
+The manifests inject `SDKWORK_NODE_HOSTNAME` from the Pod name and
+`SDKWORK_NODE_INSTANCE_ID` from the Pod UID for lease diagnostics. Do not set
+`SDKWORK_CLAW_SNOWFLAKE_NODE_ID` on Kubernetes workloads and never share a static Snowflake node
+ID across replicas. Pod identity improves diagnostics but does not replace the PostgreSQL lease,
+random ownership token, and monotonic fencing version.
+
+Production least-privilege rollout is still blocked by the current platform allocator's runtime
+DDL behavior. `sdkwork-database` must provide a migrator-owned registry provisioning step and a
+runtime allocation path that requires only `USAGE` on the schema plus `SELECT`, `INSERT`, and
+`UPDATE` on `sdkwork_node_registry`. Do not grant schema `CREATE` to the application runtime role
+as a workaround.
+
 ## HA
 
 Manifests include PodDisruptionBudget and HorizontalPodAutoscaler resources for gateway, edge, app-api, and admin-api. Replace the in-cluster Redis example with a managed Redis service for production.

@@ -93,6 +93,7 @@ struct ProviderPassthroughRuntime {
 enum ProviderPassthroughError {
     RequestBodyTooLarge { limit: usize },
     InvalidRequest(String),
+    StreamingAccountingUnavailable,
     Relay(String),
 }
 
@@ -483,8 +484,32 @@ fn passthrough_forward_failed(code: &'static str, error: ProviderPassthroughErro
         ProviderPassthroughError::InvalidRequest(message) => {
             passthrough_client_error(StatusCode::BAD_REQUEST, "invalid_request", message)
         }
+        ProviderPassthroughError::StreamingAccountingUnavailable => passthrough_server_error(
+            StatusCode::NOT_IMPLEMENTED,
+            "provider_adapter_streaming_accounting_unavailable",
+            "authenticated provider adapter streaming requires a terminal usage envelope",
+        ),
         ProviderPassthroughError::Relay(message) => passthrough_relay_failed(code, message),
     }
+}
+
+fn passthrough_server_error(
+    status: StatusCode,
+    code: &'static str,
+    message: &'static str,
+) -> Response {
+    (
+        status,
+        Json(json!({
+            "error": {
+                "message": message,
+                "type": "server_error",
+                "param": null,
+                "code": code,
+            }
+        })),
+    )
+        .into_response()
 }
 
 fn passthrough_client_error(status: StatusCode, code: &'static str, message: String) -> Response {
@@ -782,6 +807,7 @@ impl ProviderPassthroughRuntime {
             if let ProviderInvocationMode::InternalHttpAdapter(route) =
                 adapter.registry.resolve_standard_path(&lookup).mode
             {
+                ensure_authenticated_adapter_route_supported(&route)?;
                 let (invocation, result, user_agent) = self
                     .invoke_adapter(
                         request,
@@ -909,6 +935,18 @@ impl ProviderPassthroughRuntime {
             .iter()
             .any(|target| target.provider() == "openai")
     }
+}
+
+fn ensure_authenticated_adapter_route_supported(
+    route: &ProviderAdapterRouteConfig,
+) -> Result<(), ProviderPassthroughError> {
+    if matches!(
+        route.invocation_shape,
+        AdapterInvocationShape::SseStream | AdapterInvocationShape::ByteStream
+    ) {
+        return Err(ProviderPassthroughError::StreamingAccountingUnavailable);
+    }
+    Ok(())
 }
 
 async fn record_adapter_usage_lines<C>(
@@ -1984,6 +2022,57 @@ mod tests {
         let response = passthrough_forward_failed("provider_passthrough_relay_failed", error);
 
         assert_eq!(StatusCode::BAD_REQUEST, response.status());
+    }
+
+    #[tokio::test]
+    async fn authenticated_adapter_streaming_shapes_fail_closed_before_invocation() {
+        let adapter_config = ProviderAdapterConfig::from_json(
+            r#"{
+                "routes": [
+                    {
+                        "supplierCode": "tencent-cloud",
+                        "adapterKind": "internal_http",
+                        "adapterBaseUrl": "https://adapter.example",
+                        "endpointKey": "test.stream",
+                        "method": "POST",
+                        "standardPathPattern": "/v1/stream",
+                        "adapterPathTemplate": "/providers/{supplier_code}{standard_path}",
+                        "invocationShape": "sse_stream",
+                        "status": "enabled",
+                        "priority": 10
+                    },
+                    {
+                        "supplierCode": "tencent-cloud",
+                        "adapterKind": "internal_http",
+                        "adapterBaseUrl": "https://adapter.example",
+                        "endpointKey": "test.bytes",
+                        "method": "GET",
+                        "standardPathPattern": "/v1/bytes",
+                        "adapterPathTemplate": "/providers/{supplier_code}{standard_path}",
+                        "invocationShape": "byte_stream",
+                        "status": "enabled",
+                        "priority": 10
+                    }
+                ]
+            }"#,
+            Some("adapter-token".to_owned()),
+        )
+        .unwrap();
+
+        assert_eq!(2, adapter_config.routes().len());
+        for route in adapter_config.routes() {
+            let error = ensure_authenticated_adapter_route_supported(route)
+                .expect_err("authenticated adapter stream must fail before network dispatch");
+            let response = passthrough_forward_failed("provider_passthrough_relay_failed", error);
+
+            assert_eq!(StatusCode::NOT_IMPLEMENTED, response.status());
+            let body = response.into_body().collect().await.unwrap().to_bytes();
+            let body: Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(
+                "provider_adapter_streaming_accounting_unavailable",
+                body["error"]["code"]
+            );
+        }
     }
 
     #[test]

@@ -9,6 +9,12 @@ GENERATED_POSTGRES_SCHEMA = ROOT / "generated" / "schema" / "postgres" / "schema
 SCHEMA_COMPILER_DOC = (
     ROOT / "docs" / "architecture" / "tech" / "TECH-21-schema-compiler-postgres-ddl.md"
 )
+KUBERNETES_RUNTIME_DEPLOYMENTS = (
+    ROOT / "deployments" / "kubernetes" / "claw-router-gateway.yaml",
+    ROOT / "deployments" / "kubernetes" / "claw-router-app-api.yaml",
+    ROOT / "deployments" / "kubernetes" / "claw-router-admin-api.yaml",
+    ROOT / "deployments" / "kubernetes" / "claw-router-edge.yaml",
+)
 
 
 FORBIDDEN_RUNTIME_ID_PATTERNS = {
@@ -71,6 +77,48 @@ class DatabaseRuntimeIdStandardTest(unittest.TestCase):
         self.assertIn("id BIGINT NOT NULL PRIMARY KEY", text)
         self.assertNotIn("BIGSERIAL", text)
         self.assertNotIn("AUTOINCREMENT", text.upper())
+
+    def test_cluster_deployments_use_database_leased_node_identity(self) -> None:
+        for path in KUBERNETES_RUNTIME_DEPLOYMENTS:
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(deployment=path.name):
+                self.assertIn("name: SDKWORK_NODE_HOSTNAME", text)
+                self.assertIn("fieldPath: metadata.name", text)
+                self.assertIn("name: SDKWORK_NODE_INSTANCE_ID", text)
+                self.assertIn("fieldPath: metadata.uid", text)
+                self.assertNotIn("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", text)
+
+    def test_runtime_uses_the_canonical_database_fenced_allocator(self) -> None:
+        runtime_id_source = (SQL_SOURCE_ROOT / "runtime_id.rs").read_text(encoding="utf-8")
+        service_manifest = (
+            ROOT
+            / "services"
+            / "sdkwork-clawrouter-router-service"
+            / "Cargo.toml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("SnowflakeNodeAllocator::allocate_process_generator", runtime_id_source)
+        self.assertIn("NodeLease", runtime_id_source)
+        self.assertIn("sdkwork-database-id.workspace = true", service_manifest)
+        self.assertNotIn("sdkwork-id-core.workspace = true", service_manifest)
+
+    def test_runtime_id_health_and_failures_are_exported_with_bounded_labels(self) -> None:
+        runtime_id_source = (SQL_SOURCE_ROOT / "runtime_id.rs").read_text(encoding="utf-8")
+
+        self.assertIn("clawrouter_runtime_id_generator_ready", runtime_id_source)
+        self.assertIn("clawrouter_runtime_id_failures_total", runtime_id_source)
+        self.assertIn('&["operation", "reason"]', runtime_id_source)
+        for reason in (
+            "configuration",
+            "database",
+            "node_exhaustion",
+            "contention",
+            "lease",
+            "clock",
+            "sequence_exhaustion",
+            "state",
+        ):
+            self.assertIn(f'"{reason}"', runtime_id_source)
 
 
 if __name__ == "__main__":

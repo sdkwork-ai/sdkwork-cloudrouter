@@ -178,7 +178,11 @@ export function requiredPositiveInt64String(value: string, fieldName: string): s
 }
 
 export function readRequiredPositiveInt64String(record: ApiRecord, key: string, message: string): string {
-  const value = trim(readString(record, key));
+  const rawValue = record[key];
+  if (typeof rawValue !== 'string') {
+    throw new Error(message);
+  }
+  const value = trim(rawValue);
   if (!/^[1-9][0-9]*$/u.test(value)) {
     throw new Error(message);
   }
@@ -186,7 +190,11 @@ export function readRequiredPositiveInt64String(record: ApiRecord, key: string, 
 }
 
 export function readRequiredNonNegativeInt64String(record: ApiRecord, key: string, message: string): string {
-  const value = trim(readString(record, key));
+  const rawValue = record[key];
+  if (typeof rawValue !== 'string') {
+    throw new Error(message);
+  }
+  const value = trim(rawValue);
   if (!/^(0|[1-9][0-9]*)$/u.test(value)) {
     throw new Error(message);
   }

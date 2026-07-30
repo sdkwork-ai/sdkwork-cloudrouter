@@ -16,7 +16,7 @@ terminal event. Control-plane mutations stay on backend-admin surfaces. Authored
 contracts, runtime routes, permissions, generated SDKs, persistence, deployment,
 and documentation are changed at their owning boundaries and verified together.
 
-## Relay Core Checkpoint (2026-07-14)
+## Relay Core Checkpoint (2026-07-30)
 
 The following are narrow, verified mitigations in the current worktree. They
 are not acceptance of this plan, production approval, PostgreSQL/SQLite
@@ -39,14 +39,16 @@ equivalence, or evidence of a high-availability deployment.
   collection. The focused boundary test proves the injected ceiling is used;
   accepted bodies are still collected before forwarding, so this is not a
   streaming, aggregate-RSS, queue-capacity, or OOM-safety result.
-- [x] Settlement batch count is clamped to `1..=200`, and Cloud Gateway's two
-  environment startup paths reject a shared Snowflake default for
-  server/container modes. This is intentionally recorded as a partial guard,
-  not a cluster identity solution.
-- [x] Cloud Gateway, app-api, and backend-api now validate the configured
-  Snowflake node ID before server/container database bootstrap. This moves
-  malformed or missing configuration to startup; it does not allocate, lease,
-  fence, or make IDs safe across replicas.
+- [x] Cloud Gateway, app-api, backend-api, and all-in-one startup acquire the
+  canonical process-wide `sdkwork-database-id` generator after PostgreSQL
+  lifecycle preparation and before runtime writes. Database leases use random
+  tokens, monotonic fencing versions, database time, and heartbeats. Lease loss
+  fences generation, degrades readiness, and triggers bounded-backoff recovery.
+  Kubernetes injects Pod name/UID and never configures a static node ID. This
+  path exports generator readiness and bounded failure-reason counters. This
+  closes collision/fencing behavior and local observability, not the platform
+  allocator's runtime-DDL least-privilege gap, reviewed alerting, or the
+  required real-cluster evidence.
 - [x] The shared gateway accounting command rejects text beyond the existing
   PostgreSQL/SQLite DDL widths and rejects decimal input above SQLite's
   `NUMERIC(38, 12)` 40-byte text ceiling before parsing. Snapshot validation
@@ -63,6 +65,12 @@ equivalence, or evidence of a high-availability deployment.
   line-quote precedence, sequential write order, and continue-on-error behavior
   are preserved. This removes redundant copies only; it does not bound input
   cardinality or payload size.
+- [x] Streaming usage extraction recognizes the OpenAI Responses terminal
+  `response.completed.response.usage` envelope across fragmented SSE chunks.
+  The parser limits one line to 64 KiB and one event to 256 KiB, and retains
+  only the `usage` or `usageMetadata` projection instead of the complete event.
+  Focused parser and end-to-end `/v1/responses` settlement tests pass; this is
+  not malformed-stream, cancellation, soak, or aggregate-RSS evidence.
 
 The following remain release blockers:
 
@@ -71,9 +79,13 @@ The following remain release blockers:
   generated SDKs. Provider-native wildcard mounts enforce the embedded
   OpenAPI `(provider alias, method, standardizedPath)` allowlist before
   authentication or forwarding.
-- [ ] Direct authenticated Adapter streams must fail closed until the Adapter
-  contract supports a bounded stream outcome, terminal usage, cancellation,
-  idempotency, and controlled response metadata.
+- [x] Authenticated Adapter `SseStream` and `ByteStream` routes that require
+  settlement fail closed before provider I/O, including fallback candidates;
+  the unified dispatch guard leaves explicit free routes eligible and does not
+  misclassify `FileUpload`. Authenticated passthrough has no provable free-route
+  contract and therefore blocks both stream shapes. The Adapter contract still
+  needs a bounded stream outcome, terminal usage, cancellation, idempotency,
+  and controlled response metadata before paid stream shapes can be enabled.
 - [ ] Usage snapshots, retry envelopes, queues, and
   settlement reads need independent byte/shape/count budgets. The DDL-width
   and decimal-parser guards plus the 64-line Adapter cap do not bound snapshot payloads or queue backlog.
@@ -85,8 +97,10 @@ The following remain release blockers:
   redacts credential metadata. Recharge
   cancellation must defer to the mounted Order dependency contract rather than
   expose an unmounted owner route.
-- [ ] PostgreSQL integration, multi-replica Snowflake allocation/fencing and
-  upstream logical-clock repair, egress resolver/NetworkPolicy, warning-free
+- [ ] `sdkwork-database` must separate migrator-owned node-registry DDL from
+  runtime allocation so the runtime role needs only DML. PostgreSQL integration
+  and real multi-replica Snowflake allocation, fencing, database-partition, and
+  recovery evidence; egress resolver/NetworkPolicy; warning-free
   compilation, observability, load/chaos, and recovery evidence remain open.
 
 The following require human review before implementation because they change
@@ -97,8 +111,8 @@ public contracts, security behavior, migrations, or deployment governance:
 2. Define the remaining recharge cancellation ownership and command/result
    semantics; remove or federate the recharge cancellation ghost route.
 3. Approve paired PostgreSQL/SQLite finance and snapshot-bound migrations, plus
-   a cluster-owned Snowflake node allocation/fencing approach and the upstream
-   logical-clock/sequence-exhaustion repair.
+   the platform-owned node-registry provisioning/runtime ACL split and the
+   real-cluster Snowflake lease/fencing fault-test and capacity acceptance criteria.
 
 **Tech Stack:** Rust, axum/hyper/tokio, SQLx PostgreSQL/SQLite, Redis, OpenAPI
 3.1, generated SDK families, React/Vite, pnpm, Kubernetes, and GitHub Actions.
@@ -442,10 +456,14 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Emit exactly one terminal outcome for EOF, cancellation, timeout, or
       error and pass it to attempt metering and financial settlement without
       delaying downstream frames.
-- [ ] Before a formal Adapter stream protocol exists, fail close direct
-      authenticated Adapter `SseStream`/`ByteStream` routes before any provider
-      request is made. This is a reviewed public behavior change, not a
-      substitute for implementation.
+- [x] Before a formal Adapter stream protocol exists, direct authenticated
+      Adapter `SseStream`/`ByteStream` routes that require settlement fail
+      closed before any provider request is made. The same guard is applied
+      after fallback candidate resolution; the unified dispatch path leaves
+      explicit free routes eligible and `FileUpload` remains a distinct
+      non-stream invocation shape. Authenticated passthrough blocks both stream
+      shapes because it has no provable free-route contract. This is not a
+      substitute for the formal Adapter streaming lifecycle.
 - [ ] Measure first-frame overhead with the Task 14 benchmark harness and retain frame timing evidence.
 
 ## Task 10: Financial Contract And State Machine

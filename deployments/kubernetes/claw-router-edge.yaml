@@ -63,6 +63,14 @@ spec:
               value: cloud
             - name: SDKWORK_CLAW_ROUTER_RUNTIME_TARGET
               value: container
+            - name: SDKWORK_NODE_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SDKWORK_NODE_INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
             - name: SDKWORK_CLAW_CONFIG_FILE
               value: /etc/sdkwork/clawrouter.toml
             - name: SDKWORK_CLAW_EDGE_SERVER

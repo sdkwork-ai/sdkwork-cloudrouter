@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -9,7 +8,6 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
-use tokio::sync::RwLock;
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{problem_from_wire_code, success_envelope};
@@ -28,13 +26,6 @@ const MAX_REMARK_LEN: usize = 512;
 struct AdminRuntimeRegionSettingsState {
     store: Arc<dyn RuntimeRegionSettingsStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
-    cache: Arc<RwLock<HashMap<RuntimeRegionSettingsCacheKey, RuntimeRegionSettings>>>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct RuntimeRegionSettingsCacheKey {
-    tenant_id: i64,
-    organization_id: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -70,7 +61,6 @@ pub fn admin_runtime_region_settings_router_with_store(
         .with_state(AdminRuntimeRegionSettingsState {
             store,
             entity_uuid_generator,
-            cache: Arc::new(RwLock::new(HashMap::new())),
         })
 }
 
@@ -80,7 +70,7 @@ async fn fetch_runtime_region_settings(
     _headers: HeaderMap,
 ) -> Response {
     let subject = scoped.into();
-    match load_settings_with_cache(&state, subject).await {
+    match load_settings(&state, subject).await {
         Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) => runtime_region_system_response(
             "runtime region settings read model is unavailable",
@@ -103,7 +93,7 @@ async fn update_runtime_region_settings(
         Ok(request) => request,
         Err(message) => return bad_request(message),
     };
-    let current = match load_settings_with_cache(&state, subject).await {
+    let current = match load_settings(&state, subject).await {
         Ok(settings) => settings,
         Err(error) => {
             return runtime_region_system_response(
@@ -124,7 +114,6 @@ async fn update_runtime_region_settings(
     match state.store.update_runtime_region_settings(command).await {
         Ok(settings) => {
             let settings = settings.normalized();
-            replace_cache(&state, subject, settings.clone()).await;
             Json(success_envelope(to_response(settings))).into_response()
         }
         Err(error) => runtime_region_system_response(
@@ -134,41 +123,15 @@ async fn update_runtime_region_settings(
     }
 }
 
-async fn load_settings_with_cache(
+async fn load_settings(
     state: &AdminRuntimeRegionSettingsState,
     subject: RuntimeRegionSettingsSubject,
 ) -> Result<RuntimeRegionSettings, DomainError> {
-    let cache_key = RuntimeRegionSettingsCacheKey::from_subject(subject);
-    if let Some(settings) = state.cache.read().await.get(&cache_key).cloned() {
-        return Ok(settings);
-    }
-    let settings = state
+    Ok(state
         .store
         .get_runtime_region_settings(GetRuntimeRegionSettingsQuery { subject })
         .await?
-        .normalized();
-    replace_cache(state, subject, settings.clone()).await;
-    Ok(settings)
-}
-
-async fn replace_cache(
-    state: &AdminRuntimeRegionSettingsState,
-    subject: RuntimeRegionSettingsSubject,
-    settings: RuntimeRegionSettings,
-) {
-    state.cache.write().await.insert(
-        RuntimeRegionSettingsCacheKey::from_subject(subject),
-        settings,
-    );
-}
-
-impl RuntimeRegionSettingsCacheKey {
-    fn from_subject(subject: RuntimeRegionSettingsSubject) -> Self {
-        Self {
-            tenant_id: subject.tenant_id,
-            organization_id: subject.organization_id,
-        }
-    }
+        .normalized())
 }
 
 fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
@@ -319,4 +282,80 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let month = month_prime + if month_prime < 10 { 3 } else { -9 };
     let year = year + if month <= 2 { 1 } else { 0 };
     (year, month, day)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use crate::domain::DomainResult;
+    use crate::ports::{GetRuntimeRegionSettingsScopeQuery, RuntimeRegionSettingsFuture};
+
+    use super::*;
+
+    struct ChangingRuntimeRegionSettingsStore {
+        reads: AtomicUsize,
+    }
+
+    impl RuntimeRegionSettingsStore for ChangingRuntimeRegionSettingsStore {
+        fn get_runtime_region_settings<'a>(
+            &'a self,
+            _query: GetRuntimeRegionSettingsQuery,
+        ) -> RuntimeRegionSettingsFuture<'a, RuntimeRegionSettings> {
+            Box::pin(async move {
+                let read = self.reads.fetch_add(1, Ordering::SeqCst);
+                Ok(RuntimeRegionSettings {
+                    current_region_code: if read == 0 { "cn" } else { "global" }.to_owned(),
+                    current_region_name: String::new(),
+                    remark: String::new(),
+                })
+            })
+        }
+
+        fn get_runtime_region_settings_for_scope<'a>(
+            &'a self,
+            _query: GetRuntimeRegionSettingsScopeQuery,
+        ) -> RuntimeRegionSettingsFuture<'a, RuntimeRegionSettings> {
+            Box::pin(async { Ok(RuntimeRegionSettings::default()) })
+        }
+
+        fn update_runtime_region_settings<'a>(
+            &'a self,
+            command: UpdateRuntimeRegionSettingsCommand,
+        ) -> RuntimeRegionSettingsFuture<'a, RuntimeRegionSettings> {
+            Box::pin(async move { Ok(command.settings) })
+        }
+    }
+
+    struct TestEntityUuidGenerator;
+
+    impl EntityUuidGenerator for TestEntityUuidGenerator {
+        fn generate_entity_uuid(&self) -> DomainResult<String> {
+            Ok("test-entity-uuid".to_owned())
+        }
+    }
+
+    #[tokio::test]
+    async fn runtime_region_reads_database_authority_on_every_request() {
+        let store = Arc::new(ChangingRuntimeRegionSettingsStore {
+            reads: AtomicUsize::new(0),
+        });
+        let state = AdminRuntimeRegionSettingsState {
+            store: store.clone(),
+            entity_uuid_generator: Arc::new(TestEntityUuidGenerator),
+        };
+        let subject = RuntimeRegionSettingsSubject {
+            tenant_id: 100_001,
+            organization_id: 0,
+            operator_id: 30,
+            operator_type: 1,
+        };
+
+        let first = load_settings(&state, subject).await.unwrap();
+        let second = load_settings(&state, subject).await.unwrap();
+
+        assert_eq!(first.current_region_code, "cn");
+        assert_eq!(second.current_region_code, "global");
+        assert_eq!(store.reads.load(Ordering::SeqCst), 2);
+    }
 }

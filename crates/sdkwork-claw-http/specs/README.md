@@ -35,6 +35,18 @@ Migrated app-api SQL read handlers live in `sdkwork-clawrouter-router-service/sr
 
 Embedded modules resolve the same `SDKWORK_DATABASE_*` process identity, materialized through `ensure_workspace_database_env_from_config` when application config is passed directly.
 
+## Tenant Signing Key Ownership
+
+Production tenant signing keys are resolved through
+`sdkwork_iam_web_adapter::TenantSigningKeyStore`. The IAM PostgreSQL authority owns persistence in
+`iam_tenant_signing_key`, primary-key provisioning, and `kid` lookup. The in-memory signing service
+in this crate is compiled only for unit tests and is not a production fallback or public runtime
+capability.
+
+Operational rotation coordination, retired-key grace windows, and revocation remain IAM-owned
+lifecycle contracts. They must be implemented and verified in `sdkwork-iam`; Claw Router must not
+create a second signing-key database or rotation authority.
+
 See also: [docs/standard-alignment-audit.md](../../../docs/standard-alignment-audit.md) §1, [WEB_FRAMEWORK_SPEC.md](../../../../sdkwork-specs/WEB_FRAMEWORK_SPEC.md), [IAM_SPEC.md](../../../../sdkwork-specs/IAM_SPEC.md).
 
 ## Canonical Specs

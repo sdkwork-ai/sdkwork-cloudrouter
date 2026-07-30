@@ -32,12 +32,12 @@ class ArchitectureStandardGuardian:
         'tools',
         'plugins',
         'examples',
-        'configs',
         'deployments',
         'scripts',
         'docs',
         'tests',
     )
+    RETIRED_PROJECT_DIRECTORIES: tuple[str, ...] = ('configs',)
     REQUIRED_STANDARD_README_SECTIONS: tuple[str, ...] = (
         'Purpose',
         'Owner',
@@ -122,9 +122,10 @@ class ArchitectureStandardGuardian:
             required_terms=(
                 "Rust-first",
                 "sdkwork-clawrouter-edge-runtime",
-                "sdkwork-clawrouter-standalone-gateway",
-                "sdkwork-clawrouter-app-api-server",
-                "sdkwork-clawrouter-admin-api-server",
+                "sdkwork-api-clawrouter-assembly",
+                "sdkwork-api-clawrouter-standalone-gateway",
+                "sdkwork-routes-clawrouter-app-api",
+                "sdkwork-routes-clawrouter-backend-api",
                 "/app/v3/api",
                 "/backend/v3/api",
                 "/v1",
@@ -182,15 +183,14 @@ class ArchitectureStandardGuardian:
         messages: list[str] = []
         messages.extend(self._validate_workspace_metadata())
         messages.extend(self._validate_standard_project_directories())
+        messages.extend(self._validate_retired_project_directories())
         messages.extend(self._validate_pc_application_root())
         messages.extend(self._validate_local_dictionary_text())
         messages.extend(self._validate_component_spec_canonical_paths())
         for rule in self.DOC_RULES:
-            path = self.root / rule.relative_path
-            if not path.exists():
-                continue
-            text = path.read_text(encoding="utf-8")
-            messages.extend(self._validate_doc(rule, text))
+            for path in self.root.glob(rule.relative_path):
+                text = path.read_text(encoding="utf-8")
+                messages.extend(self._validate_doc(rule, self._relative_path(path), text))
 
         return ArchitectureStandardGuardianResult(ok=not messages, messages=messages)
 
@@ -216,6 +216,13 @@ class ArchitectureStandardGuardian:
                         f'standard project directory {directory}/README.md missing required section: {section}'
                     )
         return messages
+
+    def _validate_retired_project_directories(self) -> list[str]:
+        return [
+            f'retired project directory {directory}/ must not exist; use etc/ for source config'
+            for directory in self.RETIRED_PROJECT_DIRECTORIES
+            if (self.root / directory).exists()
+        ]
 
     def _validate_pc_application_root(self) -> list[str]:
         messages: list[str] = []
@@ -336,16 +343,23 @@ class ArchitectureStandardGuardian:
                 return True
         return False
 
-    def _validate_doc(self, rule: ArchitectureDocRule, text: str) -> list[str]:
+    def _validate_doc(
+        self,
+        rule: ArchitectureDocRule,
+        relative_path: str,
+        text: str,
+    ) -> list[str]:
         messages: list[str] = []
         for term in self.FORBIDDEN_DRIFT_TERMS:
             if term in text:
                 messages.append(
-                    f"architecture doc {rule.relative_path} contains forbidden Spring-first drift term: {term}"
+                    f"architecture doc {relative_path} contains forbidden Spring-first drift term: {term}"
                 )
         for term in rule.required_terms:
             if term not in text:
-                messages.append(f"architecture doc {rule.relative_path} must mention required Rust-first term: {term}")
+                messages.append(
+                    f"architecture doc {relative_path} must mention required Rust-first term: {term}"
+                )
         return messages
 
 

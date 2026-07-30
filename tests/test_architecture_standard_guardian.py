@@ -17,7 +17,6 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
         "tools",
         "plugins",
         "examples",
-        "configs",
         "deployments",
         "scripts",
         "docs",
@@ -149,8 +148,10 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
                 "docs/02-技术架构设计.md",
                 """
                 # 技术架构设计
-                Rust-first runtime with sdkwork-clawrouter-edge-runtime, sdkwork-clawrouter-app-api-server,
-                sdkwork-clawrouter-admin-api-server, /app/v3/api, /backend/v3/api and /v1.
+                Rust-first runtime with sdkwork-clawrouter-edge-runtime,
+                sdkwork-api-clawrouter-assembly, sdkwork-api-clawrouter-standalone-gateway,
+                sdkwork-routes-clawrouter-app-api, sdkwork-routes-clawrouter-backend-api,
+                /app/v3/api, /backend/v3/api and /v1.
                 """,
             )
             self.write_doc(
@@ -196,8 +197,21 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn("standard project directory jobs/ must exist with README.md", result.messages)
-            self.assertIn("standard project directory configs/ must exist with README.md", result.messages)
             self.assertIn("workspace metadata must include .sdkwork/README.md", result.messages)
+
+    def test_rejects_retired_root_configs_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_standard_workspace(root)
+            self.write_standard_readme(root, "configs/README.md")
+
+            result = ArchitectureStandardGuardian(root=root).run()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "retired project directory configs/ must not exist; use etc/ for source config",
+                result.messages,
+            )
 
     def test_rejects_standard_directory_readme_without_required_sections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

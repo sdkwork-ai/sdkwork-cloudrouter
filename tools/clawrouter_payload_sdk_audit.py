@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from tools.clawrouter_openapi_generator import ClawRouterOpenApiGenerator
+
 
 @dataclass(frozen=True)
 class ClawRouterPayloadSdkAuditResult:
@@ -60,7 +62,11 @@ class ClawRouterPayloadSdkAudit:
         )
         self.openapi_dir = Path(openapi_dir).resolve() if openapi_dir is not None else self.root / "generated" / "openapi"
         self.sdk_root = Path(sdk_root).resolve() if sdk_root is not None else self.root / "sdks"
-        self._dependency_exclusion_cache: dict[str, set[str]] = {}
+        self._dependency_operation_cache: dict[str, set[tuple[str, str]]] = {}
+        self._dependency_resolver = ClawRouterOpenApiGenerator(
+            root=self.root,
+            manifest_path=self.manifest_path,
+        )
 
     def run(self) -> ClawRouterPayloadSdkAuditResult:
         messages: list[str] = []
@@ -94,6 +100,8 @@ class ClawRouterPayloadSdkAudit:
 
             for operation in operations:
                 surface = self._string(operation.get("api_surface"))
+                if self._is_dependency_owned_operation(surface, operation):
+                    continue
                 operation_id = operation_ids[surface][id(operation)]
                 spec = specs.get(surface)
                 if spec is None:
@@ -193,7 +201,7 @@ class ClawRouterPayloadSdkAudit:
                         messages.append(f"{surface} {operation_id} SDK method must accept {expected_body}")
 
         response_schema = self._payload_schema_name(operation.get("response_schema"))
-        if response_schema is not None:
+        if response_schema is not None and method != "DELETE":
             result_schema = self._operation_result_component_name(operation_id)
             result_ref = f"#/components/schemas/{result_schema}"
             response_component = schemas.get(response_schema)
@@ -228,7 +236,7 @@ class ClawRouterPayloadSdkAudit:
             if operation_spec is None:
                 messages.append(f"{surface} {operation_id} is missing from OpenAPI path {self._string(operation.get('api_path'))} {method}")
             elif not self._success_response_uses_expected_envelope(operation_spec, result_ref):
-                messages.append(f"{surface} {operation_id} 200 response must reference {result_ref}")
+                messages.append(f"{surface} {operation_id} success response must reference {result_ref}")
             if owner_sdk_operation and response_schema != "NoData" and not uses_generic_envelope:
                 messages.extend(
                     self._check_sdk_type(
@@ -524,8 +532,8 @@ class ClawRouterPayloadSdkAudit:
         responses = operation_spec.get("responses", {})
         if not isinstance(responses, dict):
             return None
-        success = responses.get("200", {})
-        if not isinstance(success, dict):
+        success = self._json_success_response(responses)
+        if success is None:
             return None
         content = success.get("content", {})
         if not isinstance(content, dict):
@@ -540,8 +548,8 @@ class ClawRouterPayloadSdkAudit:
         responses = operation_spec.get("responses", {})
         if not isinstance(responses, dict):
             return ""
-        success = responses.get("200", {})
-        if not isinstance(success, dict):
+        success = self._json_success_response(responses)
+        if success is None:
             return ""
         content = success.get("content", {})
         if not isinstance(content, dict):
@@ -558,6 +566,17 @@ class ClawRouterPayloadSdkAudit:
         if self._uses_sdkwork_success_envelope(schema):
             return self.SDKWORK_API_RESPONSE_REF
         return ""
+
+    def _json_success_response(self, responses: dict[str, Any]) -> dict[str, Any] | None:
+        for status in sorted(responses):
+            try:
+                numeric_status = int(status)
+            except (TypeError, ValueError):
+                continue
+            response = responses.get(status)
+            if 200 <= numeric_status < 300 and isinstance(response, dict) and "content" in response:
+                return response
+        return None
 
     def _uses_sdkwork_success_envelope(self, schema: dict[str, Any]) -> bool:
         ref = self._string(schema.get("$ref"))
@@ -799,36 +818,20 @@ class ClawRouterPayloadSdkAudit:
         return family_root / "src"
 
     def _is_dependency_owned_operation(self, surface: str, operation: dict[str, Any]) -> bool:
-        return self._dependency_operation_key(operation) in self._dependency_exclusion_keys(surface)
+        key = self._dependency_resolver.operation_key(
+            self._string(operation.get("api_path")),
+            self._string(operation.get("api_method")),
+        )
+        return key in self._dependency_operation_keys(surface)
 
-    def _dependency_exclusion_keys(self, surface: str) -> set[str]:
-        cached = self._dependency_exclusion_cache.get(surface)
+    def _dependency_operation_keys(self, surface: str) -> set[tuple[str, str]]:
+        cached = self._dependency_operation_cache.get(surface)
         if cached is not None:
             return cached
 
-        sdk_family = self.SDK_FAMILIES[surface]
-        path = self.sdk_root / sdk_family / "openapi" / f"{sdk_family}.openapi.json"
-        payload = self._load_json_if_exists(path)
-        keys: set[str] = set()
-        marker = payload.get("x-sdkwork-dependency-exclusions") if isinstance(payload, dict) else None
-        dependencies = marker.get("dependencies") if isinstance(marker, dict) else None
-        if isinstance(dependencies, dict):
-            for values in dependencies.values():
-                if not isinstance(values, list):
-                    continue
-                keys.update(value for value in values if isinstance(value, str) and value)
-        self._dependency_exclusion_cache[surface] = keys
+        keys = self._dependency_resolver.dependency_operation_keys(surface)
+        self._dependency_operation_cache[surface] = keys
         return keys
-
-    def _dependency_operation_key(self, operation: dict[str, Any]) -> str:
-        method = self._string(operation.get("api_method")).upper()
-        surface = self._string(operation.get("api_surface"))
-        prefix = "/app/v3/api" if surface == "app" else "/backend/v3/api"
-        route = self._string(operation.get("api_path"))
-        if route.startswith(prefix):
-            route = route[len(prefix) :]
-        route = re.sub(r"\{[^}]+\}", "{}", route).strip("/")
-        return f"{method} {route}"
 
     def _method_records(self, source: str, method_name: str) -> list[tuple[str, str]]:
         pattern = re.compile(

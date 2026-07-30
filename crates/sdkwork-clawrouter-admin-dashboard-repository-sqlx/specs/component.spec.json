@@ -17,14 +17,14 @@
     "manifests": ["Cargo.toml"]
   },
   "canonicalSpecs": [
-    { "file": "COMPONENT_SPEC.md", "path": "../../../../sdkwork-specs/COMPONENT_SPEC.md", "purpose": "Component ownership and discovery." },
-    { "file": "CODE_STYLE_SPEC.md", "path": "../../../../sdkwork-specs/CODE_STYLE_SPEC.md", "purpose": "Authored source boundaries." },
-    { "file": "NAMING_SPEC.md", "path": "../../../../sdkwork-specs/NAMING_SPEC.md", "purpose": "Repository crate naming." },
-    { "file": "RUST_CODE_SPEC.md", "path": "../../../../sdkwork-specs/RUST_CODE_SPEC.md", "purpose": "Rust repository layering." },
-    { "file": "DATABASE_SPEC.md", "path": "../../../../sdkwork-specs/DATABASE_SPEC.md", "purpose": "SQL, scope, and query contracts." },
-    { "file": "PAGINATION_SPEC.md", "path": "../../../../sdkwork-specs/PAGINATION_SPEC.md", "purpose": "Bounded read-model queries." },
-    { "file": "COMPOSABLE_ARCHITECTURE_SPEC.md", "path": "../../../../sdkwork-specs/COMPOSABLE_ARCHITECTURE_SPEC.md", "purpose": "Repository port composition." },
-    { "file": "TEST_SPEC.md", "path": "../../../../sdkwork-specs/TEST_SPEC.md", "purpose": "Dialect and isolation verification." }
+    { "file": "COMPONENT_SPEC.md", "path": "../../../sdkwork-specs/COMPONENT_SPEC.md", "purpose": "Component ownership and discovery." },
+    { "file": "CODE_STYLE_SPEC.md", "path": "../../../sdkwork-specs/CODE_STYLE_SPEC.md", "purpose": "Authored source boundaries." },
+    { "file": "NAMING_SPEC.md", "path": "../../../sdkwork-specs/NAMING_SPEC.md", "purpose": "Repository crate naming." },
+    { "file": "RUST_CODE_SPEC.md", "path": "../../../sdkwork-specs/RUST_CODE_SPEC.md", "purpose": "Rust repository layering." },
+    { "file": "DATABASE_SPEC.md", "path": "../../../sdkwork-specs/DATABASE_SPEC.md", "purpose": "SQL, scope, and query contracts." },
+    { "file": "PAGINATION_SPEC.md", "path": "../../../sdkwork-specs/PAGINATION_SPEC.md", "purpose": "Bounded read-model queries." },
+    { "file": "COMPOSABLE_ARCHITECTURE_SPEC.md", "path": "../../../sdkwork-specs/COMPOSABLE_ARCHITECTURE_SPEC.md", "purpose": "Repository port composition." },
+    { "file": "TEST_SPEC.md", "path": "../../../sdkwork-specs/TEST_SPEC.md", "purpose": "Dialect and isolation verification." }
   ],
   "contracts": {
     "layerRole": "backend-repository",

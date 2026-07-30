@@ -5,10 +5,15 @@
   "type": "module",
   "main": "./src/index.tsx",
   "scripts": {
+    "test": "vitest run src/analyticsService.test.ts --config ../../vite.config.ts --configLoader native --pool vmThreads",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@sdkwork/clawroutes-pc-commons": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public",

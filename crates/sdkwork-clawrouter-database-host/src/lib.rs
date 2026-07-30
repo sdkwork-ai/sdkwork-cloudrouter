@@ -259,6 +259,14 @@ mod tests {
         let postgres = host.pool().as_postgres().expect("PostgreSQL pool");
         for table in [
             "ai_upstream_supplier",
+            "ai_chat_conversation",
+            "ai_chat_turn",
+            "ai_chat_item",
+            "ai_chat_message",
+            "ai_chat_message_part",
+            "ai_chat_context_snapshot",
+            "ai_runtime_invocation",
+            "ai_runtime_usage_link",
             "iam_gateway_api_key",
             "ops_gateway_instance",
         ] {

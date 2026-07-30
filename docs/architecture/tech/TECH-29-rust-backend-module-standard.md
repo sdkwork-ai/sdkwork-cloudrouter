@@ -7,9 +7,10 @@ Specs: `RUST_CODE_SPEC.md`, `CODE_STYLE_SPEC.md`, `NAMING_SPEC.md`, `DATABASE_SP
 
 ## 1. Goal
 
-Claw Router keeps route, application, domain, port, provider, persistence, and
-runtime composition responsibilities explicit. This local standard records
-repository-specific module ownership; global SDKWork specs remain normative.
+Claw Router is Rust-first and follows Hexagonal architecture. It keeps route,
+application, domain, port, provider, persistence, and runtime composition
+responsibilities explicit. This local standard records repository-specific
+module ownership; global SDKWork specs remain normative.
 
 ## 2. Crate Responsibilities
 
@@ -20,6 +21,8 @@ repository-specific module ownership; global SDKWork specs remain normative.
 | `sdkwork-claw-http` | Shared HTTP/framework boundaries and outbound transport helpers |
 | `sdkwork-claw-security` | Redaction, credential-safe logging, and egress policy |
 | `sdkwork-claw-observability` | Tracing and telemetry bootstrap |
+| `sdkwork-api-clawrouter-assembly` | Host-neutral App, Backend, and Open API composition |
+| `sdkwork-api-clawrouter-standalone-gateway` | Standalone public HTTP listener and process infrastructure |
 | `sdkwork-clawrouter-edge-runtime` | Invocation runtime composition and OpenAI-compatible dispatch |
 | `sdkwork-routes-clawrouter-app-api` | App API route composition |
 | `sdkwork-routes-clawrouter-backend-api` | Backend API route composition |
@@ -27,6 +30,8 @@ repository-specific module ownership; global SDKWork specs remain normative.
 | `sdkwork-clawrouter-*-repository-sqlx` | Capability-owned PostgreSQL repositories |
 
 Runnable listeners are gateways, not retired `api-server` crates.
+The HTTP stack is `axum` on `tokio`, composed through `tower` and
+`tower-http`; business modules remain framework-independent.
 
 ## 3. Module Shape
 
@@ -98,9 +103,10 @@ Management list query names are `page`, `page_size`, and bounded filters;
 generated TypeScript uses `pageSize`. List repositories return the requested
 window and total/page metadata without loading the complete dataset.
 
-App and Backend APIs use standard success envelopes; errors use RFC 9457
-Problem Details. OpenAI-compatible `/v1` endpoints retain their compatibility
-wire contract and do not use app/backend envelopes.
+App `/app/v3/api` and Backend `/backend/v3/api` APIs use standard success
+envelopes; errors use RFC 9457 Problem Details. OpenAI-compatible `/v1`
+endpoints retain their compatibility wire contract and do not use app/backend
+envelopes.
 
 Generated SDK artifacts are changed only through contract/generator inputs.
 Frontend services call the generated package root and do not recreate DTOs,

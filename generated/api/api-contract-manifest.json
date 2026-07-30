@@ -3007,7 +3007,7 @@
       "module": "pc-admin-marketing",
       "openapi_exposed": true,
       "operation": "list",
-      "operation_id": "system.marketing.referralStats.list",
+      "operation_id": "marketing.referralStats.list",
       "path_params": [],
       "query_parameters": [
         {
@@ -18051,7 +18051,7 @@
       "module": "packages",
       "openapi_exposed": true,
       "operation": "create",
-      "operation_id": "recharges.packages.create",
+      "operation_id": "packages.create",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -18261,7 +18261,7 @@
       "module": "{packageId}",
       "openapi_exposed": true,
       "operation": "delete",
-      "operation_id": "recharges.packages.delete",
+      "operation_id": "packages.delete",
       "path_params": [
         "packageId"
       ],
@@ -20665,7 +20665,7 @@
       "module": "orders",
       "openapi_exposed": true,
       "operation": "list",
-      "operation_id": "recharges.orders.management.list",
+      "operation_id": "orders.management.list",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": true,
@@ -20705,7 +20705,7 @@
       "module": "packages",
       "openapi_exposed": true,
       "operation": "list",
-      "operation_id": "recharges.packages.management.list",
+      "operation_id": "packages.management.list",
       "path_params": [],
       "query_parameters": [
         {
@@ -20805,46 +20805,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/backend/v3/api/payments/runtime/snapshot",
-      "api_surface": "backend",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "tools/bootstrap_frontend_contract_from_route_manifest.py#retrieve@/admin/payments/runtime/snapshot",
-      "kind": "read",
-      "module": "snapshot",
-      "openapi_exposed": true,
-      "operation": "retrieve",
-      "operation_id": "payments.runtime.snapshot.retrieve",
-      "path_params": [],
-      "query_parameters": [],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "payments"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/admin/payments/runtime/snapshot",
-      "route_scope": "admin",
-      "sdk_api_prefix": "/backend/v3/api",
-      "sdk_client": "SdkworkBackendClient",
-      "sdk_domain": "commerce",
-      "sdk_family": "clawrouter-backend-sdk",
-      "source": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-      "tag": "payments",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/backend/v3/api/recharges/orders/{orderId}",
       "api_surface": "backend",
       "file_targets": [],
@@ -20855,7 +20815,7 @@
       "module": "{orderId}",
       "openapi_exposed": true,
       "operation": "retrieve",
-      "operation_id": "recharges.orders.management.retrieve",
+      "operation_id": "orders.management.retrieve",
       "path_params": [
         "orderId"
       ],
@@ -20897,7 +20857,7 @@
       "module": "settings",
       "openapi_exposed": true,
       "operation": "retrieve",
-      "operation_id": "recharges.settings.management.retrieve",
+      "operation_id": "settings.management.retrieve",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": true,
@@ -21716,7 +21676,7 @@
       "module": "{packageId}",
       "openapi_exposed": true,
       "operation": "update",
-      "operation_id": "recharges.packages.update",
+      "operation_id": "packages.update",
       "path_params": [
         "packageId"
       ],
@@ -21796,7 +21756,7 @@
       "module": "settings",
       "openapi_exposed": true,
       "operation": "update",
-      "operation_id": "recharges.settings.update",
+      "operation_id": "settings.update",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": false,
@@ -22034,24 +21994,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 19,
-      "GET": 130,
+      "GET": 129,
       "PATCH": 26,
       "POST": 72,
       "PUT": 9
     },
     "api_surface_counts": {
       "app": 86,
-      "backend": 170
+      "backend": 169
     },
-    "operation_count": 256,
+    "operation_count": 255,
     "route_scope_counts": {
-      "admin": 170,
+      "admin": 169,
       "console": 31,
       "public": 55
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 86,
-      "SdkworkBackendClient": 170
+      "SdkworkBackendClient": 169
     }
   }
 }

@@ -2,7 +2,7 @@ schema_version: 1
 kind: sdkwork.database.schema
 database_role: authoritative-server
 module_id: clawrouter
-contract_version: 0.3.0
+contract_version: 0.4.0
 owner_team: claw-router-platform
 compliance_level: L2
 engines:
@@ -10,6 +10,1414 @@ engines:
 table_prefix: ai_
 source_registry: docs/schema-registry/sdkwork-clawrouter.tables.yaml
 tables:
+  - name: ai_chat_context_snapshot
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      status:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL DEFAULT 'active'
+      conversation_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      turn_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      runtime_invocation_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      snapshot_no:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      strategy:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      included_item_ids:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '[]'::jsonb
+      excluded_item_ids:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '[]'::jsonb
+      included_memory_ids:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '[]'::jsonb
+      excluded_memory_ids:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '[]'::jsonb
+      memory_pack:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      memory_token_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      provider_conversation_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      previous_response_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      input_token_estimate:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      truncation_reason:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      context_json:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+    constraints:
+      - name: pk_ai_chat_context_snapshot
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_chat_context_snapshot_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_chat_context_snapshot_scope_id
+        type: unique
+        columns: &id001
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_chat_context_snapshot_scope_uuid
+        type: unique
+        columns: &id002
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: uk_ai_chat_context_snapshot_scope_turn_no
+        type: unique
+        columns: &id003
+          - tenant_id
+          - organization_id
+          - user_id
+          - turn_id
+          - snapshot_no
+        where: null
+      - name: fk_ai_chat_context_snapshot_turn
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - turn_id
+        references_table: ai_chat_turn
+        references_columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - id
+        on_delete: CASCADE
+      - name: fk_ai_chat_context_snapshot_invocation
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - runtime_invocation_id
+        references_table: ai_runtime_invocation
+        references_columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_ai_chat_context_snapshot_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_chat_context_snapshot_status
+        type: check
+        columns: []
+        expression: status IN ('active', 'superseded', 'deleted')
+      - name: ck_ai_chat_context_snapshot_values
+        type: check
+        columns: []
+        expression: snapshot_no > 0 AND memory_token_count >= 0 AND input_token_estimate >= 0 AND length(trim(strategy)) >
+          0
+    indexes:
+      - name: uk_ai_chat_context_snapshot_scope_id
+        columns: *id001
+        unique: true
+        where: null
+      - name: uk_ai_chat_context_snapshot_scope_uuid
+        columns: *id002
+        unique: true
+        where: null
+      - name: uk_ai_chat_context_snapshot_scope_turn_no
+        columns: *id003
+        unique: true
+        where: null
+      - name: idx_ai_chat_context_snapshot_conversation_created
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_chat_context_snapshot_invocation
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - runtime_invocation_id
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_chat_conversation
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      status:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL DEFAULT 'active'
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      conversation_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      title:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+      source_surface:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL DEFAULT 'chat'
+      default_provider:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      default_model:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_session_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      memory_space_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      last_message_preview:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+      message_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      turn_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      item_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      input_token_total:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      output_token_total:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      cached_token_total:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      reasoning_token_total:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      cost_amount_total:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL DEFAULT 0
+      currency:
+        type: string(10)
+        required: false
+        postgres_type: VARCHAR(10)
+        constraints: ''
+      last_turn_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      last_item_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+    constraints:
+      - name: pk_ai_chat_conversation
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_chat_conversation_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_chat_conversation_scope_id
+        type: unique
+        columns: &id004
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_chat_conversation_scope_uuid
+        type: unique
+        columns: &id005
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: uk_ai_chat_conversation_scope_code
+        type: unique
+        columns: &id006
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_code
+        where: null
+      - name: ck_ai_chat_conversation_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_chat_conversation_status
+        type: check
+        columns: []
+        expression: status IN ('active', 'archived', 'deleted')
+      - name: ck_ai_chat_conversation_non_negative_counts
+        type: check
+        columns: []
+        expression: message_count >= 0 AND turn_count >= 0 AND item_count >= 0 AND input_token_total >= 0 AND output_token_total
+          >= 0 AND cached_token_total >= 0 AND reasoning_token_total >= 0 AND cost_amount_total >= 0 AND version >= 0
+      - name: ck_ai_chat_conversation_last_ids
+        type: check
+        columns: []
+        expression: (last_turn_id IS NULL OR last_turn_id > 0) AND (last_item_id IS NULL OR last_item_id > 0)
+      - name: ck_ai_chat_conversation_currency
+        type: check
+        columns: []
+        expression: currency IS NULL OR length(trim(currency)) BETWEEN 3 AND 10
+    indexes:
+      - name: uk_ai_chat_conversation_scope_id
+        columns: *id004
+        unique: true
+        where: null
+      - name: uk_ai_chat_conversation_scope_uuid
+        columns: *id005
+        unique: true
+        where: null
+      - name: uk_ai_chat_conversation_scope_code
+        columns: *id006
+        unique: true
+        where: null
+      - name: idx_ai_chat_conversation_user_status_updated
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - status
+          - updated_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_chat_item
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      conversation_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      turn_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      sequence_no:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      item_type:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      role:
+        type: string(32)
+        required: false
+        postgres_type: VARCHAR(32)
+        constraints: ''
+      direction:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL
+      status:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      content_text:
+        type: text
+        required: false
+        postgres_type: TEXT
+        constraints: ''
+      content_json:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      provider:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      model:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      runtime_invocation_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      completed_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_ai_chat_item
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_chat_item_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_chat_item_scope_id
+        type: unique
+        columns: &id007
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_chat_item_scope_uuid
+        type: unique
+        columns: &id008
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: uk_ai_chat_item_scope_turn_id
+        type: unique
+        columns: &id009
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - turn_id
+          - id
+        where: null
+      - name: uk_ai_chat_item_scope_conversation_sequence
+        type: unique
+        columns: &id010
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - sequence_no
+        where: null
+      - name: fk_ai_chat_item_turn
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - turn_id
+        references_table: ai_chat_turn
+        references_columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - id
+        on_delete: CASCADE
+      - name: ck_ai_chat_item_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_chat_item_sequence
+        type: check
+        columns: []
+        expression: sequence_no > 0
+      - name: ck_ai_chat_item_values
+        type: check
+        columns: []
+        expression: length(trim(item_type)) > 0 AND direction IN ('input', 'output', 'internal') AND (role IS NULL OR role
+          IN ('system', 'developer', 'user', 'assistant', 'tool')) AND status IN ('pending', 'running', 'streaming', 'completed',
+          'failed', 'cancelled', 'deleted')
+    indexes:
+      - name: uk_ai_chat_item_scope_id
+        columns: *id007
+        unique: true
+        where: null
+      - name: uk_ai_chat_item_scope_uuid
+        columns: *id008
+        unique: true
+        where: null
+      - name: uk_ai_chat_item_scope_turn_id
+        columns: *id009
+        unique: true
+        where: null
+      - name: uk_ai_chat_item_scope_conversation_sequence
+        columns: *id010
+        unique: true
+        where: null
+      - name: idx_ai_chat_item_turn_direction_status
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - turn_id
+          - direction
+          - role
+          - status
+          - sequence_no
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_chat_message
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      conversation_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      turn_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      item_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      message_no:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      role:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      message_kind:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      direction:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL
+      status:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      content_text:
+        type: text
+        required: true
+        postgres_type: TEXT
+        constraints: NOT NULL
+      content_json:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      model:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      provider:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      runtime:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      runtime_invocation_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      usage_link_id:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+    constraints:
+      - name: pk_ai_chat_message
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_chat_message_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_chat_message_scope_id
+        type: unique
+        columns: &id011
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_chat_message_scope_uuid
+        type: unique
+        columns: &id012
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: uk_ai_chat_message_scope_item_id
+        type: unique
+        columns: &id013
+          - tenant_id
+          - organization_id
+          - user_id
+          - item_id
+          - id
+        where: null
+      - name: uk_ai_chat_message_scope_conversation_no
+        type: unique
+        columns: &id014
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - message_no
+        where: null
+      - name: fk_ai_chat_message_item
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - turn_id
+          - item_id
+        references_table: ai_chat_item
+        references_columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - turn_id
+          - id
+        on_delete: CASCADE
+      - name: ck_ai_chat_message_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_chat_message_sequence
+        type: check
+        columns: []
+        expression: message_no > 0
+      - name: ck_ai_chat_message_values
+        type: check
+        columns: []
+        expression: role IN ('system', 'developer', 'user', 'assistant', 'tool') AND direction IN ('input', 'output', 'internal')
+          AND length(trim(message_kind)) > 0 AND status IN ('pending', 'running', 'streaming', 'completed', 'failed', 'cancelled',
+          'deleted')
+    indexes:
+      - name: uk_ai_chat_message_scope_id
+        columns: *id011
+        unique: true
+        where: null
+      - name: uk_ai_chat_message_scope_uuid
+        columns: *id012
+        unique: true
+        where: null
+      - name: uk_ai_chat_message_scope_item_id
+        columns: *id013
+        unique: true
+        where: null
+      - name: uk_ai_chat_message_scope_conversation_no
+        columns: *id014
+        unique: true
+        where: null
+      - name: idx_ai_chat_message_turn_status
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - turn_id
+          - role
+          - direction
+          - status
+          - message_no
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_chat_message_part
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      message_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      item_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      part_no:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      part_type:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      text_content:
+        type: text
+        required: false
+        postgres_type: TEXT
+        constraints: ''
+      json_content:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+    constraints:
+      - name: pk_ai_chat_message_part
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_chat_message_part_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_chat_message_part_scope_id
+        type: unique
+        columns: &id015
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_chat_message_part_scope_uuid
+        type: unique
+        columns: &id016
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: uk_ai_chat_message_part_scope_message_no
+        type: unique
+        columns: &id017
+          - tenant_id
+          - organization_id
+          - user_id
+          - message_id
+          - part_no
+        where: null
+      - name: fk_ai_chat_message_part_message_item
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - item_id
+          - message_id
+        references_table: ai_chat_message
+        references_columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - item_id
+          - id
+        on_delete: CASCADE
+      - name: ck_ai_chat_message_part_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_chat_message_part_values
+        type: check
+        columns: []
+        expression: part_no > 0 AND length(trim(part_type)) > 0 AND (text_content IS NOT NULL OR json_content IS NOT NULL)
+    indexes:
+      - name: uk_ai_chat_message_part_scope_id
+        columns: *id015
+        unique: true
+        where: null
+      - name: uk_ai_chat_message_part_scope_uuid
+        columns: *id016
+        unique: true
+        where: null
+      - name: uk_ai_chat_message_part_scope_message_no
+        columns: *id017
+        unique: true
+        where: null
+      - name: idx_ai_chat_message_part_item
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - item_id
+          - message_id
+          - part_no
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_chat_turn
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      conversation_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      turn_no:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      mode:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      status:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL DEFAULT 'queued'
+      completed_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      provider:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      model:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_session_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      final_output_item_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      input_token_total:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      output_token_total:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      cached_token_total:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      reasoning_token_total:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      cost_amount:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      currency:
+        type: string(10)
+        required: false
+        postgres_type: VARCHAR(10)
+        constraints: ''
+      response_snapshot:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      usage_snapshot:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      context_snapshot_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      context_snapshot_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+    constraints:
+      - name: pk_ai_chat_turn
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_chat_turn_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_chat_turn_scope_id
+        type: unique
+        columns: &id018
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_chat_turn_scope_uuid
+        type: unique
+        columns: &id019
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: uk_ai_chat_turn_scope_conversation_id
+        type: unique
+        columns: &id020
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - id
+        where: null
+      - name: uk_ai_chat_turn_scope_conversation_no
+        type: unique
+        columns: &id021
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - turn_no
+        where: null
+      - name: fk_ai_chat_turn_conversation
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+        references_table: ai_chat_conversation
+        references_columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        on_delete: CASCADE
+      - name: ck_ai_chat_turn_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_chat_turn_status
+        type: check
+        columns: []
+        expression: status IN ('queued', 'running', 'streaming', 'requires_action', 'completed', 'failed', 'cancelled', 'deleted')
+      - name: ck_ai_chat_turn_non_negative_values
+        type: check
+        columns: []
+        expression: turn_no > 0 AND input_token_total >= 0 AND output_token_total >= 0 AND cached_token_total >= 0 AND reasoning_token_total
+          >= 0 AND (cost_amount IS NULL OR cost_amount >= 0) AND context_snapshot_count >= 0 AND (final_output_item_id IS
+          NULL OR final_output_item_id > 0) AND (context_snapshot_id IS NULL OR context_snapshot_id > 0)
+      - name: ck_ai_chat_turn_currency
+        type: check
+        columns: []
+        expression: currency IS NULL OR length(trim(currency)) BETWEEN 3 AND 10
+    indexes:
+      - name: uk_ai_chat_turn_scope_id
+        columns: *id018
+        unique: true
+        where: null
+      - name: uk_ai_chat_turn_scope_uuid
+        columns: *id019
+        unique: true
+        where: null
+      - name: uk_ai_chat_turn_scope_conversation_id
+        columns: *id020
+        unique: true
+        where: null
+      - name: uk_ai_chat_turn_scope_conversation_no
+        columns: *id021
+        unique: true
+        where: null
+      - name: idx_ai_chat_turn_conversation_created
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_chat_turn_conversation_status
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - status
+          - updated_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
   - name: ai_config_change_event
     domain: ai
     profile: runtime_coordination_event
@@ -142,12 +1550,12 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_config_change_event_uuid
         type: unique
-        columns: &id001
+        columns: &id022
           - uuid
         where: null
     indexes:
       - name: uk_ai_config_change_event_uuid
-        columns: *id001
+        columns: *id022
         unique: true
         where: null
       - name: idx_ai_config_change_event_pending
@@ -329,23 +1737,23 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_config_version_uuid
         type: unique
-        columns: &id002
+        columns: &id023
           - uuid
         where: null
       - name: uk_ai_config_version_scope
         type: unique
-        columns: &id003
+        columns: &id024
           - tenant_id
           - organization_id
           - config_scope
         where: null
     indexes:
       - name: uk_ai_config_version_uuid
-        columns: *id002
+        columns: *id023
         unique: true
         where: null
       - name: uk_ai_config_version_scope
-        columns: *id003
+        columns: *id024
         unique: true
         where: null
       - name: idx_ai_config_version_scope_updated
@@ -487,12 +1895,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_model_mapping_rule_uuid
         type: unique
-        columns: &id004
+        columns: &id025
           - uuid
         where: null
     indexes:
       - name: uk_ai_model_mapping_rule_uuid
-        columns: *id004
+        columns: *id025
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_model_mapping_rule_source_vendor
@@ -651,12 +2059,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_model_mapping_rule_binding_uuid
         type: unique
-        columns: &id005
+        columns: &id026
           - uuid
         where: null
       - name: uk_ai_model_mapping_rule_binding_target
         type: unique
-        columns: &id006
+        columns: &id027
           - tenant_id
           - organization_id
           - rule_id
@@ -666,11 +2074,11 @@ tables:
         where: null
     indexes:
       - name: uk_ai_model_mapping_rule_binding_uuid
-        columns: *id005
+        columns: *id026
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_model_mapping_rule_binding_target
-        columns: *id006
+        columns: *id027
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_model_mapping_rule_binding_rule_lookup
@@ -865,12 +2273,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_model_mapping_rule_item_uuid
         type: unique
-        columns: &id007
+        columns: &id028
           - uuid
         where: null
     indexes:
       - name: uk_ai_model_mapping_rule_item_uuid
-        columns: *id007
+        columns: *id028
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_model_mapping_rule_item_rule_lookup
@@ -915,7 +2323,7 @@ tables:
     compliance_level: L2
     write_owner: ai-pricing-service
     system_of_record: true
-    tenant_scope: tenant_required
+    tenant_scope: tenant_with_global_fallback
     soft_delete_policy: null
     columns:
       id:
@@ -1078,15 +2486,15 @@ tables:
         columns:
           - tenant_id
           - organization_id
-        expression: tenant_id > 0 AND organization_id >= 0
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_pricing_import_snapshot_uuid
         type: unique
-        columns: &id008
+        columns: &id029
           - uuid
         where: null
       - name: uk_ai_pricing_import_snapshot_hash
         type: unique
-        columns: &id009
+        columns: &id030
           - tenant_id
           - organization_id
           - import_source
@@ -1094,11 +2502,11 @@ tables:
         where: null
     indexes:
       - name: uk_ai_pricing_import_snapshot_uuid
-        columns: *id008
+        columns: *id029
         unique: true
         where: null
       - name: uk_ai_pricing_import_snapshot_hash
-        columns: *id009
+        columns: *id030
         unique: true
         where: null
       - name: idx_ai_pricing_import_snapshot_tenant_latest
@@ -1337,12 +2745,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_pricing_plan_uuid
         type: unique
-        columns: &id010
+        columns: &id031
           - uuid
         where: null
       - name: uk_ai_pricing_plan_tenant_code
         type: unique
-        columns: &id011
+        columns: &id032
           - tenant_id
           - organization_id
           - plan_code
@@ -1358,11 +2766,11 @@ tables:
         expression: effective_to IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_ai_pricing_plan_uuid
-        columns: *id010
+        columns: *id031
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_pricing_plan_tenant_code
-        columns: *id011
+        columns: *id032
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_pricing_plan_scope_id
@@ -1544,12 +2952,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_pricing_plan_binding_uuid
         type: unique
-        columns: &id012
+        columns: &id033
           - uuid
         where: null
       - name: uk_ai_pricing_plan_binding_subject
         type: unique
-        columns: &id013
+        columns: &id034
           - tenant_id
           - organization_id
           - subject_type
@@ -1558,11 +2966,11 @@ tables:
         where: null
     indexes:
       - name: uk_ai_pricing_plan_binding_uuid
-        columns: *id012
+        columns: *id033
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_pricing_plan_binding_subject
-        columns: *id013
+        columns: *id034
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_pricing_plan_binding_tenant_status_effective
@@ -1903,12 +3311,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_pricing_rule_uuid
         type: unique
-        columns: &id014
+        columns: &id035
           - uuid
         where: null
       - name: uk_ai_pricing_rule_plan_code
         type: unique
-        columns: &id015
+        columns: &id036
           - tenant_id
           - organization_id
           - pricing_plan_id
@@ -1942,11 +3350,11 @@ tables:
         expression: effective_to IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_ai_pricing_rule_uuid
-        columns: *id014
+        columns: *id035
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_pricing_rule_plan_code
-        columns: *id015
+        columns: *id036
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_pricing_rule_scope_id
@@ -2224,12 +3632,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_pricing_tier_uuid
         type: unique
-        columns: &id016
+        columns: &id037
           - uuid
         where: null
       - name: uk_ai_pricing_tier_rule_code
         type: unique
-        columns: &id017
+        columns: &id038
           - tenant_id
           - organization_id
           - pricing_rule_id
@@ -2267,11 +3675,11 @@ tables:
         expression: effective_to IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_ai_pricing_tier_uuid
-        columns: *id016
+        columns: *id037
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_pricing_tier_rule_code
-        columns: *id017
+        columns: *id038
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_pricing_tier_tenant_status_effective
@@ -2508,7 +3916,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_quota_policy_tenant_subject
         type: unique
-        columns: &id018
+        columns: &id039
           - tenant_id
           - organization_id
           - subject_type
@@ -2518,7 +3926,7 @@ tables:
         where: null
     indexes:
       - name: uk_ai_quota_policy_tenant_subject
-        columns: *id018
+        columns: *id039
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_quota_policy_subject_ref
@@ -2861,7 +4269,7 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_request_trace_request_attempt
         type: unique
-        columns: &id019
+        columns: &id040
           - tenant_id
           - organization_id
           - request_id
@@ -2883,7 +4291,7 @@ tables:
           >= 0) AND (total_tokens IS NULL OR total_tokens >= 0)
     indexes:
       - name: uk_ai_request_trace_request_attempt
-        columns: *id019
+        columns: *id040
         unique: true
         where: null
       - name: idx_ai_request_trace_tenant_trace
@@ -3146,14 +4554,14 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_routing_decision_log_request
         type: unique
-        columns: &id020
+        columns: &id041
           - tenant_id
           - organization_id
           - request_id
         where: null
     indexes:
       - name: uk_ai_routing_decision_log_request
-        columns: *id020
+        columns: *id041
         unique: true
         where: null
       - name: idx_ai_routing_decision_tenant_model_created
@@ -3356,7 +4764,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_routing_policy_tenant_code
         type: unique
-        columns: &id021
+        columns: &id042
           - tenant_id
           - organization_id
           - policy_code
@@ -3367,7 +4775,7 @@ tables:
         expression: (slo_latency_ms IS NULL OR slo_latency_ms >= 0) AND (cost_ceiling IS NULL OR cost_ceiling >= 0)
     indexes:
       - name: uk_ai_routing_policy_tenant_code
-        columns: *id021
+        columns: *id042
         unique: true
         where: null
       - name: uk_ai_routing_policy_scope_id
@@ -3509,7 +4917,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_routing_profile_policy_version
         type: unique
-        columns: &id022
+        columns: &id043
           - policy_id
           - profile_version
         where: null
@@ -3531,7 +4939,7 @@ tables:
         expression: profile_version > 0
     indexes:
       - name: uk_ai_routing_profile_policy_version
-        columns: *id022
+        columns: *id043
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_routing_profile_scope_id
@@ -3683,7 +5091,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_routing_rule_profile_code
         type: unique
-        columns: &id023
+        columns: &id044
           - profile_id
           - rule_code
         where: null
@@ -3709,7 +5117,7 @@ tables:
         expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_ai_routing_rule_profile_code
-        columns: *id023
+        columns: *id044
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_routing_rule_tenant_profile_priority
@@ -3719,6 +5127,558 @@ tables:
           - profile_id
           - priority
           - status
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_runtime_invocation
+    domain: ai
+    profile: user_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      conversation_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      chat_turn_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      chat_item_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_session_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_run_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      agent_run_step_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      invocation_no:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      invocation_type:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      runtime:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      endpoint:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      attempt_no:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 1
+      status:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL DEFAULT 'running'
+      request_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      trace_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      provider_response_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      provider_session_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      provider_conversation_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      provider_step_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      model:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      provider:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      tool_name:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      tool_call_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      cwd:
+        type: string(2048)
+        required: false
+        postgres_type: VARCHAR(2048)
+        constraints: ''
+      sandbox_policy:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      approval_policy:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      permission_mode:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      streaming:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
+      started_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+      completed_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      latency_ms:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      ttft_ms:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      exit_code:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      finish_reason:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      error_type:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      error_code:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      error_message_masked:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+      request_json:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      response_json:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      usage_json:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+    constraints:
+      - name: pk_ai_runtime_invocation
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_runtime_invocation_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_runtime_invocation_scope_id
+        type: unique
+        columns: &id045
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_runtime_invocation_scope_uuid
+        type: unique
+        columns: &id046
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: ck_ai_runtime_invocation_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_runtime_invocation_sequence
+        type: check
+        columns: []
+        expression: invocation_no > 0 AND attempt_no > 0
+      - name: ck_ai_runtime_invocation_status
+        type: check
+        columns: []
+        expression: status IN ('pending', 'running', 'streaming', 'completed', 'failed', 'cancelled')
+      - name: ck_ai_runtime_invocation_runtime
+        type: check
+        columns: []
+        expression: length(trim(invocation_type)) > 0 AND length(trim(runtime)) > 0
+      - name: ck_ai_runtime_invocation_metrics
+        type: check
+        columns: []
+        expression: (latency_ms IS NULL OR latency_ms >= 0) AND (ttft_ms IS NULL OR ttft_ms >= 0)
+    indexes:
+      - name: uk_ai_runtime_invocation_scope_id
+        columns: *id045
+        unique: true
+        where: null
+      - name: uk_ai_runtime_invocation_scope_uuid
+        columns: *id046
+        unique: true
+        where: null
+      - name: idx_ai_runtime_invocation_user_created
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_runtime_invocation_chat_created
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - conversation_id
+          - chat_turn_id
+          - created_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_runtime_invocation_runtime_status
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - runtime
+          - status
+          - created_at
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+  - name: ai_runtime_usage_link
+    domain: ai
+    profile: user_entity
+    compliance_level: L3
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_required
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      conversation_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      chat_turn_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      message_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      runtime_invocation_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      usage_fact_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      usage_type:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      provider:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      model:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      input_tokens:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      output_tokens:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      cached_tokens:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      reasoning_tokens:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      total_tokens:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      cost_amount:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      currency:
+        type: string(10)
+        required: false
+        postgres_type: VARCHAR(10)
+        constraints: ''
+      occurred_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+    constraints:
+      - name: pk_ai_runtime_usage_link
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_runtime_usage_link_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id > 0 AND organization_id >= 0
+      - name: uk_ai_runtime_usage_link_scope_id
+        type: unique
+        columns: &id047
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        where: null
+      - name: uk_ai_runtime_usage_link_scope_uuid
+        type: unique
+        columns: &id048
+          - tenant_id
+          - organization_id
+          - user_id
+          - uuid
+        where: null
+      - name: ck_ai_runtime_usage_link_subject_scope
+        type: check
+        columns: []
+        expression: tenant_id > 0 AND organization_id >= 0 AND user_id > 0
+      - name: ck_ai_runtime_usage_link_non_negative_values
+        type: check
+        columns: []
+        expression: input_tokens >= 0 AND output_tokens >= 0 AND cached_tokens >= 0 AND reasoning_tokens >= 0 AND total_tokens
+          >= 0 AND (cost_amount IS NULL OR cost_amount >= 0) AND (usage_fact_id IS NULL OR usage_fact_id > 0)
+      - name: ck_ai_runtime_usage_link_usage_type
+        type: check
+        columns: []
+        expression: length(trim(usage_type)) > 0
+      - name: ck_ai_runtime_usage_link_currency
+        type: check
+        columns: []
+        expression: currency IS NULL OR length(trim(currency)) BETWEEN 3 AND 10
+    indexes:
+      - name: uk_ai_runtime_usage_link_scope_id
+        columns: *id047
+        unique: true
+        where: null
+      - name: uk_ai_runtime_usage_link_scope_uuid
+        columns: *id048
+        unique: true
+        where: null
+      - name: idx_ai_runtime_usage_link_message
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - message_id
+          - occurred_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_runtime_usage_link_invocation
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - runtime_invocation_id
+          - occurred_at
+          - id
+        unique: false
+        where: null
+      - name: idx_ai_runtime_usage_link_usage_fact
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - usage_fact_id
+          - id
         unique: false
         where: null
     source_tables: []
@@ -3943,12 +5903,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_uuid
         type: unique
-        columns: &id024
+        columns: &id049
           - uuid
         where: null
       - name: uk_ai_upstream_account_tenant_code
         type: unique
-        columns: &id025
+        columns: &id050
           - tenant_id
           - organization_id
           - account_code
@@ -4006,11 +5966,11 @@ tables:
         expression: timeout_ms IS NULL OR timeout_ms > 0
     indexes:
       - name: uk_ai_upstream_account_uuid
-        columns: *id024
+        columns: *id049
         unique: true
         where: null
       - name: uk_ai_upstream_account_tenant_code
-        columns: *id025
+        columns: *id050
         unique: true
         where: null
       - name: uk_ai_upstream_account_scope_id
@@ -4203,12 +6163,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_credential_uuid
         type: unique
-        columns: &id026
+        columns: &id051
           - uuid
         where: null
       - name: uk_ai_upstream_account_credential_version
         type: unique
-        columns: &id027
+        columns: &id052
           - tenant_id
           - organization_id
           - account_id
@@ -4234,11 +6194,11 @@ tables:
         expression: credential_version > 0 AND priority >= 0
     indexes:
       - name: uk_ai_upstream_account_credential_uuid
-        columns: *id026
+        columns: *id051
         unique: true
         where: null
       - name: uk_ai_upstream_account_credential_version
-        columns: *id027
+        columns: *id052
         unique: true
         where: null
       - name: idx_ai_upstream_account_credential_account
@@ -4429,12 +6389,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_uuid
         type: unique
-        columns: &id028
+        columns: &id053
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_tenant_code
         type: unique
-        columns: &id029
+        columns: &id054
           - tenant_id
           - organization_id
           - group_code
@@ -4454,11 +6414,11 @@ tables:
           >= 0)
     indexes:
       - name: uk_ai_upstream_account_group_uuid
-        columns: *id028
+        columns: *id053
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_tenant_code
-        columns: *id029
+        columns: *id054
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_scope_id
@@ -4614,12 +6574,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_member_uuid
         type: unique
-        columns: &id030
+        columns: &id055
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_member
         type: unique
-        columns: &id031
+        columns: &id056
           - tenant_id
           - organization_id
           - account_group_id
@@ -4660,11 +6620,11 @@ tables:
         expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_ai_upstream_account_group_member_uuid
-        columns: *id030
+        columns: *id055
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_member
-        columns: *id031
+        columns: *id056
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_member_status
@@ -4844,12 +6804,12 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_upstream_account_group_metric_snapshot_uuid
         type: unique
-        columns: &id032
+        columns: &id057
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_metric_snapshot
         type: unique
-        columns: &id033
+        columns: &id058
           - tenant_id
           - organization_id
           - account_group_id
@@ -4869,11 +6829,11 @@ tables:
           0)
     indexes:
       - name: uk_ai_upstream_account_group_metric_snapshot_uuid
-        columns: *id032
+        columns: *id057
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_metric_snapshot
-        columns: *id033
+        columns: *id058
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_metric_tenant_status
@@ -5040,12 +7000,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_group_resource_uuid
         type: unique
-        columns: &id034
+        columns: &id059
           - uuid
         where: null
       - name: uk_ai_upstream_account_group_resource
         type: unique
-        columns: &id035
+        columns: &id060
           - tenant_id
           - organization_id
           - account_group_id
@@ -5071,11 +7031,11 @@ tables:
           IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
     indexes:
       - name: uk_ai_upstream_account_group_resource_uuid
-        columns: *id034
+        columns: *id059
         unique: true
         where: null
       - name: uk_ai_upstream_account_group_resource
-        columns: *id035
+        columns: *id060
         unique: true
         where: null
       - name: idx_ai_upstream_account_group_resource_status
@@ -5192,7 +7152,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_account_health_state_scope
         type: unique
-        columns: &id036
+        columns: &id061
           - tenant_id
           - organization_id
           - account_id
@@ -5220,7 +7180,7 @@ tables:
           >= 0
     indexes:
       - name: uk_ai_upstream_account_health_state_scope
-        columns: *id036
+        columns: *id061
         unique: true
         where: null
       - name: idx_ai_upstream_account_health_state_health
@@ -5409,12 +7369,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_object_route_uuid
         type: unique
-        columns: &id037
+        columns: &id062
           - uuid
         where: null
       - name: uk_ai_upstream_object_route_object
         type: unique
-        columns: &id038
+        columns: &id063
           - tenant_id
           - organization_id
           - object_type
@@ -5422,11 +7382,11 @@ tables:
         where: null
     indexes:
       - name: uk_ai_upstream_object_route_uuid
-        columns: *id037
+        columns: *id062
         unique: true
         where: deleted_at IS NULL
       - name: uk_ai_upstream_object_route_object
-        columns: *id038
+        columns: *id063
         unique: true
         where: deleted_at IS NULL
       - name: idx_ai_upstream_object_route_fast
@@ -5644,12 +7604,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_uuid
         type: unique
-        columns: &id039
+        columns: &id064
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_tenant_code
         type: unique
-        columns: &id040
+        columns: &id065
           - tenant_id
           - organization_id
           - supplier_code
@@ -5660,11 +7620,11 @@ tables:
         expression: supplier_type IN ('official', 'relay')
     indexes:
       - name: uk_ai_upstream_supplier_uuid
-        columns: *id039
+        columns: *id064
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_tenant_code
-        columns: *id040
+        columns: *id065
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_scope_id
@@ -5828,12 +7788,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_auth_method_uuid
         type: unique
-        columns: &id041
+        columns: &id066
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_auth_method_supplier_code
         type: unique
-        columns: &id042
+        columns: &id067
           - tenant_id
           - organization_id
           - supplier_id
@@ -5863,11 +7823,11 @@ tables:
         expression: jsonb_typeof(runtime_auth_config) = 'object'
     indexes:
       - name: uk_ai_upstream_supplier_auth_method_uuid
-        columns: *id041
+        columns: *id066
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_auth_method_supplier_code
-        columns: *id042
+        columns: *id067
         unique: true
         where: null
       - name: idx_ai_upstream_supplier_auth_method_supplier_status
@@ -6031,12 +7991,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_endpoint_uuid
         type: unique
-        columns: &id043
+        columns: &id068
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_endpoint_tenant_code
         type: unique
-        columns: &id044
+        columns: &id069
           - tenant_id
           - organization_id
           - supplier_id
@@ -6062,11 +8022,11 @@ tables:
         expression: priority >= 0 AND routing_weight >= 0 AND (timeout_ms IS NULL OR timeout_ms > 0)
     indexes:
       - name: uk_ai_upstream_supplier_endpoint_uuid
-        columns: *id043
+        columns: *id068
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_endpoint_tenant_code
-        columns: *id044
+        columns: *id069
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_endpoint_scope_id
@@ -6180,7 +8140,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_endpoint_health_state_scope
         type: unique
-        columns: &id045
+        columns: &id070
           - tenant_id
           - organization_id
           - endpoint_id
@@ -6210,7 +8170,7 @@ tables:
           >= 0
     indexes:
       - name: uk_ai_upstream_supplier_endpoint_health_state_scope
-        columns: *id045
+        columns: *id070
         unique: true
         where: null
       - name: idx_ai_upstream_supplier_endpoint_health_state_health
@@ -6364,12 +8324,12 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_ai_upstream_supplier_resource_uuid
         type: unique
-        columns: &id046
+        columns: &id071
           - uuid
         where: null
       - name: uk_ai_upstream_supplier_resource
         type: unique
-        columns: &id047
+        columns: &id072
           - tenant_id
           - organization_id
           - supplier_id
@@ -6397,11 +8357,11 @@ tables:
           IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
     indexes:
       - name: uk_ai_upstream_supplier_resource_uuid
-        columns: *id046
+        columns: *id071
         unique: true
         where: null
       - name: uk_ai_upstream_supplier_resource
-        columns: *id047
+        columns: *id072
         unique: true
         where: null
       - name: idx_ai_upstream_supplier_resource_lookup
@@ -6792,21 +8752,21 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_ai_usage_scope_id
         type: unique
-        columns: &id048
+        columns: &id073
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_ai_usage_idempotency
         type: unique
-        columns: &id049
+        columns: &id074
           - tenant_id
           - organization_id
           - idempotency_key
         where: null
       - name: uk_ai_usage_request
         type: unique
-        columns: &id050
+        columns: &id075
           - tenant_id
           - organization_id
           - request_id
@@ -6832,15 +8792,15 @@ tables:
         expression: length(trim(currency)) BETWEEN 3 AND 10
     indexes:
       - name: uk_ai_usage_scope_id
-        columns: *id048
+        columns: *id073
         unique: true
         where: null
       - name: uk_ai_usage_idempotency
-        columns: *id049
+        columns: *id074
         unique: true
         where: null
       - name: uk_ai_usage_request
-        columns: *id050
+        columns: *id075
         unique: true
         where: null
       - name: idx_ai_usage_tenant_owner_occurred

@@ -95,11 +95,16 @@
   "contracts": {
     "publicExports": [],
     "runtimeEntrypoints": [
-      "Cargo.toml"
+      "infrastructure::sql::bootstrap_claw_runtime_id_generator",
+      "infrastructure::sql::validate_claw_runtime_id_configuration"
     ],
     "sdkClients": [],
     "events": [],
-    "configKeys": [],
+    "configKeys": [
+      "SDKWORK_NODE_HOSTNAME",
+      "SDKWORK_NODE_INSTANCE_ID",
+      "SDKWORK_CLAW_SNOWFLAKE_NODE_ID"
+    ],
     "routeManifest": null
   },
   "integration": {
@@ -110,7 +115,8 @@
   },
   "verification": {
     "commands": [
-      "cargo test --manifest-path apps/sdkwork-clawrouter/services/sdkwork-clawrouter-router-service/Cargo.toml"
+      "cargo test -p sdkwork-clawrouter-router-service runtime_id::tests --lib",
+      "python -m unittest tests.test_database_runtime_id_standard"
     ]
   },
   "metadata": {

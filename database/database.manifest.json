@@ -9,7 +9,7 @@
     "postgres"
   ],
   "defaultEngine": "postgres",
-  "contractVersion": "0.3.0",
+  "contractVersion": "0.4.0",
   "baselineStrategy": "baseline-plus-migrations",
   "baselineAnchorTable": "ai_upstream_supplier",
   "modules": [
@@ -45,8 +45,14 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 30,
+  "materializedTableCount": 38,
   "materializedTables": [
+    "ai_chat_context_snapshot",
+    "ai_chat_conversation",
+    "ai_chat_item",
+    "ai_chat_message",
+    "ai_chat_message_part",
+    "ai_chat_turn",
     "ai_config_change_event",
     "ai_config_version",
     "ai_model_mapping_rule",
@@ -63,6 +69,8 @@
     "ai_routing_policy",
     "ai_routing_profile",
     "ai_routing_rule",
+    "ai_runtime_invocation",
+    "ai_runtime_usage_link",
     "ai_upstream_account",
     "ai_upstream_account_credential",
     "ai_upstream_account_group",

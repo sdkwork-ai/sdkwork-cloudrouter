@@ -11,7 +11,7 @@
   ],
   "defaultEngine": "postgres",
   "tablePrefix": "ops_",
-  "contractVersion": "0.3.0",
+  "contractVersion": "0.4.0",
   "baselineStrategy": "baseline-plus-migrations",
   "baselineAnchorTable": "ops_gateway_instance",
   "modules": [],

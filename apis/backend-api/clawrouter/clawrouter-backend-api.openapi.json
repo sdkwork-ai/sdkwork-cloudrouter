@@ -3002,6 +3002,33 @@
           }
         ]
       },
+      "MarketingReferralStatsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by marketing referral stats list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Marketing referral stats list result schema exposed by Claw Router.",
+        "x-operation-id": "marketing.referralStats.list"
+      },
       "MediaAccess": {
         "additionalProperties": false,
         "description": "Media access schema exposed by Claw Router.",
@@ -3596,6 +3623,60 @@
         "properties": {},
         "type": "object"
       },
+      "OrdersManagementListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by orders management list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Orders management list result schema exposed by Claw Router.",
+        "x-operation-id": "orders.management.list"
+      },
+      "OrdersManagementRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by orders management retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Orders management retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "orders.management.retrieve"
+      },
       "OssBucketsCreateResult": {
         "allOf": [
           {
@@ -3893,6 +3974,87 @@
         "description": "Oss usage list result schema exposed by Claw Router.",
         "x-operation-id": "oss.usage.list"
       },
+      "PackagesCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by packages create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Packages create result schema exposed by Claw Router.",
+        "x-operation-id": "packages.create"
+      },
+      "PackagesManagementListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by packages management list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Packages management list result schema exposed by Claw Router.",
+        "x-operation-id": "packages.management.list"
+      },
+      "PackagesUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by packages update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Packages update result schema exposed by Claw Router.",
+        "x-operation-id": "packages.update"
+      },
       "PageInfo": {
         "additionalProperties": false,
         "properties": {
@@ -3934,33 +4096,6 @@
           "mode"
         ],
         "type": "object"
-      },
-      "PaymentsRuntimeSnapshotRetrieveResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by payments runtime snapshot retrieve result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Payments runtime snapshot retrieve result schema exposed by Claw Router.",
-        "x-operation-id": "payments.runtime.snapshot.retrieve"
       },
       "ProblemDetail": {
         "additionalProperties": true,
@@ -4274,195 +4409,6 @@
           "currencyToCnyRates"
         ],
         "type": "object"
-      },
-      "RechargesOrdersManagementListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharges orders management list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharges orders management list result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.orders.management.list"
-      },
-      "RechargesOrdersManagementRetrieveResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharges orders management retrieve result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharges orders management retrieve result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.orders.management.retrieve"
-      },
-      "RechargesPackagesCreateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharges packages create result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharges packages create result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.packages.create"
-      },
-      "RechargesPackagesManagementListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharges packages management list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharges packages management list result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.packages.management.list"
-      },
-      "RechargesPackagesUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharges packages update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharges packages update result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.packages.update"
-      },
-      "RechargesSettingsManagementRetrieveResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharges settings management retrieve result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharges settings management retrieve result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.settings.management.retrieve"
-      },
-      "RechargesSettingsUpdateResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by recharges settings update result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Recharges settings update result schema exposed by Claw Router.",
-        "x-operation-id": "recharges.settings.update"
       },
       "RecordsListResult": {
         "allOf": [
@@ -4891,6 +4837,60 @@
         "description": "Service nodes update result schema exposed by Claw Router.",
         "x-operation-id": "serviceNodes.update"
       },
+      "SettingsManagementRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by settings management retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Settings management retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "settings.management.retrieve"
+      },
+      "SettingsUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by settings update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/NoData"
+                  }
+                ],
+                "description": "No business data returned by this operation."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Settings update result schema exposed by Claw Router.",
+        "x-operation-id": "settings.update"
+      },
       "SiteSettingsListResult": {
         "allOf": [
           {
@@ -4944,33 +4944,6 @@
         ],
         "description": "Site settings update result schema exposed by Claw Router.",
         "x-operation-id": "site.settings.update"
-      },
-      "SystemMarketingReferralStatsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by system marketing referral stats list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "System marketing referral stats list result schema exposed by Claw Router.",
-        "x-operation-id": "system.marketing.referralStats.list"
       },
       "TokenLimitRuleItem": {
         "additionalProperties": false,
@@ -11210,7 +11183,7 @@
     "/backend/v3/api/marketing/referral_stats": {
       "get": {
         "description": "List. Reads growth_referral_stats. Writes none. File targets none.",
-        "operationId": "system.marketing.referralStats.list",
+        "operationId": "marketing.referralStats.list",
         "parameters": [
           {
             "description": "Page query parameter.",
@@ -11239,7 +11212,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SystemMarketingReferralStatsListResult"
+                  "$ref": "#/components/schemas/MarketingReferralStatsListResult"
                 }
               }
             },
@@ -11304,102 +11277,22 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
         "x-sdkwork-domain": "system",
-        "x-sdkwork-resource": "system.marketing.referralStats",
+        "x-sdkwork-resource": "marketing.referralStats",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": []
-      }
-    },
-    "/backend/v3/api/payments/runtime/snapshot": {
-      "get": {
-        "description": "Retrieve. Reads payments. Writes none. File targets none.",
-        "operationId": "payments.runtime.snapshot.retrieve",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentsRuntimeSnapshotRetrieveResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Retrieve",
-        "tags": [
-          "payments"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "payments"
-        ],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "commerce",
-        "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "payments.runtime.snapshot",
-        "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
       }
     },
     "/backend/v3/api/recharges/orders": {
       "get": {
         "description": "List. Reads recharges. Writes none. File targets none.",
-        "operationId": "recharges.orders.management.list",
+        "operationId": "orders.management.list",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesOrdersManagementListResult"
+                  "$ref": "#/components/schemas/OrdersManagementListResult"
                 }
               }
             },
@@ -11464,7 +11357,7 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.orders.management",
+        "x-sdkwork-resource": "orders.management",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
       }
@@ -11472,7 +11365,7 @@
     "/backend/v3/api/recharges/orders/{orderId}": {
       "get": {
         "description": "Retrieve. Reads recharges. Writes none. File targets none.",
-        "operationId": "recharges.orders.management.retrieve",
+        "operationId": "orders.management.retrieve",
         "parameters": [
           {
             "description": "Order id path parameter.",
@@ -11489,7 +11382,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesOrdersManagementRetrieveResult"
+                  "$ref": "#/components/schemas/OrdersManagementRetrieveResult"
                 }
               }
             },
@@ -11554,7 +11447,7 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.orders.management",
+        "x-sdkwork-resource": "orders.management",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
       }
@@ -11562,7 +11455,7 @@
     "/backend/v3/api/recharges/packages": {
       "get": {
         "description": "List. Reads recharges. Writes none. File targets none.",
-        "operationId": "recharges.packages.management.list",
+        "operationId": "packages.management.list",
         "parameters": [
           {
             "description": "Page query parameter.",
@@ -11600,7 +11493,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesPackagesManagementListResult"
+                  "$ref": "#/components/schemas/PackagesManagementListResult"
                 }
               }
             },
@@ -11665,13 +11558,13 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.packages.management",
+        "x-sdkwork-resource": "packages.management",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
       },
       "post": {
         "description": "Create. Reads recharges. Writes ops_audit_log. File targets none.",
-        "operationId": "recharges.packages.create",
+        "operationId": "packages.create",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -11689,7 +11582,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesPackagesCreateResult"
+                  "$ref": "#/components/schemas/PackagesCreateResult"
                 }
               }
             },
@@ -11754,7 +11647,7 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.packages",
+        "x-sdkwork-resource": "packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -11764,7 +11657,7 @@
     "/backend/v3/api/recharges/packages/{packageId}": {
       "delete": {
         "description": "Delete. Reads recharges. Writes ops_audit_log. File targets none.",
-        "operationId": "recharges.packages.delete",
+        "operationId": "packages.delete",
         "parameters": [
           {
             "description": "Package id path parameter.",
@@ -11839,7 +11732,7 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.packages",
+        "x-sdkwork-resource": "packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -11847,7 +11740,7 @@
       },
       "patch": {
         "description": "Update. Reads recharges. Writes ops_audit_log. File targets none.",
-        "operationId": "recharges.packages.update",
+        "operationId": "packages.update",
         "parameters": [
           {
             "description": "Package id path parameter.",
@@ -11875,7 +11768,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesPackagesUpdateResult"
+                  "$ref": "#/components/schemas/PackagesUpdateResult"
                 }
               }
             },
@@ -11940,7 +11833,7 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.packages",
+        "x-sdkwork-resource": "packages",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
@@ -11950,14 +11843,14 @@
     "/backend/v3/api/recharges/settings": {
       "get": {
         "description": "Retrieve. Reads recharges. Writes none. File targets none.",
-        "operationId": "recharges.settings.management.retrieve",
+        "operationId": "settings.management.retrieve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesSettingsManagementRetrieveResult"
+                  "$ref": "#/components/schemas/SettingsManagementRetrieveResult"
                 }
               }
             },
@@ -12022,13 +11915,13 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.settings.management",
+        "x-sdkwork-resource": "settings.management",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": []
       },
       "put": {
         "description": "Update. Reads recharges. Writes ops_audit_log. File targets none.",
-        "operationId": "recharges.settings.update",
+        "operationId": "settings.update",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -12046,7 +11939,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RechargesSettingsUpdateResult"
+                  "$ref": "#/components/schemas/SettingsUpdateResult"
                 }
               }
             },
@@ -12111,7 +12004,7 @@
         "x-route-scope": "admin",
         "x-sdk-domain": "commerce",
         "x-sdkwork-domain": "commerce",
-        "x-sdkwork-resource": "recharges.settings",
+        "x-sdkwork-resource": "settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"

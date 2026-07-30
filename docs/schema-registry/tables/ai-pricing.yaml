@@ -2,6 +2,7 @@ tables:
 - table: ai_pricing_import_snapshot
   domain: ai
   profile: event_log
+  tenant_scope: tenant_with_global_fallback
   compliance_level: L2
   system_of_record: true
   write_owner: ai-pricing-service

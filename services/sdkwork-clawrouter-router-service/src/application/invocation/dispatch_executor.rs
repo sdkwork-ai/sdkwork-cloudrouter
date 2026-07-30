@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use super::provider_adapter_dispatch::validate_provider_adapter_target;
 use super::provider_request::ProviderRequestBuilder;
 use super::{
     BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
@@ -89,11 +90,12 @@ impl InvocationInterceptor for DispatchExecutor {
                 if let Some(plan) = invocation.routing.route_plan.as_mut() {
                     plan.selected_index = index;
                 }
-                refresh_adapter_target(invocation, self.adapter_resolver.as_deref());
+                refresh_adapter_target(invocation, self.adapter_resolver.as_deref())?;
 
                 let replay_is_safe = request_allows_replay(invocation);
                 let max_attempts = max_attempts(candidate, replay_is_safe);
                 let mut exhausted_retryable = false;
+                let mut dispatch_started = false;
                 for attempt_no in 1..=max_attempts {
                     if let Err(error) = refresh_provider_request(
                         invocation,
@@ -115,6 +117,7 @@ impl InvocationInterceptor for DispatchExecutor {
                         break;
                     }
                     let started = Instant::now();
+                    dispatch_started = true;
                     match self.dispatcher.dispatch(invocation, &account).await {
                         Ok(response) if response_is_success(invocation, &response) => {
                             let status_code = effective_response_status_code(invocation, &response);
@@ -176,7 +179,7 @@ impl InvocationInterceptor for DispatchExecutor {
                 if !should_try_next(
                     invocation.routing.failure_strategy,
                     exhausted_retryable,
-                    replay_is_safe,
+                    replay_is_safe || !dispatch_started,
                 ) {
                     break;
                 }
@@ -219,20 +222,21 @@ fn adapter_response_status_code(body: &serde_json::Value) -> Option<u16> {
 fn refresh_adapter_target(
     invocation: &mut Invocation,
     adapter_resolver: Option<&dyn ProviderAdapterRouteResolver>,
-) {
+) -> Result<(), InvocationError> {
     if invocation.resource.surface != InvocationSurface::ProviderNative {
-        return;
+        return Ok(());
     }
     if matches!(
         invocation.dispatch.mode,
         DispatchMode::SyntheticLocalResponse | DispatchMode::NoopFree
     ) {
-        return;
+        return Ok(());
     }
     let Some(adapter_resolver) = adapter_resolver else {
-        return;
+        return Ok(());
     };
     if let Some(target) = adapter_resolver.resolve_adapter_target(invocation) {
+        validate_provider_adapter_target(invocation, &target)?;
         invocation.dispatch.mode = DispatchMode::InternalProviderAdapter;
         invocation.dispatch.invocation_shape = target.shape.clone();
         invocation.dispatch.adapter_target = Some(target);
@@ -244,6 +248,7 @@ fn refresh_adapter_target(
         invocation.dispatch.invocation_shape = InvocationShape::Json;
         invocation.dispatch.adapter_target = None;
     }
+    Ok(())
 }
 
 fn refresh_provider_request(

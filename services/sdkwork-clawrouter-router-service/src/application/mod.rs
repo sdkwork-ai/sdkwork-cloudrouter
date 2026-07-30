@@ -17,7 +17,6 @@ mod payment_provider_account_resolver;
 mod payment_provider_registry;
 mod payment_provider_runtime_assembler;
 mod payment_provider_runtime_bootstrap;
-mod payment_provider_runtime_snapshot;
 mod payment_reconciliation_runtime;
 mod payment_refund_runtime;
 mod paypal_payment_adapter;
@@ -132,11 +131,6 @@ pub use payment_provider_runtime_assembler::{
 };
 pub use payment_provider_runtime_bootstrap::{
     bootstrap_payment_provider_registry, payment_runtime_environment,
-};
-pub use payment_provider_runtime_snapshot::{
-    InMemoryPaymentProviderRuntimeSnapshotStore, PaymentProviderRuntimeSnapshot,
-    PaymentProviderRuntimeSnapshotFuture, PaymentProviderRuntimeSnapshotService,
-    PaymentProviderRuntimeSnapshotStore,
 };
 pub use payment_reconciliation_runtime::{
     InMemoryPaymentReconciliationRuntimeStore, PaymentReconciliationDifferenceType,

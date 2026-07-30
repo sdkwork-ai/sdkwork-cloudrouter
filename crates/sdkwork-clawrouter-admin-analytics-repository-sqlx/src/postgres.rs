@@ -99,8 +99,7 @@ others AS (
     WHERE rn > {USER_MODEL_LIMIT}
     GROUP BY user_id
     HAVING COALESCE(SUM(value), 0) > 0
-)
-,
+),
 combined AS (
     SELECT user_id, name, value AS value_decimal
     FROM top_rows
@@ -589,7 +588,7 @@ async fn load_model_rankings(
                 OR NULLIF(provider_error_code, '') IS NOT NULL)
         ) failed_request
           ON failed_request.tenant_id = usage.tenant_id
-         AND failed_request.organization_id = usage.organization_id
+         AND failed_request.organization_id IS NOT DISTINCT FROM usage.organization_id
          AND failed_request.request_id = usage.request_id
         WHERE usage.status = 1
           AND usage.tenant_id = $1

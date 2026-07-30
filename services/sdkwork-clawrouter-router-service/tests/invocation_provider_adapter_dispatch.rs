@@ -4,9 +4,9 @@ use axum::http::Method;
 use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_clawrouter_router_service::application::{
     AuthenticatedApiKeyContext, DispatchMode, Invocation, InvocationAdapterTarget,
-    InvocationBilling, InvocationInterceptor, InvocationRequest, InvocationResource,
-    InvocationShape, InvocationSubject, InvocationSurface, ProviderAdapterDispatchInterceptor,
-    ResourceType,
+    InvocationBilling, InvocationErrorKind, InvocationInterceptor, InvocationRequest,
+    InvocationResource, InvocationShape, InvocationSubject, InvocationSurface,
+    ProviderAdapterDispatchInterceptor, ResourceType,
 };
 use sdkwork_clawrouter_router_service::domain::{
     AiRouteModelRequirement, BillingMeter, RoutingCapability,
@@ -112,6 +112,111 @@ async fn provider_native_invocation_stays_direct_when_no_adapter_route_matches()
         invocation.dispatch.mode
     );
     assert!(invocation.dispatch.adapter_target.is_none());
+}
+
+#[tokio::test]
+async fn billable_provider_adapter_streams_are_rejected_before_dispatch() {
+    for (shape, adapter_invocation_shape) in [
+        (
+            InvocationShape::SseStream,
+            AdapterInvocationShape::SseStream,
+        ),
+        (
+            InvocationShape::ByteStream,
+            AdapterInvocationShape::ByteStream,
+        ),
+    ] {
+        let interceptor = ProviderAdapterDispatchInterceptor::new(Arc::new(FixedAdapterResolver {
+            target: Some(InvocationAdapterTarget {
+                supplier_code: "kling".to_owned(),
+                endpoint_key: "kling.stream".to_owned(),
+                base_url: "https://adapter.example".to_owned(),
+                path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
+                standard_path: "/v1/videos/stream".to_owned(),
+                gateway_token: Some("adapter-token".to_owned()),
+                shape,
+                adapter_invocation_shape,
+            }),
+        }));
+        let mut invocation = provider_native_invocation();
+
+        let error = interceptor
+            .before(&mut invocation)
+            .await
+            .expect_err("billable adapter streams need a terminal usage contract");
+
+        assert_eq!(InvocationErrorKind::Usage, error.kind);
+        assert!(error.message.contains("terminal usage envelope"));
+        assert_eq!(
+            DispatchMode::DirectHttpPassthrough,
+            invocation.dispatch.mode
+        );
+        assert!(invocation.dispatch.adapter_target.is_none());
+    }
+}
+
+#[tokio::test]
+async fn free_provider_adapter_streams_can_use_transport_without_settlement() {
+    for (shape, adapter_invocation_shape) in [
+        (
+            InvocationShape::SseStream,
+            AdapterInvocationShape::SseStream,
+        ),
+        (
+            InvocationShape::ByteStream,
+            AdapterInvocationShape::ByteStream,
+        ),
+    ] {
+        let target = InvocationAdapterTarget {
+            supplier_code: "kling".to_owned(),
+            endpoint_key: "kling.stream".to_owned(),
+            base_url: "https://adapter.example".to_owned(),
+            path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
+            standard_path: "/v1/videos/stream".to_owned(),
+            gateway_token: Some("adapter-token".to_owned()),
+            shape,
+            adapter_invocation_shape,
+        };
+        let interceptor = ProviderAdapterDispatchInterceptor::new(Arc::new(FixedAdapterResolver {
+            target: Some(target.clone()),
+        }));
+        let mut invocation = provider_native_invocation();
+        invocation.billing = InvocationBilling::free();
+
+        interceptor.before(&mut invocation).await.unwrap();
+
+        assert_eq!(
+            DispatchMode::InternalProviderAdapter,
+            invocation.dispatch.mode
+        );
+        assert_eq!(Some(target), invocation.dispatch.adapter_target);
+    }
+}
+
+#[tokio::test]
+async fn billable_file_upload_can_use_buffered_terminal_usage_contract() {
+    let target = InvocationAdapterTarget {
+        supplier_code: "s3".to_owned(),
+        endpoint_key: "storage.objects.put".to_owned(),
+        base_url: "https://adapter.example".to_owned(),
+        path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
+        standard_path: "/cloud/v3/storage/buckets/test/objects/file".to_owned(),
+        gateway_token: Some("adapter-token".to_owned()),
+        shape: InvocationShape::ByteStream,
+        adapter_invocation_shape: AdapterInvocationShape::FileUpload,
+    };
+    let interceptor = ProviderAdapterDispatchInterceptor::new(Arc::new(FixedAdapterResolver {
+        target: Some(target.clone()),
+    }));
+    let mut invocation = provider_native_invocation();
+
+    interceptor.before(&mut invocation).await.unwrap();
+
+    assert_eq!(
+        DispatchMode::InternalProviderAdapter,
+        invocation.dispatch.mode
+    );
+    assert_eq!(Some(target), invocation.dispatch.adapter_target);
 }
 
 #[tokio::test]

@@ -34,32 +34,152 @@ function collectCreateTables(sql) {
   return names;
 }
 
+function readJson(filePath, label, failures) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    failures.push(`${label} is missing or invalid JSON: ${error.message}`);
+    return null;
+  }
+}
+
+function sameStringSet(left, right) {
+  if (left.size !== right.size) {
+    return false;
+  }
+  return [...left].every((value) => right.has(value));
+}
+
+function loadModuleOwnership(root, relativeRoot, expectedModuleId, failures) {
+  const moduleRoot = path.join(root, relativeRoot);
+  const manifest = readJson(
+    path.join(moduleRoot, 'database.manifest.json'),
+    `${relativeRoot}/database.manifest.json`,
+    failures,
+  );
+  const prefixRegistry = readJson(
+    path.join(moduleRoot, 'contract/prefix-registry.json'),
+    `${relativeRoot}/contract/prefix-registry.json`,
+    failures,
+  );
+  const tableRegistry = readJson(
+    path.join(moduleRoot, 'contract/table-registry.json'),
+    `${relativeRoot}/contract/table-registry.json`,
+    failures,
+  );
+
+  if (manifest === null || prefixRegistry === null || tableRegistry === null) {
+    return null;
+  }
+  if (manifest.moduleId !== expectedModuleId) {
+    failures.push(
+      `${relativeRoot}/database.manifest.json: moduleId must be ${expectedModuleId}`,
+    );
+  }
+  if (!Array.isArray(prefixRegistry.prefixes) || prefixRegistry.prefixes.length === 0) {
+    failures.push(`${relativeRoot}: prefix registry must declare at least one prefix`);
+    return null;
+  }
+  if (!Array.isArray(tableRegistry.tables)) {
+    failures.push(`${relativeRoot}: table registry must declare tables[]`);
+    return null;
+  }
+
+  const prefixOwners = prefixRegistry.prefixes
+    .filter((row) => typeof row?.prefix === 'string' && row.prefix.length > 0)
+    .slice()
+    .sort((left, right) => right.prefix.length - left.prefix.length);
+  if (!prefixOwners.some(({ prefix }) => prefix === manifest.tablePrefix)) {
+    failures.push(
+      `${relativeRoot}: manifest tablePrefix ${manifest.tablePrefix ?? '<missing>'} is not registered`,
+    );
+  }
+
+  const tableNames = new Set();
+  for (const row of tableRegistry.tables) {
+    if (typeof row?.table_name !== 'string' || row.table_name.trim() === '') {
+      failures.push(`${relativeRoot}: table-registry table_name is required`);
+      continue;
+    }
+    if (tableNames.has(row.table_name)) {
+      failures.push(`${relativeRoot}: duplicate table-registry entry ${row.table_name}`);
+      continue;
+    }
+    tableNames.add(row.table_name);
+    if (namespaceForTable(row.table_name, prefixOwners) === null) {
+      failures.push(
+        `${relativeRoot} table-registry ${row.table_name}: table prefix is not registered by this module`,
+      );
+    }
+    if (typeof row.owner !== 'string' || row.owner.trim() === '') {
+      failures.push(`${relativeRoot} table-registry ${row.table_name}: write owner is required`);
+    }
+    if (typeof row.system_of_record !== 'boolean') {
+      failures.push(
+        `${relativeRoot} table-registry ${row.table_name}: system_of_record must be explicit`,
+      );
+    }
+  }
+
+  const materializedTables = new Set(
+    Array.isArray(manifest.materializedTables) ? manifest.materializedTables : [],
+  );
+  if (!sameStringSet(tableNames, materializedTables)) {
+    failures.push(
+      `${relativeRoot}: manifest materializedTables must exactly match its table registry`,
+    );
+  }
+
+  return { manifest, prefixOwners, tableNames };
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const failures = [];
 
-  const prefixRegistry = JSON.parse(
-    fs.readFileSync(path.join(args.root, 'database/contract/prefix-registry.json'), 'utf8'),
-  );
-  const tableRegistry = JSON.parse(
-    fs.readFileSync(path.join(args.root, 'database/contract/table-registry.json'), 'utf8'),
-  );
-  const prefixOwners = prefixRegistry.prefixes
-    .slice()
-    .sort((left, right) => right.prefix.length - left.prefix.length);
+  const rootOwnership = loadModuleOwnership(args.root, 'database', 'clawrouter', failures);
+  const allOwnedTables = new Map();
+  if (rootOwnership !== null) {
+    for (const tableName of rootOwnership.tableNames) {
+      allOwnedTables.set(tableName, 'clawrouter');
+    }
+  }
 
-  for (const row of tableRegistry.tables) {
-    const namespace = namespaceForTable(row.table_name, prefixOwners);
-    if (namespace === null) {
-      failures.push(
-        `table-registry ${row.table_name}: table prefix is not registered`,
+  const declaredModules = rootOwnership?.manifest.modules;
+  if (!Array.isArray(declaredModules)) {
+    failures.push('database/database.manifest.json: modules must be an array');
+  } else {
+    const seenModules = new Set();
+    for (const moduleId of declaredModules) {
+      if (typeof moduleId !== 'string' || !/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/u.test(moduleId)) {
+        failures.push(`database/database.manifest.json: invalid module id ${String(moduleId)}`);
+        continue;
+      }
+      if (seenModules.has(moduleId)) {
+        failures.push(`database/database.manifest.json: duplicate module ${moduleId}`);
+        continue;
+      }
+      seenModules.add(moduleId);
+      const relativeRoot = path.posix.join('database/modules', moduleId);
+      const moduleOwnership = loadModuleOwnership(
+        args.root,
+        relativeRoot,
+        moduleId,
+        failures,
       );
-    }
-    if (typeof row.owner !== 'string' || row.owner.trim() === '') {
-      failures.push(`table-registry ${row.table_name}: write owner is required`);
-    }
-    if (typeof row.system_of_record !== 'boolean') {
-      failures.push(`table-registry ${row.table_name}: system_of_record must be explicit`);
+      if (moduleOwnership === null) {
+        continue;
+      }
+      for (const tableName of moduleOwnership.tableNames) {
+        const existingOwner = allOwnedTables.get(tableName);
+        if (existingOwner !== undefined) {
+          failures.push(
+            `table ${tableName} is registered by both ${existingOwner} and ${moduleId}`,
+          );
+          continue;
+        }
+        allOwnedTables.set(tableName, moduleId);
+      }
     }
   }
 
@@ -68,10 +188,18 @@ function main() {
     'database/ddl/baseline/postgres/0001_clawrouter_baseline.sql',
   );
   const baselineSql = fs.readFileSync(baselinePath, 'utf8');
-  for (const tableName of collectCreateTables(baselineSql)) {
-    if (namespaceForTable(tableName, prefixOwners) === null) {
+  const baselineTables = new Set(collectCreateTables(baselineSql));
+  for (const tableName of baselineTables) {
+    if (!allOwnedTables.has(tableName)) {
       failures.push(
-        `claw-router baseline must not define unregistered or imported table ${tableName}`,
+        `claw-router baseline must not define table ${tableName} without a root or declared-module registry owner`,
+      );
+    }
+  }
+  for (const [tableName, owner] of allOwnedTables) {
+    if (!baselineTables.has(tableName)) {
+      failures.push(
+        `claw-router baseline is missing registered table ${tableName} owned by ${owner}`,
       );
     }
   }

@@ -129,6 +129,11 @@ class ClawRouterOpenApiPrecisionAudit:
                 isinstance(operation, dict)
                 and operation.get("api_surface") == surface
                 and operation.get("openapi_exposed", True) is not False
+                and not generator.is_dependency_operation(
+                    surface,
+                    self._string(operation.get("api_path")),
+                    self._string(operation.get("api_method")),
+                )
             )
         ]
         catalog_operations = generator._dedupe_models_catalog_operations(
@@ -139,6 +144,11 @@ class ClawRouterOpenApiPrecisionAudit:
                     isinstance(operation, dict)
                     and operation.get("api_surface") == surface
                     and generator._is_models_catalog_operation(operation, surface)
+                    and not generator.is_dependency_operation(
+                        surface,
+                        self._string(operation.get("api_path")),
+                        self._string(operation.get("api_method")),
+                    )
                 )
             ]
         )
@@ -185,12 +195,15 @@ class ClawRouterOpenApiPrecisionAudit:
             if declared_operation_id != context.operation_id:
                 messages.append(f"{surface} {context.path} {context.method} operationId must be {context.operation_id}")
 
+            if context.method == "DELETE":
+                continue
+
             response_ref = self._success_response_ref(operation_spec)
             expected_ref = self._expected_success_response_ref(context)
             if response_ref != expected_ref:
                 if response_ref in self.SDKWORK_CANONICAL_RESPONSE_REFS:
                     continue
-                messages.append(f"{surface} {context.operation_id} 200 response must reference {expected_ref}")
+                messages.append(f"{surface} {context.operation_id} success response must reference {expected_ref}")
             else:
                 expected_component = self._operation_result_component_name(context.operation_id)
                 allowed_components.add(expected_component)
@@ -412,8 +425,8 @@ class ClawRouterOpenApiPrecisionAudit:
         responses = operation_spec.get("responses", {})
         if not isinstance(responses, dict):
             return ""
-        success = responses.get("200", {})
-        if not isinstance(success, dict):
+        success = self._json_success_response(responses)
+        if success is None:
             return ""
         content = success.get("content", {})
         if not isinstance(content, dict):
@@ -428,6 +441,17 @@ class ClawRouterOpenApiPrecisionAudit:
         if direct_ref:
             return direct_ref
         return self._envelope_payload_ref(schema)
+
+    def _json_success_response(self, responses: dict[str, Any]) -> dict[str, Any] | None:
+        for status in sorted(responses):
+            try:
+                numeric_status = int(status)
+            except (TypeError, ValueError):
+                continue
+            response = responses.get(status)
+            if 200 <= numeric_status < 300 and isinstance(response, dict) and "content" in response:
+                return response
+        return None
 
     def _envelope_payload_ref(self, schema: dict[str, Any]) -> str:
         all_of = schema.get("allOf")

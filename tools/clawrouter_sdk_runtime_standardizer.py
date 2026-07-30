@@ -256,6 +256,17 @@ SDK_DEPENDENCIES = {
                 "typescript": "@sdkwork/models-app-sdk",
             },
         },
+        {
+            "workspace": "sdkwork-drive-app-sdk",
+            "role": "drive-app-storage-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/app/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/drive-app-sdk",
+            },
+        },
     ],
     "clawrouter-backend-sdk": [
         {
@@ -292,18 +303,52 @@ SDK_DEPENDENCIES = {
                 "python": "sdkwork-models-backend-sdk",
             },
         },
+        {
+            "workspace": "sdkwork-membership-backend-sdk",
+            "role": "membership-backend-management-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/membership-backend-sdk",
+            },
+        },
+        {
+            "workspace": "sdkwork-payment-backend-sdk",
+            "role": "payment-backend-management-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/payment-backend-sdk",
+            },
+        },
+        {
+            "workspace": "sdkwork-promotion-backend-sdk",
+            "role": "promotion-backend-management-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/promotion-backend-sdk",
+            },
+        },
+        {
+            "workspace": "sdkwork-drive-backend-sdk",
+            "role": "drive-backend-management-capability",
+            "required": True,
+            "dependencyMode": "consumer-sdk",
+            "apiPrefix": "/backend/v3/api",
+            "generatedTransportImportPolicy": "forbidden",
+            "packageByLanguage": {
+                "typescript": "@sdkwork/drive-backend-sdk",
+            },
+        },
     ],
 }
-SDK_DEPENDENCY_OPERATION_KEY_OVERRIDES = {
-    "sdkwork-iam-app-sdk": {
-        "POST auth/verification_codes",
-        "POST auth/verification_codes/verify",
-    },
-}
-CLAWROUTER_APP_SDK_IAM_OWNER_OPERATION_PREFIXES = (
-    "apiKeys.",
-    "users.",
-)
 GENERATED_TEXT_FILE_EXTENSIONS = {
     ".bat",
     ".cmd",
@@ -702,11 +747,6 @@ class SdkRuntimeStandardizer:
                     prefix=str(dependency["apiPrefix"]),
                     dependency_operation_keys=dependency_routes,
                 )
-            removed.extend(self._remove_dependency_domain_operations(
-                payload=payload,
-                prefix=str(dependency["apiPrefix"]),
-                dependency_domain=self._dependency_domain(dependency),
-            ))
             if removed:
                 excluded_by_dependency[str(dependency["workspace"])] = sorted(set(removed))
 
@@ -762,70 +802,30 @@ class SdkRuntimeStandardizer:
             return set()
         authority_path = self._dependency_authority_path(workspace)
         dependency_payload = self._read_mapping_or_none(authority_path)
-        operation_keys = set(SDK_DEPENDENCY_OPERATION_KEY_OVERRIDES.get(workspace, set()))
+        operation_keys: set[str] = set()
         if dependency_payload is None:
             return operation_keys
         operation_keys.update(self._operation_keys(dependency_payload, prefix))
         return operation_keys
 
     def _dependency_authority_path(self, workspace: str) -> Path:
-        iam_root = self._dependency_root("sdkwork-iam")
-        mapping = {
-            "sdkwork-iam-app-sdk": iam_root
-            / "sdks"
-            / "sdkwork-iam-app-sdk"
-            / "openapi"
-            / "sdkwork-iam-app-api.openapi.yaml",
-            "sdkwork-iam-backend-sdk": iam_root
-            / "sdks"
-            / "sdkwork-iam-backend-sdk"
-            / "openapi"
-            / "sdkwork-iam-backend-api.openapi.yaml",
-            "sdkwork-models-backend-sdk": self._dependency_root("sdkwork-models")
-            / "sdks"
-            / "sdkwork-models-backend-sdk"
-            / "openapi"
-            / "sdkwork-models-backend-api.openapi.json",
-            "sdkwork-models-app-sdk": self._dependency_root("sdkwork-models")
-            / "sdks"
-            / "sdkwork-models-app-sdk"
-            / "openapi"
-            / "sdkwork-models-app-api.openapi.json",
-            "sdkwork-account-app-sdk": self._dependency_root("sdkwork-account")
-            / "sdks"
-            / "sdkwork-account-app-sdk"
-            / "openapi"
-            / "account-app-api.openapi.json",
-            "sdkwork-membership-app-sdk": self._dependency_root("sdkwork-membership")
-            / "sdks"
-            / "sdkwork-membership-app-sdk"
-            / "openapi"
-            / "sdkwork-membership-app-api.openapi.json",
-            "sdkwork-order-app-sdk": self._dependency_root("sdkwork-order")
-            / "sdks"
-            / "sdkwork-order-app-sdk"
-            / "openapi"
-            / "sdkwork-order-app-api.openapi.json",
-            "sdkwork-catalog-app-sdk": self._dependency_root("sdkwork-catalog")
-            / "sdks"
-            / "sdkwork-catalog-app-sdk"
-            / "openapi"
-            / "sdkwork-catalog-app-api.openapi.json",
-            "sdkwork-payment-app-sdk": self._dependency_root("sdkwork-payment")
-            / "sdks"
-            / "sdkwork-payment-app-sdk"
-            / "openapi"
-            / "sdkwork-payment-app-api.openapi.json",
-            "sdkwork-promotion-app-sdk": self._dependency_root("sdkwork-promotion")
-            / "sdks"
-            / "sdkwork-promotion-app-sdk"
-            / "openapi"
-            / "sdkwork-promotion-app-api.openapi.json",
-        }
-        return mapping.get(
-            workspace,
-            self.root / ".sdkwork" / "dependencies" / workspace / "openapi.json",
-        )
+        for suffix in ("-app-sdk", "-backend-sdk", "-open-sdk"):
+            if not workspace.endswith(suffix):
+                continue
+            repository = workspace[: -len(suffix)]
+            family_root = self._dependency_root(repository) / "sdks" / workspace
+            manifest = self._read_mapping_or_none(family_root / "sdk-manifest.json")
+            if manifest is None:
+                break
+            relative_spec = str(
+                manifest.get("authoritySpec")
+                or manifest.get("generationInputSpec")
+                or ""
+            ).strip()
+            if relative_spec:
+                return (family_root / relative_spec).resolve()
+            break
+        return self.root / ".sdkwork" / "dependencies" / workspace / "openapi.json"
 
     def _dependency_root(self, dependency_name: str) -> Path:
         materialized_root = self.root / ".sdkwork" / "dependencies" / dependency_name
@@ -879,55 +879,6 @@ class SdkRuntimeStandardizer:
                     continue
                 del path_item[method]
                 removed.append(operation_key)
-            if not any(self._is_openapi_method(str(item).lower()) for item in path_item):
-                del paths[path_key]
-        return sorted(removed)
-
-    def _dependency_domain(self, dependency: dict[str, Any]) -> str | None:
-        workspace = str(dependency.get("workspace") or "")
-        if workspace.startswith("sdkwork-iam-"):
-            return "iam"
-        if workspace.startswith("clawrouter-") and workspace.endswith("-capability"):
-            if "wallet" in workspace or "membership" in workspace or "promotion" in workspace or "order" in workspace or "payment" in workspace or "catalog" in workspace or "inventory" in workspace or "finance" in workspace:
-                return workspace.replace("clawrouter-app-", "").replace("clawrouter-backend-", "").replace("-capability", "")
-        return None
-
-    def _remove_dependency_domain_operations(
-        self,
-        *,
-        payload: dict[str, Any],
-        prefix: str,
-        dependency_domain: str | None,
-    ) -> list[str]:
-        if not dependency_domain:
-            return []
-
-        paths = payload.get("paths")
-        if not isinstance(paths, dict):
-            return []
-
-        removed: list[str] = []
-        for path_key in list(paths.keys()):
-            path_item = paths.get(path_key)
-            route = self._normalized_route(str(path_key), prefix)
-            if route is None or not isinstance(path_item, dict):
-                continue
-            for method in list(path_item.keys()):
-                normalized_method = str(method).lower()
-                operation = path_item.get(method)
-                if not self._is_openapi_method(normalized_method) or not isinstance(operation, dict):
-                    continue
-                domain = operation.get("x-sdkwork-domain") or operation.get("x-sdk-domain")
-                if domain != dependency_domain:
-                    continue
-                operation_id = str(operation.get("operationId") or "")
-                if (
-                    dependency_domain == "iam"
-                    and any(operation_id.startswith(prefix) for prefix in CLAWROUTER_APP_SDK_IAM_OWNER_OPERATION_PREFIXES)
-                ):
-                    continue
-                del path_item[method]
-                removed.append(f"{normalized_method.upper()} {route}")
             if not any(self._is_openapi_method(str(item).lower()) for item in path_item):
                 del paths[path_key]
         return sorted(removed)

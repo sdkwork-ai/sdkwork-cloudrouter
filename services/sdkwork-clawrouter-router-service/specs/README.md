@@ -50,6 +50,28 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 
 - No local extension specs are declared yet.
 
+## Runtime ID Lease
+
+Server and container runtimes allocate one process-wide Snowflake generator through
+`sdkwork-database-id` and the shared PostgreSQL `sdkwork_node_registry` authority. The allocator
+uses expiring heartbeats, random ownership tokens, monotonic lease versions, and generator fencing.
+Runtime writes fail closed while no healthy lease is installed, and readiness remains false until
+lease recovery succeeds.
+
+Prometheus exports `clawrouter_runtime_id_generator_ready` and
+`clawrouter_runtime_id_failures_total{operation,reason}` with bounded operational labels. Raw
+database errors, lease tokens, hostnames, Pod UIDs, and request context are not metric labels.
+
+`SDKWORK_NODE_HOSTNAME` and `SDKWORK_NODE_INSTANCE_ID` provide diagnostic instance identity.
+`SDKWORK_CLAW_SNOWFLAKE_NODE_ID` is a single-process desktop development override only and is
+rejected for server, Docker, and Kubernetes deployments.
+
+Commercial production remains blocked by the canonical allocator's runtime registry DDL. The
+`sdkwork-database` owner must separate migrator-owned provisioning from a runtime allocation path
+that needs schema `USAGE` and table `SELECT`/`INSERT`/`UPDATE` only; granting schema `CREATE` to the
+Claw Router runtime role is not an accepted workaround.
+
 ## Verification
 
-- `cargo test --manifest-path apps/sdkwork-clawrouter/services/sdkwork-clawrouter-router-service/Cargo.toml`
+- `cargo test -p sdkwork-clawrouter-router-service runtime_id::tests --lib`
+- `python -m unittest tests.test_database_runtime_id_standard`

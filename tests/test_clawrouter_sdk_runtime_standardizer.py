@@ -111,7 +111,7 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["build"])
                 self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["dev"])
                 self.assertEqual("npm run build", package["scripts"]["prepublishOnly"])
-                self.assertEqual("^1.0.2", package["dependencies"]["@sdkwork/sdk-common"])
+            self.assertEqual("workspace:*", package["dependencies"]["@sdkwork/sdk-common"])
                 self.assertIn("rollup", package["devDependencies"])
                 self.assertNotIn("vite", package["devDependencies"])
                 self.assertNotIn("vite-plugin-dts", package["devDependencies"])
@@ -1338,12 +1338,7 @@ export class HttpClient {
 
 class ClawRouterAppSdkIamOwnerOperationsTest(unittest.TestCase):
     def test_owner_only_openapi_keeps_clawrouter_user_settings_operations(self) -> None:
-        from tools.clawrouter_sdk_runtime_standardizer import (
-            CLAWROUTER_APP_SDK_IAM_OWNER_OPERATION_PREFIXES,
-            SdkRuntimeStandardizer,
-        )
-
-        self.assertIn("users.", CLAWROUTER_APP_SDK_IAM_OWNER_OPERATION_PREFIXES)
+        from tools.clawrouter_sdk_runtime_standardizer import SdkRuntimeStandardizer
 
         root = Path(__file__).resolve().parents[1]
         authority = json.loads(

@@ -232,6 +232,7 @@
       "capability": "usage-logs",
       "targetCrate": "crates/sdkwork-clawrouter-usage-logs-repository-sqlx",
       "storePaths": [
+        "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/app_gateway_traces_read_store.rs",
         "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
       ],
       "tables": [
@@ -538,9 +539,9 @@
     }
   ],
   "inventoryStats": {
-    "activeStoreFiles": 31,
-    "coveredStoreFiles": 31,
+    "activeStoreFiles": 32,
+    "coveredStoreFiles": 32,
     "capabilityGroups": 29,
-    "logicalStores": 31
+    "logicalStores": 32
   }
 }

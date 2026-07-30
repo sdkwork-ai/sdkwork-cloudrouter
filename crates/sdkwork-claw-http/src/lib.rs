@@ -11,6 +11,7 @@ pub mod query_string;
 pub mod readiness;
 pub mod router;
 pub mod shutdown;
+#[cfg(test)]
 pub mod signing_service;
 pub mod tenant_isolation;
 pub mod web_bridge;
@@ -68,6 +69,7 @@ pub use router::{
 pub use sdkwork_claw_contract::{ApiSurface, ContractOperation};
 pub use sdkwork_iam_web_adapter::TenantSigningKeyResolver;
 pub use shutdown::{subscribe_shutdown_signal, wait_for_shutdown_signal};
+#[cfg(test)]
 pub use signing_service::{
     InMemorySigningKeyStore, SessionTokenSigningService, SigningServiceConfig, TokenWithKid,
 };

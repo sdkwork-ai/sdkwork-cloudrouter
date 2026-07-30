@@ -824,7 +824,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/marketing/referral_stats",
-      "operationId": "system.marketing.referralStats.list",
+      "operationId": "marketing.referralStats.list",
       "tags": [
         "system"
       ],
@@ -849,34 +849,8 @@
     },
     {
       "method": "GET",
-      "path": "/backend/v3/api/payments/runtime/snapshot",
-      "operationId": "payments.runtime.snapshot.retrieve",
-      "tags": [
-        "payments"
-      ],
-      "auth": {
-        "mode": "dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-clawrouter",
-        "apiAuthority": "sdkwork-clawrouter-backend-api"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-clawrouter-backend-api",
-        "openApiAuthority": "apis/backend-api/clawrouter/clawrouter-backend-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "backend-api"
-    },
-    {
-      "method": "GET",
       "path": "/backend/v3/api/recharges/orders",
-      "operationId": "recharges.orders.management.list",
+      "operationId": "orders.management.list",
       "tags": [
         "recharges"
       ],
@@ -902,7 +876,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/recharges/orders/{orderId}",
-      "operationId": "recharges.orders.management.retrieve",
+      "operationId": "orders.management.retrieve",
       "tags": [
         "recharges"
       ],
@@ -928,7 +902,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/recharges/packages",
-      "operationId": "recharges.packages.management.list",
+      "operationId": "packages.management.list",
       "tags": [
         "recharges"
       ],
@@ -954,7 +928,7 @@
     {
       "method": "POST",
       "path": "/backend/v3/api/recharges/packages",
-      "operationId": "recharges.packages.create",
+      "operationId": "packages.create",
       "tags": [
         "recharges"
       ],
@@ -980,7 +954,7 @@
     {
       "method": "DELETE",
       "path": "/backend/v3/api/recharges/packages/{packageId}",
-      "operationId": "recharges.packages.delete",
+      "operationId": "packages.delete",
       "tags": [
         "recharges"
       ],
@@ -1006,7 +980,7 @@
     {
       "method": "PATCH",
       "path": "/backend/v3/api/recharges/packages/{packageId}",
-      "operationId": "recharges.packages.update",
+      "operationId": "packages.update",
       "tags": [
         "recharges"
       ],
@@ -1032,7 +1006,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/recharges/settings",
-      "operationId": "recharges.settings.management.retrieve",
+      "operationId": "settings.management.retrieve",
       "tags": [
         "recharges"
       ],
@@ -1058,7 +1032,7 @@
     {
       "method": "PUT",
       "path": "/backend/v3/api/recharges/settings",
-      "operationId": "recharges.settings.update",
+      "operationId": "settings.update",
       "tags": [
         "recharges"
       ],

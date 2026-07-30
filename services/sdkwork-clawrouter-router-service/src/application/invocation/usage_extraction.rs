@@ -271,10 +271,34 @@ impl StreamingUsageAccumulator {
         let Ok(value) = serde_json::from_str::<Value>(text) else {
             return;
         };
-        if value.get("usage").is_some() || value.get("usageMetadata").is_some() {
-            self.latest_usage_body = Some(value);
+        if let Some(usage_body) = streaming_usage_body_from_event(value) {
+            self.latest_usage_body = Some(usage_body);
         }
     }
+}
+
+fn streaming_usage_body_from_event(mut event: Value) -> Option<Value> {
+    let event = event.as_object_mut()?;
+    if let Some(usage_body) = take_usage_body(event) {
+        return Some(usage_body);
+    }
+
+    event
+        .get_mut("response")
+        .and_then(Value::as_object_mut)
+        .and_then(take_usage_body)
+}
+
+fn take_usage_body(object: &mut serde_json::Map<String, Value>) -> Option<Value> {
+    for field in ["usage", "usageMetadata"] {
+        if let Some(usage) = object.remove(field) {
+            return Some(Value::Object(serde_json::Map::from_iter([(
+                field.to_owned(),
+                usage,
+            )])));
+        }
+    }
+    None
 }
 
 fn trim_ascii_start(bytes: &[u8]) -> &[u8] {

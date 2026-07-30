@@ -2,7 +2,7 @@ schema_version: 1
 kind: sdkwork.database.schema
 database_role: authoritative-server
 module_id: operations
-contract_version: 0.3.0
+contract_version: 0.4.0
 owner_team: claw-router-platform
 compliance_level: L2
 engines:

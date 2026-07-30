@@ -1,3 +1,4 @@
+use sdkwork_utils_rust::truncate;
 use serde_json::{json, Value};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
@@ -209,9 +210,10 @@ impl AppChatStore for PostgresAppChatStore {
                  AND t.organization_id = m.organization_id
                  AND t.user_id = m.user_id
                 LEFT JOIN ai_runtime_usage_link u
-                  ON u.uuid = m.usage_link_id
+                 ON u.uuid = m.usage_link_id
                  AND u.tenant_id = m.tenant_id
                  AND u.organization_id = m.organization_id
+                 AND u.user_id = m.user_id
                 WHERE m.tenant_id = $1
                   AND m.organization_id = $2
                   AND m.user_id = $3
@@ -276,10 +278,10 @@ async fn create_turn(
         .await?
         .ok_or_else(|| DomainError::not_found("chat conversation was not found"))?;
     let conversation_pk = conversation.get::<i64, _>("id");
-    let next_turn_no = next_count(&mut tx, ChatCountTable::AiChatTurn, conversation_pk).await?;
-    let next_sequence_no = next_count(&mut tx, ChatCountTable::AiChatItem, conversation_pk).await?;
-    let next_message_no =
-        next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
+    let next_turn_no = checked_counter_next(&conversation, "turn_count", "chat turn")?;
+    let next_sequence_no = checked_counter_next(&conversation, "item_count", "chat item")?;
+    let output_sequence_no = checked_sequence_next(next_sequence_no, "chat item")?;
+    let next_message_no = checked_counter_next(&conversation, "message_count", "chat message")?;
 
     let turn_id = next_claw_runtime_id("ai_chat_turn")?;
     sqlx::query(
@@ -291,6 +293,7 @@ async fn create_turn(
             user_id,
             conversation_id,
             turn_no,
+            mode,
             status,
             created_at,
             updated_at,
@@ -301,7 +304,7 @@ async fn create_turn(
             metadata,
             id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, 'running', $7::timestamp AT TIME ZONE 'UTC', $7::timestamp AT TIME ZONE 'UTC', $8, $9, $10, $11, $12::jsonb, $13)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'running', $8::timestamp AT TIME ZONE 'UTC', $8::timestamp AT TIME ZONE 'UTC', $9, $10, $11, $12, $13::jsonb, $14)
         "#,
     )
     .bind(&command.turn_uuid)
@@ -310,6 +313,7 @@ async fn create_turn(
     .bind(command.subject.user_id)
     .bind(conversation_pk)
     .bind(next_turn_no)
+    .bind(&command.mode)
     .bind(&command.requested_at)
     .bind(&command.provider)
     .bind(&command.model)
@@ -336,13 +340,13 @@ async fn create_turn(
     )
     .await?;
 
-    let _output_item_id = insert_item(
+    let output_item_id = insert_item(
         &mut tx,
         &command,
         conversation_pk,
         turn_id,
         &command.output_item_uuid,
-        next_sequence_no + 1,
+        output_sequence_no,
         "message",
         Some("assistant"),
         "output",
@@ -352,6 +356,7 @@ async fn create_turn(
     .await?;
 
     let message_id = next_claw_runtime_id("ai_chat_message")?;
+    let last_message_preview = truncate(&command.message, 1024, None);
     sqlx::query(
         r#"
         INSERT INTO ai_chat_message (
@@ -439,13 +444,19 @@ async fn create_turn(
             last_turn_id = $3,
             last_item_id = $4,
             version = version + 1
-        WHERE id = $5
+        WHERE tenant_id = $5
+          AND organization_id = $6
+          AND user_id = $7
+          AND id = $8
         "#,
     )
     .bind(&command.requested_at)
-    .bind(&command.message)
+    .bind(&last_message_preview)
     .bind(turn_id)
-    .bind(input_item_id)
+    .bind(output_item_id)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(command.subject.user_id)
     .bind(conversation_pk)
     .execute(&mut *tx)
     .await
@@ -554,8 +565,8 @@ async fn complete_turn_response(
     let input_item = load_turn_input_item_row(&mut tx, command.subject, conversation_pk, turn_pk)
         .await?
         .ok_or_else(|| DomainError::conflict("chat turn input item was not found"))?;
-    let next_message_no =
-        next_count(&mut tx, ChatCountTable::AiChatMessage, conversation_pk).await?;
+    let next_message_no = checked_counter_next(&conversation, "message_count", "chat message")?;
+    let last_message_preview = truncate(&command.message, 1024, None);
     let usage = command.usage.clone().unwrap_or_default();
     let usage_link_id = if command.usage.is_some()
         || command.runtime_invocation_id.is_some()
@@ -585,6 +596,11 @@ async fn complete_turn_response(
             completed_at = $6::timestamp AT TIME ZONE 'UTC',
             metadata = $7::jsonb
         WHERE id = $8
+          AND tenant_id = $9
+          AND organization_id = $10
+          AND user_id = $11
+          AND conversation_id = $12
+          AND turn_id = $13
         "#,
     )
     .bind(&command.status)
@@ -595,6 +611,11 @@ async fn complete_turn_response(
     .bind(&command.requested_at)
     .bind(&metadata)
     .bind(output_item_pk)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(command.subject.user_id)
+    .bind(conversation_pk)
+    .bind(turn_pk)
     .execute(&mut *tx)
     .await
     .map_err(sql_error)?;
@@ -717,6 +738,10 @@ async fn complete_turn_response(
             context_snapshot_id = $15,
             metadata = $16::jsonb
         WHERE id = $17
+          AND tenant_id = $18
+          AND organization_id = $19
+          AND user_id = $20
+          AND conversation_id = $21
         "#,
     )
     .bind(&command.status)
@@ -736,6 +761,10 @@ async fn complete_turn_response(
     .bind(context_snapshot_id)
     .bind(&metadata)
     .bind(turn_pk)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(command.subject.user_id)
+    .bind(conversation_pk)
     .execute(&mut *tx)
     .await
     .map_err(sql_error)?;
@@ -756,10 +785,13 @@ async fn complete_turn_response(
             currency = COALESCE($10, currency),
             version = version + 1
         WHERE id = $11
+          AND tenant_id = $12
+          AND organization_id = $13
+          AND user_id = $14
         "#,
     )
     .bind(&command.requested_at)
-    .bind(&command.message)
+    .bind(&last_message_preview)
     .bind(turn_pk)
     .bind(output_item_pk)
     .bind(usage.input_tokens)
@@ -769,6 +801,9 @@ async fn complete_turn_response(
     .bind(&usage.cost_amount)
     .bind(&usage.currency)
     .bind(conversation_pk)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(command.subject.user_id)
     .execute(&mut *tx)
     .await
     .map_err(sql_error)?;
@@ -821,7 +856,7 @@ async fn load_conversation_row(
 ) -> DomainResult<Option<sqlx::postgres::PgRow>> {
     sqlx::query(
         r#"
-        SELECT id, conversation_code
+        SELECT id, conversation_code, message_count, turn_count, item_count
         FROM ai_chat_conversation
         WHERE tenant_id = $1
           AND organization_id = $2
@@ -829,6 +864,7 @@ async fn load_conversation_row(
           AND conversation_code = $4
           AND status <> 'deleted'
           AND deleted_at IS NULL
+        FOR UPDATE
         "#,
     )
     .bind(subject.tenant_id)
@@ -947,6 +983,10 @@ async fn load_existing_turn_response_outcome(
           ON u.uuid = m.usage_link_id
          AND u.tenant_id = m.tenant_id
          AND u.organization_id = m.organization_id
+         AND u.user_id = m.user_id
+         AND u.user_id = m.user_id
+         AND u.user_id = m.user_id
+         AND u.user_id = m.user_id
         WHERE m.tenant_id = $1
           AND m.organization_id = $2
           AND m.user_id = $3
@@ -1057,9 +1097,10 @@ async fn update_existing_streaming_turn_response_outcome(
          AND t.organization_id = i.organization_id
          AND t.user_id = i.user_id
         LEFT JOIN ai_runtime_usage_link u
-          ON u.uuid = m.usage_link_id
+         ON u.uuid = m.usage_link_id
          AND u.tenant_id = m.tenant_id
          AND u.organization_id = m.organization_id
+         AND u.user_id = m.user_id
         WHERE i.tenant_id = $1
           AND i.organization_id = $2
           AND i.user_id = $3
@@ -1102,7 +1143,8 @@ async fn update_existing_streaming_turn_response_outcome(
     let input_item = load_turn_input_item_row(tx, subject, conversation_pk, turn_pk)
         .await?
         .ok_or_else(|| DomainError::conflict("chat turn input item was not found"))?;
-    let output_item = load_output_item_row_by_pk(tx, output_item_pk).await?;
+    let output_item =
+        load_output_item_row_by_pk(tx, subject, conversation_pk, turn_pk, output_item_pk).await?;
     let usage = command.usage.clone().unwrap_or_default();
     let existing_usage = usage_from_row(&row).unwrap_or_default();
     let usage_link_id = reconcile_usage_link(
@@ -1127,6 +1169,11 @@ async fn update_existing_streaming_turn_response_outcome(
             completed_at = CASE WHEN $6 IN ('completed', 'failed', 'cancelled') THEN $7::timestamp AT TIME ZONE 'UTC' ELSE completed_at END,
             metadata = $8::jsonb
         WHERE id = $9
+          AND tenant_id = $10
+          AND organization_id = $11
+          AND user_id = $12
+          AND conversation_id = $13
+          AND turn_id = $14
         "#,
     )
     .bind(&command.status)
@@ -1138,6 +1185,11 @@ async fn update_existing_streaming_turn_response_outcome(
     .bind(&command.requested_at)
     .bind(metadata)
     .bind(output_item_pk)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(subject.user_id)
+    .bind(conversation_pk)
+    .bind(turn_pk)
     .execute(&mut **tx)
     .await
     .map_err(sql_error)?;
@@ -1155,6 +1207,11 @@ async fn update_existing_streaming_turn_response_outcome(
             updated_at = $8::timestamp AT TIME ZONE 'UTC',
             metadata = $9::jsonb
         WHERE id = $10
+          AND tenant_id = $11
+          AND organization_id = $12
+          AND user_id = $13
+          AND conversation_id = $14
+          AND turn_id = $15
         "#,
     )
     .bind(&command.status)
@@ -1167,6 +1224,11 @@ async fn update_existing_streaming_turn_response_outcome(
     .bind(&command.requested_at)
     .bind(metadata)
     .bind(message_pk)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(subject.user_id)
+    .bind(conversation_pk)
+    .bind(turn_pk)
     .execute(&mut **tx)
     .await
     .map_err(sql_error)?;
@@ -1178,6 +1240,9 @@ async fn update_existing_streaming_turn_response_outcome(
             metadata = $2::jsonb
         WHERE message_id = $3
           AND item_id = $4
+          AND tenant_id = $5
+          AND organization_id = $6
+          AND user_id = $7
           AND part_no = 1
           AND part_type = 'text'
         "#,
@@ -1186,6 +1251,9 @@ async fn update_existing_streaming_turn_response_outcome(
     .bind(metadata)
     .bind(message_pk)
     .bind(output_item_pk)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(subject.user_id)
     .execute(&mut **tx)
     .await
     .map_err(sql_error)?;
@@ -1222,6 +1290,10 @@ async fn update_existing_streaming_turn_response_outcome(
             context_snapshot_id = $15,
             metadata = $16::jsonb
         WHERE id = $17
+          AND tenant_id = $18
+          AND organization_id = $19
+          AND user_id = $20
+          AND conversation_id = $21
         "#,
     )
     .bind(&command.status)
@@ -1241,10 +1313,15 @@ async fn update_existing_streaming_turn_response_outcome(
     .bind(context_snapshot_id)
     .bind(metadata)
     .bind(turn_pk)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(subject.user_id)
+    .bind(conversation_pk)
     .execute(&mut **tx)
     .await
     .map_err(sql_error)?;
 
+    let last_message_preview = truncate(&command.message, 1024, None);
     sqlx::query(
         r#"
         UPDATE ai_chat_conversation
@@ -1260,10 +1337,13 @@ async fn update_existing_streaming_turn_response_outcome(
             currency = COALESCE($11, currency),
             version = version + 1
         WHERE id = $12
+          AND tenant_id = $13
+          AND organization_id = $14
+          AND user_id = $15
         "#,
     )
     .bind(&command.requested_at)
-    .bind(&command.message)
+    .bind(&last_message_preview)
     .bind(turn_pk)
     .bind(output_item_pk)
     .bind(usage.input_tokens - existing_usage.input_tokens)
@@ -1274,6 +1354,9 @@ async fn update_existing_streaming_turn_response_outcome(
     .bind(&existing_usage.cost_amount)
     .bind(&usage.currency)
     .bind(conversation_pk)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(subject.user_id)
     .execute(&mut **tx)
     .await
     .map_err(sql_error)?;
@@ -1335,13 +1418,32 @@ async fn load_turn_input_item_row(
 
 async fn load_output_item_row_by_pk(
     tx: &mut Transaction<'_, Postgres>,
+    subject: AppChatSubject,
+    conversation_pk: i64,
+    turn_pk: i64,
     output_item_pk: i64,
 ) -> DomainResult<sqlx::postgres::PgRow> {
-    sqlx::query("SELECT id, uuid FROM ai_chat_item WHERE id = $1")
-        .bind(output_item_pk)
-        .fetch_one(&mut **tx)
-        .await
-        .map_err(sql_error)
+    sqlx::query(
+        r#"
+        SELECT id, uuid
+        FROM ai_chat_item
+        WHERE tenant_id = $1
+          AND organization_id = $2
+          AND user_id = $3
+          AND conversation_id = $4
+          AND turn_id = $5
+          AND id = $6
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(subject.user_id)
+    .bind(conversation_pk)
+    .bind(turn_pk)
+    .bind(output_item_pk)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(sql_error)
 }
 
 async fn load_turn_response_message_by_pk(
@@ -1385,9 +1487,10 @@ async fn load_turn_response_message_by_pk(
          AND t.organization_id = m.organization_id
          AND t.user_id = m.user_id
         LEFT JOIN ai_runtime_usage_link u
-          ON u.uuid = m.usage_link_id
+         ON u.uuid = m.usage_link_id
          AND u.tenant_id = m.tenant_id
          AND u.organization_id = m.organization_id
+         AND u.user_id = m.user_id
         WHERE m.tenant_id = $1
           AND m.organization_id = $2
           AND m.user_id = $3
@@ -1507,22 +1610,28 @@ async fn next_context_snapshot_no(
     subject: AppChatSubject,
     turn_pk: i64,
 ) -> DomainResult<i64> {
-    let row = sqlx::query(
+    let next_value = sqlx::query_scalar::<_, i64>(
         r#"
-        SELECT COUNT(*) + 1 AS next_value
-        FROM ai_chat_context_snapshot
+        UPDATE ai_chat_turn
+        SET context_snapshot_count = context_snapshot_count + 1
         WHERE tenant_id = $1
           AND organization_id = $2
-          AND turn_id = $3
+          AND user_id = $3
+          AND id = $4
+          AND context_snapshot_count < 9223372036854775807
+        RETURNING context_snapshot_count
         "#,
     )
     .bind(subject.tenant_id)
     .bind(subject.organization_id)
+    .bind(subject.user_id)
     .bind(turn_pk)
-    .fetch_one(&mut **tx)
+    .fetch_optional(&mut **tx)
     .await
     .map_err(sql_error)?;
-    Ok(integer_cell(&row, "next_value"))
+    next_value.ok_or_else(|| {
+        DomainError::conflict("chat context snapshot sequence is exhausted or turn is unavailable")
+    })
 }
 
 async fn load_runtime_invocation_pk(
@@ -1671,7 +1780,8 @@ async fn update_usage_link_for_message(
             metadata = $17::jsonb
         WHERE tenant_id = $18
           AND organization_id = $19
-          AND uuid = $20
+          AND user_id = $20
+          AND uuid = $21
         "#,
     )
     .bind(command.subject.user_id)
@@ -1693,6 +1803,7 @@ async fn update_usage_link_for_message(
     .bind(metadata)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
+    .bind(command.subject.user_id)
     .bind(usage_link_id)
     .execute(&mut **tx)
     .await
@@ -1741,41 +1852,28 @@ async fn reconcile_usage_link(
     Ok(Some(command.usage_link_uuid.clone()))
 }
 
-/// Validated chat table identifiers used for sequence counting.
-///
-/// Using a typed enum prevents SQL injection through `format!` interpolation by
-/// restricting table names to a fixed, code-owned set of values.
-enum ChatCountTable {
-    AiChatTurn,
-    AiChatItem,
-    AiChatMessage,
-}
-
-impl ChatCountTable {
-    /// Returns the validated SQL identifier for this table.
-    fn as_sql_identifier(&self) -> &'static str {
-        match self {
-            ChatCountTable::AiChatTurn => "ai_chat_turn",
-            ChatCountTable::AiChatItem => "ai_chat_item",
-            ChatCountTable::AiChatMessage => "ai_chat_message",
-        }
-    }
-}
-
-async fn next_count(
-    tx: &mut Transaction<'_, Postgres>,
-    table: ChatCountTable,
-    conversation_pk: i64,
+fn checked_counter_next(
+    row: &sqlx::postgres::PgRow,
+    column: &str,
+    sequence_name: &str,
 ) -> DomainResult<i64> {
-    let table_name = table.as_sql_identifier();
-    let sql =
-        format!("SELECT COUNT(*) + 1 AS next_value FROM {table_name} WHERE conversation_id = $1");
-    let row = sqlx::query(&sql)
-        .bind(conversation_pk)
-        .fetch_one(&mut **tx)
-        .await
-        .map_err(sql_error)?;
-    Ok(integer_cell(&row, "next_value"))
+    let current = row.try_get::<i64, _>(column).map_err(|error| {
+        DomainError::new(format!(
+            "failed to read {sequence_name} counter {column}: {error}"
+        ))
+    })?;
+    if current < 0 {
+        return Err(DomainError::conflict(format!(
+            "{sequence_name} counter is invalid"
+        )));
+    }
+    checked_sequence_next(current, sequence_name)
+}
+
+fn checked_sequence_next(current: i64, sequence_name: &str) -> DomainResult<i64> {
+    current
+        .checked_add(1)
+        .ok_or_else(|| DomainError::conflict(format!("{sequence_name} sequence is exhausted")))
 }
 
 async fn insert_item(

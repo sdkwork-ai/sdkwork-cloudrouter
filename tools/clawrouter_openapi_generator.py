@@ -63,44 +63,6 @@ class ClawRouterOpenApiGenerator:
         "/backend/v3/api/ai/resources",
         "/backend/v3/api/ai/resource_groups",
     )
-    DEPENDENCY_PATH_PREFIXES = {
-        "app": (
-            "/app/v3/api/accounts",
-            "/app/v3/api/addresses",
-            "/app/v3/api/after_sales",
-            "/app/v3/api/ai/model_rankings",
-            "/app/v3/api/ai/model_vendors",
-            "/app/v3/api/ai/models",
-            "/app/v3/api/billing",
-            "/app/v3/api/cart",
-            "/app/v3/api/catalog",
-            "/app/v3/api/checkout",
-            "/app/v3/api/fulfillments",
-            "/app/v3/api/memberships",
-            "/app/v3/api/orders",
-            "/app/v3/api/payments",
-            "/app/v3/api/promotions",
-            "/app/v3/api/recharges",
-            "/app/v3/api/refunds",
-            "/app/v3/api/shipments",
-            "/app/v3/api/wallet",
-            "/app/v3/api/withdrawals",
-        ),
-        "backend": (
-            "/backend/v3/api/ai/model_mappings",
-            "/backend/v3/api/ai/model_rankings",
-            "/backend/v3/api/ai/model_vendors",
-            "/backend/v3/api/ai/models",
-            "/backend/v3/api/ai/resource_groups",
-            "/backend/v3/api/ai/resources",
-            "/backend/v3/api/memberships",
-            "/backend/v3/api/payments",
-            "/backend/v3/api/promotions",
-        ),
-    }
-    OWNED_DEPENDENCY_PREFIX_EXCEPTIONS = {
-        "backend": {"/backend/v3/api/payments/runtime/snapshot"},
-    }
     TITLES = {
         "app": "SDKWork Claw Router App API",
         "backend": "SDKWork Claw Router Backend API",
@@ -179,6 +141,7 @@ class ClawRouterOpenApiGenerator:
             else self.root / "generated" / "openapi" / "schema-components.yaml"
         )
         self._response_entities_cache: dict[str, Any] | None = None
+        self._dependency_operations_cache: dict[str, set[tuple[str, str]]] = {}
 
     def generate(self, surface: str) -> dict[str, Any]:
         if surface not in self.SURFACES:
@@ -348,21 +311,17 @@ class ClawRouterOpenApiGenerator:
         paths = filtered.get("paths")
         if not isinstance(paths, dict):
             return filtered
-        dependency_operations = self._dependency_operation_keys(surface)
-        prefixes = self.DEPENDENCY_PATH_PREFIXES[surface]
+        dependency_operations = self.dependency_operation_keys(surface)
         for api_path in list(paths):
             path_item = paths.get(api_path)
             if not isinstance(path_item, dict):
                 continue
             for method in list(path_item):
-                if (api_path, method.lower()) in dependency_operations:
+                if self.operation_key(api_path, method) in dependency_operations:
                     del path_item[method]
             if not any(
                 method.lower() in {"get", "post", "put", "patch", "delete"}
                 for method in path_item
-            ) or (
-                api_path not in self.OWNED_DEPENDENCY_PREFIX_EXCEPTIONS.get(surface, set())
-                and any(api_path == prefix or api_path.startswith(f"{prefix}/") for prefix in prefixes)
             ):
                 del paths[api_path]
         components = filtered.get("components")
@@ -370,7 +329,10 @@ class ClawRouterOpenApiGenerator:
             self._prune_unreachable_component_schemas(paths, components)
         return filtered
 
-    def _dependency_operation_keys(self, surface: str) -> set[tuple[str, str]]:
+    def dependency_operation_keys(self, surface: str) -> set[tuple[str, str]]:
+        cached = self._dependency_operations_cache.get(surface)
+        if cached is not None:
+            return cached
         manifest = self._surface_sdk_manifest(surface)
         dependencies = manifest.get("sdkDependencies")
         if not isinstance(dependencies, list):
@@ -405,8 +367,16 @@ class ClawRouterOpenApiGenerator:
                     if method.lower() in {"get", "post", "put", "patch", "delete"} and isinstance(
                         operation, dict
                     ):
-                        operations.add((api_path, method.lower()))
+                        operations.add(self.operation_key(api_path, method))
+        self._dependency_operations_cache[surface] = operations
         return operations
+
+    def is_dependency_operation(self, surface: str, api_path: str, method: str) -> bool:
+        return self.operation_key(api_path, method) in self.dependency_operation_keys(surface)
+
+    def operation_key(self, api_path: str, method: str) -> tuple[str, str]:
+        normalized_path = re.sub(r"\{[^}/]+\}", "{}", api_path)
+        return normalized_path, method.lower()
 
     def _surface_sdk_manifest(self, surface: str) -> dict[str, Any]:
         family = f"clawrouter-{surface}-sdk"

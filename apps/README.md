@@ -5,6 +5,15 @@ Status: active
 Owner: SDKWork maintainers
 Specs: APPLICATION_SPEC.md, SDKWORK_WORKSPACE_SPEC.md
 
+## Purpose
+
+Index the application roots owned by SDKWork Claw Router and identify which
+surfaces are runnable.
+
+## Owner
+
+SDKWork maintainers.
+
 ## Primary App Surface
 
 The repository root is the primary runnable app surface.

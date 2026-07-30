@@ -123,9 +123,9 @@ function resolvePostgresDatabaseUrlFromFields(env) {
       'SDKWORK_DATABASE_PROVIDER is not supported; use SDKWORK_DATABASE_ENGINE',
     );
   }
-  if (normalizeText(env.SDKWORK_DATABASE_SSLMODE)) {
+  if (normalizeText(env.SDKWORK_DATABASE_SSLMODE)) { // sdkwork-retired-database-key-rejection
     throw new Error(
-      'SDKWORK_DATABASE_SSLMODE is not supported; use SDKWORK_DATABASE_SSL_MODE',
+      'SDKWORK_DATABASE_SSLMODE is not supported; use SDKWORK_DATABASE_SSL_MODE', // sdkwork-retired-database-key-rejection
     );
   }
 

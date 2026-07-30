@@ -1103,6 +1103,12 @@ async fn router_with_database_api_key_provider_configs_usage_settlement_worker_c
                     ))
                 })?;
         prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+        sdkwork_clawrouter_router_service::infrastructure::sql::bootstrap_claw_runtime_id_generator(
+            &database_pool,
+            crate::SERVICE_NAME,
+        )
+        .await
+        .map_err(|error| GatewayRouterError::Config(error.to_string()))?;
         let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
             GatewayRouterError::Config("expected PostgreSQL database pool".to_owned())
         })?;
@@ -1496,6 +1502,12 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         prepare_claw_router_database_lifecycle(database_pool.clone())
             .await
             .map_err(anyhow::Error::new)?;
+        sdkwork_clawrouter_router_service::infrastructure::sql::bootstrap_claw_runtime_id_generator(
+            &database_pool,
+            crate::SERVICE_NAME,
+        )
+        .await
+        .map_err(anyhow::Error::new)?;
         let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
             anyhow::Error::new(GatewayRouterError::Postgres(
                 PostgresCatalogLoadError::Database(sqlx::Error::Configuration(

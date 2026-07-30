@@ -6175,20 +6175,6 @@ frontend_operations:
   request_body_required: false
   write_tables:
   - ops_audit_log
-- route: /admin/payments/runtime/snapshot
-  source: tools/bootstrap_frontend_contract_from_route_manifest.py
-  operation: retrieve
-  operation_id: payments.runtime.snapshot.retrieve
-  kind: read
-  api_surface: backend
-  api_method: GET
-  api_path: /backend/v3/api/payments/runtime/snapshot
-  read_sources:
-  - payments
-  response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
 - route: /admin/payments/webhook_events
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
@@ -6444,7 +6430,7 @@ frontend_operations:
 - route: /admin/recharges/orders
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
-  operation_id: recharges.orders.management.list
+  operation_id: orders.management.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -6458,7 +6444,7 @@ frontend_operations:
 - route: /admin/recharges/orders/{orderId}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: retrieve
-  operation_id: recharges.orders.management.retrieve
+  operation_id: orders.management.retrieve
   kind: read
   api_surface: backend
   api_method: GET
@@ -6472,7 +6458,7 @@ frontend_operations:
 - route: /admin/recharges/packages
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: list
-  operation_id: recharges.packages.management.list
+  operation_id: packages.management.list
   kind: read
   api_surface: backend
   api_method: GET
@@ -6491,7 +6477,7 @@ frontend_operations:
 - route: /admin/recharges/packages
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: create
-  operation_id: recharges.packages.create
+  operation_id: packages.create
   kind: create
   api_surface: backend
   api_method: POST
@@ -6517,7 +6503,7 @@ frontend_operations:
 - route: /admin/recharges/packages/{packageId}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: delete
-  operation_id: recharges.packages.delete
+  operation_id: packages.delete
   kind: delete
   api_surface: backend
   api_method: DELETE
@@ -6532,7 +6518,7 @@ frontend_operations:
 - route: /admin/recharges/packages/{packageId}
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: update
-  operation_id: recharges.packages.update
+  operation_id: packages.update
   kind: update
   api_surface: backend
   api_method: PATCH
@@ -6549,7 +6535,7 @@ frontend_operations:
 - route: /admin/recharges/settings
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: retrieve
-  operation_id: recharges.settings.management.retrieve
+  operation_id: settings.management.retrieve
   kind: read
   api_surface: backend
   api_method: GET
@@ -6563,7 +6549,7 @@ frontend_operations:
 - route: /admin/recharges/settings
   source: tools/bootstrap_frontend_contract_from_route_manifest.py
   operation: update
-  operation_id: recharges.settings.update
+  operation_id: settings.update
   kind: update
   api_surface: backend
   api_method: PUT
@@ -7268,7 +7254,7 @@ frontend_operations:
 - route: /admin/marketing/referrals
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-marketing/src/marketingService.ts
   operation: list
-  operation_id: system.marketing.referralStats.list
+  operation_id: marketing.referralStats.list
   kind: read
   api_surface: backend
   api_method: GET

@@ -36,6 +36,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
+import { formatLocalizedDecimalAmount } from '@sdkwork/clawroutes-pc-commons/runtime';
 import {
   AdminDashboardService,
   formatChargeAmount,
@@ -195,7 +196,7 @@ export function DashboardAdmin() {
                   {getTrendMetricLabel(entry.name) ?? String(entry.name === 'chartValue' ? label ?? entry.payload?.name ?? '' : entry.name ?? '')}
                 </span>
                 <span className="font-semibold text-slate-900 dark:text-white ml-auto pl-4">
-                  {Number(readTooltipValue(entry)).toLocaleString()}
+                  {formatLocalizedDecimalAmount(readTooltipValue(entry), 'en-US', 12, 0)}
                 </span>
               </div>
             ))}

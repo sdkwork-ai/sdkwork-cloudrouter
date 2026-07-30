@@ -11,7 +11,7 @@
   ],
   "defaultEngine": "postgres",
   "tablePrefix": "iam_gateway_",
-  "contractVersion": "0.3.0",
+  "contractVersion": "0.4.0",
   "baselineStrategy": "baseline-plus-migrations",
   "baselineAnchorTable": "iam_gateway_api_key",
   "modules": [],

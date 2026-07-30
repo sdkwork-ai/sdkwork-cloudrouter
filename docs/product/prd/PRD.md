@@ -3,7 +3,7 @@
 Status: active  
 Owner: SDKWork maintainers  
 Application: sdkwork-clawrouter  
-Updated: 2026-07-29  
+Updated: 2026-07-30
 Specs: `REQUIREMENTS_SPEC.md`, `DOCUMENTATION_SPEC.md`
 
 ## 1. Background And Problem
@@ -45,9 +45,15 @@ evidence.
   disclosure.
 - Use PostgreSQL as the only authoritative server database and support
   high-concurrency transaction semantics explicitly.
+- Scale server replicas horizontally without runtime ID collisions. Every
+  process uses a database-leased, fenced Snowflake node and stops issuing IDs
+  or reporting ready when lease ownership cannot be proven.
 - Generate app, backend, and open SDK families from reviewed API authorities.
 - Produce usage, routing-decision, health, audit, and settlement facts required
   for commercial reconciliation.
+- Persist first-party Chat conversations, turns, visible messages, context
+  snapshots, runtime references, and usage links with strict user isolation and
+  concurrent-write correctness.
 
 ### Non-Goals
 
@@ -55,6 +61,8 @@ evidence.
 - Supplier-specific columns or conditionals in the core routing domain.
 - A second provider-account or service-provider aggregate alongside the
   upstream domain.
+- Claiming unimplemented agent, memory, runtime-event, artifact, or full Chat
+  lifecycle behavior from the current Chat persistence tables.
 - Advertising OAuth support before authorization, refresh, revocation,
   encrypted persistence, audit, and failure recovery are implemented end to
   end.
@@ -87,6 +95,26 @@ The detailed product contract is
 is
 [ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md).
 
+### First-Party Chat
+
+- Create, retrieve, and list user-owned conversations.
+- Create a turn with its input message and pending output item, then complete
+  that output with normalized message content, context snapshot, runtime
+  reference, and optional usage linkage.
+- List messages through bounded server-side pagination without loading a user's
+  entire transcript into process memory.
+- Persist the current eight-table Chat/runtime authority in PostgreSQL with
+  tenant, organization, and user predicates on every read and mutation.
+- Serialize per-conversation turn, item, and message ordinals under concurrent
+  writers and fail closed on invalid or exhausted counters.
+
+The implemented boundary does not yet include conversation rename/archive/
+delete commands, agent and long-term-memory persistence, runtime event streams,
+or runtime artifacts. Those capabilities require separate product contracts
+and executable authorities before they may be advertised. Chat data ownership
+is recorded in
+[ADR-20260730](../../architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md).
+
 ### Product Surfaces
 
 - Backend management API and `@sdkwork/clawrouter-backend-sdk` for operators.
@@ -111,6 +139,9 @@ is
    strategy and fallback policy without crossing tenant or resource boundaries.
 6. Finance reconciles supplier costs, customer charges, account balances, and
    settlement ledger entries from immutable usage facts.
+7. An authenticated product user creates a conversation, submits turns from
+   multiple sessions or replicas, and receives a stable ordered transcript
+   that cannot cross tenant, organization, or user boundaries.
 
 ## 6. Success Metrics
 
@@ -125,6 +156,9 @@ These are launch targets and require production-like evidence.
 | Retired upstream aggregates in production code and current contracts | 0 |
 | API operations traceable to authority OpenAPI and generated SDK | 100% |
 | Usage and settlement writes covered by transaction/idempotency evidence | 100% |
+| Server write replicas using healthy database-leased runtime IDs in readiness | 100% |
+| Chat tables, reads, joins, and mutations binding tenant/org/user scope | 100% |
+| Chat sequence collisions under accepted concurrent-write load | 0 |
 | Release artifacts with checksum, signature, and SBOM | 100% |
 
 Latency, throughput, recovery time, failover time, and memory ceilings must be
@@ -136,6 +170,7 @@ backup/restore, and multi-replica tests. They are not inferred from design.
 | Phase | Exit condition | Status |
 | --- | --- | --- |
 | Domain convergence | Supplier/account/account-group model, PostgreSQL schema, APIs, SDKs, UI, tests, and docs agree | In progress |
+| Chat persistence convergence | Eight-table PostgreSQL authority, API/SDK pagination, concurrency, readiness, recovery, and docs agree | In progress |
 | Production hardening | Security, streaming, financial, load, recovery, observability, and HA gates pass | Planned |
 | Commercial beta | Clean release candidate, signed artifacts, runbooks, support controls, and reviewed evidence | Planned |
 | General availability | Accepted SLO/SLA, operational history, recovery drills, and supply-chain evidence | Planned |
@@ -149,6 +184,7 @@ manifest remains `preLaunch: true` until the release gate is accepted.
 - [Commercial production readiness](../requirements/REQ-2026-0001-commercial-production-readiness.md)
 - [Technical architecture](../../architecture/tech/TECH_ARCHITECTURE.md)
 - [Upstream supplier architecture decision](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
+- [Chat PostgreSQL ownership decision](../../architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md)
 - [Production-readiness revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md)
 - [Security policy](../../SECURITY.md)
 - [Commercial pricing](../../commercial/PRICING.md)

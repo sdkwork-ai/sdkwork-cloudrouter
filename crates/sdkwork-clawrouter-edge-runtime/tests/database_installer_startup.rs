@@ -15,7 +15,7 @@ async fn gateway_env_startup_rejects_zero_config_server_placeholder_postgres() {
     std::env::remove_var("SDKWORK_DATABASE_URL");
     std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "server");
     std::env::set_var("SDKWORK_CLAW_CONFIG_FILE", &config_path);
-    std::env::set_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", "17");
+    std::env::remove_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID");
     std::env::set_var(
         "SDKWORK_CLAW_API_KEY_PEPPER",
         "0123456789abcdef0123456789abcdef",
@@ -41,7 +41,7 @@ async fn gateway_env_startup_rejects_zero_config_server_placeholder_postgres() {
 }
 
 #[tokio::test]
-async fn gateway_env_startup_rejects_missing_server_snowflake_node_id_before_database_bootstrap() {
+async fn gateway_env_startup_rejects_static_server_snowflake_node_id_before_database_bootstrap() {
     let _guard = env_guard().lock().unwrap();
     let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
     let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
@@ -51,7 +51,7 @@ async fn gateway_env_startup_rejects_missing_server_snowflake_node_id_before_dat
     std::env::remove_var("SDKWORK_DATABASE_URL");
     std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "server");
     std::env::set_var("SDKWORK_CLAW_CONFIG_FILE", &config_path);
-    std::env::remove_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID");
+    std::env::set_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", "17");
 
     let router_result = sdkwork_clawrouter_edge_runtime::runtime::router_from_env().await;
 
@@ -61,13 +61,13 @@ async fn gateway_env_startup_rejects_missing_server_snowflake_node_id_before_dat
     restore_env_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
 
     let error = router_result
-        .expect_err("gateway server startup must require an explicit Snowflake node ID")
+        .expect_err("gateway server startup must reject a static Snowflake node ID")
         .to_string();
     assert!(error.contains("SDKWORK_CLAW_SNOWFLAKE_NODE_ID"));
-    assert!(error.contains("server"));
+    assert!(error.contains("database-leased node IDs"));
     assert!(
         !config_path.exists(),
-        "Snowflake validation must fail before database bootstrap creates runtime configuration"
+        "static Snowflake validation must fail before database bootstrap creates runtime configuration"
     );
 }
 

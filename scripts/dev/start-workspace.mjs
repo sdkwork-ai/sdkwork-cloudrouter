@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { mkdirSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import path from 'node:path';
@@ -61,6 +62,24 @@ const DEFAULT_DEV_DATABASE_RELATIVE_PATH = path.join('target', 'dev', 'clawroute
 const DEFAULT_MODELS_CATALOG_RELATIVE_PATH = path.join('..', 'sdkwork-models');
 const DEFAULT_DEV_SECRET =
   'sdkwork-clawrouter-local-dev-secret-20260507';
+const UPSTREAM_CREDENTIAL_KEY_RING_ENV =
+  'SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING';
+const UPSTREAM_CREDENTIAL_KEY_RING_FILE_ENV =
+  'SDKWORK_CLAW_UPSTREAM_CREDENTIAL_KEY_RING_FILE';
+const INTERNAL_GATEWAY_SIGNING_SECRET_ENV =
+  'SDKWORK_CLAW_INTERNAL_GATEWAY_SIGNING_SECRET';
+const INTERNAL_GATEWAY_SIGNING_SECRET_FILE_ENV =
+  'SDKWORK_CLAW_INTERNAL_GATEWAY_SIGNING_SECRET_FILE';
+const DEFAULT_DEV_UPSTREAM_CREDENTIAL_KEY_RING_RELATIVE_PATH = path.join(
+  '.sdkwork',
+  'secrets',
+  'upstream-credential-key-ring.development.json',
+);
+const DEFAULT_DEV_INTERNAL_GATEWAY_SIGNING_SECRET_RELATIVE_PATH = path.join(
+  '.sdkwork',
+  'secrets',
+  'internal-gateway-signing.development.secret',
+);
 const DEFAULT_DEV_SNOWFLAKE_NODE_IDS = Object.freeze({
   installer: '1000',
   modelCatalogRefresh: '1001',
@@ -318,6 +337,81 @@ function clawRouterDevCargoEnv(workspaceRoot, baseEnv = process.env) {
     ...IAM_APPLICATION_BOOTSTRAP_ENV,
     CARGO_TARGET_DIR: clawRouterDevCargoTargetDir(workspaceRoot),
   };
+}
+
+export function ensureClawRouterDevSecurityFiles({
+  workspaceRoot = repositoryRoot,
+  env = process.env,
+  dryRun = false,
+  randomBytesFn = randomBytes,
+} = {}) {
+  const resolvedEnv = {};
+  const hasConfiguredKeyRing =
+    String(env[UPSTREAM_CREDENTIAL_KEY_RING_ENV] ?? '').trim()
+    || String(env[UPSTREAM_CREDENTIAL_KEY_RING_FILE_ENV] ?? '').trim();
+
+  const keyRingFile = path.join(
+    workspaceRoot,
+    DEFAULT_DEV_UPSTREAM_CREDENTIAL_KEY_RING_RELATIVE_PATH,
+  );
+  if (!hasConfiguredKeyRing && !dryRun && !existsSync(keyRingFile)) {
+    mkdirSync(path.dirname(keyRingFile), { recursive: true, mode: 0o700 });
+    const keyRing = {
+      activeKeyId: 'development-local-v1',
+      activeKey: randomBytesFn(32).toString('base64url'),
+      fingerprintKey: randomBytesFn(32).toString('base64url'),
+      decryptionKeys: [],
+    };
+    try {
+      writeFileSync(keyRingFile, `${JSON.stringify(keyRing, null, 2)}\n`, {
+        encoding: 'utf8',
+        flag: 'wx',
+        mode: 0o600,
+      });
+    } catch (error) {
+      if (error?.code !== 'EEXIST') {
+        throw error;
+      }
+    }
+  }
+  if (!hasConfiguredKeyRing) {
+    resolvedEnv[UPSTREAM_CREDENTIAL_KEY_RING_FILE_ENV] = keyRingFile;
+  }
+
+  const hasConfiguredInternalGatewaySecret =
+    String(env[INTERNAL_GATEWAY_SIGNING_SECRET_ENV] ?? '').trim()
+    || String(env[INTERNAL_GATEWAY_SIGNING_SECRET_FILE_ENV] ?? '').trim();
+  const internalGatewaySigningSecretFile = path.join(
+    workspaceRoot,
+    DEFAULT_DEV_INTERNAL_GATEWAY_SIGNING_SECRET_RELATIVE_PATH,
+  );
+  if (
+    !hasConfiguredInternalGatewaySecret
+    && !dryRun
+    && !existsSync(internalGatewaySigningSecretFile)
+  ) {
+    mkdirSync(path.dirname(internalGatewaySigningSecretFile), {
+      recursive: true,
+      mode: 0o700,
+    });
+    try {
+      writeFileSync(
+        internalGatewaySigningSecretFile,
+        `${randomBytesFn(32).toString('base64url')}\n`,
+        { encoding: 'utf8', flag: 'wx', mode: 0o600 },
+      );
+    } catch (error) {
+      if (error?.code !== 'EEXIST') {
+        throw error;
+      }
+    }
+  }
+  if (!hasConfiguredInternalGatewaySecret) {
+    resolvedEnv[INTERNAL_GATEWAY_SIGNING_SECRET_FILE_ENV] =
+      internalGatewaySigningSecretFile;
+  }
+
+  return resolvedEnv;
 }
 
 export function clawRouterRustDevPackages(settings) {
@@ -624,6 +718,22 @@ function serviceEnv(settings, bindEnvName, bindValue, {
       : defaultClawRouterDevPostgresMaxConnections());
   const redisUrl = String(process.env.SDKWORK_CLAW_REDIS_URL ?? '').trim();
   const baseEnv = { ...process.env };
+  for (const key of [
+    UPSTREAM_CREDENTIAL_KEY_RING_ENV,
+    UPSTREAM_CREDENTIAL_KEY_RING_FILE_ENV,
+    INTERNAL_GATEWAY_SIGNING_SECRET_ENV,
+    INTERNAL_GATEWAY_SIGNING_SECRET_FILE_ENV,
+  ]) {
+    if (!String(baseEnv[key] ?? '').trim()) {
+      delete baseEnv[key];
+    }
+  }
+  const developmentSecurityEnv =
+    ensureClawRouterDevSecurityFiles({
+      workspaceRoot: settings.workspaceRoot ?? repositoryRoot,
+      env: baseEnv,
+      dryRun: settings.dryRun === true,
+    });
   const redisStructuredDefaults = redisUrl
     ? {}
     : {
@@ -644,6 +754,7 @@ function serviceEnv(settings, bindEnvName, bindValue, {
     ...baseEnv,
     ...IAM_APPLICATION_BOOTSTRAP_ENV,
     ...redisStructuredDefaults,
+    ...developmentSecurityEnv,
     SDKWORK_CLAW_DEPLOYMENT_MODE: 'server',
     SDKWORK_CLAW_SNOWFLAKE_NODE_ID:
       process.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID ?? snowflakeNodeId,
@@ -729,6 +840,7 @@ export function buildWorkspaceCommandPlan(settings, {
   workspaceRoot = repositoryRoot,
   platform = process.platform,
 } = {}) {
+  settings.workspaceRoot = workspaceRoot;
   const portalRelativeDir = 'apps/sdkwork-clawrouter-pc';
   splitBind(settings.portalBind, '--portal-bind');
   if (settings.runtimeMode !== 'client') {

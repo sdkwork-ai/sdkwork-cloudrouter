@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.migration-metadata",
+  "engine": "postgres",
+  "sourcePolicy": "historical-immutable",
+  "migrations": {
+    "0002_ai_request_trace_gateway_attribution.up.sql": {
+      "engine": "postgres",
+      "reversible": "true",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "table",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
+    }
+  }
+}

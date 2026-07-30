@@ -122,6 +122,17 @@
       "packageByLanguage": {
         "typescript": "@sdkwork/models-app-sdk"
       }
+    },
+    {
+      "workspace": "sdkwork-drive-app-sdk",
+      "role": "drive-app-storage-capability",
+      "required": true,
+      "dependencyMode": "consumer-sdk",
+      "apiPrefix": "/app/v3/api",
+      "generatedTransportImportPolicy": "forbidden",
+      "packageByLanguage": {
+        "typescript": "@sdkwork/drive-app-sdk"
+      }
     }
   ],
   "dependencyApiExports": [

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderAdapterRouteConfig {
+    #[serde(rename = "providerCode", alias = "supplierCode")]
     pub supplier_code: String,
     pub adapter_kind: AdapterKind,
     pub adapter_base_url: String,
@@ -49,4 +50,45 @@ pub struct ProviderAdapterLookup<'a> {
     pub standard_path: &'a str,
     pub capability: Option<&'a str>,
     pub endpoint_key: Option<&'a str>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ProviderAdapterRouteConfig;
+    use serde_json::json;
+
+    fn canonical_route_json() -> serde_json::Value {
+        json!({
+            "providerCode": "openrouter",
+            "adapterKind": "internal_http",
+            "adapterBaseUrl": "http://adapter.internal",
+            "method": "POST",
+            "standardPathPattern": "/v1/chat/completions",
+            "adapterPathTemplate": "/providers/{supplier_code}{standard_path}",
+            "status": "enabled",
+            "priority": 10
+        })
+    }
+
+    #[test]
+    fn route_config_serializes_the_canonical_provider_code() {
+        let route: ProviderAdapterRouteConfig =
+            serde_json::from_value(canonical_route_json()).expect("canonical provider route");
+
+        let serialized = serde_json::to_value(route).expect("serialized provider route");
+        assert_eq!(Some("openrouter"), serialized["providerCode"].as_str());
+        assert!(serialized.get("supplierCode").is_none());
+    }
+
+    #[test]
+    fn route_config_accepts_the_legacy_supplier_code_alias() {
+        let mut value = canonical_route_json();
+        let object = value.as_object_mut().expect("provider route object");
+        let provider_code = object.remove("providerCode").expect("providerCode");
+        object.insert("supplierCode".to_owned(), provider_code);
+
+        let route: ProviderAdapterRouteConfig =
+            serde_json::from_value(value).expect("legacy provider route");
+        assert_eq!("openrouter", route.supplier_code);
+    }
 }

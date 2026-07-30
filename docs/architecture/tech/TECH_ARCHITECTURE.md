@@ -3,7 +3,7 @@
 Status: active  
 Owner: SDKWork maintainers  
 Application: sdkwork-clawrouter  
-Updated: 2026-07-29  
+Updated: 2026-07-30
 Specs: `ARCHITECTURE_SPEC.md`, `API_SPEC.md`, `SDK_SPEC.md`, `DATABASE_SPEC.md`, `SECURITY_SPEC.md`, `DEPLOYMENT_SPEC.md`
 
 ## 1. Architecture Overview
@@ -83,6 +83,9 @@ Problem Details. They do not own SQL or provider calls.
   through `Arc<[UpstreamAccountRoute]>`.
 - Invocation application modules coordinate entitlement, routing, dispatch,
   telemetry, and accounting ports.
+- `api/app_chat.rs`, `ports/app_chat_store.rs`, and
+  `infrastructure/sql/postgres/app_chat_store.rs` own the currently implemented
+  first-party Chat HTTP adaptation, persistence port, and PostgreSQL adapter.
 
 The refreshable SQL catalog publishes `ArcSwap<SqlPricingCatalogSnapshot>`.
 Each request borrows an immutable `Arc` snapshot; refresh performs a pointer
@@ -116,6 +119,41 @@ The database authority chain is:
 
 There is no server SQLite baseline, generated server SQLite schema, or
 router-service SQLite adapter directory.
+
+### Chat Persistence
+
+Claw Router is the current system of record for the first-party Chat surface.
+The authored fragment `docs/schema-registry/tables/ai-chat-runtime.yaml`
+declares six transcript/context tables plus `ai_runtime_invocation` and
+`ai_runtime_usage_link`. All eight are PostgreSQL-only server authorities and
+bind numeric `tenant_id`, `organization_id`, and `user_id` scope.
+
+One turn creation transaction locks its conversation row with `FOR UPDATE`,
+allocates turn/item/message ordinals from the locked aggregate counters, writes
+the input and pending output timeline, and advances the counters. Completion
+locks the same aggregate, reconciles the output message and optional usage link,
+uses an atomic counter for context snapshots, and updates the conversation.
+Scoped unique indexes remain the final collision guard. Counter underflow and
+`BIGINT` exhaustion fail closed. Conversation previews are bounded to the
+schema's 1024-character limit before persistence.
+
+List reads apply subject predicates and SQL `LIMIT`/`OFFSET`; the HTTP boundary
+rejects non-canonical aliases and page sizes outside `1..=200`. Cursor/keyset
+pagination and production-like query-plan evidence for high-volume message
+history remain release gates under `PAGINATION_SPEC.md`; bounded offset behavior
+must not be described as proof of large-history scalability.
+
+Readiness checks the materialized table inventory, lifecycle installation
+state, critical Chat columns and scoped indexes, database connectivity, and the
+runtime ID lease. A failed contract parse, missing schema fact, database error,
+or unhealthy ID lease reports not ready.
+
+`ai_runtime_usage_link` links Chat records to runtime and usage facts but is not
+the billing ledger; `ai_usage` remains the billing source of truth. Runtime
+events, runtime artifacts, agent state, and memory state are outside the current
+eight-table implementation. Data ownership and future transfer requirements are
+recorded in
+[ADR-20260730](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md).
 
 ## 4. Upstream Supplier Data Model
 
@@ -225,6 +263,32 @@ the contract or implementation authority and regenerated.
 - Database pools, timeouts, and transaction isolation are explicit. Financial
   and idempotent writes use PostgreSQL transaction and locking semantics.
 
+### Runtime Identifiers
+
+- Server and container processes bootstrap one shared `SnowflakeIdGenerator`
+  through `sdkwork-database-id` after the PostgreSQL lifecycle is ready and
+  before seed or runtime writes.
+- `sdkwork_node_registry` allocates node IDs with expiring heartbeats, random
+  ownership tokens, monotonic lease versions, and database-time comparisons.
+  Active leases are never reclaimed from matching human-readable identity.
+- Lease ownership loss or expiry fences the generator. Runtime writes fail
+  closed, readiness reports unavailable, and a bounded-backoff worker obtains
+  and atomically installs a new process lease.
+- Prometheus exports `clawrouter_runtime_id_generator_ready` and
+  `clawrouter_runtime_id_failures_total{operation,reason}`. Failure labels are
+  fixed operational codes for bootstrap, recovery, state, lease, clock,
+  sequence, contention, and capacity conditions; raw error text and process
+  identity never enter metric labels.
+- Kubernetes injects Pod name and UID for diagnostics. Static
+  `SDKWORK_CLAW_SNOWFLAKE_NODE_ID` values are rejected outside single-process
+  desktop development and are never a cluster identity authority.
+- The current platform allocator still runs idempotent registry DDL from its
+  allocation path. PostgreSQL requires schema `CREATE` even for `CREATE TABLE
+  IF NOT EXISTS` when the table already exists, which conflicts with the
+  `DATABASE_SPEC` least-privilege runtime role. Production approval remains
+  blocked until `sdkwork-database` provides migrator-owned registry
+  provisioning and a runtime verify/allocate path that needs only table DML.
+
 ### Observability
 
 Structured logs and traces use request/trace identity and bounded labels.
@@ -243,14 +307,15 @@ models.
 | `cloud` | Managed/operated PostgreSQL | Managed/operated Redis | Split services behind dedicated ingress |
 | Explicit client-local feature | Separate SQLite client-local contract | No server authority | Device/profile scoped only |
 
-Readiness must verify database connectivity and required schema before serving
-traffic. Production and commercial claims additionally require clean-install,
+Readiness verifies database connectivity, required schema, and the runtime ID
+lease before serving traffic. Production and commercial claims additionally require clean-install,
 upgrade, backup/restore, failover, multi-replica, load, soak, memory, and fault
 injection evidence from the release candidate.
 
 ## 9. Architecture Decision Index
 
 - [ADR-20260728: Standardize upstream supplier routing](../decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
+- [ADR-20260730: Own Chat runtime PostgreSQL authority](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md)
 - [ADR-20260720: Dedicated cloud ingress](../decisions/ADR-20260720-dedicated-cloud-ingress.md)
 - [ADR-20260710: Commercial gateway safety boundaries](../decisions/ADR-20260710-commercial-gateway-safety-boundaries.md)
 

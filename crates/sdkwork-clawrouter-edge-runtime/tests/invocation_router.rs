@@ -399,6 +399,7 @@ fn catalog_with_hashed_api_key_and_base_url(
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter", 3001)
+            .with_account_group_binding(10, 10, 100)
             .with_upstream_endpoint(
                 Some(base_url),
                 Some("vault://providers/openrouter/account/main"),
@@ -487,7 +488,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -512,7 +513,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             r#"{"routeKey":"openai/management/files"}"#,
             "openai/management/files",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -537,7 +538,7 @@ fn catalog_with_hashed_api_key_and_base_url(
             r#"{"routeKey":"kling.text_to_video"}"#,
             "kling.text_to_video",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -565,6 +566,7 @@ fn catalog_with_failover_routes_and_hashed_api_key(
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("fallback", 3002)
+            .with_account_group_binding(10, 20, 100)
             .with_upstream_endpoint(
                 Some(fallback_base_url),
                 Some("vault://providers/fallback/account/main"),
@@ -603,10 +605,7 @@ fn catalog_with_failover_routes_and_hashed_api_key(
             r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
             "openai/gpt-4o-mini",
         )
-        .with_candidate_account_groups(vec![
-            RouteCandidate::new(3001, 100),
-            RouteCandidate::new(3002, 90),
-        ]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -675,7 +674,7 @@ fn catalog_with_encoded_image_model_and_hashed_api_key(key_hash: &str) -> InMemo
             r#"{"catalogKey":"openrouter/gpt-4o-mini+latest"}"#,
             "openrouter/gpt-4o-mini+latest",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -815,10 +814,16 @@ async fn invocation_router_dispatches_openai_model_call_through_pipeline() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
+    assert_eq!(
+        StatusCode::OK,
+        status,
+        "unexpected invocation response: {}",
+        String::from_utf8_lossy(&body)
+    );
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!("chatcmpl-invocation-router", payload["id"]);
 
@@ -922,7 +927,16 @@ async fn invocation_router_can_failover_when_primary_secret_is_missing() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert_eq!(
+        StatusCode::OK,
+        status,
+        "unexpected failover response: {}",
+        String::from_utf8_lossy(&body)
+    );
     let calls = dispatcher.calls();
     assert_eq!(1, calls.len());
     assert_eq!("fallback", calls[0].supplier_code);
@@ -1126,7 +1140,12 @@ async fn invocation_router_records_metered_usage_after_settlement() {
     assert!(commands
         .iter()
         .all(|command| command.supplier_code == "openrouter" && command.account_id == 3001));
-    assert!(usage_recorder.traces().is_empty());
+    let traces = usage_recorder.traces();
+    assert_eq!(1, traces.len());
+    assert_eq!(Some(200), traces[0].http_status);
+    assert_eq!(3, traces[0].prompt_tokens);
+    assert_eq!(2, traces[0].completion_tokens);
+    assert_eq!(5, traces[0].total_tokens);
 }
 
 #[tokio::test]
@@ -1181,8 +1200,8 @@ async fn invocation_router_resolves_lookup_sticky_route_before_dispatch() {
     let dispatcher = Arc::new(CapturingDispatcher::default());
     let sticky_store = Arc::new(RecordingStickyRouteStore::with_binding(
         StickyObjectRouteBinding {
-            tenant_id: 100001,
-            organization_id: 0,
+            tenant_id: 10,
+            organization_id: 20,
             object_type: "file".to_owned(),
             object_id: "file-sticky-1".to_owned(),
             parent_object_type: None,
@@ -1219,7 +1238,16 @@ async fn invocation_router_resolves_lookup_sticky_route_before_dispatch() {
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::OK, response.status());
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert_eq!(
+        StatusCode::OK,
+        status,
+        "unexpected sticky route response: {}",
+        String::from_utf8_lossy(&body)
+    );
     let lookups = sticky_store.lookups();
     assert_eq!(1, lookups.len());
     assert_eq!(10, lookups[0].tenant_id);
@@ -1871,6 +1899,110 @@ async fn invocation_http_dispatcher_forwards_streaming_model_call_as_sse_respons
 }
 
 #[tokio::test]
+async fn invocation_http_dispatcher_settles_responses_stream_from_nested_terminal_usage() {
+    let upstream = Arc::new(UpstreamCapture::default());
+    let app = axum::Router::new()
+        .route(
+            "/openrouter/v1/responses",
+            post(
+                |State(upstream): State<Arc<UpstreamCapture>>,
+                 headers: HeaderMap,
+                 Json(body): Json<serde_json::Value>| async move {
+                    upstream
+                        .requests
+                        .lock()
+                        .unwrap()
+                        .push(CapturedUpstreamRequest {
+                            authorization: headers
+                                .get("authorization")
+                                .and_then(|value| value.to_str().ok())
+                                .map(str::to_owned),
+                            x_api_key: None,
+                            api_key: None,
+                            x_client_trace: None,
+                            body,
+                        });
+                    (
+                        [(axum::http::header::CONTENT_TYPE, "text/event-stream")],
+                        concat!(
+                            "event: response.output_text.delta\n",
+                            "data: {\"type\":\"response.output_text.delta\",\"delta\":\"pong\"}\n\n",
+                            "event: response.completed\n",
+                            "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_stream\",\"usage\":{\"input_tokens\":4,\"output_tokens\":3,\"total_tokens\":7}}}\n\n"
+                        ),
+                    )
+                },
+            ),
+        )
+        .with_state(Arc::clone(&upstream));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base_url = format!("http://{}", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let usage_recorder = Arc::new(RecordingUsageRecorder::default());
+    let router = sdkwork_clawrouter_edge_runtime::invocation_router_with_full_pipeline(
+        Arc::new(catalog_with_hashed_api_key_and_base_url(
+            &key_hash,
+            &format!("{base_url}/openrouter"),
+        )),
+        hasher,
+        Arc::new(sdkwork_clawrouter_edge_runtime::InvocationHttpDispatcher::for_development()),
+        Some(secret_resolver()),
+        None,
+        Some(usage_recorder.clone()),
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/responses")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","stream":true,"input":"ping"}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    assert!(
+        usage_recorder.commands().is_empty(),
+        "Responses usage must remain pending until the terminal SSE event"
+    );
+    let body = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .unwrap();
+    let body_text = std::str::from_utf8(&body).unwrap();
+    assert!(body_text.contains("response.completed"), "{body_text}");
+
+    let requests = upstream.requests.lock().unwrap().clone();
+    assert_eq!(1, requests.len());
+    assert_eq!(
+        Some("Bearer sk-provider-secret"),
+        requests[0].authorization.as_deref()
+    );
+    assert_eq!("gpt-4o-mini-provider", requests[0].body["model"]);
+    assert_eq!(true, requests[0].body["stream"]);
+
+    let commands = wait_for_usage_commands(usage_recorder.as_ref(), 2).await;
+    assert_eq!(2, commands.len());
+    assert!(commands.iter().all(|command| command.streaming));
+    assert_eq!("llm_input_token", commands[0].billing_meter_code);
+    assert_eq!("4", commands[0].billable_quantity);
+    assert_eq!("llm_output_token", commands[1].billing_meter_code);
+    assert_eq!("3", commands[1].billable_quantity);
+
+    server.abort();
+}
+
+#[tokio::test]
 async fn invocation_router_streams_without_buffering_and_retains_idempotency_until_eof() {
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -1960,6 +2092,7 @@ async fn invocation_router_times_out_an_unpolled_stream_and_releases_idempotency
     let mut catalog = catalog_with_hashed_api_key(&key_hash);
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter", 3001)
+            .with_account_group_binding(10, 10, 100)
             .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/main"),

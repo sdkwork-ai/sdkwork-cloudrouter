@@ -1,8 +1,11 @@
 use std::sync::Arc;
 
+use sdkwork_claw_provider_adapter_contract::AdapterInvocationShape;
+
 use super::{
-    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationFuture,
-    InvocationInterceptor, InvocationSurface,
+    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAdapterTarget,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
+    InvocationSurface,
 };
 use crate::ports::ProviderAdapterRouteResolver;
 
@@ -30,6 +33,7 @@ impl InvocationInterceptor for ProviderAdapterDispatchInterceptor {
             let Some(target) = self.resolver.resolve_adapter_target(invocation) else {
                 return Ok(());
             };
+            validate_provider_adapter_target(invocation, &target)?;
             invocation.dispatch.mode = DispatchMode::InternalProviderAdapter;
             invocation.dispatch.invocation_shape = target.shape.clone();
             invocation.dispatch.adapter_target = Some(target);
@@ -39,4 +43,22 @@ impl InvocationInterceptor for ProviderAdapterDispatchInterceptor {
             Ok(())
         })
     }
+}
+
+pub(super) fn validate_provider_adapter_target(
+    invocation: &Invocation,
+    target: &InvocationAdapterTarget,
+) -> Result<(), InvocationError> {
+    if invocation.billing.settlement_required
+        && matches!(
+            target.adapter_invocation_shape,
+            AdapterInvocationShape::SseStream | AdapterInvocationShape::ByteStream
+        )
+    {
+        return Err(InvocationError::new(
+            InvocationErrorKind::Usage,
+            "streaming provider adapter route does not define a terminal usage envelope",
+        ));
+    }
+    Ok(())
 }

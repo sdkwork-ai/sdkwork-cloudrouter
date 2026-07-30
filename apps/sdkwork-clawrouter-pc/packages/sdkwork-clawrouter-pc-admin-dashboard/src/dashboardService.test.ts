@@ -12,18 +12,18 @@ import {
 const keyTranslator: AdminDashboardTranslator = (key) => key;
 
 const ANALYTICS_SUMMARY = {
-  totalUsers: 56,
-  activeUsers: 23,
-  activeModels: 7,
-  totalRequests: 1_234,
-  successfulRequests: 1_204,
-  failedRequests: 30,
-  totalTokens: 1_500_000,
-  totalPoints: 1_234.567,
-  upstreamCost: 98.7,
-  averageTokensPerRequest: 1_215.56,
-  averagePointsPerRequest: 1.234,
-  errorRate: 2.5,
+  totalUsers: '56',
+  activeUsers: '23',
+  activeModels: '7',
+  totalRequests: '1234',
+  successfulRequests: '1204',
+  failedRequests: '30',
+  totalTokens: '1500000.000000000000',
+  totalPoints: '1234.567000000000',
+  upstreamCost: '98.700000000000',
+  averageTokensPerRequest: '1215.560000000000',
+  averagePointsPerRequest: '1.234000000000',
+  errorRate: '2.500000000000',
 } satisfies Parameters<typeof createDashboardSummaryCards>[0]['summary'];
 
 const MULTIMODAL: PieChartData[] = [
@@ -66,17 +66,30 @@ describe('dashboard metric mapping', () => {
   it('preserves analytics points as points in trend data', () => {
     expect(normalizeAnalyticsTrafficData({
       time: '2026-07-20',
-      tokens: 1_500,
-      requests: 12,
-      points: 34.5,
+      tokens: '1500.000000000000',
+      requests: '12.000000000000',
+      points: '34.500000000000',
     })).toEqual({
       time: '2026-07-20',
-      tokens: 1_500,
-      requests: 12,
-      points: 34.5,
+      tokens: '1500.000000000000',
+      requests: '12.000000000000',
+      points: '34.500000000000',
       chartTokens: 1_500,
       chartRequests: 12,
       chartPoints: 34.5,
+    });
+  });
+
+  it('preserves analytics values beyond JavaScript safe integer precision', () => {
+    expect(normalizeAnalyticsTrafficData({
+      time: '2026-07-20',
+      tokens: '9007199254740992.000000000001',
+      requests: '9007199254740993',
+      points: '0.000000000009',
+    })).toMatchObject({
+      tokens: '9007199254740992.000000000001',
+      requests: '9007199254740993',
+      points: '0.000000000009',
     });
   });
 

@@ -208,45 +208,8 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
         doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
         doc.parent.mkdir(parents=True, exist_ok=True)
         doc.write_text(
-            textwrap.dedent(
-                """
-                # Rust Backend Module Standard
-
-                Rust-first backend module boundary uses sdkwork-claw-security and sdkwork-claw-http.
-                Hexagonal architecture keeps api, application, domain, ports, adapters, infrastructure, and bootstrap separated.
-                App surface /app/v3/api, backend surface /backend/v3/api, and runtime surface /v1 remain separate.
-                High performance requires axum, tokio, tower, tower-http, connection pool, streaming, backpressure, timeout, request id, and tracing.
-                RuntimeConfig loads SDKWORK_CLAW_GATEWAY_BIND, SDKWORK_CLAW_APP_API_BIND, SDKWORK_CLAW_ADMIN_API_BIND, and validates each bind value as a valid socket address.
-                DatabaseConfig parses SDKWORK_DATABASE_URL for typed deployment database wiring.
-                DatabaseHealth exposes configured, engine, and maxConnections only, and must not expose database URLs.
-                ApiKeyIdentity is parsed only in sdkwork-claw-http auth from Authorization: Bearer, x-api-key, x-goog-api-key, and query key inputs; business handlers must not parse raw auth headers.
-                ApiKeySecurityConfig loads SDKWORK_CLAW_API_KEY_PEPPER and HmacSha256ApiKeySecretHasher implements ApiKeySecretHasher for HMAC plus pepper hashing and iam_gateway_api_key.key_hash lookup with no plaintext API key storage.
-                Security requires redaction, sensitive headers, authorization, idempotency, audit log, rate limit, CORS, and security headers.
-                The manifest-driven contract route returns 501 for declared but unfinished operations with no fake success responses.
-                Package rules keep contract, config, core, security, http, observability, gateway, app-api, admin-api, and product boundaries clear.
-                Product implementation keeps domain, application, ports, and infrastructure as first-class submodules.
-                PricingCatalog powers ModelCatalogQueryService, PriceAvailability, and lowest upstream cost pricing views.
-                SQL PricingCatalog boundary uses infrastructure/sql catalog, queries, rows, and postgres modules, PostgreSQL loader, immutable snapshot, Schema Registry table names, decimal strings, generated enums, and no ai_pricing_group.
-                AdminModelRoute calls ModelCatalogQueryService and must not rebuild pricing logic in HTTP handlers.
-                OpenAIModelsRoute serves /v1/models through the gateway runtime module, uses PricingCatalog snapshots, and returns OpenAI-compatible model list envelopes only after API key authentication.
-                OpenAIChatCompletionsRoute serves /v1/chat/completions through the gateway runtime module, authenticates the API key, validates model routing and pricing, uses ChatCompletionRelay for non-stream execution, uses ChatCompletionStreamRelay with ChatCompletionStreamRelayResponse for SSE text/event-stream pass-through, and returns provider_relay_not_configured or streaming_relay_not_configured only when the matching relay is absent.
-                Non-stream OpenAIChatCompletionsRoute provider success must build GatewayUsageRecordCommand from provider usage and persist through GatewayUsageRecorder, with PostgresGatewayUsageRecorder writing ai_request_trace and ai_usage; missing usage returns provider_usage_record_failed. The streaming usage boundary must force upstream stream_options.include_usage through OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay, then StreamingUsageRecordingBody must persist the provider SSE usage event before stream completion.
-                UsageSettlementWorker owns the background worker boundary and UsageSettlementWorkerConfig controls schema readiness gated settlement activation. SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED, SDKWORK_CLAW_USAGE_SETTLEMENT_BATCH_SIZE, and SDKWORK_CLAW_USAGE_SETTLEMENT_INTERVAL_MILLIS configure the worker. UsageSettlementStore consumes UsageSettlementCommand and returns UsageSettlementOutcome from a worker boundary after ai_usage is written. PostgresUsageSettlementStore must settle pending or failed settlement_status rows into commerce_usage_settlement and plus_account_history idempotently, update settlement_id, use FOR UPDATE SKIP LOCKED on Postgres, and insufficient balances must use INSUFFICIENT_POINTS without double-debiting.
-                OpenAIResponsesRoute serves /v1/responses through the gateway runtime module, authenticates the API key, validates responses capability, provider route, and LlmInputToken pricing, returns responses_relay_not_configured when relay is absent, and uses ResponsesRelay with ResponsesRelayRequest for non-stream provider execution.
-                OpenAiCompatibleResponsesRelay and SecretRefOpenAiCompatibleResponsesRelay use UpstreamProviderEndpoint, provider_base_url, provider_secret_ref, ai_upstream_account.timeout_ms, ai_upstream_account.retry_policy, request-context provider timeout, request-context provider retry policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, and retryable upstream status for native OpenAI-compatible /v1/responses relay without plaintext provider secret storage.
-                OpenAIEmbeddingsRoute serves /v1/embeddings through the gateway runtime module, authenticates the API key, validates embedding capability, provider route, and EmbeddingInputToken pricing, returns embedding_relay_not_configured when relay is absent, and uses EmbeddingsRelay with EmbeddingsRelayRequest for provider execution.
-                OpenAiCompatibleEmbeddingsRelay and SecretRefOpenAiCompatibleEmbeddingsRelay use UpstreamProviderEndpoint, provider_base_url, provider_secret_ref, ai_upstream_account.timeout_ms, ai_upstream_account.retry_policy, request-context provider timeout, request-context provider retry policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, and retryable upstream status for native OpenAI-compatible /v1/embeddings relay without plaintext provider secret storage.
-                ChatCompletionRelay accepts ChatCompletionRelayRequest only after authentication, model routing, and pricing validation, and carries provider_base_url, provider_secret_ref, ai_upstream_account.timeout_ms, ai_upstream_account.retry_policy, request-context provider timeout, and request-context provider retry policy, so HTTP handlers must not call upstream providers directly.
-                OpenAiCompatibleChatCompletionStreamRelay and SecretRefOpenAiCompatibleChatCompletionStreamRelay use UpstreamProviderEndpoint, an absolute http or https provider URL, hyper, hyper-rustls, and a TLS connector for native OpenAI-compatible upstream SSE calls, normalize the /v1 prefix, never send /v1/v1/..., require a provider response timeout, apply request-context provider timeout from ai_upstream_account.timeout_ms, stream adapters must not retry retryable upstream status, and keep no plaintext provider secret storage.
-                ProviderSecretResolver resolves provider_secret_ref into runtime bearer credentials outside catalog snapshots.
-                ProviderSecretMapConfig loads SDKWORK_CLAW_PROVIDER_SECRET_MAP_JSON for environment-backed local and deployment secret reference resolution.
-                ProviderSecretMapResolver adapts ProviderSecretMapConfig into ProviderSecretResolver without exposing plaintext provider tokens.
-                ProviderRelayConfig loads SDKWORK_CLAW_OPENAI_RELAY_BASE_URL and SDKWORK_CLAW_OPENAI_RELAY_BEARER_TOKEN for deployment-time provider relay wiring.
-                OpenAiCompatibleChatCompletionRelay and SecretRefOpenAiCompatibleChatCompletionRelay use UpstreamProviderEndpoint, an absolute http or https provider URL, hyper, hyper-rustls, and a TLS connector for native OpenAI-compatible upstream calls, normalize the /v1 prefix, never send /v1/v1/..., require a provider response timeout, apply request-context provider timeout from ai_upstream_account.timeout_ms, apply request-context provider retry policy from ai_upstream_account.retry_policy, ProviderRetryPolicy, strict JSON, non-stream JSON relay, transient provider retry, retryable upstream status, and keep no plaintext provider secret storage.
-                GatewayRouterError reports database loader and API key pepper configuration failures without leaking secrets.
-                lib.rs is a thin orchestration entrypoint and delegates implementation to submodules.
-                """
-            ).strip()
+            "# Rust Backend Module Standard\n\n"
+            + "\n".join(RustBackendArchitectureGuardian.REQUIRED_DOC_TERMS)
             + "\n",
             encoding="utf-8",
         )
@@ -337,20 +300,25 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: sdkwork-claw-security", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: sdkwork-api-clawrouter-assembly", result.messages)
             self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: backpressure", result.messages)
 
-    def test_reports_missing_product_query_standard_doc_terms(self) -> None:
+    def test_reports_missing_postgres_only_standard_doc_terms(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(doc.read_text(encoding="utf-8").replace("PriceAvailability", "PriceState"), encoding="utf-8")
+            doc.write_text(
+                doc.read_text(encoding="utf-8").replace(
+                    "There is no server SQLite", "Server database"
+                ),
+                encoding="utf-8",
+            )
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: PriceAvailability", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: There is no server SQLite", result.messages)
 
     def test_reports_product_without_chat_completion_relay_port(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -835,40 +803,40 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertTrue(result.ok, result.messages)
 
-    def test_reports_missing_admin_model_route_doc_standard(self) -> None:
+    def test_reports_missing_api_assembly_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(doc.read_text(encoding="utf-8").replace("AdminModelRoute", "ModelRoute"), encoding="utf-8")
+            doc.write_text(doc.read_text(encoding="utf-8").replace("sdkwork-api-clawrouter-assembly", "api-assembly"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
-            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: AdminModelRoute", result.messages)
+            self.assertIn("docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: sdkwork-api-clawrouter-assembly", result.messages)
 
-    def test_reports_missing_database_health_doc_standard(self) -> None:
+    def test_reports_missing_postgres_only_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(doc.read_text(encoding="utf-8").replace("DatabaseHealth", "DatabaseStatus"), encoding="utf-8")
+            doc.write_text(doc.read_text(encoding="utf-8").replace("There is no server SQLite", "Server database"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: DatabaseHealth",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: There is no server SQLite",
                 result.messages,
             )
 
-    def test_reports_missing_runtime_config_doc_standard(self) -> None:
+    def test_reports_missing_bounded_pool_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("RuntimeConfig", "RuntimeSettings"),
+                doc.read_text(encoding="utf-8").replace("bounded database pools", "database pools"),
                 encoding="utf-8",
             )
 
@@ -876,77 +844,77 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: RuntimeConfig",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: bounded database pools",
                 result.messages,
             )
 
-    def test_reports_missing_api_key_identity_doc_standard(self) -> None:
+    def test_reports_missing_tenant_scope_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(doc.read_text(encoding="utf-8").replace("ApiKeyIdentity", "ApiIdentity"), encoding="utf-8")
+            doc.write_text(doc.read_text(encoding="utf-8").replace("tenant and organization", "tenant scope"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ApiKeyIdentity",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: tenant and organization",
                 result.messages,
             )
 
-    def test_reports_missing_api_key_hashing_doc_standard(self) -> None:
+    def test_reports_missing_pagination_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(doc.read_text(encoding="utf-8").replace("ApiKeySecretHasher", "ApiHasher"), encoding="utf-8")
+            doc.write_text(doc.read_text(encoding="utf-8").replace("pagination", "paging"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ApiKeySecretHasher",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: pagination",
                 result.messages,
             )
 
-    def test_reports_missing_api_key_security_config_doc_standard(self) -> None:
+    def test_reports_missing_bounded_limit_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(doc.read_text(encoding="utf-8").replace("ApiKeySecurityConfig", "ApiKeyConfig"), encoding="utf-8")
+            doc.write_text(doc.read_text(encoding="utf-8").replace("bounded limits", "limits"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ApiKeySecurityConfig",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: bounded limits",
                 result.messages,
             )
 
-    def test_reports_missing_openai_models_runtime_doc_standard(self) -> None:
+    def test_reports_missing_app_api_path_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
-            doc.write_text(doc.read_text(encoding="utf-8").replace("/v1/models", "/v1/model-list"), encoding="utf-8")
+            doc.write_text(doc.read_text(encoding="utf-8").replace("/app/v3/api", "/app/api"), encoding="utf-8")
 
             result = RustBackendArchitectureGuardian(root=root).run()
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1/models",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /app/v3/api",
                 result.messages,
             )
 
-    def test_reports_missing_openai_chat_runtime_doc_standard(self) -> None:
+    def test_reports_missing_backend_api_path_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("/v1/chat/completions", "/v1/chat"),
+                doc.read_text(encoding="utf-8").replace("/backend/v3/api", "/backend/api"),
                 encoding="utf-8",
             )
 
@@ -954,17 +922,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1/chat/completions",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /backend/v3/api",
                 result.messages,
             )
 
-    def test_reports_missing_openai_responses_runtime_doc_standard(self) -> None:
+    def test_reports_missing_open_api_path_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("/v1/responses", "/v1/response"),
+                doc.read_text(encoding="utf-8").replace("/v1", "/open-api"),
                 encoding="utf-8",
             )
 
@@ -972,17 +940,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1/responses",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1",
                 result.messages,
             )
 
-    def test_reports_missing_responses_relay_doc_standard(self) -> None:
+    def test_reports_missing_usage_recording_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("ResponsesRelay", "ResponseRelay"),
+                doc.read_text(encoding="utf-8").replace("PostgresGatewayUsageRecorder", "UsageRecorder"),
                 encoding="utf-8",
             )
 
@@ -990,17 +958,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ResponsesRelay",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: PostgresGatewayUsageRecorder",
                 result.messages,
             )
 
-    def test_reports_missing_openai_embeddings_runtime_doc_standard(self) -> None:
+    def test_reports_missing_payment_webhook_secret_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("/v1/embeddings", "/v1/embed"),
+                doc.read_text(encoding="utf-8").replace("SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET", "payment webhook secret"),
                 encoding="utf-8",
             )
 
@@ -1008,17 +976,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: /v1/embeddings",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET",
                 result.messages,
             )
 
-    def test_reports_missing_embeddings_relay_doc_standard(self) -> None:
+    def test_reports_missing_async_lock_rule_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("EmbeddingsRelay", "EmbeddingRelay"),
+                doc.read_text(encoding="utf-8").replace("Do not hold locks across `.await`", "Do not hold async locks"),
                 encoding="utf-8",
             )
 
@@ -1026,17 +994,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: EmbeddingsRelay",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: Do not hold locks across `.await`",
                 result.messages,
             )
 
-    def test_reports_missing_chat_completion_relay_doc_standard(self) -> None:
+    def test_reports_missing_backpressure_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("ChatCompletionRelay", "ChatRelay"),
+                doc.read_text(encoding="utf-8").replace("backpressure", "flow control"),
                 encoding="utf-8",
             )
 
@@ -1044,17 +1012,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ChatCompletionRelay",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: backpressure",
                 result.messages,
             )
 
-    def test_reports_missing_chat_completion_stream_relay_doc_standard(self) -> None:
+    def test_reports_missing_settlement_locking_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("ChatCompletionStreamRelay", "ChatStreamRelay"),
+                doc.read_text(encoding="utf-8").replace("FOR UPDATE SKIP LOCKED", "row lock"),
                 encoding="utf-8",
             )
 
@@ -1062,17 +1030,17 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ChatCompletionStreamRelay",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: FOR UPDATE SKIP LOCKED",
                 result.messages,
             )
 
-    def test_reports_missing_provider_relay_config_doc_standard(self) -> None:
+    def test_reports_missing_layering_verification_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
-                doc.read_text(encoding="utf-8").replace("ProviderRelayConfig", "ProviderConfig"),
+                doc.read_text(encoding="utf-8").replace("node ../sdkwork-specs/tools/check-application-layering.mjs --root .", "layering check"),
                 encoding="utf-8",
             )
 
@@ -1080,18 +1048,19 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ProviderRelayConfig",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: node ../sdkwork-specs/tools/check-application-layering.mjs --root .",
                 result.messages,
             )
 
-    def test_reports_missing_provider_secret_map_config_doc_standard(self) -> None:
+    def test_reports_missing_composition_verification_doc_standard(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_valid_workspace(root)
             doc = root / "docs" / "architecture" / "tech" / "TECH-29-rust-backend-module-standard.md"
             doc.write_text(
                 doc.read_text(encoding="utf-8").replace(
-                    "ProviderSecretMapConfig", "ProviderSecretConfig"
+                    "node ../sdkwork-specs/tools/check-rust-backend-composition.mjs --root .",
+                    "composition check",
                 ),
                 encoding="utf-8",
             )
@@ -1100,7 +1069,7 @@ class RustBackendArchitectureGuardianTest(unittest.TestCase):
 
             self.assertFalse(result.ok)
             self.assertIn(
-                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: ProviderSecretMapConfig",
+                "docs/architecture/tech/TECH-29-rust-backend-module-standard.md must mention required backend module term: node ../sdkwork-specs/tools/check-rust-backend-composition.mjs --root .",
                 result.messages,
             )
 

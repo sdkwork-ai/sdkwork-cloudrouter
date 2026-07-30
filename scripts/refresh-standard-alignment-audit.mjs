@@ -99,7 +99,7 @@ function collectCiSecurityFacts() {
 
 function collectMigrationsFacts() {
   const pgDir = "database/migrations/postgres";
-  const sqliteDir = "database/migrations/sqlite";
+  const sqliteDir = "tests/fixtures/database/sqlite/migrations";
   const pgFiles = listDir(pgDir).filter((f) => f.endsWith(".sql")).sort();
   const sqliteFiles = listDir(sqliteDir).filter((f) => f.endsWith(".sql")).sort();
   const paired = (files) => {
@@ -114,7 +114,7 @@ function collectMigrationsFacts() {
     postgresBaselineExists: fileExists("database/ddl/baseline/postgres/0001_clawrouter_baseline.sql"),
     postgresPairs: paired(pgFiles),
     sqliteMigrationFiles: sqliteFiles,
-    sqliteBaselineExists: fileExists("database/ddl/baseline/sqlite/0001_clawrouter_baseline.sql"),
+    sqliteBaselineExists: fileExists("tests/fixtures/database/sqlite/ddl/baseline/0001_clawrouter_baseline.sql"),
     sqlitePairs: paired(sqliteFiles),
   };
 }

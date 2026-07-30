@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "b83827dfde18496532d0a5f56063389b1b9dc9b8f26af459b37b018d1a945e39"
+      "sha256": "ae761e11264946d650163c778f5b7ed46be128b2e21b60b87fecba83033577b6"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -60,15 +60,11 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "0b1e67be354625b22dcb293a94a23a60151451e4e52bddf05c6634953f0ae7a6"
+      "sha256": "62a31adf569483817249ca9edd4cb85d20cdd9f833c34f39a9408d69397de4d6"
     },
     {
       "path": "src/api/paths.ts",
       "sha256": "fb06a3db13e96bb5b349ddc1831aa6d350c17b09d05ea92a36438131140f666e"
-    },
-    {
-      "path": "src/api/payments.ts",
-      "sha256": "9166ebd698240da1b0e5614ab1171d5d74cf800a38f970de90400f3f7f7b9715"
     },
     {
       "path": "src/api/recharges.ts",
@@ -100,7 +96,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "5a20dcc73a3778d4244e36159c58a8478dce3810fd7a2f100dab91bf0f01dd55"
+      "sha256": "4b972cdc2fa89c79db813ab9a3701564ea7bd7edf7a6fffbf22fa08bb67ca7cd"
     },
     {
       "path": "src/types/admin-analytics-insight.ts",
@@ -280,7 +276,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "00a498837e8d8e77ec887f09841666eff40dbbd1c66ac8c08301295b84d42019"
+      "sha256": "f779c95c40a4771b5c16bd76d05b4bdabe868738c277cabb02bc7d9b0cffbc92"
     },
     {
       "path": "src/types/ip-limit-rule-item.ts",

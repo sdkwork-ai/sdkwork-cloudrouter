@@ -411,13 +411,6 @@ where
             admin_model_rankings_router(),
         ),
     };
-    let payment_runtime_router =
-        sdkwork_clawrouter_router_service::api::admin_payment_runtime_router();
-    router = merge_admin_router_with_subject_boundary(
-        router,
-        &admin_subject_boundary_config,
-        payment_runtime_router,
-    );
     if let Some(store) = inventory_store {
         let inventory_router =
             sdkwork_clawrouter_router_service::api::admin_inventory_router_with_store(store);
@@ -898,6 +891,12 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
             ))
         })?;
     prepare_claw_router_database_lifecycle(database_pool.clone()).await?;
+    sdkwork_clawrouter_router_service::infrastructure::sql::bootstrap_claw_runtime_id_generator(
+        &database_pool,
+        SERVICE_NAME,
+    )
+    .await
+    .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
     let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
         ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
     })?;
@@ -1621,7 +1620,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
-    async fn router_from_env_rejects_missing_or_invalid_server_snowflake_node_id_before_database_bootstrap(
+    async fn router_from_env_rejects_static_or_invalid_server_snowflake_node_id_before_database_bootstrap(
     ) {
         let _guard = env_guard().lock().unwrap();
         let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
@@ -1631,28 +1630,25 @@ mod tests {
 
         std::env::remove_var("SDKWORK_DATABASE_URL");
         std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "server");
-        for node_id in [None, Some("not-a-node-id")] {
+        for node_id in ["17", "not-a-node-id"] {
             let mut config_path = unique_runtime_config_path();
             config_path.set_file_name(match node_id {
-                Some(_) => "invalid-snowflake-node-id.toml",
-                None => "missing-snowflake-node-id.toml",
+                "17" => "static-snowflake-node-id.toml",
+                _ => "invalid-snowflake-node-id.toml",
             });
             std::env::set_var("SDKWORK_CLAW_CONFIG_FILE", &config_path);
-            match node_id {
-                Some(node_id) => std::env::set_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", node_id),
-                None => std::env::remove_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID"),
-            }
+            std::env::set_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", node_id);
 
             let error = router_from_env()
                 .await
                 .expect_err(
-                    "server startup must reject invalid Snowflake node IDs before bootstrap",
+                    "server startup must reject static and invalid Snowflake node IDs before bootstrap",
                 )
                 .to_string();
 
             assert!(
                 error.contains("SDKWORK_CLAW_SNOWFLAKE_NODE_ID"),
-                "unexpected startup error for node id {node_id:?}: {error}"
+                "unexpected startup error for node id {node_id}: {error}"
             );
             assert!(
                 !config_path.exists(),

@@ -151,6 +151,25 @@ impl ProviderAdapterRouteResolver for AccountProviderAdapterResolver {
     }
 }
 
+#[derive(Debug)]
+struct FallbackStreamingAdapterResolver;
+
+impl ProviderAdapterRouteResolver for FallbackStreamingAdapterResolver {
+    fn resolve_adapter_target(&self, invocation: &Invocation) -> Option<InvocationAdapterTarget> {
+        let account = invocation.account.as_ref()?;
+        (account.supplier_code == "fallback").then(|| InvocationAdapterTarget {
+            supplier_code: account.supplier_code.clone(),
+            endpoint_key: "fallback.stream".to_owned(),
+            base_url: "https://adapter.example".to_owned(),
+            path_template: "/providers/{supplier_code}{standard_path}".to_owned(),
+            standard_path: "/v1/stream".to_owned(),
+            gateway_token: Some("adapter-token-fallback".to_owned()),
+            shape: InvocationShape::SseStream,
+            adapter_invocation_shape: AdapterInvocationShape::SseStream,
+        })
+    }
+}
+
 impl FakeDispatcher {
     fn new(outcomes: Vec<Result<InvocationDispatchResponse, InvocationDispatchError>>) -> Self {
         Self {
@@ -369,6 +388,33 @@ async fn retries_failover_candidate_after_retryable_status() {
             .and_then(|body| body.get("id"))
             .and_then(Value::as_str)
     );
+}
+
+#[tokio::test]
+async fn failover_rejects_billable_streaming_adapter_before_second_dispatch() {
+    let dispatcher = FakeDispatcher::new(vec![
+        ok(503, json!({"error": "retry later"})),
+        ok(200, json!({"id": "fallback-must-not-run"})),
+    ]);
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::StatelessFailover,
+        vec![candidate("primary", 3001), candidate("fallback", 3002)],
+    );
+    invocation.resource.surface =
+        sdkwork_clawrouter_router_service::application::InvocationSurface::ProviderNative;
+    invocation.request.method = Method::GET;
+
+    let error = DispatchExecutor::new(Arc::new(dispatcher.clone()))
+        .with_adapter_resolver(Arc::new(FallbackStreamingAdapterResolver))
+        .before(&mut invocation)
+        .await
+        .expect_err("billable fallback adapter stream must fail before dispatch");
+
+    assert_eq!(InvocationErrorKind::Usage, error.kind);
+    assert!(error.message.contains("terminal usage envelope"));
+    assert_eq!(vec!["primary"], dispatcher.providers());
+    assert_eq!(1, invocation.routing.attempted_routes.len());
+    assert!(invocation.dispatch.adapter_target.is_none());
 }
 
 #[tokio::test]
@@ -826,7 +872,7 @@ async fn failover_resolves_candidate_secret_and_auth_per_attempt() {
 }
 
 #[tokio::test]
-async fn non_idempotent_post_preparation_failure_is_not_failed_over() {
+async fn non_idempotent_post_preparation_failure_can_try_fallback_before_provider_io() {
     let dispatcher = FakeDispatcher::new(vec![ok(200, json!({"id": "fallback-ok"}))]);
     let secret_resolver = Arc::new(MapSecretResolver {
         secrets: HashMap::new(),
@@ -843,19 +889,18 @@ async fn non_idempotent_post_preparation_failure_is_not_failed_over() {
         DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
             .before(&mut invocation)
             .await
-            .expect_err("non-idempotent request preparation must fail closed");
+            .expect_err("all candidate preparation failures must fail closed");
 
     assert!(dispatcher.providers().is_empty());
-    assert_eq!(1, invocation.routing.attempted_routes.len());
-    assert_eq!(
-        "primary",
-        invocation.routing.attempted_routes[0].supplier_code
-    );
-    assert!(!invocation.routing.attempted_routes[0].success);
-    assert_eq!(
-        Some("provider_request_prepare_failed"),
-        invocation.routing.attempted_routes[0].error_code.as_deref()
-    );
+    assert_eq!(2, invocation.routing.attempted_routes.len());
+    for (candidate_index, attempt) in invocation.routing.attempted_routes.iter().enumerate() {
+        assert_eq!(candidate_index, attempt.candidate_index);
+        assert!(!attempt.success);
+        assert_eq!(
+            Some("provider_request_prepare_failed"),
+            attempt.error_code.as_deref()
+        );
+    }
     assert_eq!(InvocationErrorKind::Dispatch, error.kind);
     assert!(error.message.contains("secret not found"));
 }

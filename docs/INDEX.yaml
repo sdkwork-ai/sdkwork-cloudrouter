@@ -68,6 +68,12 @@ entries:
     status: accepted
     owner: clawrouter-platform
     title: Standardize upstream supplier routing
+  - id: ADR-20260730
+    path: docs/architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md
+    kind: adr
+    status: accepted
+    owner: clawrouter-platform
+    title: Own Chat runtime PostgreSQL authority
   - id: PLAN-2026-0001
     path: docs/engineering/plans/PLAN-2026-0001-commercial-production-readiness.md
     kind: plan
@@ -276,6 +282,14 @@ domains:
     description: React PC application, console, admin, playground, i18n, theming
     documents:
       - TECH-0001
+  - id: chat
+    name: Chat
+    owner: clawrouter-platform
+    description: First-party conversation transcript, context snapshots, runtime references, and usage linkage
+    documents:
+      - PRD-0001
+      - TECH-0001
+      - ADR-20260730
   - id: docs
     name: Documentation
     owner: clawrouter-docs

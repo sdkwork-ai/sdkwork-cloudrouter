@@ -327,7 +327,11 @@ function readPositiveInteger(record: ApiRecord, key: string, message: string): n
 }
 
 function readRequiredNonNegativeDecimalString(record: ApiRecord, key: string, message: string): string {
-  const value = readString(record, key).trim();
+  const rawValue = record[key];
+  if (typeof rawValue !== 'string') {
+    throw new Error(message);
+  }
+  const value = rawValue.trim();
   if (value.length > 64 || !/^[0-9]+(?:\.[0-9]{1,12})?$/u.test(value)) {
     throw new Error(message);
   }

@@ -10,9 +10,10 @@ use sdkwork_claw_security::{
 };
 use sdkwork_clawrouter_router_service::application::{
     BillingMode, DeferredStreamInvocation, DeferredStreamResponse, DispatchMode,
-    GatewayInvocationPolicyViolation, Invocation, InvocationBody, InvocationClassificationRequest,
-    InvocationDispatchResponse, InvocationError, InvocationErrorKind, InvocationPipelineExecution,
-    InvocationRequest, InvocationResourceClassifier, InvocationSubject, InvocationSurface,
+    GatewayInvocationPolicyViolation, Invocation, InvocationBody, InvocationClassification,
+    InvocationClassificationRequest, InvocationDispatchResponse, InvocationError,
+    InvocationErrorKind, InvocationPipelineExecution, InvocationRequest,
+    InvocationResourceClassifier, InvocationSubject, InvocationSurface,
     OpenAiResourceClassifier, ProviderNativeResourceClassifier, ResourceType,
 };
 use sdkwork_clawrouter_router_service::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
@@ -34,6 +35,14 @@ where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let (mut parts, body) = request.into_parts();
+    let preclassified_openai = if is_openai_prefixed_path(parts.uri.path()) {
+        match classify_request(&parts.method, &parts.uri) {
+            Ok(classified) => Some(classified),
+            Err(_) => return not_found_response(),
+        }
+    } else {
+        None
+    };
     let auth_context = match authenticate_gateway_api_key(
         state.catalog.as_ref(),
         state.api_key_hasher.as_ref(),
@@ -48,7 +57,13 @@ where
         Ok(uri) => uri,
         Err(response) => return response,
     };
-    handle_authenticated_invocation(state, Request::from_parts(parts, body), auth_context).await
+    handle_authenticated_invocation(
+        state,
+        Request::from_parts(parts, body),
+        auth_context,
+        preclassified_openai,
+    )
+    .await
 }
 
 pub(crate) async fn handle_internal_invocation<C>(
@@ -117,6 +132,7 @@ where
         state,
         Request::from_parts(parts, Body::from(body)),
         auth_context,
+        None,
     )
     .await
 }
@@ -125,20 +141,12 @@ async fn handle_authenticated_invocation<C>(
     state: InvocationRouterState<C>,
     request: Request<Body>,
     auth_context: sdkwork_clawrouter_router_service::application::AuthenticatedApiKeyContext,
+    preclassified_openai: Option<(InvocationClassification, String)>,
 ) -> Response
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let (parts, body) = request.into_parts();
-    let preclassified_openai = if is_openai_prefixed_path(parts.uri.path()) {
-        match classify_request(&parts.method, &parts.uri) {
-            Ok(classified) => Some(classified),
-            Err(_) => return not_found_response(),
-        }
-    } else {
-        None
-    };
-
     let client_ip = extract_client_ip(&parts, false);
     if let Err(violation) = state
         .invocation_policy_guard

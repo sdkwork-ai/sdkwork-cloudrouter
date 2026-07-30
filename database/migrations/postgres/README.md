@@ -12,6 +12,23 @@ Current migrations:
   provider/site/channel model to supplier/account aggregates. It is an
   irreversible, forward-fix migration and requires human review before
   execution because its verified contract phase drops retired legacy tables.
+- `0004_add_chat_runtime_schema.up.sql` creates the user-scoped chat transcript,
+  context snapshot, runtime invocation, and usage-link authority. It accepts
+  either an empty pre-launch schema or the complete folded-baseline shape and
+  fails closed when only part of the eight-table contract exists.
+- `0005_reconcile_upstream_supplier_routing.up.sql` repairs a partially applied
+  `0003` without changing lifecycle history. It backfills canonical supplier and
+  account references, retires remaining provider/channel columns and empty
+  prototype tables, and fails closed on conflicts, orphan references, or legacy
+  fields that still contain data.
+- `0006_align_chat_runtime_optional_cost.up.sql` keeps `0004` immutable while
+  aligning chat turn and runtime usage costs with the optional decimal contract.
+  It performs metadata-only nullability/default changes and replaces the two
+  non-negative checks with null-aware constraints.
+- `0007_reconcile_canonical_contract_constraints.up.sql` reconciles legacy
+  nullability, validated constraints, and soft-delete-aware unique indexes with
+  the materialized Claw Router contract. It fails closed on null, scope, range,
+  relationship, or uniqueness violations instead of rewriting business data.
 
 ## Naming
 
@@ -33,6 +50,16 @@ Example:
 - Do not replay the baseline over a non-empty shared schema or replace an applied
   migration with a folded-baseline revision. Repair drift through a reviewed
   forward migration while preserving lifecycle history.
+- If `0004` rejects a partial pre-launch chat schema, stop chat writes, inspect
+  drift against `database/contract/schema.yaml`, and use a reviewed forward-fix
+  or recreate the disposable pre-launch database. Do not bypass its shape
+  verification or mark the migration as applied manually.
+- If `0005` rejects legacy data, keep `0003` history intact, stop routing writes,
+  archive or reconcile the named rows, and rerun `0005`. Do not rename columns
+  manually or mark the repair migration as applied.
+- If `0007` rejects existing data, keep prior migration history intact and repair
+  the named rows under the owning service before rerunning it. Do not weaken the
+  contract or mark constraints valid without PostgreSQL validation.
 - After GA, **do not** change production schema only by regenerating the baseline; add an incremental migration and update the schema registry contract.
 - Run `pnpm db:plan` and `pnpm db:drift:check` before merge.
 - Production upgrades use controlled jobs (`deployments/kubernetes/claw-router-migration-job.yaml`) with `SDKWORK_CLAW_STARTUP_INSTALL_MODE=skip`.

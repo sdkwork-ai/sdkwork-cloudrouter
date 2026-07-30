@@ -1,5 +1,6 @@
 //! API assembly for sdkwork-clawrouter.
 //! Application bootstrap lives in `bootstrap.rs`; route inventory is in `assembly-manifest.json`.
+// SDKWORK-ASSEMBLY-LIB-CUSTOM
 
 mod bootstrap;
 mod generated;

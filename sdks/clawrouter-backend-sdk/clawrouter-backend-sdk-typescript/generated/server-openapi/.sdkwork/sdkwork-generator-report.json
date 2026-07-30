@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "700434e85954d693fe1b4e211d55b6d02df5ce7a77954bb403e8cba6fbc09a34",
+  "changeFingerprint": "914dd08d1eb26de41982902b5910fe1e04cab949b19b4aa27ead1706e7ae91ba",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -33,7 +33,6 @@
           "src/api/base.ts",
           "src/api/index.ts",
           "src/api/paths.ts",
-          "src/api/payments.ts",
           "src/api/recharges.ts",
           "src/api/storage.ts",
           "src/api/system.ts",
@@ -336,10 +335,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 234,
-    "models": 206,
-    "apis": 5,
-    "types": 208
+    "totalFiles": 232,
+    "models": 205,
+    "apis": 4,
+    "types": 207
   },
   "warnings": [
     {
@@ -357,10 +356,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/system.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/payments.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -394,12 +389,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 151,
+    "writtenFiles": 150,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "700434e85954d693fe1b4e211d55b6d02df5ce7a77954bb403e8cba6fbc09a34",
+    "changeFingerprint": "914dd08d1eb26de41982902b5910fe1e04cab949b19b4aa27ead1706e7ae91ba",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -416,7 +411,6 @@
         "src/api/base.ts",
         "src/api/index.ts",
         "src/api/paths.ts",
-        "src/api/payments.ts",
         "src/api/recharges.ts",
         "src/api/storage.ts",
         "src/api/system.ts",
@@ -582,7 +576,6 @@
             "src/api/base.ts",
             "src/api/index.ts",
             "src/api/paths.ts",
-            "src/api/payments.ts",
             "src/api/recharges.ts",
             "src/api/storage.ts",
             "src/api/system.ts",
