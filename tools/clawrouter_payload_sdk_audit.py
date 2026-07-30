@@ -219,12 +219,15 @@ class ClawRouterPayloadSdkAudit:
                 )
             result_component = schemas.get(result_schema)
             operation_success_schema = self._json_success_schema(operation_spec) if operation_spec is not None else None
-            uses_sdkwork_envelope = self._uses_sdkwork_success_envelope(operation_success_schema or {})
+            uses_sdkwork_envelope = self._uses_sdkwork_success_envelope(operation_success_schema or {}) or (
+                isinstance(result_component, dict)
+                and self._uses_sdkwork_success_envelope(result_component)
+            )
             uses_generic_envelope = self._uses_sdkwork_generic_success_envelope(operation_success_schema or {})
             if not isinstance(result_component, dict):
                 if not uses_generic_envelope and not uses_sdkwork_envelope:
                     messages.append(f"{surface} {operation_id} result schema component is missing: {result_schema}")
-            elif operation_spec is not None and not uses_sdkwork_envelope:
+            elif operation_spec is not None and not uses_generic_envelope:
                 data_schema = self._result_data_schema(result_component)
                 expected_data_schema = self._expected_response_data_schema(
                     operation=operation,
@@ -248,6 +251,16 @@ class ClawRouterPayloadSdkAudit:
                         response_component,
                     )
                 )
+                messages.extend(
+                    self._check_sdk_response_entity_types(
+                        surface,
+                        operation_id,
+                        response_schema,
+                        response_component,
+                        schemas,
+                        sdk_types_dir,
+                    )
+                )
             if owner_sdk_operation and not uses_generic_envelope and not uses_sdkwork_envelope:
                 messages.extend(
                     self._check_sdk_type(
@@ -257,16 +270,6 @@ class ClawRouterPayloadSdkAudit:
                         sdk_types_dir,
                         sdk_type_index,
                         result_component,
-                    )
-                )
-                messages.extend(
-                    self._check_sdk_response_entity_types(
-                        surface,
-                        operation_id,
-                        response_schema,
-                        response_component,
-                        schemas,
-                        sdk_types_dir,
                     )
                 )
                 if not sdk_method_records:
@@ -835,7 +838,7 @@ class ClawRouterPayloadSdkAudit:
 
     def _method_records(self, source: str, method_name: str) -> list[tuple[str, str]]:
         pattern = re.compile(
-            rf"async\s+{re.escape(method_name)}\s*\([^)]*\)\s*:\s*Promise<[^>]+>\s*\{{",
+            rf"async\s+{re.escape(method_name)}\s*\([^)]*\)\s*:\s*Promise<[^\r\n{{]+>\s*\{{",
             re.S,
         )
         records: list[tuple[str, str]] = []
@@ -848,7 +851,10 @@ class ClawRouterPayloadSdkAudit:
         return records
 
     def _all_method_records(self, source: str) -> list[tuple[str, str]]:
-        pattern = re.compile(r"async\s+[A-Za-z_][A-Za-z0-9_]*\s*\([^)]*\)\s*:\s*Promise<[^>]+>\s*\{", re.S)
+        pattern = re.compile(
+            r"async\s+[A-Za-z_][A-Za-z0-9_]*\s*\([^)]*\)\s*:\s*Promise<[^\r\n{]+>\s*\{",
+            re.S,
+        )
         records: list[tuple[str, str]] = []
         for match in pattern.finditer(source):
             body_start = match.end()

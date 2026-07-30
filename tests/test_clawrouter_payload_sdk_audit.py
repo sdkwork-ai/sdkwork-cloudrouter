@@ -138,6 +138,36 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
 
             self.assertTrue(result.ok, result.messages)
 
+    def test_accepts_sdkwork_v3_unwrapped_response_without_result_type(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_openapi(root)
+            self.write_sdk(root)
+            base = root / "sdks" / "clawrouter-app-sdk" / "clawrouter-app-sdk-typescript" / "src"
+            (base / "api" / "iam.ts").write_text(
+                "import { appApiPath } from './paths';\n"
+                "import type { HttpClient } from '../http/client';\n"
+                "import type { CreateApiKeyRequest, CreateApiKeyResponse } from '../types';\n"
+                "export class IamApiKeysApi {\n"
+                "  constructor(private client: HttpClient) {}\n"
+                "  async create(body: CreateApiKeyRequest): Promise<CreateApiKeyResponse> {\n"
+                "    return this.client.request<CreateApiKeyResponse>(appApiPath(`/iam/api_keys`), "
+                "{ method: 'POST', body, sdkworkUnwrapKind: 'data' });\n"
+                "  }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            (base / "types" / "api-keys-create-result.ts").unlink()
+            (base / "types" / "index.ts").write_text(
+                "export type { CreateApiKeyRequest } from './create-api-key-request';\n"
+                "export type { CreateApiKeyResponse } from './create-api-key-response';\n",
+                encoding="utf-8",
+            )
+
+            result = ClawRouterPayloadSdkAudit(root=root).run()
+
+            self.assertTrue(result.ok, result.messages)
+
     def test_accepts_closed_empty_request_object_as_record_never_type_alias(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1934,10 +1964,6 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
             self.assertFalse(result.ok)
             self.assertIn(
                 "app apiKeys.create SDK method must accept body: CreateApiKeyRequest",
-                result.messages,
-            )
-            self.assertIn(
-                "app apiKeys.create SDK method must return Promise<ApiKeysCreateResult>",
                 result.messages,
             )
 
