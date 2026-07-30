@@ -111,7 +111,7 @@ class SdkRuntimeStandardizerTest(unittest.TestCase):
                 self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["build"])
                 self.assertEqual("node custom/build-runtime.mjs", package["scripts"]["dev"])
                 self.assertEqual("npm run build", package["scripts"]["prepublishOnly"])
-            self.assertEqual("workspace:*", package["dependencies"]["@sdkwork/sdk-common"])
+                self.assertEqual("workspace:*", package["dependencies"]["@sdkwork/sdk-common"])
                 self.assertIn("rollup", package["devDependencies"])
                 self.assertNotIn("vite", package["devDependencies"])
                 self.assertNotIn("vite-plugin-dts", package["devDependencies"])

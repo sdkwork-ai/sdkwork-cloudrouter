@@ -100,6 +100,15 @@ ALTER TABLE ai_usage
     ALTER COLUMN settlement_status SET NOT NULL,
     ALTER COLUMN idempotency_key SET NOT NULL;
 
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_plan_scope_id
+    ON ai_pricing_plan (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_pricing_rule_scope_id
+    ON ai_pricing_rule (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_policy_scope_id
+    ON ai_routing_policy (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_profile_scope_id
+    ON ai_routing_profile (tenant_id, organization_id, id);
+
 DROP INDEX IF EXISTS uk_ai_model_mapping_rule_uuid;
 CREATE UNIQUE INDEX uk_ai_model_mapping_rule_uuid
     ON ai_model_mapping_rule (uuid)
@@ -412,6 +421,7 @@ DECLARE
     canonical_not_null_count INTEGER;
     canonical_constraint_count INTEGER;
     canonical_partial_index_count INTEGER;
+    canonical_scope_index_count INTEGER;
     import_request_nullable BOOLEAN;
 BEGIN
     SELECT count(*)
@@ -522,16 +532,33 @@ BEGIN
        AND pg_get_expr(index_metadata.indpred, index_metadata.indrelid)
            LIKE '%deleted_at IS NULL%';
 
+    SELECT count(*)
+      INTO canonical_scope_index_count
+      FROM pg_class index_record
+      JOIN pg_index index_metadata
+        ON index_metadata.indexrelid = index_record.oid
+     WHERE index_record.relnamespace = current_schema()::regnamespace
+       AND index_record.relname IN (
+           'uk_ai_pricing_plan_scope_id',
+           'uk_ai_pricing_rule_scope_id',
+           'uk_ai_routing_policy_scope_id',
+           'uk_ai_routing_profile_scope_id'
+       )
+       AND index_metadata.indisunique
+       AND index_metadata.indpred IS NULL;
+
     IF canonical_not_null_count <> 17
        OR import_request_nullable IS DISTINCT FROM TRUE
        OR canonical_constraint_count <> 41
-       OR canonical_partial_index_count <> 15 THEN
+       OR canonical_partial_index_count <> 15
+       OR canonical_scope_index_count <> 4 THEN
         RAISE EXCEPTION
-            'canonical contract verification failed: not-null %, import request nullable %, constraints %, partial indexes %',
+            'canonical contract verification failed: not-null %, import request nullable %, constraints %, partial indexes %, scope indexes %',
             canonical_not_null_count,
             import_request_nullable,
             canonical_constraint_count,
-            canonical_partial_index_count;
+            canonical_partial_index_count,
+            canonical_scope_index_count;
     END IF;
 END
 $sdkwork_migration$;
