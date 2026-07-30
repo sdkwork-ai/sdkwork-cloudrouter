@@ -139,9 +139,9 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
         source = compose.read_text(encoding="utf-8")
 
         self.assertIn("postgres:16-alpine", source)
-        self.assertIn("POSTGRES_DB: sdkwork_claw_test", source)
-        self.assertIn("POSTGRES_USER: sdkwork_claw_test", source)
-        self.assertIn("POSTGRES_PASSWORD: sdkwork_claw_test_password", source)
+        self.assertIn("POSTGRES_DB: sdkwork_ai_test", source)
+        self.assertIn("POSTGRES_USER: sdkwork_ai_test", source)
+        self.assertIn("POSTGRES_PASSWORD: sdkwork_ai_test_password", source)
         self.assertIn("${SDKWORK_CLAW_POSTGRES_TEST_PORT:-15432}:5432", source)
         self.assertIn("tmpfs:", source)
         self.assertIn("/var/lib/postgresql/data", source)

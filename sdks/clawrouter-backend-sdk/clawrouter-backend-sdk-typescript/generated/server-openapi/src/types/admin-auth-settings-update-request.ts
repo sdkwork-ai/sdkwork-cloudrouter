@@ -1,3 +1,5 @@
+import type { JsonValue } from './json-value';
+
 /** AdminAuthSettingsUpdateRequest contract. */
 export interface AdminAuthSettingsUpdateRequest {
   /** leftRailMode field on AdminAuthSettingsUpdateRequest. */
@@ -19,7 +21,7 @@ export interface AdminAuthSettingsUpdateRequest {
   /** registerMethods field on AdminAuthSettingsUpdateRequest. */
   registerMethods?: ('email' | 'phone')[];
   /** verificationPolicy field on AdminAuthSettingsUpdateRequest. */
-  verificationPolicy?: Record<string, unknown>;
+  verificationPolicy?: Record<string, JsonValue>;
   /** wechat field on AdminAuthSettingsUpdateRequest. */
-  wechat?: Record<string, unknown>;
+  wechat?: Record<string, JsonValue>;
 }

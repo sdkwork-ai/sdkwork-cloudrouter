@@ -1,13 +1,13 @@
 /** CacheOperationOutcome contract. */
 export interface CacheOperationOutcome {
   /** cacheKey field on CacheOperationOutcome. */
-  cacheKey: string | unknown;
+  cacheKey: string;
   /** deletedEntries field on CacheOperationOutcome. */
   deletedEntries: string;
   /** instanceName field on CacheOperationOutcome. */
-  instanceName: string | unknown;
+  instanceName: string;
   /** namespace field on CacheOperationOutcome. */
-  namespace: string | unknown;
+  namespace: string;
   /** operation field on CacheOperationOutcome. */
   operation: string;
   /** refreshedEntries field on CacheOperationOutcome. */

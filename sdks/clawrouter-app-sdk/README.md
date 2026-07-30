@@ -49,6 +49,7 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | `sdkwork-payment-app-sdk` | `payment-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-promotion-app-sdk` | `promotion-app-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-models-app-sdk` | `models-app-catalog-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-drive-app-sdk` | `drive-app-storage-capability` | `consumer-sdk` | `/app/v3/api` | `generatedTransportImportPolicy: forbidden` |
 
 Package names:
 
@@ -76,6 +77,8 @@ Package names:
 - `typescript`: `@sdkwork/promotion-app-sdk`
 - `sdkwork-models-app-sdk`
 - `typescript`: `@sdkwork/models-app-sdk`
+- `sdkwork-drive-app-sdk`
+- `typescript`: `@sdkwork/drive-app-sdk`
 
 Regenerate this SDK family from the project root:
 

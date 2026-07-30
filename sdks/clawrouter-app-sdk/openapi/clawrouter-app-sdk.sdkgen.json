@@ -3460,6 +3460,7 @@
       "MediaSource": {
         "description": "Media source schema exposed by Claw Router.",
         "enum": [
+          "drive",
           "object_storage",
           "external_url",
           "data_url",

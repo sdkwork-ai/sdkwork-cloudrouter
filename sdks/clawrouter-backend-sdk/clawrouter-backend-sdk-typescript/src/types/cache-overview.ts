@@ -1,9 +1,11 @@
+import type { JsonValue } from './json-value';
+
 /** CacheOverview contract. */
 export interface CacheOverview {
   /** instances field on CacheOverview. */
-  instances: Record<string, unknown>[];
+  instances: Record<string, JsonValue>[];
   /** namespacePolicies field on CacheOverview. */
-  namespacePolicies: Record<string, unknown>[];
+  namespacePolicies: Record<string, JsonValue>[];
   /** summary field on CacheOverview. */
-  summary: Record<string, unknown>;
+  summary: Record<string, JsonValue>;
 }

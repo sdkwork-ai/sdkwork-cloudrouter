@@ -43,6 +43,10 @@ This SDK family is owner-only. Dependency-owned routes are consumed through decl
 | --- | --- | --- | --- | --- |
 | `sdkwork-iam-backend-sdk` | `appbase-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 | `sdkwork-models-backend-sdk` | `models-backend-catalog-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-membership-backend-sdk` | `membership-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-payment-backend-sdk` | `payment-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-promotion-backend-sdk` | `promotion-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
+| `sdkwork-drive-backend-sdk` | `drive-backend-management-capability` | `consumer-sdk` | `/backend/v3/api` | `generatedTransportImportPolicy: forbidden` |
 
 Package names:
 
@@ -62,6 +66,14 @@ Package names:
 - `java`: `com.sdkwork:sdkwork-models-backend-sdk`
 - `go`: `github.com/sdkwork/sdkwork-models-backend-sdk`
 - `python`: `sdkwork-models-backend-sdk`
+- `sdkwork-membership-backend-sdk`
+- `typescript`: `@sdkwork/membership-backend-sdk`
+- `sdkwork-payment-backend-sdk`
+- `typescript`: `@sdkwork/payment-backend-sdk`
+- `sdkwork-promotion-backend-sdk`
+- `typescript`: `@sdkwork/promotion-backend-sdk`
+- `sdkwork-drive-backend-sdk`
+- `typescript`: `@sdkwork/drive-backend-sdk`
 
 Regenerate this SDK family from the project root:
 

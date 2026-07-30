@@ -1,3 +1,4 @@
+import type { JsonValue } from './json-value';
 import type { PageInfo } from './page-info';
 
 /** CacheNamespaceKeyPage contract. */
@@ -5,10 +6,10 @@ export interface CacheNamespaceKeyPage {
   /** instanceName field on CacheNamespaceKeyPage. */
   instanceName: string;
   /** items field on CacheNamespaceKeyPage. */
-  items: Record<string, unknown>[];
+  items: Record<string, JsonValue>[];
   /** namespace field on CacheNamespaceKeyPage. */
   namespace: string;
-  /** pageInfo field on CacheNamespaceKeyPage. */
+  /** Page info field on cache namespace key page. */
   pageInfo: PageInfo;
   /** returnedItems field on CacheNamespaceKeyPage. */
   returnedItems: string;

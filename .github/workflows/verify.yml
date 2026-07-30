@@ -16,18 +16,18 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: sdkwork
+          POSTGRES_USER: sdkwork_ai_test
           POSTGRES_PASSWORD: sdkwork-ci
-          POSTGRES_DB: sdkwork_clawrouter_ci
+          POSTGRES_DB: sdkwork_ai_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U sdkwork"
+          --health-cmd "pg_isready -U sdkwork_ai_test -d sdkwork_ai_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
     env:
-      SDKWORK_DATABASE_URL: postgres://sdkwork:sdkwork-ci@localhost:5432/sdkwork_clawrouter_ci
+      SDKWORK_DATABASE_URL: postgres://sdkwork_ai_test:sdkwork-ci@localhost:5432/sdkwork_ai_test
       CLAWROUTER_BROWSER_SMOKE_REQUIRED: "1"
       CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED: "1"
       RUSTFLAGS: "-D warnings"

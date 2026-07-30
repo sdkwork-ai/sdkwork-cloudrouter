@@ -1,45 +1,45 @@
 import type { MediaResource } from './media-resource';
 
-/** Admin site settings response schema exposed by Claw Router. */
+/** AdminSiteSettingsResponse contract. */
 export interface AdminSiteSettingsResponse {
-  /** Accent color field on admin site settings response. */
+  /** accentColor field on AdminSiteSettingsResponse. */
   accentColor: string;
-  /** Brand color field on admin site settings response. */
+  /** brandColor field on AdminSiteSettingsResponse. */
   brandColor: string;
-  /** Custom css field on admin site settings response. */
+  /** customCss field on AdminSiteSettingsResponse. */
   customCss: string;
-  /** Description field on admin site settings response. */
+  /** description field on AdminSiteSettingsResponse. */
   description: string;
-  /** Docs url field on admin site settings response. */
+  /** docsUrl field on AdminSiteSettingsResponse. */
   docsUrl: string;
   /** Favicon field on admin site settings response. */
   favicon: MediaResource;
-  /** Footer copyright field on admin site settings response. */
+  /** footerCopyright field on AdminSiteSettingsResponse. */
   footerCopyright: string;
   /** Icon field on admin site settings response. */
   icon: MediaResource;
-  /** Icp record number field on admin site settings response. */
+  /** icpRecordNumber field on AdminSiteSettingsResponse. */
   icpRecordNumber: string;
-  /** Icp record url field on admin site settings response. */
+  /** icpRecordUrl field on AdminSiteSettingsResponse. */
   icpRecordUrl: string;
   /** Logo field on admin site settings response. */
   logo: MediaResource;
-  /** Police record number field on admin site settings response. */
+  /** policeRecordNumber field on AdminSiteSettingsResponse. */
   policeRecordNumber: string;
-  /** Police record url field on admin site settings response. */
+  /** policeRecordUrl field on AdminSiteSettingsResponse. */
   policeRecordUrl: string;
-  /** Privacy url field on admin site settings response. */
+  /** privacyUrl field on AdminSiteSettingsResponse. */
   privacyUrl: string;
-  /** Seo description field on admin site settings response. */
+  /** seoDescription field on AdminSiteSettingsResponse. */
   seoDescription: string;
-  /** Seo title field on admin site settings response. */
+  /** seoTitle field on AdminSiteSettingsResponse. */
   seoTitle: string;
-  /** Short name field on admin site settings response. */
+  /** shortName field on AdminSiteSettingsResponse. */
   shortName: string;
-  /** Site name field on admin site settings response. */
+  /** siteName field on AdminSiteSettingsResponse. */
   siteName: string;
-  /** Support url field on admin site settings response. */
+  /** supportUrl field on AdminSiteSettingsResponse. */
   supportUrl: string;
-  /** Terms url field on admin site settings response. */
+  /** termsUrl field on AdminSiteSettingsResponse. */
   termsUrl: string;
 }

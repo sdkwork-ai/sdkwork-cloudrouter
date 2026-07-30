@@ -56,6 +56,9 @@ const client = new SdkworkBackendClient({
 
 - `client.ai` - ai API
 - `client.system` - system API
+- `client.memberships` - memberships API
+- `client.payments` - payments API
+- `client.promotions` - promotions API
 - `client.recharges` - recharges API
 - `client.storage` - storage API
 
@@ -73,6 +76,48 @@ const result = await client.ai.modelMappingOptions.list();
 ```typescript
 // List claw router auth settings
 const result = await client.system.auth.settings.retrieve();
+```
+
+### memberships
+
+```typescript
+// Update
+const membershipId = '1';
+const body = {
+  status: 'active',
+};
+const result = await client.memberships.members.update(membershipId, body);
+```
+
+### payments
+
+```typescript
+// List
+const params = {
+  page: 1,
+  page_size: 2,
+  status: 'status',
+  provider_code: 'provider_code',
+  provider_account_id: 'provider_account_id',
+  method_code: 'method_code',
+  country_code: 'country_code',
+  currency_code: 'currency_code',
+  order_id: 'order_id',
+  intent_id: 'intent_id',
+  business_date: 'business_date',
+};
+const result = await client.payments.disputes.list(params);
+```
+
+### promotions
+
+```typescript
+// List
+const params = {
+  page: 1,
+  page_size: 2,
+};
+const result = await client.promotions.budgetLedgerEntries.list(params);
 ```
 
 ### recharges

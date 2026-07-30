@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "914dd08d1eb26de41982902b5910fe1e04cab949b19b4aa27ead1706e7ae91ba",
+  "changeFingerprint": "017abec087e27b02239ada82306f790ece482cb2665933a269c94c548d2d998e",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -32,7 +32,10 @@
           "src/api/ai.ts",
           "src/api/base.ts",
           "src/api/index.ts",
+          "src/api/memberships.ts",
           "src/api/paths.ts",
+          "src/api/payments.ts",
+          "src/api/promotions.ts",
           "src/api/recharges.ts",
           "src/api/storage.ts",
           "src/api/system.ts",
@@ -99,12 +102,17 @@
           "src/types/media-kind.ts",
           "src/types/media-resource.ts",
           "src/types/media-source.ts",
+          "src/types/membership-package-group-mutation-request.ts",
+          "src/types/membership-package-mutation-request.ts",
+          "src/types/membership-plan-mutation-request.ts",
+          "src/types/membership-status-update-request.ts",
           "src/types/model-limit-rule-item.ts",
           "src/types/model-limit-rule-page.ts",
           "src/types/monitor-alert-page.ts",
           "src/types/monitor-node-page.ts",
           "src/types/monitor-performance-page.ts",
           "src/types/page-info.ts",
+          "src/types/payment-provider-account-status-update-request.ts",
           "src/types/problem-detail.ts",
           "src/types/recharge-package-mutation-request.ts",
           "src/types/recharge-settings-update-request.ts",
@@ -335,10 +343,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 232,
-    "models": 205,
-    "apis": 4,
-    "types": 207
+    "totalFiles": 256,
+    "models": 226,
+    "apis": 7,
+    "types": 228
   },
   "warnings": [
     {
@@ -356,6 +364,18 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/system.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/memberships.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/payments.ts"
+    },
+    {
+      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/promotions.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -389,12 +409,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 150,
+    "writtenFiles": 158,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "914dd08d1eb26de41982902b5910fe1e04cab949b19b4aa27ead1706e7ae91ba",
+    "changeFingerprint": "017abec087e27b02239ada82306f790ece482cb2665933a269c94c548d2d998e",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -410,7 +430,10 @@
         "src/api/ai.ts",
         "src/api/base.ts",
         "src/api/index.ts",
+        "src/api/memberships.ts",
         "src/api/paths.ts",
+        "src/api/payments.ts",
+        "src/api/promotions.ts",
         "src/api/recharges.ts",
         "src/api/storage.ts",
         "src/api/system.ts",
@@ -475,12 +498,17 @@
         "src/types/media-kind.ts",
         "src/types/media-resource.ts",
         "src/types/media-source.ts",
+        "src/types/membership-package-group-mutation-request.ts",
+        "src/types/membership-package-mutation-request.ts",
+        "src/types/membership-plan-mutation-request.ts",
+        "src/types/membership-status-update-request.ts",
         "src/types/model-limit-rule-item.ts",
         "src/types/model-limit-rule-page.ts",
         "src/types/monitor-alert-page.ts",
         "src/types/monitor-node-page.ts",
         "src/types/monitor-performance-page.ts",
         "src/types/page-info.ts",
+        "src/types/payment-provider-account-status-update-request.ts",
         "src/types/problem-detail.ts",
         "src/types/recharge-package-mutation-request.ts",
         "src/types/recharge-settings-update-request.ts",
@@ -575,7 +603,10 @@
             "src/api/ai.ts",
             "src/api/base.ts",
             "src/api/index.ts",
+            "src/api/memberships.ts",
             "src/api/paths.ts",
+            "src/api/payments.ts",
+            "src/api/promotions.ts",
             "src/api/recharges.ts",
             "src/api/storage.ts",
             "src/api/system.ts",
@@ -642,12 +673,17 @@
             "src/types/media-kind.ts",
             "src/types/media-resource.ts",
             "src/types/media-source.ts",
+            "src/types/membership-package-group-mutation-request.ts",
+            "src/types/membership-package-mutation-request.ts",
+            "src/types/membership-plan-mutation-request.ts",
+            "src/types/membership-status-update-request.ts",
             "src/types/model-limit-rule-item.ts",
             "src/types/model-limit-rule-page.ts",
             "src/types/monitor-alert-page.ts",
             "src/types/monitor-node-page.ts",
             "src/types/monitor-performance-page.ts",
             "src/types/page-info.ts",
+            "src/types/payment-provider-account-status-update-request.ts",
             "src/types/problem-detail.ts",
             "src/types/recharge-package-mutation-request.ts",
             "src/types/recharge-settings-update-request.ts",

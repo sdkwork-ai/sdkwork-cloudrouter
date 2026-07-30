@@ -4,6 +4,9 @@ import type { AuthTokenManager } from '@sdkwork/sdk-common';
 
 import { AiApi, createAiApi } from './api/ai';
 import { SystemApi, createSystemApi } from './api/system';
+import { MembershipsApi, createMembershipsApi } from './api/memberships';
+import { PaymentsApi, createPaymentsApi } from './api/payments';
+import { PromotionsApi, createPromotionsApi } from './api/promotions';
 import { RechargesApi, createRechargesApi } from './api/recharges';
 import { StorageApi, createStorageApi } from './api/storage';
 
@@ -12,6 +15,9 @@ export class SdkworkBackendClient {
 
   public readonly ai: AiApi;
   public readonly system: SystemApi;
+  public readonly memberships: MembershipsApi;
+  public readonly payments: PaymentsApi;
+  public readonly promotions: PromotionsApi;
   public readonly recharges: RechargesApi;
   public readonly storage: StorageApi;
 
@@ -20,6 +26,12 @@ export class SdkworkBackendClient {
     this.ai = createAiApi(this.httpClient);
 
     this.system = createSystemApi(this.httpClient);
+
+    this.memberships = createMembershipsApi(this.httpClient);
+
+    this.payments = createPaymentsApi(this.httpClient);
+
+    this.promotions = createPromotionsApi(this.httpClient);
 
     this.recharges = createRechargesApi(this.httpClient);
 

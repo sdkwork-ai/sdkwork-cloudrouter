@@ -3,9 +3,9 @@ export interface ModelLimitRuleItem {
   /** Upstream account group code. */
   accountGroup: string;
   /** Upstream account group identifier. */
-  accountGroupId: string | unknown;
+  accountGroupId: string;
   /** Upstream account group display name. */
-  accountGroupName: string | unknown;
+  accountGroupName: string;
   /** id field on ModelLimitRuleItem. */
   id: string;
   /** model field on ModelLimitRuleItem. */
