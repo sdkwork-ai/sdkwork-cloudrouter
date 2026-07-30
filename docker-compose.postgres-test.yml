@@ -2,9 +2,9 @@ services:
   postgres-test:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: sdkwork_claw_test
-      POSTGRES_USER: sdkwork_claw_test
-      POSTGRES_PASSWORD: sdkwork_claw_test_password
+      POSTGRES_DB: sdkwork_ai_test
+      POSTGRES_USER: sdkwork_ai_test
+      POSTGRES_PASSWORD: sdkwork_ai_test_password
     ports:
       - "${SDKWORK_CLAW_POSTGRES_TEST_PORT:-15432}:5432"
     tmpfs:
@@ -13,7 +13,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U sdkwork_claw_test -d sdkwork_claw_test",
+          "pg_isready -U sdkwork_ai_test -d sdkwork_ai_test",
         ]
       interval: 1s
       timeout: 3s
