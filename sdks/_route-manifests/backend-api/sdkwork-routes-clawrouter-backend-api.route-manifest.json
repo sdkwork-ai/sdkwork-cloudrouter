@@ -1500,7 +1500,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/system/analytics/admin/overview",
-      "operationId": "analytics.admin.overview.list",
+      "operationId": "analytics.admin.overview.retrieve",
       "tags": [
         "system"
       ],

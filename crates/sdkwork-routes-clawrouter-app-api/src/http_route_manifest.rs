@@ -291,4 +291,5 @@ mod tests {
     fn public_catalog_routes_allow_anonymous_access() {
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
     }
+
 }

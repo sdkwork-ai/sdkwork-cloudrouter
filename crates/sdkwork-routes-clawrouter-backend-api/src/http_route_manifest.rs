@@ -350,7 +350,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/system/analytics/admin/overview",
         "system",
-        "analytics.admin.overview.list",
+        "analytics.admin.overview.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
