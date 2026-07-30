@@ -1483,15 +1483,15 @@ support.
 
 Detailed commercial documents:
 
-- [Commercial Pricing Model](./docs/commercial/PRICING.md) �?license tiers,
+- [Commercial Pricing Model](./docs/commercial/PRICING.md) - license tiers,
   pricing matrix, token metering, additional services, payment, and refund
   policy.
-- [Service Level Agreement](./docs/legal/SLA.md) �?uptime commitments,
+- [Service Level Agreement](./docs/legal/SLA.md) - uptime commitments,
   incident response times, service credits, rate-limit tiers, and support
   channels.
-- [Edition Tier Matrix](./docs/legal/TIER_MATRIX.md) �?full capability
+- [Edition Tier Matrix](./docs/legal/TIER_MATRIX.md) - full capability
   comparison across Community, Pro, Enterprise, and OEM editions.
-- [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md) �?commercial authorization
+- [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md) - commercial authorization
   terms.
 
 Contact `sales@sdkwork.com` to request commercial authorization, request a

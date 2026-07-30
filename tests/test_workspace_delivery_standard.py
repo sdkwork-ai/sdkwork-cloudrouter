@@ -24,7 +24,7 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             scripts["test:postgres:docker"],
         )
         self.assertEqual(
-            "node scripts/verify-claw-router-application.mjs",
+            "pnpm exec sdkwork-app verify",
             scripts["verify"],
         )
         self.assertEqual(
@@ -65,7 +65,10 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             / "build-portal.mjs"
         ).read_text(encoding="utf-8")
 
-        self.assertEqual("pnpm deps:check && node scripts/build-portal.mjs", portal_package_json["scripts"]["build"])
+        self.assertEqual(
+            "pnpm check:dependencies && node scripts/build-portal.mjs",
+            portal_package_json["scripts"]["build"],
+        )
         self.assertIn("MAX_OLD_SPACE_SIZE_MB = 8192", build_script)
         self.assertIn("CLAWROUTER_PORTAL_BUILD_HEAP_BOOTSTRAPPED", build_script)
         self.assertIn("process.execPath", build_script)
