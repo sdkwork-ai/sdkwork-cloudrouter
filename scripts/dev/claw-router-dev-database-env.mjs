@@ -118,61 +118,61 @@ function postgresKindFromUrl(databaseUrl) {
 }
 
 function resolvePostgresDatabaseUrlFromFields(env) {
-  if (normalizeText(env.SDKWORK_CLAW_DATABASE_PROVIDER)) {
+  if (normalizeText(env.SDKWORK_DATABASE_PROVIDER)) {
     throw new Error(
-      'SDKWORK_CLAW_DATABASE_PROVIDER is not supported; use SDKWORK_CLAW_DATABASE_ENGINE',
+      'SDKWORK_DATABASE_PROVIDER is not supported; use SDKWORK_DATABASE_ENGINE',
     );
   }
-  if (normalizeText(env.SDKWORK_CLAW_DATABASE_SSLMODE)) {
+  if (normalizeText(env.SDKWORK_DATABASE_SSLMODE)) {
     throw new Error(
-      'SDKWORK_CLAW_DATABASE_SSLMODE is not supported; use SDKWORK_CLAW_DATABASE_SSL_MODE',
+      'SDKWORK_DATABASE_SSLMODE is not supported; use SDKWORK_DATABASE_SSL_MODE',
     );
   }
 
-  const engine = normalizeText(env.SDKWORK_CLAW_DATABASE_ENGINE);
+  const engine = normalizeText(env.SDKWORK_DATABASE_ENGINE);
   if (!engine) {
     return undefined;
   }
   if (!/^postgres(?:ql)?$/iu.test(engine)) {
-    throw new Error(`unsupported SDKWORK_CLAW_DATABASE_ENGINE: ${engine}`);
+    throw new Error(`unsupported SDKWORK_DATABASE_ENGINE: ${engine}`);
   }
 
-  const host = normalizeText(env.SDKWORK_CLAW_DATABASE_HOST);
-  const database = normalizeText(env.SDKWORK_CLAW_DATABASE_NAME);
-  const username = normalizeText(env.SDKWORK_CLAW_DATABASE_USERNAME);
-  const password = normalizeText(env.SDKWORK_CLAW_DATABASE_PASSWORD);
+  const host = normalizeText(env.SDKWORK_DATABASE_HOST);
+  const database = normalizeText(env.SDKWORK_DATABASE_NAME);
+  const username = normalizeText(env.SDKWORK_DATABASE_USERNAME);
+  const password = normalizeText(env.SDKWORK_DATABASE_PASSWORD);
   const missing = [];
   if (!host) {
-    missing.push('SDKWORK_CLAW_DATABASE_HOST');
+    missing.push('SDKWORK_DATABASE_HOST');
   }
   if (!database) {
-    missing.push('SDKWORK_CLAW_DATABASE_NAME');
+    missing.push('SDKWORK_DATABASE_NAME');
   }
   if (!username) {
-    missing.push('SDKWORK_CLAW_DATABASE_USERNAME');
+    missing.push('SDKWORK_DATABASE_USERNAME');
   }
   if (!password) {
-    missing.push('SDKWORK_CLAW_DATABASE_PASSWORD');
+    missing.push('SDKWORK_DATABASE_PASSWORD');
   }
   if (missing.length > 0) {
     throw new Error(
-      `SDKWORK_CLAW_DATABASE_ENGINE=postgresql requires ${missing.join(', ')}`,
+      `SDKWORK_DATABASE_ENGINE=postgresql requires ${missing.join(', ')}`,
     );
   }
 
-  const port = normalizeText(env.SDKWORK_CLAW_DATABASE_PORT);
+  const port = normalizeText(env.SDKWORK_DATABASE_PORT);
   return buildPostgresDatabaseUrl({
     host,
     port,
     database,
     username,
     password,
-    sslmode: env.SDKWORK_CLAW_DATABASE_SSL_MODE,
+    sslmode: env.SDKWORK_DATABASE_SSL_MODE,
   });
 }
 
 export function hasCompletePostgresSplitProfile(env) {
-  if (!normalizeText(env.SDKWORK_CLAW_DATABASE_ENGINE)) {
+  if (!normalizeText(env.SDKWORK_DATABASE_ENGINE)) {
     return false;
   }
   try {
@@ -187,9 +187,9 @@ export function mergeDevEnvWithDatabasePrecedence(baseEnv, fileEnv) {
   if (
     fileEnv
     && hasCompletePostgresSplitProfile(fileEnv)
-    && !normalizeText(fileEnv.SDKWORK_CLAW_DATABASE_URL)
+    && !normalizeText(fileEnv.SDKWORK_DATABASE_URL)
   ) {
-    delete merged.SDKWORK_CLAW_DATABASE_URL;
+    delete merged.SDKWORK_DATABASE_URL;
   }
   return merged;
 }
@@ -234,7 +234,7 @@ export function resolveClawRouterDevDatabaseEnv({
   env = process.env,
   defaultDatabase = 'postgresql',
 } = {}) {
-  const databaseUrl = normalizeText(env.SDKWORK_CLAW_DATABASE_URL)
+  const databaseUrl = normalizeText(env.SDKWORK_DATABASE_URL)
     ?? resolvePostgresDatabaseUrlFromFields(env);
   if (!databaseUrl) {
     if (defaultDatabase === 'postgresql') {
@@ -242,9 +242,9 @@ export function resolveClawRouterDevDatabaseEnv({
       return {
         databaseUrl: defaultDatabaseUrl,
         env: {
-          SDKWORK_CLAW_DATABASE_URL: defaultDatabaseUrl,
-          SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS:
-            normalizeText(env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS)
+          SDKWORK_DATABASE_URL: defaultDatabaseUrl,
+          SDKWORK_DATABASE_MAX_CONNECTIONS:
+            normalizeText(env.SDKWORK_DATABASE_MAX_CONNECTIONS)
               ?? defaultClawRouterDevPostgresMaxConnections(),
         },
         kind: 'postgresql',
@@ -258,11 +258,11 @@ export function resolveClawRouterDevDatabaseEnv({
   }
 
   const resultEnv = {
-    SDKWORK_CLAW_DATABASE_URL: databaseUrl,
+    SDKWORK_DATABASE_URL: databaseUrl,
   };
-  const maxConnections = normalizeText(env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS);
+  const maxConnections = normalizeText(env.SDKWORK_DATABASE_MAX_CONNECTIONS);
   if (maxConnections) {
-    resultEnv.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = maxConnections;
+    resultEnv.SDKWORK_DATABASE_MAX_CONNECTIONS = maxConnections;
   }
 
   return {

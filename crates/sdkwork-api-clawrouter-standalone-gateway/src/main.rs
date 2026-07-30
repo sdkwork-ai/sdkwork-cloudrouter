@@ -11,7 +11,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .or_else(|| std::env::var("SDKWORK_CLAW_SERVER_BIND").ok())
         .or_else(|| runtime_toml.and_then(|config| config.server.bind))
         .unwrap_or_else(|| "127.0.0.1:3900".to_owned());
-    let assembly = api_assembly::assemble_api_router().await?;
+    let assembly =
+        api_assembly::assemble_api_router(api_assembly::ApiAssemblyContext::default()).await?;
     let app = service_router(
         assembly.router,
         ServiceRouterConfig::default().with_always_ready(),

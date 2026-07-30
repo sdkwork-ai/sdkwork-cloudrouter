@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { toCanvas } from 'html-to-image';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
@@ -314,7 +314,7 @@ export function Rankings() {
 
       // Explicitly set high bit rate (16 Mbps) for better text rendering
       let options: MediaRecorderOptions = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 16000000 };
-      if (typeof MediaRecorder !== 'undefined' && !MediaRecorder.isTypeSupported(options.mimeType)) {
+      if (typeof MediaRecorder !== 'undefined' && options.mimeType && !MediaRecorder.isTypeSupported(options.mimeType)) {
         options = { mimeType: 'video/webm', videoBitsPerSecond: 16000000 };
       }
 

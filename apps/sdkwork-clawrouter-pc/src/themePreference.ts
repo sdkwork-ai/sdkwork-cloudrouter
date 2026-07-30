@@ -8,7 +8,9 @@ export const CLAW_ROUTER_THEME_COLOR_STORAGE_KEY = 'claw-router-theme-color';
 const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system';
 const DEFAULT_THEME_COLOR_PREFERENCE: ThemeColorPreference = 'lobster';
 
-const THEME_COLOR_PALETTES: Record<ThemeColorPreference, Record<string, string>> = {
+type ThemeColorShade = '50' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '900';
+
+const THEME_COLOR_PALETTES: Record<ThemeColorPreference, Record<ThemeColorShade, string>> = {
   lobster: {
     '50': '#fdf3f2',
     '100': '#fbe4e2',

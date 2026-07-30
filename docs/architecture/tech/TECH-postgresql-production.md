@@ -62,11 +62,11 @@ Use `password_file` for normal production deployments. Direct `password = "..."`
 
 `/etc/sdkwork/router/clawrouter.env` is for process-level overrides and operational toggles. Normal database configuration should stay in TOML plus `database.secret`.
 
-`SDKWORK_CLAW_DATABASE_URL` remains supported as an emergency or orchestration override:
+`SDKWORK_DATABASE_URL` remains supported as an emergency or orchestration override:
 
 ```bash
-SDKWORK_CLAW_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod?sslmode=require"
-SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS="16"
+SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod?sslmode=require"
+SDKWORK_DATABASE_MAX_CONNECTIONS="16"
 ```
 
 Do not store long-lived production passwords in shell history or ad hoc startup commands. Prefer `password_file` in `/etc/sdkwork/router/clawrouter.toml`.

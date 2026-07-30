@@ -55,15 +55,15 @@ cp .env.postgres.example .env.postgres
 Edit `.env.postgres`:
 
 ```env
-SDKWORK_CLAW_DATABASE_ENGINE=postgresql
-SDKWORK_CLAW_DATABASE_HOST=127.0.0.1
-SDKWORK_CLAW_DATABASE_PORT=5432
-SDKWORK_CLAW_DATABASE_NAME=sdkwork_ai_dev
-SDKWORK_CLAW_DATABASE_SCHEMA=sdkwork_ai_dev
-SDKWORK_CLAW_DATABASE_USERNAME=sdkwork_ai_dev
-SDKWORK_CLAW_DATABASE_PASSWORD=sdkworkdev123
-SDKWORK_CLAW_DATABASE_SSL_MODE=disable
-SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS=10
+SDKWORK_DATABASE_ENGINE=postgresql
+SDKWORK_DATABASE_HOST=127.0.0.1
+SDKWORK_DATABASE_PORT=5432
+SDKWORK_DATABASE_NAME=sdkwork_ai_dev
+SDKWORK_DATABASE_SCHEMA=sdkwork_ai_dev
+SDKWORK_DATABASE_USERNAME=sdkwork_ai_dev
+SDKWORK_DATABASE_PASSWORD=sdkworkdev123
+SDKWORK_DATABASE_SSL_MODE=disable
+SDKWORK_DATABASE_MAX_CONNECTIONS=10
 ```
 
 Do not commit `.env.postgres`. The repository only tracks `.env.postgres.example`.
@@ -107,10 +107,10 @@ pnpm dev:server --dry-run
 The default dev profile assembles:
 
 ```text
-SDKWORK_CLAW_DATABASE_URL=postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable
+SDKWORK_DATABASE_URL=postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable
 ```
 
-and passes the URL plus `SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS` to the explicit
+and passes the URL plus `SDKWORK_DATABASE_MAX_CONNECTIONS` to the explicit
 product server installer, catalog refresh, gateway, and edge runtime steps.
 
 `pnpm dev:server` loads `.env.postgres`. These PostgreSQL scripts resolve to
@@ -134,21 +134,21 @@ behavior. The PostgreSQL dev profile is not the desktop persistence default.
 
 Development startup resolves the database in this order:
 
-1. `SDKWORK_CLAW_DATABASE_URL`
-2. `SDKWORK_CLAW_DATABASE_ENGINE/HOST/PORT/NAME/USERNAME/PASSWORD/SSL_MODE`
+1. `SDKWORK_DATABASE_URL`
+2. `SDKWORK_DATABASE_ENGINE/HOST/PORT/NAME/USERNAME/PASSWORD/SSL_MODE`
 3. Default local PostgreSQL dev database
 4. The client-local desktop SQLite profile
 
-Normal local PostgreSQL development should use the default profile or split fields. Set `SDKWORK_CLAW_DATABASE_URL` only for a temporary explicit override.
+Normal local PostgreSQL development should use the default profile or split fields. Set `SDKWORK_DATABASE_URL` only for a temporary explicit override.
 
-Unsupported engines fail startup. A PostgreSQL split-field profile must define `SDKWORK_CLAW_DATABASE_HOST`, `SDKWORK_CLAW_DATABASE_NAME`, `SDKWORK_CLAW_DATABASE_USERNAME`, and `SDKWORK_CLAW_DATABASE_PASSWORD`.
+Unsupported engines fail startup. A PostgreSQL split-field profile must define `SDKWORK_DATABASE_HOST`, `SDKWORK_DATABASE_NAME`, `SDKWORK_DATABASE_USERNAME`, and `SDKWORK_DATABASE_PASSWORD`.
 
 ## 5. Troubleshooting
 
 If product server startup shows SQLite in the dry-run output, remove the
 SQLite database override; product server development is PostgreSQL-only.
 
-If startup fails with a missing password error, add `SDKWORK_CLAW_DATABASE_PASSWORD` to `.env.postgres`. Empty passwords are not accepted for the split-field PostgreSQL profile.
+If startup fails with a missing password error, add `SDKWORK_DATABASE_PASSWORD` to `.env.postgres`. Empty passwords are not accepted for the split-field PostgreSQL profile.
 
 If PostgreSQL rejects the connection, verify it manually:
 
@@ -157,4 +157,4 @@ $env:PGPASSWORD = "sdkworkdev123"
 psql -h 127.0.0.1 -p 5432 -U sdkwork_ai_dev -d sdkwork_ai_dev -c "select 1;"
 ```
 
-Use `SDKWORK_CLAW_DATABASE_SSL_MODE=disable` for local unencrypted PostgreSQL. Use `require` only when the local PostgreSQL server supports TLS.
+Use `SDKWORK_DATABASE_SSL_MODE=disable` for local unencrypted PostgreSQL. Use `require` only when the local PostgreSQL server supports TLS.

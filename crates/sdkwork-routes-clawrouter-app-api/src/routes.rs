@@ -10,7 +10,6 @@ use sdkwork_claw_config::{
     UpstreamCredentialSecurityConfig,
 };
 use sdkwork_claw_http::AppSubjectBoundaryConfig;
-use sdkwork_clawrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_clawrouter_database_host::connect_claw_router_database;
 use sdkwork_clawrouter_router_service::application::{
     bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretHasher,
@@ -50,6 +49,7 @@ use sdkwork_clawrouter_router_service::ports::{
     ModelRankingsReadModelStore, PaymentCallbackStore, SettingsStore,
     SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
 };
+use sdkwork_clawrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
@@ -794,7 +794,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
-    sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
+    sdkwork_claw_http::materialize_federated_database_env_from_config(&config);
     let subject_boundary_config =
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
@@ -1626,7 +1626,7 @@ fn require_api_key_security_config(
 ) -> Result<ApiKeySecurityConfig, ProductCatalogRouterError> {
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
-            "{} is required when SDKWORK_CLAW_DATABASE_URL is configured",
+            "{} is required when SDKWORK_DATABASE_URL is configured",
             ApiKeySecurityConfig::ENV_API_KEY_PEPPER
         ))
     })
@@ -1637,7 +1637,7 @@ fn require_trusted_subject_config(
 ) -> Result<TrustedSubjectConfig, ProductCatalogRouterError> {
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
-            "{} is required when SDKWORK_CLAW_DATABASE_URL is configured",
+            "{} is required when SDKWORK_DATABASE_URL is configured",
             TrustedSubjectConfig::ENV_TRUSTED_SUBJECT_SECRET
         ))
     })
@@ -1648,7 +1648,7 @@ fn require_app_session_config(
 ) -> Result<AppSessionConfig, ProductCatalogRouterError> {
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
-            "{} is required when SDKWORK_CLAW_DATABASE_URL is configured",
+            "{} is required when SDKWORK_DATABASE_URL is configured",
             AppSessionConfig::ENV_APP_SESSION_SECRET
         ))
     })
@@ -1659,7 +1659,7 @@ fn require_payment_webhook_config(
 ) -> Result<PaymentWebhookConfig, ProductCatalogRouterError> {
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
-            "{} is required when SDKWORK_CLAW_DATABASE_URL is configured",
+            "{} is required when SDKWORK_DATABASE_URL is configured",
             PaymentWebhookConfig::ENV_PAYMENT_WEBHOOK_SECRET
         ))
     })
@@ -1675,7 +1675,7 @@ fn require_database_config(
         let help_text = DatabaseConfig::startup_help_text(profile);
         ProductCatalogRouterError::Config(
             format!(
-                "SDKWORK_CLAW_DATABASE_URL is required for sdkwork-clawrouter-standalone-gateway startup so install checks can run.\n{help_text}"
+                "SDKWORK_DATABASE_URL is required for sdkwork-clawrouter-standalone-gateway startup so install checks can run.\n{help_text}"
             ),
         )
     })
@@ -1853,7 +1853,7 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn router_from_env_rejects_zero_config_server_placeholder_postgres() {
         let _guard = env_guard().lock().unwrap();
-        let saved_database_url = std::env::var("SDKWORK_CLAW_DATABASE_URL").ok();
+        let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
         let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
         let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
         let saved_snowflake_node_id = std::env::var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID").ok();
@@ -1864,7 +1864,7 @@ mod tests {
         let saved_payment_webhook_secret =
             std::env::var("SDKWORK_CLAW_PAYMENT_WEBHOOK_SECRET").ok();
         let config_path = unique_runtime_config_path();
-        std::env::remove_var("SDKWORK_CLAW_DATABASE_URL");
+        std::env::remove_var("SDKWORK_DATABASE_URL");
         std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "server");
         std::env::set_var("SDKWORK_CLAW_CONFIG_FILE", &config_path);
         std::env::set_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", "1");
@@ -1887,7 +1887,7 @@ mod tests {
 
         let router_result = router_from_env().await;
 
-        restore_env_var("SDKWORK_CLAW_DATABASE_URL", saved_database_url);
+        restore_env_var("SDKWORK_DATABASE_URL", saved_database_url);
         restore_env_var("SDKWORK_CLAW_DEPLOYMENT_MODE", saved_deployment_mode);
         restore_env_var("SDKWORK_CLAW_CONFIG_FILE", saved_config_file);
         restore_env_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);
@@ -1917,12 +1917,12 @@ mod tests {
     async fn router_from_env_rejects_missing_or_invalid_server_snowflake_node_id_before_database_bootstrap(
     ) {
         let _guard = env_guard().lock().unwrap();
-        let saved_database_url = std::env::var("SDKWORK_CLAW_DATABASE_URL").ok();
+        let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
         let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
         let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
         let saved_snowflake_node_id = std::env::var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID").ok();
 
-        std::env::remove_var("SDKWORK_CLAW_DATABASE_URL");
+        std::env::remove_var("SDKWORK_DATABASE_URL");
         std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "server");
         for node_id in [None, Some("not-a-node-id")] {
             let mut config_path = unique_runtime_config_path();
@@ -1954,7 +1954,7 @@ mod tests {
             );
         }
 
-        restore_env_var("SDKWORK_CLAW_DATABASE_URL", saved_database_url);
+        restore_env_var("SDKWORK_DATABASE_URL", saved_database_url);
         restore_env_var("SDKWORK_CLAW_DEPLOYMENT_MODE", saved_deployment_mode);
         restore_env_var("SDKWORK_CLAW_CONFIG_FILE", saved_config_file);
         restore_env_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);

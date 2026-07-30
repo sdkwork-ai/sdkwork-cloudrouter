@@ -2355,6 +2355,10 @@ dependencies = [
  "sdkwork-routes-paas-open-api",
  "sdkwork-routes-payment-open-api",
  "sdkwork-routes-video-open-api",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-contract",
+ "sdkwork-web-core",
+ "serde_json",
  "tokio",
  "tower",
 ]
@@ -2740,7 +2744,6 @@ dependencies = [
  "sdkwork-models",
  "sdkwork-models-catalog-service",
  "sdkwork-models-contract-service",
- "sdkwork-models-database-bootstrap",
  "sdkwork-payment-service",
  "sdkwork-sdk-generator-client",
  "sdkwork-utils-rust",
@@ -2841,6 +2844,7 @@ dependencies = [
  "thiserror 2.0.18",
  "toml",
  "tracing",
+ "url",
 ]
 
 [[package]]
@@ -3204,10 +3208,6 @@ dependencies = [
  "serde_json",
  "sqlx",
 ]
-
-[[package]]
-name = "sdkwork-models-database-bootstrap"
-version = "0.1.0"
 
 [[package]]
 name = "sdkwork-models-database-host"

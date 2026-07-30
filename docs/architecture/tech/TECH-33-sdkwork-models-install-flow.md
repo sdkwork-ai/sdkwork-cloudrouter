@@ -209,7 +209,7 @@ errors use `invalid_argument`; catalog/schema/runtime state problems use
 `invalid_state`. The CLI parses and validates command syntax before loading
 database configuration, so unsupported commands, missing option values, and
 unsupported refresh options must return `invalid_argument` even when
-`SDKWORK_CLAW_DATABASE_URL` is not set. Non-refresh commands (`status`,
+`SDKWORK_DATABASE_URL` is not set. Non-refresh commands (`status`,
 `install`, `upgrade`, and `ensure`) must reject extra arguments instead of
 silently ignoring them.
 

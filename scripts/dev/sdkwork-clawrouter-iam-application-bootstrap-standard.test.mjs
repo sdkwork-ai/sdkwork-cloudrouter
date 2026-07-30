@@ -18,7 +18,7 @@ const routerServiceCargo = read('services/sdkwork-clawrouter-router-service/Carg
 const workspaceCargo = read('Cargo.toml');
 const topologySource = read('scripts/lib/claw-router-topology.mjs');
 const sharedBootstrapSource = read(
-  'crates/sdkwork-iam-embedded-application-bootstrap/src/runtime.rs',
+  'crates/sdkwork-iam-web-adapter/src/embedded_bootstrap.rs',
   iamRepoRoot,
 );
 const iamAdapterSource = read(
@@ -79,7 +79,7 @@ assert.match(
 
 assert.match(
   sharedBootstrapSource,
-  /postgres_url_with_search_path/u,
+  /normalize_workspace_postgres_url/u,
   'Shared embedded bootstrap must align postgres search_path before provisioning.',
 );
 

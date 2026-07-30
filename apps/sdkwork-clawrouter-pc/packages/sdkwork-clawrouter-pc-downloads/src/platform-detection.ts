@@ -45,7 +45,8 @@ export function resolveSdkworkDownloadCardActions(
   card: SdkworkDownloadCard,
   detectedPlatform: SdkworkDownloadPlatform,
 ): ResolvedSdkworkDownloadCardActions {
-  if (card.actions.length === 0) {
+  const firstAction = card.actions[0];
+  if (!firstAction) {
     throw new Error(`Download card ${card.id} must define at least one action`);
   }
 
@@ -58,7 +59,7 @@ export function resolveSdkworkDownloadCardActions(
     )
     : undefined;
   const firstAvailablePrimary = card.actions.find(isActionAvailable);
-  const primaryAction = explicitPrimary ?? platformPrimary ?? firstAvailablePrimary ?? card.actions[0];
+  const primaryAction = explicitPrimary ?? platformPrimary ?? firstAvailablePrimary ?? firstAction;
 
   return {
     primaryAction,

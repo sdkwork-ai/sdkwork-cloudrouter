@@ -17,7 +17,7 @@ class PostgresIntegrationStandardTest(unittest.TestCase):
         self.assertTrue(test_path.exists())
         source = test_path.read_text(encoding="utf-8")
 
-        self.assertIn("SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL", source)
+        self.assertIn("SDKWORK_DATABASE_URL", source)
         self.assertIn("CREATE SCHEMA", source)
         self.assertIn("SET search_path", source)
         self.assertIn("DROP SCHEMA IF EXISTS", source)

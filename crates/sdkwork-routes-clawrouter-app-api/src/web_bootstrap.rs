@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::Router;
 use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_http::{
-    claw_service_security_policy, ensure_iam_database_env_for_claw_database,
+    claw_service_security_policy, ensure_workspace_database_env_from_config,
     inject_legacy_handler_context_from_web_context, resolve_claw_web_environment_from_process_env,
 };
 use sdkwork_iam_web_adapter::{
@@ -38,6 +38,10 @@ impl DomainContextInjector for ClawRouterAppDomainInjector {
         }
         inject_legacy_handler_context_from_web_context(request, context);
     }
+}
+
+pub fn claw_router_app_domain_context_injector() -> Arc<dyn DomainContextInjector> {
+    Arc::new(ClawRouterAppDomainInjector)
 }
 
 fn build_claw_router_app_web_framework_layer(
@@ -80,7 +84,7 @@ pub async fn iam_web_resolver_from_env(
     postgres_pool: Option<Arc<PgPool>>,
 ) -> IamWebRequestContextResolver {
     if let Some(config) = database_config {
-        ensure_iam_database_env_for_claw_database(config);
+        ensure_workspace_database_env_from_config(config);
     }
     match postgres_pool {
         Some(pool) => IamWebRequestContextResolver::new(Some(pool)),

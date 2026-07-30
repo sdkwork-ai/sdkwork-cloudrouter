@@ -2873,6 +2873,9 @@ importers:
       '@sdkwork/clawrouter-pc-console-gateway':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-console-gateway
+      '@sdkwork/clawrouter-pc-console-messages':
+        specifier: workspace:*
+        version: link:packages/sdkwork-clawrouter-pc-console-messages
       '@sdkwork/clawrouter-pc-console-settings':
         specifier: workspace:*
         version: link:packages/sdkwork-clawrouter-pc-console-settings
@@ -3655,6 +3658,9 @@ importers:
       '@sdkwork/appbase-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react
+      '@sdkwork/assets-core':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-assets/apps/sdkwork-assets-common/packages/sdkwork-assets-core
       '@sdkwork/auth-runtime-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-runtime-pc-react

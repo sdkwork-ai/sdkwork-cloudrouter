@@ -253,6 +253,12 @@ export class SystemRateLimitsApi {
 
 }
 
+export interface SystemMonitorPerformanceListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
 export class SystemMonitorPerformanceApi {
   private client: HttpClient;
 
@@ -262,9 +268,20 @@ export class SystemMonitorPerformanceApi {
 
 
 /** List performance data */
-  async list(requestOptions?: ApiRequestOptions): Promise<MonitorPerformancePage> {
-    return this.client.request<MonitorPerformancePage>(backendApiPath(`/system/monitor/performance`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  async list(params?: SystemMonitorPerformanceListParams, requestOptions?: ApiRequestOptions): Promise<MonitorPerformancePage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<MonitorPerformancePage>(appendQueryString(backendApiPath(`/system/monitor/performance`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
+}
+
+export interface SystemMonitorNodesListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
 }
 
 export class SystemMonitorNodesApi {
@@ -276,9 +293,20 @@ export class SystemMonitorNodesApi {
 
 
 /** List nodes */
-  async list(requestOptions?: ApiRequestOptions): Promise<MonitorNodePage> {
-    return this.client.request<MonitorNodePage>(backendApiPath(`/system/monitor/nodes`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  async list(params?: SystemMonitorNodesListParams, requestOptions?: ApiRequestOptions): Promise<MonitorNodePage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<MonitorNodePage>(appendQueryString(backendApiPath(`/system/monitor/nodes`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
+}
+
+export interface SystemMonitorAlertsListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
 }
 
 export class SystemMonitorAlertsApi {
@@ -290,8 +318,13 @@ export class SystemMonitorAlertsApi {
 
 
 /** List alerts */
-  async list(requestOptions?: ApiRequestOptions): Promise<MonitorAlertPage> {
-    return this.client.request<MonitorAlertPage>(backendApiPath(`/system/monitor/alerts`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  async list(params?: SystemMonitorAlertsListParams, requestOptions?: ApiRequestOptions): Promise<MonitorAlertPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<MonitorAlertPage>(appendQueryString(backendApiPath(`/system/monitor/alerts`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -431,6 +464,11 @@ export class SystemCacheOverviewApi {
   }
 }
 
+export interface SystemCacheNamespacesKeysListParams {
+  pageSize?: number;
+  cursor?: string;
+}
+
 export class SystemCacheNamespacesKeysApi {
   private client: HttpClient;
 
@@ -440,8 +478,12 @@ export class SystemCacheNamespacesKeysApi {
 
 
 /** List keys */
-  async list(namespace_: string, requestOptions?: ApiRequestOptions): Promise<CacheNamespaceKeyPage> {
-    return this.client.request<CacheNamespaceKeyPage>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  async list(namespace_: string, params?: SystemCacheNamespacesKeysListParams, requestOptions?: ApiRequestOptions): Promise<CacheNamespaceKeyPage> {
+    const query = buildQueryString([
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<CacheNamespaceKeyPage>(appendQueryString(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Delete key */

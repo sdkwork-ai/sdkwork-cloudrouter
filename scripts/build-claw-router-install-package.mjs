@@ -955,7 +955,7 @@ function createInstallGuide(packageItem) {
     lines.push(
       'Desktop deployments default to SQLite.',
       `Default SQLite file: ${policy.defaultSqlitePath}`,
-      'Override SDKWORK_CLAW_DATABASE_URL only for diagnostics or managed private deployments.',
+      'Override SDKWORK_DATABASE_URL only for diagnostics or managed private deployments.',
       '',
     );
   } else {
@@ -963,8 +963,8 @@ function createInstallGuide(packageItem) {
       'This package is configured for external PostgreSQL.',
       `Set [database].host, [database].database, [database].username, and [database].password_file in ${policy.configFile.path}.`,
       `Write the PostgreSQL password to ${policy.passwordFile.path}, or set [database].password directly in protected TOML for controlled deployments.`,
-      'SDKWORK_CLAW_DATABASE_URL remains available only as an explicit operator override.',
-      `Set SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS to ${policy.maxConnections} or another capacity-planned value.`,
+      'SDKWORK_DATABASE_URL remains available only as an explicit operator override.',
+      `Set SDKWORK_DATABASE_MAX_CONNECTIONS to ${policy.maxConnections} or another capacity-planned value.`,
       '',
     );
   }

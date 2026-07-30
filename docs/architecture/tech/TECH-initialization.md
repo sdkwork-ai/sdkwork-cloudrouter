@@ -301,10 +301,10 @@ payment_callback_body_max_bytes = 65536
 deployment_mode = "server"
 ```
 
-`SDKWORK_CLAW_DATABASE_URL` remains available in `/etc/sdkwork/router/clawrouter.env` or the process environment only as an explicit operator override:
+`SDKWORK_DATABASE_URL` remains available in `/etc/sdkwork/router/clawrouter.env` or the process environment only as an explicit operator override:
 
 ```text
-SDKWORK_CLAW_DATABASE_URL=postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod
+SDKWORK_DATABASE_URL=postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod
 ```
 
 Desktop SQLite example:

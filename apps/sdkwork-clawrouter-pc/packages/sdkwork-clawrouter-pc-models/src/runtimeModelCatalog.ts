@@ -256,19 +256,6 @@ function normalizeRuntimeModelCategory(value: string): ModelCategoryKey | null {
   }
 }
 
-function normalizeNullableString(value: unknown): string | null | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  if (value === null) {
-    return null;
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-  return null;
-}
-
 function normalizeNullableCurrency(value: unknown): string | null | undefined {
   if (value === undefined) {
     return undefined;

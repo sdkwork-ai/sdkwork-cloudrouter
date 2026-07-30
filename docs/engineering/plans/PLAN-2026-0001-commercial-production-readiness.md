@@ -195,8 +195,8 @@ No task may replace these chains with direct edits to generated output.
       aliases. Migrate application lifecycle keys to `SDKWORK_CLAW_ROUTER_CONFIG_PROFILE`,
       `_ENVIRONMENT`, `_DEPLOYMENT_PROFILE`, and `_RUNTIME_TARGET` across Rust, scripts, templates,
       and Kubernetes with no legacy fallback; `.env.release` uses config profile `prod` and runtime
-      target `server`. Keep the globally mandated shared `SDKWORK_CLAW_DATABASE_*` and
-      `SDKWORK_CLAW_REDIS_*` infrastructure namespaces unchanged.
+      target `server`. Use the globally mandated `SDKWORK_DATABASE_*` workspace database
+      authority and keep Claw Router-owned `SDKWORK_CLAW_REDIS_*` settings unchanged.
 - [ ] Obtain human review of the production manifest/env-key diff, then make
       `specs/application-env-standard.md` describe only the resulting v4 profiles and namespaces.
 - [ ] Resolve the PC core IAM manifest path and add an inherited permission-catalog entry for

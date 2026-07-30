@@ -93,7 +93,13 @@ class ClawRouterOpenApiGenerator:
             "/backend/v3/api/ai/models",
             "/backend/v3/api/ai/resource_groups",
             "/backend/v3/api/ai/resources",
+            "/backend/v3/api/memberships",
+            "/backend/v3/api/payments",
+            "/backend/v3/api/promotions",
         ),
+    }
+    OWNED_DEPENDENCY_PREFIX_EXCEPTIONS = {
+        "backend": {"/backend/v3/api/payments/runtime/snapshot"},
     }
     TITLES = {
         "app": "SDKWork Claw Router App API",
@@ -354,7 +360,10 @@ class ClawRouterOpenApiGenerator:
             if not any(
                 method.lower() in {"get", "post", "put", "patch", "delete"}
                 for method in path_item
-            ) or any(api_path == prefix or api_path.startswith(f"{prefix}/") for prefix in prefixes):
+            ) or (
+                api_path not in self.OWNED_DEPENDENCY_PREFIX_EXCEPTIONS.get(surface, set())
+                and any(api_path == prefix or api_path.startswith(f"{prefix}/") for prefix in prefixes)
+            ):
                 del paths[api_path]
         components = filtered.get("components")
         if isinstance(components, dict):

@@ -1,7 +1,6 @@
 {
   "extends": "../tsconfig.typecheck.json",
   "include": [
-    "../src/typecheck-shims.d.ts",
     "*/src/**/*.ts",
     "*/src/**/*.tsx"
   ],

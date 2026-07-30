@@ -106,7 +106,7 @@ pub fn connect_claw_router_database(pool: DatabasePool) -> Result<ClawRouterData
 ///
 /// The manifest defaults `autoMigrate` to `false`, so production startup only
 /// loads the module and retains a shared pool. A caller may enable the standard
-/// `SDKWORK_CLAW_ROUTER_DATABASE_AUTO_MIGRATE` switch in a guarded development
+/// `SDKWORK_DATABASE_AUTO_MIGRATE` switch in a guarded development
 /// or controlled staging process; release and operator commands should call
 /// [`migrate_claw_router_database`] instead.
 pub async fn bootstrap_claw_router_database(
@@ -238,10 +238,9 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires SDKWORK_CLAW_ROUTER_TEST_DATABASE_URL pointing to disposable PostgreSQL"]
+    #[ignore = "requires SDKWORK_DATABASE_URL pointing to disposable PostgreSQL"]
     async fn postgres_registry_migrates_all_declared_modules() {
-        let database_url = std::env::var("SDKWORK_CLAW_ROUTER_TEST_DATABASE_URL")
-            .expect("SDKWORK_CLAW_ROUTER_TEST_DATABASE_URL");
+        let database_url = std::env::var("SDKWORK_DATABASE_URL").expect("SDKWORK_DATABASE_URL");
         let pool = create_pool_from_config(DatabaseConfig {
             engine: DatabaseEngine::Postgres,
             url: database_url,

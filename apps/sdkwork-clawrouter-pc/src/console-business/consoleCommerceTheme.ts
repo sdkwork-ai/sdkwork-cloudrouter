@@ -39,6 +39,9 @@ const SDK_COMMERCE_THEME_VAR_KEYS = [
   '--sdk-shadow-lg',
 ] as const;
 
+type SdkCommerceThemeVariableKey = (typeof SDK_COMMERCE_THEME_VAR_KEYS)[number];
+type SdkCommerceThemeStyle = CSSProperties & Partial<Record<SdkCommerceThemeVariableKey, string>>;
+
 function mapConsoleThemeColor(themeColor: ThemeColorPreference): SdkworkThemeColor {
   switch (themeColor) {
     case 'blue':
@@ -58,14 +61,14 @@ function mapConsoleThemeColor(themeColor: ThemeColorPreference): SdkworkThemeCol
 export function createConsoleCommerceThemeStyle(
   isDark: boolean,
   themeColor: ThemeColorPreference = 'lobster',
-): CSSProperties {
+): SdkCommerceThemeStyle {
   const sdkThemeColor = mapConsoleThemeColor(themeColor);
   const theme = createSdkworkTheme({
     colorMode: isDark ? 'dark' : 'light',
     themeColor: sdkThemeColor,
   });
 
-  return createThemeHostCssVariables(theme, sdkThemeColor) as CSSProperties;
+  return createThemeHostCssVariables(theme, sdkThemeColor) as SdkCommerceThemeStyle;
 }
 
 export function applySdkCommerceThemeVariables(

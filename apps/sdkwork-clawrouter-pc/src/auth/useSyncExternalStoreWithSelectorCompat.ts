@@ -21,12 +21,11 @@ export function useSyncExternalStoreWithSelector<TSnapshot, TSelection>(
   isSelectionEqual: EqualityFn<TSelection> = isEqual,
 ): TSelection {
   const stateRef = useRef<SelectorState<TSelection> | null>(null);
-  let state = stateRef.current;
-  if (state === null) {
-    state = {
+  const state = stateRef.current ?? {
       hasValue: false,
       value: null,
     };
+  if (stateRef.current === null) {
     stateRef.current = state;
   }
 

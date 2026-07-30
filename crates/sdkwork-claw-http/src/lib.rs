@@ -41,7 +41,7 @@ pub use contract_routes::{
 };
 pub use error::{not_implemented_response, NotImplementedData};
 pub use federated_database_env::{
-    ensure_iam_database_env_for_claw_database, materialize_federated_database_env_from_claw_config,
+    ensure_workspace_database_env_from_config, materialize_federated_database_env_from_config,
 };
 pub use headers::{default_security_headers, redact_http_header};
 pub use metrics::{metrics, metrics_middleware, record_readiness_check};

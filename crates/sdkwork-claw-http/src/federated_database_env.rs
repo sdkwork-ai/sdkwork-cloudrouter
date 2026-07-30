@@ -1,10 +1,9 @@
 use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
-use sdkwork_database_config::claw_database::postgres_url_with_search_path;
 use std::path::{Path, PathBuf};
 
-/// Ensures IAM database env is materialized from the canonical Claw database config.
-pub fn ensure_iam_database_env_for_claw_database(database_config: &DatabaseConfig) {
-    if std::env::var("SDKWORK_IAM_DATABASE_URL")
+/// Ensures the canonical workspace database env is materialized from application config.
+pub fn ensure_workspace_database_env_from_config(database_config: &DatabaseConfig) {
+    if std::env::var("SDKWORK_DATABASE_URL")
         .ok()
         .filter(|value| !value.trim().is_empty())
         .is_some()
@@ -12,25 +11,14 @@ pub fn ensure_iam_database_env_for_claw_database(database_config: &DatabaseConfi
         return;
     }
 
-    materialize_capability_database_env("IAM", database_config);
+    materialize_workspace_database_env(database_config);
 }
 
-/// Materialize federated T1 capability database env from the active claw database profile.
+/// Materialize federated T1 capability env from the active workspace database profile.
 ///
 /// Standalone gateway tests and embedded runtimes pass `DatabaseConfig` directly without
-/// exporting `SDKWORK_CLAW_DATABASE_URL`; invoice and other federated hosts must still
+/// exporting `SDKWORK_DATABASE_URL`; invoice and other federated hosts must still
 /// resolve the same database URL/engine as the product installer.
-const FEDERATED_CAPABILITY_SERVICE_CODES: &[&str] = &[
-    "ACCOUNT",
-    "CATALOG",
-    "INVOICE",
-    "MEMBERSHIP",
-    "ORDER",
-    "PAYMENT",
-    "PROMOTION",
-    "SHOP",
-];
-
 const FEDERATED_CAPABILITY_REPO_DIRS: &[(&str, &str)] = &[
     ("ACCOUNT", "sdkwork-account"),
     ("CATALOG", "sdkwork-catalog"),
@@ -42,20 +30,13 @@ const FEDERATED_CAPABILITY_REPO_DIRS: &[(&str, &str)] = &[
     ("SHOP", "sdkwork-shop"),
 ];
 
-pub fn materialize_federated_database_env_from_claw_config(database_config: &DatabaseConfig) {
-    for service_code in FEDERATED_CAPABILITY_SERVICE_CODES {
-        materialize_capability_database_env(service_code, database_config);
-    }
+pub fn materialize_federated_database_env_from_config(database_config: &DatabaseConfig) {
+    materialize_workspace_database_env(database_config);
     materialize_federated_capability_app_roots();
     materialize_federated_commerce_lifecycle_env();
-    ensure_iam_database_env_for_claw_database(database_config);
 }
 
 fn materialize_federated_commerce_lifecycle_env() {
-    // Claw Router composes legacy appbase commerce tables with T1 route handlers. Account L3
-    // migrations must not run against that schema until the unified cutover is complete.
-    materialize_capability_auto_migrate_env("ACCOUNT", false);
-    materialize_capability_auto_migrate_env("MEMBERSHIP", false);
     materialize_capability_env_when_unset("SDKWORK_PAYMENT_FEDERATED_COMMERCE", "true");
 }
 
@@ -71,22 +52,6 @@ fn materialize_capability_env_when_unset(key: &str, value: &str) {
     // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
     unsafe {
         std::env::set_var(key, value);
-    }
-}
-
-fn materialize_capability_auto_migrate_env(service_code: &str, auto_migrate: bool) {
-    let key = format!("SDKWORK_{service_code}_DATABASE_AUTO_MIGRATE");
-    if std::env::var(&key)
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .is_some()
-    {
-        return;
-    }
-
-    // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
-    unsafe {
-        std::env::set_var(&key, if auto_migrate { "true" } else { "false" });
     }
 }
 
@@ -124,28 +89,19 @@ fn materialize_capability_app_root_env(service_code: &str, app_root: PathBuf) {
     }
 }
 
-fn materialize_capability_database_env(service_code: &str, database_config: &DatabaseConfig) {
-    let prefix = format!("SDKWORK_{}", service_code.to_uppercase());
-    let database_url_key = format!("{prefix}_DATABASE_URL");
-    let database_url = match database_config.engine {
-        DatabaseEngine::Postgres => {
-            postgres_url_with_search_path(&database_config.url, prefix.as_str())
-        }
-        DatabaseEngine::Sqlite => database_config.url.clone(),
-    };
-
+fn materialize_workspace_database_env(database_config: &DatabaseConfig) {
     // SAFETY: router bootstrap runs sequentially on the main thread before async handlers start.
     unsafe {
-        std::env::set_var(&database_url_key, database_url);
+        std::env::set_var("SDKWORK_DATABASE_URL", &database_config.url);
         std::env::set_var(
-            format!("{prefix}_DATABASE_ENGINE"),
+            "SDKWORK_DATABASE_ENGINE",
             match database_config.engine {
                 DatabaseEngine::Postgres => "postgres",
                 DatabaseEngine::Sqlite => "sqlite",
             },
         );
         std::env::set_var(
-            format!("{prefix}_DATABASE_MAX_CONNECTIONS"),
+            "SDKWORK_DATABASE_MAX_CONNECTIONS",
             database_config.max_connections.to_string(),
         );
     }
@@ -174,8 +130,8 @@ fn resolve_clawrouter_app_root() -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::{
-        ensure_iam_database_env_for_claw_database, materialize_capability_database_env,
-        materialize_federated_commerce_lifecycle_env, resolve_clawrouter_app_root,
+        ensure_workspace_database_env_from_config, materialize_federated_commerce_lifecycle_env,
+        materialize_workspace_database_env, resolve_clawrouter_app_root,
     };
     use sdkwork_claw_config::{DatabaseConfig, DatabaseEngine};
     use std::sync::{Mutex, OnceLock};
@@ -189,11 +145,11 @@ mod tests {
     }
 
     #[test]
-    fn ensure_iam_database_env_skips_when_iam_url_already_set() {
+    fn workspace_database_env_preserves_existing_url() {
         let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
-        let prior = std::env::var("SDKWORK_IAM_DATABASE_URL").ok();
+        let prior = std::env::var("SDKWORK_DATABASE_URL").ok();
         std::env::set_var(
-            "SDKWORK_IAM_DATABASE_URL",
+            "SDKWORK_DATABASE_URL",
             "postgresql://iam:iam@127.0.0.1:5432/iam",
         );
         let config = DatabaseConfig {
@@ -201,24 +157,24 @@ mod tests {
             url: "postgresql://claw:claw@127.0.0.1:5432/claw".to_owned(),
             max_connections: 5,
         };
-        ensure_iam_database_env_for_claw_database(&config);
+        ensure_workspace_database_env_from_config(&config);
         assert_eq!(
-            std::env::var("SDKWORK_IAM_DATABASE_URL").expect("iam url"),
+            std::env::var("SDKWORK_DATABASE_URL").expect("iam url"),
             "postgresql://iam:iam@127.0.0.1:5432/iam"
         );
         match prior {
-            Some(value) => std::env::set_var("SDKWORK_IAM_DATABASE_URL", value),
-            None => std::env::remove_var("SDKWORK_IAM_DATABASE_URL"),
+            Some(value) => std::env::set_var("SDKWORK_DATABASE_URL", value),
+            None => std::env::remove_var("SDKWORK_DATABASE_URL"),
         }
     }
 
     #[test]
-    fn ensure_iam_database_env_materializes_sqlite_process_identity() {
+    fn workspace_database_env_materializes_sqlite_process_identity() {
         let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         let keys = [
-            "SDKWORK_IAM_DATABASE_URL",
-            "SDKWORK_IAM_DATABASE_ENGINE",
-            "SDKWORK_IAM_DATABASE_MAX_CONNECTIONS",
+            "SDKWORK_DATABASE_URL",
+            "SDKWORK_DATABASE_ENGINE",
+            "SDKWORK_DATABASE_MAX_CONNECTIONS",
         ];
         let previous = keys.map(|key| (key, std::env::var(key).ok()));
         for key in keys {
@@ -230,18 +186,12 @@ mod tests {
             max_connections: 1,
         };
 
-        ensure_iam_database_env_for_claw_database(&config);
+        ensure_workspace_database_env_from_config(&config);
 
+        assert_eq!(std::env::var("SDKWORK_DATABASE_URL").unwrap(), config.url);
+        assert_eq!(std::env::var("SDKWORK_DATABASE_ENGINE").unwrap(), "sqlite");
         assert_eq!(
-            std::env::var("SDKWORK_IAM_DATABASE_URL").unwrap(),
-            config.url
-        );
-        assert_eq!(
-            std::env::var("SDKWORK_IAM_DATABASE_ENGINE").unwrap(),
-            "sqlite"
-        );
-        assert_eq!(
-            std::env::var("SDKWORK_IAM_DATABASE_MAX_CONNECTIONS").unwrap(),
+            std::env::var("SDKWORK_DATABASE_MAX_CONNECTIONS").unwrap(),
             "1"
         );
         for (key, value) in previous {
@@ -255,13 +205,7 @@ mod tests {
     #[test]
     fn federated_commerce_lifecycle_uses_database_scoped_env_keys() {
         let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
-        let keys = [
-            "SDKWORK_ACCOUNT_DATABASE_AUTO_MIGRATE",
-            "SDKWORK_MEMBERSHIP_DATABASE_AUTO_MIGRATE",
-            "SDKWORK_ACCOUNT_AUTO_MIGRATE",
-            "SDKWORK_MEMBERSHIP_AUTO_MIGRATE",
-            "SDKWORK_PAYMENT_FEDERATED_COMMERCE",
-        ];
+        let keys = ["SDKWORK_PAYMENT_FEDERATED_COMMERCE"];
         let previous = keys.map(|key| (key, std::env::var(key).ok()));
         for key in keys {
             std::env::remove_var(key);
@@ -270,15 +214,16 @@ mod tests {
         materialize_federated_commerce_lifecycle_env();
 
         assert_eq!(
-            std::env::var("SDKWORK_ACCOUNT_DATABASE_AUTO_MIGRATE").unwrap(),
-            "false"
+            std::env::var("SDKWORK_PAYMENT_FEDERATED_COMMERCE").unwrap(),
+            "true"
         );
-        assert_eq!(
-            std::env::var("SDKWORK_MEMBERSHIP_DATABASE_AUTO_MIGRATE").unwrap(),
-            "false"
-        );
-        assert!(std::env::var("SDKWORK_ACCOUNT_AUTO_MIGRATE").is_err());
-        assert!(std::env::var("SDKWORK_MEMBERSHIP_AUTO_MIGRATE").is_err());
+        for service_code in ["ACCOUNT", "MEMBERSHIP"] {
+            assert!(std::env::var(format!(
+                "SDKWORK_{service_code}_{}",
+                "DATABASE_AUTO_MIGRATE"
+            ))
+            .is_err());
+        }
 
         for (key, value) in previous {
             match value {
@@ -289,18 +234,16 @@ mod tests {
     }
 
     #[test]
-    fn materialize_postgres_capability_env_pins_the_claw_schema() {
+    fn materialize_postgres_workspace_env_preserves_canonical_config_url() {
         let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
         let keys = [
-            "SDKWORK_CLAW_DATABASE_SCHEMA",
             "SDKWORK_DATABASE_SCHEMA",
-            "SDKWORK_PAYMENT_DATABASE_SCHEMA",
-            "SDKWORK_PAYMENT_DATABASE_URL",
+            "SDKWORK_DATABASE_URL",
+            "SDKWORK_DATABASE_ENGINE",
+            "SDKWORK_DATABASE_MAX_CONNECTIONS",
         ];
         let previous = keys.map(|key| (key, std::env::var(key).ok()));
-        std::env::set_var("SDKWORK_CLAW_DATABASE_SCHEMA", "sdkwork_ai_dev");
-        std::env::remove_var("SDKWORK_DATABASE_SCHEMA");
-        std::env::remove_var("SDKWORK_PAYMENT_DATABASE_SCHEMA");
+        std::env::set_var("SDKWORK_DATABASE_SCHEMA", "sdkwork_ai_dev");
 
         let config = DatabaseConfig {
             engine: DatabaseEngine::Postgres,
@@ -308,10 +251,12 @@ mod tests {
                 .to_owned(),
             max_connections: 5,
         };
-        materialize_capability_database_env("PAYMENT", &config);
+        materialize_workspace_database_env(&config);
 
-        let url = std::env::var("SDKWORK_PAYMENT_DATABASE_URL").expect("payment database url");
-        assert!(url.contains("options=-c%20search_path%3Dsdkwork_ai_dev%2Cpublic"));
+        assert_eq!(
+            std::env::var("SDKWORK_DATABASE_URL").expect("workspace database url"),
+            config.url
+        );
 
         for (key, value) in previous {
             match value {

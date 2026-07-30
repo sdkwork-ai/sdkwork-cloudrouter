@@ -86,7 +86,7 @@ Common initialization commands:
   pnpm start -- --init-config-only --deployment-mode desktop
 
 Production PostgreSQL configuration:
-  SDKWORK_CLAW_DATABASE_URL="${EXAMPLE_POSTGRES_URL}" pnpm start -- --deployment-mode server
+  SDKWORK_DATABASE_URL="${EXAMPLE_POSTGRES_URL}" pnpm start -- --deployment-mode server
   pnpm start -- --deployment-mode server --database-url "${EXAMPLE_POSTGRES_URL}"
   Or edit [database] in the generated runtime TOML.
 
@@ -716,7 +716,7 @@ function buildRuntimeConfigHelpLines(result) {
       `[start-production]   Server deployments use PostgreSQL configured in ${result.configFile}`,
       '[start-production]   Set [database].host, [database].database, [database].username, and [database].password_file',
       '[start-production]   Use [database].password directly only when the runtime TOML is protected as a secret-bearing file',
-      `[start-production]   Example: SDKWORK_CLAW_DATABASE_URL="${EXAMPLE_POSTGRES_URL}" pnpm start -- --deployment-mode server`,
+      `[start-production]   Example: SDKWORK_DATABASE_URL="${EXAMPLE_POSTGRES_URL}" pnpm start -- --deployment-mode server`,
       `[start-production]   CLI override: pnpm start -- --deployment-mode server --database-url "${EXAMPLE_POSTGRES_URL}"`,
       '[start-production]   Initialize only: pnpm start -- --init-config-only --deployment-mode server',
       '[start-production]   Desktop initialize: pnpm start -- --init-config-only --deployment-mode desktop',
@@ -765,7 +765,7 @@ function prepareStartProductionRuntimeConfig({
   const configFile = location.configFile;
   const dataDirectory = location.dataDirectory;
   const sqlitePath = location.sqlitePath;
-  const explicitDatabaseUrl = String(settings.databaseUrl ?? baseEnv.SDKWORK_CLAW_DATABASE_URL ?? '').trim();
+  const explicitDatabaseUrl = String(settings.databaseUrl ?? baseEnv.SDKWORK_DATABASE_URL ?? '').trim();
   const defaultDatabaseUrl = runtimeConfigDefaultUrlForMode(
     deploymentMode,
     sqlitePath,
@@ -775,7 +775,7 @@ function prepareStartProductionRuntimeConfig({
     || runtimeConfigEngineForMode(deploymentMode);
   const databaseMaxConnections = String(
     settings.databaseMaxConnections
-      ?? baseEnv.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS
+      ?? baseEnv.SDKWORK_DATABASE_MAX_CONNECTIONS
       ?? runtimeConfigDefaultMaxConnectionsForMode(deploymentMode),
   ).trim();
   const configSnapshot = readRuntimeConfigSnapshot(configFile, baseEnv);
@@ -825,9 +825,9 @@ function prepareStartProductionRuntimeConfig({
     env: {
       SDKWORK_CLAW_CONFIG_FILE: configFile,
       SDKWORK_CLAW_DEPLOYMENT_MODE: deploymentMode,
-      ...(explicitDatabaseUrl ? { SDKWORK_CLAW_DATABASE_URL: explicitDatabaseUrl } : {}),
+      ...(explicitDatabaseUrl ? { SDKWORK_DATABASE_URL: explicitDatabaseUrl } : {}),
       ...(settings.databaseMaxConnections
-        ? { SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS: String(settings.databaseMaxConnections) }
+        ? { SDKWORK_DATABASE_MAX_CONNECTIONS: String(settings.databaseMaxConnections) }
         : {}),
     },
     helpLines: [],

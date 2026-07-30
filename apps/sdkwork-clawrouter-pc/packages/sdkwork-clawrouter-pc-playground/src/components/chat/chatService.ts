@@ -103,8 +103,7 @@ export class ChatService {
 
   static async fetchMessages(input: { completionId: string }): Promise<ChatMessage[]> {
     const result = await listChatMessages(input.completionId, {
-      limit: 20,
-      order: 'asc',
+      pageSize: 20,
     });
     ensureSdkworkApiSuccess(result, 'Failed to fetch chat messages');
     return readRequiredApiItems(result, 'Chat messages response missing items')
@@ -130,7 +129,6 @@ export class ChatService {
         status: 'cancelled',
         usageJson: usage,
       },
-      { idempotencyPrefix: 'chat-runtime-stop' },
     );
     ensureSdkworkApiSuccess(result, 'Failed to stop runtime invocation');
   }
@@ -666,7 +664,6 @@ async function failTurnResponse(
       status: 'failed',
       usage: { ...usage },
     },
-    { idempotencyPrefix: 'chat-turn-response-failed' },
   );
   ensureSdkworkApiSuccess(result, 'Failed to mark chat turn response failed');
 }

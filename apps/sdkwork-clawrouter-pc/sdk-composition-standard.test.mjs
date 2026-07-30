@@ -428,13 +428,11 @@ test('app surface component spec declares permission inheritance and core SDK in
   );
 });
 
-test('commons package does not depend on low-level appbase IAM SDK adapters', () => {
+test('commons package uses public IAM packages without local typecheck shims', () => {
   const commonsPackageJson = json('packages/sdkwork-clawroutes-pc-commons/package.json');
-  const typecheckShimsSource = source('src/typecheck-shims.d.ts');
+  const typecheckShimsUrl = new URL('src/typecheck-shims.d.ts', portalRoot);
 
   assert.equal(commonsPackageJson.dependencies['@sdkwork/auth-runtime-pc-react'], 'workspace:*');
   assert.equal(commonsPackageJson.dependencies['@sdkwork/iam-sdk-adapter'], undefined);
-  assert.doesNotMatch(typecheckShimsSource, /declare module '@sdkwork\/iam-sdk-adapter'/);
-  assert.doesNotMatch(typecheckShimsSource, /appbaseBackendApiBaseUrl/);
-  assert.doesNotMatch(typecheckShimsSource, /createAppbaseBackendClient/);
+  assert.equal(existsSync(typecheckShimsUrl), false);
 });

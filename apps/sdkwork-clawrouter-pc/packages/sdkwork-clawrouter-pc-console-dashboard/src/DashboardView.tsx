@@ -382,7 +382,7 @@ export function DashboardView() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.14} />
                       <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} interval={xAxisInterval} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
-                      <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatMetricValue(value, metricType), undefined]} />
+                      <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatMetricValue(Number(value), metricType)} />
                       {SERIES.map((series) =>
                         visibleSeries[series.key] ? <Bar key={series.key} dataKey={series.key} name={series.label(t)} stackId="usage" fill={series.color} radius={[4, 4, 0, 0]} /> : null,
                       )}
@@ -392,7 +392,7 @@ export function DashboardView() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.14} />
                       <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} interval={xAxisInterval} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={formatAxis} width={50} />
-                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [formatMetricValue(value, metricType), undefined]} />
+                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => formatMetricValue(Number(value), metricType)} />
                         {SERIES.map((series) =>
                           visibleSeries[series.key] ? (
                             <Area key={series.key} type="monotone" dataKey={series.key} name={series.label(t)} stackId="usage" stroke={series.color} fill={series.color} fillOpacity={0.2} strokeWidth={2} />
@@ -588,7 +588,7 @@ export function DashboardView() {
                         {pieData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
                       </Pie>
                       {hasModalityData && (
-                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number) => [`${value}%`, t("console.dashboard.dashboardview.text.wu2yr5", "占比")]} />
+                        <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${Number(value)}%`, t("console.dashboard.dashboardview.text.wu2yr5", "占比")]} />
                       )}
                     </PieChart>
                   </ResponsiveContainer>

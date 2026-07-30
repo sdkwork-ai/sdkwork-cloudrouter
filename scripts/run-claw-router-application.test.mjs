@@ -33,7 +33,7 @@ const documentsSdkReferenceRoot = path.join(
 const execFileAsync = promisify(execFile);
 
 const validReleaseEnv = Object.freeze({
-  SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/claw',
+  SDKWORK_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/claw',
   PORTAL_PUBLIC_API_BASE_URL: 'https://tenant.example.com/v1',
   PORTAL_PUBLIC_OPEN_API_BASE_URL: 'https://open.tenant.example.com/v1',
   PORTAL_PUBLIC_APP_API_BASE_URL: '/app/v3/api',
@@ -52,23 +52,23 @@ const productionPostgresDsnExample =
   'postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod';
 const defaultDevSqliteDatabaseUrl = 'sqlite://target/dev/clawrouter.sqlite';
 const devDatabaseEnvNames = Object.freeze([
-  'SDKWORK_CLAW_DATABASE_URL',
-  'SDKWORK_CLAW_DATABASE_ENGINE',
-  'SDKWORK_CLAW_DATABASE_HOST',
-  'SDKWORK_CLAW_DATABASE_PORT',
-  'SDKWORK_CLAW_DATABASE_NAME',
-  'SDKWORK_CLAW_DATABASE_SCHEMA',
-  'SDKWORK_CLAW_DATABASE_USERNAME',
-  'SDKWORK_CLAW_DATABASE_PASSWORD',
-  'SDKWORK_CLAW_DATABASE_SSL_MODE',
-  'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS',
-  'SDKWORK_CLAW_DATABASE_ADMIN_URL',
-  'SDKWORK_CLAW_DATABASE_ADMIN_HOST',
-  'SDKWORK_CLAW_DATABASE_ADMIN_PORT',
-  'SDKWORK_CLAW_DATABASE_ADMIN_USERNAME',
-  'SDKWORK_CLAW_DATABASE_ADMIN_PASSWORD',
-  'SDKWORK_CLAW_DATABASE_ADMIN_DATABASE',
-  'SDKWORK_CLAW_DATABASE_ADMIN_SSL_MODE',
+  'SDKWORK_DATABASE_URL',
+  'SDKWORK_DATABASE_ENGINE',
+  'SDKWORK_DATABASE_HOST',
+  'SDKWORK_DATABASE_PORT',
+  'SDKWORK_DATABASE_NAME',
+  'SDKWORK_DATABASE_SCHEMA',
+  'SDKWORK_DATABASE_USERNAME',
+  'SDKWORK_DATABASE_PASSWORD',
+  'SDKWORK_DATABASE_SSL_MODE',
+  'SDKWORK_DATABASE_MAX_CONNECTIONS',
+  'SDKWORK_DATABASE_ADMIN_URL',
+  'SDKWORK_DATABASE_ADMIN_HOST',
+  'SDKWORK_DATABASE_ADMIN_PORT',
+  'SDKWORK_DATABASE_ADMIN_USERNAME',
+  'SDKWORK_DATABASE_ADMIN_PASSWORD',
+  'SDKWORK_DATABASE_ADMIN_DATABASE',
+  'SDKWORK_DATABASE_ADMIN_SSL_MODE',
 ]);
 
 const tests = [];
@@ -1265,8 +1265,8 @@ test('installation documentation covers release, source, initialization, usage, 
   assert.ok(postgresqlDevelopment.includes('pnpm dev:server'));
   assert.ok(postgresqlDevelopment.includes('pnpm dev:desktop'));
   assert.ok(postgresqlDevelopment.includes('Copy-Item .env.postgres.example .env.postgres'));
-  assert.ok(postgresqlDevelopment.includes('SDKWORK_CLAW_DATABASE_ENGINE=postgresql'));
-  assert.ok(!postgresqlDevelopment.includes('SDKWORK_CLAW_DATABASE_PROVIDER=postgresql'));
+  assert.ok(postgresqlDevelopment.includes('SDKWORK_DATABASE_ENGINE=postgresql'));
+  assert.ok(!postgresqlDevelopment.includes('SDKWORK_DATABASE_PROVIDER=postgresql'));
   assert.ok(postgresqlDevelopment.includes('pnpm dev:server:postgres'));
   assert.ok(postgresqlDevelopment.includes('Default local PostgreSQL dev database'));
   assert.ok(postgresqlDevelopment.includes('Workspace desktop commands are gateway-backed client commands.'));
@@ -1280,7 +1280,7 @@ test('installation documentation covers release, source, initialization, usage, 
   assert.ok(postgresqlProduction.includes('/etc/sdkwork/router/clawrouter.toml'));
   assert.ok(postgresqlProduction.includes('/etc/sdkwork/router/database.secret'));
   assert.ok(postgresqlProduction.includes('password_file = "/etc/sdkwork/router/database.secret"'));
-  assert.ok(postgresqlProduction.includes('SDKWORK_CLAW_DATABASE_URL'));
+  assert.ok(postgresqlProduction.includes('SDKWORK_DATABASE_URL'));
   assert.ok(postgresqlProduction.includes('Desktop local runtime'));
   assert.ok(postgresqlProduction.includes('~/.sdkwork/router/data/clawrouter.sqlite'));
   assert.ok(enRelease.includes('This desktop SQLite policy is independent from the explicit product server PostgreSQL development profile used by `pnpm dev`, `pnpm dev:server`, and `pnpm dev:server:postgres` for the backend service runtime.'));
@@ -1685,17 +1685,17 @@ test('claw router dev database env helper prefers split fields over stale proces
 
   const merged = module.mergeDevEnvWithDatabasePrecedence(
     {
-      SDKWORK_CLAW_DATABASE_URL:
+      SDKWORK_DATABASE_URL:
         'postgresql://stale_user:wrong_pass@127.0.0.1:5432/stale_db?sslmode=disable',
     },
     {
-      SDKWORK_CLAW_DATABASE_ENGINE: 'postgresql',
-      SDKWORK_CLAW_DATABASE_HOST: '127.0.0.1',
-      SDKWORK_CLAW_DATABASE_PORT: '5432',
-      SDKWORK_CLAW_DATABASE_NAME: 'sdkwork_ai_dev',
-      SDKWORK_CLAW_DATABASE_USERNAME: 'sdkwork_ai_dev',
-      SDKWORK_CLAW_DATABASE_PASSWORD: 'sdkworkdev123',
-      SDKWORK_CLAW_DATABASE_SSL_MODE: 'disable',
+      SDKWORK_DATABASE_ENGINE: 'postgresql',
+      SDKWORK_DATABASE_HOST: '127.0.0.1',
+      SDKWORK_DATABASE_PORT: '5432',
+      SDKWORK_DATABASE_NAME: 'sdkwork_ai_dev',
+      SDKWORK_DATABASE_USERNAME: 'sdkwork_ai_dev',
+      SDKWORK_DATABASE_PASSWORD: 'sdkworkdev123',
+      SDKWORK_DATABASE_SSL_MODE: 'disable',
     },
   );
 
@@ -1713,14 +1713,14 @@ test('claw router dev database env helper resolves split PostgreSQL fields', asy
 
   const splitConfig = module.resolveClawRouterDevDatabaseEnv({
     env: {
-      SDKWORK_CLAW_DATABASE_ENGINE: 'postgresql',
-      SDKWORK_CLAW_DATABASE_HOST: '127.0.0.1',
-      SDKWORK_CLAW_DATABASE_PORT: '15432',
-      SDKWORK_CLAW_DATABASE_NAME: 'sdkwork_claw_router',
-      SDKWORK_CLAW_DATABASE_USERNAME: 'router_user',
-      SDKWORK_CLAW_DATABASE_PASSWORD: 'router pass',
-      SDKWORK_CLAW_DATABASE_SSL_MODE: 'disable',
-      SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS: '12',
+      SDKWORK_DATABASE_ENGINE: 'postgresql',
+      SDKWORK_DATABASE_HOST: '127.0.0.1',
+      SDKWORK_DATABASE_PORT: '15432',
+      SDKWORK_DATABASE_NAME: 'sdkwork_claw_router',
+      SDKWORK_DATABASE_USERNAME: 'router_user',
+      SDKWORK_DATABASE_PASSWORD: 'router pass',
+      SDKWORK_DATABASE_SSL_MODE: 'disable',
+      SDKWORK_DATABASE_MAX_CONNECTIONS: '12',
     },
   });
 
@@ -1730,46 +1730,46 @@ test('claw router dev database env helper resolves split PostgreSQL fields', asy
     'postgresql://router_user:router%20pass@127.0.0.1:15432/sdkwork_claw_router?sslmode=disable',
   );
   assert.deepEqual(splitConfig.env, {
-    SDKWORK_CLAW_DATABASE_URL:
+    SDKWORK_DATABASE_URL:
       'postgresql://router_user:router%20pass@127.0.0.1:15432/sdkwork_claw_router?sslmode=disable',
-    SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS: '12',
+    SDKWORK_DATABASE_MAX_CONNECTIONS: '12',
   });
 
   assert.throws(
     () => module.resolveClawRouterDevDatabaseEnv({
       env: {
-        SDKWORK_CLAW_DATABASE_ENGINE: 'postgres',
-        SDKWORK_CLAW_DATABASE_HOST: '127.0.0.1',
-        SDKWORK_CLAW_DATABASE_NAME: 'sdkwork_claw_router',
-        SDKWORK_CLAW_DATABASE_USERNAME: 'router_user',
+        SDKWORK_DATABASE_ENGINE: 'postgres',
+        SDKWORK_DATABASE_HOST: '127.0.0.1',
+        SDKWORK_DATABASE_NAME: 'sdkwork_claw_router',
+        SDKWORK_DATABASE_USERNAME: 'router_user',
       },
     }),
-    /SDKWORK_CLAW_DATABASE_PASSWORD/u,
+    /SDKWORK_DATABASE_PASSWORD/u,
   );
   assert.throws(
     () => module.resolveClawRouterDevDatabaseEnv({
       env: {
-        SDKWORK_CLAW_DATABASE_ENGINE: 'mysql',
-        SDKWORK_CLAW_DATABASE_HOST: '127.0.0.1',
-        SDKWORK_CLAW_DATABASE_NAME: 'sdkwork_claw_router',
-        SDKWORK_CLAW_DATABASE_USERNAME: 'router_user',
-        SDKWORK_CLAW_DATABASE_PASSWORD: 'router_pass',
+        SDKWORK_DATABASE_ENGINE: 'mysql',
+        SDKWORK_DATABASE_HOST: '127.0.0.1',
+        SDKWORK_DATABASE_NAME: 'sdkwork_claw_router',
+        SDKWORK_DATABASE_USERNAME: 'router_user',
+        SDKWORK_DATABASE_PASSWORD: 'router_pass',
       },
     }),
-    /unsupported SDKWORK_CLAW_DATABASE_ENGINE/u,
+    /unsupported SDKWORK_DATABASE_ENGINE/u,
   );
 
   const explicitConfig = module.resolveClawRouterDevDatabaseEnv({
     env: {
-      SDKWORK_CLAW_DATABASE_URL:
+      SDKWORK_DATABASE_URL:
         'postgresql://url_user:url_pass@127.0.0.1:25432/url_db?sslmode=require',
-      SDKWORK_CLAW_DATABASE_ENGINE: 'postgresql',
-      SDKWORK_CLAW_DATABASE_HOST: '127.0.0.1',
-      SDKWORK_CLAW_DATABASE_PORT: '15432',
-      SDKWORK_CLAW_DATABASE_NAME: 'split_db',
-      SDKWORK_CLAW_DATABASE_USERNAME: 'split_user',
-      SDKWORK_CLAW_DATABASE_PASSWORD: 'split_pass',
-      SDKWORK_CLAW_DATABASE_SSL_MODE: 'disable',
+      SDKWORK_DATABASE_ENGINE: 'postgresql',
+      SDKWORK_DATABASE_HOST: '127.0.0.1',
+      SDKWORK_DATABASE_PORT: '15432',
+      SDKWORK_DATABASE_NAME: 'split_db',
+      SDKWORK_DATABASE_USERNAME: 'split_user',
+      SDKWORK_DATABASE_PASSWORD: 'split_pass',
+      SDKWORK_DATABASE_SSL_MODE: 'disable',
     },
   });
   assert.equal(
@@ -1781,21 +1781,21 @@ test('claw router dev database env helper resolves split PostgreSQL fields', asy
   assert.equal(defaultConfig.kind, 'postgresql');
   assert.equal(defaultConfig.databaseUrl, defaultDevPostgresDatabaseUrl);
   assert.deepEqual(defaultConfig.env, {
-    SDKWORK_CLAW_DATABASE_URL: defaultDevPostgresDatabaseUrl,
-    SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS: '10',
+    SDKWORK_DATABASE_URL: defaultDevPostgresDatabaseUrl,
+    SDKWORK_DATABASE_MAX_CONNECTIONS: '10',
   });
 
   assert.throws(
     () => module.resolveClawRouterDevDatabaseEnv({
       env: {
-        SDKWORK_CLAW_DATABASE_PROVIDER: 'postgresql',
-        SDKWORK_CLAW_DATABASE_HOST: '127.0.0.1',
-        SDKWORK_CLAW_DATABASE_NAME: 'legacy_dev_db',
-        SDKWORK_CLAW_DATABASE_USERNAME: 'legacy_user',
-        SDKWORK_CLAW_DATABASE_PASSWORD: 'legacy pass',
+        SDKWORK_DATABASE_PROVIDER: 'postgresql',
+        SDKWORK_DATABASE_HOST: '127.0.0.1',
+        SDKWORK_DATABASE_NAME: 'legacy_dev_db',
+        SDKWORK_DATABASE_USERNAME: 'legacy_user',
+        SDKWORK_DATABASE_PASSWORD: 'legacy pass',
       },
     }),
-    /SDKWORK_CLAW_DATABASE_PROVIDER is not supported/u,
+    /SDKWORK_DATABASE_PROVIDER is not supported/u,
   );
 });
 
@@ -1810,29 +1810,29 @@ test('claw router dev postgres env example documents split database fields', () 
   assert.ok(ignored.includes('!.env.*.example'));
   assert.ok(!ignored.includes('!.env.postgres'));
   for (const requiredName of [
-    'SDKWORK_CLAW_DATABASE_ENGINE=postgresql',
-    'SDKWORK_CLAW_DATABASE_HOST=127.0.0.1',
-    'SDKWORK_CLAW_DATABASE_PORT=5432',
-    'SDKWORK_CLAW_DATABASE_NAME=sdkwork_ai_dev',
-    'SDKWORK_CLAW_DATABASE_SCHEMA=sdkwork_ai_dev',
-    'SDKWORK_CLAW_DATABASE_USERNAME=sdkwork_ai_dev',
-    'SDKWORK_CLAW_DATABASE_PASSWORD=sdkworkdev123',
-    'SDKWORK_CLAW_DATABASE_SSL_MODE=disable',
-    'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS=10',
-    'SDKWORK_CLAW_DATABASE_ADMIN_HOST=127.0.0.1',
-    'SDKWORK_CLAW_DATABASE_ADMIN_PORT=5432',
-    'SDKWORK_CLAW_DATABASE_ADMIN_USERNAME=postgres',
-    'SDKWORK_CLAW_DATABASE_ADMIN_PASSWORD=postgres_admin_pass',
-    'SDKWORK_CLAW_DATABASE_ADMIN_DATABASE=postgres',
-    'SDKWORK_CLAW_DATABASE_ADMIN_SSL_MODE=disable',
+    'SDKWORK_DATABASE_ENGINE=postgresql',
+    'SDKWORK_DATABASE_HOST=127.0.0.1',
+    'SDKWORK_DATABASE_PORT=5432',
+    'SDKWORK_DATABASE_NAME=sdkwork_ai_dev',
+    'SDKWORK_DATABASE_SCHEMA=sdkwork_ai_dev',
+    'SDKWORK_DATABASE_USERNAME=sdkwork_ai_dev',
+    'SDKWORK_DATABASE_PASSWORD=sdkworkdev123',
+    'SDKWORK_DATABASE_SSL_MODE=disable',
+    'SDKWORK_DATABASE_MAX_CONNECTIONS=10',
+    'SDKWORK_DATABASE_ADMIN_HOST=127.0.0.1',
+    'SDKWORK_DATABASE_ADMIN_PORT=5432',
+    'SDKWORK_DATABASE_ADMIN_USERNAME=postgres',
+    'SDKWORK_DATABASE_ADMIN_PASSWORD=postgres_admin_pass',
+    'SDKWORK_DATABASE_ADMIN_DATABASE=postgres',
+    'SDKWORK_DATABASE_ADMIN_SSL_MODE=disable',
   ]) {
     assert.ok(
       envExample.includes(requiredName),
       `.env.postgres.example must document ${requiredName}`,
     );
   }
-  assert.ok(envExample.includes('SDKWORK_CLAW_DATABASE_URL='));
-  assert.ok(envExample.includes('SDKWORK_CLAW_DATABASE_ADMIN_URL='));
+  assert.ok(envExample.includes('SDKWORK_DATABASE_URL='));
+  assert.ok(envExample.includes('SDKWORK_DATABASE_ADMIN_URL='));
 });
 
 test('claw router application launcher loads dev env file into server workspace env', async () => {
@@ -1845,14 +1845,14 @@ test('claw router application launcher loads dev env file into server workspace 
     fixtureRoot,
     'postgres.env',
     [
-      'SDKWORK_CLAW_DATABASE_ENGINE=postgresql',
-      'SDKWORK_CLAW_DATABASE_HOST=[::1]',
-      'SDKWORK_CLAW_DATABASE_PORT=15433',
-      'SDKWORK_CLAW_DATABASE_NAME=env_file_db',
-      'SDKWORK_CLAW_DATABASE_USERNAME=env_file_user',
-      'SDKWORK_CLAW_DATABASE_PASSWORD=env file pass',
-      'SDKWORK_CLAW_DATABASE_SSL_MODE=disable',
-      'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS=15',
+      'SDKWORK_DATABASE_ENGINE=postgresql',
+      'SDKWORK_DATABASE_HOST=[::1]',
+      'SDKWORK_DATABASE_PORT=15433',
+      'SDKWORK_DATABASE_NAME=env_file_db',
+      'SDKWORK_DATABASE_USERNAME=env_file_user',
+      'SDKWORK_DATABASE_PASSWORD=env file pass',
+      'SDKWORK_DATABASE_SSL_MODE=disable',
+      'SDKWORK_DATABASE_MAX_CONNECTIONS=15',
       '',
     ].join('\n'),
   );
@@ -1869,10 +1869,10 @@ test('claw router application launcher loads dev env file into server workspace 
 
   const serverStep = findPlanStep(plan, 'server development workspace');
   assert.equal(
-    serverStep.env.SDKWORK_CLAW_DATABASE_URL,
+    serverStep.env.SDKWORK_DATABASE_URL,
     'postgresql://env_file_user:env%20file%20pass@[::1]:15433/env_file_db?sslmode=disable',
   );
-  assert.equal(serverStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '15');
+  assert.equal(serverStep.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '15');
 });
 
 test('claw router application launcher loads default PostgreSQL dev profile from workspace files', async () => {
@@ -1885,21 +1885,21 @@ test('claw router application launcher loads default PostgreSQL dev profile from
     fixtureRoot,
     '.env.postgres.example',
     [
-      'SDKWORK_CLAW_DATABASE_ENGINE=postgresql',
-      'SDKWORK_CLAW_DATABASE_HOST=[::1]',
-      'SDKWORK_CLAW_DATABASE_PORT=15432',
-      'SDKWORK_CLAW_DATABASE_NAME=example_dev_db',
-      'SDKWORK_CLAW_DATABASE_SCHEMA=example_dev_schema',
-      'SDKWORK_CLAW_DATABASE_USERNAME=example_dev_user',
-      'SDKWORK_CLAW_DATABASE_PASSWORD=example_dev_pass',
-      'SDKWORK_CLAW_DATABASE_SSL_MODE=disable',
-      'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS=9',
-      'SDKWORK_CLAW_DATABASE_ADMIN_HOST=127.0.0.1',
-      'SDKWORK_CLAW_DATABASE_ADMIN_PORT=5432',
-      'SDKWORK_CLAW_DATABASE_ADMIN_USERNAME=postgres',
-      'SDKWORK_CLAW_DATABASE_ADMIN_PASSWORD=postgres_admin_pass',
-      'SDKWORK_CLAW_DATABASE_ADMIN_DATABASE=postgres',
-      'SDKWORK_CLAW_DATABASE_ADMIN_SSL_MODE=disable',
+      'SDKWORK_DATABASE_ENGINE=postgresql',
+      'SDKWORK_DATABASE_HOST=[::1]',
+      'SDKWORK_DATABASE_PORT=15432',
+      'SDKWORK_DATABASE_NAME=example_dev_db',
+      'SDKWORK_DATABASE_SCHEMA=example_dev_schema',
+      'SDKWORK_DATABASE_USERNAME=example_dev_user',
+      'SDKWORK_DATABASE_PASSWORD=example_dev_pass',
+      'SDKWORK_DATABASE_SSL_MODE=disable',
+      'SDKWORK_DATABASE_MAX_CONNECTIONS=9',
+      'SDKWORK_DATABASE_ADMIN_HOST=127.0.0.1',
+      'SDKWORK_DATABASE_ADMIN_PORT=5432',
+      'SDKWORK_DATABASE_ADMIN_USERNAME=postgres',
+      'SDKWORK_DATABASE_ADMIN_PASSWORD=postgres_admin_pass',
+      'SDKWORK_DATABASE_ADMIN_DATABASE=postgres',
+      'SDKWORK_DATABASE_ADMIN_SSL_MODE=disable',
       '',
     ].join('\n'),
   );
@@ -1916,25 +1916,25 @@ test('claw router application launcher loads default PostgreSQL dev profile from
 
   assert.equal(examplePlan.length, 1);
   assert.equal(
-    examplePlan[0].env.SDKWORK_CLAW_DATABASE_URL,
+    examplePlan[0].env.SDKWORK_DATABASE_URL,
     'postgresql://example_dev_user:example_dev_pass@[::1]:15432/example_dev_db?sslmode=disable',
   );
-  assert.equal(examplePlan[0].env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '9');
-  assert.equal(examplePlan[0].env.SDKWORK_CLAW_DATABASE_SCHEMA, 'example_dev_schema');
-  assert.equal(examplePlan[0].env.SDKWORK_CLAW_DATABASE_ADMIN_DATABASE, 'postgres');
+  assert.equal(examplePlan[0].env.SDKWORK_DATABASE_MAX_CONNECTIONS, '9');
+  assert.equal(examplePlan[0].env.SDKWORK_DATABASE_SCHEMA, 'example_dev_schema');
+  assert.equal(examplePlan[0].env.SDKWORK_DATABASE_ADMIN_DATABASE, 'postgres');
 
   writeFixtureFile(
     fixtureRoot,
     '.env.postgres',
     [
-      'SDKWORK_CLAW_DATABASE_ENGINE=postgresql',
-      'SDKWORK_CLAW_DATABASE_HOST=[::1]',
-      'SDKWORK_CLAW_DATABASE_PORT=25432',
-      'SDKWORK_CLAW_DATABASE_NAME=local_override_db',
-      'SDKWORK_CLAW_DATABASE_USERNAME=local_override_user',
-      'SDKWORK_CLAW_DATABASE_PASSWORD=local_override_pass',
-      'SDKWORK_CLAW_DATABASE_SSL_MODE=require',
-      'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS=11',
+      'SDKWORK_DATABASE_ENGINE=postgresql',
+      'SDKWORK_DATABASE_HOST=[::1]',
+      'SDKWORK_DATABASE_PORT=25432',
+      'SDKWORK_DATABASE_NAME=local_override_db',
+      'SDKWORK_DATABASE_USERNAME=local_override_user',
+      'SDKWORK_DATABASE_PASSWORD=local_override_pass',
+      'SDKWORK_DATABASE_SSL_MODE=require',
+      'SDKWORK_DATABASE_MAX_CONNECTIONS=11',
       '',
     ].join('\n'),
   );
@@ -1949,10 +1949,10 @@ test('claw router application launcher loads default PostgreSQL dev profile from
   });
 
   assert.equal(
-    overridePlan[0].env.SDKWORK_CLAW_DATABASE_URL,
+    overridePlan[0].env.SDKWORK_DATABASE_URL,
     'postgresql://local_override_user:local_override_pass@[::1]:25432/local_override_db?sslmode=require',
   );
-  assert.equal(overridePlan[0].env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '11');
+  assert.equal(overridePlan[0].env.SDKWORK_DATABASE_MAX_CONNECTIONS, '11');
   rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
@@ -1966,13 +1966,13 @@ test('claw router application launcher reinstalls portal dependencies when comma
     fixtureRoot,
     '.env.postgres.example',
     [
-      'SDKWORK_CLAW_DATABASE_ENGINE=postgresql',
-      'SDKWORK_CLAW_DATABASE_HOST=[::1]',
-      'SDKWORK_CLAW_DATABASE_PORT=15432',
-      'SDKWORK_CLAW_DATABASE_NAME=example_dev_db',
-      'SDKWORK_CLAW_DATABASE_USERNAME=example_dev_user',
-      'SDKWORK_CLAW_DATABASE_PASSWORD=example_dev_pass',
-      'SDKWORK_CLAW_DATABASE_SSL_MODE=disable',
+      'SDKWORK_DATABASE_ENGINE=postgresql',
+      'SDKWORK_DATABASE_HOST=[::1]',
+      'SDKWORK_DATABASE_PORT=15432',
+      'SDKWORK_DATABASE_NAME=example_dev_db',
+      'SDKWORK_DATABASE_USERNAME=example_dev_user',
+      'SDKWORK_DATABASE_PASSWORD=example_dev_pass',
+      'SDKWORK_DATABASE_SSL_MODE=disable',
       '',
     ].join('\n'),
   );
@@ -2023,10 +2023,10 @@ test('claw router application launcher defaults explicit server dev to PostgreSQ
 
       const serverStep = findPlanStep(serverPlan, 'server development workspace');
       const desktopStep = findPlanStep(desktopPlan, 'desktop development workspace');
-      assert.equal(serverStep.env.SDKWORK_CLAW_DATABASE_URL, defaultDevPostgresDatabaseUrl);
-      assert.equal(serverStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '10');
-      assert.equal(desktopStep.env.SDKWORK_CLAW_DATABASE_URL, undefined);
-      assert.equal(desktopStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, undefined);
+      assert.equal(serverStep.env.SDKWORK_DATABASE_URL, defaultDevPostgresDatabaseUrl);
+      assert.equal(serverStep.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '10');
+      assert.equal(desktopStep.env.SDKWORK_DATABASE_URL, undefined);
+      assert.equal(desktopStep.env.SDKWORK_DATABASE_MAX_CONNECTIONS, undefined);
       assert.equal(desktopStep.env.SDKWORK_CLAW_DEPLOYMENT_MODE, 'desktop');
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
@@ -2063,8 +2063,8 @@ test('claw router application launcher keeps explicit client and desktop modes g
     ]) {
       const step = findPlanStep(plan, expectedLabel);
       assert.deepEqual(step.args.slice(1), ['--client-only']);
-      assert.equal(step.env.SDKWORK_CLAW_DATABASE_URL, undefined);
-      assert.equal(step.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, undefined);
+      assert.equal(step.env.SDKWORK_DATABASE_URL, undefined);
+      assert.equal(step.env.SDKWORK_DATABASE_MAX_CONNECTIONS, undefined);
     }
     assert.equal(findPlanStep(desktopPlan, 'desktop development workspace').env.SDKWORK_CLAW_DEPLOYMENT_MODE, 'desktop');
   });
@@ -2150,8 +2150,8 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.equal(installerStep.command, installerBinary);
     assert.deepEqual(installerStep.args, ['ensure']);
     assert.equal(installerStep.blocking, true);
-    assert.equal(installerStep.env.SDKWORK_CLAW_DATABASE_URL, settings.databaseUrl);
-    assert.equal(installerStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '10');
+    assert.equal(installerStep.env.SDKWORK_DATABASE_URL, settings.databaseUrl);
+    assert.equal(installerStep.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '10');
     assert.equal(installerStep.env.SDKWORK_CLAW_STARTUP_INSTALL_MODE, 'ensure');
     assert.equal(installerStep.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1000');
     assert.equal(installerStep.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT, 'development');
@@ -2171,8 +2171,8 @@ test('claw router workspace launch plan defaults to all-in-one Rust edge runtime
     assert.equal(refreshStep.blocking, true);
     assert.match(refreshStep.failureHint, /model catalog refresh failed/u);
     assert.match(refreshStep.failureHint, /pnpm models:check/u);
-    assert.equal(refreshStep.env.SDKWORK_CLAW_DATABASE_URL, settings.databaseUrl);
-    assert.equal(refreshStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '10');
+    assert.equal(refreshStep.env.SDKWORK_DATABASE_URL, settings.databaseUrl);
+    assert.equal(refreshStep.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '10');
     assert.equal(refreshStep.env.SDKWORK_CLAW_STARTUP_INSTALL_MODE, 'ensure');
     assert.equal(refreshStep.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID, '1001');
     assert.equal(
@@ -2281,16 +2281,16 @@ test('claw router development services receive explicit Snowflake node ids', asy
   }
 });
 
-test('claw router workspace launch plan honors SDKWORK_CLAW_DATABASE_URL from dev env', async () => {
+test('claw router workspace launch plan honors SDKWORK_DATABASE_URL from dev env', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
   );
-  const previousDatabaseUrl = process.env.SDKWORK_CLAW_DATABASE_URL;
-  const previousMaxConnections = process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS;
+  const previousDatabaseUrl = process.env.SDKWORK_DATABASE_URL;
+  const previousMaxConnections = process.env.SDKWORK_DATABASE_MAX_CONNECTIONS;
   try {
-    process.env.SDKWORK_CLAW_DATABASE_URL =
+    process.env.SDKWORK_DATABASE_URL =
       'postgresql://env_user:env_pass@127.0.0.1:15434/env_db?sslmode=disable';
-    process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = '18';
+    process.env.SDKWORK_DATABASE_MAX_CONNECTIONS = '18';
 
     const settings = parseWorkspaceArgsIsolated(module, []);
     const plan = module.buildWorkspaceCommandPlan(settings, { workspaceRoot });
@@ -2304,21 +2304,21 @@ test('claw router workspace launch plan honors SDKWORK_CLAW_DATABASE_URL from de
     );
     for (const step of serviceSteps) {
       assert.equal(
-        step.env.SDKWORK_CLAW_DATABASE_URL,
+        step.env.SDKWORK_DATABASE_URL,
         'postgresql://env_user:env_pass@127.0.0.1:15434/env_db?sslmode=disable',
       );
-      assert.equal(step.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '18');
+      assert.equal(step.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '18');
     }
   } finally {
     if (previousDatabaseUrl === undefined) {
-      delete process.env.SDKWORK_CLAW_DATABASE_URL;
+      delete process.env.SDKWORK_DATABASE_URL;
     } else {
-      process.env.SDKWORK_CLAW_DATABASE_URL = previousDatabaseUrl;
+      process.env.SDKWORK_DATABASE_URL = previousDatabaseUrl;
     }
     if (previousMaxConnections === undefined) {
-      delete process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS;
+      delete process.env.SDKWORK_DATABASE_MAX_CONNECTIONS;
     } else {
-      process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = previousMaxConnections;
+      process.env.SDKWORK_DATABASE_MAX_CONNECTIONS = previousMaxConnections;
     }
   }
 });
@@ -2328,14 +2328,14 @@ test('claw router workspace launch plan resolves split PostgreSQL env fields dir
     const module = await import(
       pathToFileURL(path.join(workspaceRoot, 'scripts', 'dev', 'start-workspace.mjs')).href
     );
-    process.env.SDKWORK_CLAW_DATABASE_ENGINE = 'postgresql';
-    process.env.SDKWORK_CLAW_DATABASE_HOST = '127.0.0.1';
-    process.env.SDKWORK_CLAW_DATABASE_PORT = '15435';
-    process.env.SDKWORK_CLAW_DATABASE_NAME = 'direct_split_db';
-    process.env.SDKWORK_CLAW_DATABASE_USERNAME = 'direct_user';
-    process.env.SDKWORK_CLAW_DATABASE_PASSWORD = 'direct pass';
-    process.env.SDKWORK_CLAW_DATABASE_SSL_MODE = 'disable';
-    process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = '11';
+    process.env.SDKWORK_DATABASE_ENGINE = 'postgresql';
+    process.env.SDKWORK_DATABASE_HOST = '127.0.0.1';
+    process.env.SDKWORK_DATABASE_PORT = '15435';
+    process.env.SDKWORK_DATABASE_NAME = 'direct_split_db';
+    process.env.SDKWORK_DATABASE_USERNAME = 'direct_user';
+    process.env.SDKWORK_DATABASE_PASSWORD = 'direct pass';
+    process.env.SDKWORK_DATABASE_SSL_MODE = 'disable';
+    process.env.SDKWORK_DATABASE_MAX_CONNECTIONS = '11';
 
     const settings = parseWorkspaceArgsIsolated(module, []);
     const plan = module.buildWorkspaceCommandPlan(settings, { workspaceRoot });
@@ -2348,8 +2348,8 @@ test('claw router workspace launch plan resolves split PostgreSQL env fields dir
       'postgresql://direct_user:direct%20pass@127.0.0.1:15435/direct_split_db?sslmode=disable',
     );
     for (const step of serviceSteps) {
-      assert.equal(step.env.SDKWORK_CLAW_DATABASE_URL, settings.databaseUrl);
-      assert.equal(step.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '11');
+      assert.equal(step.env.SDKWORK_DATABASE_URL, settings.databaseUrl);
+      assert.equal(step.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '11');
     }
   });
 });
@@ -2625,11 +2625,11 @@ test('claw router workspace pins startup install ownership to installer steps', 
 });
 
 test('claw router workspace constrains explicit SQLite dev database without overriding explicit database tuning', async () => {
-  const previousMaxConnections = process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS;
+  const previousMaxConnections = process.env.SDKWORK_DATABASE_MAX_CONNECTIONS;
   const previousSettlementWorker = process.env.SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED;
   const previousRankingStartup = process.env.SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP;
   try {
-    delete process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS;
+    delete process.env.SDKWORK_DATABASE_MAX_CONNECTIONS;
     delete process.env.SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED;
     delete process.env.SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP;
     const module = await import(
@@ -2645,12 +2645,12 @@ test('claw router workspace constrains explicit SQLite dev database without over
     for (const step of sqlitePlan.steps.filter((step) =>
       ['installer', 'model-catalog-refresh', 'gateway', 'admin-api', 'app-api', 'server'].includes(step.name),
     )) {
-      assert.equal(step.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '1');
+      assert.equal(step.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '1');
       assert.equal(step.env.SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED, 'false');
       assert.equal(step.env.SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP, 'false');
     }
 
-    process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = '8';
+    process.env.SDKWORK_DATABASE_MAX_CONNECTIONS = '8';
     process.env.SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED = 'true';
     process.env.SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP = 'true';
     const tunedSettings = module.parseWorkspaceArgs([
@@ -2661,15 +2661,15 @@ test('claw router workspace constrains explicit SQLite dev database without over
     for (const step of tunedPlan.steps.filter((step) =>
       ['installer', 'model-catalog-refresh', 'gateway', 'admin-api', 'app-api', 'server'].includes(step.name),
     )) {
-      assert.equal(step.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '8');
+      assert.equal(step.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '8');
       assert.equal(step.env.SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED, 'true');
       assert.equal(step.env.SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP, 'true');
     }
   } finally {
     if (previousMaxConnections === undefined) {
-      delete process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS;
+      delete process.env.SDKWORK_DATABASE_MAX_CONNECTIONS;
     } else {
-      process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = previousMaxConnections;
+      process.env.SDKWORK_DATABASE_MAX_CONNECTIONS = previousMaxConnections;
     }
     if (previousSettlementWorker === undefined) {
       delete process.env.SDKWORK_CLAW_USAGE_SETTLEMENT_WORKER_ENABLED;
@@ -2783,14 +2783,14 @@ test('admin reset wrapper maps postgres dev mode through the configured env file
   writeFileSync(
     envFile,
     [
-      'SDKWORK_CLAW_DATABASE_ENGINE=postgresql',
-      'SDKWORK_CLAW_DATABASE_HOST=[::1]',
-      'SDKWORK_CLAW_DATABASE_PORT=5432',
-      'SDKWORK_CLAW_DATABASE_NAME=sdkwork_ai_dev',
-      'SDKWORK_CLAW_DATABASE_USERNAME=sdkwork_ai_dev',
-      'SDKWORK_CLAW_DATABASE_PASSWORD=sdkworkdev123',
-      'SDKWORK_CLAW_DATABASE_SSL_MODE=disable',
-      'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS=10',
+      'SDKWORK_DATABASE_ENGINE=postgresql',
+      'SDKWORK_DATABASE_HOST=[::1]',
+      'SDKWORK_DATABASE_PORT=5432',
+      'SDKWORK_DATABASE_NAME=sdkwork_ai_dev',
+      'SDKWORK_DATABASE_USERNAME=sdkwork_ai_dev',
+      'SDKWORK_DATABASE_PASSWORD=sdkworkdev123',
+      'SDKWORK_DATABASE_SSL_MODE=disable',
+      'SDKWORK_DATABASE_MAX_CONNECTIONS=10',
       '',
     ].join('\n'),
   );
@@ -2813,10 +2813,10 @@ test('admin reset wrapper maps postgres dev mode through the configured env file
   assert.equal(plan.mode, 'dev');
   const [step] = plan.steps;
   assert.equal(
-    step.env.SDKWORK_CLAW_DATABASE_URL,
+    step.env.SDKWORK_DATABASE_URL,
     'postgresql://sdkwork_ai_dev:sdkworkdev123@[::1]:5432/sdkwork_ai_dev?sslmode=disable',
   );
-  assert.equal(step.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '10');
+  assert.equal(step.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '10');
   assert.equal(step.env.SDKWORK_CLAW_ADMIN_RESET_PASSWORD, 'Admin-Postgres-Reset-Password-2026!');
   assert.equal(step.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT, 'development');
   assert.equal(step.args.includes('Admin-Postgres-Reset-Password-2026!'), false);
@@ -2905,7 +2905,7 @@ test('admin reset wrapper maps release mode through production runtime config an
   assert.equal(step.env.SDKWORK_CLAW_CONFIG_FILE, configFile);
   assert.equal(step.env.SDKWORK_CLAW_DEPLOYMENT_MODE, 'server');
   assert.equal(
-    step.env.SDKWORK_CLAW_DATABASE_URL,
+    step.env.SDKWORK_DATABASE_URL,
     'postgresql://sdkwork:secret@db.internal:5432/sdkwork_claw_router?sslmode=require',
   );
   assert.equal(existsSync(configFile), false);
@@ -2955,7 +2955,7 @@ test('database management wrapper maps pnpm init and upgrade commands to the ins
   ]);
   assert.equal(initStep.env.SDKWORK_CLAW_CONFIG_FILE, configFile);
   assert.equal(initStep.env.SDKWORK_CLAW_DEPLOYMENT_MODE, 'server');
-  assert.equal(initStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '7');
+  assert.equal(initStep.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '7');
   assert.equal(initStep.env.SDKWORK_CLAW_INSTALL_ENVIRONMENT, 'staging');
   assert.equal(initStep.env.SDKWORK_CLAW_INSTALL_SEED_PROFILE, 'commercial');
   assert.equal(initStep.env.SDKWORK_MODELS_CATALOG_ROOT, '../sdkwork-models');
@@ -2986,10 +2986,10 @@ test('database management wrapper maps pnpm init and upgrade commands to the ins
     'upgrade',
   ]);
   assert.equal(
-    upgradeStep.env.SDKWORK_CLAW_DATABASE_URL,
+    upgradeStep.env.SDKWORK_DATABASE_URL,
     'postgresql://sdkwork:secret@db.internal:5432/sdkwork_claw_router',
   );
-  assert.equal(upgradeStep.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS, '12');
+  assert.equal(upgradeStep.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '12');
 
   const rootDbSettings = module.parseDatabaseManagementArgs([
     '--',
@@ -3936,7 +3936,7 @@ test('production starter help documents automatic runtime config initialization'
   assert.ok(stdout.includes('Configure PostgreSQL in clawrouter.toml with host, database, username,'));
   assert.ok(stdout.includes('Desktop deployments default to SQLite and can start from the generated config.'));
   assert.ok(stdout.includes('pnpm start -- --init-config-only --deployment-mode server'));
-  assert.ok(stdout.includes(`SDKWORK_CLAW_DATABASE_URL="${productionPostgresDsnExample}"`));
+  assert.ok(stdout.includes(`SDKWORK_DATABASE_URL="${productionPostgresDsnExample}"`));
   assert.ok(stdout.includes('Linux server: /etc/sdkwork/router/clawrouter.toml'));
   assert.ok(stdout.includes('Linux desktop: ~/.sdkwork/router/config/clawrouter.toml'));
   assert.ok(stdout.includes('Windows server: %ProgramData%/sdkwork/router/clawrouter.toml'));
@@ -4100,7 +4100,7 @@ test('install package planner covers platforms, architectures, modes, fast init,
   assert.equal(windowsService.databasePolicy.configurableFromFile, true);
   assert.equal(windowsService.databasePolicy.requiresExternalDatabase, true);
   assert.equal(windowsService.databasePolicy.configFile.path, '%ProgramData%/sdkwork/router/clawrouter.toml');
-  assert.equal(windowsService.databasePolicy.envOverrides.includes('SDKWORK_CLAW_DATABASE_URL'), true);
+  assert.equal(windowsService.databasePolicy.envOverrides.includes('SDKWORK_DATABASE_URL'), true);
   assert.equal(windowsService.databasePolicy.defaultHost, 'db.example.com');
   assert.equal(windowsService.databasePolicy.defaultDatabase, defaultProdPostgresDatabase);
   assert.equal(windowsService.databasePolicy.defaultUsername, defaultProdPostgresUsername);
@@ -4281,7 +4281,7 @@ test('install package archive builder creates manifest-backed archives without l
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
   writeFileSync(path.join(stagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
-  writeFileSync(path.join(stagingRoot, '.env.release'), 'SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL=postgres://secret\n');
+  writeFileSync(path.join(stagingRoot, '.env.release'), 'SDKWORK_DATABASE_URL=postgres://secret\n');
 
   try {
     const buildPlan = module.createInstallPackageBuildPlan({
@@ -5552,8 +5552,8 @@ test('install init smoke validates fast initialization without starting dev serv
     assert.equal(existsSync(smokePlan.releaseEnvPath), true);
     const writtenEnv = readFileSync(smokePlan.releaseEnvPath, 'utf8');
     assert.ok(writtenEnv.includes('SDKWORK_CLAW_CONFIG_FILE='));
-    assert.ok(!writtenEnv.includes('SDKWORK_CLAW_DATABASE_URL="sqlite://'));
-    assert.ok(writtenEnv.includes('SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL="postgres://release-smoke.invalid:5432/sdkwork_claw_router"'));
+    assert.ok(!writtenEnv.includes('SDKWORK_DATABASE_URL="sqlite://'));
+    assert.ok(writtenEnv.includes('SDKWORK_DATABASE_URL="postgres://release-smoke.invalid:5432/sdkwork_claw_router"'));
     const writtenConfig = readFileSync(smokePlan.runtimeConfigPath, 'utf8');
     assert.ok(writtenConfig.includes('engine = "postgresql"'));
     assert.ok(writtenConfig.includes('host = "release-smoke.invalid"'));
@@ -6342,7 +6342,7 @@ test('postgres integration runner exposes optional and required execution modes'
   ]);
   assert.equal(
     module.hasPostgresDatabaseUrl({
-      SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: 'postgres://example',
+      SDKWORK_DATABASE_URL: 'postgres://example',
     }),
     true,
   );
@@ -6395,7 +6395,7 @@ test('postgres integration runner can plan an ephemeral Docker database', async 
     '--wait',
   ]);
   assert.equal(
-    plan.steps[2].env.SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL,
+    plan.steps[2].env.SDKWORK_DATABASE_URL,
     'postgres://sdkwork_claw_test:sdkwork_claw_test_password@127.0.0.1:15439/sdkwork_claw_test',
   );
   assert.deepEqual(plan.steps[3].args.slice(-2), ['--volumes', '--remove-orphans']);
@@ -7120,7 +7120,7 @@ test('release preflight publishes a single release environment contract', async 
 
   assert.equal(module.RELEASE_ENVIRONMENT_CONTRACT.version, 4);
   assert.deepEqual(module.RELEASE_ENVIRONMENT_CONTRACT.requiredReleaseEnv, [
-    'SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL',
+    'SDKWORK_DATABASE_URL',
   ]);
   assert.deepEqual(module.RELEASE_ENVIRONMENT_CONTRACT.requiredPortalPublicEnv, [
     'PORTAL_PUBLIC_API_BASE_URL',
@@ -7143,7 +7143,7 @@ test('release preflight env-file values satisfy strict release environment check
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'release-preflight.mjs')).href
   );
   const envFile = [
-    'SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL="postgres://release.example"',
+    'SDKWORK_DATABASE_URL="postgres://release.example"',
     'PORTAL_PUBLIC_API_BASE_URL=https://tenant.example.com/v1',
     'PORTAL_PUBLIC_OPEN_API_BASE_URL=https://open.tenant.example.com/v1',
     'PORTAL_PUBLIC_APP_API_BASE_URL=/app/v3/api',
@@ -7220,7 +7220,7 @@ test('release env writer creates a dotenv file from the executable contract with
 
   assert.equal(plan.outputPath, '.env.release');
   assert.equal(plan.safeSummary, 'release env file would be written with 19 release profile variables');
-  assert.ok(plan.content.includes('SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL="postgres://release:secret@db.example.com:5432/claw"'));
+  assert.ok(plan.content.includes('SDKWORK_DATABASE_URL="postgres://release:secret@db.example.com:5432/claw"'));
   assert.ok(plan.content.includes('PORTAL_PUBLIC_OPEN_API_BASE_URL="https://open.tenant.example.com/v1"'));
   assert.ok(plan.content.includes('PORTAL_PUBLIC_TOOL_API_ENABLED="false"'));
   assert.match(plan.content, /SDKWORK_ACCESS_TOKEN="v2\./u);
@@ -7331,7 +7331,7 @@ test('release env writer CLI writes a local dotenv file without leaking values',
     assert.ok(!stdout.includes('secret'));
     assert.ok(!stdout.includes('tenant.example.com'));
     assert.ok(written.includes('# Generated by node scripts/write-release-env.mjs. Do not commit this file.'));
-    assert.ok(written.includes('SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL="postgres://release:secret@db.example.com:5432/claw"'));
+    assert.ok(written.includes('SDKWORK_DATABASE_URL="postgres://release:secret@db.example.com:5432/claw"'));
     assert.ok(written.includes('PORTAL_PUBLIC_API_BASE_URL="https://tenant.example.com/v1"'));
     assert.ok(written.includes('PORTAL_PUBLIC_OPEN_API_BASE_URL="https://open.tenant.example.com/v1"'));
 
@@ -7403,7 +7403,7 @@ test('release preflight rejects malformed release environment values in strict m
     settings: module.parseArgs(['--strict', '--env-file', '.env.release']),
     platform: 'linux',
     env: {
-      SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: 'not-a-postgres-url',
+      SDKWORK_DATABASE_URL: 'not-a-postgres-url',
       PORTAL_PUBLIC_API_BASE_URL: 'javascript:alert(1)',
       PORTAL_PUBLIC_OPEN_API_BASE_URL: 'ftp://open.example.com/v1',
       PORTAL_PUBLIC_APP_API_BASE_URL: '//evil.example.com/app',
@@ -7432,7 +7432,7 @@ test('release preflight rejects malformed release environment values in strict m
 
   assert.equal(result.exitCode, 1);
   assert.equal(byId['env.releaseContract'].status, 'FAIL');
-  assert.ok(byId['env.releaseContract'].details.includes('SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL'));
+  assert.ok(byId['env.releaseContract'].details.includes('SDKWORK_DATABASE_URL'));
   assert.ok(byId['env.releaseContract'].details.includes('PORTAL_PUBLIC_API_BASE_URL'));
   assert.ok(byId['env.releaseContract'].details.includes('PORTAL_PUBLIC_OPEN_API_BASE_URL'));
   assert.ok(byId['env.releaseContract'].details.includes('PORTAL_PUBLIC_TOOL_API_ENABLED'));
@@ -7486,7 +7486,7 @@ test('global and application environment contracts document Claw Router runtime 
     assert.ok(content.includes('SDKWORK_CLAW_CONFIG_FILE'));
     assert.ok(content.includes('SDKWORK_<APP>_DATABASE_ENGINE'));
     assert.ok(content.includes('SDKWORK_<APP>_DATABASE_SSL_MODE'));
-    assert.ok(content.includes('SDKWORK_CLAW_DATABASE_URL'));
+    assert.ok(content.includes('SDKWORK_DATABASE_URL'));
     assert.ok(content.includes('SDKWORK_CLAW_REDIS_HOST'));
     assert.ok(content.includes('SDKWORK_CLAW_REDIS_PORT'));
     assert.ok(content.includes('SDKWORK_CLAW_REDIS_DATABASE'));
@@ -7506,10 +7506,10 @@ test('global and application environment contracts document Claw Router runtime 
   assert.ok(environmentSpec.includes('| `standalone` | `server` | PostgreSQL |'));
   assert.ok(environmentSpec.includes('| `standalone` | `container` | PostgreSQL |'));
   assert.ok(environmentSpec.includes('.env.postgres.example'));
-  assert.ok(environmentSpec.includes('SDKWORK_CLAW_DATABASE_ENGINE=postgresql'));
-  assert.ok(environmentSpec.includes('SDKWORK_CLAW_DATABASE_SCHEMA=sdkwork_ai_dev'));
-  assert.ok(environmentSpec.includes('SDKWORK_CLAW_DATABASE_SSL_MODE=disable'));
-  assert.ok(environmentSpec.includes('SDKWORK_CLAW_DATABASE_ADMIN_SSL_MODE=disable'));
+  assert.ok(environmentSpec.includes('SDKWORK_DATABASE_ENGINE=postgresql'));
+  assert.ok(environmentSpec.includes('SDKWORK_DATABASE_SCHEMA=sdkwork_ai_dev'));
+  assert.ok(environmentSpec.includes('SDKWORK_DATABASE_SSL_MODE=disable'));
+  assert.ok(environmentSpec.includes('SDKWORK_DATABASE_ADMIN_SSL_MODE=disable'));
   assert.ok(environmentSpec.includes('`DATABASE_PROVIDER` and `DATABASE_SSLMODE` are not standard names'));
   assert.ok(environmentSpec.includes('password_file = "/etc/sdkwork/router/database.secret"'));
   assert.ok(environmentSpec.includes('[redis]'));
@@ -7731,7 +7731,7 @@ test('release preflight json output is machine readable', async () => {
     settings: module.parseArgs(['--json']),
     platform: 'linux',
     env: {
-      SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: 'postgres://example',
+      SDKWORK_DATABASE_URL: 'postgres://example',
       PORTAL_PUBLIC_API_BASE_URL: 'https://api.example.com',
       PORTAL_PUBLIC_APP_API_BASE_URL: 'https://api.example.com/app/v3/api',
       PORTAL_PUBLIC_BACKEND_API_BASE_URL: 'https://api.example.com/backend/v3/api',
@@ -7901,7 +7901,7 @@ test('release preflight fails when runtime skill seed JSON is invalid', async ()
     settings: module.parseArgs([]),
     platform: 'linux',
     env: {
-      SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: 'postgres://example',
+      SDKWORK_DATABASE_URL: 'postgres://example',
       PORTAL_PUBLIC_API_BASE_URL: 'https://api.example.com',
       PORTAL_PUBLIC_APP_API_BASE_URL: 'https://api.example.com/app/v3/api',
       PORTAL_PUBLIC_BACKEND_API_BASE_URL: 'https://api.example.com/backend/v3/api',

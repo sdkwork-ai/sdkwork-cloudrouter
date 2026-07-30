@@ -452,7 +452,7 @@ function matchesModelCategory(model: Model, category: string): boolean {
   return model.categories.includes(category as Model['categories'][number]);
 }
 
-function uniqueSortedStrings(values: string[]): string[] {
+function uniqueSortedStrings(values: readonly string[]): string[] {
   return Array.from(new Set(values)).sort();
 }
 

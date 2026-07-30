@@ -2211,7 +2211,29 @@
       "path_params": [
         "namespace"
       ],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "cursor",
+          "required": false,
+          "schema": {
+            "maxLength": 2048,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ops_config_snapshot",
@@ -2530,7 +2552,40 @@
       "operation": "fetchAlerts",
       "operation_id": "monitor.alerts.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ops_alert_event"
@@ -2538,11 +2593,74 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "MonitorAlertListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "MonitorAlertListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "MonitorAlertItem",
+                "properties": {
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "message": {
+                    "maxLength": 4096,
+                    "type": "string"
+                  },
+                  "severity": {
+                    "enum": [
+                      "critical",
+                      "warning",
+                      "info"
+                    ],
+                    "type": "string"
+                  },
+                  "source": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "resolved"
+                    ],
+                    "type": "string"
+                  },
+                  "time": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 255,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "severity",
+                  "title",
+                  "message",
+                  "time",
+                  "status",
+                  "source"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -2570,7 +2688,40 @@
       "operation": "fetchNodes",
       "operation_id": "monitor.nodes.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ops_gateway_instance",
@@ -2579,11 +2730,76 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "MonitorNodeListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "MonitorNodeListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "MonitorNodeItem",
+                "properties": {
+                  "cpu": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "ip": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "memory": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "name": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "region": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "online",
+                      "warning",
+                      "offline"
+                    ],
+                    "type": "string"
+                  },
+                  "uptime": {
+                    "maxLength": 128,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "region",
+                  "status",
+                  "cpu",
+                  "memory",
+                  "uptime",
+                  "ip"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -2611,7 +2827,40 @@
       "operation": "fetchPerformanceData",
       "operation_id": "monitor.performance.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ops_metric_snapshot"
@@ -2619,11 +2868,51 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "MonitorPerformanceListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "MonitorPerformanceListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "MonitorPerformanceItem",
+                "properties": {
+                  "cpu": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "memory": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "network": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "time": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "time",
+                  "cpu",
+                  "memory",
+                  "network"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -3686,11 +3975,112 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminSiteSettingsResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminSiteSettingsResponse",
+          "properties": {
+            "accentColor": {
+              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "type": "string"
+            },
+            "brandColor": {
+              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "type": "string"
+            },
+            "customCss": {
+              "maxLength": 20000,
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "docsUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "favicon": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "footerCopyright": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "icon": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "icpRecordNumber": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "icpRecordUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "logo": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "policeRecordNumber": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "policeRecordUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "privacyUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "seoDescription": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "seoTitle": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "shortName": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "siteName": {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            "supportUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "termsUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            }
+          },
+          "required": [
+            "siteName",
+            "shortName",
+            "description",
+            "logo",
+            "icon",
+            "favicon",
+            "brandColor",
+            "accentColor",
+            "footerCopyright",
+            "icpRecordNumber",
+            "icpRecordUrl",
+            "policeRecordNumber",
+            "policeRecordUrl",
+            "seoTitle",
+            "seoDescription",
+            "supportUrl",
+            "docsUrl",
+            "privacyUrl",
+            "termsUrl",
+            "customCss"
+          ],
           "type": "object"
         }
       },
@@ -3723,15 +4113,100 @@
       "read_sources": [
         "ops_config_snapshot"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminSiteSettingsUpdateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminSiteSettingsUpdateRequest",
+          "properties": {
+            "accentColor": {
+              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "type": "string"
+            },
+            "brandColor": {
+              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "type": "string"
+            },
+            "customCss": {
+              "maxLength": 20000,
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "docsUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "favicon": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "footerCopyright": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "icon": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "icpRecordNumber": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "icpRecordUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "logo": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "policeRecordNumber": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "policeRecordUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "privacyUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "seoDescription": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "seoTitle": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "shortName": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "siteName": {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            "supportUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "termsUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            }
+          },
           "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminSiteSettingsResponse",
+        "schema": {
+          "$ref": "#/components/schemas/AdminSiteSettingsResponse"
         }
       },
       "route": "/admin/site",
@@ -10082,19 +10557,44 @@
       "path_params": [
         "notificationId"
       ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "app_id",
+          "required": false,
+          "schema": {
+            "default": "claw-router",
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
       "read_sources": [
         "ops_audit_log"
       ],
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AcknowledgeNotificationResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AcknowledgeNotificationResponse",
+          "properties": {
+            "state": {
+              "enum": [
+                "acknowledged"
+              ],
+              "type": "string"
+            },
+            "updated": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "updated",
+            "state"
+          ],
           "type": "object"
         }
       },
@@ -10166,19 +10666,44 @@
       "path_params": [
         "notificationId"
       ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "app_id",
+          "required": false,
+          "schema": {
+            "default": "claw-router",
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
       "read_sources": [
         "ops_audit_log"
       ],
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "MarkNotificationPopupSeenResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "MarkNotificationPopupSeenResponse",
+          "properties": {
+            "state": {
+              "enum": [
+                "popup_seen"
+              ],
+              "type": "string"
+            },
+            "updated": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "updated",
+            "state"
+          ],
           "type": "object"
         }
       },
@@ -10773,15 +11298,120 @@
         "ai_runtime_invocation",
         "ai_usage"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "CompleteChatTurnResponseRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CompleteChatTurnResponseRequest",
+          "properties": {
+            "message": {
+              "maxLength": 65536,
+              "minLength": 1,
+              "type": "string"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "model": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "provider": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "runtime": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "runtimeInvocationId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "status": {
+              "default": "completed",
+              "enum": [
+                "completed",
+                "failed",
+                "cancelled",
+                "streaming"
+              ],
+              "type": "string"
+            },
+            "usage": {
+              "additionalProperties": false,
+              "properties": {
+                "cachedTokens": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "cost": {
+                  "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+                  "type": "string"
+                },
+                "costAmount": {
+                  "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+                  "type": "string"
+                },
+                "currency": {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                "inputTokens": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "outputTokens": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "reasoningTokens": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                },
+                "totalTokens": {
+                  "format": "int64",
+                  "pattern": "^[0-9]+$",
+                  "type": "string",
+                  "x-sdkwork-int64-string": true,
+                  "x-sdkwork-rust-type": "i64"
+                }
+              },
+              "type": "object"
+            },
+            "usageFactId": {
+              "format": "int64",
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "required": [
+            "message"
+          ],
           "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "ChatTurnOutcome",
+        "schema": {
+          "$ref": "#/components/schemas/ChatTurnOutcome"
         }
       },
       "route": "/playground",
@@ -10821,15 +11451,99 @@
       "read_sources": [
         "ai_runtime_invocation"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "CompleteRuntimeInvocationRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CompleteRuntimeInvocationRequest",
+          "properties": {
+            "errorCode": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "errorMessageMasked": {
+              "maxLength": 1024,
+              "type": "string"
+            },
+            "errorType": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "exitCode": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "finishReason": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "latencyMs": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "providerConversationId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "providerResponseId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "providerSessionId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "providerStepId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "responseJson": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "status": {
+              "default": "completed",
+              "enum": [
+                "pending",
+                "running",
+                "streaming",
+                "completed",
+                "failed",
+                "cancelled"
+              ],
+              "type": "string"
+            },
+            "ttftMs": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "usageJson": {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          },
           "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "RuntimeInvocationResponse",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeInvocationResponse"
         }
       },
       "route": "/playground",
@@ -10863,14 +11577,63 @@
       "read_sources": [
         "ai_agent_session"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "CreateChatConversationRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CreateChatConversationRequest",
+          "properties": {
+            "agentId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "agentSessionId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "defaultModel": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "defaultProvider": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "memorySpaceId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "sourceSurface": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "title": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "ChatConversationCreateResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ChatConversationCreateResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/ChatConversationItem"
+            }
+          },
+          "required": [
+            "item"
+          ],
           "type": "object"
         }
       },
@@ -10908,14 +11671,127 @@
         "ai_chat_conversation",
         "ai_agent_session"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "CreateChatTurnRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CreateChatTurnRequest",
+          "properties": {
+            "agentId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "agentSessionId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "message": {
+              "maxLength": 65536,
+              "minLength": 1,
+              "type": "string"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "mode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "model": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "provider": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          "required": [
+            "message"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "ChatTurnOutcome",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ChatTurnOutcome",
+          "properties": {
+            "messages": {
+              "items": {
+                "$ref": "#/components/schemas/ChatMessageItem"
+              },
+              "type": "array"
+            },
+            "turn": {
+              "additionalProperties": false,
+              "name": "ChatTurnItem",
+              "properties": {
+                "agentId": {
+                  "maxLength": 128,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "agentSessionId": {
+                  "maxLength": 128,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "conversationId": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "createdAt": {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                "id": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "model": {
+                  "maxLength": 128,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "provider": {
+                  "maxLength": 128,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "status": {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "maxLength": 64,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "conversationId",
+                "status",
+                "model",
+                "provider",
+                "agentId",
+                "agentSessionId",
+                "createdAt",
+                "updatedAt"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "turn",
+            "messages"
+          ],
           "type": "object"
         }
       },
@@ -11046,14 +11922,77 @@
       "read_sources": [
         "ai_runtime_invocation"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "CreateRuntimeArtifactRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CreateRuntimeArtifactRequest",
+          "properties": {
+            "artifactType": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "contentJson": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "contentText": {
+              "maxLength": 262144,
+              "type": "string"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "mimeType": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 512,
+              "type": "string"
+            },
+            "resource": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "sha256": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "sizeBytes": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "storageKey": {
+              "maxLength": 2048,
+              "type": "string"
+            }
+          },
+          "required": [
+            "artifactType"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "RuntimeArtifactResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RuntimeArtifactResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/RuntimeArtifactItem"
+            }
+          },
+          "required": [
+            "item"
+          ],
           "type": "object"
         }
       },
@@ -11090,14 +12029,56 @@
       "read_sources": [
         "ai_runtime_invocation"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "CreateRuntimeEventRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CreateRuntimeEventRequest",
+          "properties": {
+            "eventSource": {
+              "default": "runtime",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "eventType": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "payloadJson": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "textDelta": {
+              "maxLength": 262144,
+              "type": "string"
+            }
+          },
+          "required": [
+            "eventType"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "RuntimeEventResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RuntimeEventResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/RuntimeEventItem"
+            }
+          },
+          "required": [
+            "item"
+          ],
           "type": "object"
         }
       },
@@ -11134,14 +12115,132 @@
         "ai_chat_turn",
         "ai_agent_session"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "CreateRuntimeInvocationRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "CreateRuntimeInvocationRequest",
+          "properties": {
+            "agentRunId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "agentRunStepId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "agentSessionId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "approvalPolicy": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "chatItemId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "chatTurnId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "conversationId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "cwd": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "endpoint": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "invocationType": {
+              "default": "chat_response",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "model": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "permissionMode": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "provider": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "requestJson": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "runtime": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "sandboxPolicy": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "status": {
+              "default": "running",
+              "enum": [
+                "pending",
+                "running",
+                "streaming",
+                "completed",
+                "failed",
+                "cancelled"
+              ],
+              "type": "string"
+            },
+            "streaming": {
+              "default": false,
+              "type": "boolean"
+            },
+            "toolCallId": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "toolName": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "traceId": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          "required": [
+            "runtime"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "RuntimeInvocationResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RuntimeInvocationResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/RuntimeInvocationItem"
+            }
+          },
+          "required": [
+            "item"
+          ],
           "type": "object"
         }
       },
@@ -11171,7 +12270,31 @@
       "operation": "listChatConversations",
       "operation_id": "conversations.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_chat_conversation",
@@ -11180,11 +12303,114 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ChatConversationListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ChatConversationListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "ChatConversationItem",
+                "properties": {
+                  "agentId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "agentSessionId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "defaultModel": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "defaultProvider": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "lastMessagePreview": {
+                    "maxLength": 4096,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "memorySpaceId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "messageCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "sourceSurface": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "turnCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "updatedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "status",
+                  "sourceSurface",
+                  "defaultModel",
+                  "defaultProvider",
+                  "agentId",
+                  "agentSessionId",
+                  "memorySpaceId",
+                  "lastMessagePreview",
+                  "messageCount",
+                  "turnCount",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -11214,7 +12440,31 @@
       "path_params": [
         "conversationId"
       ],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_chat_conversation",
@@ -11228,11 +12478,167 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ChatMessageListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "ChatMessageListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "ChatMessageItem",
+                "properties": {
+                  "content": {
+                    "maxLength": 65536,
+                    "type": "string"
+                  },
+                  "conversationId": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "direction": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "model": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "provider": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "role": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "runtime": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "runtimeInvocationId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "turnId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "usage": {
+                    "additionalProperties": false,
+                    "name": "ChatUsageSnapshot",
+                    "nullable": true,
+                    "properties": {
+                      "cachedTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "costAmount": {
+                        "nullable": true,
+                        "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+                        "type": "string"
+                      },
+                      "currency": {
+                        "maxLength": 16,
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "inputTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "outputTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "reasoningTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "totalTokens": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      }
+                    },
+                    "required": [
+                      "inputTokens",
+                      "outputTokens",
+                      "cachedTokens",
+                      "reasoningTokens",
+                      "totalTokens",
+                      "costAmount",
+                      "currency"
+                    ],
+                    "type": "object"
+                  },
+                  "usageLinkId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "conversationId",
+                  "turnId",
+                  "role",
+                  "direction",
+                  "content",
+                  "status",
+                  "model",
+                  "provider",
+                  "runtime",
+                  "runtimeInvocationId",
+                  "usageLinkId",
+                  "usage",
+                  "createdAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -11384,7 +12790,31 @@
       "path_params": [
         "invocationId"
       ],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_runtime_invocation",
@@ -11393,11 +12823,96 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "RuntimeArtifactListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "RuntimeArtifactListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "RuntimeArtifactItem",
+                "properties": {
+                  "artifactType": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "contentText": {
+                    "maxLength": 262144,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "invocationId": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "mimeType": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 512,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "resource": {
+                    "$ref": "#/components/schemas/MediaResource"
+                  },
+                  "sha256": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "sizeBytes": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "storageKey": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "invocationId",
+                  "artifactType",
+                  "name",
+                  "mimeType",
+                  "contentText",
+                  "storageKey",
+                  "resource",
+                  "sha256",
+                  "sizeBytes",
+                  "createdAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -11427,7 +12942,31 @@
       "path_params": [
         "invocationId"
       ],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_runtime_invocation",
@@ -11436,11 +12975,77 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "RuntimeEventListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "RuntimeEventListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "RuntimeEventItem",
+                "properties": {
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "eventNo": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "eventSource": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "eventType": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "invocationId": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "payloadJson": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "textDelta": {
+                    "maxLength": 262144,
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "invocationId",
+                  "eventNo",
+                  "eventType",
+                  "eventSource",
+                  "payloadJson",
+                  "textDelta",
+                  "createdAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -11468,7 +13073,83 @@
       "operation": "listRuntimeInvocations",
       "operation_id": "invocations.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "conversation_id",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "chat_turn_id",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "agent_session_id",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "runtime",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "pending",
+              "running",
+              "streaming",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_runtime_invocation",
@@ -11479,11 +13160,273 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "RuntimeInvocationListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "RuntimeInvocationListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "RuntimeInvocationItem",
+                "properties": {
+                  "agentRunId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "agentRunStepId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "agentSessionId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "approvalPolicy": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "attemptNo": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "chatItemId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "chatTurnId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "completedAt": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "conversationId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "cwd": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "endpoint": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "errorCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "errorMessageMasked": {
+                    "maxLength": 1024,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "errorType": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "exitCode": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "finishReason": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "invocationNo": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "invocationType": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "latencyMs": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "model": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "permissionMode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "provider": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "providerConversationId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "providerResponseId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "providerSessionId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "providerStepId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "requestId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "runtime": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "sandboxPolicy": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "startedAt": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "pending",
+                      "running",
+                      "streaming",
+                      "completed",
+                      "failed",
+                      "cancelled"
+                    ],
+                    "type": "string"
+                  },
+                  "streaming": {
+                    "type": "boolean"
+                  },
+                  "toolCallId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "toolName": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "traceId": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "ttftMs": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "id",
+                  "invocationNo",
+                  "invocationType",
+                  "runtime",
+                  "endpoint",
+                  "attemptNo",
+                  "status",
+                  "conversationId",
+                  "chatTurnId",
+                  "chatItemId",
+                  "agentSessionId",
+                  "agentRunId",
+                  "agentRunStepId",
+                  "requestId",
+                  "traceId",
+                  "providerResponseId",
+                  "providerSessionId",
+                  "providerConversationId",
+                  "providerStepId",
+                  "model",
+                  "provider",
+                  "toolName",
+                  "toolCallId",
+                  "cwd",
+                  "sandboxPolicy",
+                  "approvalPolicy",
+                  "permissionMode",
+                  "streaming",
+                  "startedAt",
+                  "completedAt",
+                  "latencyMs",
+                  "ttftMs",
+                  "exitCode",
+                  "finishReason",
+                  "errorType",
+                  "errorCode",
+                  "errorMessageMasked",
+                  "createdAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -11522,12 +13465,9 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ChatConversationItem",
         "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
+          "$ref": "#/components/schemas/ChatConversationItem"
         }
       },
       "route": "/playground",
@@ -11648,12 +13588,9 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "RuntimeInvocationItem",
         "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
+          "$ref": "#/components/schemas/RuntimeInvocationItem"
         }
       },
       "route": "/playground",
@@ -11682,7 +13619,21 @@
       "path_params": [
         "invocationId"
       ],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "after_event_no",
+          "required": false,
+          "schema": {
+            "default": "0",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ai_runtime_invocation",
@@ -13018,19 +14969,44 @@
       "path_params": [
         "notificationId"
       ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "app_id",
+          "required": false,
+          "schema": {
+            "default": "claw-router",
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
       "read_sources": [
         "ops_audit_log"
       ],
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AcknowledgeNotificationResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AcknowledgeNotificationResponse",
+          "properties": {
+            "state": {
+              "enum": [
+                "acknowledged"
+              ],
+              "type": "string"
+            },
+            "updated": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "updated",
+            "state"
+          ],
           "type": "object"
         }
       },
@@ -13060,7 +15036,50 @@
       "operation": "fetchNotifications",
       "operation_id": "notifications.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "app_id",
+          "required": false,
+          "schema": {
+            "default": "claw-router",
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "include_archived",
+          "required": false,
+          "schema": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ops_audit_log"
@@ -13068,11 +15087,95 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "NotificationListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "NotificationListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "NotificationItem",
+                "properties": {
+                  "actionUrl": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "appId": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  },
+                  "content": {
+                    "maxLength": 65536,
+                    "type": "string"
+                  },
+                  "desc": {
+                    "maxLength": 4096,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "popupSeen": {
+                    "type": "boolean"
+                  },
+                  "read": {
+                    "type": "boolean"
+                  },
+                  "showAsPopup": {
+                    "type": "boolean"
+                  },
+                  "time": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 255,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "info",
+                      "billing",
+                      "warning",
+                      "alert"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "appId",
+                  "title",
+                  "desc",
+                  "content",
+                  "time",
+                  "type",
+                  "read",
+                  "showAsPopup",
+                  "popupSeen",
+                  "archived"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -13142,19 +15245,44 @@
       "path_params": [
         "notificationId"
       ],
-      "query_parameters": [],
-      "query_parameters_declared": false,
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "app_id",
+          "required": false,
+          "schema": {
+            "default": "claw-router",
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
       "read_sources": [
         "ops_audit_log"
       ],
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "MarkNotificationPopupSeenResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "MarkNotificationPopupSeenResponse",
+          "properties": {
+            "state": {
+              "enum": [
+                "popup_seen"
+              ],
+              "type": "string"
+            },
+            "updated": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "updated",
+            "state"
+          ],
           "type": "object"
         }
       },

@@ -8,6 +8,7 @@ import type { UserConfig } from "vite";
 import portalViteConfig from "./vite.config.ts";
 import {
   buildPortalRuntimeEnvScript,
+  findStaticChunkCycle,
   resolvePortalRuntimeEnv,
   resolvePortalWorkspaceDependencyRoot,
 } from "./vite.config.ts";
@@ -79,6 +80,59 @@ test("dependency optimizer compiles workspace TSX with automatic React runtime",
   assert.ok(
     config.optimizeDeps?.needsInterop?.includes("react/jsx-dev-runtime"),
     "React dev JSX runtime is CommonJS and needs Vite named-import interop for jsxDEV",
+  );
+});
+
+test("production chunks let Rollup keep qrcode with its CommonJS dependencies", async () => {
+  const config = await resolvePortalViteConfig("production", "build");
+  const output = config.build?.rollupOptions?.output;
+
+  assert.ok(output && !Array.isArray(output));
+  assert.equal(typeof output.manualChunks, "function");
+  assert.equal(
+    output.manualChunks(
+      "C:/workspace/node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode/lib/browser.js",
+      {} as never,
+    ),
+    undefined,
+  );
+  assert.equal(
+    output.manualChunks(
+      "C:/workspace/node_modules/.pnpm/jspdf@3.0.4/node_modules/jspdf/dist/jspdf.es.min.js",
+      {} as never,
+    ),
+    "vendor-pdf",
+  );
+  assert.equal(
+    output.manualChunks(
+      "E:/sdkwork-space/sdkwork-account/sdks/sdkwork-account-app-sdk/sdkwork-account-app-sdk-typescript/generated/server-openapi/src/api/wallet.ts",
+      {} as never,
+    ),
+    "vendor-sdkwork-sdk",
+  );
+  assert.equal(
+    output.manualChunks(
+      "E:/sdkwork-space/sdkwork-clawrouter/apps/sdkwork-clawrouter-pc/node_modules/@sdkwork/clawrouter-backend-sdk/dist/index.js",
+      {} as never,
+    ),
+    "vendor-sdkwork-sdk",
+  );
+});
+
+test("static production chunk cycles are detected with the complete cycle path", () => {
+  assert.deepEqual(
+    findStaticChunkCycle(new Map([
+      ["vendor.js", ["vendor-qrcode.js"]],
+      ["vendor-qrcode.js", ["vendor.js"]],
+    ])),
+    ["vendor.js", "vendor-qrcode.js", "vendor.js"],
+  );
+  assert.equal(
+    findStaticChunkCycle(new Map([
+      ["entry.js", ["vendor.js"]],
+      ["vendor.js", []],
+    ])),
+    null,
   );
 });
 

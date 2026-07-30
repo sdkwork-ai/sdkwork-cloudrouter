@@ -1,7 +1,12 @@
 import {
   getClawRouterBackendSdkClient,
   isRecord,
+  decimalNumber,
+  formatLocalizedCompactDecimalAmount,
+  formatLocalizedDecimalAmount,
+  formatLocalizedInteger,
   readDecimalString,
+  readRequiredNonNegativeInt64String,
   readRequiredNonNegativeNumber,
   readRequiredString,
   type ApiRecord,
@@ -25,9 +30,9 @@ export interface PieChartData {
 
 export interface TrafficData {
   time: string;
-  tokens: number;
-  requests: number;
-  points: number;
+  tokens: string | number;
+  requests: string | number;
+  points: string | number;
   chartTokens: number;
   chartRequests: number;
   chartPoints: number;
@@ -77,18 +82,18 @@ export interface InstallationStatusResponse {
 }
 
 interface DashboardAnalyticsSummary {
-  totalUsers: number;
-  activeUsers: number;
-  activeModels: number;
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  totalTokens: number;
-  totalPoints: number;
-  upstreamCost: number;
-  averageTokensPerRequest: number;
-  averagePointsPerRequest: number;
-  errorRate: number;
+  totalUsers: string;
+  activeUsers: string;
+  activeModels: string;
+  totalRequests: string;
+  successfulRequests: string;
+  failedRequests: string;
+  totalTokens: string;
+  totalPoints: string;
+  upstreamCost: string;
+  averageTokensPerRequest: string;
+  averagePointsPerRequest: string;
+  errorRate: string;
 }
 
 interface DashboardAnalyticsSnapshot {
@@ -174,8 +179,9 @@ export class AdminDashboardService {
 }
 
 async function fetchDailyDashboardAnalytics(): Promise<DashboardAnalyticsSnapshot> {
-  // The generated SDK has no analytics query type; the backend's no-query default is daily.
-  const result = await getClawRouterBackendSdkClient().system.analytics.admin.overview.list();
+  const result = await getClawRouterBackendSdkClient().system.analytics.admin.overview.retrieve({
+    timeRange: DEFAULT_TRAFFIC_TIME_RANGE,
+  });
   const data = readRequiredRecord(result, 'Dashboard traffic analytics overview is required');
   return {
     summary: normalizeAnalyticsSummary(readRequiredRecord(data.summary, 'Dashboard traffic analytics summary is required')),
@@ -233,34 +239,34 @@ function normalizeTrafficData(value: unknown): TrafficData {
 
 export function normalizeAnalyticsTrafficData(value: unknown): TrafficData {
   const item = readRequiredRecord(value, 'Dashboard traffic analytics trend point is required');
-  const tokens = readRequiredNonNegativeNumber(item, 'tokens', 'Dashboard traffic analytics tokens are required');
-  const requests = readRequiredNonNegativeNumber(item, 'requests', 'Dashboard traffic analytics requests are required');
-  const points = readRequiredNonNegativeNumber(item, 'points', 'Dashboard traffic analytics Compute Credits are required');
+  const tokens = readRequiredAnalyticsDecimalString(item, 'tokens', 'Dashboard traffic analytics tokens are required');
+  const requests = readRequiredAnalyticsDecimalString(item, 'requests', 'Dashboard traffic analytics requests are required');
+  const points = readRequiredAnalyticsDecimalString(item, 'points', 'Dashboard traffic analytics Compute Credits are required');
   return {
     time: readRequiredString(item, 'time', 'Dashboard traffic analytics time is required'),
     tokens,
     requests,
     points,
-    chartTokens: tokens,
-    chartRequests: requests,
-    chartPoints: points,
+    chartTokens: analyticsChartNumber(tokens),
+    chartRequests: analyticsChartNumber(requests),
+    chartPoints: analyticsChartNumber(points),
   };
 }
 
 function normalizeAnalyticsSummary(record: ApiRecord): DashboardAnalyticsSummary {
   return {
-    totalUsers: readRequiredNonNegativeNumber(record, 'totalUsers', 'Dashboard traffic analytics total users are required'),
-    activeUsers: readRequiredNonNegativeNumber(record, 'activeUsers', 'Dashboard traffic analytics active users are required'),
-    activeModels: readRequiredNonNegativeNumber(record, 'activeModels', 'Dashboard traffic analytics active models are required'),
-    totalRequests: readRequiredNonNegativeNumber(record, 'totalRequests', 'Dashboard traffic analytics total requests are required'),
-    successfulRequests: readRequiredNonNegativeNumber(record, 'successfulRequests', 'Dashboard traffic analytics successful requests are required'),
-    failedRequests: readRequiredNonNegativeNumber(record, 'failedRequests', 'Dashboard traffic analytics failed requests are required'),
-    totalTokens: readRequiredNonNegativeNumber(record, 'totalTokens', 'Dashboard traffic analytics total tokens are required'),
-    totalPoints: readRequiredNonNegativeNumber(record, 'totalPoints', 'Dashboard traffic analytics total Compute Credits are required'),
-    upstreamCost: readRequiredNonNegativeNumber(record, 'upstreamCost', 'Dashboard traffic analytics upstream cost is required'),
-    averageTokensPerRequest: readRequiredNonNegativeNumber(record, 'averageTokensPerRequest', 'Dashboard traffic analytics average tokens are required'),
-    averagePointsPerRequest: readRequiredNonNegativeNumber(record, 'averagePointsPerRequest', 'Dashboard traffic analytics average Compute Credits are required'),
-    errorRate: readRequiredNonNegativeNumber(record, 'errorRate', 'Dashboard traffic analytics error rate is required'),
+    totalUsers: readRequiredNonNegativeInt64String(record, 'totalUsers', 'Dashboard traffic analytics total users are required'),
+    activeUsers: readRequiredNonNegativeInt64String(record, 'activeUsers', 'Dashboard traffic analytics active users are required'),
+    activeModels: readRequiredNonNegativeInt64String(record, 'activeModels', 'Dashboard traffic analytics active models are required'),
+    totalRequests: readRequiredNonNegativeInt64String(record, 'totalRequests', 'Dashboard traffic analytics total requests are required'),
+    successfulRequests: readRequiredNonNegativeInt64String(record, 'successfulRequests', 'Dashboard traffic analytics successful requests are required'),
+    failedRequests: readRequiredNonNegativeInt64String(record, 'failedRequests', 'Dashboard traffic analytics failed requests are required'),
+    totalTokens: readRequiredAnalyticsDecimalString(record, 'totalTokens', 'Dashboard traffic analytics total tokens are required'),
+    totalPoints: readRequiredAnalyticsDecimalString(record, 'totalPoints', 'Dashboard traffic analytics total Compute Credits are required'),
+    upstreamCost: readRequiredAnalyticsDecimalString(record, 'upstreamCost', 'Dashboard traffic analytics upstream cost is required'),
+    averageTokensPerRequest: readRequiredAnalyticsDecimalString(record, 'averageTokensPerRequest', 'Dashboard traffic analytics average tokens are required'),
+    averagePointsPerRequest: readRequiredAnalyticsDecimalString(record, 'averagePointsPerRequest', 'Dashboard traffic analytics average Compute Credits are required'),
+    errorRate: readRequiredAnalyticsDecimalString(record, 'errorRate', 'Dashboard traffic analytics error rate is required'),
   };
 }
 
@@ -309,9 +315,9 @@ function withInitialTrafficData(
   const trafficItems = items.length > 0 ? items : INITIAL_DAILY_TRAFFIC_DATA;
   return trafficItems.map((item) => ({
     ...item,
-    chartTokens: item.tokens,
-    chartRequests: item.requests,
-    chartPoints: item.points,
+    chartTokens: analyticsChartNumber(item.tokens),
+    chartRequests: analyticsChartNumber(item.requests),
+    chartPoints: analyticsChartNumber(item.points),
   }));
 }
 
@@ -395,6 +401,28 @@ function readRequiredDecimalString(
   return readDecimalString(record, key);
 }
 
+function readRequiredAnalyticsDecimalString(record: ApiRecord, key: string, message: string): string {
+  const value = record[key];
+  if (typeof value !== 'string') {
+    throw new Error(message);
+  }
+  const normalized = value.trim();
+  if (normalized.length > 64 || !/^[0-9]+(?:\.[0-9]{1,12})?$/u.test(normalized)) {
+    throw new Error(message);
+  }
+  return normalized;
+}
+
+function analyticsChartNumber(value: string | number): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.min(Math.max(value, 0), Number.MAX_SAFE_INTEGER) : 0;
+  }
+  const projected = decimalNumber(value, 12);
+  return Number.isFinite(projected)
+    ? Math.min(Math.max(projected, 0), Number.MAX_SAFE_INTEGER)
+    : Number.MAX_SAFE_INTEGER;
+}
+
 export function createDashboardSummaryCards(snapshot: {
   activeUsers: number;
   summary: DashboardAnalyticsSummary;
@@ -463,8 +491,8 @@ function sumBy<T>(items: T[], project: (item: T) => number): number {
   return items.reduce((total, item) => total + project(item), 0);
 }
 
-function formatInteger(value: number): string {
-  return Math.round(value).toLocaleString('en-US');
+function formatInteger(value: string | number): string {
+  return formatLocalizedInteger(value, 'en-US');
 }
 
 export function formatChargeAmount(value: string): string {
@@ -483,31 +511,16 @@ export function formatCompactAxisValue(value: number): string {
   return COMPACT_AXIS_NUMBER_FORMATTER.format(value).replace(/K$/u, 'k');
 }
 
-function formatDecimal(value: number): string {
-  return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+function formatDecimal(value: string): string {
+  return formatLocalizedDecimalAmount(value, 'en-US', 2, 0);
 }
 
-function formatPercent(value: number): string {
-  return `${value.toFixed(1)}%`;
+function formatPercent(value: string): string {
+  return `${formatLocalizedDecimalAmount(value, 'en-US', 1, 1)}%`;
 }
 
-function formatCompactNumber(value: number): string {
-  const absolute = Math.abs(value);
-  if (absolute >= 1_000_000_000) {
-    return `${formatCompactUnit(value, 1_000_000_000)}B`;
-  }
-  if (absolute >= 1_000_000) {
-    return `${formatCompactUnit(value, 1_000_000)}M`;
-  }
-  if (absolute >= 1_000) {
-    return `${formatCompactUnit(value, 1_000)}K`;
-  }
-  return formatInteger(value);
-}
-
-function formatCompactUnit(value: number, unit: number): string {
-  const normalized = value / unit;
-  return Number.isInteger(normalized) ? String(normalized) : normalized.toFixed(1);
+function formatCompactNumber(value: string): string {
+  return formatLocalizedCompactDecimalAmount(value, 'en-US');
 }
 
 function interpolateFallback(fallback: string, options?: Record<string, unknown>): string {

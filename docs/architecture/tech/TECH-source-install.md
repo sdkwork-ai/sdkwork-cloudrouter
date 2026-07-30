@@ -141,7 +141,7 @@ This command is only for source workspaces. After a formal release package is ex
 Server mode with PostgreSQL:
 
 ```bash
-SDKWORK_CLAW_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod" pnpm start -- --deployment-mode server
+SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod" pnpm start -- --deployment-mode server
 ```
 
 Generated server TOML uses structured PostgreSQL fields. Prefer `password_file`; use direct `password` only when the TOML file is protected as a secret-bearing file:

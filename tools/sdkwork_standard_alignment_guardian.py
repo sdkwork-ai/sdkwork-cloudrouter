@@ -98,7 +98,7 @@ class SdkworkStandardAlignmentGuardian:
         "crates/sdkwork-claw-http/src/federated_database_env.rs"
     )
     IAM_RESOLVER_CLAW_INTEGRATION_MARKERS: tuple[str, ...] = (
-        "ensure_iam_database_env_for_claw_database",
+        "ensure_workspace_database_env_from_config",
     )
 
     def __init__(self, root: Path) -> None:
@@ -1810,7 +1810,7 @@ class SdkworkStandardAlignmentGuardian:
                             "canonical claw IAM database environment integration"
                         ),
                         remediation=(
-                            "implement ensure_iam_database_env_for_claw_database per WEB_FRAMEWORK_SPEC.md"
+                            "implement ensure_workspace_database_env_from_config per WEB_FRAMEWORK_SPEC.md"
                         ),
                     )
                 )

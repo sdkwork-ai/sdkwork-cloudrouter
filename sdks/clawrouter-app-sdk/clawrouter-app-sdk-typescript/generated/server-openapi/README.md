@@ -75,7 +75,11 @@ const result = await client.ai.generations.list();
 
 ```typescript
 // List chat conversations
-const result = await client.chat.conversations.list();
+const params = {
+  page: 1,
+  page_size: 2,
+};
+const result = await client.chat.conversations.list(params);
 ```
 
 ### iam
@@ -96,14 +100,29 @@ const result = await client.memory.spaces.list();
 
 ```typescript
 // List notifications
-const result = await client.notification.list();
+const params = {
+  app_id: 'app_id',
+  include_archived: false,
+  page: 3,
+  page_size: 4,
+};
+const result = await client.notification.list(params);
 ```
 
 ### runtime
 
 ```typescript
 // List runtime invocations
-const result = await client.runtime.invocations.list();
+const params = {
+  page: 1,
+  page_size: 2,
+  conversation_id: 'conversation_id',
+  chat_turn_id: 'chat_turn_id',
+  agent_session_id: 'agent_session_id',
+  runtime: 'runtime',
+  status: 'pending',
+};
+const result = await client.runtime.invocations.list(params);
 ```
 
 ### system

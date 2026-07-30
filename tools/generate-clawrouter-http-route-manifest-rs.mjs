@@ -5,95 +5,25 @@ import { fileURLToPath } from "node:url";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDir, "..");
 
-const APPBASE_IAM_MANIFEST_PATH = path.resolve(
-  workspaceRoot,
-  "../sdkwork-iam/crates/sdkwork-routes-iam-app-api/src/manifest.rs",
-);
-const MEMBERSHIP_APP_MANIFEST_PATH = path.resolve(
-  workspaceRoot,
-  "../sdkwork-membership/crates/sdkwork-routes-membership-app-api/src/manifest.rs",
-);
-
-const EXECUTABLE_DEPENDENCY_MOUNTS = {
-  iam: {
-    label: "IAM app API",
-    componentSpecPath:
-      "crates/sdkwork-api-clawrouter-assembly/specs/component.spec.json",
-    sdkFamily: "sdkwork-iam-app-sdk",
-    contract: {
-      runtimeMode: "same-origin-mounted",
-      cargoDependency: "sdkwork-routes-iam-app-api",
-      embeddedExecutableExport: "sdkwork_api_clawrouter_assembly::assemble_api_router",
-    },
-    sourceEvidence: [
-      {
-        path: "crates/sdkwork-api-clawrouter-assembly/src/bootstrap.rs",
-        requiredText: [
-          "iam::wire_iam_app_router().await?",
-          "with_dependency_api_router(iam_router)",
-        ],
-      },
-      {
-        path: "crates/sdkwork-api-clawrouter-assembly/src/bootstrap/iam.rs",
-        requiredText: [
-          "sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router()",
-        ],
-      },
-      {
-        path: "crates/sdkwork-api-clawrouter-assembly/Cargo.toml",
-        requiredText: ["sdkwork-routes-iam-app-api.workspace = true"],
-      },
-    ],
-  },
-  membership: {
-    label: "Membership app API",
-    componentSpecPath:
-      "crates/sdkwork-routes-clawrouter-app-api/specs/component.spec.json",
-    sdkFamily: "sdkwork-membership-app-sdk",
-    contract: {
-      runtimeMode: "same-origin-mounted",
-      cargoDependency: "sdkwork_routes_membership_app_api",
-      embeddedExecutableExport:
-        "sdkwork_routes_membership_app_api::app_membership_router_with_postgres_pool",
-    },
-    sourceEvidence: [
-      {
-        path: "crates/sdkwork-routes-clawrouter-app-api/src/routes.rs",
-        requiredText: [
-          "crate::commerce_runtime::merge_federated_commerce_app_routers(",
-        ],
-      },
-      {
-        path: "crates/sdkwork-routes-clawrouter-app-api/src/commerce_runtime.rs",
-        requiredText: [
-          "app_membership_router_with_postgres_pool",
-          "let membership_router = build_membership_router_from_pool(",
-          "merge_federated_app_capability_router_with_optional_auth(",
-        ],
-      },
-      {
-        path: "crates/sdkwork-routes-clawrouter-app-api/Cargo.toml",
-        requiredText: ["sdkwork_routes_membership_app_api.workspace = true"],
-      },
-    ],
-  },
-};
-
 const TARGETS = [
   {
     surface: "app-api",
     manifestPath:
       "sdks/_route-manifests/app-api/sdkwork-routes-clawrouter-app-api.route-manifest.json",
     outputPath: "crates/sdkwork-routes-clawrouter-app-api/src/http_route_manifest.rs",
-    mergeAppbaseIamRoutes: true,
-    mergeMembershipRoutes: true,
   },
   {
     surface: "backend-api",
     manifestPath:
       "sdks/_route-manifests/backend-api/sdkwork-routes-clawrouter-backend-api.route-manifest.json",
     outputPath: "crates/sdkwork-routes-clawrouter-backend-api/src/http_route_manifest.rs",
-    mergeAppbaseIamRoutes: false,
+  },
+  {
+    surface: "open-api",
+    manifestPath:
+      "sdks/_route-manifests/open-api/sdkwork-routes-clawrouter-open-api.route-manifest.json",
+    outputPath:
+      "crates/sdkwork-api-clawrouter-assembly/src/generated_open_http_route_manifest.rs",
   },
 ];
 
@@ -158,155 +88,17 @@ function routeEntry(route) {
     ),`;
 }
 
-async function readAppbaseIamRouteEntries() {
-  const source = await readFile(APPBASE_IAM_MANIFEST_PATH, "utf8");
-  const match = source.match(/const IAM_APP_API_ROUTES: &\[HttpRoute\] = &\[([\s\S]*?)\];/);
-  if (!match) {
-    throw new Error(
-      `failed to parse IAM_APP_API_ROUTES from ${APPBASE_IAM_MANIFEST_PATH}`,
-    );
-  }
-  return `    ${match[1].trim()}`;
-}
-
-async function readMembershipAppRouteEntries() {
-  const source = await readFile(MEMBERSHIP_APP_MANIFEST_PATH, "utf8");
-  const routeArrayMatch = source.match(
-    /const APP_API_HTTP_ROUTES: &\[HttpRoute\] = &\[([\s\S]*?)\];/,
-  );
-  const inlineManifestMatch = source.match(
-    /pub const APP_API_HTTP_ROUTE_MANIFEST: HttpRouteManifest = HttpRouteManifest::new\(&\[([\s\S]*?)\]\);/,
-  );
-  const match = routeArrayMatch ?? inlineManifestMatch;
-  if (!match) {
-    throw new Error(
-      `failed to parse membership HttpRoute entries from ${MEMBERSHIP_APP_MANIFEST_PATH}`,
-    );
-  }
-  return `    ${match[1].trim()}`;
-}
-
-function listHttpRouteKeys(rustRouteEntries) {
-  const keys = new Set();
-  const pattern = /HttpRoute::\w+\(\s*HttpMethod::(\w+),\s*"([^"]+)"/g;
-  for (const entry of rustRouteEntries.matchAll(pattern)) {
-    keys.add(`${entry[1].toUpperCase()} ${entry[2]}`);
-  }
-  return keys;
-}
-
-function filterProductRoutesOverlappingDependencies(productRoutes, dependencyRouteEntries) {
-  const dependencyKeys = listHttpRouteKeys(dependencyRouteEntries);
-  return productRoutes.filter(
-    (route) => !dependencyKeys.has(`${route.method} ${route.path}`),
-  );
-}
-
-async function assertExecutableDependencyMount(mount) {
-  const componentSpecFile = path.join(workspaceRoot, mount.componentSpecPath);
-  const componentSpec = JSON.parse(await readFile(componentSpecFile, "utf8"));
-  const dependencySurfaces = componentSpec.contracts?.dependencyApiSurfaces;
-  if (!Array.isArray(dependencySurfaces)) {
-    throw new Error(
-      `${mount.label} executable mount check failed: ${mount.componentSpecPath} does not declare contracts.dependencyApiSurfaces`,
-    );
-  }
-
-  const dependencySurface = dependencySurfaces.find(
-    (candidate) => candidate.sdkFamily === mount.sdkFamily,
-  );
-  if (!dependencySurface) {
-    throw new Error(
-      `${mount.label} executable mount check failed: ${mount.componentSpecPath} does not declare ${mount.sdkFamily}`,
-    );
-  }
-
-  for (const [field, expected] of Object.entries(mount.contract)) {
-    if (dependencySurface[field] !== expected) {
-      throw new Error(
-        `${mount.label} executable mount check failed: ${mount.componentSpecPath} requires ${field}=${JSON.stringify(expected)}, found ${JSON.stringify(dependencySurface[field])}`,
-      );
-    }
-  }
-
-  for (const evidence of mount.sourceEvidence) {
-    const source = await readFile(path.join(workspaceRoot, evidence.path), "utf8");
-    for (const requiredText of evidence.requiredText) {
-      if (!source.includes(requiredText)) {
-        throw new Error(
-          `${mount.label} executable mount check failed: ${evidence.path} is missing ${JSON.stringify(requiredText)}`,
-        );
-      }
-    }
-  }
-}
-
-async function assertExecutableDependencyMounts(target) {
-  if (target.mergeAppbaseIamRoutes) {
-    await assertExecutableDependencyMount(EXECUTABLE_DEPENDENCY_MOUNTS.iam);
-  }
-  if (target.mergeMembershipRoutes) {
-    await assertExecutableDependencyMount(EXECUTABLE_DEPENDENCY_MOUNTS.membership);
-  }
-}
-
-function renderManifest(
-  routes,
-  { iamRouteEntries = null, membershipRouteEntries = null } = {},
-) {
-  const dependencyRouteEntries = [iamRouteEntries, membershipRouteEntries]
-    .filter(Boolean)
-    .join("\n");
-  const productRoutes = dependencyRouteEntries
-    ? filterProductRoutesOverlappingDependencies(routes, dependencyRouteEntries)
-    : routes;
-  const productEntries = productRoutes.map(routeEntry).join("\n");
-  const routeBlock = dependencyRouteEntries
-    ? `${dependencyRouteEntries}\n${productEntries}`
-    : productEntries;
-  const publicBootstrapTests = iamRouteEntries
+function renderManifest(routes, target) {
+  const routeBlock = routes.map(routeEntry).join("\n");
+  const appManifestAlias = target.surface === "app-api"
     ? `
-    #[test]
-    fn iam_bootstrap_routes_allow_anonymous_access() {
-        assert_public_route("POST", "/app/v3/api/auth/sessions");
-        assert_public_route("POST", "/app/v3/api/oauth/device_authorizations");
-        assert_public_route("GET", "/app/v3/api/system/iam/runtime");
-    }
-
-    #[test]
-    fn order_assembly_routes_are_materialized() {
-        let aggregate = super::http_route_manifest();
-        let order = sdkwork_api_order_assembly::ApiAssembly::app_route_manifest();
-
-        for dependency_route in order.routes() {
-            let route = aggregate
-                .routes()
-                .iter()
-                .find(|route| {
-                    route.method == dependency_route.method && route.path == dependency_route.path
-                })
-                .unwrap_or_else(|| {
-                    panic!(
-                        "Order assembly route {:?} {} must be materialized",
-                        dependency_route.method, dependency_route.path
-                    )
-                });
-            assert_eq!(dependency_route.operation_id, route.operation_id);
-            assert_eq!(dependency_route.auth, route.auth);
-        }
-        assert_eq!(41, order.routes().len());
-    }
-`
-  : "";
-  const appManifestAlias = iamRouteEntries
-    ? `
-/// Product app-api manifest including appbase IAM bootstrap/auth/oauth metadata.
+/// Clawrouter-owned app-api route manifest.
 pub fn claw_router_app_http_route_manifest() -> HttpRouteManifest {
     http_route_manifest()
 }
 `
     : "";
-  const appManifestTests = iamRouteEntries
+  const appManifestTests = target.surface === "app-api"
     ? `
 #[cfg(test)]
 mod tests {
@@ -336,29 +128,10 @@ mod tests {
 
     #[test]
     fn public_catalog_routes_allow_anonymous_access() {
-        assert_public_route("GET", "/app/v3/api/ai/models");
-        assert_public_route("GET", "/app/v3/api/ai/model_rankings");
-        assert_public_route("GET", "/app/v3/api/ai/model_vendors");
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
     }
 
-    #[test]
-    fn membership_catalog_routes_allow_anonymous_access() {
-        assert_public_route("GET", "/app/v3/api/memberships/plans");
-        assert_public_route("GET", "/app/v3/api/memberships/benefits");
-        assert_public_route("GET", "/app/v3/api/memberships/packages");
-        assert_public_route("GET", "/app/v3/api/memberships/packages/{packageId}");
-        assert_public_route("GET", "/app/v3/api/memberships/package_groups");
-        assert_public_route(
-            "GET",
-            "/app/v3/api/memberships/package_groups/{packageGroupId}",
-        );
-        assert_public_route(
-            "GET",
-            "/app/v3/api/memberships/package_groups/{packageGroupId}/packages",
-        );
-    }
-${publicBootstrapTests}}
+}
 `
     : "";
 
@@ -379,20 +152,10 @@ ${appManifestAlias}${appManifestTests}
 }
 
 async function processTarget(target, mode) {
-  await assertExecutableDependencyMounts(target);
   const manifest = JSON.parse(
     await readFile(path.join(workspaceRoot, target.manifestPath), "utf8"),
   );
-  const iamRouteEntries = target.mergeAppbaseIamRoutes
-    ? await readAppbaseIamRouteEntries()
-    : null;
-  const membershipRouteEntries = target.mergeMembershipRoutes
-    ? await readMembershipAppRouteEntries()
-    : null;
-  const content = renderManifest(manifest.routes, {
-    iamRouteEntries,
-    membershipRouteEntries,
-  });
+  const content = renderManifest(manifest.routes, target);
   const outputPath = path.join(workspaceRoot, target.outputPath);
   let existing = null;
   try {
@@ -405,10 +168,6 @@ async function processTarget(target, mode) {
       surface: target.surface,
       status: "ok",
       routeCount: manifest.routes.length,
-      iamRouteCount: iamRouteEntries ? listHttpRouteKeys(iamRouteEntries).size : 0,
-      membershipRouteCount: membershipRouteEntries
-        ? listHttpRouteKeys(membershipRouteEntries).size
-        : 0,
     };
   }
   if (mode.check) {
@@ -416,10 +175,6 @@ async function processTarget(target, mode) {
       surface: target.surface,
       status: "drift",
       routeCount: manifest.routes.length,
-      iamRouteCount: iamRouteEntries ? listHttpRouteKeys(iamRouteEntries).size : 0,
-      membershipRouteCount: membershipRouteEntries
-        ? listHttpRouteKeys(membershipRouteEntries).size
-        : 0,
     };
   }
   await writeFile(outputPath, content, "utf8");
@@ -427,10 +182,6 @@ async function processTarget(target, mode) {
     surface: target.surface,
     status: "wrote",
     routeCount: manifest.routes.length,
-    iamRouteCount: iamRouteEntries ? listHttpRouteKeys(iamRouteEntries).size : 0,
-    membershipRouteCount: membershipRouteEntries
-      ? listHttpRouteKeys(membershipRouteEntries).size
-      : 0,
   };
 }
 
@@ -441,13 +192,8 @@ async function main() {
     summaries.push(await processTarget(target, mode));
   }
   for (const summary of summaries) {
-    const iamSuffix =
-      summary.iamRouteCount > 0 ? ` iamRoutes=${summary.iamRouteCount}` : "";
-    const membershipSuffix = summary.membershipRouteCount > 0
-      ? ` membershipRoutes=${summary.membershipRouteCount}`
-      : "";
     console.log(
-      `[${summary.surface}] routes=${summary.routeCount}${iamSuffix}${membershipSuffix} status=${summary.status}`,
+      `[${summary.surface}] routes=${summary.routeCount} status=${summary.status}`,
     );
   }
   if (mode.check && summaries.some((summary) => summary.status === "drift")) {

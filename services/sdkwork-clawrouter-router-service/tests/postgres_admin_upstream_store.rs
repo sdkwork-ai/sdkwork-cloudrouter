@@ -17,7 +17,7 @@ use sdkwork_clawrouter_router_service::ports::{
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 
-const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL";
+const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 const REQUESTED_AT: &str = "2026-07-28T12:00:00.000Z";
 
 #[tokio::test]

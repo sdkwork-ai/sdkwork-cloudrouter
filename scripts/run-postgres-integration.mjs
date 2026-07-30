@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const POSTGRES_TEST_DATABASE_URL = 'SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL';
+const POSTGRES_TEST_DATABASE_URL = 'SDKWORK_DATABASE_URL';
 const POSTGRES_TEST_PORT = 'SDKWORK_CLAW_POSTGRES_TEST_PORT';
 const POSTGRES_DOCKER_COMPOSE_FILE = 'docker-compose.postgres-test.yml';
 const POSTGRES_DOCKER_PROJECT = 'sdkwork-clawrouter-postgres-test';

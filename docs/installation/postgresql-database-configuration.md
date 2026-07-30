@@ -21,7 +21,7 @@ The development profile intentionally uses split fields instead of a full
 connection URL so every application in the SDKWork app stack has the same
 integration shape. At explicit product server startup, the dev launcher
 assembles the split fields into the runtime-standard
-`SDKWORK_CLAW_DATABASE_URL` and passes that to the Rust services. This does not
+`SDKWORK_DATABASE_URL` and passes that to the Rust services. This does not
 change the desktop package default: the desktop local data profile stores
 SQLite under `~/.sdkwork/router/data/clawrouter.sqlite` or
 `%USERPROFILE%/.sdkwork/router/data/clawrouter.sqlite` on Windows. The explicit
@@ -55,9 +55,9 @@ single-machine local data behavior.
 
 Configuration precedence in development:
 
-1. `SDKWORK_CLAW_DATABASE_URL`
-2. Split fields: `SDKWORK_CLAW_DATABASE_ENGINE`, `SDKWORK_CLAW_DATABASE_HOST`, `SDKWORK_CLAW_DATABASE_PORT`, `SDKWORK_CLAW_DATABASE_NAME`, `SDKWORK_CLAW_DATABASE_USERNAME`, `SDKWORK_CLAW_DATABASE_PASSWORD`, and `SDKWORK_CLAW_DATABASE_SSL_MODE`
+1. `SDKWORK_DATABASE_URL`
+2. Split fields: `SDKWORK_DATABASE_ENGINE`, `SDKWORK_DATABASE_HOST`, `SDKWORK_DATABASE_PORT`, `SDKWORK_DATABASE_NAME`, `SDKWORK_DATABASE_USERNAME`, `SDKWORK_DATABASE_PASSWORD`, and `SDKWORK_DATABASE_SSL_MODE`
 3. Default local PostgreSQL dev database
 4. Explicit SQLite entrypoints, which pass `--database-url sqlite://target/dev/clawrouter.sqlite`
 
-Use the default local PostgreSQL profile for normal development, and use split fields for customized `.env.postgres` files. Use `SDKWORK_CLAW_DATABASE_URL` only as an explicit temporary override.
+Use the default local PostgreSQL profile for normal development, and use split fields for customized `.env.postgres` files. Use `SDKWORK_DATABASE_URL` only as an explicit temporary override.

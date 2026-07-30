@@ -6,7 +6,10 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Row};
 
-use sdkwork_iam_bootstrap::{DEFAULT_IAM_ORGANIZATION_ID, DEFAULT_IAM_TENANT_ID};
+use sdkwork_iam_bootstrap::{
+    DEFAULT_IAM_ORGANIZATION_SQL_ID as DEFAULT_IAM_ORGANIZATION_ID,
+    DEFAULT_IAM_TENANT_SQL_ID as DEFAULT_IAM_TENANT_ID,
+};
 
 const MANIFEST_JSON: &str = include_str!("../../../../../data/ai-routing/install-manifest.json");
 const CORE_RESOURCES_JSON: &str =

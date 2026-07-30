@@ -1381,12 +1381,12 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         .map_err(anyhow::Error::msg)?
         .ok_or_else(|| {
             anyhow::Error::msg(format!(
-                "SDKWORK_CLAW_DATABASE_URL is required for all-in-one startup.\n{}",
+                "SDKWORK_DATABASE_URL is required for all-in-one startup.\n{}",
                 DatabaseConfig::startup_help_text(profile)
             ))
         })?;
     require_postgres_server_database(&database_config).map_err(anyhow::Error::new)?;
-    sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&database_config);
+    sdkwork_claw_http::materialize_federated_database_env_from_config(&database_config);
     let api_key_security_config = require_api_key_security_config(
         ApiKeySecurityConfig::from_env_or_runtime_toml(runtime_toml_ref)
             .map_err(GatewayRouterError::Config)?,

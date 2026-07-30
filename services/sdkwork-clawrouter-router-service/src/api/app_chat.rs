@@ -91,10 +91,15 @@ struct AppChatCompleteTurnResponseRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct AppChatUsageRequest {
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     input_tokens: Option<i64>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     output_tokens: Option<i64>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     cached_tokens: Option<i64>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     reasoning_tokens: Option<i64>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     total_tokens: Option<i64>,
     cost: Option<String>,
     cost_amount: Option<String>,

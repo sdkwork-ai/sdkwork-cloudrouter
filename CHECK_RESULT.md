@@ -44,8 +44,8 @@ The main improvements made in this pass are:
 - runtime database configuration is now shared by the gateway, installer,
   admin API, and app API through `sdkwork-claw-config`; it reads
   `SDKWORK_CLAW_CONFIG_FILE` or the OS-standard config file path, with
-  `SDKWORK_CLAW_DATABASE_URL` and
-  `SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS` kept as explicit overrides
+  `SDKWORK_DATABASE_URL` and
+  `SDKWORK_DATABASE_MAX_CONNECTIONS` kept as explicit overrides
 - fast initialization is now a delivery contract instead of tribal knowledge:
   release env validation/write, `sdkwork-claw-installer ensure`,
   `sdkwork-claw-installer refresh-catalog --force`, and `/healthz` plus
@@ -1309,7 +1309,7 @@ Results:
   468 Python standard tests, and schema quality gate.
 - `pnpm.cmd test:postgres`: passed the env-gated local path. The Rust Postgres
   suites compiled and ran 11 SQL contract tests through the configured skip
-  contract path because `SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL` is not set.
+  contract path because `SDKWORK_DATABASE_URL` is not set.
 - `pnpm.cmd test:postgres:docker`: blocked by local environment. Docker
   preflight failed with `spawn EPERM`, so real Docker-backed Postgres evidence
   still requires Docker Desktop or a compatible Docker engine.
@@ -3016,7 +3016,7 @@ pnpm.cmd test:postgres
 Required mode with an existing database:
 
 ```powershell
-$env:SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL="postgres://user:password@127.0.0.1:5432/dbname"
+$env:SDKWORK_DATABASE_URL="postgres://user:password@127.0.0.1:5432/dbname"
 pnpm.cmd test:postgres:required
 ```
 
@@ -3561,7 +3561,7 @@ Remaining delivery policy:
   hosts from the process environment with `pnpm.cmd release:env:write`, and run
   `pnpm.cmd release:preflight -- --strict --env-file .env.release --strict-root-clean`
   before packaging. The contract requires
-  `SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL`, `PORTAL_PUBLIC_API_BASE_URL`,
+  `SDKWORK_DATABASE_URL`, `PORTAL_PUBLIC_API_BASE_URL`,
   `PORTAL_PUBLIC_APP_API_BASE_URL`, `PORTAL_PUBLIC_BACKEND_API_BASE_URL`, and
   `PORTAL_PUBLIC_TOOL_API_ENABLED`, plus optional canonical edge private keys
   (`SDKWORK_CLAW_EDGE_CSP_CONNECT_SRC`, `SDKWORK_CLAW_TOOL_API_RATE_LIMIT_*`,

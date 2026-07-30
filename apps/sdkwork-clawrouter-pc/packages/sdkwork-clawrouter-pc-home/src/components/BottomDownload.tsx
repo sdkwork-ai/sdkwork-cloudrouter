@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'motion/react';
 import { Download, Apple, Play, Monitor, Server, Terminal } from 'lucide-react';
 
 export function BottomDownload() {
@@ -22,15 +21,16 @@ export function BottomDownload() {
     }
   }, []);
 
+  const defaultPlatform = { name: 'macOS', icon: <Download className="w-4 h-4" />, primaryIcon: <Download className="w-5 h-5" /> };
   const platforms = [
-    { name: 'macOS', icon: <Download className="w-4 h-4" />, primaryIcon: <Download className="w-5 h-5" /> },
+    defaultPlatform,
     { name: 'Windows', icon: <Download className="w-4 h-4" />, primaryIcon: <Download className="w-5 h-5" /> },
     { name: 'Linux', icon: <Download className="w-4 h-4" />, primaryIcon: <Download className="w-5 h-5" /> },
     { name: 'iOS', icon: <Apple className="w-4 h-4" />, primaryIcon: <Apple className="w-5 h-5" /> },
     { name: 'Android', icon: <Play className="w-4 h-4" />, primaryIcon: <Play className="w-5 h-5" /> },
   ];
 
-  const primaryPlatform = platforms.find(p => p.name === os) || platforms[0];
+  const primaryPlatform = platforms.find(p => p.name === os) ?? defaultPlatform;
   const secondaryPlatforms = platforms.filter(p => p.name !== os);
 
   return (

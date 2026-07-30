@@ -5,7 +5,7 @@ import { CLAW_ROUTER_RELEASE_ENV_KEY_ORDER } from './dev/claw-router-application
 import { buildReleaseEnvFilePlan } from './write-release-env.mjs';
 
 const validReleaseEnv = Object.freeze({
-  SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/claw',
+  SDKWORK_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/claw',
   PORTAL_PUBLIC_API_BASE_URL: 'https://tenant.example.com/v1',
   PORTAL_PUBLIC_OPEN_API_BASE_URL: 'https://open.tenant.example.com/v1',
   PORTAL_PUBLIC_APP_API_BASE_URL: '/app/v3/api',

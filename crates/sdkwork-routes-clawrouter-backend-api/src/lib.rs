@@ -7,11 +7,12 @@ pub mod routes;
 mod upstream;
 mod web_bootstrap;
 
+pub use http_route_manifest::http_route_manifest;
 pub use manifest::{route_manifest, RouterApiRouteManifest};
 pub use routes::*;
 pub use web_bootstrap::{
-    finalize_served_router, maybe_wrap_router_with_web_framework,
-    maybe_wrap_router_with_web_framework_and_database_config,
+    claw_router_backend_domain_context_injector, finalize_served_router,
+    maybe_wrap_router_with_web_framework, maybe_wrap_router_with_web_framework_and_database_config,
     maybe_wrap_router_with_web_framework_and_iam_pool,
 };
 

@@ -5,7 +5,7 @@ export const RELEASE_ENVIRONMENT_CONTRACT = Object.freeze({
   /** @deprecated use profileFile */
   localFile: '.env.release',
   requiredReleaseEnv: Object.freeze([
-    'SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL',
+    'SDKWORK_DATABASE_URL',
   ]),
   requiredPortalPublicEnv: Object.freeze([
     'PORTAL_PUBLIC_API_BASE_URL',

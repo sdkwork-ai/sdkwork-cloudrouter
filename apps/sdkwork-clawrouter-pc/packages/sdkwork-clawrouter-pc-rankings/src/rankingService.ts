@@ -55,7 +55,7 @@ export class RankingService {
     const source = normalizeRankingSource(data);
     return {
       catalog: items,
-      history: normalizeRankingHistory(data, source, items),
+      history: normalizeRankingHistory(data, items),
       source,
     };
   }
@@ -151,7 +151,6 @@ function normalizeRankingSource(data: ApiRecord): RankingSnapshotSource {
 
 function normalizeRankingHistory(
   data: ApiRecord,
-  source: RankingSnapshotSource,
   items: readonly RankingModel[],
 ): RankingHistoryWeek[] {
   const historyKeyByIdentity = createRankingHistoryIdentityMap(items);

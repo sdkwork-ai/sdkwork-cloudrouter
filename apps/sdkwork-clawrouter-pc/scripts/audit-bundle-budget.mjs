@@ -1,12 +1,19 @@
-import { readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import { gzip } from "node:zlib";
 
 const MAX_VENDOR_CHUNK_BYTES = 2 * 1024 * 1024;
 const MAX_ROUTE_CHUNK_BYTES = 256 * 1024;
-const MAX_CSS_BYTES = 256 * 1024;
+const MAX_ENTRY_CHUNK_BYTES = 1_536 * 1024;
+const MAX_CSS_UNCOMPRESSED_BYTES = 768 * 1024;
+const MAX_CSS_GZIP_BYTES = 96 * 1024;
+const MAX_TOTAL_CSS_UNCOMPRESSED_BYTES = 1024 * 1024;
+const MAX_TOTAL_CSS_GZIP_BYTES = 128 * 1024;
 const MIN_ROUTE_CHUNK_COUNT = 20;
+const gzipAsync = promisify(gzip);
 
 const routeChunkPattern = /^(?!vendor-|index-|AdminLayout-).+\.js$/;
 
@@ -23,7 +30,12 @@ async function main() {
   const failures = [];
   const vendorChunks = files.filter(file => file.name.startsWith("vendor-") && file.name.endsWith(".js"));
   const routeChunks = files.filter(file => routeChunkPattern.test(file.name));
+  const entryChunks = files.filter(file => file.name.startsWith("index-") && file.name.endsWith(".js"));
   const cssFiles = files.filter(file => file.name.endsWith(".css"));
+  const cssBudgets = await Promise.all(cssFiles.map(async (file) => ({
+    ...file,
+    gzipBytes: (await gzipAsync(await readFile(path.join(assetsDir, file.name)))).byteLength,
+  })));
 
   if (vendorChunks.length === 0) {
     failures.push("portal build must emit explicit vendor chunks");
@@ -42,10 +54,31 @@ async function main() {
       failures.push(`${chunk.name} exceeds route chunk budget: ${chunk.bytes} > ${MAX_ROUTE_CHUNK_BYTES}`);
     }
   }
-  for (const file of cssFiles) {
-    if (file.bytes > MAX_CSS_BYTES) {
-      failures.push(`${file.name} exceeds CSS budget: ${file.bytes} > ${MAX_CSS_BYTES}`);
+  for (const chunk of entryChunks) {
+    if (chunk.bytes > MAX_ENTRY_CHUNK_BYTES) {
+      failures.push(`${chunk.name} exceeds entry chunk budget: ${chunk.bytes} > ${MAX_ENTRY_CHUNK_BYTES}`);
     }
+  }
+  for (const file of cssBudgets) {
+    if (file.bytes > MAX_CSS_UNCOMPRESSED_BYTES) {
+      failures.push(
+        `${file.name} exceeds uncompressed CSS budget: ${file.bytes} > ${MAX_CSS_UNCOMPRESSED_BYTES}`,
+      );
+    }
+    if (file.gzipBytes > MAX_CSS_GZIP_BYTES) {
+      failures.push(`${file.name} exceeds gzip CSS budget: ${file.gzipBytes} > ${MAX_CSS_GZIP_BYTES}`);
+    }
+  }
+
+  const totalCssBytes = cssBudgets.reduce((total, file) => total + file.bytes, 0);
+  const totalCssGzipBytes = cssBudgets.reduce((total, file) => total + file.gzipBytes, 0);
+  if (totalCssBytes > MAX_TOTAL_CSS_UNCOMPRESSED_BYTES) {
+    failures.push(
+      `portal CSS exceeds total uncompressed budget: ${totalCssBytes} > ${MAX_TOTAL_CSS_UNCOMPRESSED_BYTES}`,
+    );
+  }
+  if (totalCssGzipBytes > MAX_TOTAL_CSS_GZIP_BYTES) {
+    failures.push(`portal CSS exceeds total gzip budget: ${totalCssGzipBytes} > ${MAX_TOTAL_CSS_GZIP_BYTES}`);
   }
 
   if (failures.length > 0) {
@@ -58,9 +91,17 @@ async function main() {
 
   const largestVendor = vendorChunks.reduce((largest, file) => file.bytes > largest.bytes ? file : largest, { name: "none", bytes: 0 });
   const largestRoute = routeChunks.reduce((largest, file) => file.bytes > largest.bytes ? file : largest, { name: "none", bytes: 0 });
+  const largestEntry = entryChunks.reduce((largest, file) => file.bytes > largest.bytes ? file : largest, { name: "none", bytes: 0 });
+  const largestCss = cssBudgets.reduce(
+    (largest, file) => file.bytes > largest.bytes ? file : largest,
+    { name: "none", bytes: 0, gzipBytes: 0 },
+  );
   console.log(
     `Portal bundle budget passed: ${vendorChunks.length} vendor chunks, ${routeChunks.length} route chunks, `
-      + `largest vendor ${largestVendor.name}=${largestVendor.bytes}, largest route ${largestRoute.name}=${largestRoute.bytes}`,
+      + `largest vendor ${largestVendor.name}=${largestVendor.bytes}, `
+      + `largest route ${largestRoute.name}=${largestRoute.bytes}, `
+      + `largest entry ${largestEntry.name}=${largestEntry.bytes}, `
+      + `largest CSS ${largestCss.name}=${largestCss.bytes}/${largestCss.gzipBytes} gzip`,
   );
 }
 

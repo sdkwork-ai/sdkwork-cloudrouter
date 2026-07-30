@@ -33,7 +33,7 @@ Migrated app-api SQL read handlers live in `sdkwork-clawrouter-router-service/sr
 | `SDKWORK_CLAW_WEB_FRAMEWORK_ENABLED=false` | Off | Skip `WebFrameworkLayer` wrapping |
 | `SDKWORK_CLAW_WEB_FRAMEWORK_LEGACY=true` | Legacy session path | Use claw app-session tokens; for integration tests and explicit rollback only |
 
-IAM database URL resolution uses `SDKWORK_IAM_DATABASE_URL` or unified claw postgres bridging via `ensure_iam_database_env_for_claw_database`.
+Embedded modules resolve the same `SDKWORK_DATABASE_*` process identity, materialized through `ensure_workspace_database_env_from_config` when application config is passed directly.
 
 See also: [docs/standard-alignment-audit.md](../../../docs/standard-alignment-audit.md) §1, [WEB_FRAMEWORK_SPEC.md](../../../../sdkwork-specs/WEB_FRAMEWORK_SPEC.md), [IAM_SPEC.md](../../../../sdkwork-specs/IAM_SPEC.md).
 

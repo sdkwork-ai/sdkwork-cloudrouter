@@ -241,9 +241,9 @@ export function createDatabaseManagementPlan({
     SDKWORK_CLAW_DEPLOYMENT_MODE:
       settings.deploymentMode ?? env.SDKWORK_CLAW_DEPLOYMENT_MODE ?? 'server',
     ...(configFile ? { SDKWORK_CLAW_CONFIG_FILE: configFile } : {}),
-    ...(settings.databaseUrl ? { SDKWORK_CLAW_DATABASE_URL: settings.databaseUrl } : {}),
+    ...(settings.databaseUrl ? { SDKWORK_DATABASE_URL: settings.databaseUrl } : {}),
     ...(settings.databaseMaxConnections
-      ? { SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS: settings.databaseMaxConnections }
+      ? { SDKWORK_DATABASE_MAX_CONNECTIONS: settings.databaseMaxConnections }
       : {}),
     ...(settings.environment
       ? { SDKWORK_CLAW_INSTALL_ENVIRONMENT: settings.environment }
@@ -278,15 +278,15 @@ function redactedEnvSummary(env) {
   const keys = [
     'SDKWORK_CLAW_CONFIG_FILE',
     'SDKWORK_CLAW_DEPLOYMENT_MODE',
-    'SDKWORK_CLAW_DATABASE_URL',
-    'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS',
+    'SDKWORK_DATABASE_URL',
+    'SDKWORK_DATABASE_MAX_CONNECTIONS',
     'SDKWORK_CLAW_INSTALL_ENVIRONMENT',
     'SDKWORK_CLAW_INSTALL_SEED_PROFILE',
     'SDKWORK_MODELS_CATALOG_ROOT',
   ];
   return keys
     .filter((key) => env[key])
-    .map((key) => `${key}=${key === 'SDKWORK_CLAW_DATABASE_URL' ? redactDatabaseUrl(env[key]) : env[key]}`);
+    .map((key) => `${key}=${key === 'SDKWORK_DATABASE_URL' ? redactDatabaseUrl(env[key]) : env[key]}`);
 }
 
 function redactDatabaseUrl(value) {

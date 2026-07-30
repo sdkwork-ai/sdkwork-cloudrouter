@@ -3,9 +3,9 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::domain::{
-    AiModel, BillingMeter, UpstreamAccountGroup, DecimalValue, GatewayApiKey, ModelPrice,
-    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    UpstreamAccountRoute, RouteCandidate, RoutingPolicy, RoutingPolicyScope, RoutingRule,
+    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
+    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, RouteCandidate,
+    RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_clawrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use tower::ServiceExt;
@@ -44,7 +44,13 @@ fn catalog() -> InMemoryPricingCatalog {
                 Some("https://openrouter.example.test/v1"),
                 Some("vault://providers/openrouter/account/main"),
             )
-            .with_resource_scoped_account_group_binding(10, 1, 100, ["openai.chat_completions"], ["llm"]),
+            .with_resource_scoped_account_group_binding(
+                10,
+                1,
+                100,
+                ["openai.chat_completions"],
+                ["llm"],
+            ),
     );
     catalog.add_plan(PricingPlan::new(
         "standard",

@@ -117,7 +117,7 @@ class RustBackendArchitectureGuardian:
         "SDKWORK_CLAW_ADMIN_API_BIND",
         "valid socket address",
         "DatabaseConfig",
-        "SDKWORK_CLAW_DATABASE_URL",
+        "SDKWORK_DATABASE_URL",
         "DatabaseHealth",
         "configured",
         "maxConnections",

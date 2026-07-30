@@ -35,16 +35,17 @@ export function ApiKeyUsageDetailsDrawer({
   const activeProfile =
     API_KEY_USAGE_TOOL_PROFILES.find((profile) => profile.id === activeToolId)
     ?? API_KEY_USAGE_TOOL_PROFILES[0];
+
+  if (!isOpen || !apiKey || !activeProfile) {
+    return null;
+  }
+
   const activeEndpoint =
     activeProfile.endpointKind === 'anthropic'
       ? endpoints.anthropicBaseUrl
       : activeProfile.endpointKind === 'gemini'
         ? endpoints.geminiBaseUrl
         : endpoints.openAiBaseUrl;
-
-  if (!isOpen || !apiKey) {
-    return null;
-  }
 
   return (
     <div className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">

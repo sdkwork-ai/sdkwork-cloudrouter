@@ -219,8 +219,11 @@ struct AppRuntimeCompleteInvocationRequest {
     provider_conversation_id: Option<String>,
     provider_step_id: Option<String>,
     finish_reason: Option<String>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     latency_ms: Option<i64>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     ttft_ms: Option<i64>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     exit_code: Option<i64>,
     error_type: Option<String>,
     error_code: Option<String>,
@@ -251,6 +254,7 @@ struct AppRuntimeCreateArtifactRequest {
     resource: Option<Value>,
     storage_key: Option<String>,
     sha256: Option<String>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     size_bytes: Option<i64>,
     metadata: Option<Value>,
 }

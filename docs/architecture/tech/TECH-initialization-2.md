@@ -234,9 +234,9 @@ payment_callback_body_max_bytes = 65536
 deployment_mode = "server"
 ```
 
-`SDKWORK_CLAW_DATABASE_URL` 仍可�?`/etc/sdkwork/router/clawrouter.env` 或进程环境中作为明确运维覆盖�?
+`SDKWORK_DATABASE_URL` 仍可�?`/etc/sdkwork/router/clawrouter.env` 或进程环境中作为明确运维覆盖�?
 ```text
-SDKWORK_CLAW_DATABASE_URL=postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod
+SDKWORK_DATABASE_URL=postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod
 ```
 
 desktop SQLite 示例�?

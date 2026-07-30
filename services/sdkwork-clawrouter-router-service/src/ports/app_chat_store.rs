@@ -19,8 +19,11 @@ pub struct AppChatSubject {
 #[serde(rename_all = "camelCase")]
 pub struct AppChatConversationList {
     pub items: Vec<AppChatConversationItem>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_no: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_size: i64,
 }
 
@@ -37,7 +40,9 @@ pub struct AppChatConversationItem {
     pub agent_session_id: Option<String>,
     pub memory_space_id: Option<String>,
     pub last_message_preview: Option<String>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub message_count: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub turn_count: i64,
     pub created_at: String,
     pub updated_at: String,
@@ -60,10 +65,15 @@ pub struct AppChatTurnItem {
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AppChatUsageSnapshot {
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub input_tokens: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub output_tokens: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub cached_tokens: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub reasoning_tokens: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total_tokens: i64,
     pub cost_amount: Option<String>,
     pub currency: Option<String>,
@@ -73,8 +83,11 @@ pub struct AppChatUsageSnapshot {
 #[serde(rename_all = "camelCase")]
 pub struct AppChatMessageList {
     pub items: Vec<AppChatMessageItem>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_no: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_size: i64,
 }
 

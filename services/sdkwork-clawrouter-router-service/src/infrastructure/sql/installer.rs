@@ -26,7 +26,7 @@ pub const CURRENT_SCHEMA_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const DEFAULT_SEED_PROFILE: &str = "standard";
 pub const DEFAULT_INSTALL_ENVIRONMENT: &str = "production";
 pub const ENV_INSTALL_ENVIRONMENT: &str = "SDKWORK_CLAW_ROUTER_ENVIRONMENT";
-pub const ENV_INSTALL_SEED_PROFILE: &str = "SDKWORK_CLAW_ROUTER_DATABASE_SEED_PROFILE";
+pub const ENV_INSTALL_SEED_PROFILE: &str = "SDKWORK_DATABASE_SEED_PROFILE";
 pub const ENV_MODELS_CATALOG_ROOT: &str = "SDKWORK_MODELS_CATALOG_ROOT";
 
 const MAX_REFRESH_SOURCE_LEN: usize = 64;
@@ -220,10 +220,7 @@ impl DatabaseInstaller {
         }
     }
 
-    pub fn with_admin_model_store(
-        mut self,
-        store: Arc<dyn AdminModelStore + Send + Sync>,
-    ) -> Self {
+    pub fn with_admin_model_store(mut self, store: Arc<dyn AdminModelStore + Send + Sync>) -> Self {
         self.admin_model_store = Some(store);
         self
     }

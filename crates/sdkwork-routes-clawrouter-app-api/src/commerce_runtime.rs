@@ -8,7 +8,7 @@ use std::sync::Arc;
 use axum::Router;
 use sdkwork_claw_config::DatabaseConfig;
 use sdkwork_claw_http::{
-    materialize_federated_database_env_from_claw_config,
+    materialize_federated_database_env_from_config,
     merge_federated_app_capability_router_with_optional_auth, AppSubjectBoundaryConfig,
 };
 use sdkwork_database_lifecycle::RegistryLifecycleOrchestrator;
@@ -25,7 +25,7 @@ pub async fn merge_federated_commerce_app_routers(
     database_config: &DatabaseConfig,
     subject_boundary_config: AppSubjectBoundaryConfig,
 ) -> Result<Router, String> {
-    materialize_federated_database_env_from_claw_config(database_config);
+    materialize_federated_database_env_from_config(database_config);
     let payment = Arc::new(PaymentServiceHost::from_env().await?);
     let commerce_router = wire_commerce_app_router(payment.clone()).await?;
     let router = merge_federated_app_capability_router_with_optional_auth(

@@ -117,7 +117,7 @@ ensure` and `refresh-catalog --force` automatically before the gateway starts,
 and service packages enable `clawrouter.service` during installation on systemd
 hosts. The service is not started until the operator configures PostgreSQL in
 `/etc/sdkwork/router/clawrouter.toml` or uses a protected
-`SDKWORK_CLAW_DATABASE_URL` override in `/etc/sdkwork/router/clawrouter.env`.
+`SDKWORK_DATABASE_URL` override in `/etc/sdkwork/router/clawrouter.env`.
 The package post-install step prints the runtime TOML, service environment,
 PostgreSQL password file, systemd service name, and the exact first-start
 commands so the operator can configure the service without hunting through
@@ -733,7 +733,7 @@ host from the host process environment, and never commit the local file.
 Required release verification variable:
 
 ```text
-SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL
+SDKWORK_DATABASE_URL
 ```
 
 Required browser-visible portal runtime variables:
@@ -1055,8 +1055,8 @@ The standard config file locations are:
 - macOS desktop: `~/.sdkwork/router/config/clawrouter.toml`
 
 At runtime, `SDKWORK_CLAW_CONFIG_FILE` can point to any explicit TOML config
-file. `SDKWORK_CLAW_DATABASE_URL` and
-`SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS` override the file for emergency
+file. `SDKWORK_DATABASE_URL` and
+`SDKWORK_DATABASE_MAX_CONNECTIONS` override the file for emergency
 operations and container orchestration. The Rust gateway, installer, admin API,
 and app API all read this shared configuration layer through
 `sdkwork-claw-config`.
@@ -1282,7 +1282,7 @@ pnpm test:postgres
 Required Postgres contract tests with an existing database:
 
 ```powershell
-$env:SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL="postgres://user:password@127.0.0.1:5432/dbname"
+$env:SDKWORK_DATABASE_URL="postgres://user:password@127.0.0.1:5432/dbname"
 pnpm test:postgres:required
 ```
 
@@ -1483,15 +1483,15 @@ support.
 
 Detailed commercial documents:
 
-- [Commercial Pricing Model](./docs/commercial/PRICING.md) â€?license tiers,
+- [Commercial Pricing Model](./docs/commercial/PRICING.md) ï¿½?license tiers,
   pricing matrix, token metering, additional services, payment, and refund
   policy.
-- [Service Level Agreement](./docs/legal/SLA.md) â€?uptime commitments,
+- [Service Level Agreement](./docs/legal/SLA.md) ï¿½?uptime commitments,
   incident response times, service credits, rate-limit tiers, and support
   channels.
-- [Edition Tier Matrix](./docs/legal/TIER_MATRIX.md) â€?full capability
+- [Edition Tier Matrix](./docs/legal/TIER_MATRIX.md) ï¿½?full capability
   comparison across Community, Pro, Enterprise, and OEM editions.
-- [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md) â€?commercial authorization
+- [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md) ï¿½?commercial authorization
   terms.
 
 Contact `sales@sdkwork.com` to request commercial authorization, request a

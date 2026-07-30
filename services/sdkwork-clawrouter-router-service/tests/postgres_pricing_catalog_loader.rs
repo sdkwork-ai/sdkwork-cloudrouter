@@ -2,7 +2,7 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::PostgresPr
 use sdkwork_clawrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sqlx::postgres::PgPoolOptions;
 
-const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL";
+const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 
 #[tokio::test]
 async fn postgres_loader_can_be_constructed_without_connecting_for_server_deployments() {

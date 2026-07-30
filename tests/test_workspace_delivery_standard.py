@@ -121,7 +121,7 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
         self.assertTrue(runner.exists())
         source = runner.read_text(encoding="utf-8")
 
-        self.assertIn("SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL", source)
+        self.assertIn("SDKWORK_DATABASE_URL", source)
         self.assertIn("--require-database", source)
         self.assertIn("--with-docker", source)
         self.assertIn("docker-compose.postgres-test.yml", source)
@@ -203,7 +203,7 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             "pnpm test:postgres",
             "pnpm test:postgres:required",
             "pnpm test:postgres:docker",
-            "SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL",
+            "SDKWORK_DATABASE_URL",
             "PORTAL_PUBLIC_API_BASE_URL",
             "PORTAL_PUBLIC_APP_API_BASE_URL",
             "PORTAL_PUBLIC_BACKEND_API_BASE_URL",
@@ -224,8 +224,8 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             "install-packages-manifest.json",
             "config/clawrouter.toml.example",
             "SDKWORK_CLAW_CONFIG_FILE",
-            "SDKWORK_CLAW_DATABASE_URL",
-            "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
+            "SDKWORK_DATABASE_URL",
+            "SDKWORK_DATABASE_MAX_CONNECTIONS",
             "macos-arm64-desktop",
             "windows-x64-service",
             "linux-arm64-container",

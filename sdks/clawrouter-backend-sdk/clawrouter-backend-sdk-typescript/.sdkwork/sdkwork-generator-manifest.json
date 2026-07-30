@@ -88,7 +88,7 @@
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "726133816416546aaddb16c6daa0a9c5170ce9cb45689a0776d8c373d4b4a3f2"
+      "sha256": "fbe932e51d1c5b69126673213ec86f7ab5e3a82f963ccd19defaf3b1961e41ed"
     },
     {
       "path": "src/auth/index.ts",
@@ -168,11 +168,11 @@
     },
     {
       "path": "src/types/admin-site-settings-response.ts",
-      "sha256": "8ac6fd43cd6cf6eced57e49d6eb38d8c0ea5089a37204956c2e21b4716251b61"
+      "sha256": "82cb173ae7bf57b88efdcc4fbe4a365977d31e50cf7da70ab707055fff0cb613"
     },
     {
       "path": "src/types/admin-site-settings-update-request.ts",
-      "sha256": "d147d05d97eb0870c59e3d2575c1b499cfc08a33ee166b777e79319d9998152e"
+      "sha256": "437e8cba2b2d8a1bf9bc529f22231ab5bdac7eb1db0e716d0ba60ab509ef4d9c"
     },
     {
       "path": "src/types/admin-storage-bucket-create-request.ts",
@@ -256,7 +256,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "43c4ccc8a20148779184691b3c65ef08d9c88c04c6645f055effabb59549ca90"
+      "sha256": "09c6804e262c705cd8f01c06f7df38e56f8d5430d545b93286fb16be2afd6ff7"
     },
     {
       "path": "src/types/ip-limit-rule-item.ts",
@@ -277,6 +277,30 @@
     {
       "path": "src/types/json-value.ts",
       "sha256": "22654cfefd5c2d5b7d4055c69738f83a6ec78e22cf28435ee38e04224788116d"
+    },
+    {
+      "path": "src/types/media-access.ts",
+      "sha256": "a0fb7073fbc4bc37a9b0b23cabf6e362ad07b832eaa0f74efa71ab4ecfac5c79"
+    },
+    {
+      "path": "src/types/media-ai-provenance.ts",
+      "sha256": "d5284ece259cac31814a6005330d78528556d8ef01a6e796fdad3cd789e11b0c"
+    },
+    {
+      "path": "src/types/media-checksum.ts",
+      "sha256": "38c7b9c397247f053f0911f4a23c49c1a368b11f86e167360600899c80988683"
+    },
+    {
+      "path": "src/types/media-kind.ts",
+      "sha256": "4f553bdfa913a95407664d69b5a2e09f01a5d0c11830323e4cee7eebfef0cd16"
+    },
+    {
+      "path": "src/types/media-resource.ts",
+      "sha256": "8e6f1dd86d9172cfd70590bcff43b548a9b065cc85bbba5ee9599110015db374"
+    },
+    {
+      "path": "src/types/media-source.ts",
+      "sha256": "4d269f884f9eab8cbef6e905a62d3cabea0b4a84bc617c0ee40ced9b23f03d43"
     },
     {
       "path": "src/types/membership-package-group-mutation-request.ts",

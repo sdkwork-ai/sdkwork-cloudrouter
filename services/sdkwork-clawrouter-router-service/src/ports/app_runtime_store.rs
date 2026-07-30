@@ -30,8 +30,11 @@ pub struct AppRuntimeInvocationQuery {
 #[serde(rename_all = "camelCase")]
 pub struct AppRuntimeInvocationList {
     pub items: Vec<AppRuntimeInvocationItem>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_no: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_size: i64,
 }
 
@@ -39,10 +42,12 @@ pub struct AppRuntimeInvocationList {
 #[serde(rename_all = "camelCase")]
 pub struct AppRuntimeInvocationItem {
     pub id: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub invocation_no: i64,
     pub invocation_type: String,
     pub runtime: String,
     pub endpoint: Option<String>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub attempt_no: i64,
     pub status: String,
     pub conversation_id: Option<String>,
@@ -68,8 +73,11 @@ pub struct AppRuntimeInvocationItem {
     pub streaming: bool,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64::option")]
     pub latency_ms: Option<i64>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64::option")]
     pub ttft_ms: Option<i64>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64::option")]
     pub exit_code: Option<i64>,
     pub finish_reason: Option<String>,
     pub error_type: Option<String>,
@@ -89,8 +97,11 @@ pub struct AppRuntimeInvocationExecution {
 #[serde(rename_all = "camelCase")]
 pub struct AppRuntimeEventList {
     pub items: Vec<AppRuntimeEventItem>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_no: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_size: i64,
 }
 
@@ -99,6 +110,7 @@ pub struct AppRuntimeEventList {
 pub struct AppRuntimeEventItem {
     pub id: String,
     pub invocation_id: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub event_no: i64,
     pub event_type: String,
     pub event_source: String,
@@ -111,8 +123,11 @@ pub struct AppRuntimeEventItem {
 #[serde(rename_all = "camelCase")]
 pub struct AppRuntimeArtifactList {
     pub items: Vec<AppRuntimeArtifactItem>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_no: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub page_size: i64,
 }
 
@@ -128,6 +143,7 @@ pub struct AppRuntimeArtifactItem {
     pub storage_key: Option<String>,
     pub resource: Option<Value>,
     pub sha256: Option<String>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64::option")]
     pub size_bytes: Option<i64>,
     pub created_at: String,
 }

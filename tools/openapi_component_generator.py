@@ -75,7 +75,7 @@ MEDIA_RESOURCE_COMPONENTS: dict[str, Any] = {
     },
     "MediaSource": {
         "type": "string",
-        "enum": ["object_storage", "external_url", "data_url", "provider_asset", "generated"],
+        "enum": ["drive", "object_storage", "external_url", "data_url", "provider_asset", "generated"],
     },
     "MediaChecksum": {
         "type": "object",

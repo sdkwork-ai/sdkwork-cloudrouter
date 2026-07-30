@@ -618,7 +618,7 @@ function serviceEnv(settings, bindEnvName, bindValue, {
   if (snowflakeNodeId === undefined) {
     throw new Error('development service Snowflake node id must be explicitly assigned');
   }
-  const databaseMaxConnections = process.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS
+  const databaseMaxConnections = process.env.SDKWORK_DATABASE_MAX_CONNECTIONS
     ?? (String(settings.databaseUrl ?? '').trim().toLowerCase().startsWith('sqlite:')
       ? '1'
       : defaultClawRouterDevPostgresMaxConnections());
@@ -648,7 +648,7 @@ function serviceEnv(settings, bindEnvName, bindValue, {
     SDKWORK_CLAW_SNOWFLAKE_NODE_ID:
       process.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID ?? snowflakeNodeId,
     [bindEnvName]: bindValue,
-    SDKWORK_CLAW_DATABASE_URL: settings.databaseUrl,
+    SDKWORK_DATABASE_URL: settings.databaseUrl,
     SDKWORK_CLAW_STARTUP_INSTALL_MODE: startupInstallMode,
     SDKWORK_MODELS_CATALOG_ROOT: settings.modelsCatalogRoot,
     SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP:
@@ -673,7 +673,7 @@ function serviceEnv(settings, bindEnvName, bindValue, {
       process.env.SDKWORK_CLAW_INSTALL_SEED_PROFILE ?? 'commercial',
   };
   if (databaseMaxConnections !== undefined) {
-    env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = databaseMaxConnections;
+    env.SDKWORK_DATABASE_MAX_CONNECTIONS = databaseMaxConnections;
   }
 
   return env;
@@ -1073,7 +1073,7 @@ Options:
   --deployment-profile <standalone|cloud>
                          Deployment profile (default standalone)
   --distributed          Use local split-process debugging; does not change the topology profile
-  --database-url <url>    Optional shared SDKWORK_CLAW_DATABASE_URL override (default ${defaultPostgresDatabaseUrl()})
+  --database-url <url>    Optional shared SDKWORK_DATABASE_URL override (default ${defaultPostgresDatabaseUrl()})
   --gateway-bind <bind>   SDKWORK_CLAW_GATEWAY_BIND override (default ${DEFAULT_GATEWAY_BIND})
   --admin-api-bind <bind> SDKWORK_CLAW_ADMIN_API_BIND override (default ${DEFAULT_ADMIN_API_BIND})
   --app-api-bind <bind>   SDKWORK_CLAW_APP_API_BIND override (default ${DEFAULT_APP_API_BIND})
@@ -1164,7 +1164,7 @@ export function renderWorkspaceDryRun(settings, plan) {
   return [
     '[start-workspace] edge launch settings',
     `  SDKWORK_CLAW_RUNTIME_MODE=${settings.runtimeMode}`,
-    `  SDKWORK_CLAW_DATABASE_URL=${settings.databaseUrl ?? defaultPostgresDatabaseUrl()}`,
+    `  SDKWORK_DATABASE_URL=${settings.databaseUrl ?? defaultPostgresDatabaseUrl()}`,
     `  SDKWORK_MODELS_CATALOG_ROOT=${settings.modelsCatalogRoot}`,
     `  SDKWORK_CLAW_GATEWAY_BIND=${settings.gatewayBind}`,
     `  SDKWORK_CLAW_ADMIN_API_BIND=${settings.adminApiBind}`,

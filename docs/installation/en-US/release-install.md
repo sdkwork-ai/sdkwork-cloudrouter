@@ -232,7 +232,7 @@ max_connections = 16
 deployment_mode = "server"
 ```
 
-`SDKWORK_CLAW_DATABASE_URL` remains available in `/etc/sdkwork/router/clawrouter.env` only as an explicit operator override for emergency operations or platform-managed secret injection.
+`SDKWORK_DATABASE_URL` remains available in `/etc/sdkwork/router/clawrouter.env` only as an explicit operator override for emergency operations or platform-managed secret injection.
 
 The `.deb` post-install script creates:
 
@@ -294,7 +294,7 @@ Set-Location $installRoot
 For Windows server/service deployment, set PostgreSQL in the runtime TOML before starting the gateway. A protected process override remains available when the service manager injects secrets:
 
 ```powershell
-$env:SDKWORK_CLAW_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod"
+$env:SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod"
 ```
 
 Windows `.msi` packages keep program binaries under `%ProgramFiles%/sdkwork/router` and shared templates under `%ProgramData%/sdkwork/router`. The native manifest records inherited ProgramData ACLs for service templates, runtime TOML, password files, and data directories. Desktop runtime files are created during user initialization under `%USERPROFILE%/.sdkwork/router/config` and `%USERPROFILE%/.sdkwork/router/data`, using the current user's profile ACLs.
@@ -561,7 +561,7 @@ docker run --rm -p 3900:3900 \
   clawrouter:0.3.0
 ```
 
-Service and container deployments must mount runtime configuration, logs, and mutable data as writable resources, and must inject database credentials through protected TOML files, password files, or platform secrets. `SDKWORK_CLAW_DATABASE_URL` remains available only for explicit operator override.
+Service and container deployments must mount runtime configuration, logs, and mutable data as writable resources, and must inject database credentials through protected TOML files, password files, or platform secrets. `SDKWORK_DATABASE_URL` remains available only for explicit operator override.
 
 ## 8. Upgrade A Release
 

@@ -7,6 +7,7 @@ import {
   ensureSdkworkApiSuccess,
   readApiRecord,
   readMediaResource,
+  toSdkMediaResource,
   type ClawRouterMediaResource,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 
@@ -95,9 +96,9 @@ function toSiteSettingsUpdateRequest(form: SiteSettingsForm): AdminSiteSettingsU
     siteName: form.siteName,
     shortName: form.shortName,
     description: form.description,
-    logo: form.logo,
-    icon: form.icon,
-    favicon: form.favicon,
+    logo: toSdkMediaResource(form.logo, 'siteSettings.logo'),
+    icon: toSdkMediaResource(form.icon, 'siteSettings.icon'),
+    favicon: toSdkMediaResource(form.favicon, 'siteSettings.favicon'),
     brandColor: form.brandColor,
     accentColor: form.accentColor,
     footerCopyright: form.footerCopyright,

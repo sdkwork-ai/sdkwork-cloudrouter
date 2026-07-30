@@ -1,6 +1,29 @@
 {
   "components": {
     "schemas": {
+      "AcknowledgeNotificationResponse": {
+        "additionalProperties": false,
+        "description": "Acknowledge notification response schema exposed by Claw Router.",
+        "name": "AcknowledgeNotificationResponse",
+        "properties": {
+          "state": {
+            "description": "State field on acknowledge notification response.",
+            "enum": [
+              "acknowledged"
+            ],
+            "type": "string"
+          },
+          "updated": {
+            "description": "Updated field on acknowledge notification response.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "updated",
+          "state"
+        ],
+        "type": "object"
+      },
       "ApiKeysCreateResult": {
         "allOf": [
           {
@@ -759,6 +782,718 @@
         ],
         "type": "object"
       },
+      "ChatConversationCreateResponse": {
+        "additionalProperties": false,
+        "description": "Chat conversation create response schema exposed by Claw Router.",
+        "name": "ChatConversationCreateResponse",
+        "properties": {
+          "item": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatConversationItem"
+              }
+            ],
+            "description": "Item field on chat conversation create response."
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
+      },
+      "ChatConversationItem": {
+        "additionalProperties": false,
+        "description": "Chat conversation item schema exposed by Claw Router.",
+        "properties": {
+          "agentId": {
+            "description": "Agent id field on chat conversation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "agentSessionId": {
+            "description": "Agent session id field on chat conversation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Created at field on chat conversation item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "defaultModel": {
+            "description": "Default model field on chat conversation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "defaultProvider": {
+            "description": "Default provider field on chat conversation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on chat conversation item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "lastMessagePreview": {
+            "description": "Last message preview field on chat conversation item.",
+            "maxLength": 4096,
+            "nullable": true,
+            "type": "string"
+          },
+          "memorySpaceId": {
+            "description": "Memory space id field on chat conversation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "messageCount": {
+            "description": "Message count field on chat conversation item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "sourceSurface": {
+            "description": "Source surface field on chat conversation item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on chat conversation item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "title": {
+            "description": "Title field on chat conversation item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "turnCount": {
+            "description": "Turn count field on chat conversation item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "updatedAt": {
+            "description": "Updated at field on chat conversation item.",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "sourceSurface",
+          "defaultModel",
+          "defaultProvider",
+          "agentId",
+          "agentSessionId",
+          "memorySpaceId",
+          "lastMessagePreview",
+          "messageCount",
+          "turnCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ChatConversationListResponse": {
+        "additionalProperties": false,
+        "description": "Chat conversation list response schema exposed by Claw Router.",
+        "name": "ChatConversationListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on chat conversation list response.",
+            "items": {
+              "$ref": "#/components/schemas/ChatConversationItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on chat conversation list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "ChatMessageItem": {
+        "additionalProperties": false,
+        "description": "Chat message item schema exposed by Claw Router.",
+        "properties": {
+          "content": {
+            "description": "Content field on chat message item.",
+            "maxLength": 65536,
+            "type": "string"
+          },
+          "conversationId": {
+            "description": "Conversation id field on chat message item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Created at field on chat message item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "direction": {
+            "description": "Direction field on chat message item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on chat message item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "model": {
+            "description": "Model field on chat message item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider field on chat message item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "role": {
+            "description": "Role field on chat message item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "runtime": {
+            "description": "Runtime field on chat message item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "runtimeInvocationId": {
+            "description": "Runtime invocation id field on chat message item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on chat message item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "turnId": {
+            "description": "Turn id field on chat message item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "usage": {
+            "description": "Usage field on chat message item.",
+            "oneOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatUsageSnapshot"
+                  }
+                ],
+                "description": "Usage field on chat message item."
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonNull"
+                  }
+                ],
+                "description": "Null variant accepted by usage."
+              }
+            ]
+          },
+          "usageLinkId": {
+            "description": "Usage link id field on chat message item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "turnId",
+          "role",
+          "direction",
+          "content",
+          "status",
+          "model",
+          "provider",
+          "runtime",
+          "runtimeInvocationId",
+          "usageLinkId",
+          "usage",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "ChatMessageListResponse": {
+        "additionalProperties": false,
+        "description": "Chat message list response schema exposed by Claw Router.",
+        "name": "ChatMessageListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on chat message list response.",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on chat message list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "ChatTurnItem": {
+        "additionalProperties": false,
+        "description": "Chat turn item schema exposed by Claw Router.",
+        "properties": {
+          "agentId": {
+            "description": "Agent id field on chat turn item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "agentSessionId": {
+            "description": "Agent session id field on chat turn item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "conversationId": {
+            "description": "Conversation id field on chat turn item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Created at field on chat turn item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on chat turn item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "model": {
+            "description": "Model field on chat turn item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider field on chat turn item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on chat turn item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Updated at field on chat turn item.",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "status",
+          "model",
+          "provider",
+          "agentId",
+          "agentSessionId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ChatTurnOutcome": {
+        "additionalProperties": false,
+        "description": "Chat turn outcome schema exposed by Claw Router.",
+        "name": "ChatTurnOutcome",
+        "properties": {
+          "messages": {
+            "description": "Messages field on chat turn outcome.",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageItem"
+            },
+            "type": "array"
+          },
+          "turn": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatTurnItem"
+              }
+            ],
+            "description": "Turn field on chat turn outcome."
+          }
+        },
+        "required": [
+          "turn",
+          "messages"
+        ],
+        "type": "object"
+      },
+      "ChatUsageSnapshot": {
+        "additionalProperties": false,
+        "description": "Chat usage snapshot schema exposed by Claw Router.",
+        "nullable": true,
+        "properties": {
+          "cachedTokens": {
+            "description": "Cached tokens field on chat usage snapshot.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "costAmount": {
+            "description": "Cost amount field on chat usage snapshot.",
+            "nullable": true,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+            "type": "string"
+          },
+          "currency": {
+            "description": "Currency field on chat usage snapshot.",
+            "maxLength": 16,
+            "nullable": true,
+            "type": "string"
+          },
+          "inputTokens": {
+            "description": "Input tokens field on chat usage snapshot.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "outputTokens": {
+            "description": "Output tokens field on chat usage snapshot.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "reasoningTokens": {
+            "description": "Reasoning tokens field on chat usage snapshot.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "totalTokens": {
+            "description": "Total tokens field on chat usage snapshot.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "inputTokens",
+          "outputTokens",
+          "cachedTokens",
+          "reasoningTokens",
+          "totalTokens",
+          "costAmount",
+          "currency"
+        ],
+        "type": "object"
+      },
+      "CompleteChatTurnResponseRequest": {
+        "additionalProperties": false,
+        "description": "Complete chat turn response request schema exposed by Claw Router.",
+        "name": "CompleteChatTurnResponseRequest",
+        "properties": {
+          "message": {
+            "description": "Message field on complete chat turn response request.",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on complete chat turn response request."
+            },
+            "description": "Metadata field on complete chat turn response request.",
+            "type": "object"
+          },
+          "model": {
+            "description": "Model field on complete chat turn response request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider field on complete chat turn response request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "runtime": {
+            "description": "Runtime field on complete chat turn response request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "runtimeInvocationId": {
+            "description": "Runtime invocation id field on complete chat turn response request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "status": {
+            "default": "completed",
+            "description": "Status field on complete chat turn response request.",
+            "enum": [
+              "completed",
+              "failed",
+              "cancelled",
+              "streaming"
+            ],
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": false,
+            "description": "Usage field on complete chat turn response request.",
+            "properties": {
+              "cachedTokens": {
+                "description": "Cached tokens field on complete chat turn response request.",
+                "format": "int64",
+                "pattern": "^[0-9]+$",
+                "type": "string",
+                "x-sdkwork-int64-string": true,
+                "x-sdkwork-rust-type": "i64"
+              },
+              "cost": {
+                "description": "Cost field on complete chat turn response request.",
+                "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+                "type": "string"
+              },
+              "costAmount": {
+                "description": "Cost amount field on complete chat turn response request.",
+                "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
+                "type": "string"
+              },
+              "currency": {
+                "description": "Currency field on complete chat turn response request.",
+                "maxLength": 16,
+                "type": "string"
+              },
+              "inputTokens": {
+                "description": "Input tokens field on complete chat turn response request.",
+                "format": "int64",
+                "pattern": "^[0-9]+$",
+                "type": "string",
+                "x-sdkwork-int64-string": true,
+                "x-sdkwork-rust-type": "i64"
+              },
+              "outputTokens": {
+                "description": "Output tokens field on complete chat turn response request.",
+                "format": "int64",
+                "pattern": "^[0-9]+$",
+                "type": "string",
+                "x-sdkwork-int64-string": true,
+                "x-sdkwork-rust-type": "i64"
+              },
+              "reasoningTokens": {
+                "description": "Reasoning tokens field on complete chat turn response request.",
+                "format": "int64",
+                "pattern": "^[0-9]+$",
+                "type": "string",
+                "x-sdkwork-int64-string": true,
+                "x-sdkwork-rust-type": "i64"
+              },
+              "totalTokens": {
+                "description": "Total tokens field on complete chat turn response request.",
+                "format": "int64",
+                "pattern": "^[0-9]+$",
+                "type": "string",
+                "x-sdkwork-int64-string": true,
+                "x-sdkwork-rust-type": "i64"
+              }
+            },
+            "type": "object"
+          },
+          "usageFactId": {
+            "description": "Usage fact id field on complete chat turn response request.",
+            "format": "int64",
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "CompleteRuntimeInvocationRequest": {
+        "additionalProperties": false,
+        "description": "Complete runtime invocation request schema exposed by Claw Router.",
+        "name": "CompleteRuntimeInvocationRequest",
+        "properties": {
+          "errorCode": {
+            "description": "Error code field on complete runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "errorMessageMasked": {
+            "description": "Error message masked field on complete runtime invocation request.",
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "errorType": {
+            "description": "Error type field on complete runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "exitCode": {
+            "description": "Exit code field on complete runtime invocation request.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "finishReason": {
+            "description": "Finish reason field on complete runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "latencyMs": {
+            "description": "Latency ms field on complete runtime invocation request.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on complete runtime invocation request."
+            },
+            "description": "Metadata field on complete runtime invocation request.",
+            "type": "object"
+          },
+          "providerConversationId": {
+            "description": "Provider conversation id field on complete runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "providerResponseId": {
+            "description": "Provider response id field on complete runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "providerSessionId": {
+            "description": "Provider session id field on complete runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "providerStepId": {
+            "description": "Provider step id field on complete runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "responseJson": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Response json field on complete runtime invocation request."
+            },
+            "description": "Response json field on complete runtime invocation request.",
+            "type": "object"
+          },
+          "status": {
+            "default": "completed",
+            "description": "Status field on complete runtime invocation request.",
+            "enum": [
+              "pending",
+              "running",
+              "streaming",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "ttftMs": {
+            "description": "Ttft ms field on complete runtime invocation request.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "usageJson": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Usage json field on complete runtime invocation request."
+            },
+            "description": "Usage json field on complete runtime invocation request.",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
       "ConversationsCreateResult": {
         "allOf": [
           {
@@ -771,10 +1506,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/ChatConversationCreateResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on conversations create result."
               }
             },
             "required": [
@@ -798,10 +1533,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/ChatConversationListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on conversations list result."
               }
             },
             "required": [
@@ -825,10 +1560,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/ChatMessageListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on conversations messages list result."
               }
             },
             "required": [
@@ -852,10 +1587,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/ChatConversationItem"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on conversations retrieve result."
               }
             },
             "required": [
@@ -879,10 +1614,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/ChatTurnOutcome"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on conversations turns create result."
               }
             },
             "required": [
@@ -906,10 +1641,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/ChatTurnOutcome"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on conversations turns response create result."
               }
             },
             "required": [
@@ -1012,6 +1747,394 @@
         "required": [
           "item",
           "rawKey"
+        ],
+        "type": "object"
+      },
+      "CreateChatConversationRequest": {
+        "additionalProperties": false,
+        "description": "Create chat conversation request schema exposed by Claw Router.",
+        "name": "CreateChatConversationRequest",
+        "properties": {
+          "agentId": {
+            "description": "Agent id field on create chat conversation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "agentSessionId": {
+            "description": "Agent session id field on create chat conversation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "defaultModel": {
+            "description": "Default model field on create chat conversation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "defaultProvider": {
+            "description": "Default provider field on create chat conversation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "memorySpaceId": {
+            "description": "Memory space id field on create chat conversation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on create chat conversation request."
+            },
+            "description": "Metadata field on create chat conversation request.",
+            "type": "object"
+          },
+          "sourceSurface": {
+            "description": "Source surface field on create chat conversation request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "title": {
+            "description": "Title field on create chat conversation request.",
+            "maxLength": 256,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CreateChatTurnRequest": {
+        "additionalProperties": false,
+        "description": "Create chat turn request schema exposed by Claw Router.",
+        "name": "CreateChatTurnRequest",
+        "properties": {
+          "agentId": {
+            "description": "Agent id field on create chat turn request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "agentSessionId": {
+            "description": "Agent session id field on create chat turn request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "message": {
+            "description": "Message field on create chat turn request.",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on create chat turn request."
+            },
+            "description": "Metadata field on create chat turn request.",
+            "type": "object"
+          },
+          "mode": {
+            "description": "Mode field on create chat turn request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "model": {
+            "description": "Model field on create chat turn request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider field on create chat turn request.",
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "CreateRuntimeArtifactRequest": {
+        "additionalProperties": false,
+        "description": "Create runtime artifact request schema exposed by Claw Router.",
+        "name": "CreateRuntimeArtifactRequest",
+        "properties": {
+          "artifactType": {
+            "description": "Artifact type field on create runtime artifact request.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "contentJson": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Content json field on create runtime artifact request."
+            },
+            "description": "Content json field on create runtime artifact request.",
+            "type": "object"
+          },
+          "contentText": {
+            "description": "Content text field on create runtime artifact request.",
+            "maxLength": 262144,
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on create runtime artifact request."
+            },
+            "description": "Metadata field on create runtime artifact request.",
+            "type": "object"
+          },
+          "mimeType": {
+            "description": "Mime type field on create runtime artifact request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on create runtime artifact request.",
+            "maxLength": 512,
+            "type": "string"
+          },
+          "resource": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Resource field on create runtime artifact request."
+          },
+          "sha256": {
+            "description": "Sha 256 field on create runtime artifact request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Size bytes field on create runtime artifact request.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "storageKey": {
+            "description": "Storage key field on create runtime artifact request.",
+            "maxLength": 2048,
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifactType"
+        ],
+        "type": "object"
+      },
+      "CreateRuntimeEventRequest": {
+        "additionalProperties": false,
+        "description": "Create runtime event request schema exposed by Claw Router.",
+        "name": "CreateRuntimeEventRequest",
+        "properties": {
+          "eventSource": {
+            "default": "runtime",
+            "description": "Event source field on create runtime event request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "eventType": {
+            "description": "Event type field on create runtime event request.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on create runtime event request."
+            },
+            "description": "Metadata field on create runtime event request.",
+            "type": "object"
+          },
+          "payloadJson": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Payload json field on create runtime event request."
+            },
+            "description": "Payload json field on create runtime event request.",
+            "type": "object"
+          },
+          "textDelta": {
+            "description": "Text delta field on create runtime event request.",
+            "maxLength": 262144,
+            "type": "string"
+          }
+        },
+        "required": [
+          "eventType"
+        ],
+        "type": "object"
+      },
+      "CreateRuntimeInvocationRequest": {
+        "additionalProperties": false,
+        "description": "Create runtime invocation request schema exposed by Claw Router.",
+        "name": "CreateRuntimeInvocationRequest",
+        "properties": {
+          "agentRunId": {
+            "description": "Agent run id field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "agentRunStepId": {
+            "description": "Agent run step id field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "agentSessionId": {
+            "description": "Agent session id field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "approvalPolicy": {
+            "description": "Approval policy field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "chatItemId": {
+            "description": "Chat item id field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "chatTurnId": {
+            "description": "Chat turn id field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "conversationId": {
+            "description": "Conversation id field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Cwd field on create runtime invocation request.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "endpoint": {
+            "description": "Endpoint field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "invocationType": {
+            "default": "chat_response",
+            "description": "Invocation type field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on create runtime invocation request."
+            },
+            "description": "Metadata field on create runtime invocation request.",
+            "type": "object"
+          },
+          "model": {
+            "description": "Model field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "permissionMode": {
+            "description": "Permission mode field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "requestJson": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Request json field on create runtime invocation request."
+            },
+            "description": "Request json field on create runtime invocation request.",
+            "type": "object"
+          },
+          "runtime": {
+            "description": "Runtime field on create runtime invocation request.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sandboxPolicy": {
+            "description": "Sandbox policy field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "status": {
+            "default": "running",
+            "description": "Status field on create runtime invocation request.",
+            "enum": [
+              "pending",
+              "running",
+              "streaming",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "streaming": {
+            "default": false,
+            "description": "Streaming field on create runtime invocation request.",
+            "type": "boolean"
+          },
+          "toolCallId": {
+            "description": "Tool call id field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "toolName": {
+            "description": "Tool name field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "traceId": {
+            "description": "Trace id field on create runtime invocation request.",
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        "required": [
+          "runtime"
         ],
         "type": "object"
       },
@@ -1706,10 +2829,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/RuntimeArtifactResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on invocations artifacts create result."
               }
             },
             "required": [
@@ -1733,10 +2856,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/RuntimeArtifactListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on invocations artifacts list result."
               }
             },
             "required": [
@@ -1760,10 +2883,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/RuntimeInvocationResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on invocations complete result."
               }
             },
             "required": [
@@ -1787,10 +2910,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/RuntimeInvocationResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on invocations create result."
               }
             },
             "required": [
@@ -1814,10 +2937,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/RuntimeEventResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on invocations events create result."
               }
             },
             "required": [
@@ -1841,10 +2964,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/RuntimeEventListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on invocations events list result."
               }
             },
             "required": [
@@ -1895,10 +3018,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/RuntimeInvocationListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on invocations list result."
               }
             },
             "required": [
@@ -1922,10 +3045,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/RuntimeInvocationItem"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on invocations retrieve result."
               }
             },
             "required": [
@@ -1997,10 +3120,470 @@
           }
         ]
       },
+      "MarkNotificationPopupSeenResponse": {
+        "additionalProperties": false,
+        "description": "Mark notification popup seen response schema exposed by Claw Router.",
+        "name": "MarkNotificationPopupSeenResponse",
+        "properties": {
+          "state": {
+            "description": "State field on mark notification popup seen response.",
+            "enum": [
+              "popup_seen"
+            ],
+            "type": "string"
+          },
+          "updated": {
+            "description": "Updated field on mark notification popup seen response.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "updated",
+          "state"
+        ],
+        "type": "object"
+      },
+      "MediaAccess": {
+        "additionalProperties": false,
+        "description": "Media access schema exposed by Claw Router.",
+        "properties": {
+          "expiresAt": {
+            "description": "Expires at field on media access.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "Visibility field on media access.",
+            "enum": [
+              "private",
+              "tenant",
+              "organization",
+              "public",
+              "signed"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "MediaAiProvenance": {
+        "additionalProperties": false,
+        "description": "Media ai provenance schema exposed by Claw Router.",
+        "properties": {
+          "generationTaskId": {
+            "description": "Generation task id field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "model": {
+            "description": "Model field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "moderationStatus": {
+            "description": "Moderation status field on media ai provenance.",
+            "enum": [
+              "unknown",
+              "pending",
+              "approved",
+              "rejected",
+              "blocked"
+            ],
+            "type": "string"
+          },
+          "promptId": {
+            "description": "Prompt id field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "provenance": {
+            "description": "Provenance field on media ai provenance.",
+            "enum": [
+              "uploaded",
+              "generated",
+              "edited",
+              "imported"
+            ],
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "safetyLabels": {
+            "description": "Safety labels field on media ai provenance.",
+            "items": {
+              "description": "Safety labels field on media ai provenance.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "type": "array"
+          },
+          "seed": {
+            "description": "Seed field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "sourceMediaIds": {
+            "description": "Source media ids field on media ai provenance.",
+            "items": {
+              "description": "Source media ids field on media ai provenance.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "MediaChecksum": {
+        "additionalProperties": false,
+        "description": "Media checksum schema exposed by Claw Router.",
+        "properties": {
+          "algorithm": {
+            "description": "Algorithm field on media checksum.",
+            "enum": [
+              "sha256",
+              "md5",
+              "etag"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "description": "Value field on media checksum.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "algorithm",
+          "value"
+        ],
+        "type": "object"
+      },
+      "MediaKind": {
+        "description": "Media kind schema exposed by Claw Router.",
+        "enum": [
+          "image",
+          "video",
+          "audio",
+          "voice",
+          "document",
+          "archive",
+          "model",
+          "other"
+        ],
+        "type": "string"
+      },
+      "MediaResource": {
+        "additionalProperties": false,
+        "description": "Media resource schema exposed by Claw Router.",
+        "properties": {
+          "access": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaAccess"
+              }
+            ],
+            "description": "Access field on media resource."
+          },
+          "ai": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaAiProvenance"
+              }
+            ],
+            "description": "Ai field on media resource."
+          },
+          "altText": {
+            "description": "Alt text field on media resource.",
+            "maxLength": 512,
+            "type": "string"
+          },
+          "bucketId": {
+            "description": "Bucket id field on media resource.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "checksum": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaChecksum"
+              }
+            ],
+            "description": "Checksum field on media resource."
+          },
+          "durationSeconds": {
+            "description": "Duration seconds field on media resource.",
+            "minimum": 0,
+            "type": "number"
+          },
+          "fileName": {
+            "description": "File name field on media resource.",
+            "maxLength": 512,
+            "type": "string"
+          },
+          "height": {
+            "description": "Height field on media resource.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "description": "Id field on media resource.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaKind"
+              }
+            ],
+            "description": "Kind field on media resource."
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on media resource."
+            },
+            "description": "Metadata field on media resource.",
+            "type": "object"
+          },
+          "mimeType": {
+            "description": "Mime type field on media resource.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "objectBlobId": {
+            "description": "Object blob id field on media resource.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "objectKey": {
+            "description": "Object key field on media resource.",
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "objectVersion": {
+            "description": "Object version field on media resource.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "poster": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Poster field on media resource."
+          },
+          "publicUrl": {
+            "description": "Public url field on media resource.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Size bytes field on media resource.",
+            "pattern": "^[0-9]+$",
+            "type": "string"
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaSource"
+              }
+            ],
+            "description": "Source field on media resource."
+          },
+          "thumbnails": {
+            "description": "Thumbnails field on media resource.",
+            "items": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "type": "array"
+          },
+          "title": {
+            "description": "Title field on media resource.",
+            "maxLength": 255,
+            "type": "string"
+          },
+          "uri": {
+            "description": "Uri field on media resource.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "url": {
+            "description": "Url field on media resource.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "variants": {
+            "description": "Variants field on media resource.",
+            "items": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "type": "array"
+          },
+          "width": {
+            "description": "Width field on media resource.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "source"
+        ],
+        "type": "object"
+      },
+      "MediaSource": {
+        "description": "Media source schema exposed by Claw Router.",
+        "enum": [
+          "object_storage",
+          "external_url",
+          "data_url",
+          "provider_asset",
+          "generated"
+        ],
+        "type": "string"
+      },
       "NoData": {
         "additionalProperties": false,
         "description": "Closed empty payload for operations that complete without business data.",
         "properties": {},
+        "type": "object"
+      },
+      "NotificationItem": {
+        "additionalProperties": false,
+        "description": "Notification item schema exposed by Claw Router.",
+        "properties": {
+          "actionUrl": {
+            "description": "Action url field on notification item.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          },
+          "appId": {
+            "description": "App id field on notification item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "archived": {
+            "description": "Archived field on notification item.",
+            "type": "boolean"
+          },
+          "content": {
+            "description": "Content field on notification item.",
+            "maxLength": 65536,
+            "type": "string"
+          },
+          "desc": {
+            "description": "Desc field on notification item.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on notification item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "popupSeen": {
+            "description": "Popup seen field on notification item.",
+            "type": "boolean"
+          },
+          "read": {
+            "description": "Read field on notification item.",
+            "type": "boolean"
+          },
+          "showAsPopup": {
+            "description": "Show as popup field on notification item.",
+            "type": "boolean"
+          },
+          "time": {
+            "description": "Time field on notification item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "title": {
+            "description": "Title field on notification item.",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "description": "Type field on notification item.",
+            "enum": [
+              "info",
+              "billing",
+              "warning",
+              "alert"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "appId",
+          "title",
+          "desc",
+          "content",
+          "time",
+          "type",
+          "read",
+          "showAsPopup",
+          "popupSeen",
+          "archived"
+        ],
+        "type": "object"
+      },
+      "NotificationListResponse": {
+        "additionalProperties": false,
+        "description": "Notification list response schema exposed by Claw Router.",
+        "name": "NotificationListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on notification list response.",
+            "items": {
+              "$ref": "#/components/schemas/NotificationItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on notification list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
         "type": "object"
       },
       "NotificationsAcknowledgeCreateResult": {
@@ -2015,10 +3598,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AcknowledgeNotificationResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on notifications acknowledge create result."
               }
             },
             "required": [
@@ -2042,10 +3625,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/NotificationListResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on notifications list result."
               }
             },
             "required": [
@@ -2069,10 +3652,10 @@
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/MarkNotificationPopupSeenResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on notifications popup seen create result."
               }
             },
             "required": [
@@ -2286,6 +3869,585 @@
         ],
         "description": "Routing usage retrieve result schema exposed by Claw Router.",
         "x-operation-id": "routing.usage.retrieve"
+      },
+      "RuntimeArtifactItem": {
+        "additionalProperties": false,
+        "description": "Runtime artifact item schema exposed by Claw Router.",
+        "properties": {
+          "artifactType": {
+            "description": "Artifact type field on runtime artifact item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "contentText": {
+            "description": "Content text field on runtime artifact item.",
+            "maxLength": 262144,
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Created at field on runtime artifact item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on runtime artifact item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "invocationId": {
+            "description": "Invocation id field on runtime artifact item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "mimeType": {
+            "description": "Mime type field on runtime artifact item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on runtime artifact item.",
+            "maxLength": 512,
+            "nullable": true,
+            "type": "string"
+          },
+          "resource": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Resource field on runtime artifact item."
+          },
+          "sha256": {
+            "description": "Sha 256 field on runtime artifact item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Size bytes field on runtime artifact item.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "storageKey": {
+            "description": "Storage key field on runtime artifact item.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "invocationId",
+          "artifactType",
+          "name",
+          "mimeType",
+          "contentText",
+          "storageKey",
+          "resource",
+          "sha256",
+          "sizeBytes",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "RuntimeArtifactListResponse": {
+        "additionalProperties": false,
+        "description": "Runtime artifact list response schema exposed by Claw Router.",
+        "name": "RuntimeArtifactListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on runtime artifact list response.",
+            "items": {
+              "$ref": "#/components/schemas/RuntimeArtifactItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on runtime artifact list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "RuntimeArtifactResponse": {
+        "additionalProperties": false,
+        "description": "Runtime artifact response schema exposed by Claw Router.",
+        "name": "RuntimeArtifactResponse",
+        "properties": {
+          "item": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeArtifactItem"
+              }
+            ],
+            "description": "Item field on runtime artifact response."
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
+      },
+      "RuntimeEventItem": {
+        "additionalProperties": false,
+        "description": "Runtime event item schema exposed by Claw Router.",
+        "properties": {
+          "createdAt": {
+            "description": "Created at field on runtime event item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "eventNo": {
+            "description": "Event no field on runtime event item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "eventSource": {
+            "description": "Event source field on runtime event item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "eventType": {
+            "description": "Event type field on runtime event item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on runtime event item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "invocationId": {
+            "description": "Invocation id field on runtime event item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "payloadJson": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Payload json field on runtime event item."
+            },
+            "description": "Payload json field on runtime event item.",
+            "type": "object"
+          },
+          "textDelta": {
+            "description": "Text delta field on runtime event item.",
+            "maxLength": 262144,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "invocationId",
+          "eventNo",
+          "eventType",
+          "eventSource",
+          "payloadJson",
+          "textDelta",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "RuntimeEventListResponse": {
+        "additionalProperties": false,
+        "description": "Runtime event list response schema exposed by Claw Router.",
+        "name": "RuntimeEventListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on runtime event list response.",
+            "items": {
+              "$ref": "#/components/schemas/RuntimeEventItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on runtime event list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "RuntimeEventResponse": {
+        "additionalProperties": false,
+        "description": "Runtime event response schema exposed by Claw Router.",
+        "name": "RuntimeEventResponse",
+        "properties": {
+          "item": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeEventItem"
+              }
+            ],
+            "description": "Item field on runtime event response."
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
+      },
+      "RuntimeInvocationItem": {
+        "additionalProperties": false,
+        "description": "Runtime invocation item schema exposed by Claw Router.",
+        "properties": {
+          "agentRunId": {
+            "description": "Agent run id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "agentRunStepId": {
+            "description": "Agent run step id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "agentSessionId": {
+            "description": "Agent session id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "approvalPolicy": {
+            "description": "Approval policy field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "attemptNo": {
+            "description": "Attempt no field on runtime invocation item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "chatItemId": {
+            "description": "Chat item id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "chatTurnId": {
+            "description": "Chat turn id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "completedAt": {
+            "description": "Completed at field on runtime invocation item.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "conversationId": {
+            "description": "Conversation id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Created at field on runtime invocation item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Cwd field on runtime invocation item.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          },
+          "endpoint": {
+            "description": "Endpoint field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "errorCode": {
+            "description": "Error code field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "errorMessageMasked": {
+            "description": "Error message masked field on runtime invocation item.",
+            "maxLength": 1024,
+            "nullable": true,
+            "type": "string"
+          },
+          "errorType": {
+            "description": "Error type field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "exitCode": {
+            "description": "Exit code field on runtime invocation item.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "finishReason": {
+            "description": "Finish reason field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on runtime invocation item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "invocationNo": {
+            "description": "Invocation no field on runtime invocation item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "invocationType": {
+            "description": "Invocation type field on runtime invocation item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "latencyMs": {
+            "description": "Latency ms field on runtime invocation item.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "model": {
+            "description": "Model field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "permissionMode": {
+            "description": "Permission mode field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "providerConversationId": {
+            "description": "Provider conversation id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "providerResponseId": {
+            "description": "Provider response id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "providerSessionId": {
+            "description": "Provider session id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "providerStepId": {
+            "description": "Provider step id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "runtime": {
+            "description": "Runtime field on runtime invocation item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "sandboxPolicy": {
+            "description": "Sandbox policy field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "startedAt": {
+            "description": "Started at field on runtime invocation item.",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on runtime invocation item.",
+            "enum": [
+              "pending",
+              "running",
+              "streaming",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "streaming": {
+            "description": "Streaming field on runtime invocation item.",
+            "type": "boolean"
+          },
+          "toolCallId": {
+            "description": "Tool call id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "toolName": {
+            "description": "Tool name field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "traceId": {
+            "description": "Trace id field on runtime invocation item.",
+            "maxLength": 128,
+            "nullable": true,
+            "type": "string"
+          },
+          "ttftMs": {
+            "description": "Ttft ms field on runtime invocation item.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "id",
+          "invocationNo",
+          "invocationType",
+          "runtime",
+          "endpoint",
+          "attemptNo",
+          "status",
+          "conversationId",
+          "chatTurnId",
+          "chatItemId",
+          "agentSessionId",
+          "agentRunId",
+          "agentRunStepId",
+          "traceId",
+          "providerResponseId",
+          "providerSessionId",
+          "providerConversationId",
+          "providerStepId",
+          "model",
+          "provider",
+          "toolName",
+          "toolCallId",
+          "cwd",
+          "sandboxPolicy",
+          "approvalPolicy",
+          "permissionMode",
+          "streaming",
+          "startedAt",
+          "completedAt",
+          "latencyMs",
+          "ttftMs",
+          "exitCode",
+          "finishReason",
+          "errorType",
+          "errorCode",
+          "errorMessageMasked",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "RuntimeInvocationListResponse": {
+        "additionalProperties": false,
+        "description": "Runtime invocation list response schema exposed by Claw Router.",
+        "name": "RuntimeInvocationListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on runtime invocation list response.",
+            "items": {
+              "$ref": "#/components/schemas/RuntimeInvocationItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on runtime invocation list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "RuntimeInvocationResponse": {
+        "additionalProperties": false,
+        "description": "Runtime invocation response schema exposed by Claw Router.",
+        "name": "RuntimeInvocationResponse",
+        "properties": {
+          "item": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeInvocationItem"
+              }
+            ],
+            "description": "Item field on runtime invocation response."
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
       },
       "SdkWorkApiResponse": {
         "additionalProperties": false,
@@ -4233,7 +6395,33 @@
       "get": {
         "description": "List chat conversations. Reads ai_chat_conversation, ai_agent_session. Writes none. File targets none.",
         "operationId": "conversations.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4315,6 +6503,17 @@
         "description": "Create chat conversation. Reads ai_agent_session. Writes ai_chat_conversation. File targets none.",
         "operationId": "conversations.create",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatConversationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create chat conversation.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -4500,6 +6699,31 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -4600,6 +6824,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatTurnRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create chat turn.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -4712,6 +6947,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteChatTurnResponseRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for complete chat turn response.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -5945,7 +8191,54 @@
       "get": {
         "description": "List notifications. Reads ops_audit_log. Writes none. File targets none.",
         "operationId": "notifications.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "App id query parameter.",
+            "in": "query",
+            "name": "app_id",
+            "required": false,
+            "schema": {
+              "default": "claw-router",
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Include archived query parameter.",
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -6034,6 +8327,17 @@
             "name": "notificationId",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "App id query parameter.",
+            "in": "query",
+            "name": "app_id",
+            "required": false,
+            "schema": {
+              "default": "claw-router",
+              "maxLength": 128,
               "type": "string"
             }
           }
@@ -6130,6 +8434,17 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "App id query parameter.",
+            "in": "query",
+            "name": "app_id",
+            "required": false,
+            "schema": {
+              "default": "claw-router",
+              "maxLength": 128,
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6215,7 +8530,90 @@
       "get": {
         "description": "List runtime invocations. Reads ai_runtime_invocation, ai_chat_conversation, ai_chat_turn, ai_agent_session. Writes none. File targets none.",
         "operationId": "invocations.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Conversation id query parameter.",
+            "in": "query",
+            "name": "conversation_id",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Chat turn id query parameter.",
+            "in": "query",
+            "name": "chat_turn_id",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Agent session id query parameter.",
+            "in": "query",
+            "name": "agent_session_id",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Runtime query parameter.",
+            "in": "query",
+            "name": "runtime",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Status query parameter.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "pending",
+                "running",
+                "streaming",
+                "completed",
+                "failed",
+                "cancelled"
+              ],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -6299,6 +8697,17 @@
         "description": "Create runtime invocation. Reads ai_chat_conversation, ai_chat_turn, ai_agent_session. Writes ai_runtime_invocation. File targets none.",
         "operationId": "invocations.create",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRuntimeInvocationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create runtime invocation.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -6485,6 +8894,31 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -6578,6 +9012,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRuntimeArtifactRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create runtime artifact.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -6672,6 +9117,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteRuntimeInvocationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for complete runtime invocation.",
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -6763,6 +9219,31 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -6857,6 +9338,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRuntimeEventRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create runtime event.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
@@ -6948,6 +9440,20 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": "After event no query parameter.",
+            "in": "query",
+            "name": "after_event_no",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
             }
           }
         ],

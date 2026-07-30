@@ -246,7 +246,7 @@ export function deriveVendorOptionsForRankings(
       if (mergedVendorCodesByLabel[label]) {
         continue;
       }
-      mergedVendorModelCounts[label] = vendorModelCounts[label];
+      mergedVendorModelCounts[label] = vendorModelCounts[label] ?? 0;
       mergedVendorCodesByLabel[label] = vendorCodesByLabel[label] || normalizeRankingVendorCode(label);
     }
 
@@ -462,8 +462,11 @@ export function deriveRankingDynamicStats({
         }
       }
     } else if (displayRankings.length > 0) {
-      trendingName = displayRankings[0].name;
-      trendingRankDisplay = '#1 Overall';
+      const topRanking = displayRankings[0];
+      if (topRanking) {
+        trendingName = topRanking.name;
+        trendingRankDisplay = '#1 Overall';
+      }
     }
   }
 

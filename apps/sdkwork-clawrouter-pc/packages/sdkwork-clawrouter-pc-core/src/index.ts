@@ -19,22 +19,24 @@ export function generateCodeSnippets(curlCommand: string) {
     const sanitizedCurlCommand = stripRequestIdentityHeaders(curlCommand);
     // Extract URL
     const urlMatch = sanitizedCurlCommand.match(/curl\s+([^\s\\]+)/);
-    const url = urlMatch ? urlMatch[1] : resolveApiRequestUrl(API_BASE_URL, '/v1/chat/completions').url;
+    const url = urlMatch?.[1] ?? resolveApiRequestUrl(API_BASE_URL, '/v1/chat/completions').url;
 
     // Extract Headers
     const headers: Record<string, string> = {};
     const headerRegex = /-H\s+"([^"]+)"/g;
     let match;
     while ((match = headerRegex.exec(sanitizedCurlCommand)) !== null) {
-      const parts = match[1].split(': ');
-      if (parts.length === 2) {
-        headers[parts[0]] = parts[1];
+      const header = match[1];
+      const separatorIndex = header?.indexOf(': ') ?? -1;
+      if (header && separatorIndex > 0) {
+        const name = header.slice(0, separatorIndex);
+        headers[name] = header.slice(separatorIndex + 2);
       }
     }
 
     // Extract Body
     const bodyMatch = sanitizedCurlCommand.match(/-d\s+'([^']+)'/);
-    let body = bodyMatch ? bodyMatch[1] : '{}';
+    let body = bodyMatch?.[1] ?? '{}';
 
     // Format JSON body for snippets
     try {

@@ -9,8 +9,8 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::installer::{
 use sdkwork_iam_bootstrap::{
     DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_IAM_TENANT_ID,
 };
-use sdkwork_models_database_host::connect_models_database;
 use sdkwork_models_catalog_repository_sqlx::PostgresModelCatalogAdminStore;
+use sdkwork_models_database_host::connect_models_database;
 use serde::Serialize;
 use sqlx::PgPool;
 use std::error::Error;
@@ -113,7 +113,7 @@ async fn apply_explicit_schema_lifecycle_if_required(
 
 fn database_connection_error_message(database_url: &str, error: impl std::fmt::Display) -> String {
     format!(
-        "PostgreSQL database is not reachable for SDKWORK_CLAW_DATABASE_URL ({}) within {} seconds: {error}. Start the configured PostgreSQL service or fix the host, port, and credentials.",
+        "PostgreSQL database is not reachable for SDKWORK_DATABASE_URL ({}) within {} seconds: {error}. Start the configured PostgreSQL service or fix the host, port, and credentials.",
         redact_database_url(database_url),
         sdkwork_clawrouter_router_service::infrastructure::sql::pool::POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS
     )
@@ -436,7 +436,7 @@ fn installer_error_code(error: &(dyn std::error::Error + 'static), message: &str
     if error.downcast_ref::<sqlx::Error>().is_some() {
         return "database_error";
     }
-    if message.contains("SDKWORK_CLAW_DATABASE_URL") {
+    if message.contains("SDKWORK_DATABASE_URL") {
         "missing_database_url"
     } else if message.contains("unsupported installer command")
         || message.contains("unsupported refresh-catalog option")
@@ -470,7 +470,7 @@ impl Display for InstallerCliError {
         match self {
             Self::MissingDatabaseUrl => write!(
                 formatter,
-                "SDKWORK_CLAW_DATABASE_URL is required.\n{}",
+                "SDKWORK_DATABASE_URL is required.\n{}",
                 DatabaseConfig::startup_help_text(runtime_config_profile_from_deployment_mode())
             ),
             Self::InvalidArgument(message) => write!(formatter, "{message}"),

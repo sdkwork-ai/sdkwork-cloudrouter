@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MessageSquare, Check, Info, FileText, ExternalLink, Zap, Cpu, Globe, AlertTriangle, Code2, Layers, Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

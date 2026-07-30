@@ -4,8 +4,10 @@ import {
   getModelsAppSdkClient,
   getSdkworkMemoryAppSdkClient,
   streamRuntimeInvocationEvents,
-  type ClawRouterMediaResource,
+  toSdkMediaResource,
   type ClawRouterAppSdkClient,
+  type ClawRouterMediaResource,
+  type ClawRouterSdkMediaResource,
   type JsonValue,
   type ModelsAppSdkClient,
   type RuntimeStreamEvent,
@@ -14,7 +16,7 @@ import {
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 
 type JsonObject = Record<string, JsonValue>;
-type SdkUsageSnapshot = {
+type SdkUsageSnapshot = JsonObject & {
   cachedTokens?: string;
   inputTokens?: string;
   outputTokens?: string;
@@ -60,7 +62,7 @@ export interface ChatTurnResponseBody {
   runtime?: string;
   runtimeInvocationId?: string;
   status?: 'completed' | 'failed' | 'cancelled' | 'streaming';
-  usage?: Record<string, unknown>;
+  usage?: RuntimeUsageSnapshot;
   usageFactId?: string;
 }
 
@@ -136,10 +138,11 @@ interface ModelCatalogParams {
   capabilities?: string[];
   categories?: string[];
   groups?: string[];
-  limit?: number;
+  modelTypes?: string;
   modalities?: string[];
+  page?: number;
+  pageSize?: number;
   q?: string;
-  vendorCode?: string;
   vendorCodes?: string[];
 }
 
@@ -162,9 +165,9 @@ export async function listModelCatalog(
   sdkClient?: ModelsAppSdkClient,
 ): Promise<unknown> {
   if (sdkClient) {
-    return sdkClient.ai.models.list(sdkModelCatalogParams(params));
+    return sdkClient.ai.models.list(params);
   }
-  return getModelsAppSdkClient().ai.models.list(sdkModelCatalogParams(params));
+  return getModelsAppSdkClient().ai.models.list(params);
 }
 
 export async function listChatConversations(
@@ -172,16 +175,15 @@ export async function listChatConversations(
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.chat.conversations.list(sdkPageParams(params));
+  return client.chat.conversations.list(params);
 }
 
 export async function createChatConversation(
   body: ChatConversationCreateBody,
-  options?: MutationOptions,
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.chat.conversations.create(body, mutationParams('chat-conversation', options));
+  return client.chat.conversations.create(body);
 }
 
 export async function retrieveChatConversation(
@@ -194,39 +196,33 @@ export async function retrieveChatConversation(
 
 export async function listChatMessages(
   conversationId: string,
-  params: { limit?: number; order?: 'asc' | 'desc' } = { limit: DEFAULT_PAGE_SIZE, order: 'asc' },
+  params: PageParams = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.chat.conversationMessages.list(conversationId, {
-    ...params,
-    limit: params.limit === undefined ? undefined : String(params.limit),
-  });
+  return client.chat.conversations.messages.list(conversationId, params);
 }
 
 export async function createChatTurn(
   conversationId: string,
   body: ChatTurnCreateBody,
-  options?: MutationOptions,
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.chat.turns.create(conversationId, body, mutationParams('chat-turn', options));
+  return client.chat.conversations.turns.create(conversationId, body);
 }
 
 export async function completeChatTurnResponse(
   conversationId: string,
   turnId: string,
   body: ChatTurnResponseBody,
-  options?: MutationOptions,
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.chat.turnResponses.create(
+  return client.chat.conversations.turns.response.create(
     conversationId,
     turnId,
-    body,
-    mutationParams('chat-turn-response', options),
+    sdkChatTurnResponseBody(body),
   );
 }
 
@@ -281,11 +277,12 @@ export async function createMemoryEntry(
 }
 
 export async function retrieveMemoryEntry(
+  spaceId: string,
   entryId: string,
   sdkClient?: SdkworkMemoryAppSdkClient,
 ): Promise<unknown> {
   const client = memoryClient(sdkClient);
-  return client.memory.retrieve(entryId);
+  return client.memory.retrieve(entryId, { spaceId });
 }
 
 export async function listRuntimeInvocations(
@@ -294,21 +291,20 @@ export async function listRuntimeInvocations(
     chatTurnId?: string;
     conversationId?: string;
     runtime?: string;
-    status?: string;
+    status?: 'pending' | 'running' | 'streaming' | 'completed' | 'failed' | 'cancelled';
   } = { pageSize: DEFAULT_PAGE_SIZE },
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.runtime.invocations.list(sdkPageParams(params));
+  return client.runtime.invocations.list(params);
 }
 
 export async function createRuntimeInvocation(
   body: RuntimeInvocationCreateBody,
-  options?: MutationOptions,
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.runtime.invocations.create(body, mutationParams('runtime-invocation', options));
+  return client.runtime.invocations.create(body);
 }
 
 export async function retrieveRuntimeInvocation(
@@ -322,14 +318,12 @@ export async function retrieveRuntimeInvocation(
 export async function completeRuntimeInvocation(
   invocationId: string,
   body: RuntimeInvocationCompleteBody,
-  options?: MutationOptions,
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.runtime.invocations.submit(
+  return client.runtime.invocations.complete(
     invocationId,
     sdkRuntimeInvocationCompleteBody(body),
-    mutationParams('runtime-invocation-complete', options),
   );
 }
 
@@ -339,7 +333,7 @@ export async function listRuntimeEvents(
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.runtime.invocationEvents.list(invocationId, sdkPageParams(params));
+  return client.runtime.invocations.events.list(invocationId, params);
 }
 
 export async function streamRuntimeEvents(
@@ -354,15 +348,10 @@ export async function streamRuntimeEvents(
 export async function createRuntimeEvent(
   invocationId: string,
   body: RuntimeEventCreateBody,
-  options?: MutationOptions,
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.runtime.invocationEvents.create(
-    invocationId,
-    body,
-    mutationParams('runtime-event', options),
-  );
+  return client.runtime.invocations.events.create(invocationId, body);
 }
 
 export async function listRuntimeArtifacts(
@@ -371,28 +360,19 @@ export async function listRuntimeArtifacts(
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.runtime.artifacts.list(invocationId, sdkPageParams(params));
+  return client.runtime.invocations.artifacts.list(invocationId, params);
 }
 
 export async function createRuntimeArtifact(
   invocationId: string,
   body: RuntimeArtifactCreateBody,
-  options?: MutationOptions,
   sdkClient?: ClawRouterAppSdkClient,
 ): Promise<unknown> {
   const client = appClient(sdkClient);
-  return client.runtime.artifacts.create(invocationId, sdkRuntimeArtifactCreateBody(body), mutationParams('runtime-artifact', options));
-}
-
-function sdkPageParams<T extends PageParams>(params: T): Omit<T, 'page' | 'pageSize'> & {
-  page?: string;
-  pageSize?: string;
-} {
-  return {
-    ...params,
-    page: params.page === undefined ? undefined : String(params.page),
-    pageSize: params.pageSize === undefined ? undefined : String(params.pageSize),
-  };
+  return client.runtime.invocations.artifacts.create(
+    invocationId,
+    sdkRuntimeArtifactCreateBody(body),
+  );
 }
 
 type MemoryRecordType =
@@ -478,13 +458,6 @@ function compactJsonObject(value: Record<string, JsonValue | undefined>): JsonOb
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
-function sdkModelCatalogParams(params: ModelCatalogParams): Omit<ModelCatalogParams, 'limit'> & { limit?: string } {
-  return {
-    ...params,
-    limit: params.limit === undefined ? undefined : String(params.limit),
-  };
-}
-
 function sdkUsageSnapshot(value: RuntimeUsageSnapshot | undefined): SdkUsageSnapshot | undefined {
   if (!value) {
     return undefined;
@@ -497,6 +470,15 @@ function sdkUsageSnapshot(value: RuntimeUsageSnapshot | undefined): SdkUsageSnap
   };
 }
 
+function sdkChatTurnResponseBody(
+  body: ChatTurnResponseBody,
+): Omit<ChatTurnResponseBody, 'usage'> & { usage?: SdkUsageSnapshot } {
+  return {
+    ...body,
+    usage: sdkUsageSnapshot(body.usage),
+  };
+}
+
 function sdkRuntimeInvocationCompleteBody(body: RuntimeInvocationCompleteBody): Omit<RuntimeInvocationCompleteBody, 'usageJson'> & { usageJson?: SdkUsageSnapshot } {
   return {
     ...body,
@@ -504,9 +486,15 @@ function sdkRuntimeInvocationCompleteBody(body: RuntimeInvocationCompleteBody): 
   };
 }
 
-function sdkRuntimeArtifactCreateBody(body: RuntimeArtifactCreateBody): Omit<RuntimeArtifactCreateBody, 'sizeBytes'> & { sizeBytes?: string } {
+function sdkRuntimeArtifactCreateBody(
+  body: RuntimeArtifactCreateBody,
+): Omit<RuntimeArtifactCreateBody, 'resource' | 'sizeBytes'> & {
+  resource?: ClawRouterSdkMediaResource;
+  sizeBytes?: string;
+} {
   return {
     ...body,
+    resource: toSdkMediaResource(body.resource, 'runtimeArtifact.resource'),
     sizeBytes: body.sizeBytes === undefined ? undefined : String(body.sizeBytes),
   };
 }

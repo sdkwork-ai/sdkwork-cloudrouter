@@ -6,7 +6,9 @@ use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
-use sdkwork_utils_rust::SdkWorkResultCode;
+use sdkwork_utils_rust::{
+    add_days, add_hours, format_datetime, now, parse_datetime, SdkWorkResultCode,
+};
 use serde::Serialize;
 
 use crate::api::query_string::{parse_i64_query_param, query_pairs};
@@ -34,10 +36,8 @@ struct AdminAnalyticsQueryParams {
 #[serde(rename_all = "camelCase")]
 struct AdminAnalyticsOverviewResponse {
     time_range: AdminAnalyticsTimeRange,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    start_time: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    end_time: Option<String>,
+    start_time: String,
+    end_time: String,
     ranking_size: i64,
     summary: AdminAnalyticsSummary,
     trend: Vec<AdminAnalyticsTrendPoint>,
@@ -90,11 +90,17 @@ fn analytics_query(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     params: AdminAnalyticsQueryParams,
 ) -> Result<AdminAnalyticsQuery, String> {
+    let time_range = normalize_time_range(params.time_range)?;
+    let (start_time, end_time) = normalize_time_window(
+        time_range,
+        normalize_optional_text(params.start_time),
+        normalize_optional_text(params.end_time),
+    )?;
     Ok(AdminAnalyticsQuery {
         subject: scoped.into(),
-        time_range: AdminAnalyticsTimeRange::parse(params.time_range.as_deref()),
-        start_time: normalize_optional_text(params.start_time),
-        end_time: normalize_optional_text(params.end_time),
+        time_range,
+        start_time,
+        end_time,
         limit: normalize_ranking_size(params.ranking_size)?,
     })
 }
@@ -158,6 +164,87 @@ fn normalize_optional_text(value: Option<String>) -> Option<String> {
 const DEFAULT_RANKING_SIZE: i64 = 10;
 const MIN_RANKING_SIZE: i64 = 3;
 const MAX_RANKING_SIZE: i64 = 50;
+const MAX_TIMESTAMP_LEN: usize = 35;
+const MILLIS_PER_HOUR: i64 = 3_600_000;
+const MILLIS_PER_DAY: i64 = 24 * MILLIS_PER_HOUR;
+
+fn normalize_time_range(value: Option<String>) -> Result<AdminAnalyticsTimeRange, String> {
+    let Some(value) = normalize_optional_text(value) else {
+        return Ok(AdminAnalyticsTimeRange::Daily);
+    };
+    AdminAnalyticsTimeRange::parse(&value).ok_or_else(|| {
+        "time_range must be one of hourly, daily, weekly, monthly, yearly".to_owned()
+    })
+}
+
+fn normalize_time_window(
+    time_range: AdminAnalyticsTimeRange,
+    start_time: Option<String>,
+    end_time: Option<String>,
+) -> Result<(String, String), String> {
+    match (start_time, end_time) {
+        (None, None) => Ok(default_time_window(time_range)),
+        (Some(start_time), Some(end_time)) => {
+            let start_millis = parse_timestamp_millis(&start_time, "start_time")?;
+            let end_millis = parse_timestamp_millis(&end_time, "end_time")?;
+            if end_millis < start_millis {
+                return Err("end_time must be greater than or equal to start_time".to_owned());
+            }
+            let max_window_millis = max_window_millis(time_range);
+            if end_millis - start_millis > max_window_millis {
+                return Err(format!(
+                    "analytics time range exceeds the maximum window for {}",
+                    time_range_name(time_range)
+                ));
+            }
+            Ok((start_time, end_time))
+        }
+        _ => Err("start_time and end_time must be provided together".to_owned()),
+    }
+}
+
+fn default_time_window(time_range: AdminAnalyticsTimeRange) -> (String, String) {
+    let end = now();
+    let start = match time_range {
+        AdminAnalyticsTimeRange::Hourly => add_hours(end, -24),
+        AdminAnalyticsTimeRange::Daily => add_days(end, -30),
+        AdminAnalyticsTimeRange::Weekly => add_days(end, -84),
+        AdminAnalyticsTimeRange::Monthly => add_days(end, -366),
+        AdminAnalyticsTimeRange::Yearly => add_days(end, -3653),
+    };
+    (format_datetime(start, None), format_datetime(end, None))
+}
+
+fn parse_timestamp_millis(value: &str, field_name: &str) -> Result<i64, String> {
+    if value.len() > MAX_TIMESTAMP_LEN || !value.ends_with('Z') {
+        return Err(format!(
+            "{field_name} must be a valid ISO 8601 UTC timestamp"
+        ));
+    }
+    parse_datetime(value, None)
+        .map(|timestamp| timestamp.timestamp_millis())
+        .ok_or_else(|| format!("{field_name} must be a valid ISO 8601 UTC timestamp"))
+}
+
+fn max_window_millis(time_range: AdminAnalyticsTimeRange) -> i64 {
+    match time_range {
+        AdminAnalyticsTimeRange::Hourly => 30 * MILLIS_PER_HOUR,
+        AdminAnalyticsTimeRange::Daily => 31 * MILLIS_PER_DAY,
+        AdminAnalyticsTimeRange::Weekly => 210 * MILLIS_PER_DAY,
+        AdminAnalyticsTimeRange::Monthly => 731 * MILLIS_PER_DAY,
+        AdminAnalyticsTimeRange::Yearly => 3653 * MILLIS_PER_DAY,
+    }
+}
+
+fn time_range_name(time_range: AdminAnalyticsTimeRange) -> &'static str {
+    match time_range {
+        AdminAnalyticsTimeRange::Hourly => "hourly",
+        AdminAnalyticsTimeRange::Daily => "daily",
+        AdminAnalyticsTimeRange::Weekly => "weekly",
+        AdminAnalyticsTimeRange::Monthly => "monthly",
+        AdminAnalyticsTimeRange::Yearly => "yearly",
+    }
+}
 
 fn normalize_ranking_size(value: Option<i64>) -> Result<i64, String> {
     let value = value.unwrap_or(DEFAULT_RANKING_SIZE);
@@ -192,5 +279,58 @@ impl From<AdminAnalyticsSnapshot> for AdminAnalyticsOverviewResponse {
             modality_distribution: snapshot.modality_distribution,
             insights: snapshot.insights,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_time_window_is_utc_and_bounded() {
+        let (start_time, end_time) = default_time_window(AdminAnalyticsTimeRange::Daily);
+        let start_millis = parse_timestamp_millis(&start_time, "start_time").unwrap();
+        let end_millis = parse_timestamp_millis(&end_time, "end_time").unwrap();
+
+        assert_eq!(30 * MILLIS_PER_DAY, end_millis - start_millis);
+        assert!(start_time.ends_with('Z'));
+        assert!(end_time.ends_with('Z'));
+    }
+
+    #[test]
+    fn explicit_time_window_requires_two_strict_utc_timestamps() {
+        for (start_time, end_time) in [
+            (Some("2026-01-01T00:00:00Z"), None),
+            (None, Some("2026-01-02T00:00:00Z")),
+            (
+                Some("2026-01-01T00:00:00+08:00"),
+                Some("2026-01-02T00:00:00Z"),
+            ),
+            (Some("invalid"), Some("2026-01-02T00:00:00Z")),
+            (Some("2026-01-02T00:00:00Z"), Some("2026-01-01T00:00:00Z")),
+        ] {
+            assert!(normalize_time_window(
+                AdminAnalyticsTimeRange::Daily,
+                start_time.map(str::to_owned),
+                end_time.map(str::to_owned),
+            )
+            .is_err());
+        }
+    }
+
+    #[test]
+    fn explicit_time_window_rejects_ranges_above_selected_bucket_limit() {
+        let result = normalize_time_window(
+            AdminAnalyticsTimeRange::Hourly,
+            Some("2026-01-01T00:00:00Z".to_owned()),
+            Some("2026-02-01T00:00:01Z".to_owned()),
+        );
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn unknown_time_range_is_not_silently_downgraded() {
+        assert!(normalize_time_range(Some("quarterly".to_owned())).is_err());
     }
 }

@@ -229,7 +229,7 @@ function createInstallInitSmokePlan({
 function createSmokeEnvironment({ databaseUrl, databaseEngine, deploymentMode, releaseEnvPath, runtimeConfigPath, modelsCatalogRoot }) {
   const env = {
     SDKWORK_MODELS_CATALOG_ROOT: modelsCatalogRoot,
-    SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: DEFAULT_RELEASE_POSTGRES_URL,
+    SDKWORK_DATABASE_URL: DEFAULT_RELEASE_POSTGRES_URL,
     PORTAL_PUBLIC_SDK_BASE_URL: '/',
     PORTAL_PUBLIC_API_BASE_URL: '/v1',
     PORTAL_PUBLIC_APP_API_BASE_URL: '/app/v3/api',
@@ -240,8 +240,8 @@ function createSmokeEnvironment({ databaseUrl, databaseEngine, deploymentMode, r
     SDKWORK_CLAW_DEPLOYMENT_MODE: deploymentMode,
   };
   if (databaseEngine === 'sqlite') {
-    env.SDKWORK_CLAW_DATABASE_URL = databaseUrl;
-    env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS = '1';
+    env.SDKWORK_DATABASE_URL = databaseUrl;
+    env.SDKWORK_DATABASE_MAX_CONNECTIONS = '1';
   }
   return env;
 }
@@ -298,8 +298,8 @@ function validateInstallInitSmokePlan(plan) {
   if (!plan.env?.SDKWORK_CLAW_CONFIG_FILE || !plan.env?.SDKWORK_MODELS_CATALOG_ROOT) {
     issues.push('installer environment must include config file and model catalog roots');
   }
-  if (plan.databaseEngine === 'sqlite' && !plan.env?.SDKWORK_CLAW_DATABASE_URL) {
-    issues.push('installer environment must include SDKWORK_CLAW_DATABASE_URL for SQLite smoke');
+  if (plan.databaseEngine === 'sqlite' && !plan.env?.SDKWORK_DATABASE_URL) {
+    issues.push('installer environment must include SDKWORK_DATABASE_URL for SQLite smoke');
   }
   if (plan.mode === 'real-installer' && !plan.installerBin) {
     issues.push('real-installer mode requires installerBin');
@@ -416,8 +416,8 @@ function inspectReleaseEnvContent(content, plan) {
   return {
     path: plan.releaseEnvPath,
     written: true,
-    containsLocalDatabaseUrl: Boolean(plan.env.SDKWORK_CLAW_DATABASE_URL)
-      && content.includes(`SDKWORK_CLAW_DATABASE_URL="${plan.env.SDKWORK_CLAW_DATABASE_URL}"`),
+    containsLocalDatabaseUrl: Boolean(plan.env.SDKWORK_DATABASE_URL)
+      && content.includes(`SDKWORK_DATABASE_URL="${plan.env.SDKWORK_DATABASE_URL}"`),
     containsConfigFile: /^SDKWORK_CLAW_CONFIG_FILE=/mu.test(content),
     containsHostSecret: /SDKWORK_SECRET|SECRET_KEY|PRIVATE_KEY|(?<!ACCESS_)TOKEN=/u.test(content),
     containsExamplePath: content.includes('.env.release.example'),

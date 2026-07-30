@@ -162,9 +162,9 @@ function devResetEnv(settings, env, root) {
   const resolvedDatabase = resolveClawRouterDevDatabaseEnv({
     env: {
       ...devEnv,
-      ...(settings.databaseUrl ? { SDKWORK_CLAW_DATABASE_URL: settings.databaseUrl } : {}),
+      ...(settings.databaseUrl ? { SDKWORK_DATABASE_URL: settings.databaseUrl } : {}),
       ...(settings.databaseMaxConnections
-        ? { SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS: settings.databaseMaxConnections }
+        ? { SDKWORK_DATABASE_MAX_CONNECTIONS: settings.databaseMaxConnections }
         : {}),
     },
     defaultDatabase: 'postgresql',
@@ -174,16 +174,16 @@ function devResetEnv(settings, env, root) {
   }
   const databaseUrl = resolvedDatabase.databaseUrl;
   const databaseMaxConnections = settings.databaseMaxConnections
-    ?? resolvedDatabase.env.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS
-    ?? devEnv.SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS;
+    ?? resolvedDatabase.env.SDKWORK_DATABASE_MAX_CONNECTIONS
+    ?? devEnv.SDKWORK_DATABASE_MAX_CONNECTIONS;
   return {
     ...devEnv,
     ...resolvedDatabase.env,
-    SDKWORK_CLAW_DATABASE_URL: databaseUrl,
+    SDKWORK_DATABASE_URL: databaseUrl,
     SDKWORK_CLAW_DEPLOYMENT_MODE: env.SDKWORK_CLAW_DEPLOYMENT_MODE ?? 'server',
     SDKWORK_CLAW_INSTALL_ENVIRONMENT: env.SDKWORK_CLAW_INSTALL_ENVIRONMENT ?? 'development',
     SDKWORK_CLAW_INSTALL_SEED_PROFILE: env.SDKWORK_CLAW_INSTALL_SEED_PROFILE ?? 'commercial',
-    ...(databaseMaxConnections ? { SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS: databaseMaxConnections } : {}),
+    ...(databaseMaxConnections ? { SDKWORK_DATABASE_MAX_CONNECTIONS: databaseMaxConnections } : {}),
   };
 }
 

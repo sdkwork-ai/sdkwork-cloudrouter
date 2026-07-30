@@ -1,43 +1,45 @@
-/** AdminSiteSettingsResponse contract. */
+import type { MediaResource } from './media-resource';
+
+/** Admin site settings response schema exposed by Claw Router. */
 export interface AdminSiteSettingsResponse {
-  /** accentColor field on AdminSiteSettingsResponse. */
+  /** Accent color field on admin site settings response. */
   accentColor: string;
-  /** brandColor field on AdminSiteSettingsResponse. */
+  /** Brand color field on admin site settings response. */
   brandColor: string;
-  /** customCss field on AdminSiteSettingsResponse. */
+  /** Custom css field on admin site settings response. */
   customCss: string;
-  /** description field on AdminSiteSettingsResponse. */
+  /** Description field on admin site settings response. */
   description: string;
-  /** docsUrl field on AdminSiteSettingsResponse. */
+  /** Docs url field on admin site settings response. */
   docsUrl: string;
-  /** favicon field on AdminSiteSettingsResponse. */
-  favicon?: Record<string, unknown>;
-  /** footerCopyright field on AdminSiteSettingsResponse. */
+  /** Favicon field on admin site settings response. */
+  favicon: MediaResource;
+  /** Footer copyright field on admin site settings response. */
   footerCopyright: string;
-  /** icon field on AdminSiteSettingsResponse. */
-  icon?: Record<string, unknown>;
-  /** icpRecordNumber field on AdminSiteSettingsResponse. */
+  /** Icon field on admin site settings response. */
+  icon: MediaResource;
+  /** Icp record number field on admin site settings response. */
   icpRecordNumber: string;
-  /** icpRecordUrl field on AdminSiteSettingsResponse. */
+  /** Icp record url field on admin site settings response. */
   icpRecordUrl: string;
-  /** logo field on AdminSiteSettingsResponse. */
-  logo?: Record<string, unknown>;
-  /** policeRecordNumber field on AdminSiteSettingsResponse. */
+  /** Logo field on admin site settings response. */
+  logo: MediaResource;
+  /** Police record number field on admin site settings response. */
   policeRecordNumber: string;
-  /** policeRecordUrl field on AdminSiteSettingsResponse. */
+  /** Police record url field on admin site settings response. */
   policeRecordUrl: string;
-  /** privacyUrl field on AdminSiteSettingsResponse. */
+  /** Privacy url field on admin site settings response. */
   privacyUrl: string;
-  /** seoDescription field on AdminSiteSettingsResponse. */
+  /** Seo description field on admin site settings response. */
   seoDescription: string;
-  /** seoTitle field on AdminSiteSettingsResponse. */
+  /** Seo title field on admin site settings response. */
   seoTitle: string;
-  /** shortName field on AdminSiteSettingsResponse. */
+  /** Short name field on admin site settings response. */
   shortName: string;
-  /** siteName field on AdminSiteSettingsResponse. */
+  /** Site name field on admin site settings response. */
   siteName: string;
-  /** supportUrl field on AdminSiteSettingsResponse. */
+  /** Support url field on admin site settings response. */
   supportUrl: string;
-  /** termsUrl field on AdminSiteSettingsResponse. */
+  /** Terms url field on admin site settings response. */
   termsUrl: string;
 }

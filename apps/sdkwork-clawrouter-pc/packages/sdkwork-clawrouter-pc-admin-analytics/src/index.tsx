@@ -18,6 +18,13 @@ import {
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/clawroutes-pc-commons/components/BusinessState';
 import {
+  decimalNumber,
+  formatLocalizedCompactDecimalAmount,
+  formatLocalizedCurrencyAmount,
+  formatLocalizedDecimalAmount,
+  formatLocalizedInteger,
+} from '@sdkwork/clawroutes-pc-commons/runtime';
+import {
   AdminAnalyticsService,
   type AdminAnalyticsInsight,
   type AdminAnalyticsModelRankItem,
@@ -51,6 +58,21 @@ type TooltipProps = {
   active?: boolean;
   payload?: ChartPayloadEntry[];
   label?: string | number;
+};
+
+type AnalyticsChartPoint = {
+  time: string;
+  requests: number;
+  tokens: number;
+  points: number;
+  requestsExact: string;
+  tokensExact: string;
+  pointsExact: string;
+};
+
+type AnalyticsChartPieItem = Omit<PieChartData, 'value'> & {
+  value: number;
+  valueExact: string;
 };
 
 const TIME_RANGES: AdminAnalyticsTimeRange[] = ['hourly', 'daily', 'weekly', 'monthly', 'yearly'];
@@ -104,6 +126,10 @@ export function AnalyticsAdmin() {
   });
 
   const metricCards = useMemo(() => buildMetricCards(displayOverview, t, locale), [displayOverview, t, locale]);
+  const trendChartData = useMemo(
+    () => displayOverview.trend.map(toAnalyticsChartPoint),
+    [displayOverview.trend],
+  );
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-hidden">
@@ -220,7 +246,7 @@ export function AnalyticsAdmin() {
                       <BusinessStatePanel kind="loading" title={t('admin.analytics.states.loading', 'Loading analytics...')} className="h-full min-h-0" />
                     ) : displayOverview.trend.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={displayOverview.trend} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
+                        <AreaChart data={trendChartData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
                           <defs>
                             <linearGradient id="adminAnalyticsPoints" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#2563eb" stopOpacity={0.26} />
@@ -552,9 +578,10 @@ function DistributionPanel({
 }
 
 function DistributionBarChart({ data, t, locale }: { data: PieChartData[]; t: TFunction<'translation', undefined>; locale: string }) {
+  const chartData = data.map(toAnalyticsChartPieItem);
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+      <BarChart data={chartData} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
         <XAxis type="number" hide />
         <YAxis
           dataKey="name"
@@ -567,7 +594,7 @@ function DistributionBarChart({ data, t, locale }: { data: PieChartData[]; t: TF
         />
         <Tooltip content={<AnalyticsTooltip t={t} locale={locale} />} />
         <Bar dataKey="value" radius={[0, 5, 5, 0]} barSize={16}>
-          {data.map((entry) => (
+          {chartData.map((entry) => (
             <Cell key={entry.name} fill={entry.color} />
           ))}
         </Bar>
@@ -577,11 +604,12 @@ function DistributionBarChart({ data, t, locale }: { data: PieChartData[]; t: TF
 }
 
 function DistributionPieChart({ data, t, locale }: { data: PieChartData[]; t: TFunction<'translation', undefined>; locale: string }) {
+  const chartData = data.map(toAnalyticsChartPieItem);
   return (
     <ResponsiveContainer width="100%" height="100%">
       <PieChart>
-        <Pie data={data} cx="50%" cy="50%" innerRadius={58} outerRadius={96} paddingAngle={2} dataKey="value" stroke="none">
-          {data.map((entry) => (
+        <Pie data={chartData} cx="50%" cy="50%" innerRadius={58} outerRadius={96} paddingAngle={2} dataKey="value" stroke="none">
+          {chartData.map((entry) => (
             <Cell key={entry.name} fill={entry.color} />
           ))}
         </Pie>
@@ -595,11 +623,12 @@ function InlineDistribution({ data, t }: { data: PieChartData[]; t: TFunction<'t
   if (data.length === 0) {
     return <span className="text-xs text-slate-400">-</span>;
   }
-  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const chartData = data.map(toAnalyticsChartPieItem);
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
   return (
     <div className="min-w-40">
       <div className="flex h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
-        {data.slice(0, 5).map((item) => (
+        {chartData.slice(0, 5).map((item) => (
           <div
             key={item.name}
             className="h-full"
@@ -661,7 +690,7 @@ function AnalyticsTooltip({
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color ?? '#64748b' }} />
               {translateAnalyticsLabel(String(entry.name ?? ''), t)}
             </span>
-            <span className="font-mono font-semibold text-slate-900 dark:text-white">{formatDecimal(Number(entry.value ?? 0), locale)}</span>
+            <span className="font-mono font-semibold text-slate-900 dark:text-white">{formatDecimal(readTooltipExactValue(entry), locale)}</span>
           </div>
         ))}
       </div>
@@ -767,46 +796,58 @@ function sectionCount(section: AnalyticsSection, overview: AdminAnalyticsOvervie
   }
 }
 
-function formatInteger(value: number, locale: string): string {
-  return Math.round(value).toLocaleString(locale);
+function toAnalyticsChartPoint(point: AdminAnalyticsOverview['trend'][number]): AnalyticsChartPoint {
+  return {
+    time: point.time,
+    requests: analyticsChartNumber(point.requests),
+    tokens: analyticsChartNumber(point.tokens),
+    points: analyticsChartNumber(point.points),
+    requestsExact: point.requests,
+    tokensExact: point.tokens,
+    pointsExact: point.points,
+  };
 }
 
-function formatDecimal(value: number, locale: string): string {
-  return value.toLocaleString(locale, { maximumFractionDigits: 2 });
+function toAnalyticsChartPieItem(item: PieChartData): AnalyticsChartPieItem {
+  return {
+    name: item.name,
+    value: analyticsChartNumber(item.value),
+    valueExact: item.value,
+    color: item.color,
+  };
 }
 
-function formatCurrency(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: 'USD',
-    currencyDisplay: 'narrowSymbol',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
+function analyticsChartNumber(value: string): number {
+  const projected = decimalNumber(value, 12);
+  if (!Number.isFinite(projected)) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  return Math.min(Math.max(projected, 0), Number.MAX_SAFE_INTEGER);
 }
 
-function formatPercent(value: number, locale: string): string {
+function readTooltipExactValue(entry: ChartPayloadEntry): string | number {
+  const name = typeof entry.name === 'string' ? entry.name : '';
+  const key = name ? `${name}Exact` : 'valueExact';
+  const exactValue = entry.payload?.[key] ?? entry.payload?.valueExact;
+  return typeof exactValue === 'string' ? exactValue : (entry.value ?? 0);
+}
+
+function formatInteger(value: string | number, locale: string): string {
+  return formatLocalizedInteger(value, locale);
+}
+
+function formatDecimal(value: string | number, locale: string): string {
+  return formatLocalizedDecimalAmount(value, locale, 2, 0);
+}
+
+function formatCurrency(value: string, locale: string): string {
+  return formatLocalizedCurrencyAmount(value, locale, 'USD');
+}
+
+function formatPercent(value: string, locale: string): string {
   return `${formatDecimal(value, locale)}%`;
 }
 
-function formatCompactNumber(value: number, locale: string): string {
-  const absolute = Math.abs(value);
-  if (absolute >= 1_000_000_000) {
-    return `${formatCompactUnit(value, 1_000_000_000, locale)}B`;
-  }
-  if (absolute >= 1_000_000) {
-    return `${formatCompactUnit(value, 1_000_000, locale)}M`;
-  }
-  if (absolute >= 1_000) {
-    return `${formatCompactUnit(value, 1_000, locale)}K`;
-  }
-  return formatInteger(value, locale);
-}
-
-function formatCompactUnit(value: number, unit: number, locale: string): string {
-  const normalized = value / unit;
-  return normalized.toLocaleString(locale, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: Number.isInteger(normalized) ? 0 : 1,
-  });
+function formatCompactNumber(value: string, locale: string): string {
+  return formatLocalizedCompactDecimalAmount(value, locale);
 }

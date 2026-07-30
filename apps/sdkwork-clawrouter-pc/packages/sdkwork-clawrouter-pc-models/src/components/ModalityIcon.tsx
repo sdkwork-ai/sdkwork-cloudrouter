@@ -1,4 +1,3 @@
-import React from 'react';
 import { MessageSquare, Image as ImageIcon, Video, Music, Database } from 'lucide-react';
 
 export const ModalityIcon = ({ modality, className = "w-4 h-4" }: { modality: string, className?: string }) => {

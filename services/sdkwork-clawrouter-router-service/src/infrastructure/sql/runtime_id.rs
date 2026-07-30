@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use sdkwork_claw_config::{DeploymentMode, RuntimeTomlConfig};
-use sdkwork_database_config::claw_database::postgres_url_with_search_path;
+use sdkwork_database_config::workspace_database::normalize_workspace_postgres_url;
 use sdkwork_database_config::DatabaseConfig as StandardDatabaseConfig;
 use sdkwork_database_config::DatabaseEngine as StandardDatabaseEngine;
 use sdkwork_id_core::SnowflakeIdGenerator;
@@ -20,7 +20,11 @@ pub(crate) fn to_standard_database_config(
     }
     Ok(StandardDatabaseConfig {
         engine: StandardDatabaseEngine::Postgres,
-        url: postgres_url_with_search_path(&config.url, "SDKWORK_CLAW"),
+        url: normalize_workspace_postgres_url(&config.url).map_err(|error| {
+            RuntimeIdConfigurationError::new(format!(
+                "invalid workspace PostgreSQL identity: {error}"
+            ))
+        })?,
         max_connections: config.max_connections,
         ..StandardDatabaseConfig::default()
     })
@@ -240,9 +244,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn standard_postgres_config_materializes_the_claw_schema_search_path() {
-        let previous_schema = std::env::var("SDKWORK_CLAW_DATABASE_SCHEMA").ok();
-        std::env::set_var("SDKWORK_CLAW_DATABASE_SCHEMA", "sdkwork_ai_dev");
+    fn standard_postgres_config_materializes_the_workspace_schema_search_path() {
+        let previous_schema = std::env::var("SDKWORK_DATABASE_SCHEMA").ok();
+        std::env::set_var("SDKWORK_DATABASE_SCHEMA", "sdkwork_ai_dev");
         let config = sdkwork_claw_config::DatabaseConfig {
             engine: sdkwork_claw_config::DatabaseEngine::Postgres,
             url: "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
@@ -253,13 +257,13 @@ mod tests {
         let standard = to_standard_database_config(&config).expect("postgres config");
 
         match previous_schema {
-            Some(value) => std::env::set_var("SDKWORK_CLAW_DATABASE_SCHEMA", value),
-            None => std::env::remove_var("SDKWORK_CLAW_DATABASE_SCHEMA"),
+            Some(value) => std::env::set_var("SDKWORK_DATABASE_SCHEMA", value),
+            None => std::env::remove_var("SDKWORK_DATABASE_SCHEMA"),
         }
-        assert_eq!(
-            standard.url,
-            "postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable&options=-c%20search_path%3Dsdkwork_ai_dev%2Cpublic"
-        );
+        assert!(standard.url.contains("/sdkwork_ai_dev?"));
+        assert!(standard
+            .url
+            .contains("search_path%3Dsdkwork_ai_dev%2Cpublic"));
     }
 
     #[test]

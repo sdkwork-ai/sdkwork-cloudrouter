@@ -1,43 +1,45 @@
-/** AdminSiteSettingsUpdateRequest contract. */
+import type { MediaResource } from './media-resource';
+
+/** Admin site settings update request schema exposed by Claw Router. */
 export interface AdminSiteSettingsUpdateRequest {
-  /** accentColor field on AdminSiteSettingsUpdateRequest. */
+  /** Accent color field on admin site settings update request. */
   accentColor?: string;
-  /** brandColor field on AdminSiteSettingsUpdateRequest. */
+  /** Brand color field on admin site settings update request. */
   brandColor?: string;
-  /** customCss field on AdminSiteSettingsUpdateRequest. */
+  /** Custom css field on admin site settings update request. */
   customCss?: string;
-  /** description field on AdminSiteSettingsUpdateRequest. */
+  /** Description field on admin site settings update request. */
   description?: string;
-  /** docsUrl field on AdminSiteSettingsUpdateRequest. */
+  /** Docs url field on admin site settings update request. */
   docsUrl?: string;
-  /** favicon field on AdminSiteSettingsUpdateRequest. */
-  favicon?: Record<string, unknown>;
-  /** footerCopyright field on AdminSiteSettingsUpdateRequest. */
+  /** Favicon field on admin site settings update request. */
+  favicon?: MediaResource;
+  /** Footer copyright field on admin site settings update request. */
   footerCopyright?: string;
-  /** icon field on AdminSiteSettingsUpdateRequest. */
-  icon?: Record<string, unknown>;
-  /** icpRecordNumber field on AdminSiteSettingsUpdateRequest. */
+  /** Icon field on admin site settings update request. */
+  icon?: MediaResource;
+  /** Icp record number field on admin site settings update request. */
   icpRecordNumber?: string;
-  /** icpRecordUrl field on AdminSiteSettingsUpdateRequest. */
+  /** Icp record url field on admin site settings update request. */
   icpRecordUrl?: string;
-  /** logo field on AdminSiteSettingsUpdateRequest. */
-  logo?: Record<string, unknown>;
-  /** policeRecordNumber field on AdminSiteSettingsUpdateRequest. */
+  /** Logo field on admin site settings update request. */
+  logo?: MediaResource;
+  /** Police record number field on admin site settings update request. */
   policeRecordNumber?: string;
-  /** policeRecordUrl field on AdminSiteSettingsUpdateRequest. */
+  /** Police record url field on admin site settings update request. */
   policeRecordUrl?: string;
-  /** privacyUrl field on AdminSiteSettingsUpdateRequest. */
+  /** Privacy url field on admin site settings update request. */
   privacyUrl?: string;
-  /** seoDescription field on AdminSiteSettingsUpdateRequest. */
+  /** Seo description field on admin site settings update request. */
   seoDescription?: string;
-  /** seoTitle field on AdminSiteSettingsUpdateRequest. */
+  /** Seo title field on admin site settings update request. */
   seoTitle?: string;
-  /** shortName field on AdminSiteSettingsUpdateRequest. */
+  /** Short name field on admin site settings update request. */
   shortName?: string;
-  /** siteName field on AdminSiteSettingsUpdateRequest. */
+  /** Site name field on admin site settings update request. */
   siteName?: string;
-  /** supportUrl field on AdminSiteSettingsUpdateRequest. */
+  /** Support url field on admin site settings update request. */
   supportUrl?: string;
-  /** termsUrl field on AdminSiteSettingsUpdateRequest. */
+  /** Terms url field on admin site settings update request. */
   termsUrl?: string;
 }

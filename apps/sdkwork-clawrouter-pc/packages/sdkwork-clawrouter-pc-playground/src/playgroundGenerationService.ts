@@ -205,7 +205,6 @@ async function createPlaygroundRuntimeInvocation(
       status: 'streaming',
       streaming: true,
     },
-    { idempotencyPrefix: 'playground-agent-runtime' },
   );
   ensureSdkworkApiSuccess(result, 'Failed to create playground runtime invocation');
   const item = readApiItem(result);
@@ -265,7 +264,6 @@ async function failPlaygroundRuntimeInvocation(
       errorType: 'runtime_unavailable',
       status: 'failed',
     },
-    { idempotencyPrefix: 'playground-agent-runtime-failed' },
   );
   ensureSdkworkApiSuccess(runtimeResult, 'Failed to mark playground runtime invocation failed');
 }
@@ -674,7 +672,6 @@ async function completeAgentRuntimeInvocation(
       status: 'completed',
       usageJson: generationOutput.usage,
     },
-    { idempotencyPrefix: 'playground-agent-runtime-complete' },
   );
   ensureSdkworkApiSuccess(result, 'Failed to complete playground runtime invocation');
   const item = readApiItem(result);

@@ -1,5 +1,5 @@
-use sqlx::{PgPool, Row};
 use sdkwork_clawrouter_router_service::domain::DomainError;
+use sqlx::{PgPool, Row};
 
 use crate::error::{store_error, RepositoryError, RepositoryResult};
 use crate::modality;

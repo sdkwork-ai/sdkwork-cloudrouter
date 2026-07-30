@@ -1,9 +1,9 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 
-use crate::domain::DomainResult;
+use crate::domain::{DecimalValue, DomainResult};
 
 pub type AdminAnalyticsReadFuture<'a> =
     Pin<Box<dyn Future<Output = DomainResult<AdminAnalyticsSnapshot>> + Send + 'a>>;
@@ -27,18 +27,14 @@ pub enum AdminAnalyticsTimeRange {
 }
 
 impl AdminAnalyticsTimeRange {
-    pub fn parse(value: Option<&str>) -> Self {
-        match value
-            .unwrap_or_default()
-            .trim()
-            .to_ascii_lowercase()
-            .as_str()
-        {
-            "hourly" => Self::Hourly,
-            "weekly" => Self::Weekly,
-            "monthly" => Self::Monthly,
-            "yearly" => Self::Yearly,
-            _ => Self::Daily,
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "hourly" => Some(Self::Hourly),
+            "daily" => Some(Self::Daily),
+            "weekly" => Some(Self::Weekly),
+            "monthly" => Some(Self::Monthly),
+            "yearly" => Some(Self::Yearly),
+            _ => None,
         }
     }
 }
@@ -47,8 +43,8 @@ impl AdminAnalyticsTimeRange {
 pub struct AdminAnalyticsQuery {
     pub subject: AdminAnalyticsSubject,
     pub time_range: AdminAnalyticsTimeRange,
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
+    pub start_time: String,
+    pub end_time: String,
     pub limit: i64,
 }
 
@@ -56,10 +52,8 @@ pub struct AdminAnalyticsQuery {
 #[serde(rename_all = "camelCase")]
 pub struct AdminAnalyticsSnapshot {
     pub time_range: AdminAnalyticsTimeRange,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    pub start_time: String,
+    pub end_time: String,
     pub limit: i64,
     pub summary: AdminAnalyticsSummary,
     pub trend: Vec<AdminAnalyticsTrendPoint>,
@@ -70,30 +64,46 @@ pub struct AdminAnalyticsSnapshot {
     pub insights: Vec<AdminAnalyticsInsight>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAnalyticsSummary {
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub total_users: i64,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub active_users: i64,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub active_models: i64,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub total_requests: i64,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub successful_requests: i64,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub failed_requests: i64,
-    pub total_tokens: f64,
-    pub total_points: f64,
-    pub upstream_cost: f64,
-    pub average_tokens_per_request: f64,
-    pub average_points_per_request: f64,
-    pub error_rate: f64,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub total_tokens: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub total_points: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub upstream_cost: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub average_tokens_per_request: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub average_points_per_request: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub error_rate: DecimalValue,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAnalyticsTrendPoint {
     pub time: String,
-    pub requests: f64,
-    pub tokens: f64,
-    pub points: f64,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub requests: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub tokens: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub points: DecimalValue,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub users: i64,
 }
 
@@ -113,9 +123,12 @@ pub struct AdminAnalyticsUserRankItem {
     pub user_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub request_count: i64,
-    pub total_tokens: f64,
-    pub points: f64,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub total_tokens: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub points: DecimalValue,
     pub model_distribution: Vec<AdminAnalyticsPieItem>,
 }
 
@@ -135,20 +148,28 @@ pub struct AdminAnalyticsModelRankItem {
     pub catalog_key: String,
     pub vendor: String,
     pub modality: String,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub request_count: i64,
-    pub total_tokens: f64,
-    pub points: f64,
-    pub upstream_cost: f64,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub total_tokens: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub points: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub upstream_cost: DecimalValue,
+    #[serde(serialize_with = "serialize_i64_as_string")]
     pub user_count: i64,
-    pub average_tokens_per_request: f64,
-    pub error_rate: f64,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub average_tokens_per_request: DecimalValue,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub error_rate: DecimalValue,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAnalyticsPieItem {
     pub name: String,
-    pub value: f64,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
+    pub value: DecimalValue,
     pub color: String,
 }
 
@@ -167,4 +188,18 @@ pub trait AdminAnalyticsReadStore {
         &'a self,
         query: AdminAnalyticsQuery,
     ) -> AdminAnalyticsReadFuture<'a>;
+}
+
+fn serialize_i64_as_string<S>(value: &i64, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(&value.to_string())
+}
+
+fn serialize_decimal_as_string<S>(value: &DecimalValue, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(&value.to_fixed_string(12))
 }

@@ -50,7 +50,7 @@ class RustCompileRegressionStandardTest(unittest.TestCase):
             "let api_key_security_config", 1
         )[0]
         self.assertIn(
-            "materialize_federated_database_env_from_claw_config(&database_config)",
+            "materialize_federated_database_env_from_config(&database_config)",
             context_body,
         )
         self.assertIn("server_runtime_rejects_sqlite_before_database_initialization", runtime)

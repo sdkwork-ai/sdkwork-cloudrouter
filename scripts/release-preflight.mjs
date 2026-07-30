@@ -140,9 +140,9 @@ function releaseEnvironmentIssues(env) {
     issues.push(`${name} is missing`);
   }
 
-  const postgresUrl = String(env.SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL ?? '').trim();
+  const postgresUrl = String(env.SDKWORK_DATABASE_URL ?? '').trim();
   if (postgresUrl && !isPostgresDatabaseUrl(postgresUrl)) {
-    issues.push('SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL must be a postgres:// or postgresql:// URL');
+    issues.push('SDKWORK_DATABASE_URL must be a postgres:// or postgresql:// URL');
   }
 
   const sdkBaseUrl = String(env.PORTAL_PUBLIC_SDK_BASE_URL ?? '').trim();
@@ -664,9 +664,9 @@ function buildReleasePreflightReport({
     'Postgres integration environment',
     missingReleaseEnv.length === 0 ? 'PASS' : settings.strict ? 'FAIL' : 'WARN',
     missingReleaseEnv.length === 0
-      ? 'SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL is configured'
+      ? 'SDKWORK_DATABASE_URL is configured'
       : `missing: ${missingReleaseEnv.join(', ')}`,
-    'Set SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL or run pnpm.cmd test:postgres:docker on a Docker-enabled host.',
+    'Set SDKWORK_DATABASE_URL or run pnpm.cmd test:postgres:docker on a Docker-enabled host.',
   ));
 
   const missingPortalRequiredEnv = missingEnv(env, REQUIRED_PORTAL_PUBLIC_ENV);

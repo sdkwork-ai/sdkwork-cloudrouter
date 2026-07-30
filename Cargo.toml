@@ -177,7 +177,6 @@ sdkwork-provider-adapter-tencent-cloud = { path = "crates/provider-adapters/tenc
 sdkwork-models = { path = "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust" }
 sdkwork_models_contract_service = { package = "sdkwork-models-contract-service", path = "../sdkwork-models/crates/sdkwork-models-contract-service" }
 sdkwork-models-database-host = { path = "../sdkwork-models/crates/sdkwork-models-database-host" }
-sdkwork_models_database_bootstrap = { package = "sdkwork-models-database-bootstrap", path = "../sdkwork-models/crates/sdkwork-models-database-bootstrap" }
 sdkwork_models_catalog_repository_sqlx = { package = "sdkwork-models-catalog-repository-sqlx", path = "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx" }
 sdkwork_models_catalog_service = { package = "sdkwork-models-catalog-service", path = "../sdkwork-models/crates/sdkwork-models-catalog-service" }
 sdkwork_routes_models_catalog_app_api = { package = "sdkwork-routes-models-catalog-app-api", path = "../sdkwork-models/crates/sdkwork-routes-catalog-app-api" }

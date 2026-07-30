@@ -345,7 +345,7 @@ class SchemaQualityGateTest(unittest.TestCase):
                 App surface /app/v3/api, backend surface /backend/v3/api, and runtime surface /v1 remain separate.
                 High performance requires axum, tokio, tower, tower-http, connection pool, streaming, backpressure, timeout, request id, and tracing.
                 RuntimeConfig loads SDKWORK_CLAW_GATEWAY_BIND, SDKWORK_CLAW_APP_API_BIND, SDKWORK_CLAW_ADMIN_API_BIND, and validates each bind value as a valid socket address.
-                DatabaseConfig parses SDKWORK_CLAW_DATABASE_URL for typed deployment database wiring.
+                DatabaseConfig parses SDKWORK_DATABASE_URL for typed deployment database wiring.
                 DatabaseHealth exposes configured, engine, and maxConnections only, and must not expose database URLs.
                 ApiKeyIdentity is parsed only in sdkwork-claw-http auth from Authorization: Bearer, x-api-key, x-goog-api-key, and query key inputs; business handlers must not parse raw auth headers.
                 ApiKeySecurityConfig loads SDKWORK_CLAW_API_KEY_PEPPER and HmacSha256ApiKeySecretHasher implements ApiKeySecretHasher for HMAC plus pepper hashing and iam_gateway_api_key.key_hash lookup with no plaintext API key storage.

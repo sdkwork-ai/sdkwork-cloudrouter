@@ -27,7 +27,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: postgres://sdkwork:sdkwork-ci@localhost:5432/sdkwork_clawrouter_ci
+      SDKWORK_DATABASE_URL: postgres://sdkwork:sdkwork-ci@localhost:5432/sdkwork_clawrouter_ci
       CLAWROUTER_BROWSER_SMOKE_REQUIRED: "1"
       CLAWROUTER_EDGE_DEV_SMOKE_REQUIRED: "1"
       RUSTFLAGS: "-D warnings"

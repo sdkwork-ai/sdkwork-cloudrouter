@@ -2,50 +2,20 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@sdkwork/clawrouter-app-sdk": [
-        "../../sdks/clawrouter-app-sdk/clawrouter-app-sdk-typescript/src/index.ts"
+      "react": [
+        "./node_modules/@types/react/index.d.ts"
       ],
-      "@sdkwork/clawrouter-backend-sdk": [
-        "../../sdks/clawrouter-backend-sdk/clawrouter-backend-sdk-typescript/src/index.ts"
+      "react/jsx-runtime": [
+        "./node_modules/@types/react/jsx-runtime.d.ts"
       ],
-      "@sdkwork/clawrouter-open-sdk": [
-        "../../sdks/clawrouter-open-sdk/clawrouter-open-sdk-typescript/src/index.ts"
+      "react/jsx-dev-runtime": [
+        "./node_modules/@types/react/jsx-dev-runtime.d.ts"
       ],
-      "@sdkwork/documents-app-sdk": [
-        "../../../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/src/index.ts"
+      "react-dom": [
+        "./node_modules/@types/react-dom/index.d.ts"
       ],
-      "@sdkwork/documents-pc-commons": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/documents-pc-commons/runtime": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/documents-pc-i18n": [
-        "../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-i18n/src/index.ts"
-      ],
-      "@sdkwork/documents-pc-api-reference": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/documents-pc-api-reference/openapiTypes": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/documents-pc-api-reference/apiReferenceSchemaTabs": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/documents-pc-api-reference/openapiSchemaRuntime": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/documents-pc-sdk-reference": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-app-sdk": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-backend-sdk": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/drive-app-sdk": [
-        "./src/typecheck-shims.d.ts"
+      "react-dom/*": [
+        "./node_modules/@types/react-dom/*"
       ],
       "@sdkwork/clawrouter-pc-admin-analytics": [
         "./packages/sdkwork-clawrouter-pc-admin-analytics/src/index.tsx"
@@ -62,27 +32,6 @@
       "@sdkwork/clawrouter-pc-admin-core": [
         "./packages/sdkwork-clawrouter-pc-admin-core/src/index.ts"
       ],
-      "@sdkwork/account-pc-wallet": [
-        "../../../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet/src/index.ts"
-      ],
-      "@sdkwork/promotion-pc-coupon": [
-        "../../../sdkwork-promotion/apps/sdkwork-promotion-pc/packages/sdkwork-promotion-pc-coupon/src/index.ts"
-      ],
-      "@sdkwork/membership-pc-membership": [
-        "../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-membership/src/index.ts"
-      ],
-      "@sdkwork/membership-pc-subscription": [
-        "../../../sdkwork-membership/apps/sdkwork-membership-pc/packages/sdkwork-membership-pc-subscription/src/index.ts"
-      ],
-      "@sdkwork/payment-pc-payment": [
-        "../../../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-payment/src/index.ts"
-      ],
-      "@sdkwork/order-pc-order": [
-        "../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-order/src/index.ts"
-      ],
-      "@sdkwork/order-pc-recharge": [
-        "../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-recharge/src/index.ts"
-      ],
       "@sdkwork/clawrouter-pc-admin-service-nodes": [
         "./packages/sdkwork-clawrouter-pc-admin-service-nodes/src/index.tsx"
       ],
@@ -97,129 +46,6 @@
       ],
       "@sdkwork/clawrouter-pc-downloads": [
         "./packages/sdkwork-clawrouter-pc-downloads/src/index.ts"
-      ],
-      "@sdkwork/appbase-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/conversation": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/auth-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/auth-runtime-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/core-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/image-pc-generation": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/image-pc-generation/react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/image-pc-generation/generation-service": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/image-pc-generation/generation-history": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/models-pc-picker": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/generations-pc-workspace": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/generations-pc-workspace/generation-asset-config": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/generations-pc-workspace/generation-history": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/generations-pc-workspace/generation-service": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/generations-app-sdk": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/memory-app-sdk": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/agents-app-sdk": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/agents-backend-sdk": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/host-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/host-tauri-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/i18n-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/notification-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/notification-pc-react/service": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-contracts": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-core-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-runtime": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/models-app-sdk": [
-        "../../../sdkwork-models/sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript/src/index.ts"
-      ],
-      "@sdkwork/models-pc-admin-catalog": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/models-pc-admin-catalog/modelService": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/models-pc-admin-catalog/vendorPickerModal": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/drive-backend-sdk": [
-        "../../../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src/index.ts"
-      ],
-      "@sdkwork/models-backend-sdk": [
-        "../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript/src/index.ts"
-      ],
-      "@sdkwork/models-backend-sdk/api/ai": [
-        "../../../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript/src/index.ts/api/ai.ts"
-      ],
-      "@sdkwork/iam-sdk-adapter": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-sdk-ports": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-service": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/ui-pc-react": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/ui-pc-react/components/ui/button": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/ui-pc-react/components/ui/feedback/states": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/ui-pc-react/theme": [
-        "./src/typecheck-shims.d.ts"
       ],
       "@sdkwork/sdk-common": [
         "node_modules/@sdkwork/sdk-common/dist/index.d.ts"

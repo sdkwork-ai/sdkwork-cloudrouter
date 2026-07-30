@@ -366,8 +366,8 @@ function databasePolicyFor({ platform, runtimeProfile, deploymentMode = 'archive
     },
     envOverrides: [
       'SDKWORK_CLAW_CONFIG_FILE',
-      'SDKWORK_CLAW_DATABASE_URL',
-      'SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS',
+      'SDKWORK_DATABASE_URL',
+      'SDKWORK_DATABASE_MAX_CONNECTIONS',
       'SDKWORK_CLAW_DEPLOYMENT_MODE',
     ],
   };
@@ -701,8 +701,8 @@ function validatePackageItem(packageItem, seenIds, issues) {
   if (!packageItem.databasePolicy?.configFile?.path) {
     issues.push(`${packageItem.id} databasePolicy must declare an OS-standard config file path`);
   }
-  if (!packageItem.databasePolicy?.envOverrides?.includes('SDKWORK_CLAW_DATABASE_URL')) {
-    issues.push(`${packageItem.id} databasePolicy must preserve SDKWORK_CLAW_DATABASE_URL override support`);
+  if (!packageItem.databasePolicy?.envOverrides?.includes('SDKWORK_DATABASE_URL')) {
+    issues.push(`${packageItem.id} databasePolicy must preserve SDKWORK_DATABASE_URL override support`);
   }
   if (packageItem.redisPolicy?.configSection !== 'redis') {
     issues.push(`${packageItem.id} redisPolicy must declare the redis config section`);

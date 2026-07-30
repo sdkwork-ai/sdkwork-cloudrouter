@@ -106,7 +106,7 @@ impl DatabaseConfig {
 
         let max_connections = match max_connections {
             Some(value) => value.parse::<u32>().map_err(|_| {
-                format!("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS must be a positive integer: {value}")
+                format!("SDKWORK_DATABASE_MAX_CONNECTIONS must be a positive integer: {value}")
             })?,
             None => Self::DEFAULT_MAX_CONNECTIONS,
         };
@@ -116,8 +116,8 @@ impl DatabaseConfig {
 
     pub fn from_env() -> Result<Option<Self>, String> {
         let env_config = Self::from_optional_parts(
-            std::env::var("SDKWORK_CLAW_DATABASE_URL").ok(),
-            std::env::var("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS").ok(),
+            std::env::var("SDKWORK_DATABASE_URL").ok(),
+            std::env::var("SDKWORK_DATABASE_MAX_CONNECTIONS").ok(),
         )?;
         if env_config.is_some() {
             return Ok(env_config);
@@ -140,8 +140,8 @@ impl DatabaseConfig {
         let profile = RuntimeConfigProfile::from_env_or_runtime_toml(None)?;
         let location = Self::runtime_config_location_from_env(profile);
         let env_config = Self::from_optional_parts(
-            std::env::var("SDKWORK_CLAW_DATABASE_URL").ok(),
-            std::env::var("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS").ok(),
+            std::env::var("SDKWORK_DATABASE_URL").ok(),
+            std::env::var("SDKWORK_DATABASE_MAX_CONNECTIONS").ok(),
         )?;
         if let Some(config) = env_config {
             config.validate_for_runtime_profile_at(profile, &location)?;
@@ -161,8 +161,8 @@ impl DatabaseConfig {
         let profile = RuntimeConfigProfile::from_env_or_runtime_toml(runtime_toml)?;
         let location = Self::runtime_config_location_from_env(profile);
         let env_config = Self::from_optional_parts(
-            std::env::var("SDKWORK_CLAW_DATABASE_URL").ok(),
-            std::env::var("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS").ok(),
+            std::env::var("SDKWORK_DATABASE_URL").ok(),
+            std::env::var("SDKWORK_DATABASE_MAX_CONNECTIONS").ok(),
         )?;
         if let Some(config) = env_config {
             config.validate_for_runtime_profile_at(profile, &location)?;
@@ -439,7 +439,7 @@ impl DatabaseConfig {
                     "Configure PostgreSQL host, database, username, and password/password_file in {}",
                     location.config_file.display()
                 ),
-                "SDKWORK_CLAW_DATABASE_URL remains available as an explicit operator override.".to_owned(),
+                "SDKWORK_DATABASE_URL remains available as an explicit operator override.".to_owned(),
             ],
             RuntimeConfigProfile::Desktop => vec![
                 format!("Runtime config file: {}", location.config_file.display()),

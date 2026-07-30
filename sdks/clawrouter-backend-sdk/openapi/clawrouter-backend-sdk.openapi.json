@@ -690,198 +690,257 @@
       },
       "AdminSiteSettingsResponse": {
         "additionalProperties": false,
-        "description": "AdminSiteSettingsResponse contract.",
+        "description": "Admin site settings response schema exposed by Claw Router.",
+        "name": "AdminSiteSettingsResponse",
         "properties": {
           "accentColor": {
-            "description": "accentColor field on AdminSiteSettingsResponse.",
+            "description": "Accent color field on admin site settings response.",
+            "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
             "type": "string"
           },
           "brandColor": {
-            "description": "brandColor field on AdminSiteSettingsResponse.",
+            "description": "Brand color field on admin site settings response.",
+            "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
             "type": "string"
           },
           "customCss": {
-            "description": "customCss field on AdminSiteSettingsResponse.",
+            "description": "Custom css field on admin site settings response.",
+            "maxLength": 20000,
             "type": "string"
           },
           "description": {
-            "description": "description field on AdminSiteSettingsResponse.",
+            "description": "Description field on admin site settings response.",
+            "maxLength": 4096,
             "type": "string"
           },
           "docsUrl": {
-            "description": "docsUrl field on AdminSiteSettingsResponse.",
+            "description": "Docs url field on admin site settings response.",
+            "maxLength": 2048,
             "type": "string"
           },
           "favicon": {
-            "additionalProperties": true,
-            "description": "favicon field on AdminSiteSettingsResponse.",
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Favicon field on admin site settings response."
           },
           "footerCopyright": {
-            "description": "footerCopyright field on AdminSiteSettingsResponse.",
+            "description": "Footer copyright field on admin site settings response.",
+            "maxLength": 4096,
             "type": "string"
           },
           "icon": {
-            "additionalProperties": true,
-            "description": "icon field on AdminSiteSettingsResponse.",
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Icon field on admin site settings response."
           },
           "icpRecordNumber": {
-            "description": "icpRecordNumber field on AdminSiteSettingsResponse.",
+            "description": "Icp record number field on admin site settings response.",
+            "maxLength": 255,
             "type": "string"
           },
           "icpRecordUrl": {
-            "description": "icpRecordUrl field on AdminSiteSettingsResponse.",
+            "description": "Icp record url field on admin site settings response.",
+            "maxLength": 2048,
             "type": "string"
           },
           "logo": {
-            "additionalProperties": true,
-            "description": "logo field on AdminSiteSettingsResponse.",
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Logo field on admin site settings response."
           },
           "policeRecordNumber": {
-            "description": "policeRecordNumber field on AdminSiteSettingsResponse.",
+            "description": "Police record number field on admin site settings response.",
+            "maxLength": 255,
             "type": "string"
           },
           "policeRecordUrl": {
-            "description": "policeRecordUrl field on AdminSiteSettingsResponse.",
+            "description": "Police record url field on admin site settings response.",
+            "maxLength": 2048,
             "type": "string"
           },
           "privacyUrl": {
-            "description": "privacyUrl field on AdminSiteSettingsResponse.",
+            "description": "Privacy url field on admin site settings response.",
+            "maxLength": 2048,
             "type": "string"
           },
           "seoDescription": {
-            "description": "seoDescription field on AdminSiteSettingsResponse.",
+            "description": "Seo description field on admin site settings response.",
+            "maxLength": 4096,
             "type": "string"
           },
           "seoTitle": {
-            "description": "seoTitle field on AdminSiteSettingsResponse.",
+            "description": "Seo title field on admin site settings response.",
+            "maxLength": 255,
             "type": "string"
           },
           "shortName": {
-            "description": "shortName field on AdminSiteSettingsResponse.",
+            "description": "Short name field on admin site settings response.",
+            "maxLength": 255,
             "type": "string"
           },
           "siteName": {
-            "description": "siteName field on AdminSiteSettingsResponse.",
+            "description": "Site name field on admin site settings response.",
+            "maxLength": 255,
+            "minLength": 1,
             "type": "string"
           },
           "supportUrl": {
-            "description": "supportUrl field on AdminSiteSettingsResponse.",
+            "description": "Support url field on admin site settings response.",
+            "maxLength": 2048,
             "type": "string"
           },
           "termsUrl": {
-            "description": "termsUrl field on AdminSiteSettingsResponse.",
+            "description": "Terms url field on admin site settings response.",
+            "maxLength": 2048,
             "type": "string"
           }
         },
         "required": [
-          "accentColor",
-          "brandColor",
-          "customCss",
+          "siteName",
+          "shortName",
           "description",
-          "docsUrl",
+          "logo",
+          "icon",
+          "favicon",
+          "brandColor",
+          "accentColor",
           "footerCopyright",
           "icpRecordNumber",
           "icpRecordUrl",
           "policeRecordNumber",
           "policeRecordUrl",
-          "privacyUrl",
-          "seoDescription",
           "seoTitle",
-          "shortName",
-          "siteName",
+          "seoDescription",
           "supportUrl",
-          "termsUrl"
+          "docsUrl",
+          "privacyUrl",
+          "termsUrl",
+          "customCss"
         ],
         "type": "object"
       },
       "AdminSiteSettingsUpdateRequest": {
         "additionalProperties": false,
-        "description": "AdminSiteSettingsUpdateRequest contract.",
+        "description": "Admin site settings update request schema exposed by Claw Router.",
+        "name": "AdminSiteSettingsUpdateRequest",
         "properties": {
           "accentColor": {
-            "description": "accentColor field on AdminSiteSettingsUpdateRequest.",
+            "description": "Accent color field on admin site settings update request.",
+            "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
             "type": "string"
           },
           "brandColor": {
-            "description": "brandColor field on AdminSiteSettingsUpdateRequest.",
+            "description": "Brand color field on admin site settings update request.",
+            "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
             "type": "string"
           },
           "customCss": {
-            "description": "customCss field on AdminSiteSettingsUpdateRequest.",
+            "description": "Custom css field on admin site settings update request.",
+            "maxLength": 20000,
             "type": "string"
           },
           "description": {
-            "description": "description field on AdminSiteSettingsUpdateRequest.",
+            "description": "Description field on admin site settings update request.",
+            "maxLength": 4096,
             "type": "string"
           },
           "docsUrl": {
-            "description": "docsUrl field on AdminSiteSettingsUpdateRequest.",
+            "description": "Docs url field on admin site settings update request.",
+            "maxLength": 2048,
             "type": "string"
           },
           "favicon": {
-            "additionalProperties": true,
-            "description": "favicon field on AdminSiteSettingsUpdateRequest.",
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Favicon field on admin site settings update request."
           },
           "footerCopyright": {
-            "description": "footerCopyright field on AdminSiteSettingsUpdateRequest.",
+            "description": "Footer copyright field on admin site settings update request.",
+            "maxLength": 4096,
             "type": "string"
           },
           "icon": {
-            "additionalProperties": true,
-            "description": "icon field on AdminSiteSettingsUpdateRequest.",
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Icon field on admin site settings update request."
           },
           "icpRecordNumber": {
-            "description": "icpRecordNumber field on AdminSiteSettingsUpdateRequest.",
+            "description": "Icp record number field on admin site settings update request.",
+            "maxLength": 255,
             "type": "string"
           },
           "icpRecordUrl": {
-            "description": "icpRecordUrl field on AdminSiteSettingsUpdateRequest.",
+            "description": "Icp record url field on admin site settings update request.",
+            "maxLength": 2048,
             "type": "string"
           },
           "logo": {
-            "additionalProperties": true,
-            "description": "logo field on AdminSiteSettingsUpdateRequest.",
-            "type": "object"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Logo field on admin site settings update request."
           },
           "policeRecordNumber": {
-            "description": "policeRecordNumber field on AdminSiteSettingsUpdateRequest.",
+            "description": "Police record number field on admin site settings update request.",
+            "maxLength": 255,
             "type": "string"
           },
           "policeRecordUrl": {
-            "description": "policeRecordUrl field on AdminSiteSettingsUpdateRequest.",
+            "description": "Police record url field on admin site settings update request.",
+            "maxLength": 2048,
             "type": "string"
           },
           "privacyUrl": {
-            "description": "privacyUrl field on AdminSiteSettingsUpdateRequest.",
+            "description": "Privacy url field on admin site settings update request.",
+            "maxLength": 2048,
             "type": "string"
           },
           "seoDescription": {
-            "description": "seoDescription field on AdminSiteSettingsUpdateRequest.",
+            "description": "Seo description field on admin site settings update request.",
+            "maxLength": 4096,
             "type": "string"
           },
           "seoTitle": {
-            "description": "seoTitle field on AdminSiteSettingsUpdateRequest.",
+            "description": "Seo title field on admin site settings update request.",
+            "maxLength": 255,
             "type": "string"
           },
           "shortName": {
-            "description": "shortName field on AdminSiteSettingsUpdateRequest.",
+            "description": "Short name field on admin site settings update request.",
+            "maxLength": 255,
             "type": "string"
           },
           "siteName": {
-            "description": "siteName field on AdminSiteSettingsUpdateRequest.",
+            "description": "Site name field on admin site settings update request.",
+            "maxLength": 255,
+            "minLength": 1,
             "type": "string"
           },
           "supportUrl": {
-            "description": "supportUrl field on AdminSiteSettingsUpdateRequest.",
+            "description": "Support url field on admin site settings update request.",
+            "maxLength": 2048,
             "type": "string"
           },
           "termsUrl": {
-            "description": "termsUrl field on AdminSiteSettingsUpdateRequest.",
+            "description": "Terms url field on admin site settings update request.",
+            "maxLength": 2048,
             "type": "string"
           }
         },
@@ -2467,6 +2526,331 @@
             "description": "Null JSON value."
           }
         ]
+      },
+      "MediaAccess": {
+        "additionalProperties": false,
+        "description": "Media access schema exposed by Claw Router.",
+        "properties": {
+          "expiresAt": {
+            "description": "Expires at field on media access.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "Visibility field on media access.",
+            "enum": [
+              "private",
+              "tenant",
+              "organization",
+              "public",
+              "signed"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "visibility"
+        ],
+        "type": "object"
+      },
+      "MediaAiProvenance": {
+        "additionalProperties": false,
+        "description": "Media ai provenance schema exposed by Claw Router.",
+        "properties": {
+          "generationTaskId": {
+            "description": "Generation task id field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "model": {
+            "description": "Model field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "moderationStatus": {
+            "description": "Moderation status field on media ai provenance.",
+            "enum": [
+              "unknown",
+              "pending",
+              "approved",
+              "rejected",
+              "blocked"
+            ],
+            "type": "string"
+          },
+          "promptId": {
+            "description": "Prompt id field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "provenance": {
+            "description": "Provenance field on media ai provenance.",
+            "enum": [
+              "uploaded",
+              "generated",
+              "edited",
+              "imported"
+            ],
+            "type": "string"
+          },
+          "provider": {
+            "description": "Provider field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "safetyLabels": {
+            "description": "Safety labels field on media ai provenance.",
+            "items": {
+              "description": "Safety labels field on media ai provenance.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "type": "array"
+          },
+          "seed": {
+            "description": "Seed field on media ai provenance.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "sourceMediaIds": {
+            "description": "Source media ids field on media ai provenance.",
+            "items": {
+              "description": "Source media ids field on media ai provenance.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "MediaChecksum": {
+        "additionalProperties": false,
+        "description": "Media checksum schema exposed by Claw Router.",
+        "properties": {
+          "algorithm": {
+            "description": "Algorithm field on media checksum.",
+            "enum": [
+              "sha256",
+              "md5",
+              "etag"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "description": "Value field on media checksum.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "algorithm",
+          "value"
+        ],
+        "type": "object"
+      },
+      "MediaKind": {
+        "description": "Media kind schema exposed by Claw Router.",
+        "enum": [
+          "image",
+          "video",
+          "audio",
+          "voice",
+          "document",
+          "archive",
+          "model",
+          "other"
+        ],
+        "type": "string"
+      },
+      "MediaResource": {
+        "additionalProperties": false,
+        "description": "Media resource schema exposed by Claw Router.",
+        "properties": {
+          "access": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaAccess"
+              }
+            ],
+            "description": "Access field on media resource."
+          },
+          "ai": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaAiProvenance"
+              }
+            ],
+            "description": "Ai field on media resource."
+          },
+          "altText": {
+            "description": "Alt text field on media resource.",
+            "maxLength": 512,
+            "type": "string"
+          },
+          "bucketId": {
+            "description": "Bucket id field on media resource.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "checksum": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaChecksum"
+              }
+            ],
+            "description": "Checksum field on media resource."
+          },
+          "durationSeconds": {
+            "description": "Duration seconds field on media resource.",
+            "minimum": 0,
+            "type": "number"
+          },
+          "fileName": {
+            "description": "File name field on media resource.",
+            "maxLength": 512,
+            "type": "string"
+          },
+          "height": {
+            "description": "Height field on media resource.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "description": "Id field on media resource.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaKind"
+              }
+            ],
+            "description": "Kind field on media resource."
+          },
+          "metadata": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Metadata field on media resource."
+            },
+            "description": "Metadata field on media resource.",
+            "type": "object"
+          },
+          "mimeType": {
+            "description": "Mime type field on media resource.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "objectBlobId": {
+            "description": "Object blob id field on media resource.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "objectKey": {
+            "description": "Object key field on media resource.",
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "objectVersion": {
+            "description": "Object version field on media resource.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "poster": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Poster field on media resource."
+          },
+          "publicUrl": {
+            "description": "Public url field on media resource.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Size bytes field on media resource.",
+            "pattern": "^[0-9]+$",
+            "type": "string"
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaSource"
+              }
+            ],
+            "description": "Source field on media resource."
+          },
+          "thumbnails": {
+            "description": "Thumbnails field on media resource.",
+            "items": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "type": "array"
+          },
+          "title": {
+            "description": "Title field on media resource.",
+            "maxLength": 255,
+            "type": "string"
+          },
+          "uri": {
+            "description": "Uri field on media resource.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "url": {
+            "description": "Url field on media resource.",
+            "format": "uri",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "variants": {
+            "description": "Variants field on media resource.",
+            "items": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "type": "array"
+          },
+          "width": {
+            "description": "Width field on media resource.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "source"
+        ],
+        "type": "object"
+      },
+      "MediaSource": {
+        "description": "Media source schema exposed by Claw Router.",
+        "enum": [
+          "object_storage",
+          "external_url",
+          "data_url",
+          "provider_asset",
+          "generated"
+        ],
+        "type": "string"
       },
       "MembershipPackageGroupMutationRequest": {
         "additionalProperties": false,
@@ -21662,6 +22046,29 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Cursor query parameter.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 2048,
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -22574,7 +22981,43 @@
       "get": {
         "description": "List alerts. Reads ops_alert_event. Writes none. File targets none.",
         "operationId": "monitor.alerts.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -22656,7 +23099,43 @@
       "get": {
         "description": "List nodes. Reads ops_gateway_instance, ops_gateway_heartbeat. Writes none. File targets none.",
         "operationId": "monitor.nodes.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -22739,7 +23218,43 @@
       "get": {
         "description": "List performance data. Reads ops_metric_snapshot. Writes none. File targets none.",
         "operationId": "monitor.performance.list",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {

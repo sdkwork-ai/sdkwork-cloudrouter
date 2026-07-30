@@ -219,7 +219,7 @@ max_connections = 16
 deployment_mode = "server"
 ```
 
-`SDKWORK_CLAW_DATABASE_URL` 仍可写入 `/etc/sdkwork/router/clawrouter.env`，但只建议作为明确的运维覆盖或平台密钥注入方式。
+`SDKWORK_DATABASE_URL` 仍可写入 `/etc/sdkwork/router/clawrouter.env`，但只建议作为明确的运维覆盖或平台密钥注入方式。
 
 `.deb` 安装脚本会创建：
 
@@ -281,7 +281,7 @@ Set-Location $installRoot
 生产或多节点 server/service 部署需要在受保护的服务环境或运行时 TOML 中配置 PostgreSQL：
 
 ```powershell
-$env:SDKWORK_CLAW_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod"
+$env:SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod"
 ```
 
 Windows `.msi` 会把程序二进制放在 `%ProgramFiles%/sdkwork/router`，把共享模板放在 `%ProgramData%/sdkwork/router`。原生安装清单会记录 service 模板、运行时 TOML、密码文件和数据目录继承 ProgramData ACL；desktop 运行时文件由当前用户初始化到 `%USERPROFILE%/.sdkwork/router/config` 和 `%USERPROFILE%/.sdkwork/router/data`，使用当前用户 profile ACL。

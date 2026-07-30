@@ -4,7 +4,6 @@
     "baseUrl": "../.."
   },
   "include": [
-    "../../src/typecheck-shims.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "vite.config.ts"

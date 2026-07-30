@@ -8,7 +8,7 @@ use sdkwork_clawrouter_router_service::ports::{
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 
-const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL";
+const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 
 #[tokio::test]
 async fn postgres_app_routing_projects_authorized_account_groups_api_keys_and_traces() {

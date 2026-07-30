@@ -13,7 +13,7 @@ use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 
-const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL";
+const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 
 #[tokio::test]
 async fn postgres_payment_callback_concurrent_first_account_creation_credits_one_account() {

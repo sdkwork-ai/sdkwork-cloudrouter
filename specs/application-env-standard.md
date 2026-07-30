@@ -75,9 +75,10 @@ authority for profile lookup and surface bindings.
 
 ## Shared Infrastructure Namespace
 
-Database and Redis settings remain in the workspace-wide Claw infrastructure
-namespaces `SDKWORK_CLAW_DATABASE_*` and `SDKWORK_CLAW_REDIS_*`. They are not
-application lifecycle axes and must not be renamed by lifecycle tooling.
+Database settings use the workspace-wide `SDKWORK_DATABASE_*` authority across
+all applications and embedded modules. Claw Router-owned Redis settings remain
+under `SDKWORK_CLAW_REDIS_*`; database identity must never use an application
+prefix.
 
 ## Lifecycle Commands
 

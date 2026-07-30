@@ -1,9 +1,39 @@
 import type { MediaResource } from '@sdkwork/assets-core';
 
+import { normalizeOptionalJsonObject, type JsonObject } from './json-value.ts';
 import { isBlank, trim } from './sdkwork-utils.ts';
 
 export type ClawRouterMediaResource = MediaResource;
 export type ClawRouterMediaKind = ClawRouterMediaResource['kind'];
+type ClawRouterMediaChecksumAlgorithm = 'etag' | 'md5' | 'sha256';
+
+export interface ClawRouterSdkMediaResource {
+  access?: ClawRouterMediaResource['access'];
+  ai?: ClawRouterMediaResource['ai'];
+  altText?: string;
+  checksum?: {
+    algorithm: ClawRouterMediaChecksumAlgorithm;
+    value: string;
+  };
+  durationSeconds?: number;
+  fileName?: string;
+  height?: number;
+  id?: string;
+  kind: ClawRouterMediaResource['kind'];
+  metadata?: JsonObject;
+  mimeType?: string;
+  objectBlobId?: string;
+  poster?: ClawRouterSdkMediaResource;
+  publicUrl?: string;
+  sizeBytes?: string;
+  source: ClawRouterMediaResource['source'];
+  thumbnails?: ClawRouterSdkMediaResource[];
+  title?: string;
+  uri?: string;
+  url?: string;
+  variants?: ClawRouterSdkMediaResource[];
+  width?: number;
+}
 
 export function toExternalUrlMediaResource(
   value: string | null | undefined,
@@ -30,6 +60,47 @@ export function toNullableExternalUrlMediaResource(
   }
   const media = toExternalUrlMediaResource(value, kind);
   return media ?? null;
+}
+
+export function toSdkMediaResource(
+  value: ClawRouterMediaResource | undefined,
+  fieldName = 'media',
+): ClawRouterSdkMediaResource | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const checksum = value.checksum
+    ? {
+        algorithm: normalizeMediaChecksumAlgorithm(value.checksum.algorithm, `${fieldName}.checksum.algorithm`),
+        value: normalizeRequiredMediaText(value.checksum.value, `${fieldName}.checksum.value`),
+      }
+    : undefined;
+  return {
+    access: value.access,
+    ai: value.ai,
+    altText: value.altText,
+    checksum,
+    durationSeconds: value.durationSeconds,
+    fileName: value.fileName,
+    height: value.height,
+    id: value.id,
+    kind: value.kind,
+    metadata: normalizeOptionalJsonObject(value.metadata, `${fieldName}.metadata`),
+    mimeType: value.mimeType,
+    objectBlobId: value.objectBlobId,
+    poster: toSdkMediaResource(value.poster, `${fieldName}.poster`),
+    publicUrl: value.publicUrl,
+    sizeBytes: value.sizeBytes,
+    source: value.source,
+    thumbnails: value.thumbnails?.map((item, index) =>
+      toRequiredSdkMediaResource(item, `${fieldName}.thumbnails[${index}]`)),
+    title: value.title,
+    uri: value.uri,
+    url: value.url,
+    variants: value.variants?.map((item, index) =>
+      toRequiredSdkMediaResource(item, `${fieldName}.variants[${index}]`)),
+    width: value.width,
+  };
 }
 
 export function readMediaResourceUrl(value: unknown): string {
@@ -89,4 +160,34 @@ export function toExternalUrlMediaResources(
 
 function normalizeMediaUrl(value: string | null | undefined): string {
   return typeof value === 'string' ? trim(value) : '';
+}
+
+function toRequiredSdkMediaResource(
+  value: ClawRouterMediaResource,
+  fieldName: string,
+): ClawRouterSdkMediaResource {
+  const resource = toSdkMediaResource(value, fieldName);
+  if (!resource) {
+    throw new Error(`${fieldName} is required`);
+  }
+  return resource;
+}
+
+function normalizeMediaChecksumAlgorithm(
+  value: string,
+  fieldName: string,
+): ClawRouterMediaChecksumAlgorithm {
+  const normalized = trim(value).toLowerCase().replaceAll('-', '');
+  if (normalized === 'sha256' || normalized === 'md5' || normalized === 'etag') {
+    return normalized;
+  }
+  throw new Error(`${fieldName} must be sha256, md5, or etag`);
+}
+
+function normalizeRequiredMediaText(value: string, fieldName: string): string {
+  const normalized = trim(value);
+  if (!normalized) {
+    throw new Error(`${fieldName} is required`);
+  }
+  return normalized;
 }

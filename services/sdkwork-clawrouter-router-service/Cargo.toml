@@ -32,7 +32,6 @@ url.workspace = true
 sdkwork-models.workspace = true
 sdkwork_models_contract_service.workspace = true
 sdkwork_models_catalog_service.workspace = true
-sdkwork_models_database_bootstrap.workspace = true
 sdkwork-claw-contract.workspace = true
 sdkwork-claw-config.workspace = true
 sdkwork-claw-health.workspace = true

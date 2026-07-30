@@ -2245,9 +2245,40 @@ frontend_operations:
   - ai_chat_conversation
   - ai_agent_session
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ChatConversationListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: ChatConversationItem
+          type: object
+          additionalProperties: false
+          required: [id, title, status, sourceSurface, defaultModel, defaultProvider, agentId, agentSessionId, memorySpaceId, lastMessagePreview, messageCount, turnCount, createdAt, updatedAt]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            title: { type: string, maxLength: 256 }
+            status: { type: string, maxLength: 64 }
+            sourceSurface: { type: string, maxLength: 64 }
+            defaultModel: { type: string, nullable: true, maxLength: 128 }
+            defaultProvider: { type: string, nullable: true, maxLength: 128 }
+            agentId: { type: string, nullable: true, maxLength: 128 }
+            agentSessionId: { type: string, nullable: true, maxLength: 128 }
+            memorySpaceId: { type: string, nullable: true, maxLength: 128 }
+            lastMessagePreview: { type: string, nullable: true, maxLength: 4096 }
+            messageCount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            turnCount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            createdAt: { type: string, maxLength: 64 }
+            updatedAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/components/chat/chatService.ts
   operation: fetchSessions
@@ -2278,9 +2309,26 @@ frontend_operations:
   read_sources:
   - ai_agent_session
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: ChatConversationCreateResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item: { $ref: '#/components/schemas/ChatConversationItem' }
+  request_schema:
+    name: CreateChatConversationRequest
+    type: object
+    additionalProperties: false
+    properties:
+      title: { type: string, maxLength: 256 }
+      sourceSurface: { type: string, maxLength: 64 }
+      defaultModel: { type: string, maxLength: 128 }
+      defaultProvider: { type: string, maxLength: 128 }
+      agentId: { type: string, maxLength: 128 }
+      agentSessionId: { type: string, maxLength: 128 }
+      memorySpaceId: { type: string, maxLength: 128 }
+      metadata: { type: object, additionalProperties: true }
+  request_body_required: true
   write_tables:
   - ai_chat_conversation
 - route: /playground
@@ -2314,8 +2362,8 @@ frontend_operations:
   - ai_chat_conversation
   - ai_agent_session
   response_schema:
-    name: NoData
-    properties: {}
+    name: ChatConversationItem
+    $ref: '#/components/schemas/ChatConversationItem'
   query_parameters: []
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
@@ -2335,9 +2383,53 @@ frontend_operations:
   - ai_runtime_usage_link
   - ai_runtime_artifact
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: ChatMessageListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: ChatMessageItem
+          type: object
+          additionalProperties: false
+          required: [id, conversationId, turnId, role, direction, content, status, model, provider, runtime, runtimeInvocationId, usageLinkId, usage, createdAt]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            conversationId: { type: string, minLength: 1, maxLength: 128 }
+            turnId: { type: string, nullable: true, maxLength: 128 }
+            role: { type: string, maxLength: 64 }
+            direction: { type: string, maxLength: 64 }
+            content: { type: string, maxLength: 65536 }
+            status: { type: string, maxLength: 64 }
+            model: { type: string, nullable: true, maxLength: 128 }
+            provider: { type: string, nullable: true, maxLength: 128 }
+            runtime: { type: string, nullable: true, maxLength: 128 }
+            runtimeInvocationId: { type: string, nullable: true, maxLength: 128 }
+            usageLinkId: { type: string, nullable: true, maxLength: 128 }
+            usage:
+              name: ChatUsageSnapshot
+              type: object
+              nullable: true
+              additionalProperties: false
+              required: [inputTokens, outputTokens, cachedTokens, reasoningTokens, totalTokens, costAmount, currency]
+              properties:
+                inputTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+                outputTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+                cachedTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+                reasoningTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+                totalTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+                costAmount: { type: string, nullable: true, pattern: '^[0-9]+(?:\.[0-9]{1,9})?$' }
+                currency: { type: string, nullable: true, maxLength: 16 }
+            createdAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createChatTurn
@@ -2351,9 +2443,43 @@ frontend_operations:
   - ai_chat_conversation
   - ai_agent_session
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: ChatTurnOutcome
+    type: object
+    additionalProperties: false
+    required: [turn, messages]
+    properties:
+      turn:
+        name: ChatTurnItem
+        type: object
+        additionalProperties: false
+        required: [id, conversationId, status, model, provider, agentId, agentSessionId, createdAt, updatedAt]
+        properties:
+          id: { type: string, minLength: 1, maxLength: 128 }
+          conversationId: { type: string, minLength: 1, maxLength: 128 }
+          status: { type: string, maxLength: 64 }
+          model: { type: string, nullable: true, maxLength: 128 }
+          provider: { type: string, nullable: true, maxLength: 128 }
+          agentId: { type: string, nullable: true, maxLength: 128 }
+          agentSessionId: { type: string, nullable: true, maxLength: 128 }
+          createdAt: { type: string, maxLength: 64 }
+          updatedAt: { type: string, maxLength: 64 }
+      messages:
+        type: array
+        items: { $ref: '#/components/schemas/ChatMessageItem' }
+  request_schema:
+    name: CreateChatTurnRequest
+    type: object
+    additionalProperties: false
+    required: [message]
+    properties:
+      message: { type: string, minLength: 1, maxLength: 65536 }
+      mode: { type: string, maxLength: 64 }
+      agentId: { type: string, maxLength: 128 }
+      agentSessionId: { type: string, maxLength: 128 }
+      model: { type: string, maxLength: 128 }
+      provider: { type: string, maxLength: 128 }
+      metadata: { type: object, additionalProperties: true }
+  request_body_required: true
   write_tables:
   - ai_chat_turn
   - ai_chat_item
@@ -2380,9 +2506,35 @@ frontend_operations:
   - ai_runtime_invocation
   - ai_usage
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: ChatTurnOutcome
+    $ref: '#/components/schemas/ChatTurnOutcome'
+  request_schema:
+    name: CompleteChatTurnResponseRequest
+    type: object
+    additionalProperties: false
+    required: [message]
+    properties:
+      message: { type: string, minLength: 1, maxLength: 65536 }
+      status: { type: string, enum: [completed, failed, cancelled, streaming], default: completed }
+      model: { type: string, maxLength: 128 }
+      provider: { type: string, maxLength: 128 }
+      runtime: { type: string, maxLength: 128 }
+      runtimeInvocationId: { type: string, maxLength: 128 }
+      usageFactId: { type: string, format: int64, pattern: '^[1-9][0-9]*$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      usage:
+        type: object
+        additionalProperties: false
+        properties:
+          inputTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          outputTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          cachedTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          reasoningTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          totalTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          cost: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,9})?$' }
+          costAmount: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,9})?$' }
+          currency: { type: string, maxLength: 16 }
+      metadata: { type: object, additionalProperties: true }
+  request_body_required: true
   write_tables:
   - ai_chat_turn
   - ai_chat_item
@@ -3075,9 +3227,42 @@ frontend_operations:
   read_sources:
   - ops_audit_log
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: NotificationListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: NotificationItem
+          type: object
+          additionalProperties: false
+          required: [id, appId, title, desc, content, time, type, read, showAsPopup, popupSeen, archived]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            appId: { type: string, minLength: 1, maxLength: 128 }
+            title: { type: string, minLength: 1, maxLength: 255 }
+            desc: { type: string, maxLength: 4096 }
+            content: { type: string, maxLength: 65536 }
+            time: { type: string, maxLength: 64 }
+            type: { type: string, enum: [info, billing, warning, alert] }
+            read: { type: boolean }
+            showAsPopup: { type: boolean }
+            popupSeen: { type: boolean }
+            archived: { type: boolean }
+            actionUrl: { type: string, nullable: true, maxLength: 2048 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: app_id
+    schema: { type: string, maxLength: 128, default: claw-router }
+  - name: include_archived
+    schema: { type: boolean, default: false }
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /console/notifications
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts
   operation: list
@@ -3106,8 +3291,16 @@ frontend_operations:
   read_sources:
   - ops_audit_log
   response_schema:
-    name: NoData
-    properties: {}
+    name: AcknowledgeNotificationResponse
+    type: object
+    additionalProperties: false
+    required: [updated, state]
+    properties:
+      updated: { type: boolean }
+      state: { type: string, enum: [acknowledged] }
+  query_parameters:
+  - name: app_id
+    schema: { type: string, maxLength: 128, default: claw-router }
   request_body_required: false
   write_tables:
   - ops_audit_log
@@ -3124,8 +3317,16 @@ frontend_operations:
   read_sources:
   - ops_audit_log
   response_schema:
-    name: NoData
-    properties: {}
+    name: AcknowledgeNotificationResponse
+    type: object
+    additionalProperties: false
+    required: [updated, state]
+    properties:
+      updated: { type: boolean }
+      state: { type: string, enum: [acknowledged] }
+  query_parameters:
+  - name: app_id
+    schema: { type: string, maxLength: 128, default: claw-router }
   request_body_required: false
   write_tables:
   - ops_audit_log
@@ -3141,8 +3342,16 @@ frontend_operations:
   read_sources:
   - ops_audit_log
   response_schema:
-    name: NoData
-    properties: {}
+    name: MarkNotificationPopupSeenResponse
+    type: object
+    additionalProperties: false
+    required: [updated, state]
+    properties:
+      updated: { type: boolean }
+      state: { type: string, enum: [popup_seen] }
+  query_parameters:
+  - name: app_id
+    schema: { type: string, maxLength: 128, default: claw-router }
   request_body_required: false
   write_tables:
   - ops_audit_log
@@ -3159,8 +3368,16 @@ frontend_operations:
   read_sources:
   - ops_audit_log
   response_schema:
-    name: NoData
-    properties: {}
+    name: MarkNotificationPopupSeenResponse
+    type: object
+    additionalProperties: false
+    required: [updated, state]
+    properties:
+      updated: { type: boolean }
+      state: { type: string, enum: [popup_seen] }
+  query_parameters:
+  - name: app_id
+    schema: { type: string, maxLength: 128, default: claw-router }
   request_body_required: false
   write_tables:
   - ops_audit_log
@@ -3217,9 +3434,74 @@ frontend_operations:
   - ai_chat_turn
   - ai_agent_session
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: RuntimeInvocationListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: RuntimeInvocationItem
+          type: object
+          additionalProperties: false
+          required: [id, invocationNo, invocationType, runtime, endpoint, attemptNo, status, conversationId, chatTurnId, chatItemId, agentSessionId, agentRunId, agentRunStepId, requestId, traceId, providerResponseId, providerSessionId, providerConversationId, providerStepId, model, provider, toolName, toolCallId, cwd, sandboxPolicy, approvalPolicy, permissionMode, streaming, startedAt, completedAt, latencyMs, ttftMs, exitCode, finishReason, errorType, errorCode, errorMessageMasked, createdAt]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            invocationNo: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            invocationType: { type: string, maxLength: 128 }
+            runtime: { type: string, maxLength: 128 }
+            endpoint: { type: string, nullable: true, maxLength: 128 }
+            attemptNo: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            status: { type: string, enum: [pending, running, streaming, completed, failed, cancelled] }
+            conversationId: { type: string, nullable: true, maxLength: 128 }
+            chatTurnId: { type: string, nullable: true, maxLength: 128 }
+            chatItemId: { type: string, nullable: true, maxLength: 128 }
+            agentSessionId: { type: string, nullable: true, maxLength: 128 }
+            agentRunId: { type: string, nullable: true, maxLength: 128 }
+            agentRunStepId: { type: string, nullable: true, maxLength: 128 }
+            requestId: { type: string, nullable: true, maxLength: 128 }
+            traceId: { type: string, nullable: true, maxLength: 128 }
+            providerResponseId: { type: string, nullable: true, maxLength: 128 }
+            providerSessionId: { type: string, nullable: true, maxLength: 128 }
+            providerConversationId: { type: string, nullable: true, maxLength: 128 }
+            providerStepId: { type: string, nullable: true, maxLength: 128 }
+            model: { type: string, nullable: true, maxLength: 128 }
+            provider: { type: string, nullable: true, maxLength: 128 }
+            toolName: { type: string, nullable: true, maxLength: 128 }
+            toolCallId: { type: string, nullable: true, maxLength: 128 }
+            cwd: { type: string, nullable: true, maxLength: 2048 }
+            sandboxPolicy: { type: string, nullable: true, maxLength: 128 }
+            approvalPolicy: { type: string, nullable: true, maxLength: 128 }
+            permissionMode: { type: string, nullable: true, maxLength: 128 }
+            streaming: { type: boolean }
+            startedAt: { type: string, nullable: true, maxLength: 64 }
+            completedAt: { type: string, nullable: true, maxLength: 64 }
+            latencyMs: { type: string, format: int64, nullable: true, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            ttftMs: { type: string, format: int64, nullable: true, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            exitCode: { type: string, format: int64, nullable: true, pattern: '^-?[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            finishReason: { type: string, nullable: true, maxLength: 128 }
+            errorType: { type: string, nullable: true, maxLength: 128 }
+            errorCode: { type: string, nullable: true, maxLength: 128 }
+            errorMessageMasked: { type: string, nullable: true, maxLength: 1024 }
+            createdAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: conversation_id
+    schema: { type: string, maxLength: 128 }
+  - name: chat_turn_id
+    schema: { type: string, maxLength: 128 }
+  - name: agent_session_id
+    schema: { type: string, maxLength: 128 }
+  - name: runtime
+    schema: { type: string, maxLength: 128 }
+  - name: status
+    schema: { type: string, enum: [pending, running, streaming, completed, failed, cancelled] }
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createRuntimeInvocation
@@ -3234,9 +3516,41 @@ frontend_operations:
   - ai_chat_turn
   - ai_agent_session
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: RuntimeInvocationResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item: { $ref: '#/components/schemas/RuntimeInvocationItem' }
+  request_schema:
+    name: CreateRuntimeInvocationRequest
+    type: object
+    additionalProperties: false
+    required: [runtime]
+    properties:
+      invocationType: { type: string, maxLength: 128, default: chat_response }
+      runtime: { type: string, minLength: 1, maxLength: 128 }
+      endpoint: { type: string, maxLength: 128 }
+      status: { type: string, enum: [pending, running, streaming, completed, failed, cancelled], default: running }
+      conversationId: { type: string, maxLength: 128 }
+      chatTurnId: { type: string, maxLength: 128 }
+      chatItemId: { type: string, maxLength: 128 }
+      agentSessionId: { type: string, maxLength: 128 }
+      agentRunId: { type: string, maxLength: 128 }
+      agentRunStepId: { type: string, maxLength: 128 }
+      traceId: { type: string, maxLength: 128 }
+      model: { type: string, maxLength: 128 }
+      provider: { type: string, maxLength: 128 }
+      toolName: { type: string, maxLength: 128 }
+      toolCallId: { type: string, maxLength: 128 }
+      cwd: { type: string, maxLength: 2048 }
+      sandboxPolicy: { type: string, maxLength: 128 }
+      approvalPolicy: { type: string, maxLength: 128 }
+      permissionMode: { type: string, maxLength: 128 }
+      streaming: { type: boolean, default: false }
+      requestJson: { type: object, additionalProperties: true }
+      metadata: { type: object, additionalProperties: true }
+  request_body_required: true
   write_tables:
   - ai_runtime_invocation
 - route: /playground
@@ -3310,8 +3624,8 @@ frontend_operations:
   read_sources:
   - ai_runtime_invocation
   response_schema:
-    name: NoData
-    properties: {}
+    name: RuntimeInvocationItem
+    $ref: '#/components/schemas/RuntimeInvocationItem'
   query_parameters: []
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
@@ -3326,9 +3640,37 @@ frontend_operations:
   - ai_runtime_invocation
   - ai_runtime_artifact
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: RuntimeArtifactListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: RuntimeArtifactItem
+          type: object
+          additionalProperties: false
+          required: [id, invocationId, artifactType, name, mimeType, contentText, storageKey, resource, sha256, sizeBytes, createdAt]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            invocationId: { type: string, minLength: 1, maxLength: 128 }
+            artifactType: { type: string, maxLength: 128 }
+            name: { type: string, nullable: true, maxLength: 512 }
+            mimeType: { type: string, nullable: true, maxLength: 128 }
+            contentText: { type: string, nullable: true, maxLength: 262144 }
+            storageKey: { type: string, nullable: true, maxLength: 2048 }
+            resource: { $ref: '#/components/schemas/MediaResource', nullable: true }
+            sha256: { type: string, nullable: true, maxLength: 128 }
+            sizeBytes: { type: string, format: int64, nullable: true, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            createdAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createRuntimeArtifact
@@ -3341,9 +3683,29 @@ frontend_operations:
   read_sources:
   - ai_runtime_invocation
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: RuntimeArtifactResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item: { $ref: '#/components/schemas/RuntimeArtifactItem' }
+  request_schema:
+    name: CreateRuntimeArtifactRequest
+    type: object
+    additionalProperties: false
+    required: [artifactType]
+    properties:
+      artifactType: { type: string, minLength: 1, maxLength: 128 }
+      name: { type: string, maxLength: 512 }
+      mimeType: { type: string, maxLength: 128 }
+      contentText: { type: string, maxLength: 262144 }
+      contentJson: { type: object, additionalProperties: true }
+      storageKey: { type: string, maxLength: 2048 }
+      resource: { $ref: '#/components/schemas/MediaResource' }
+      sha256: { type: string, maxLength: 128 }
+      sizeBytes: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      metadata: { type: object, additionalProperties: true }
+  request_body_required: true
   write_tables:
   - ai_runtime_artifact
 - route: /playground
@@ -3358,9 +3720,29 @@ frontend_operations:
   read_sources:
   - ai_runtime_invocation
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: RuntimeInvocationResponse
+    $ref: '#/components/schemas/RuntimeInvocationResponse'
+  request_schema:
+    name: CompleteRuntimeInvocationRequest
+    type: object
+    additionalProperties: false
+    properties:
+      status: { type: string, enum: [pending, running, streaming, completed, failed, cancelled], default: completed }
+      providerResponseId: { type: string, maxLength: 128 }
+      providerSessionId: { type: string, maxLength: 128 }
+      providerConversationId: { type: string, maxLength: 128 }
+      providerStepId: { type: string, maxLength: 128 }
+      finishReason: { type: string, maxLength: 128 }
+      latencyMs: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      ttftMs: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      exitCode: { type: string, format: int64, pattern: '^-?[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      errorType: { type: string, maxLength: 128 }
+      errorCode: { type: string, maxLength: 128 }
+      errorMessageMasked: { type: string, maxLength: 1024 }
+      responseJson: { type: object, additionalProperties: true }
+      usageJson: { type: object, additionalProperties: true }
+      metadata: { type: object, additionalProperties: true }
+  request_body_required: true
   write_tables:
   - ai_runtime_invocation
 - route: /playground
@@ -3422,9 +3804,34 @@ frontend_operations:
   - ai_runtime_invocation
   - ai_runtime_invocation_event
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: RuntimeEventListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: RuntimeEventItem
+          type: object
+          additionalProperties: false
+          required: [id, invocationId, eventNo, eventType, eventSource, payloadJson, textDelta, createdAt]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            invocationId: { type: string, minLength: 1, maxLength: 128 }
+            eventNo: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            eventType: { type: string, maxLength: 128 }
+            eventSource: { type: string, maxLength: 128 }
+            payloadJson: { type: object, additionalProperties: true }
+            textDelta: { type: string, nullable: true, maxLength: 262144 }
+            createdAt: { type: string, maxLength: 64 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: createRuntimeEvent
@@ -3437,9 +3844,24 @@ frontend_operations:
   read_sources:
   - ai_runtime_invocation
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: RuntimeEventResponse
+    type: object
+    additionalProperties: false
+    required: [item]
+    properties:
+      item: { $ref: '#/components/schemas/RuntimeEventItem' }
+  request_schema:
+    name: CreateRuntimeEventRequest
+    type: object
+    additionalProperties: false
+    required: [eventType]
+    properties:
+      eventType: { type: string, minLength: 1, maxLength: 128 }
+      eventSource: { type: string, maxLength: 128, default: runtime }
+      payloadJson: { type: object, additionalProperties: true }
+      textDelta: { type: string, maxLength: 262144 }
+      metadata: { type: object, additionalProperties: true }
+  request_body_required: true
   write_tables:
   - ai_runtime_invocation_event
 - route: /playground
@@ -3457,7 +3879,9 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: []
+  query_parameters:
+  - name: after_event_no
+    schema: { type: string, format: int64, pattern: '^[0-9]+$', default: '0', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
 - route: /auth/login
   source: apps/sdkwork-clawrouter-pc/src/auth/clawRouterAuthSettingsService.ts
   operation: fetchClawRouterAuthRuntimeSettings
@@ -4240,9 +4664,34 @@ frontend_operations:
   read_sources:
   - ops_alert_event
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: MonitorAlertListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: MonitorAlertItem
+          type: object
+          additionalProperties: false
+          required: [id, severity, title, message, time, status, source]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            severity: { type: string, enum: [critical, warning, info] }
+            title: { type: string, maxLength: 255 }
+            message: { type: string, maxLength: 4096 }
+            time: { type: string, maxLength: 64 }
+            status: { type: string, enum: [active, resolved] }
+            source: { type: string, maxLength: 255 }
+      pageInfo: { $ref: '#/components/schemas/PageInfo' }
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /admin/monitor
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
   operation: fetchNodes
@@ -4256,9 +4705,35 @@ frontend_operations:
   - ops_gateway_instance
   - ops_gateway_heartbeat
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: MonitorNodeListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: MonitorNodeItem
+          type: object
+          additionalProperties: false
+          required: [id, name, region, status, cpu, memory, uptime, ip]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            name: { type: string, maxLength: 255 }
+            region: { type: string, maxLength: 128 }
+            status: { type: string, enum: [online, warning, offline] }
+            cpu: { type: number, minimum: 0 }
+            memory: { type: number, minimum: 0 }
+            uptime: { type: string, maxLength: 128 }
+            ip: { type: string, maxLength: 128 }
+      pageInfo: { $ref: '#/components/schemas/PageInfo' }
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /admin/monitor
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-monitor/src/monitorService.ts
   operation: fetchPerformanceData
@@ -4271,13 +4746,35 @@ frontend_operations:
   read_sources:
   - ops_metric_snapshot
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: MonitorPerformanceListResponse
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: MonitorPerformanceItem
+          type: object
+          additionalProperties: false
+          required: [time, cpu, memory, network]
+          properties:
+            time: { type: string, maxLength: 64 }
+            cpu: { type: number, minimum: 0 }
+            memory: { type: number, minimum: 0 }
+            network: { type: number, minimum: 0 }
+      pageInfo: { $ref: '#/components/schemas/PageInfo' }
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
 - route: /admin/analytics
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-analytics/src/analyticsService.ts
   operation: fetchOverview
-  operation_id: system.analytics.admin.overview.get
+  operation_id: analytics.admin.overview.retrieve
   kind: read
   api_surface: backend
   api_method: GET
@@ -4287,9 +4784,166 @@ frontend_operations:
   - ai_usage
   - ai_request_trace
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AdminAnalyticsOverview
+    type: object
+    additionalProperties: false
+    required:
+    - timeRange
+    - startTime
+    - endTime
+    - rankingSize
+    - summary
+    - trend
+    - userRankings
+    - modelRankings
+    - modelDistribution
+    - modalityDistribution
+    - insights
+    properties:
+      timeRange: { type: string, enum: [hourly, daily, weekly, monthly, yearly] }
+      startTime: { type: string, format: date-time, maxLength: 35 }
+      endTime: { type: string, format: date-time, maxLength: 35 }
+      rankingSize: { type: integer, format: int32, minimum: 3, maximum: 50 }
+      summary:
+        name: AdminAnalyticsSummary
+        type: object
+        additionalProperties: false
+        required: [totalUsers, activeUsers, activeModels, totalRequests, successfulRequests, failedRequests, totalTokens, totalPoints, upstreamCost, averageTokensPerRequest, averagePointsPerRequest, errorRate]
+        properties:
+          totalUsers: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          activeUsers: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          activeModels: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          totalRequests: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          successfulRequests: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          failedRequests: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+          totalTokens: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+          totalPoints: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+          upstreamCost: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+          averageTokensPerRequest: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+          averagePointsPerRequest: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+          errorRate: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+      trend:
+        type: array
+        maxItems: 30
+        items:
+          name: AdminAnalyticsTrendPoint
+          type: object
+          additionalProperties: false
+          required: [time, requests, tokens, points, users]
+          properties:
+            time: { type: string, minLength: 4, maxLength: 32 }
+            requests: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+            tokens: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+            points: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+            users: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      userRankings:
+        name: AdminAnalyticsUserRankings
+        type: object
+        additionalProperties: false
+        required: [points, tokens, requests]
+        properties:
+          points:
+            type: array
+            maxItems: 50
+            items:
+              name: AdminAnalyticsUserRankItem
+              type: object
+              additionalProperties: false
+              required: [rank, userId, userName, requestCount, totalTokens, points, modelDistribution]
+              properties:
+                rank: { type: integer, format: int32, minimum: 1, maximum: 50 }
+                userId: { type: string, minLength: 1, maxLength: 128 }
+                userName: { type: string, minLength: 1, maxLength: 256 }
+                email: { type: string, nullable: true, maxLength: 320 }
+                requestCount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+                totalTokens: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                points: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                modelDistribution:
+                  type: array
+                  maxItems: 6
+                  items: { $ref: '#/components/schemas/AdminAnalyticsPieItem' }
+          tokens:
+            type: array
+            maxItems: 50
+            items: { $ref: '#/components/schemas/AdminAnalyticsUserRankItem' }
+          requests:
+            type: array
+            maxItems: 50
+            items: { $ref: '#/components/schemas/AdminAnalyticsUserRankItem' }
+      modelRankings:
+        name: AdminAnalyticsModelRankings
+        type: object
+        additionalProperties: false
+        required: [points, tokens, requests]
+        properties:
+          points:
+            type: array
+            maxItems: 50
+            items:
+              name: AdminAnalyticsModelRankItem
+              type: object
+              additionalProperties: false
+              required: [rank, model, catalogKey, vendor, modality, requestCount, totalTokens, points, upstreamCost, userCount, averageTokensPerRequest, errorRate]
+              properties:
+                rank: { type: integer, format: int32, minimum: 1, maximum: 50 }
+                model: { type: string, minLength: 1, maxLength: 256 }
+                catalogKey: { type: string, minLength: 1, maxLength: 256 }
+                vendor: { type: string, minLength: 1, maxLength: 128 }
+                modality: { type: string, minLength: 1, maxLength: 32 }
+                requestCount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+                totalTokens: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                points: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                upstreamCost: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                userCount: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+                averageTokensPerRequest: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                errorRate: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+          tokens:
+            type: array
+            maxItems: 50
+            items: { $ref: '#/components/schemas/AdminAnalyticsModelRankItem' }
+          requests:
+            type: array
+            maxItems: 50
+            items: { $ref: '#/components/schemas/AdminAnalyticsModelRankItem' }
+      modelDistribution:
+        type: array
+        maxItems: 9
+        items:
+          name: AdminAnalyticsPieItem
+          type: object
+          additionalProperties: false
+          required: [name, value, color]
+          properties:
+            name: { type: string, minLength: 1, maxLength: 256 }
+            value: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+            color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+      modalityDistribution:
+        type: array
+        maxItems: 8
+        items: { $ref: '#/components/schemas/AdminAnalyticsPieItem' }
+      insights:
+        type: array
+        maxItems: 3
+        items:
+          name: AdminAnalyticsInsight
+          type: object
+          additionalProperties: false
+          required: [key, title, value, severity, detail]
+          properties:
+            key: { type: string, minLength: 1, maxLength: 64 }
+            title: { type: string, minLength: 1, maxLength: 256 }
+            value: { type: string, minLength: 1, maxLength: 64 }
+            severity: { type: string, enum: [info, warning, critical] }
+            detail: { type: string, minLength: 1, maxLength: 512 }
+  query_parameters:
+  - name: time_range
+    schema: { type: string, enum: [hourly, daily, weekly, monthly, yearly], default: daily }
+  - name: start_time
+    schema: { type: string, format: date-time, maxLength: 35 }
+  - name: end_time
+    schema: { type: string, format: date-time, maxLength: 35 }
+  - name: ranking_size
+    schema: { type: integer, format: int32, minimum: 3, maximum: 50, default: 10 }
 - route: /admin/settings
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/AuthSettingsService.ts
   operation: fetchClawRouterAuthSettings
@@ -4390,7 +5044,11 @@ frontend_operations:
   response_schema:
     name: NoData
     properties: {}
-  query_parameters: []
+  query_parameters:
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: cursor
+    schema: { type: string, maxLength: 2048 }
 - route: /admin/cache
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
   operation: deleteKey
@@ -4778,8 +5436,31 @@ frontend_operations:
   read_sources:
   - ops_config_snapshot
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminSiteSettingsResponse
+    type: object
+    additionalProperties: false
+    required: [siteName, shortName, description, logo, icon, favicon, brandColor, accentColor, footerCopyright, icpRecordNumber, icpRecordUrl, policeRecordNumber, policeRecordUrl, seoTitle, seoDescription, supportUrl, docsUrl, privacyUrl, termsUrl, customCss]
+    properties:
+      siteName: { type: string, minLength: 1, maxLength: 255 }
+      shortName: { type: string, maxLength: 255 }
+      description: { type: string, maxLength: 4096 }
+      logo: { $ref: '#/components/schemas/MediaResource' }
+      icon: { $ref: '#/components/schemas/MediaResource' }
+      favicon: { $ref: '#/components/schemas/MediaResource' }
+      brandColor: { type: string, pattern: '^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$' }
+      accentColor: { type: string, pattern: '^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$' }
+      footerCopyright: { type: string, maxLength: 4096 }
+      icpRecordNumber: { type: string, maxLength: 255 }
+      icpRecordUrl: { type: string, maxLength: 2048 }
+      policeRecordNumber: { type: string, maxLength: 255 }
+      policeRecordUrl: { type: string, maxLength: 2048 }
+      seoTitle: { type: string, maxLength: 255 }
+      seoDescription: { type: string, maxLength: 4096 }
+      supportUrl: { type: string, maxLength: 2048 }
+      docsUrl: { type: string, maxLength: 2048 }
+      privacyUrl: { type: string, maxLength: 2048 }
+      termsUrl: { type: string, maxLength: 2048 }
+      customCss: { type: string, maxLength: 20000 }
   query_parameters: []
 - route: /admin/site
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts
@@ -4793,9 +5474,34 @@ frontend_operations:
   read_sources:
   - ops_config_snapshot
   response_schema:
-    name: NoData
-    properties: {}
-  request_body_required: false
+    name: AdminSiteSettingsResponse
+    $ref: '#/components/schemas/AdminSiteSettingsResponse'
+  request_schema:
+    name: AdminSiteSettingsUpdateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      siteName: { type: string, minLength: 1, maxLength: 255 }
+      shortName: { type: string, maxLength: 255 }
+      description: { type: string, maxLength: 4096 }
+      logo: { $ref: '#/components/schemas/MediaResource' }
+      icon: { $ref: '#/components/schemas/MediaResource' }
+      favicon: { $ref: '#/components/schemas/MediaResource' }
+      brandColor: { type: string, pattern: '^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$' }
+      accentColor: { type: string, pattern: '^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$' }
+      footerCopyright: { type: string, maxLength: 4096 }
+      icpRecordNumber: { type: string, maxLength: 255 }
+      icpRecordUrl: { type: string, maxLength: 2048 }
+      policeRecordNumber: { type: string, maxLength: 255 }
+      policeRecordUrl: { type: string, maxLength: 2048 }
+      seoTitle: { type: string, maxLength: 255 }
+      seoDescription: { type: string, maxLength: 4096 }
+      supportUrl: { type: string, maxLength: 2048 }
+      docsUrl: { type: string, maxLength: 2048 }
+      privacyUrl: { type: string, maxLength: 2048 }
+      termsUrl: { type: string, maxLength: 2048 }
+      customCss: { type: string, maxLength: 20000 }
+  request_body_required: true
   write_tables:
   - ops_config_snapshot
   - ops_audit_log
@@ -7180,7 +7886,7 @@ frontend_models:
   - timeRange
   - startTime
   - endTime
-  - limit
+  - rankingSize
   - summary
   - summary.totalUsers
   - summary.activeUsers

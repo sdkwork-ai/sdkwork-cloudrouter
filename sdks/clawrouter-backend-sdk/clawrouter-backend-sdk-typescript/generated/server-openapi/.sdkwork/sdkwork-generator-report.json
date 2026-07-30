@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "4e2dacc02f2529ae20db379d5344fe4ec6453354544d1887814ad8411ad97cf2",
+  "changeFingerprint": "5f174ef7f46166bf423dd1f629e67c977d721d6db4bfe362b1fd9c129c8fc4f2",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -88,6 +88,12 @@
           "src/types/json-null.ts",
           "src/types/json-object.ts",
           "src/types/json-value.ts",
+          "src/types/media-access.ts",
+          "src/types/media-ai-provenance.ts",
+          "src/types/media-checksum.ts",
+          "src/types/media-kind.ts",
+          "src/types/media-resource.ts",
+          "src/types/media-source.ts",
           "src/types/membership-package-group-mutation-request.ts",
           "src/types/membership-package-mutation-request.ts",
           "src/types/membership-plan-mutation-request.ts",
@@ -330,10 +336,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 278,
-    "models": 248,
+    "totalFiles": 284,
+    "models": 254,
     "apis": 7,
-    "types": 250
+    "types": 256
   },
   "warnings": [
     {
@@ -396,12 +402,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 145,
+    "writtenFiles": 151,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "4e2dacc02f2529ae20db379d5344fe4ec6453354544d1887814ad8411ad97cf2",
+    "changeFingerprint": "5f174ef7f46166bf423dd1f629e67c977d721d6db4bfe362b1fd9c129c8fc4f2",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -471,6 +477,12 @@
         "src/types/json-null.ts",
         "src/types/json-object.ts",
         "src/types/json-value.ts",
+        "src/types/media-access.ts",
+        "src/types/media-ai-provenance.ts",
+        "src/types/media-checksum.ts",
+        "src/types/media-kind.ts",
+        "src/types/media-resource.ts",
+        "src/types/media-source.ts",
         "src/types/membership-package-group-mutation-request.ts",
         "src/types/membership-package-mutation-request.ts",
         "src/types/membership-plan-mutation-request.ts",
@@ -633,6 +645,12 @@
             "src/types/json-null.ts",
             "src/types/json-object.ts",
             "src/types/json-value.ts",
+            "src/types/media-access.ts",
+            "src/types/media-ai-provenance.ts",
+            "src/types/media-checksum.ts",
+            "src/types/media-kind.ts",
+            "src/types/media-resource.ts",
+            "src/types/media-source.ts",
             "src/types/membership-package-group-mutation-request.ts",
             "src/types/membership-package-mutation-request.ts",
             "src/types/membership-plan-mutation-request.ts",

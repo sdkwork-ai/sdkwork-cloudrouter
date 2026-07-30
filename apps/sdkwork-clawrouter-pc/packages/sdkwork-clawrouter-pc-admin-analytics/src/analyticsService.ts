@@ -2,7 +2,7 @@ import {
   isRecord,
   readNullableString,
   readNumber,
-  readRequiredNonNegativeNumber,
+  readRequiredNonNegativeInt64String,
   readRequiredString,
   readString,
   type ApiRecord,
@@ -30,31 +30,31 @@ type AdminAnalyticsSdkQuery = {
 
 export interface PieChartData {
   name: string;
-  value: number;
+  value: string;
   color: string;
 }
 
 export interface AdminAnalyticsSummary {
-  totalUsers: number;
-  activeUsers: number;
-  activeModels: number;
-  totalRequests: number;
-  successfulRequests: number;
-  failedRequests: number;
-  totalTokens: number;
-  totalPoints: number;
-  upstreamCost: number;
-  averageTokensPerRequest: number;
-  averagePointsPerRequest: number;
-  errorRate: number;
+  totalUsers: string;
+  activeUsers: string;
+  activeModels: string;
+  totalRequests: string;
+  successfulRequests: string;
+  failedRequests: string;
+  totalTokens: string;
+  totalPoints: string;
+  upstreamCost: string;
+  averageTokensPerRequest: string;
+  averagePointsPerRequest: string;
+  errorRate: string;
 }
 
 export interface AdminAnalyticsTrendPoint {
   time: string;
-  requests: number;
-  tokens: number;
-  points: number;
-  users: number;
+  requests: string;
+  tokens: string;
+  points: string;
+  users: string;
 }
 
 export interface AdminAnalyticsUserRankItem {
@@ -62,9 +62,9 @@ export interface AdminAnalyticsUserRankItem {
   userId: string;
   userName: string;
   email: string | null;
-  requestCount: number;
-  totalTokens: number;
-  points: number;
+  requestCount: string;
+  totalTokens: string;
+  points: string;
   modelDistribution: PieChartData[];
 }
 
@@ -74,13 +74,13 @@ export interface AdminAnalyticsModelRankItem {
   catalogKey: string;
   vendor: string;
   modality: string;
-  requestCount: number;
-  totalTokens: number;
-  points: number;
-  upstreamCost: number;
-  userCount: number;
-  averageTokensPerRequest: number;
-  errorRate: number;
+  requestCount: string;
+  totalTokens: string;
+  points: string;
+  upstreamCost: string;
+  userCount: string;
+  averageTokensPerRequest: string;
+  errorRate: string;
 }
 
 export interface AdminAnalyticsRankings<T> {
@@ -99,8 +99,8 @@ export interface AdminAnalyticsInsight {
 
 export interface AdminAnalyticsOverview {
   timeRange: AdminAnalyticsTimeRange;
-  startTime: string | null;
-  endTime: string | null;
+  startTime: string;
+  endTime: string;
   rankingSize: number;
   summary: AdminAnalyticsSummary;
   trend: AdminAnalyticsTrendPoint[];
@@ -146,8 +146,8 @@ function normalizeAnalyticsQuery(query: AdminAnalyticsQuery): AdminAnalyticsSdkQ
 function normalizeOverview(record: ApiRecord): AdminAnalyticsOverview {
   return {
     timeRange: readTimeRange(record, 'timeRange', 'Analytics time range is required'),
-    startTime: readNullableString(record, 'startTime'),
-    endTime: readNullableString(record, 'endTime'),
+    startTime: readRequiredString(record, 'startTime', 'Analytics start time is required'),
+    endTime: readRequiredString(record, 'endTime', 'Analytics end time is required'),
     rankingSize: readRankingSize(record),
     summary: normalizeSummary(readRequiredRecord(record.summary, 'Analytics summary is required')),
     trend: readOptionalRecordArray(record, 'trend', 'Analytics trend point is required')
@@ -179,28 +179,28 @@ function normalizeOverview(record: ApiRecord): AdminAnalyticsOverview {
 
 function normalizeSummary(record: ApiRecord): AdminAnalyticsSummary {
   return {
-    totalUsers: readRequiredNonNegativeNumber(record, 'totalUsers', 'Analytics total users are required'),
-    activeUsers: readRequiredNonNegativeNumber(record, 'activeUsers', 'Analytics active users are required'),
-    activeModels: readRequiredNonNegativeNumber(record, 'activeModels', 'Analytics active models are required'),
-    totalRequests: readRequiredNonNegativeNumber(record, 'totalRequests', 'Analytics total requests are required'),
-    successfulRequests: readRequiredNonNegativeNumber(record, 'successfulRequests', 'Analytics successful requests are required'),
-    failedRequests: readRequiredNonNegativeNumber(record, 'failedRequests', 'Analytics failed requests are required'),
-    totalTokens: readRequiredNonNegativeNumber(record, 'totalTokens', 'Analytics total tokens are required'),
-    totalPoints: readRequiredNonNegativeNumber(record, 'totalPoints', 'Analytics total Compute Credits are required'),
-    upstreamCost: readRequiredNonNegativeNumber(record, 'upstreamCost', 'Analytics upstream cost is required'),
-    averageTokensPerRequest: readRequiredNonNegativeNumber(record, 'averageTokensPerRequest', 'Analytics average tokens are required'),
-    averagePointsPerRequest: readRequiredNonNegativeNumber(record, 'averagePointsPerRequest', 'Analytics average Compute Credits are required'),
-    errorRate: readRequiredNonNegativeNumber(record, 'errorRate', 'Analytics error rate is required'),
+    totalUsers: readRequiredNonNegativeInt64String(record, 'totalUsers', 'Analytics total users are required'),
+    activeUsers: readRequiredNonNegativeInt64String(record, 'activeUsers', 'Analytics active users are required'),
+    activeModels: readRequiredNonNegativeInt64String(record, 'activeModels', 'Analytics active models are required'),
+    totalRequests: readRequiredNonNegativeInt64String(record, 'totalRequests', 'Analytics total requests are required'),
+    successfulRequests: readRequiredNonNegativeInt64String(record, 'successfulRequests', 'Analytics successful requests are required'),
+    failedRequests: readRequiredNonNegativeInt64String(record, 'failedRequests', 'Analytics failed requests are required'),
+    totalTokens: readRequiredNonNegativeDecimalString(record, 'totalTokens', 'Analytics total tokens are required'),
+    totalPoints: readRequiredNonNegativeDecimalString(record, 'totalPoints', 'Analytics total Compute Credits are required'),
+    upstreamCost: readRequiredNonNegativeDecimalString(record, 'upstreamCost', 'Analytics upstream cost is required'),
+    averageTokensPerRequest: readRequiredNonNegativeDecimalString(record, 'averageTokensPerRequest', 'Analytics average tokens are required'),
+    averagePointsPerRequest: readRequiredNonNegativeDecimalString(record, 'averagePointsPerRequest', 'Analytics average Compute Credits are required'),
+    errorRate: readRequiredNonNegativeDecimalString(record, 'errorRate', 'Analytics error rate is required'),
   };
 }
 
 function normalizeTrendPoint(value: ApiRecord): AdminAnalyticsTrendPoint {
   return {
     time: readRequiredString(value, 'time', 'Analytics trend time is required'),
-    requests: readRequiredNonNegativeNumber(value, 'requests', 'Analytics trend requests are required'),
-    tokens: readRequiredNonNegativeNumber(value, 'tokens', 'Analytics trend tokens are required'),
-    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics trend Compute Credits are required'),
-    users: readRequiredNonNegativeNumber(value, 'users', 'Analytics trend users are required'),
+    requests: readRequiredNonNegativeDecimalString(value, 'requests', 'Analytics trend requests are required'),
+    tokens: readRequiredNonNegativeDecimalString(value, 'tokens', 'Analytics trend tokens are required'),
+    points: readRequiredNonNegativeDecimalString(value, 'points', 'Analytics trend Compute Credits are required'),
+    users: readRequiredNonNegativeInt64String(value, 'users', 'Analytics trend users are required'),
   };
 }
 
@@ -210,9 +210,9 @@ function normalizeUserRankItem(value: ApiRecord): AdminAnalyticsUserRankItem {
     userId: readRequiredString(value, 'userId', 'Analytics user id is required'),
     userName: readRequiredString(value, 'userName', 'Analytics user name is required'),
     email: readNullableString(value, 'email'),
-    requestCount: readRequiredNonNegativeNumber(value, 'requestCount', 'Analytics user request count is required'),
-    totalTokens: readRequiredNonNegativeNumber(value, 'totalTokens', 'Analytics user tokens are required'),
-    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics user Compute Credits are required'),
+    requestCount: readRequiredNonNegativeInt64String(value, 'requestCount', 'Analytics user request count is required'),
+    totalTokens: readRequiredNonNegativeDecimalString(value, 'totalTokens', 'Analytics user tokens are required'),
+    points: readRequiredNonNegativeDecimalString(value, 'points', 'Analytics user Compute Credits are required'),
     modelDistribution: readRequiredRecordArray(
       value,
       'modelDistribution',
@@ -229,24 +229,24 @@ function normalizeModelRankItem(value: ApiRecord): AdminAnalyticsModelRankItem {
     catalogKey: readRequiredString(value, 'catalogKey', 'Analytics model catalog key is required'),
     vendor: readRequiredString(value, 'vendor', 'Analytics model vendor is required'),
     modality: readRequiredString(value, 'modality', 'Analytics model modality is required'),
-    requestCount: readRequiredNonNegativeNumber(value, 'requestCount', 'Analytics model request count is required'),
-    totalTokens: readRequiredNonNegativeNumber(value, 'totalTokens', 'Analytics model tokens are required'),
-    points: readRequiredNonNegativeNumber(value, 'points', 'Analytics model Compute Credits are required'),
-    upstreamCost: readRequiredNonNegativeNumber(value, 'upstreamCost', 'Analytics model upstream cost is required'),
-    userCount: readRequiredNonNegativeNumber(value, 'userCount', 'Analytics model user count is required'),
-    averageTokensPerRequest: readRequiredNonNegativeNumber(
+    requestCount: readRequiredNonNegativeInt64String(value, 'requestCount', 'Analytics model request count is required'),
+    totalTokens: readRequiredNonNegativeDecimalString(value, 'totalTokens', 'Analytics model tokens are required'),
+    points: readRequiredNonNegativeDecimalString(value, 'points', 'Analytics model Compute Credits are required'),
+    upstreamCost: readRequiredNonNegativeDecimalString(value, 'upstreamCost', 'Analytics model upstream cost is required'),
+    userCount: readRequiredNonNegativeInt64String(value, 'userCount', 'Analytics model user count is required'),
+    averageTokensPerRequest: readRequiredNonNegativeDecimalString(
       value,
       'averageTokensPerRequest',
       'Analytics model average tokens are required',
     ),
-    errorRate: readRequiredNonNegativeNumber(value, 'errorRate', 'Analytics model error rate is required'),
+    errorRate: readRequiredNonNegativeDecimalString(value, 'errorRate', 'Analytics model error rate is required'),
   };
 }
 
 function normalizePieChartData(value: ApiRecord): PieChartData {
   return {
     name: readRequiredString(value, 'name', 'Analytics chart name is required'),
-    value: readRequiredNonNegativeNumber(value, 'value', 'Analytics chart value is required'),
+    value: readRequiredNonNegativeDecimalString(value, 'value', 'Analytics chart value is required'),
     color: readRequiredString(value, 'color', 'Analytics chart color is required'),
   };
 }
@@ -325,6 +325,14 @@ function readPositiveInteger(record: ApiRecord, key: string, message: string): n
   return value;
 }
 
+function readRequiredNonNegativeDecimalString(record: ApiRecord, key: string, message: string): string {
+  const value = readString(record, key).trim();
+  if (value.length > 64 || !/^[0-9]+(?:\.[0-9]{1,12})?$/u.test(value)) {
+    throw new Error(message);
+  }
+  return value;
+}
+
 function readRequiredRecord(value: unknown, message: string): ApiRecord {
   if (!isRecord(value)) {
     throw new Error(message);
@@ -357,22 +365,22 @@ function readRequiredRecordArray(record: ApiRecord, key: string, missingMessage:
 export function createEmptyAnalyticsOverview(timeRange: AdminAnalyticsTimeRange = DEFAULT_TIME_RANGE): AdminAnalyticsOverview {
   return {
     timeRange,
-    startTime: null,
-    endTime: null,
+    startTime: '',
+    endTime: '',
     rankingSize: DEFAULT_RANKING_SIZE,
     summary: {
-      totalUsers: 0,
-      activeUsers: 0,
-      activeModels: 0,
-      totalRequests: 0,
-      successfulRequests: 0,
-      failedRequests: 0,
-      totalTokens: 0,
-      totalPoints: 0,
-      upstreamCost: 0,
-      averageTokensPerRequest: 0,
-      averagePointsPerRequest: 0,
-      errorRate: 0,
+      totalUsers: '0',
+      activeUsers: '0',
+      activeModels: '0',
+      totalRequests: '0',
+      successfulRequests: '0',
+      failedRequests: '0',
+      totalTokens: '0',
+      totalPoints: '0',
+      upstreamCost: '0',
+      averageTokensPerRequest: '0',
+      averagePointsPerRequest: '0',
+      errorRate: '0',
     },
     trend: [],
     userRankings: { points: [], tokens: [], requests: [] },

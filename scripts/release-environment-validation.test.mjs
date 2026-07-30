@@ -6,7 +6,7 @@ import { RELEASE_ENVIRONMENT_CONTRACT } from './release-environment-contract.mjs
 import { releaseEnvironmentIssues } from './release-preflight.mjs';
 
 const validReleaseEnv = Object.freeze({
-  SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/claw',
+  SDKWORK_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/claw',
   PORTAL_PUBLIC_API_BASE_URL: 'https://tenant.example.com/v1',
   PORTAL_PUBLIC_APP_API_BASE_URL: '/app/v3/api',
   PORTAL_PUBLIC_BACKEND_API_BASE_URL: '/backend/v3/api',

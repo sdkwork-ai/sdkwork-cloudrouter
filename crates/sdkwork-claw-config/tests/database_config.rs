@@ -73,7 +73,7 @@ fn rejects_invalid_environment_database_pool_size() {
     )
     .unwrap_err();
 
-    assert!(error.contains("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS"));
+    assert!(error.contains("SDKWORK_DATABASE_MAX_CONNECTIONS"));
 }
 
 #[test]
@@ -252,14 +252,8 @@ max_connections = 16
             "SDKWORK_CLAW_CONFIG_FILE",
             Some(config_path.to_string_lossy().to_string()),
         ),
-        (
-            "SDKWORK_CLAW_DATABASE_URL",
-            Some("sqlite::memory:".to_owned()),
-        ),
-        (
-            "SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS",
-            Some("3".to_owned()),
-        ),
+        ("SDKWORK_DATABASE_URL", Some("sqlite::memory:".to_owned())),
+        ("SDKWORK_DATABASE_MAX_CONNECTIONS", Some("3".to_owned())),
     ];
     let _guard = EnvGuard::set(&env);
 
@@ -287,8 +281,8 @@ max_connections = 12
             "SDKWORK_CLAW_CONFIG_FILE",
             Some(config_path.to_string_lossy().to_string()),
         ),
-        ("SDKWORK_CLAW_DATABASE_URL", None),
-        ("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS", None),
+        ("SDKWORK_DATABASE_URL", None),
+        ("SDKWORK_DATABASE_MAX_CONNECTIONS", None),
     ]);
 
     let config = DatabaseConfig::from_env().unwrap().unwrap();
@@ -405,8 +399,8 @@ fn from_env_or_initialize_creates_server_postgres_template_and_requires_real_dat
             "SDKWORK_CLAW_CONFIG_FILE",
             Some(config_path.to_string_lossy().to_string()),
         ),
-        ("SDKWORK_CLAW_DATABASE_URL", None),
-        ("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS", None),
+        ("SDKWORK_DATABASE_URL", None),
+        ("SDKWORK_DATABASE_MAX_CONNECTIONS", None),
         ("SDKWORK_CLAW_DEPLOYMENT_MODE", Some("server".to_owned())),
         (
             "ProgramData",
@@ -450,8 +444,8 @@ fn explicit_runtime_config_file_uses_neighbor_data_directory_for_server_template
             "SDKWORK_CLAW_CONFIG_FILE",
             Some(config_path.to_string_lossy().to_string()),
         ),
-        ("SDKWORK_CLAW_DATABASE_URL", None),
-        ("SDKWORK_CLAW_DATABASE_MAX_CONNECTIONS", None),
+        ("SDKWORK_DATABASE_URL", None),
+        ("SDKWORK_DATABASE_MAX_CONNECTIONS", None),
         ("SDKWORK_CLAW_DEPLOYMENT_MODE", Some("server".to_owned())),
         (
             "ProgramData",
@@ -493,7 +487,7 @@ fn startup_help_text_covers_standard_config_paths_and_database_guidance() {
     )
     .join("\n");
     assert!(server_help.contains("/etc/sdkwork/router/clawrouter.toml"));
-    assert!(server_help.contains("SDKWORK_CLAW_DATABASE_URL"));
+    assert!(server_help.contains("SDKWORK_DATABASE_URL"));
     assert!(server_help.contains("SDKWORK_CLAW_CONFIG_FILE"));
     assert!(server_help.contains("PostgreSQL"));
     assert!(server_help.contains("password/password_file"));

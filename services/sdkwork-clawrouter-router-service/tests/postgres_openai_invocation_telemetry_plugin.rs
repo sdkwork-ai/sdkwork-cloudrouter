@@ -11,7 +11,7 @@ use serde_json::json;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 
-const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_CLAW_POSTGRES_TEST_DATABASE_URL";
+const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 const TENANT_ID: i64 = 100_001;
 const ORGANIZATION_ID: i64 = 200_001;
 const SUPPLIER_ID: i64 = 7_001;

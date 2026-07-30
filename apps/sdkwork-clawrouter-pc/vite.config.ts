@@ -22,7 +22,6 @@ const ENABLE_TYPESCRIPT_TRANSFORM_SOURCE_MAPS = false;
 const importMetaHotPattern = /\bimport\.meta\.hot\b/g;
 const nodeEnvPattern = /\b(?:globalThis\.|global\.)?process\.env\.NODE_ENV\b/g;
 const processEnvPattern = /\b(?:globalThis\.|global\.)?process\.env\b/g;
-const LOCAL_ROUTE_PACKAGE_PATTERN = /(?:^|\/)node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?sdkwork-clawrouter-(?<packageName>[^/]+)\//;
 const HTML_MODULE_SCRIPT_PATTERN = /<script\b(?=[^>]*\btype=["']module["'])(?=[^>]*\bsrc=["'][^"']+["'])[^>]*><\/script>/i;
 const RUNTIME_ENV_SCRIPT_PATH = '/runtime-env.js';
 const DEFAULT_PORTAL_DEV_PORT = 3901;
@@ -149,6 +148,68 @@ function clawrouterNodeEnvTransform() {
           .replace(processEnvPattern, '{}'),
         map: null,
       };
+    },
+  };
+}
+
+export function findStaticChunkCycle(
+  graph: ReadonlyMap<string, readonly string[]>,
+): string[] | null {
+  const visited = new Set<string>();
+  const active = new Set<string>();
+  const pathStack: string[] = [];
+
+  function visit(chunkName: string): string[] | null {
+    if (active.has(chunkName)) {
+      const cycleStart = pathStack.indexOf(chunkName);
+      return [...pathStack.slice(cycleStart), chunkName];
+    }
+    if (visited.has(chunkName)) {
+      return null;
+    }
+
+    visited.add(chunkName);
+    active.add(chunkName);
+    pathStack.push(chunkName);
+    for (const importedChunk of graph.get(chunkName) ?? []) {
+      if (!graph.has(importedChunk)) {
+        continue;
+      }
+      const cycle = visit(importedChunk);
+      if (cycle) {
+        return cycle;
+      }
+    }
+    pathStack.pop();
+    active.delete(chunkName);
+    return null;
+  }
+
+  for (const chunkName of graph.keys()) {
+    const cycle = visit(chunkName);
+    if (cycle) {
+      return cycle;
+    }
+  }
+  return null;
+}
+
+function clawrouterStaticChunkCycleGuard(): Plugin {
+  return {
+    name: 'clawrouter-static-chunk-cycle-guard',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      const chunkGraph = new Map<string, string[]>();
+      for (const output of Object.values(bundle)) {
+        if (output.type === 'chunk') {
+          chunkGraph.set(output.fileName, output.imports);
+        }
+      }
+
+      const cycle = findStaticChunkCycle(chunkGraph);
+      if (cycle) {
+        this.error(`Production bundle contains a static chunk import cycle: ${cycle.join(' -> ')}`);
+      }
     },
   };
 }
@@ -545,6 +606,7 @@ export default defineConfig(({mode}) => {
       clawrouterPortalPnpmWorkspaceResolver(configDir),
       clawrouterPortalWorkspaceDependencyResolver(configDir, portalWorkspaceDependencyRoots),
       tailwindcss(),
+      clawrouterStaticChunkCycleGuard(),
     ],
     esbuild: false,
     keepProcessEnv: false,
@@ -637,48 +699,6 @@ export default defineConfig(({mode}) => {
             const normalizedSdkworkCoreRoot = normalizePath(sdkworkCoreRoot);
             const normalizedSdkworkUiRoot = normalizePath(sdkworkUiRoot);
             const normalizedClawRouterSdkRoot = normalizePath(path.resolve(configDir, '../../sdks'));
-            const localPackageMatch = normalizedId.match(
-              /\/packages\/sdkwork-clawrouter-pc-(?<packageName>[^/]+)\//,
-            );
-            if (localPackageMatch) {
-              const packageName = localPackageMatch.groups?.packageName;
-              if (packageName === 'models') {
-                if (normalizedId.includes('/src/pages/ModelDetails') || normalizedId.includes('/src/modelDetailsRoute')) {
-                  return 'models-details';
-                }
-                if (normalizedId.includes('/src/pages/Models') || normalizedId.includes('/src/modelsRoute')) {
-                  return 'models';
-                }
-                if (normalizedId.includes('/src/components/ModelShowcase')) {
-                  return 'models-showcase';
-                }
-                return 'models-core';
-              }
-              if (packageName?.startsWith('admin-')) {
-                return packageName;
-              }
-              if (packageName?.startsWith('console-')) {
-                return packageName;
-              }
-              return packageName;
-            }
-            const routePackageMatch = normalizedId.match(LOCAL_ROUTE_PACKAGE_PATTERN);
-            if (routePackageMatch) {
-              const packageName = routePackageMatch.groups?.packageName;
-              if (packageName === 'models') {
-                if (normalizedId.includes('/src/pages/ModelDetails') || normalizedId.includes('/src/modelDetailsRoute')) {
-                  return 'models-details';
-                }
-                if (normalizedId.includes('/src/pages/Models') || normalizedId.includes('/src/modelsRoute')) {
-                  return 'models';
-                }
-                if (normalizedId.includes('/src/components/ModelShowcase')) {
-                  return 'models-showcase';
-                }
-                return 'models-core';
-              }
-              return packageName;
-            }
             if (
               normalizedId.startsWith(`${normalizedIamRoot}/apps/sdkwork-iam-pc/packages/`)
               || normalizedId.startsWith(`${normalizedIamRoot}/apps/sdkwork-iam-common/packages/`)
@@ -707,6 +727,13 @@ export default defineConfig(({mode}) => {
             }
             if (
               normalizedId.startsWith(`${normalizedClawRouterSdkRoot}/`)
+              || (
+                normalizedId.includes('/sdks/')
+                && /\/sdkwork-[^/]+-(?:app|backend|open)-sdk\//u.test(normalizedId)
+              )
+              || /\/node_modules\/@sdkwork\/[^/]+-(?:app|backend|open)-sdk\//u.test(normalizedId)
+              || /\/node_modules\/sdkwork-[^/]+-(?:app|backend|open)-sdk-generated-typescript\//u.test(normalizedId)
+              || normalizedId.includes('/sdkwork-sdk-commons/')
             ) {
               return 'vendor-sdkwork-sdk';
             }
@@ -738,8 +765,8 @@ export default defineConfig(({mode}) => {
             if (normalizedId.includes('/node_modules/react-hook-form/')) {
               return 'vendor-form';
             }
-            if (normalizedId.includes('/node_modules/qrcode/')) {
-              return 'vendor-qrcode';
+            if (normalizedId.includes('/node_modules/jspdf/')) {
+              return 'vendor-pdf';
             }
             if (
               normalizedId.includes('/node_modules/@monaco-editor/')
@@ -772,7 +799,7 @@ export default defineConfig(({mode}) => {
             if (id.includes('node_modules/lucide-react/')) {
               return 'vendor-icons';
             }
-            return 'vendor';
+            return undefined;
           },
         },
       },

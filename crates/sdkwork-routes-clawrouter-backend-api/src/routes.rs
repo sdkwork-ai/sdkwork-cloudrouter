@@ -38,10 +38,9 @@ use sdkwork_clawrouter_router_service::infrastructure::sql::pool::connect_standa
 use sdkwork_clawrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAnnouncementStore, PostgresAdminApiKeyRateLimitStore,
     PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore, PostgresAdminFinanceStore,
-    PostgresAdminFirewallRuleStore,
-    PostgresAdminInventoryStore, PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore,
-    PostgresAdminMcpStore, PostgresAdminModelRateLimitStore, PostgresAdminRecordStore,
-    PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
+    PostgresAdminFirewallRuleStore, PostgresAdminInventoryStore, PostgresAdminIpRateLimitStore,
+    PostgresAdminMarketingStore, PostgresAdminMcpStore, PostgresAdminModelRateLimitStore,
+    PostgresAdminRecordStore, PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
     PostgresAdminTransactionCenterStore, PostgresAdminUpstreamAccountVerifier,
     PostgresAdminUpstreamStore, PostgresCatalogLoadError, PostgresGatewayApiKeyCommandStore,
     PostgresPricingCatalogLoader, PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
@@ -240,6 +239,8 @@ fn is_commerce_dependency_contract_path(path: &str) -> bool {
         "/backend/v3/api/inventory/",
         "/backend/v3/api/memberships/",
         "/backend/v3/api/orders",
+        "/backend/v3/api/payments/",
+        "/backend/v3/api/promotions/",
         "/backend/v3/api/refunds",
         "/backend/v3/api/shipments",
         "/backend/v3/api/wallet/",
@@ -867,7 +868,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
     startup_install_mode: StartupInstallMode,
     runtime_toml: Option<&RuntimeTomlConfig>,
 ) -> Result<Router, ProductCatalogRouterError> {
-    sdkwork_claw_http::materialize_federated_database_env_from_claw_config(&config);
+    sdkwork_claw_http::materialize_federated_database_env_from_config(&config);
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
         .map_err(ProductCatalogRouterError::Config)?;
     let deployment_mode = deployment_mode_from_env_or_toml(runtime_toml)
@@ -1355,7 +1356,7 @@ fn require_api_key_security_config(
 ) -> Result<ApiKeySecurityConfig, ProductCatalogRouterError> {
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
-            "{} is required when SDKWORK_CLAW_DATABASE_URL is configured",
+            "{} is required when SDKWORK_DATABASE_URL is configured",
             ApiKeySecurityConfig::ENV_API_KEY_PEPPER
         ))
     })
@@ -1378,7 +1379,7 @@ fn require_trusted_subject_config(
 ) -> Result<TrustedSubjectConfig, ProductCatalogRouterError> {
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
-            "{} is required when SDKWORK_CLAW_DATABASE_URL is configured",
+            "{} is required when SDKWORK_DATABASE_URL is configured",
             TrustedSubjectConfig::ENV_TRUSTED_SUBJECT_SECRET
         ))
     })
@@ -1389,7 +1390,7 @@ fn require_app_session_config(
 ) -> Result<AppSessionConfig, ProductCatalogRouterError> {
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
-            "{} is required when SDKWORK_CLAW_DATABASE_URL is configured",
+            "{} is required when SDKWORK_DATABASE_URL is configured",
             AppSessionConfig::ENV_APP_SESSION_SECRET
         ))
     })
@@ -1515,10 +1516,10 @@ mod tests {
         assert!(is_commerce_dependency_contract_path(
             "/backend/v3/api/memberships/plans"
         ));
-        assert!(!is_commerce_dependency_contract_path(
+        assert!(is_commerce_dependency_contract_path(
             "/backend/v3/api/payments/providers"
         ));
-        assert!(!is_commerce_dependency_contract_path(
+        assert!(is_commerce_dependency_contract_path(
             "/backend/v3/api/promotions/offers"
         ));
         assert!(!is_commerce_dependency_contract_path(
@@ -1623,12 +1624,12 @@ mod tests {
     async fn router_from_env_rejects_missing_or_invalid_server_snowflake_node_id_before_database_bootstrap(
     ) {
         let _guard = env_guard().lock().unwrap();
-        let saved_database_url = std::env::var("SDKWORK_CLAW_DATABASE_URL").ok();
+        let saved_database_url = std::env::var("SDKWORK_DATABASE_URL").ok();
         let saved_deployment_mode = std::env::var("SDKWORK_CLAW_DEPLOYMENT_MODE").ok();
         let saved_config_file = std::env::var("SDKWORK_CLAW_CONFIG_FILE").ok();
         let saved_snowflake_node_id = std::env::var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID").ok();
 
-        std::env::remove_var("SDKWORK_CLAW_DATABASE_URL");
+        std::env::remove_var("SDKWORK_DATABASE_URL");
         std::env::set_var("SDKWORK_CLAW_DEPLOYMENT_MODE", "server");
         for node_id in [None, Some("not-a-node-id")] {
             let mut config_path = unique_runtime_config_path();
@@ -1660,7 +1661,7 @@ mod tests {
             );
         }
 
-        restore_env_var("SDKWORK_CLAW_DATABASE_URL", saved_database_url);
+        restore_env_var("SDKWORK_DATABASE_URL", saved_database_url);
         restore_env_var("SDKWORK_CLAW_DEPLOYMENT_MODE", saved_deployment_mode);
         restore_env_var("SDKWORK_CLAW_CONFIG_FILE", saved_config_file);
         restore_env_var("SDKWORK_CLAW_SNOWFLAKE_NODE_ID", saved_snowflake_node_id);

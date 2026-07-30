@@ -141,7 +141,7 @@ pnpm release:env:write -- --force
 server 模式指定 PostgreSQL：
 
 ```powershell
-$env:SDKWORK_CLAW_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod"
+$env:SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod"
 pnpm start -- --deployment-mode server
 ```
 

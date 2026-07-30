@@ -633,7 +633,7 @@ test("navbar notification dropdown has a portal-side outside click dismiss guard
   }
 });
 
-test("portal notification service fetches console announcements without frontend app id", () => {
+test("portal notification service composes the shared service with canonical pagination and app scope", () => {
   const serviceSource = readFileSync(
     new URL("./packages/sdkwork-clawroutes-pc-commons/src/notificationService.ts", import.meta.url),
     "utf8",
@@ -644,18 +644,17 @@ test("portal notification service fetches console announcements without frontend
   );
 
   for (const marker of [
-    "client.notification.listNotifications({",
-    "includeArchived: options.includeArchived ?? false",
-    "page: options.page ?? DEFAULT_NOTIFICATION_PAGE",
-    "pageSize: options.pageSize ?? DEFAULT_NOTIFICATION_PAGE_SIZE",
-    "client.notification.acknowledge.create(notificationId)",
-    "client.notification.popupSeen.create(notificationId)",
+    "createSdkworkNotificationService({",
+    "appId: DEFAULT_NOTIFICATION_APP_ID",
+    "page_size: DEFAULT_NOTIFICATION_PAGE_SIZE",
+    "pageSize: params?.page_size ?? DEFAULT_NOTIFICATION_PAGE_SIZE",
+    "appSdkClient.notification.acknowledge.create(notificationId, { appId: params?.appId })",
+    "appSdkClient.notification.popupSeen.create(notificationId, { appId: params?.appId })",
   ]) {
-    assert.ok(serviceSource.includes(marker), `missing app-id-free notification service marker: ${marker}`);
+    assert.ok(serviceSource.includes(marker), `missing shared notification service marker: ${marker}`);
   }
 
-  assert.doesNotMatch(serviceSource, /createSdkworkNotificationService/u);
-  assert.doesNotMatch(serviceSource, /appId:\s*DEFAULT_NOTIFICATION_APP_ID/u);
+  assert.doesNotMatch(serviceSource, /createIdempotencyParams/u);
   assert.ok(navbarSource.includes("service={notificationService}"));
   assert.ok(navbarSource.includes("const notificationService = useMemo(() => createPortalNotificationService(), [])"));
 });
@@ -672,9 +671,9 @@ test("portal notification facade remains typed and backend SDK construction has 
 
   for (const marker of [
     "export type PortalNotificationClient = SdkworkNotificationGeneratedClient;",
-    "client.notification.listNotifications({",
-    "client.notification.acknowledge.create(notificationId)",
-    "client.notification.popupSeen.create(notificationId)",
+    "appSdkClient.notification.list({",
+    "appSdkClient.notification.acknowledge.create(notificationId, { appId: params?.appId })",
+    "appSdkClient.notification.popupSeen.create(notificationId, { appId: params?.appId })",
   ]) {
     assert.ok(notificationSource.includes(marker), `missing notification client facade marker: ${marker}`);
   }

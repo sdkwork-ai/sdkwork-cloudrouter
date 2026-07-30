@@ -23,12 +23,6 @@
       ],
       "@sdkwork/clawroutes-pc-commons/sdk-request-boundary": [
         "./packages/sdkwork-clawroutes-pc-commons/src/sdk-request-boundary.ts"
-      ],
-      "@sdkwork/iam-runtime": [
-        "./src/typecheck-shims.d.ts"
-      ],
-      "@sdkwork/iam-service": [
-        "./src/typecheck-shims.d.ts"
       ]
     },
     "allowImportingTsExtensions": true,
