@@ -2694,11 +2694,38 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOverview",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "CacheOverview contract.",
+          "properties": {
+            "instances": {
+              "description": "instances field on CacheOverview.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "namespacePolicies": {
+              "description": "namespacePolicies field on CacheOverview.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "summary": {
+              "additionalProperties": true,
+              "description": "summary field on CacheOverview.",
+              "type": "object"
+            }
+          },
+          "required": [
+            "instances",
+            "namespacePolicies",
+            "summary"
+          ],
           "type": "object"
         }
       },
@@ -2759,11 +2786,52 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheNamespaceKeyPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "CacheNamespaceKeyPage contract.",
+          "properties": {
+            "instanceName": {
+              "description": "instanceName field on CacheNamespaceKeyPage.",
+              "type": "string"
+            },
+            "items": {
+              "description": "items field on CacheNamespaceKeyPage.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "namespace": {
+              "description": "namespace field on CacheNamespaceKeyPage.",
+              "type": "string"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            },
+            "returnedItems": {
+              "description": "returnedItems field on CacheNamespaceKeyPage.",
+              "type": "string"
+            },
+            "scanComplete": {
+              "description": "scanComplete field on CacheNamespaceKeyPage.",
+              "type": "boolean"
+            },
+            "scannedItems": {
+              "description": "scannedItems field on CacheNamespaceKeyPage.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "instanceName",
+            "items",
+            "namespace",
+            "pageInfo",
+            "returnedItems",
+            "scanComplete",
+            "scannedItems"
+          ],
           "type": "object"
         }
       },
@@ -2800,11 +2868,61 @@
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "CacheOperationOutcome contract.",
+          "properties": {
+            "cacheKey": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "cacheKey field on CacheOperationOutcome."
+            },
+            "deletedEntries": {
+              "description": "deletedEntries field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "instanceName": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "instanceName field on CacheOperationOutcome."
+            },
+            "namespace": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "namespace field on CacheOperationOutcome."
+            },
+            "operation": {
+              "description": "operation field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "description": "refreshedEntries field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "status": {
+              "description": "status field on CacheOperationOutcome.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "cacheKey",
+            "deletedEntries",
+            "instanceName",
+            "namespace",
+            "operation",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -2845,11 +2963,61 @@
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "CacheOperationOutcome contract.",
+          "properties": {
+            "cacheKey": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "cacheKey field on CacheOperationOutcome."
+            },
+            "deletedEntries": {
+              "description": "deletedEntries field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "instanceName": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "instanceName field on CacheOperationOutcome."
+            },
+            "namespace": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "namespace field on CacheOperationOutcome."
+            },
+            "operation": {
+              "description": "operation field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "description": "refreshedEntries field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "status": {
+              "description": "status field on CacheOperationOutcome.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "cacheKey",
+            "deletedEntries",
+            "instanceName",
+            "namespace",
+            "operation",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -2890,11 +3058,61 @@
       "request_body_required": false,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "CacheOperationOutcome",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "CacheOperationOutcome contract.",
+          "properties": {
+            "cacheKey": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "cacheKey field on CacheOperationOutcome."
+            },
+            "deletedEntries": {
+              "description": "deletedEntries field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "instanceName": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "instanceName field on CacheOperationOutcome."
+            },
+            "namespace": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "namespace field on CacheOperationOutcome."
+            },
+            "operation": {
+              "description": "operation field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "refreshedEntries": {
+              "description": "refreshedEntries field on CacheOperationOutcome.",
+              "type": "string"
+            },
+            "status": {
+              "description": "status field on CacheOperationOutcome.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "cacheKey",
+            "deletedEntries",
+            "instanceName",
+            "namespace",
+            "operation",
+            "refreshedEntries",
+            "status"
+          ],
           "type": "object"
         }
       },
@@ -3110,62 +3328,15 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "MonitorAlertListResponse",
+        "name": "MonitorAlertPage",
         "schema": {
           "additionalProperties": false,
-          "name": "MonitorAlertListResponse",
+          "description": "MonitorAlertPage contract.",
           "properties": {
             "items": {
+              "description": "items field on MonitorAlertPage.",
               "items": {
-                "additionalProperties": false,
-                "name": "MonitorAlertItem",
-                "properties": {
-                  "id": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "message": {
-                    "maxLength": 4096,
-                    "type": "string"
-                  },
-                  "severity": {
-                    "enum": [
-                      "critical",
-                      "warning",
-                      "info"
-                    ],
-                    "type": "string"
-                  },
-                  "source": {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  "status": {
-                    "enum": [
-                      "active",
-                      "resolved"
-                    ],
-                    "type": "string"
-                  },
-                  "time": {
-                    "maxLength": 64,
-                    "type": "string"
-                  },
-                  "title": {
-                    "maxLength": 255,
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "id",
-                  "severity",
-                  "title",
-                  "message",
-                  "time",
-                  "status",
-                  "source"
-                ],
+                "additionalProperties": true,
                 "type": "object"
               },
               "type": "array"
@@ -3247,64 +3418,15 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "MonitorNodeListResponse",
+        "name": "MonitorNodePage",
         "schema": {
           "additionalProperties": false,
-          "name": "MonitorNodeListResponse",
+          "description": "MonitorNodePage contract.",
           "properties": {
             "items": {
+              "description": "items field on MonitorNodePage.",
               "items": {
-                "additionalProperties": false,
-                "name": "MonitorNodeItem",
-                "properties": {
-                  "cpu": {
-                    "minimum": 0,
-                    "type": "number"
-                  },
-                  "id": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "ip": {
-                    "maxLength": 128,
-                    "type": "string"
-                  },
-                  "memory": {
-                    "minimum": 0,
-                    "type": "number"
-                  },
-                  "name": {
-                    "maxLength": 255,
-                    "type": "string"
-                  },
-                  "region": {
-                    "maxLength": 128,
-                    "type": "string"
-                  },
-                  "status": {
-                    "enum": [
-                      "online",
-                      "warning",
-                      "offline"
-                    ],
-                    "type": "string"
-                  },
-                  "uptime": {
-                    "maxLength": 128,
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "id",
-                  "name",
-                  "region",
-                  "status",
-                  "cpu",
-                  "memory",
-                  "uptime",
-                  "ip"
-                ],
+                "additionalProperties": true,
                 "type": "object"
               },
               "type": "array"
@@ -3385,39 +3507,15 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "MonitorPerformanceListResponse",
+        "name": "MonitorPerformancePage",
         "schema": {
           "additionalProperties": false,
-          "name": "MonitorPerformanceListResponse",
+          "description": "MonitorPerformancePage contract.",
           "properties": {
             "items": {
+              "description": "items field on MonitorPerformancePage.",
               "items": {
-                "additionalProperties": false,
-                "name": "MonitorPerformanceItem",
-                "properties": {
-                  "cpu": {
-                    "minimum": 0,
-                    "type": "number"
-                  },
-                  "memory": {
-                    "minimum": 0,
-                    "type": "number"
-                  },
-                  "network": {
-                    "minimum": 0,
-                    "type": "number"
-                  },
-                  "time": {
-                    "maxLength": 64,
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "time",
-                  "cpu",
-                  "memory",
-                  "network"
-                ],
+                "additionalProperties": true,
                 "type": "object"
               },
               "type": "array"
@@ -3462,14 +3560,69 @@
       "read_sources": [
         "iam_gateway_risk_rule"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminFirewallRuleCreateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminFirewallRuleCreateRequest contract.",
+          "properties": {
+            "reason": {
+              "description": "reason field on AdminFirewallRuleCreateRequest.",
+              "type": "string"
+            },
+            "type": {
+              "description": "type field on AdminFirewallRuleCreateRequest.",
+              "type": "string"
+            },
+            "value": {
+              "description": "value field on AdminFirewallRuleCreateRequest.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "reason",
+            "type",
+            "value"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "FirewallRuleItem",
+        "schema": {
+          "additionalProperties": false,
+          "description": "FirewallRuleItem contract.",
+          "properties": {
+            "id": {
+              "description": "id field on FirewallRuleItem.",
+              "type": "string"
+            },
+            "reason": {
+              "description": "reason field on FirewallRuleItem.",
+              "type": "string"
+            },
+            "time": {
+              "description": "time field on FirewallRuleItem.",
+              "type": "string"
+            },
+            "type": {
+              "description": "type field on FirewallRuleItem.",
+              "type": "string"
+            },
+            "value": {
+              "description": "value field on FirewallRuleItem.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "reason",
+            "time",
+            "type",
+            "value"
+          ],
           "type": "object"
         }
       },
@@ -3505,14 +3658,93 @@
       "read_sources": [
         "iam_gateway_risk_rule"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminIpLimitCreateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminIpLimitCreateRequest contract.",
+          "properties": {
+            "blockDuration": {
+              "description": "blockDuration field on AdminIpLimitCreateRequest.",
+              "type": "string"
+            },
+            "rpm": {
+              "description": "rpm field on AdminIpLimitCreateRequest.",
+              "type": "number"
+            },
+            "rps": {
+              "description": "rps field on AdminIpLimitCreateRequest.",
+              "type": "number"
+            },
+            "ruleName": {
+              "description": "ruleName field on AdminIpLimitCreateRequest.",
+              "type": "string"
+            },
+            "targetIp": {
+              "description": "targetIp field on AdminIpLimitCreateRequest.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "blockDuration",
+            "rpm",
+            "rps",
+            "ruleName",
+            "targetIp"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "IpLimitRuleItem",
+        "schema": {
+          "additionalProperties": false,
+          "description": "IpLimitRuleItem contract.",
+          "properties": {
+            "blockDuration": {
+              "description": "blockDuration field on IpLimitRuleItem.",
+              "type": "string"
+            },
+            "id": {
+              "description": "id field on IpLimitRuleItem.",
+              "type": "string"
+            },
+            "rpm": {
+              "description": "rpm field on IpLimitRuleItem.",
+              "type": "number"
+            },
+            "rps": {
+              "description": "rps field on IpLimitRuleItem.",
+              "type": "number"
+            },
+            "ruleName": {
+              "description": "ruleName field on IpLimitRuleItem.",
+              "type": "string"
+            },
+            "status": {
+              "description": "status field on IpLimitRuleItem.",
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "targetIp": {
+              "description": "targetIp field on IpLimitRuleItem.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "blockDuration",
+            "id",
+            "rpm",
+            "rps",
+            "ruleName",
+            "status",
+            "targetIp"
+          ],
           "type": "object"
         }
       },
@@ -3549,14 +3781,101 @@
         "ai_quota_policy",
         "ai_upstream_account_group"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminModelLimitCreateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminModelLimitCreateRequest contract.",
+          "properties": {
+            "accountGroup": {
+              "description": "Upstream account group code for the model rate limit.",
+              "type": "string"
+            },
+            "model": {
+              "description": "model field on AdminModelLimitCreateRequest.",
+              "type": "string"
+            },
+            "rpm": {
+              "description": "rpm field on AdminModelLimitCreateRequest.",
+              "type": "number"
+            },
+            "tpm": {
+              "description": "tpm field on AdminModelLimitCreateRequest.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "accountGroup",
+            "model",
+            "rpm",
+            "tpm"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "ModelLimitRuleItem",
+        "schema": {
+          "additionalProperties": false,
+          "description": "ModelLimitRuleItem contract.",
+          "properties": {
+            "accountGroup": {
+              "description": "Upstream account group code.",
+              "type": "string"
+            },
+            "accountGroupId": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Upstream account group identifier."
+            },
+            "accountGroupName": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Upstream account group display name."
+            },
+            "id": {
+              "description": "id field on ModelLimitRuleItem.",
+              "type": "string"
+            },
+            "model": {
+              "description": "model field on ModelLimitRuleItem.",
+              "type": "string"
+            },
+            "rpm": {
+              "description": "rpm field on ModelLimitRuleItem.",
+              "type": "number"
+            },
+            "status": {
+              "description": "status field on ModelLimitRuleItem.",
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "tpm": {
+              "description": "tpm field on ModelLimitRuleItem.",
+              "type": "number"
+            }
+          },
+          "required": [
+            "accountGroup",
+            "accountGroupId",
+            "accountGroupName",
+            "id",
+            "model",
+            "rpm",
+            "status",
+            "tpm"
+          ],
           "type": "object"
         }
       },
@@ -3593,14 +3912,93 @@
         "ai_quota_policy",
         "iam_gateway_api_key"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminTokenLimitCreateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminTokenLimitCreateRequest contract.",
+          "properties": {
+            "burst": {
+              "description": "burst field on AdminTokenLimitCreateRequest.",
+              "type": "number"
+            },
+            "keyPrefix": {
+              "description": "keyPrefix field on AdminTokenLimitCreateRequest.",
+              "type": "string"
+            },
+            "rpd": {
+              "description": "rpd field on AdminTokenLimitCreateRequest.",
+              "type": "number"
+            },
+            "rps": {
+              "description": "rps field on AdminTokenLimitCreateRequest.",
+              "type": "number"
+            },
+            "user": {
+              "description": "user field on AdminTokenLimitCreateRequest.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "burst",
+            "keyPrefix",
+            "rpd",
+            "rps",
+            "user"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "TokenLimitRuleItem",
+        "schema": {
+          "additionalProperties": false,
+          "description": "TokenLimitRuleItem contract.",
+          "properties": {
+            "burst": {
+              "description": "burst field on TokenLimitRuleItem.",
+              "type": "number"
+            },
+            "id": {
+              "description": "id field on TokenLimitRuleItem.",
+              "type": "string"
+            },
+            "keyPrefix": {
+              "description": "keyPrefix field on TokenLimitRuleItem.",
+              "type": "string"
+            },
+            "rpd": {
+              "description": "rpd field on TokenLimitRuleItem.",
+              "type": "number"
+            },
+            "rps": {
+              "description": "rps field on TokenLimitRuleItem.",
+              "type": "number"
+            },
+            "status": {
+              "description": "status field on TokenLimitRuleItem.",
+              "enum": [
+                "active",
+                "exhausted"
+              ],
+              "type": "string"
+            },
+            "user": {
+              "description": "user field on TokenLimitRuleItem.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "burst",
+            "id",
+            "keyPrefix",
+            "rpd",
+            "rps",
+            "status",
+            "user"
+          ],
           "type": "object"
         }
       },
@@ -3672,11 +4070,27 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "FirewallRulePage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "FirewallRulePage contract.",
+          "properties": {
+            "items": {
+              "description": "items field on FirewallRulePage.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -3745,11 +4159,27 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "IpLimitRulePage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "IpLimitRulePage contract.",
+          "properties": {
+            "items": {
+              "description": "items field on IpLimitRulePage.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -3819,11 +4249,27 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "ModelLimitRulePage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "ModelLimitRulePage contract.",
+          "properties": {
+            "items": {
+              "description": "items field on ModelLimitRulePage.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -3893,11 +4339,27 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "TokenLimitRulePage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "TokenLimitRulePage contract.",
+          "properties": {
+            "items": {
+              "description": "items field on TokenLimitRulePage.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4029,11 +4491,27 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminRecordPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminRecordPage contract.",
+          "properties": {
+            "items": {
+              "description": "items field on AdminRecordPage.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4069,11 +4547,29 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminRuntimeRegionSettingsResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminRuntimeRegionSettingsResponse contract.",
+          "properties": {
+            "currentRegionCode": {
+              "description": "currentRegionCode field on AdminRuntimeRegionSettingsResponse.",
+              "type": "string"
+            },
+            "currentRegionName": {
+              "description": "currentRegionName field on AdminRuntimeRegionSettingsResponse.",
+              "type": "string"
+            },
+            "remark": {
+              "description": "remark field on AdminRuntimeRegionSettingsResponse.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "currentRegionCode",
+            "currentRegionName",
+            "remark"
+          ],
           "type": "object"
         }
       },
@@ -4106,14 +4602,59 @@
       "read_sources": [
         "ops_config_snapshot"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminRuntimeRegionSettingsUpdateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminRuntimeRegionSettingsUpdateRequest contract.",
+          "properties": {
+            "currentRegionCode": {
+              "description": "currentRegionCode field on AdminRuntimeRegionSettingsUpdateRequest.",
+              "type": "string"
+            },
+            "currentRegionName": {
+              "description": "currentRegionName field on AdminRuntimeRegionSettingsUpdateRequest.",
+              "type": "string"
+            },
+            "remark": {
+              "description": "remark field on AdminRuntimeRegionSettingsUpdateRequest.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "currentRegionCode",
+            "currentRegionName",
+            "remark"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminRuntimeRegionSettingsResponse",
+        "schema": {
+          "additionalProperties": false,
+          "description": "AdminRuntimeRegionSettingsResponse contract.",
+          "properties": {
+            "currentRegionCode": {
+              "description": "currentRegionCode field on AdminRuntimeRegionSettingsResponse.",
+              "type": "string"
+            },
+            "currentRegionName": {
+              "description": "currentRegionName field on AdminRuntimeRegionSettingsResponse.",
+              "type": "string"
+            },
+            "remark": {
+              "description": "remark field on AdminRuntimeRegionSettingsResponse.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "currentRegionCode",
+            "currentRegionName",
+            "remark"
+          ],
           "type": "object"
         }
       },
@@ -4149,14 +4690,152 @@
       "read_sources": [
         "ops_gateway_instance"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminServiceNodeCreateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminServiceNodeCreateRequest contract.",
+          "properties": {
+            "baseUrl": {
+              "description": "Primary public HTTP(S) API base URL, including the API path prefix.",
+              "format": "uri",
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "deploymentProfile": {
+              "description": "Deployment topology used to expose this API ingress.",
+              "enum": [
+                "standalone",
+                "cloud"
+              ],
+              "type": "string"
+            },
+            "domain": {
+              "description": "Legacy primary domain alias retained for backward compatibility.",
+              "maxLength": 255,
+              "type": "string"
+            },
+            "domains": {
+              "description": "Public domain aliases served by this deployment node.",
+              "items": {
+                "maxLength": 255,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array"
+            },
+            "ip": {
+              "description": "Optional node IP address; cloud gateway deployments may omit it.",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "name": {
+              "description": "name field on AdminServiceNodeCreateRequest.",
+              "type": "string"
+            },
+            "remark": {
+              "description": "remark field on AdminServiceNodeCreateRequest.",
+              "type": "string"
+            },
+            "status": {
+              "description": "status field on AdminServiceNodeCreateRequest.",
+              "enum": [
+                "enabled",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminServiceNodeItem",
+        "schema": {
+          "additionalProperties": false,
+          "description": "AdminServiceNodeItem contract.",
+          "properties": {
+            "baseUrl": {
+              "description": "Primary public HTTP(S) API base URL.",
+              "format": "uri",
+              "type": "string"
+            },
+            "deploymentProfile": {
+              "description": "Deployment topology used to expose this API ingress.",
+              "enum": [
+                "standalone",
+                "cloud"
+              ],
+              "type": "string"
+            },
+            "domain": {
+              "description": "Compatibility mirror of the first configured domain.",
+              "type": "string"
+            },
+            "domains": {
+              "description": "Normalized public domain aliases served by this node.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "healthStatus": {
+              "description": "healthStatus field on AdminServiceNodeItem.",
+              "enum": [
+                "online",
+                "warning",
+                "offline",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            "id": {
+              "description": "id field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "ip": {
+              "description": "ip field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "name": {
+              "description": "name field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "remark": {
+              "description": "remark field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "status": {
+              "description": "status field on AdminServiceNodeItem.",
+              "enum": [
+                "enabled",
+                "disabled"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "description": "updatedAt field on AdminServiceNodeItem.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "baseUrl",
+            "deploymentProfile",
+            "domain",
+            "domains",
+            "healthStatus",
+            "id",
+            "ip",
+            "name",
+            "remark",
+            "status",
+            "updatedAt"
+          ],
           "type": "object"
         }
       },
@@ -4281,11 +4960,27 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminServiceNodePage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminServiceNodePage contract.",
+          "properties": {
+            "items": {
+              "description": "items field on AdminServiceNodePage.",
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -4320,14 +5015,140 @@
       "read_sources": [
         "ops_gateway_instance"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminServiceNodeUpdateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminServiceNodeUpdateRequest contract.",
+          "properties": {
+            "baseUrl": {
+              "description": "Primary public HTTP(S) API base URL.",
+              "format": "uri",
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "deploymentProfile": {
+              "description": "Deployment topology used to expose this API ingress.",
+              "enum": [
+                "standalone",
+                "cloud"
+              ],
+              "type": "string"
+            },
+            "domain": {
+              "description": "Legacy primary domain alias retained for backward compatibility.",
+              "maxLength": 255,
+              "type": "string"
+            },
+            "domains": {
+              "description": "Public domain aliases served by this deployment node.",
+              "items": {
+                "maxLength": 255,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array"
+            },
+            "ip": {
+              "description": "ip field on AdminServiceNodeUpdateRequest.",
+              "type": "string"
+            },
+            "name": {
+              "description": "name field on AdminServiceNodeUpdateRequest.",
+              "type": "string"
+            },
+            "remark": {
+              "description": "remark field on AdminServiceNodeUpdateRequest.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminServiceNodeItem",
+        "schema": {
+          "additionalProperties": false,
+          "description": "AdminServiceNodeItem contract.",
+          "properties": {
+            "baseUrl": {
+              "description": "Primary public HTTP(S) API base URL.",
+              "format": "uri",
+              "type": "string"
+            },
+            "deploymentProfile": {
+              "description": "Deployment topology used to expose this API ingress.",
+              "enum": [
+                "standalone",
+                "cloud"
+              ],
+              "type": "string"
+            },
+            "domain": {
+              "description": "Compatibility mirror of the first configured domain.",
+              "type": "string"
+            },
+            "domains": {
+              "description": "Normalized public domain aliases served by this node.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "healthStatus": {
+              "description": "healthStatus field on AdminServiceNodeItem.",
+              "enum": [
+                "online",
+                "warning",
+                "offline",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            "id": {
+              "description": "id field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "ip": {
+              "description": "ip field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "name": {
+              "description": "name field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "remark": {
+              "description": "remark field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "status": {
+              "description": "status field on AdminServiceNodeItem.",
+              "enum": [
+                "enabled",
+                "disabled"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "description": "updatedAt field on AdminServiceNodeItem.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "baseUrl",
+            "deploymentProfile",
+            "domain",
+            "domains",
+            "healthStatus",
+            "id",
+            "ip",
+            "name",
+            "remark",
+            "status",
+            "updatedAt"
+          ],
           "type": "object"
         }
       },
@@ -4364,14 +5185,111 @@
       "read_sources": [
         "ops_gateway_instance"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminServiceNodeStatusUpdateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminServiceNodeStatusUpdateRequest contract.",
+          "properties": {
+            "status": {
+              "description": "status field on AdminServiceNodeStatusUpdateRequest.",
+              "enum": [
+                "enabled",
+                "disabled"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminServiceNodeItem",
+        "schema": {
+          "additionalProperties": false,
+          "description": "AdminServiceNodeItem contract.",
+          "properties": {
+            "baseUrl": {
+              "description": "Primary public HTTP(S) API base URL.",
+              "format": "uri",
+              "type": "string"
+            },
+            "deploymentProfile": {
+              "description": "Deployment topology used to expose this API ingress.",
+              "enum": [
+                "standalone",
+                "cloud"
+              ],
+              "type": "string"
+            },
+            "domain": {
+              "description": "Compatibility mirror of the first configured domain.",
+              "type": "string"
+            },
+            "domains": {
+              "description": "Normalized public domain aliases served by this node.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "healthStatus": {
+              "description": "healthStatus field on AdminServiceNodeItem.",
+              "enum": [
+                "online",
+                "warning",
+                "offline",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            "id": {
+              "description": "id field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "ip": {
+              "description": "ip field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "name": {
+              "description": "name field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "remark": {
+              "description": "remark field on AdminServiceNodeItem.",
+              "type": "string"
+            },
+            "status": {
+              "description": "status field on AdminServiceNodeItem.",
+              "enum": [
+                "enabled",
+                "disabled"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "description": "updatedAt field on AdminServiceNodeItem.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "baseUrl",
+            "deploymentProfile",
+            "domain",
+            "domains",
+            "healthStatus",
+            "id",
+            "ip",
+            "name",
+            "remark",
+            "status",
+            "updatedAt"
+          ],
           "type": "object"
         }
       },
@@ -4409,11 +5327,111 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminAuthSettingsResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminAuthSettingsResponse contract.",
+          "properties": {
+            "leftRailMode": {
+              "description": "leftRailMode field on AdminAuthSettingsResponse.",
+              "enum": [
+                "auto",
+                "highlights-only",
+                "qr-only"
+              ],
+              "type": "string"
+            },
+            "loginMethods": {
+              "description": "loginMethods field on AdminAuthSettingsResponse.",
+              "items": {
+                "enum": [
+                  "password",
+                  "emailCode",
+                  "phoneCode",
+                  "sessionBridge"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "oauthLoginEnabled": {
+              "description": "oauthLoginEnabled field on AdminAuthSettingsResponse.",
+              "type": "boolean"
+            },
+            "oauthProviders": {
+              "description": "oauthProviders field on AdminAuthSettingsResponse.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "oauthRegion": {
+              "description": "oauthRegion field on AdminAuthSettingsResponse.",
+              "enum": [
+                "mainland",
+                "overseas"
+              ],
+              "type": "string"
+            },
+            "qrLoginEnabled": {
+              "description": "qrLoginEnabled field on AdminAuthSettingsResponse.",
+              "type": "boolean"
+            },
+            "qrLoginType": {
+              "description": "qrLoginType field on AdminAuthSettingsResponse.",
+              "enum": [
+                "web",
+                "official",
+                "mini"
+              ],
+              "type": "string"
+            },
+            "recoveryMethods": {
+              "description": "recoveryMethods field on AdminAuthSettingsResponse.",
+              "items": {
+                "enum": [
+                  "email",
+                  "phone"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "registerMethods": {
+              "description": "registerMethods field on AdminAuthSettingsResponse.",
+              "items": {
+                "enum": [
+                  "email",
+                  "phone"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "verificationPolicy": {
+              "additionalProperties": true,
+              "description": "verificationPolicy field on AdminAuthSettingsResponse.",
+              "type": "object"
+            },
+            "wechat": {
+              "additionalProperties": true,
+              "description": "wechat field on AdminAuthSettingsResponse.",
+              "type": "object"
+            }
+          },
+          "required": [
+            "leftRailMode",
+            "loginMethods",
+            "oauthLoginEnabled",
+            "oauthProviders",
+            "oauthRegion",
+            "qrLoginEnabled",
+            "qrLoginType",
+            "recoveryMethods",
+            "registerMethods",
+            "verificationPolicy",
+            "wechat"
+          ],
           "type": "object"
         }
       },
@@ -4446,14 +5464,213 @@
       "read_sources": [
         "ops_config_snapshot"
       ],
-      "request_body_required": false,
+      "request_body_required": true,
       "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
+      "request_schema": {
+        "name": "AdminAuthSettingsUpdateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "description": "AdminAuthSettingsUpdateRequest contract.",
+          "properties": {
+            "leftRailMode": {
+              "description": "leftRailMode field on AdminAuthSettingsUpdateRequest.",
+              "enum": [
+                "auto",
+                "highlights-only",
+                "qr-only"
+              ],
+              "type": "string"
+            },
+            "loginMethods": {
+              "description": "loginMethods field on AdminAuthSettingsUpdateRequest.",
+              "items": {
+                "enum": [
+                  "password",
+                  "emailCode",
+                  "phoneCode",
+                  "sessionBridge"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "oauthLoginEnabled": {
+              "description": "oauthLoginEnabled field on AdminAuthSettingsUpdateRequest.",
+              "type": "boolean"
+            },
+            "oauthProviders": {
+              "description": "oauthProviders field on AdminAuthSettingsUpdateRequest.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "oauthRegion": {
+              "description": "oauthRegion field on AdminAuthSettingsUpdateRequest.",
+              "enum": [
+                "mainland",
+                "overseas"
+              ],
+              "type": "string"
+            },
+            "qrLoginEnabled": {
+              "description": "qrLoginEnabled field on AdminAuthSettingsUpdateRequest.",
+              "type": "boolean"
+            },
+            "qrLoginType": {
+              "description": "qrLoginType field on AdminAuthSettingsUpdateRequest.",
+              "enum": [
+                "web",
+                "official",
+                "mini"
+              ],
+              "type": "string"
+            },
+            "recoveryMethods": {
+              "description": "recoveryMethods field on AdminAuthSettingsUpdateRequest.",
+              "items": {
+                "enum": [
+                  "email",
+                  "phone"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "registerMethods": {
+              "description": "registerMethods field on AdminAuthSettingsUpdateRequest.",
+              "items": {
+                "enum": [
+                  "email",
+                  "phone"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "verificationPolicy": {
+              "additionalProperties": true,
+              "description": "verificationPolicy field on AdminAuthSettingsUpdateRequest.",
+              "type": "object"
+            },
+            "wechat": {
+              "additionalProperties": true,
+              "description": "wechat field on AdminAuthSettingsUpdateRequest.",
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminAuthSettingsResponse",
+        "schema": {
+          "additionalProperties": false,
+          "description": "AdminAuthSettingsResponse contract.",
+          "properties": {
+            "leftRailMode": {
+              "description": "leftRailMode field on AdminAuthSettingsResponse.",
+              "enum": [
+                "auto",
+                "highlights-only",
+                "qr-only"
+              ],
+              "type": "string"
+            },
+            "loginMethods": {
+              "description": "loginMethods field on AdminAuthSettingsResponse.",
+              "items": {
+                "enum": [
+                  "password",
+                  "emailCode",
+                  "phoneCode",
+                  "sessionBridge"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "oauthLoginEnabled": {
+              "description": "oauthLoginEnabled field on AdminAuthSettingsResponse.",
+              "type": "boolean"
+            },
+            "oauthProviders": {
+              "description": "oauthProviders field on AdminAuthSettingsResponse.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "oauthRegion": {
+              "description": "oauthRegion field on AdminAuthSettingsResponse.",
+              "enum": [
+                "mainland",
+                "overseas"
+              ],
+              "type": "string"
+            },
+            "qrLoginEnabled": {
+              "description": "qrLoginEnabled field on AdminAuthSettingsResponse.",
+              "type": "boolean"
+            },
+            "qrLoginType": {
+              "description": "qrLoginType field on AdminAuthSettingsResponse.",
+              "enum": [
+                "web",
+                "official",
+                "mini"
+              ],
+              "type": "string"
+            },
+            "recoveryMethods": {
+              "description": "recoveryMethods field on AdminAuthSettingsResponse.",
+              "items": {
+                "enum": [
+                  "email",
+                  "phone"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "registerMethods": {
+              "description": "registerMethods field on AdminAuthSettingsResponse.",
+              "items": {
+                "enum": [
+                  "email",
+                  "phone"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "verificationPolicy": {
+              "additionalProperties": true,
+              "description": "verificationPolicy field on AdminAuthSettingsResponse.",
+              "type": "object"
+            },
+            "wechat": {
+              "additionalProperties": true,
+              "description": "wechat field on AdminAuthSettingsResponse.",
+              "type": "object"
+            }
+          },
+          "required": [
+            "leftRailMode",
+            "loginMethods",
+            "oauthLoginEnabled",
+            "oauthProviders",
+            "oauthRegion",
+            "qrLoginEnabled",
+            "qrLoginType",
+            "recoveryMethods",
+            "registerMethods",
+            "verificationPolicy",
+            "wechat"
+          ],
           "type": "object"
         }
       },
@@ -4495,108 +5712,107 @@
         "name": "AdminSiteSettingsResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "AdminSiteSettingsResponse",
+          "description": "AdminSiteSettingsResponse contract.",
           "properties": {
             "accentColor": {
-              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "description": "accentColor field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "brandColor": {
-              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "description": "brandColor field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "customCss": {
-              "maxLength": 20000,
+              "description": "customCss field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "description": {
-              "maxLength": 4096,
+              "description": "description field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "docsUrl": {
-              "maxLength": 2048,
+              "description": "docsUrl field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "favicon": {
               "$ref": "#/components/schemas/MediaResource"
             },
             "footerCopyright": {
-              "maxLength": 4096,
+              "description": "footerCopyright field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "icon": {
               "$ref": "#/components/schemas/MediaResource"
             },
             "icpRecordNumber": {
-              "maxLength": 255,
+              "description": "icpRecordNumber field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "icpRecordUrl": {
-              "maxLength": 2048,
+              "description": "icpRecordUrl field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "logo": {
               "$ref": "#/components/schemas/MediaResource"
             },
             "policeRecordNumber": {
-              "maxLength": 255,
+              "description": "policeRecordNumber field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "policeRecordUrl": {
-              "maxLength": 2048,
+              "description": "policeRecordUrl field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "privacyUrl": {
-              "maxLength": 2048,
+              "description": "privacyUrl field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "seoDescription": {
-              "maxLength": 4096,
+              "description": "seoDescription field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "seoTitle": {
-              "maxLength": 255,
+              "description": "seoTitle field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "shortName": {
-              "maxLength": 255,
+              "description": "shortName field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "siteName": {
-              "maxLength": 255,
-              "minLength": 1,
+              "description": "siteName field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "supportUrl": {
-              "maxLength": 2048,
+              "description": "supportUrl field on AdminSiteSettingsResponse.",
               "type": "string"
             },
             "termsUrl": {
-              "maxLength": 2048,
+              "description": "termsUrl field on AdminSiteSettingsResponse.",
               "type": "string"
             }
           },
           "required": [
-            "siteName",
-            "shortName",
+            "accentColor",
+            "brandColor",
+            "customCss",
             "description",
+            "docsUrl",
+            "footerCopyright",
             "logo",
             "icon",
             "favicon",
-            "brandColor",
-            "accentColor",
-            "footerCopyright",
             "icpRecordNumber",
             "icpRecordUrl",
             "policeRecordNumber",
             "policeRecordUrl",
-            "seoTitle",
-            "seoDescription",
-            "supportUrl",
-            "docsUrl",
             "privacyUrl",
-            "termsUrl",
-            "customCss"
+            "seoDescription",
+            "seoTitle",
+            "shortName",
+            "siteName",
+            "supportUrl",
+            "termsUrl"
           ],
           "type": "object"
         }
@@ -4636,84 +5852,83 @@
         "name": "AdminSiteSettingsUpdateRequest",
         "schema": {
           "additionalProperties": false,
-          "name": "AdminSiteSettingsUpdateRequest",
+          "description": "AdminSiteSettingsUpdateRequest contract.",
           "properties": {
             "accentColor": {
-              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "description": "accentColor field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "brandColor": {
-              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "description": "brandColor field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "customCss": {
-              "maxLength": 20000,
+              "description": "customCss field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "description": {
-              "maxLength": 4096,
+              "description": "description field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "docsUrl": {
-              "maxLength": 2048,
+              "description": "docsUrl field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "favicon": {
               "$ref": "#/components/schemas/MediaResource"
             },
             "footerCopyright": {
-              "maxLength": 4096,
+              "description": "footerCopyright field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "icon": {
               "$ref": "#/components/schemas/MediaResource"
             },
             "icpRecordNumber": {
-              "maxLength": 255,
+              "description": "icpRecordNumber field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "icpRecordUrl": {
-              "maxLength": 2048,
+              "description": "icpRecordUrl field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "logo": {
               "$ref": "#/components/schemas/MediaResource"
             },
             "policeRecordNumber": {
-              "maxLength": 255,
+              "description": "policeRecordNumber field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "policeRecordUrl": {
-              "maxLength": 2048,
+              "description": "policeRecordUrl field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "privacyUrl": {
-              "maxLength": 2048,
+              "description": "privacyUrl field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "seoDescription": {
-              "maxLength": 4096,
+              "description": "seoDescription field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "seoTitle": {
-              "maxLength": 255,
+              "description": "seoTitle field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "shortName": {
-              "maxLength": 255,
+              "description": "shortName field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "siteName": {
-              "maxLength": 255,
-              "minLength": 1,
+              "description": "siteName field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "supportUrl": {
-              "maxLength": 2048,
+              "description": "supportUrl field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             },
             "termsUrl": {
-              "maxLength": 2048,
+              "description": "termsUrl field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
             }
           },
@@ -4723,7 +5938,110 @@
       "response_schema": {
         "name": "AdminSiteSettingsResponse",
         "schema": {
-          "$ref": "#/components/schemas/AdminSiteSettingsResponse"
+          "additionalProperties": false,
+          "description": "AdminSiteSettingsResponse contract.",
+          "properties": {
+            "accentColor": {
+              "description": "accentColor field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "brandColor": {
+              "description": "brandColor field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "customCss": {
+              "description": "customCss field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "description": {
+              "description": "description field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "docsUrl": {
+              "description": "docsUrl field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "favicon": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "footerCopyright": {
+              "description": "footerCopyright field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "icon": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "icpRecordNumber": {
+              "description": "icpRecordNumber field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "icpRecordUrl": {
+              "description": "icpRecordUrl field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "logo": {
+              "$ref": "#/components/schemas/MediaResource"
+            },
+            "policeRecordNumber": {
+              "description": "policeRecordNumber field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "policeRecordUrl": {
+              "description": "policeRecordUrl field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "privacyUrl": {
+              "description": "privacyUrl field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "seoDescription": {
+              "description": "seoDescription field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "seoTitle": {
+              "description": "seoTitle field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "shortName": {
+              "description": "shortName field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "siteName": {
+              "description": "siteName field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "supportUrl": {
+              "description": "supportUrl field on AdminSiteSettingsResponse.",
+              "type": "string"
+            },
+            "termsUrl": {
+              "description": "termsUrl field on AdminSiteSettingsResponse.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "accentColor",
+            "brandColor",
+            "customCss",
+            "description",
+            "docsUrl",
+            "footerCopyright",
+            "logo",
+            "icon",
+            "favicon",
+            "icpRecordNumber",
+            "icpRecordUrl",
+            "policeRecordNumber",
+            "policeRecordUrl",
+            "privacyUrl",
+            "seoDescription",
+            "seoTitle",
+            "shortName",
+            "siteName",
+            "supportUrl",
+            "termsUrl"
+          ],
+          "type": "object"
         }
       },
       "route": "/admin/site",
