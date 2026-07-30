@@ -1,3 +1,4 @@
+import json
 import tempfile
 import textwrap
 import unittest
@@ -19,6 +20,102 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
         contract.parent.mkdir(parents=True, exist_ok=True)
         contract.write_text(textwrap.dedent(content).strip() + "\n", encoding="utf-8")
         return contract
+
+    def test_backend_payload_contract_is_materialized_into_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            contract_path = self.write_contract(
+                root,
+                """
+                frontend_operations:
+                  - route: /admin/settings
+                    source: apps/admin/authSettingsService.ts
+                    operation: fetchAuthSettings
+                    operation_id: auth.settings.retrieve
+                    kind: read
+                    api_surface: backend
+                    api_method: GET
+                    api_path: /backend/v3/api/system/auth/settings
+                    sdk_domain: system
+                    read_sources: [ops_config_snapshot]
+                    query_parameters: []
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                  - route: /admin/settings
+                    source: apps/admin/authSettingsService.ts
+                    operation: updateAuthSettings
+                    operation_id: auth.settings.update
+                    kind: update
+                    api_surface: backend
+                    api_method: PATCH
+                    api_path: /backend/v3/api/system/auth/settings
+                    sdk_domain: system
+                    read_sources: [ops_config_snapshot]
+                    write_tables: [ops_config_snapshot]
+                    request_body_required: false
+                    response_schema:
+                      name: NoData
+                      properties: {}
+                """,
+            )
+            backend_contract_path = root / ApiContractManifestGenerator.BACKEND_CONTRACT_OVERRIDES
+            backend_contract_path.parent.mkdir(parents=True, exist_ok=True)
+            backend_contract_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "kind": "sdkwork.openapi.contract-overrides",
+                        "owner": "sdkwork-clawrouter",
+                        "surface": "backend-api",
+                        "authority": "sdkwork-clawrouter.backend",
+                        "schemas": {
+                            "AuthSettingsResponse": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["enabled"],
+                                "properties": {"enabled": {"type": "boolean"}},
+                            },
+                            "AuthSettingsUpdateRequest": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "properties": {"enabled": {"type": "boolean"}},
+                            },
+                        },
+                        "operations": {
+                            "GET /backend/v3/api/system/auth/settings": {
+                                "responseSchema": "AuthSettingsResponse"
+                            },
+                            "PATCH /backend/v3/api/system/auth/settings": {
+                                "requestSchema": "AuthSettingsUpdateRequest",
+                                "responseSchema": "AuthSettingsResponse",
+                            },
+                        },
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            generator = ApiContractManifestGenerator(root=root, contract_path=contract_path)
+            validation = generator.validate()
+            operations = {
+                operation["operation_id"]: operation
+                for operation in generator.generate()["operations"]
+            }
+
+            self.assertTrue(validation.ok, validation.messages)
+            self.assertEqual(
+                "AuthSettingsResponse",
+                operations["auth.settings.retrieve"]["response_schema"]["name"],
+            )
+            self.assertEqual(
+                "AuthSettingsUpdateRequest",
+                operations["auth.settings.update"]["request_schema"]["name"],
+            )
+            self.assertTrue(operations["auth.settings.update"]["request_body_required"])
 
     def test_generates_sdk_boundaries_and_operations_from_frontend_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

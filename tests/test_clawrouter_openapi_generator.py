@@ -1535,6 +1535,23 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                     {
                         "api_surface": "app",
                         "api_method": "GET",
+                        "api_path": "/app/v3/api/iam/users/{userId}",
+                        "operation": "fetchUser",
+                        "operation_id": "users.retrieve",
+                        "tag": "iam",
+                        "sdk_domain": "iam",
+                        "kind": "read",
+                        "module": "console-users",
+                        "path_params": ["userId"],
+                        "source": "apps/portal/userService.ts",
+                        "read_sources": ["iam_user"],
+                        "write_tables": [],
+                        "query_parameters_declared": True,
+                        "query_parameters": [],
+                    },
+                    {
+                        "api_surface": "app",
+                        "api_method": "GET",
                         "api_path": "/app/v3/api/iam/api_keys",
                         "operation": "fetchApiKeys",
                         "operation_id": "apiKeys.list",
@@ -1591,6 +1608,9 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
                         "paths": {
                             "/app/v3/api/auth/sessions": {
                                 "post": {"operationId": "sessions.create"}
+                            },
+                            "/app/v3/api/iam/users/{id}": {
+                                "get": {"operationId": "users.retrieve"}
                             }
                         },
                     },
@@ -1603,6 +1623,7 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             app_spec = ClawRouterOpenApiGenerator(root=root).generate("app")
 
             self.assertNotIn("/app/v3/api/auth/sessions", app_spec["paths"])
+            self.assertNotIn("/app/v3/api/iam/users/{userId}", app_spec["paths"])
             self.assertIn("/app/v3/api/iam/api_keys", app_spec["paths"])
 
     def test_backend_contract_overrides_reject_stale_operation_paths(self) -> None:

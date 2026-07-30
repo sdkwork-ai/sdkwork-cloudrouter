@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import re
 from dataclasses import dataclass
@@ -26,6 +27,10 @@ class ApiContractManifestCheckResult:
 
 class ApiContractManifestGenerator:
     """Compile frontend operation contracts into SDK/API gateway manifest data."""
+
+    BACKEND_CONTRACT_OVERRIDES = Path(
+        "apis/backend-api/clawrouter/clawrouter-backend-contract-overrides.json"
+    )
 
     SDK_BOUNDARIES: dict[str, dict[str, str]] = {
         "app": {
@@ -425,6 +430,7 @@ class ApiContractManifestGenerator:
             for entry in self._frontend_operations()
             if isinstance(entry, dict)
         ]
+        operations = self._apply_backend_contract_overrides(operations)
         operations.sort(key=lambda item: item["key"])
 
         api_surface_counts: dict[str, int] = {}
@@ -484,6 +490,7 @@ class ApiContractManifestGenerator:
     def validate(self) -> ApiContractManifestCheckResult:
         entries = self._frontend_operations()
         messages: list[str] = []
+        compiled_operations: list[dict[str, Any]] = []
         keys: set[str] = set()
         openapi_operations: dict[tuple[str, str, str], str] = {}
         operation_ids: dict[tuple[str, str], str] = {}
@@ -493,6 +500,7 @@ class ApiContractManifestGenerator:
                 messages.append("frontend_operations entries must be mappings")
                 continue
             compiled_entry = self._compile_operation(entry)
+            compiled_operations.append(compiled_entry)
 
             source = entry.get("source")
             operation = entry.get("operation")
@@ -652,7 +660,115 @@ class ApiContractManifestGenerator:
             for field in ("request_schema", "response_schema"):
                 messages.extend(self._payload_schema_validation_messages(key, field, entry.get(field)))
 
+        try:
+            self._apply_backend_contract_overrides(compiled_operations)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            messages.append(str(exc))
+
         return ApiContractManifestCheckResult(ok=not messages, messages=messages)
+
+    def _apply_backend_contract_overrides(
+        self,
+        operations: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        contract_path = self.root / self.BACKEND_CONTRACT_OVERRIDES
+        if not contract_path.is_file():
+            return operations
+
+        contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        if contract.get("kind") != "sdkwork.openapi.contract-overrides":
+            raise ValueError(f"invalid backend contract override kind: {contract_path}")
+        if contract.get("owner") != "sdkwork-clawrouter" or contract.get("surface") != "backend-api":
+            raise ValueError(f"invalid backend contract override ownership: {contract_path}")
+
+        schemas = contract.get("schemas")
+        if not isinstance(schemas, dict):
+            raise ValueError(f"backend contract override schemas must be an object: {contract_path}")
+        operation_contracts = contract.get("operations")
+        if not isinstance(operation_contracts, dict):
+            raise ValueError(f"backend contract override operations must be an object: {contract_path}")
+
+        result = copy.deepcopy(operations)
+        operations_by_wire_key: dict[tuple[str, str], dict[str, Any]] = {}
+        for operation in result:
+            if operation.get("api_surface") != "backend" or operation.get("openapi_exposed", True) is False:
+                continue
+            wire_key = (
+                self._string(operation.get("api_method")).upper(),
+                self._string(operation.get("api_path")),
+            )
+            if wire_key in operations_by_wire_key:
+                raise ValueError(
+                    "duplicate backend contract manifest operation: "
+                    f"{wire_key[0]} {wire_key[1]}"
+                )
+            operations_by_wire_key[wire_key] = operation
+
+        for raw_operation_key, payload_contract in operation_contracts.items():
+            if not isinstance(raw_operation_key, str) or not isinstance(payload_contract, dict):
+                raise ValueError(f"invalid backend operation override in {contract_path}")
+            try:
+                method, api_path = raw_operation_key.split(" ", 1)
+            except ValueError as exc:
+                raise ValueError(
+                    f"invalid backend operation override key: {raw_operation_key}"
+                ) from exc
+            operation = operations_by_wire_key.get((method.upper(), api_path))
+            if operation is None:
+                raise ValueError(
+                    "stale backend contract override operation is not exposed: "
+                    f"{raw_operation_key}"
+                )
+
+            request_schema_name = payload_contract.get("requestSchema")
+            if isinstance(request_schema_name, str):
+                if method.upper() not in {"POST", "PUT", "PATCH"}:
+                    raise ValueError(
+                        "backend request override is invalid for bodyless method: "
+                        f"{raw_operation_key}"
+                    )
+                operation["request_schema"] = self._backend_payload_schema(
+                    schemas,
+                    request_schema_name,
+                    contract_path,
+                )
+                operation["request_body_required"] = True
+
+            response_schema_name = payload_contract.get("responseSchema")
+            if isinstance(response_schema_name, str):
+                if method.upper() == "DELETE":
+                    raise ValueError(
+                        "backend response override is invalid for delete operation: "
+                        f"{raw_operation_key}"
+                    )
+                operation["response_schema"] = self._backend_payload_schema(
+                    schemas,
+                    response_schema_name,
+                    contract_path,
+                )
+
+        return result
+
+    def _backend_payload_schema(
+        self,
+        schemas: dict[str, Any],
+        schema_name: str,
+        contract_path: Path,
+    ) -> dict[str, Any]:
+        schema = schemas.get(schema_name)
+        if not isinstance(schema, dict):
+            raise ValueError(f"backend contract override schema is missing: {schema_name}")
+        normalized = self._normalize_payload_schema(
+            {
+                "name": schema_name,
+                "schema": schema,
+            }
+        )
+        if normalized is None:
+            raise ValueError(
+                f"backend contract override schema is invalid: {schema_name} in {contract_path}"
+            )
+        return normalized
 
     def _compile_operation(self, entry: dict[str, Any]) -> dict[str, Any]:
         source = self._string(entry.get("source"))

@@ -1127,6 +1127,111 @@ class ClawRouterPayloadSdkAuditTest(unittest.TestCase):
 
             self.assertTrue(result.ok, result.messages)
 
+    def test_dependency_operation_matches_normalized_path_parameter_names(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace_root = Path(tmp)
+            root = workspace_root / "sdkwork-clawrouter"
+            manifest_path = root / "generated" / "api" / "api-contract-manifest.json"
+            manifest_path.parent.mkdir(parents=True, exist_ok=True)
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "schema": {"version": "0.1.0"},
+                        "sdk_boundaries": {
+                            "app": {
+                                "api_prefix": "/app/v3/api",
+                                "sdk_client": "SdkworkAppClient",
+                                "sdk_family": "app",
+                            },
+                            "backend": {
+                                "api_prefix": "/backend/v3/api",
+                                "sdk_client": "SdkworkBackendClient",
+                                "sdk_family": "backend",
+                            },
+                        },
+                        "operations": [
+                            {
+                                "api_surface": "app",
+                                "api_method": "GET",
+                                "api_path": "/app/v3/api/iam/users/{userId}",
+                                "operation": "fetchUser",
+                                "operation_id": "users.retrieve",
+                                "tag": "iam",
+                                "kind": "read",
+                                "path_params": ["userId"],
+                                "source": "apps/portal/userService.ts",
+                                "read_sources": ["iam_user"],
+                                "write_tables": [],
+                                "response_schema": {
+                                    "name": "NoData",
+                                    "schema": {
+                                        "type": "object",
+                                        "additionalProperties": False,
+                                        "properties": {},
+                                    },
+                                },
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            app_family = root / "sdks" / "clawrouter-app-sdk"
+            app_family.mkdir(parents=True, exist_ok=True)
+            (app_family / "sdk-manifest.json").write_text(
+                json.dumps(
+                    {
+                        "sdkDependencies": [
+                            {
+                                "workspace": "sdkwork-iam-app-sdk",
+                                "dependencyMode": "consumer-sdk",
+                            }
+                        ]
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            dependency_family = (
+                workspace_root / "sdkwork-iam" / "sdks" / "sdkwork-iam-app-sdk"
+            )
+            dependency_openapi = (
+                dependency_family / "openapi" / "sdkwork-iam-app-api.openapi.json"
+            )
+            dependency_openapi.parent.mkdir(parents=True, exist_ok=True)
+            (dependency_family / "sdk-manifest.json").write_text(
+                json.dumps(
+                    {"authoritySpec": "openapi/sdkwork-iam-app-api.openapi.json"},
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            dependency_openapi.write_text(
+                json.dumps(
+                    {
+                        "openapi": "3.1.2",
+                        "paths": {
+                            "/app/v3/api/iam/users/{id}": {
+                                "get": {"operationId": "users.retrieve"}
+                            }
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            ClawRouterOpenApiGenerator(root=root).write()
+
+            result = ClawRouterPayloadSdkAudit(root=root).run()
+
+            self.assertTrue(result.ok, result.messages)
+
     def test_rejects_explicit_no_body_operation_with_sdk_body_parameter(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
