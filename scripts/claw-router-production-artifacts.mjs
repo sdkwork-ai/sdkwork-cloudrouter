@@ -11,7 +11,8 @@ function productionTargetDir({ env = process.env, workspaceRoot = process.cwd() 
 }
 
 function productionGatewayBinaryName(platform = process.platform) {
-  return platform === 'win32' ? 'clawrouter.exe' : 'clawrouter';
+  const suffix = platform === 'win32' ? '.exe' : '';
+  return `sdkwork-api-clawrouter-standalone-gateway${suffix}`;
 }
 
 function productionGatewayBinaryPath({

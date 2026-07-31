@@ -21,6 +21,11 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 
+import {
+  analyzeClientLocalSqliteRuntime,
+  analyzeRedisHaManifest,
+} from "./lib/standard-alignment-runtime-facts.mjs";
+
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, "..");
 const OUTPUT_PATH = join(REPO_ROOT, "generated", "audit", "standard-alignment-facts.json");
@@ -37,6 +42,26 @@ function listDir(rel) {
   const abs = join(REPO_ROOT, rel);
   if (!existsSync(abs)) return [];
   return readdirSync(abs);
+}
+
+function listFilesRecursive(rel, predicate) {
+  const root = join(REPO_ROOT, rel);
+  if (!existsSync(root)) return [];
+  const files = [];
+  const visit = (absoluteDir, relativeDir) => {
+    for (const entry of readdirSync(absoluteDir)) {
+      if ([".git", "node_modules", "target"].includes(entry)) continue;
+      const absolutePath = join(absoluteDir, entry);
+      const relativePath = join(relativeDir, entry).replaceAll("\\", "/");
+      if (statSync(absolutePath).isDirectory()) {
+        visit(absolutePath, relativePath);
+      } else if (predicate(relativePath)) {
+        files.push(relativePath);
+      }
+    }
+  };
+  visit(root, rel);
+  return files.sort();
 }
 
 function readText(rel) {
@@ -143,25 +168,59 @@ function collectKubernetesFacts() {
 function collectRedisHaFacts() {
   const redisManifestPath = "deployments/kubernetes/claw-router-redis.yaml";
   if (!fileExists(redisManifestPath)) return { exists: false, isHa: false };
-  const yaml = readText(redisManifestPath);
-  // Detect Sentinel HA topology: replicas >= 3, sentinel sidecar, PDB minAvailable >= 2, auth Secret
-  const replicasMatch = yaml.match(/replicas:\s*(\d+)/);
-  const replicas = replicasMatch ? parseInt(replicasMatch[1], 10) : 0;
-  const hasSentinelContainer = /name:\s*sentinel\b/.test(yaml);
-  const hasSentinelConfig = /sentinel\.conf/.test(yaml) && /sentinel monitor\b/.test(yaml);
-  const hasPdb = /kind:\s*PodDisruptionBudget/.test(yaml) && /minAvailable:\s*2/.test(yaml);
-  const hasAuthSecret = /kind:\s*Secret/.test(yaml) && /redis-password/.test(yaml);
-  const hasPodAntiAffinity = /podAntiAffinity/.test(yaml);
-  const isHa = replicas >= 3 && hasSentinelContainer && hasSentinelConfig && hasPdb && hasAuthSecret;
+  const runtimeSourcePaths = [
+    "crates/sdkwork-claw-config/src/redis.rs",
+    "services/sdkwork-clawrouter-router-service/src/infrastructure/sql/pool.rs",
+    "services/sdkwork-clawrouter-router-service/src/application/invocation/circuit_breaker.rs",
+    "services/sdkwork-clawrouter-router-service/src/application/invocation/idempotency.rs",
+    "services/sdkwork-clawrouter-router-service/src/application/invocation/tenant_inflight.rs",
+  ];
+  const runtimeSources = runtimeSourcePaths
+    .filter(fileExists)
+    .map(readText)
+    .join("\n");
   return {
     exists: true,
-    replicas,
-    hasSentinelContainer,
-    hasSentinelConfig,
-    hasPdb,
-    hasAuthSecret,
-    hasPodAntiAffinity,
-    isHa,
+    manifestPath: redisManifestPath,
+    ...analyzeRedisHaManifest(readText(redisManifestPath), { runtimeSources }),
+  };
+}
+
+function collectClientLocalSqliteFacts() {
+  const tauriConfigPaths = listFilesRecursive(
+    "apps",
+    (path) => /(?:^|\/)tauri\.conf(?:\.[a-z0-9_-]+)?\.json$/iu.test(path),
+  );
+  const clientLocalSqliteAuthorityPaths = ["apps", "crates", "database"]
+    .flatMap((root) => listFilesRecursive(
+      root,
+      (path) => /(?:client[-_]local.*sqlite|sqlite.*client[-_]local|src-tauri\/migrations).*\.sql$/iu
+        .test(path),
+    ));
+  const serverRuntimeSourcePaths = [
+    "crates/sdkwork-clawrouter-edge-runtime/src/runtime.rs",
+    "crates/sdkwork-routes-clawrouter-app-api/src/routes.rs",
+    "crates/sdkwork-routes-clawrouter-backend-api/src/routes.rs",
+  ];
+  const runtimeFacts = analyzeClientLocalSqliteRuntime({
+    appConfig: readJson(join(REPO_ROOT, "sdkwork.app.config.json")),
+    packageJson: readJson(join(REPO_ROOT, "package.json")),
+    applicationLauncherSource: readText("scripts/run-claw-router-application.mjs"),
+    tauriConfigPaths,
+    clientLocalSqliteAuthorityPaths,
+    serverRuntimeSources: serverRuntimeSourcePaths.filter(fileExists).map(readText).join("\n"),
+  });
+  return {
+    ...runtimeFacts,
+    fixtureBaselineExists: fileExists(
+      "tests/fixtures/database/sqlite/ddl/baseline/0001_clawrouter_baseline.sql",
+    ),
+    fixtureMigrationFiles: listDir("tests/fixtures/database/sqlite/migrations")
+      .filter((file) => file.endsWith(".sql"))
+      .sort(),
+    note: runtimeFacts.isImplemented
+      ? "separate client-local SQLite runtime authority detected"
+      : "SQLite test fixtures and launch arguments do not establish a client-local runtime",
   };
 }
 
@@ -520,17 +579,10 @@ function buildP0Status(facts) {
   });
 
   items.push({
-    id: "p0-sqlite-migration-chain",
-    title: "SQLite baseline and paired migration chain",
-    status:
-      facts.migrations.sqliteBaselineExists && facts.migrations.sqlitePairs.complete
-        ? "done"
-        : "pending",
-    evidence: {
-      baselineExists: facts.migrations.sqliteBaselineExists,
-      sqliteFiles: facts.migrations.sqliteMigrationFiles,
-      pairs: facts.migrations.sqlitePairs,
-    },
+    id: "p0-client-local-sqlite-runtime",
+    title: "Client-local SQLite runtime implementation",
+    status: facts.clientLocalSqlite.isImplemented ? "done" : "pending",
+    evidence: facts.clientLocalSqlite,
   });
 
   items.push({
@@ -641,6 +693,7 @@ function collectAllFacts() {
     migrations: collectMigrationsFacts(),
     kubernetes: collectKubernetesFacts(),
     redisHa: collectRedisHaFacts(),
+    clientLocalSqlite: collectClientLocalSqliteFacts(),
     i18n: collectI18nFacts(),
     circuitBreaker: collectCircuitBreakerFacts(),
     idempotency: collectIdempotencyFacts(),

@@ -63,18 +63,17 @@ function createPortalNotificationSdkClient(
     notification: {
       listNotifications: async (params) =>
         appSdkClient.notification.list({
-          appId: params?.appId,
           includeArchived: params?.includeArchived,
           page: params?.page ?? DEFAULT_NOTIFICATION_PAGE,
           pageSize: params?.page_size ?? DEFAULT_NOTIFICATION_PAGE_SIZE,
         }),
       acknowledge: {
-        create: async (notificationId: string, params) =>
-          appSdkClient.notification.acknowledge.create(notificationId, { appId: params?.appId }),
+        create: async (notificationId: string) =>
+          appSdkClient.notification.acknowledge.create(notificationId),
       },
       popupSeen: {
-        create: async (notificationId: string, params) =>
-          appSdkClient.notification.popupSeen.create(notificationId, { appId: params?.appId }),
+        create: async (notificationId: string) =>
+          appSdkClient.notification.popupSeen.create(notificationId),
       },
     },
   };

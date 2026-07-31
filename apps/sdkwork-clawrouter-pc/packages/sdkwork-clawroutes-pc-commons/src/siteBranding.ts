@@ -61,9 +61,8 @@ export async function fetchSiteBranding(): Promise<SiteBranding> {
   if (pendingSiteBranding) {
     return pendingSiteBranding;
   }
-  const appSdkClient = getClawRouterAppSdkClient();
-  pendingSiteBranding = appSdkClient.system.site.runtime
-    .list()
+  pendingSiteBranding = Promise.resolve()
+    .then(() => getClawRouterAppSdkClient().system.site.runtime.retrieve())
     .then((result) => {
       ensureSdkworkApiSuccess(result, 'Unable to load site branding');
       const branding = normalizeSiteBranding(readApiRecord(result));

@@ -17,7 +17,6 @@ use crate::ports::{
     ListAdminTransactionsQuery,
 };
 
-const MAX_KEYWORD_LEN: usize = 128;
 const MAX_STATUS_LEN: usize = 32;
 const MAX_TIME_LEN: usize = 64;
 

@@ -1094,6 +1094,17 @@ class ClawRouterOpenApiGeneratorTest(unittest.TestCase):
             self.assertEqual("modelVendors.list", operation["operationId"])
             self.assertNotIn("FetchModelVendorsForRankingsResult", app_spec["components"]["schemas"])
 
+    def test_marks_public_sdk_operations_as_anonymous(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_manifest(root)
+
+            app_spec = ClawRouterOpenApiGenerator(root=root).generate("app")
+            operation = app_spec["paths"]["/app/v3/api/ai/model_vendors"]["get"]
+
+            self.assertEqual([], operation["security"])
+            self.assertEqual("anonymous", operation["x-sdkwork-auth-mode"])
+
     def test_get_operations_do_not_receive_default_query_parameters(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

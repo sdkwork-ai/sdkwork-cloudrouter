@@ -256,24 +256,6 @@ impl AiRoutingSeedCatalog {
         validate_catalog(&catalog)?;
         Ok(catalog)
     }
-
-    fn payload(&self) -> String {
-        serde_json::json!({
-            "catalogCode": self.manifest.catalog_code,
-            "schemaVersion": self.manifest.schema_version,
-            "source": self.manifest.source,
-            "resourceCount": self.resources.len(),
-            "resourceGroupCount": self.resource_groups.len(),
-            "defaultAdminUpstreamAccountCount": default_admin_upstream_accounts().len(),
-            "defaultAdminUpstreamAccountGroupCount": default_admin_upstream_account_groups().len(),
-            "sourceHash": source_hash(),
-        })
-        .to_string()
-    }
-}
-
-pub(crate) fn bundled_ai_routing_seed_payload() -> Result<String, AiRoutingSeedLoadError> {
-    Ok(AiRoutingSeedCatalog::load()?.payload())
 }
 
 pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(), sqlx::Error> {

@@ -25,7 +25,7 @@ fn parses_sqlite_database_urls_for_desktop_deployment() {
 #[test]
 fn parses_postgres_database_urls_for_server_docker_and_kubernetes() {
     let config = DatabaseConfig::from_url_with_max_connections(
-        "postgres://sdkwork:sdkwork@localhost:5432/sdkwork_claw_router",
+        "postgres://sdkwork_ai_dev:sdkworkdev123@localhost:5432/sdkwork_ai_dev",
         32,
     )
     .unwrap();
@@ -83,7 +83,7 @@ fn reads_database_config_from_runtime_toml_file() {
         r#"
 [database]
 engine = "postgresql"
-url = "postgresql://sdkwork:sdkwork@db.internal:5432/sdkwork_claw_router"
+url = "postgresql://sdkwork_ai_prod:secret@db.internal:5432/sdkwork_ai_prod"
 max_connections = 24
 "#,
     );
@@ -94,7 +94,7 @@ max_connections = 24
 
     assert_eq!(DatabaseEngine::Postgres, config.engine);
     assert_eq!(
-        "postgresql://sdkwork:sdkwork@db.internal:5432/sdkwork_claw_router",
+        "postgresql://sdkwork_ai_prod:secret@db.internal:5432/sdkwork_ai_prod",
         config.url
     );
     assert_eq!(24, config.max_connections);
@@ -127,7 +127,7 @@ fn runtime_config_file_accepts_standard_toml_literal_strings() {
         r#"
 [database]
 engine = 'postgresql'
-url = 'postgresql://sdkwork:sdkwork@db.internal:5432/sdkwork_claw_router'
+url = 'postgresql://sdkwork_ai_prod:secret@db.internal:5432/sdkwork_ai_prod'
 max_connections = 18
 "#,
     )
@@ -135,7 +135,7 @@ max_connections = 18
 
     assert_eq!(DatabaseEngine::Postgres, config.engine);
     assert_eq!(
-        "postgresql://sdkwork:sdkwork@db.internal:5432/sdkwork_claw_router",
+        "postgresql://sdkwork_ai_prod:secret@db.internal:5432/sdkwork_ai_prod",
         config.url
     );
     assert_eq!(18, config.max_connections);
@@ -149,8 +149,8 @@ fn runtime_config_file_supports_structured_postgres_password_directly() {
 engine = "postgresql"
 host = "db.internal"
 port = 5432
-database = "sdkwork_claw_router"
-username = "sdkwork_claw_router"
+database = "sdkwork_ai_prod"
+username = "sdkwork_ai_prod"
 password = "secret-password"
 max_connections = 18
 "#,
@@ -159,7 +159,7 @@ max_connections = 18
 
     assert_eq!(DatabaseEngine::Postgres, config.engine);
     assert_eq!(
-        "postgresql://sdkwork_claw_router:secret-password@db.internal:5432/sdkwork_claw_router",
+        "postgresql://sdkwork_ai_prod:secret-password@db.internal:5432/sdkwork_ai_prod",
         config.url
     );
     assert_eq!(18, config.max_connections);
@@ -176,8 +176,8 @@ fn runtime_config_file_supports_structured_postgres_password_from_file() {
 engine = "postgresql"
 host = "db.internal"
 port = 5432
-database = "sdkwork_claw_router"
-username = "sdkwork_claw_router"
+database = "sdkwork_ai_prod"
+username = "sdkwork_ai_prod"
 password_file = "{}"
 max_connections = 20
 "#,
@@ -191,7 +191,7 @@ max_connections = 20
 
     assert_eq!(DatabaseEngine::Postgres, config.engine);
     assert_eq!(
-        "postgresql://sdkwork_claw_router:secret-password@db.internal:5432/sdkwork_claw_router",
+        "postgresql://sdkwork_ai_prod:secret-password@db.internal:5432/sdkwork_ai_prod",
         config.url
     );
     assert_eq!(20, config.max_connections);
@@ -215,8 +215,8 @@ fn runtime_config_file_expands_password_file_environment_variables() {
 engine = "postgresql"
 host = "db.internal"
 port = 5432
-database = "sdkwork_claw_router"
-username = "sdkwork_claw_router"
+database = "sdkwork_ai_prod"
+username = "sdkwork_ai_prod"
 password_file = "${SDKWORK_CLAW_TEST_SECRET_ROOT}/database.secret"
 max_connections = 20
 "#,
@@ -228,7 +228,7 @@ max_connections = 20
 
     assert_eq!(DatabaseEngine::Postgres, config.engine);
     assert_eq!(
-        "postgresql://sdkwork_claw_router:secret-password@db.internal:5432/sdkwork_claw_router",
+        "postgresql://sdkwork_ai_prod:secret-password@db.internal:5432/sdkwork_ai_prod",
         config.url
     );
     assert_eq!(20, config.max_connections);
@@ -237,6 +237,7 @@ max_connections = 20
 #[test]
 fn environment_database_parts_override_runtime_config_file() {
     let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
     let config_path = write_temp_config(
         "env-overrides",
         r#"
@@ -265,8 +266,123 @@ max_connections = 16
 }
 
 #[test]
+fn reads_canonical_structured_postgres_environment() {
+    let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
+    let _configured = EnvGuard::set(&[
+        ("SDKWORK_DATABASE_ENGINE", Some("postgresql".to_owned())),
+        ("SDKWORK_DATABASE_HOST", Some("127.0.0.1".to_owned())),
+        ("SDKWORK_DATABASE_PORT", Some("5432".to_owned())),
+        ("SDKWORK_DATABASE_NAME", Some("sdkwork_ai_dev".to_owned())),
+        ("SDKWORK_DATABASE_SCHEMA", Some("sdkwork_ai_dev".to_owned())),
+        (
+            "SDKWORK_DATABASE_SCHEMA_FALLBACK_PUBLIC",
+            Some("false".to_owned()),
+        ),
+        (
+            "SDKWORK_DATABASE_USERNAME",
+            Some("sdkwork_ai_dev".to_owned()),
+        ),
+        ("SDKWORK_DATABASE_PASSWORD", Some("secret:p@ss".to_owned())),
+        ("SDKWORK_DATABASE_SSL_MODE", Some("disable".to_owned())),
+        ("SDKWORK_DATABASE_MAX_CONNECTIONS", Some("10".to_owned())),
+    ]);
+
+    let config = DatabaseConfig::from_env().unwrap().unwrap();
+
+    assert_eq!(DatabaseEngine::Postgres, config.engine);
+    assert_eq!(10, config.max_connections);
+    assert!(config
+        .url
+        .contains("sdkwork_ai_dev:secret%3Ap%40ss@127.0.0.1:5432/sdkwork_ai_dev"));
+    assert!(config.url.contains("sslmode=disable"));
+    assert!(config
+        .url
+        .contains("options=-c%20search_path%3Dsdkwork_ai_dev"));
+    assert!(!config.url.contains("%2Cpublic"));
+}
+
+#[test]
+fn reads_canonical_structured_postgres_password_file() {
+    let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
+    let secret_path = write_temp_secret("postgres-env-password-file", "file-secret");
+    let _configured = EnvGuard::set(&[
+        ("SDKWORK_DATABASE_ENGINE", Some("postgresql".to_owned())),
+        ("SDKWORK_DATABASE_HOST", Some("db.internal".to_owned())),
+        ("SDKWORK_DATABASE_PORT", Some("5432".to_owned())),
+        ("SDKWORK_DATABASE_NAME", Some("sdkwork_ai_prod".to_owned())),
+        (
+            "SDKWORK_DATABASE_SCHEMA",
+            Some("sdkwork_ai_prod".to_owned()),
+        ),
+        (
+            "SDKWORK_DATABASE_USERNAME",
+            Some("sdkwork_ai_prod".to_owned()),
+        ),
+        (
+            "SDKWORK_DATABASE_PASSWORD_FILE",
+            Some(secret_path.to_string_lossy().to_string()),
+        ),
+        ("SDKWORK_DATABASE_SSL_MODE", Some("require".to_owned())),
+    ]);
+
+    let config = DatabaseConfig::from_env().unwrap().unwrap();
+
+    assert_eq!(DatabaseEngine::Postgres, config.engine);
+    assert!(config
+        .url
+        .contains("sdkwork_ai_prod:file-secret@db.internal:5432/sdkwork_ai_prod"));
+    assert!(config.url.contains("sslmode=require"));
+    assert!(config
+        .url
+        .contains("options=-c%20search_path%3Dsdkwork_ai_prod"));
+}
+
+#[test]
+fn rejects_partial_canonical_structured_database_environment() {
+    let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
+    let _configured = EnvGuard::set(&[(
+        "SDKWORK_DATABASE_USERNAME",
+        Some("sdkwork_ai_dev".to_owned()),
+    )]);
+
+    let error = DatabaseConfig::from_env().unwrap_err();
+
+    assert!(error.contains("SDKWORK_DATABASE_ENGINE"));
+}
+
+#[test]
+fn rejects_schema_only_canonical_database_environment() {
+    let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
+    let _configured =
+        EnvGuard::set(&[("SDKWORK_DATABASE_SCHEMA", Some("sdkwork_ai_dev".to_owned()))]);
+
+    let error = DatabaseConfig::from_env().unwrap_err();
+
+    assert!(error.contains("SDKWORK_DATABASE_ENGINE"));
+}
+
+#[test]
+fn canonical_database_environment_uses_workspace_pool_default() {
+    let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
+    let _configured = EnvGuard::set(&[(
+        "SDKWORK_DATABASE_URL",
+        Some("postgresql://sdkwork_ai_dev:secret@127.0.0.1:5432/sdkwork_ai_dev".to_owned()),
+    )]);
+
+    let config = DatabaseConfig::from_env().unwrap().unwrap();
+
+    assert_eq!(10, config.max_connections);
+}
+
+#[test]
 fn explicit_runtime_config_file_is_used_when_database_env_is_absent() {
     let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
     let config_path = write_temp_config(
         "explicit-file",
         r#"
@@ -391,6 +507,7 @@ fn initializes_default_desktop_runtime_config_at_explicit_location() {
 #[test]
 fn from_env_or_initialize_creates_server_postgres_template_and_requires_real_database() {
     let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
     let root = temp_root("server-runtime-init");
     let config_path = root.join("config").join("clawrouter.toml");
     let program_data = root.join("program-data");
@@ -436,6 +553,7 @@ fn from_env_or_initialize_creates_server_postgres_template_and_requires_real_dat
 #[test]
 fn explicit_runtime_config_file_uses_neighbor_data_directory_for_server_template_paths() {
     let _env_lock = ENV_LOCK.lock().unwrap();
+    let _database_env = clear_database_env();
     let root = temp_root("explicit-config-neighbor-data");
     let config_path = root.join("custom").join("clawrouter.toml");
     let program_data = root.join("program-data");
@@ -790,4 +908,27 @@ impl Drop for EnvGuard {
             }
         }
     }
+}
+
+fn clear_database_env() -> EnvGuard {
+    EnvGuard::set(&[
+        ("SDKWORK_DATABASE_URL", None),
+        ("SDKWORK_DATABASE_ENGINE", None),
+        ("SDKWORK_DATABASE_HOST", None),
+        ("SDKWORK_DATABASE_PORT", None),
+        ("SDKWORK_DATABASE_NAME", None),
+        ("SDKWORK_DATABASE_SCHEMA", None),
+        ("SDKWORK_DATABASE_SCHEMA_FALLBACK_PUBLIC", None),
+        ("SDKWORK_DATABASE_USERNAME", None),
+        ("SDKWORK_DATABASE_PASSWORD", None),
+        ("SDKWORK_DATABASE_PASSWORD_FILE", None),
+        ("SDKWORK_DATABASE_SSL_MODE", None),
+        ("SDKWORK_DATABASE_FILE", None),
+        ("SDKWORK_DATABASE_MAX_CONNECTIONS", None),
+        ("SDKWORK_DATABASE_PROVIDER", None),
+        ("SDKWORK_DATABASE_SSLMODE", None),
+        ("DATABASE_URL", None),
+        ("DATABASE_PROVIDER", None),
+        ("DATABASE_SSLMODE", None),
+    ])
 }

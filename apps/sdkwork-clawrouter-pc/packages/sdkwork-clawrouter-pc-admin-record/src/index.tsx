@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Zap, Search, Cpu, Info, User } from 'lucide-react';
 import { AdminTableShell, BusinessStateTableRow } from '@sdkwork/clawroutes-pc-commons';
-import { formatDecimalAmount, formatUserAgentDeviceLabel } from '@sdkwork/clawroutes-pc-commons/runtime';
+import {
+  formatDecimalAmount,
+  formatUserAgentDeviceLabel,
+  sumDecimalStrings,
+} from '@sdkwork/clawroutes-pc-commons/runtime';
 import { RecordService, LogRecord } from './recordService';
 
 import { useTranslation } from 'react-i18next';
@@ -66,7 +70,7 @@ export function RecordAdmin() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const firstRow = logs.length > 0 ? (page - 1) * pageSize + 1 : 0;
   const lastRow = logs.length > 0 ? (page - 1) * pageSize + logs.length : 0;
-  const pageCost = logs.reduce((sum, log) => sum + Number(log.cost), 0);
+  const pageCost = sumDecimalStrings(logs.map(log => log.cost), 6);
   const streamCount = logs.filter((log) => log.isStream).length;
 
   return (
@@ -75,7 +79,7 @@ export function RecordAdmin() {
         <div className="flex items-center gap-3 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded-lg p-1.5 shadow-sm text-sm shrink-0">
           <div className="px-3 py-1 flex items-center gap-1.5 border-r border-slate-200 dark:border-white/10">
             <span className="text-slate-500">{t("admin.record.index.text.pdja6l", "当前页消耗:")}</span>
-            <span className="font-bold text-rose-500 flex items-center"><Zap className="w-3.5 h-3.5 mr-0.5" /> {formatDecimalAmount(String(pageCost), 6)}</span>
+            <span className="font-bold text-rose-500 flex items-center"><Zap className="w-3.5 h-3.5 mr-0.5" /> {formatDecimalAmount(pageCost, 6)}</span>
           </div>
           <div className="px-3 py-1 flex items-center gap-1.5 border-r border-slate-200 dark:border-white/10">
             <span className="text-slate-500">{t("admin.record.index.text.14mbkqd", "当前页请求:")}</span>
@@ -386,7 +390,7 @@ export function RecordAdmin() {
                                     "admin.record.index.text.costFormula",
                                     "(输入 {{inputBillable}} / 1M * {{inputPrice}} + 缓存 {{cacheTokens}} / 1M * {{cachePrice}} + 输出 {{outputTokens}} / 1M * {{outputPrice}}) * 倍率 {{multiplier}} = ",
                                     {
-                                      inputBillable: log.inputTokens - log.cacheReadTokens,
+                                      inputBillable: (BigInt(log.inputTokens) - BigInt(log.cacheReadTokens)).toString(),
                                       inputPrice: formatDecimalAmount(log.baseInputPrice, 6),
                                       cacheTokens: log.cacheReadTokens,
                                       cachePrice: formatDecimalAmount(log.cacheReadPrice, 6),

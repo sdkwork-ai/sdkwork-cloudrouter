@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "803f1930067f2b5db48960f4b035f382e184f95a16eec6cd3b1338b2179e791f"
+      "sha256": "91c7aedd160327ddbef1d8db730186a33e7c72f45504b965a28d1e15fd93686f"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -88,7 +88,7 @@
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "105f50e8f788d25269e593fdb03761bae34a776bef5b0e0d5959c1188dd0d643"
+      "sha256": "fa47ba036516c95110f7ac2f2dfdd32c16a6ba60dbaede0fce2f91a6c10f64b0"
     },
     {
       "path": "src/auth/index.ts",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "0b592e2fadb0d1628173bc10b3f42abd781863fed0ef11776c79566d659520a2"
+      "sha256": "1de02d0b197849688633168daebb7bd9eae868e9c720ecf7602613e1747f3a35"
     },
     {
       "path": "src/types/json-null.ts",
@@ -409,6 +409,10 @@
     {
       "path": "src/types/settings-notifications.ts",
       "sha256": "27cce53e6f61027374ffb115bcc0270673be7512951ad519715bb9772579d517"
+    },
+    {
+      "path": "src/types/site-runtime-settings-response.ts",
+      "sha256": "7d127bdfc3cfae7d29a2d4525db0bb60dbb6f20be9410823c1fec451a2694748"
     },
     {
       "path": "src/types/update-api-key-request.ts",

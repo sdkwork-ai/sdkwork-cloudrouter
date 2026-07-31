@@ -42,9 +42,9 @@ export interface LogRecord {
   totalTime: string;
   ttft: string;
   isStream: boolean;
-  inputTokens: number;
-  cacheReadTokens: number;
-  outputTokens: number;
+  inputTokens: string;
+  cacheReadTokens: string;
+  outputTokens: string;
   cost: string;
   multiplier: string;
   baseInputPrice: string;
@@ -127,6 +127,16 @@ function normalizeLogRecord(value: unknown): LogRecord {
   const errorCode = readOptionalString(item, 'errorCode');
   const errorType = readOptionalString(item, 'errorType');
   const errorMessage = readOptionalString(item, 'errorMessage');
+  const inputTokens = readRequiredNonNegativeInt64String(item, 'inputTokens', 'Log input tokens are required');
+  const cacheReadTokens = readRequiredNonNegativeInt64String(
+    item,
+    'cacheReadTokens',
+    'Log cache read tokens are required',
+  );
+  const outputTokens = readRequiredNonNegativeInt64String(item, 'outputTokens', 'Log output tokens are required');
+  if (BigInt(cacheReadTokens) > BigInt(inputTokens)) {
+    throw new Error('Log cache read tokens must not exceed input tokens');
+  }
   return {
     id: readRequiredString(item, 'id', 'Log record id is required'),
     user: readRequiredString(item, 'user', 'Log user is required'),
@@ -149,9 +159,9 @@ function normalizeLogRecord(value: unknown): LogRecord {
     totalTime: readRequiredString(item, 'totalTime', 'Log total time is required'),
     ttft: readRequiredString(item, 'ttft', 'Log TTFT is required'),
     isStream: readRequiredBoolean(item, 'isStream', 'Log stream flag is required'),
-    inputTokens: readRequiredNonNegativeNumber(item, 'inputTokens', 'Log input tokens are required'),
-    cacheReadTokens: readRequiredNonNegativeNumber(item, 'cacheReadTokens', 'Log cache read tokens are required'),
-    outputTokens: readRequiredNonNegativeNumber(item, 'outputTokens', 'Log output tokens are required'),
+    inputTokens,
+    cacheReadTokens,
+    outputTokens,
     cost: readRequiredDecimalString(item, 'cost', 'Log cost is required', 'Log cost must be a decimal string'),
     multiplier: readRequiredDecimalString(
       item,

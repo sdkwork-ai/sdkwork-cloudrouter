@@ -4,7 +4,10 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+axum.workspace = true
 sdkwork-api-clawrouter-assembly.workspace = true
 sdkwork-claw-config.workspace = true
 sdkwork-web-bootstrap.workspace = true
+serde_json.workspace = true
 tokio.workspace = true
+tower.workspace = true

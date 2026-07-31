@@ -42,7 +42,7 @@ All notable changes to `sdkwork-clawrouter` release records will be documented h
 - `node scripts/build-claw-router-native-installer.mjs --all --check --dry-run --json`
 - `pnpm app-store:seed:check`
 - `cargo test -p sdkwork-claw-config`
-- `node --test scripts/run-claw-router-application.test.mjs --test-name-pattern "installation documentation covers release|install package planner covers|install package manifests distinguish|install package builder emits service and container|native installer builder emits apt-installable|native installer builder CLI validates"`
+- `node scripts/run-claw-router-application.test.mjs --test-name-pattern "installation documentation covers release|install package planner covers|install package manifests distinguish|install package builder emits service and container|native installer builder emits apt-installable|native installer builder CLI validates"`
 - GitHub Actions `Release Package` run `25969690825`, covering Linux x64, Linux arm64, Windows x64, Windows arm64, macOS x64, and macOS arm64.
 
 ### Release Gate Status

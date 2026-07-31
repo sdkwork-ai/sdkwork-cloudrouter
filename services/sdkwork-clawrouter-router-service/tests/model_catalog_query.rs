@@ -46,6 +46,23 @@ fn catalog_for_model_list() -> InMemoryPricingCatalog {
         2001,
         "gpt-4o-mini",
     ));
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_resource_scoped_account_group_binding(
+                10,
+                10,
+                100,
+                Vec::<String>::new(),
+                Vec::<String>::new(),
+            )
+            .with_resource_scoped_account_group_binding(
+                11,
+                20,
+                100,
+                Vec::<String>::new(),
+                vec!["tools"],
+            ),
+    );
     catalog.add_plan(PricingPlan::new(
         "standard",
         PriceSide::OfficialReference,
@@ -180,6 +197,55 @@ fn lists_models_with_customer_price_provider_count_and_vendor_filter() {
             panic!("unexpected unavailable price: {reason}")
         }
     }
+}
+
+#[test]
+fn list_models_ignores_lower_upstream_cost_from_unbound_account() {
+    let mut catalog = catalog_for_model_list();
+    catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
+        "openai/gpt-4o-mini",
+        "gpt-4o-mini",
+        "unbound-provider",
+        9999,
+        "gpt-4o-mini",
+    ));
+    catalog.add_price(
+        ModelPrice::new(
+            "gpt-4o-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmInputToken,
+            Money::usd("0.001000").unwrap(),
+        )
+        .with_catalog_key("openai/gpt-4o-mini")
+        .for_upstream_account("unbound-provider", 9999),
+    );
+    let service = ModelCatalogQueryService::new(&catalog);
+
+    let page = service
+        .list_models(ListModelCatalogQuery {
+            api_key_id: Some(100),
+            billing_meter: BillingMeter::LlmInputToken,
+            vendor_code: Some("openai".to_owned()),
+            vendor_codes: Vec::new(),
+            modalities: Vec::new(),
+            capabilities: Vec::new(),
+            categories: Vec::new(),
+            groups: Vec::new(),
+            search_query: None,
+            page_size: Some(20),
+            offset: None,
+        })
+        .unwrap();
+
+    assert_eq!(1, page.items.len());
+    assert_eq!(
+        Some("0.110000"),
+        page.items[0].lowest_upstream_cost_unit_price.as_deref()
+    );
+    assert!(matches!(
+        page.items[0].price_availability,
+        PriceAvailability::Available(_)
+    ));
 }
 
 fn assert_reference_price(
@@ -421,4 +487,73 @@ fn list_models_applies_offset_after_filtering() {
         first_page.items[0].catalog_key,
         second_page.items[0].catalog_key
     );
+}
+
+#[test]
+fn list_models_keeps_large_catalog_response_bounded_to_requested_page() {
+    let mut catalog = InMemoryPricingCatalog::default();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "openai",
+        ModelVendor::OpenAi,
+        "OpenAI",
+    ));
+    for index in 0..10_000 {
+        catalog.add_model(
+            AiModel::new(
+                &format!("model-{index:05}"),
+                &format!("Model {index:05}"),
+                "openai",
+                vec!["chat"],
+            )
+            .with_catalog_key(&format!("openai/model-{index:05}")),
+        );
+    }
+    let service = ModelCatalogQueryService::new(&catalog);
+
+    let page = service
+        .list_models(ListModelCatalogQuery {
+            api_key_id: None,
+            billing_meter: BillingMeter::LlmInputToken,
+            vendor_code: None,
+            vendor_codes: Vec::new(),
+            modalities: Vec::new(),
+            capabilities: Vec::new(),
+            categories: Vec::new(),
+            groups: Vec::new(),
+            search_query: None,
+            page_size: Some(20),
+            offset: Some(9_000),
+        })
+        .unwrap();
+
+    assert_eq!(10_000, page.total_items);
+    assert_eq!(20, page.items.len());
+    assert_eq!(20, page.items.capacity());
+    assert_eq!(9_000, page.offset);
+    assert_eq!("openai/model-09000", page.items[0].catalog_key);
+}
+
+#[test]
+fn list_models_clamps_internal_zero_page_size_to_one() {
+    let catalog = catalog_for_model_list();
+    let service = ModelCatalogQueryService::new(&catalog);
+
+    let page = service
+        .list_models(ListModelCatalogQuery {
+            api_key_id: None,
+            billing_meter: BillingMeter::LlmInputToken,
+            vendor_code: None,
+            vendor_codes: Vec::new(),
+            modalities: Vec::new(),
+            capabilities: Vec::new(),
+            categories: Vec::new(),
+            groups: Vec::new(),
+            search_query: None,
+            page_size: Some(0),
+            offset: None,
+        })
+        .unwrap();
+
+    assert_eq!(1, page.page_size);
+    assert_eq!(1, page.items.len());
 }

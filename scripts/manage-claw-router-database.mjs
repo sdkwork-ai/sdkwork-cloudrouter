@@ -360,8 +360,8 @@ Runtime TOML example:
   engine = "postgresql"
   host = "db.internal"
   port = 5432
-  database = "sdkwork_claw_router"
-  username = "sdkwork_claw_router"
+  database = "sdkwork_ai_prod"
+  username = "sdkwork_ai_prod"
   password_file = "./database.secret"
   max_connections = 16
 

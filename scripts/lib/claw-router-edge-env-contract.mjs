@@ -119,6 +119,7 @@ export function migrateLegacyReleaseHostEdgeEnvRecord(record = {}) {
 export function sanitizeReleaseHostEnvRecord(record = {}) {
   const sanitized = migrateLegacyReleaseHostEdgeEnvRecord(record);
   delete sanitized.SDKWORK_ACCESS_TOKEN;
+  delete sanitized.SDKWORK_DATABASE_URL;
   for (const key of Object.keys(sanitized)) {
     if (CLAW_ROUTER_LEGACY_PRIVATE_EDGE_ENV_PREFIXES.some((prefix) => key.startsWith(prefix))) {
       delete sanitized[key];

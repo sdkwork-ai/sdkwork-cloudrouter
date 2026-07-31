@@ -70,14 +70,14 @@ where
         return *response;
     }
 
+    let mut data = Vec::new();
+    state.catalog.visit_models(None, &mut |model| {
+        data.push(to_model_response(state.catalog.as_ref(), model.clone()));
+        true
+    });
     Json(OpenAiModelListResponse {
         object: "list".to_owned(),
-        data: state
-            .catalog
-            .list_models(None)
-            .into_iter()
-            .map(|model| to_model_response(state.catalog.as_ref(), model))
-            .collect(),
+        data,
     })
     .into_response()
 }
@@ -122,12 +122,18 @@ fn find_model_for_openai_id<C>(catalog: &C, model: &str) -> Option<AiModel>
 where
     C: PricingCatalog,
 {
-    catalog.find_model(model).or_else(|| {
-        catalog
-            .list_models(None)
-            .into_iter()
-            .find(|candidate| candidate.model == model)
-    })
+    if let Some(model) = catalog.find_model(model) {
+        return Some(model);
+    }
+    let mut found = None;
+    catalog.visit_models(None, &mut |candidate| {
+        if candidate.model != model {
+            return true;
+        }
+        found = Some(candidate.clone());
+        false
+    });
+    found
 }
 
 fn authenticate<C>(

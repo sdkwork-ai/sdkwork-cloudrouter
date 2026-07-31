@@ -250,6 +250,17 @@ test('claw-router topology adapter bridges legacy portal env keys', async () => 
   assert.equal(client.VITE_CLAWROUTER_BACKEND_API_BASE_URL, 'http://127.0.0.1:3902/backend/v3/api');
   assert.equal(client.VITE_CLAWROUTER_OPEN_API_BASE_URL, 'http://127.0.0.1:3902/v1');
   assert.equal(client.VITE_SDKWORK_IAM_APP_API_BASE_URL, 'http://127.0.0.1:3902');
+
+  const clientWithoutPlatform = bridgeLegacyWorkspaceEnv({
+    SDKWORK_CLAW_ROUTER_APPLICATION_BACKEND_HTTP_URL: 'http://127.0.0.1:18081',
+    SDKWORK_CLAW_ROUTER_APPLICATION_OPEN_HTTP_URL: 'http://127.0.0.1:18080',
+  }, { runtimeMode: 'client' });
+  assert.equal(clientWithoutPlatform.VITE_CLAWROUTER_BACKEND_API_BASE_URL, undefined);
+  assert.equal(clientWithoutPlatform.VITE_CLAWROUTER_OPEN_API_BASE_URL, undefined);
+  assert.equal(
+    Object.values(clientWithoutPlatform).some((value) => String(value).includes('undefined')),
+    false,
+  );
 });
 
 test('profile env files do not use retired topology vocabulary', async () => {

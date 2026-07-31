@@ -15,22 +15,16 @@ import {
 } from 'lucide-react';
 import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/clawroutes-pc-commons';
 import {
+  formatLocalizedDecimalAmount,
   formatUserAgentDeviceLabel,
+  sumDecimalStrings,
 } from '@sdkwork/clawroutes-pc-commons/runtime';
 import { useTranslation } from 'react-i18next';
 import { UsageService, type UsageLog, type UsageLogListParams } from './usageService';
 import { formatUsageLogLocalTime } from './usageFormatting';
 
 const DEFAULT_PAGE_SIZE = 20;
-const DISPLAY_DECIMAL_DIGITS = 2;
-
-function formatDisplayAmount(value: string): string {
-  const num = Number(value);
-  if (!Number.isFinite(num)) {
-    return (0).toFixed(DISPLAY_DECIMAL_DIGITS);
-  }
-  return num.toFixed(DISPLAY_DECIMAL_DIGITS);
-}
+const SPEND_DECIMAL_DIGITS = 9;
 
 type UsageLogStatus = 'all' | 'success' | 'error';
 
@@ -91,11 +85,6 @@ function buildUsageLogQuery(query: UsageLogQueryState): UsageLogListParams {
   return params;
 }
 
-function toSafeNumber(value: string | number): number {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function toTokenCount(value: string): bigint {
   return BigInt(value);
 }
@@ -105,7 +94,7 @@ function formatTokenCount(value: string): string {
 }
 
 export function UsageView() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
   const [totalLogs, setTotalLogs] = useState('0');
@@ -120,23 +109,33 @@ export function UsageView() {
   const pageSize = query.pageSize;
   const visibleStart = usageLogs.length > 0 ? (page - 1) * pageSize + 1 : 0;
   const visibleEnd = usageLogs.length > 0 ? visibleStart + usageLogs.length - 1 : 0;
+  const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
+  const formatDisplayAmount = (value: string) =>
+    formatLocalizedDecimalAmount(value, displayLocale, 2, 2);
 
   const pageStats = useMemo(() => {
     if (usageLogs.length === 0) {
-      return { pageCost: 0, errorCount: 0, errorRate: 0, inputTokens: 0n, outputTokens: 0n };
+      return {
+        pageCost: sumDecimalStrings([], SPEND_DECIMAL_DIGITS),
+        errorCount: 0,
+        errorRate: 0,
+        inputTokens: 0n,
+        outputTokens: 0n,
+      };
     }
-    let pageCost = 0;
     let errorCount = 0;
     let inputTokens = 0n;
     let outputTokens = 0n;
     for (const log of usageLogs) {
-      pageCost += toSafeNumber(log.cost);
       if (log.status === 'error') errorCount += 1;
       inputTokens += toTokenCount(log.inputTokens);
       outputTokens += toTokenCount(log.outputTokens);
     }
     return {
-      pageCost,
+      pageCost: sumDecimalStrings(
+        usageLogs.map(log => log.cost),
+        SPEND_DECIMAL_DIGITS,
+      ),
       errorCount,
       errorRate: errorCount / usageLogs.length,
       inputTokens,

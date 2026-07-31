@@ -248,7 +248,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/system/site/runtime",
         "system",
-        "site.runtime.list",
+        "site.runtime.retrieve",
     ),
 ];
 

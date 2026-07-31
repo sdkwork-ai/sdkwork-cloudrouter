@@ -115,10 +115,7 @@ impl DatabaseConfig {
     }
 
     pub fn from_env() -> Result<Option<Self>, String> {
-        let env_config = Self::from_optional_parts(
-            std::env::var("SDKWORK_DATABASE_URL").ok(),
-            std::env::var("SDKWORK_DATABASE_MAX_CONNECTIONS").ok(),
-        )?;
+        let env_config = Self::from_canonical_database_env()?;
         if env_config.is_some() {
             return Ok(env_config);
         }
@@ -139,10 +136,7 @@ impl DatabaseConfig {
     pub fn from_env_or_initialize() -> Result<Option<Self>, String> {
         let profile = RuntimeConfigProfile::from_env_or_runtime_toml(None)?;
         let location = Self::runtime_config_location_from_env(profile);
-        let env_config = Self::from_optional_parts(
-            std::env::var("SDKWORK_DATABASE_URL").ok(),
-            std::env::var("SDKWORK_DATABASE_MAX_CONNECTIONS").ok(),
-        )?;
+        let env_config = Self::from_canonical_database_env()?;
         if let Some(config) = env_config {
             config.validate_for_runtime_profile_at(profile, &location)?;
             return Ok(Some(config));
@@ -160,10 +154,7 @@ impl DatabaseConfig {
     ) -> Result<Option<Self>, String> {
         let profile = RuntimeConfigProfile::from_env_or_runtime_toml(runtime_toml)?;
         let location = Self::runtime_config_location_from_env(profile);
-        let env_config = Self::from_optional_parts(
-            std::env::var("SDKWORK_DATABASE_URL").ok(),
-            std::env::var("SDKWORK_DATABASE_MAX_CONNECTIONS").ok(),
-        )?;
+        let env_config = Self::from_canonical_database_env()?;
         if let Some(config) = env_config {
             config.validate_for_runtime_profile_at(profile, &location)?;
             return Ok(Some(config));
@@ -174,6 +165,21 @@ impl DatabaseConfig {
             .database
             .validate_for_runtime_profile_at(profile, &report.location)?;
         Ok(Some(report.database))
+    }
+
+    fn from_canonical_database_env() -> Result<Option<Self>, String> {
+        use sdkwork_database_config::workspace_database::{
+            reject_retired_database_env, workspace_database_env_is_configured,
+        };
+
+        reject_retired_database_env().map_err(|error| error.to_string())?;
+        if !workspace_database_env_is_configured() {
+            return Ok(None);
+        }
+
+        let standard = sdkwork_database_config::env::load_from_env("CLAWROUTER")
+            .map_err(|error| error.to_string())?;
+        Self::from_url_with_max_connections(standard.url, standard.max_connections).map(Some)
     }
 
     pub fn runtime_config_location_from_env(

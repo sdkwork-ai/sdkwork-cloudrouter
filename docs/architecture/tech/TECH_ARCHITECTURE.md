@@ -3,7 +3,7 @@
 Status: active  
 Owner: SDKWork maintainers  
 Application: sdkwork-clawrouter  
-Updated: 2026-07-30
+Updated: 2026-07-31
 Specs: `ARCHITECTURE_SPEC.md`, `API_SPEC.md`, `SDK_SPEC.md`, `DATABASE_SPEC.md`, `SECURITY_SPEC.md`, `DEPLOYMENT_SPEC.md`
 
 ## 1. Architecture Overview
@@ -212,6 +212,20 @@ No fallback crosses tenant/organization boundaries. No credential may be used
 for another account, auth method, or endpoint target. Candidate snapshots,
 errors, logs, and traces exclude raw credential material.
 
+Accounting payload capacity is enforced at each ownership boundary. Usage
+commands reject a `pricing_snapshot` larger than 16 KiB before JSON parsing;
+durable retry adapters reject an encoded envelope larger than 32 KiB before
+decoding and retain only bounded byte-count/SHA-256 evidence for oversized
+poison records. PostgreSQL settlement claims at most 200 rows and projects `{}`
+instead of transferring an oversized historical snapshot, then marks that fact
+`INVALID_PRICING_SNAPSHOT` in the same transaction. These deterministic limits
+bound one settlement claim's pricing-snapshot text to 3.2 MiB before ordinary
+row and allocator overhead. Queue-wide memory, storage, retention, and overload
+budgets remain deployment/SRE gates and are not inferred from per-record limits.
+The desktop-only in-memory adapter additionally rejects a 1025th queued entry;
+all non-desktop deployments require Redis at startup and never fall back to an
+in-memory or SQLite accounting queue.
+
 ## 6. API, SDK, And Data Ownership
 
 Management resources use plural REST paths beneath `/backend/v3/api/ai`,
@@ -236,6 +250,35 @@ Generated SDK output is never hand-edited. Management UI calls
 `@sdkwork/clawrouter-app-sdk`; public gateway consumers use
 `@sdkwork/clawrouter-open-sdk`. Missing methods or incorrect DTOs are fixed at
 the contract or implementation authority and regenerated.
+
+### Admin Analytics Read Model
+
+`GET /backend/v3/api/system/analytics/admin/overview` is owned by the backend
+surface and consumed through
+`system.analytics.admin.overview.retrieve(...)`. The route validates a strict
+UTC window before entering the repository. Defaults and explicit maximums are
+bounded by bucket type: hourly defaults to 24 hours and permits 30 hours;
+daily defaults to 30 days and permits 31 days; weekly defaults to 84 days and
+permits 210 days; monthly defaults to 366 days and permits 731 days; yearly
+defaults to and permits 3653 days.
+
+The PostgreSQL adapter runs every aggregate for one response inside a
+`REPEATABLE READ`, `READ ONLY` transaction. Trend SQL orders buckets descending
+to select the latest 30 and then returns them ascending. Bucket formatting is
+UTC. Ranking limits are validated as `3..=50` and applied in SQL using numeric
+aggregate sort keys. The union of the three bounded user rankings contains at
+most 150 user identifiers; per-user model distribution SQL uses that set with
+`ANY($5::text[])` and retains five rows plus an `Others` aggregate per user.
+These bounds prevent a tenant-wide distribution result from being accumulated
+in process memory.
+
+Repository arithmetic uses the fixed-scale `DecimalValue` contract and checked
+integer operations. Counts and monetary/token decimals serialize as JSON
+strings; percentage display values use integer half-up rounding. PostgreSQL
+decode failures, negative aggregates, inconsistent failed-request counts, and
+overflow fail the request instead of substituting zero. The PC service layer
+rejects numeric JSON for these string fields and retains exact values until a
+bounded chart projection is required.
 
 ## 7. Security, Privacy, And Observability
 

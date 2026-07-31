@@ -58,8 +58,11 @@ pub struct AdminRecordLogItem {
     pub total_time: String,
     pub ttft: String,
     pub is_stream: bool,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub input_tokens: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub cache_read_tokens: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub output_tokens: i64,
     pub cost: String,
     pub multiplier: String,

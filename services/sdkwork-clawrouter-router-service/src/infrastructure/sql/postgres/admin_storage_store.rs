@@ -10,8 +10,8 @@ use crate::infrastructure::sql::sql_admin_storage::{
     STORAGE_AUDIT_TARGET_RECONCILIATION_RUN,
 };
 use crate::ports::{
-    AdminStorageCollection, AdminStorageCommandFuture, AdminStorageJsonRecord, AdminStorageStore,
-    CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
+    AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
+    AdminStorageStore, CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
     CreateStorageGarbageCollectionJobCommand, CreateStorageProviderCommand,
     CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
     ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand, UpdateStorageBucketCommand,
@@ -192,7 +192,7 @@ async fn list_providers(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -420,7 +420,7 @@ async fn list_buckets(
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
     .bind(query.logical_scope.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -594,7 +594,7 @@ async fn list_default_buckets(
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
     .bind(query.logical_scope.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -707,7 +707,7 @@ async fn list_quota_policies(
     .bind(query.status.as_deref())
     .bind(query.scope_type.as_deref())
     .bind(query.scope_id.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -808,7 +808,7 @@ async fn list_usage_counters(
     .bind(query.subject.organization_id)
     .bind(query.scope_type.as_deref())
     .bind(query.scope_id.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -845,7 +845,7 @@ async fn list_usage_ledger(
     .bind(query.subject.organization_id)
     .bind(query.scope_type.as_deref())
     .bind(query.scope_id.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -883,7 +883,7 @@ async fn list_usage_snapshots(
     .bind(query.subject.organization_id)
     .bind(query.scope_type.as_deref())
     .bind(query.scope_id.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -935,7 +935,7 @@ async fn list_reconciliation_runs(
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
     .bind(query.run_type.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -1045,7 +1045,7 @@ async fn list_gc_jobs(
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(cursor_id(query.cursor.as_deref())?)
+    .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)
     .await
@@ -1127,8 +1127,7 @@ async fn load_provider(
     subject: crate::ports::AdminStorageSubject,
     id: i64,
 ) -> DomainResult<AdminStorageJsonRecord> {
-    let mut query = list_query(subject);
-    query.cursor = Some((id + 1).to_string());
+    let query = load_query(subject, id)?;
     let collection = list_providers(pool, query).await?;
     find_loaded_record(collection, id, "storage provider was not found")
 }
@@ -1138,8 +1137,7 @@ async fn load_bucket(
     subject: crate::ports::AdminStorageSubject,
     id: i64,
 ) -> DomainResult<AdminStorageJsonRecord> {
-    let mut query = list_query(subject);
-    query.cursor = Some((id + 1).to_string());
+    let query = load_query(subject, id)?;
     let collection = list_buckets(pool, query).await?;
     find_loaded_record(collection, id, "storage bucket was not found")
 }
@@ -1149,8 +1147,7 @@ async fn load_default_bucket(
     subject: crate::ports::AdminStorageSubject,
     id: i64,
 ) -> DomainResult<AdminStorageJsonRecord> {
-    let mut query = list_query(subject);
-    query.cursor = Some((id + 1).to_string());
+    let query = load_query(subject, id)?;
     let collection = list_default_buckets(pool, query).await?;
     find_loaded_record(collection, id, "storage default bucket was not found")
 }
@@ -1160,8 +1157,7 @@ async fn load_quota_policy(
     subject: crate::ports::AdminStorageSubject,
     id: i64,
 ) -> DomainResult<AdminStorageJsonRecord> {
-    let mut query = list_query(subject);
-    query.cursor = Some((id + 1).to_string());
+    let query = load_query(subject, id)?;
     let collection = list_quota_policies(pool, query).await?;
     find_loaded_record(collection, id, "storage quota policy was not found")
 }
@@ -1171,8 +1167,7 @@ async fn load_reconciliation_run(
     subject: crate::ports::AdminStorageSubject,
     id: i64,
 ) -> DomainResult<AdminStorageJsonRecord> {
-    let mut query = list_query(subject);
-    query.cursor = Some((id + 1).to_string());
+    let query = load_query(subject, id)?;
     let collection = list_reconciliation_runs(pool, query).await?;
     find_loaded_record(collection, id, "storage reconciliation run was not found")
 }
@@ -1182,8 +1177,7 @@ async fn load_gc_job(
     subject: crate::ports::AdminStorageSubject,
     id: i64,
 ) -> DomainResult<AdminStorageJsonRecord> {
-    let mut query = list_query(subject);
-    query.cursor = Some((id + 1).to_string());
+    let query = load_query(subject, id)?;
     let collection = list_gc_jobs(pool, query).await?;
     find_loaded_record(collection, id, "storage gc job was not found")
 }
@@ -1366,16 +1360,29 @@ fn list_query(subject: crate::ports::AdminStorageSubject) -> ListAdminStorageRec
     }
 }
 
+fn load_query(
+    subject: crate::ports::AdminStorageSubject,
+    id: i64,
+) -> DomainResult<ListAdminStorageRecordsQuery> {
+    let cursor_id = id
+        .checked_add(1)
+        .and_then(AdminStorageCursor::new)
+        .ok_or_else(|| DomainError::new("storage record id cannot be paginated"))?;
+    let mut query = list_query(subject);
+    query.cursor = Some(cursor_id);
+    Ok(query)
+}
+
 fn collection_from_rows(
-    mut rows: Vec<sqlx::postgres::PgRow>,
+    rows: Vec<sqlx::postgres::PgRow>,
     query: ListAdminStorageRecordsQuery,
     fields: &[Field],
 ) -> DomainResult<AdminStorageCollection> {
-    let next_cursor = if rows.len() as i64 > query.limit {
-        rows.pop().map(|row| string_cell(&row, "id")).transpose()?
-    } else {
-        None
-    };
+    let (rows, next_cursor) = keyset_window(rows, query.limit, |row| {
+        let id = parse_required_id(&string_cell(row, "id")?, "cursor")?;
+        AdminStorageCursor::new(id)
+            .ok_or_else(|| DomainError::new("storage cursor id must be positive"))
+    })?;
     let mut items = Vec::with_capacity(rows.len());
     for row in rows {
         items.push(row_to_record(&row, fields)?);
@@ -1383,8 +1390,33 @@ fn collection_from_rows(
     Ok(AdminStorageCollection {
         items,
         next_cursor,
+        page_size: query.limit,
         request_id: query.request_id,
     })
+}
+
+fn keyset_window<T, F>(
+    mut rows: Vec<T>,
+    page_size: i64,
+    cursor_for: F,
+) -> DomainResult<(Vec<T>, Option<AdminStorageCursor>)>
+where
+    F: Fn(&T) -> DomainResult<AdminStorageCursor>,
+{
+    let page_size = usize::try_from(page_size)
+        .ok()
+        .filter(|page_size| *page_size > 0)
+        .ok_or_else(|| DomainError::new("storage page size must be positive"))?;
+    let has_more = rows.len() > page_size;
+    rows.truncate(page_size);
+    let next_cursor = if has_more {
+        Some(cursor_for(rows.last().ok_or_else(|| {
+            DomainError::new("storage cursor row is unavailable")
+        })?)?)
+    } else {
+        None
+    };
+    Ok((rows, next_cursor))
 }
 
 fn row_to_record(
@@ -1440,12 +1472,6 @@ fn json_string(value: &serde_json::Value, key: &str) -> Option<String> {
         .and_then(serde_json::Value::as_str)
         .filter(|value| !value.trim().is_empty())
         .map(ToOwned::to_owned)
-}
-
-fn cursor_id(value: Option<&str>) -> DomainResult<Option<i64>> {
-    value
-        .map(|value| parse_required_id(value, "cursor"))
-        .transpose()
 }
 
 fn parse_required_id(value: &str, field_name: &str) -> DomainResult<i64> {
@@ -1699,3 +1725,37 @@ const GC_FIELDS: &[Field] = &[
     Field::String("createdAt"),
     Field::String("completedAt"),
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn keyset_window_uses_the_last_returned_id_without_gaps() {
+        let source = [5_i64, 4, 3];
+        let mut cursor = None;
+        let mut seen = Vec::new();
+
+        loop {
+            let candidates = source
+                .iter()
+                .copied()
+                .filter(|id| cursor.is_none_or(|cursor: AdminStorageCursor| *id < cursor.id()))
+                .take(2)
+                .collect();
+            let (items, next_cursor) = keyset_window(candidates, 1, |id| {
+                AdminStorageCursor::new(*id)
+                    .ok_or_else(|| DomainError::new("test cursor must be positive"))
+            })
+            .expect("keyset window");
+            seen.extend(items);
+
+            match next_cursor {
+                Some(next_cursor) => cursor = Some(next_cursor),
+                None => break,
+            }
+        }
+
+        assert_eq!(vec![5, 4, 3], seen);
+    }
+}

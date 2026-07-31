@@ -13,6 +13,7 @@ pub type GatewayUsageRecordFuture<'a> = Pin<Box<dyn Future<Output = DomainResult
 // persistence fields. Check it before DecimalValue parses the input so a
 // malformed upstream value cannot force unbounded parser work.
 const DECIMAL_INPUT_MAX_BYTES: usize = 40;
+pub(crate) const MAX_PRICING_SNAPSHOT_BYTES: i32 = 16 * 1024;
 
 pub trait GatewayUsageRecorder {
     fn record_gateway_trace<'a>(
@@ -538,7 +539,11 @@ impl GatewayUsageRecordCommand {
         }
         validate_optional_non_negative_decimal("audio_seconds", self.audio_seconds.as_deref())?;
         validate_optional_non_negative_decimal("video_seconds", self.video_seconds.as_deref())?;
-        validate_json_object("pricing_snapshot", &self.pricing_snapshot)?;
+        validate_json_object(
+            "pricing_snapshot",
+            &self.pricing_snapshot,
+            MAX_PRICING_SNAPSHOT_BYTES,
+        )?;
         Ok(())
     }
 
@@ -598,13 +603,6 @@ impl GatewayUsageRecordCommand {
 fn non_negative_i64(field: &str, value: i64) -> DomainResult<()> {
     if value < 0 {
         return Err(DomainError::new(format!("{field} must be non-negative")));
-    }
-    Ok(())
-}
-
-fn validate_optional_non_negative_i64(field: &str, value: Option<i64>) -> DomainResult<()> {
-    if let Some(value) = value {
-        non_negative_i64(field, value)?;
     }
     Ok(())
 }
@@ -716,7 +714,12 @@ fn validate_decimal_input_length(field: &str, value: &str) -> DomainResult<()> {
     Ok(())
 }
 
-fn validate_json_object(field: &str, value: &str) -> DomainResult<()> {
+fn validate_json_object(field: &str, value: &str, max_bytes: i32) -> DomainResult<()> {
+    if value.len() > max_bytes as usize {
+        return Err(DomainError::new(format!(
+            "{field} must not exceed {max_bytes} bytes"
+        )));
+    }
     let mut deserializer = serde_json::Deserializer::from_str(value);
     IgnoredAny::deserialize(&mut deserializer)
         .and_then(|_| deserializer.end())
@@ -766,4 +769,31 @@ fn positive_decimal_value(field: &str, value: &str) -> DomainResult<DecimalValue
 
 fn positive_decimal(field: &str, value: &str) -> DomainResult<String> {
     positive_decimal_value(field, value).map(|decimal| decimal.to_fixed_string(12))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pricing_snapshot_is_bounded_by_utf8_bytes_before_json_parsing() {
+        validate_json_object("pricing_snapshot", "{}", MAX_PRICING_SNAPSHOT_BYTES)
+            .expect("small object must pass");
+
+        let oversized = format!(
+            "{{\"value\":\"{}\"}}",
+            "x".repeat(MAX_PRICING_SNAPSHOT_BYTES as usize)
+        );
+        let error =
+            validate_json_object("pricing_snapshot", &oversized, MAX_PRICING_SNAPSHOT_BYTES)
+                .expect_err("oversized object must fail before parsing");
+        assert!(error.to_string().contains("must not exceed 16384 bytes"));
+
+        let multibyte = format!("{{\"value\":\"{}\"}}", "\u{754c}".repeat(5_500));
+        assert!(multibyte.chars().count() < MAX_PRICING_SNAPSHOT_BYTES as usize);
+        assert!(
+            validate_json_object("pricing_snapshot", &multibyte, MAX_PRICING_SNAPSHOT_BYTES,)
+                .is_err()
+        );
+    }
 }

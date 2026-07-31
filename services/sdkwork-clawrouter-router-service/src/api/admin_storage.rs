@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use axum::extract::rejection::QueryRejection;
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
@@ -8,17 +9,20 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{json_success_list_response, problem_from_wire_code, success_envelope};
+use crate::api::response::{
+    json_success_list_response, platform_problem, problem_from_wire_code, success_envelope,
+};
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminStorageCollection, AdminStorageJsonRecord, AdminStorageStore,
+    AdminStorageCollection, AdminStorageCursor, AdminStorageJsonRecord, AdminStorageStore,
     CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
     CreateStorageGarbageCollectionJobCommand, CreateStorageProviderCommand,
     CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
     ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand, UpdateStorageBucketCommand,
     UpdateStorageProviderCommand,
 };
-use sdkwork_utils_rust::offset_limit_page_info;
+use sdkwork_utils_rust::http_api::cursor_window_page_info;
+use sdkwork_utils_rust::{base64url_decode, base64url_encode, SdkWorkResultCode};
 
 const DEFAULT_LIMIT: i64 = 20;
 const MAX_LIMIT: i64 = 200;
@@ -29,6 +33,7 @@ const MAX_URL_LEN: usize = 512;
 const MAX_CREDENTIAL_REF_LEN: usize = 256;
 const MAX_REASON_LEN: usize = 512;
 const MAX_REQUEST_ID_LEN: usize = 128;
+const MAX_CURSOR_LEN: usize = 256;
 const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
 
 const PROVIDER_TYPES: &[&str] = &[
@@ -77,6 +82,7 @@ struct AdminStorageState {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AdminStorageQuery {
     cursor: Option<String>,
     page_size: Option<i64>,
@@ -87,10 +93,18 @@ struct AdminStorageQuery {
     run_type: Option<String>,
 }
 
+type AdminStorageQueryResult = Result<Query<AdminStorageQuery>, QueryRejection>;
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct AdminStorageCursorPayload {
+    id: i64,
+}
+
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct CreateStorageProviderRequest {
-    supplier_code: String,
+    provider_code: String,
     provider_type: String,
     endpoint_url: Option<String>,
     region: Option<String>,
@@ -102,14 +116,14 @@ struct CreateStorageProviderRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct UpdateStorageStatusRequest {
     status: String,
     reason: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct CreateStorageBucketRequest {
     bucket_name: String,
     provider_id: String,
@@ -127,14 +141,14 @@ struct CreateStorageBucketRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct SetStorageDefaultBucketRequest {
     bucket_id: String,
     reason: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct CreateStorageQuotaPolicyRequest {
     scope_type: String,
     scope_id: String,
@@ -145,7 +159,7 @@ struct CreateStorageQuotaPolicyRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct CreateStorageReconciliationRunRequest {
     provider_id: Option<String>,
     bucket_id: Option<String>,
@@ -156,7 +170,7 @@ struct CreateStorageReconciliationRunRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct CreateStorageGarbageCollectionJobRequest {
     job_type: Option<String>,
     target: Option<String>,
@@ -266,7 +280,7 @@ async fn list_providers(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(
         scoped,
@@ -344,7 +358,7 @@ async fn list_buckets(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(scoped, query, |query| state.store.list_buckets(query), None).await
 }
@@ -396,7 +410,7 @@ async fn list_default_buckets(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(
         scoped,
@@ -433,7 +447,7 @@ async fn list_quota_policies(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(
         scoped,
@@ -469,7 +483,7 @@ async fn list_usage_counters(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(
         scoped,
@@ -484,7 +498,7 @@ async fn list_usage_ledger(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(
         scoped,
@@ -499,7 +513,7 @@ async fn list_usage_snapshots(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(
         scoped,
@@ -514,7 +528,7 @@ async fn list_reconciliation_runs(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(
         scoped,
@@ -552,7 +566,7 @@ async fn list_gc_jobs(
     State(state): State<AdminStorageState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     _headers: HeaderMap,
-    Query(query): Query<AdminStorageQuery>,
+    query: AdminStorageQueryResult,
 ) -> Response {
     list_response(scoped, query, |query| state.store.list_gc_jobs(query), None).await
 }
@@ -581,7 +595,7 @@ async fn create_gc_job(
 
 async fn list_response<'a, F>(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
-    query: AdminStorageQuery,
+    query: AdminStorageQueryResult,
     load: F,
     scope_types: Option<&'static [&'static str]>,
 ) -> Response
@@ -590,6 +604,10 @@ where
         ListAdminStorageRecordsQuery,
     ) -> crate::ports::AdminStorageCommandFuture<'a, AdminStorageCollection>,
 {
+    let Query(query) = match query {
+        Ok(query) => query,
+        Err(_) => return bad_request("storage query parameters are invalid"),
+    };
     let query = match validated_list_query(scoped, query, scope_types) {
         Ok(query) => query,
         Err(response) => return response,
@@ -601,11 +619,28 @@ where
 }
 
 fn collection_response(collection: AdminStorageCollection) -> Response {
-    let has_more = collection.next_cursor.is_some();
+    let page_size = match usize::try_from(collection.page_size) {
+        Ok(page_size) if (1..=MAX_LIMIT as usize).contains(&page_size) => page_size,
+        _ => {
+            return storage_system_response(
+                "storage pagination is unavailable",
+                DomainError::new("storage collection page size is invalid"),
+            )
+        }
+    };
+    let next_cursor = match collection.next_cursor.as_ref().map(encode_storage_cursor) {
+        Some(Ok(cursor)) => Some(cursor),
+        Some(Err(error)) => {
+            tracing::error!(error = %error, "storage cursor encoding failed");
+            return storage_system_response("storage pagination is unavailable", error);
+        }
+        None => None,
+    };
+    let has_more = next_cursor.is_some();
     json_success_list_response(
         None,
         collection.items,
-        offset_limit_page_info(collection.next_cursor, has_more),
+        cursor_window_page_info(Some(page_size), next_cursor, has_more),
     )
 }
 
@@ -621,7 +656,12 @@ fn validated_list_query(
             "page_size must be between 1 and {MAX_LIMIT}"
         )));
     }
-    let cursor = normalize_optional_text(query.cursor, "cursor", 256)?;
+    let cursor = query
+        .cursor
+        .as_deref()
+        .map(decode_storage_cursor)
+        .transpose()
+        .map_err(bad_request)?;
     let status = normalize_optional_text(query.status, "status", MAX_TYPE_LEN)?
         .map(|value| value.to_ascii_lowercase());
     if let Some(status) = status.as_deref() {
@@ -654,6 +694,22 @@ fn validated_list_query(
     })
 }
 
+fn encode_storage_cursor(cursor: &AdminStorageCursor) -> Result<String, DomainError> {
+    serde_json::to_vec(&AdminStorageCursorPayload { id: cursor.id() })
+        .map(|payload| base64url_encode(&payload))
+        .map_err(|_| DomainError::new("storage cursor serialization failed"))
+}
+
+fn decode_storage_cursor(value: &str) -> Result<AdminStorageCursor, String> {
+    if value.is_empty() || value.len() > MAX_CURSOR_LEN || value.trim() != value {
+        return Err("storage cursor is invalid".to_owned());
+    }
+    let decoded = base64url_decode(value).ok_or_else(|| "storage cursor is invalid".to_owned())?;
+    let payload = serde_json::from_slice::<AdminStorageCursorPayload>(&decoded)
+        .map_err(|_| "storage cursor is invalid".to_owned())?;
+    AdminStorageCursor::new(payload.id).ok_or_else(|| "storage cursor is invalid".to_owned())
+}
+
 fn validated_provider_create_command(
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
     headers: &HeaderMap,
@@ -667,7 +723,7 @@ fn validated_provider_create_command(
     Ok(CreateStorageProviderCommand {
         subject,
         supplier_code: normalize_required_text(
-            request.supplier_code,
+            request.provider_code,
             "providerCode",
             MAX_CODE_LEN,
         )?,
@@ -971,7 +1027,7 @@ fn response_request_id(value: Option<&str>) -> String {
 }
 
 fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
+    platform_problem(SdkWorkResultCode::InvalidParameter, message).into_response()
 }
 
 fn storage_error_response(context: &str, error: DomainError) -> Response {

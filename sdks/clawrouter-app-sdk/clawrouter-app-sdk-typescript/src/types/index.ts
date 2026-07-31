@@ -81,6 +81,8 @@ export type { SdkWorkResourceResponse } from './sdk-work-resource-response';
 export type { SettingsDataResponse } from './settings-data-response';
 export type { SettingsNotifications } from './settings-notifications';
 
+export type { SiteRuntimeSettingsResponse } from './site-runtime-settings-response';
+
 export type { UpdateApiKeyRequest } from './update-api-key-request';
 export type { UpdateApiKeyResponse } from './update-api-key-response';
 export type { UpdateSettingsNotificationsRequest } from './update-settings-notifications-request';

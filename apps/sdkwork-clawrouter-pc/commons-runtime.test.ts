@@ -648,8 +648,8 @@ test("portal notification service composes the shared service with canonical pag
     "appId: DEFAULT_NOTIFICATION_APP_ID",
     "page_size: DEFAULT_NOTIFICATION_PAGE_SIZE",
     "pageSize: params?.page_size ?? DEFAULT_NOTIFICATION_PAGE_SIZE",
-    "appSdkClient.notification.acknowledge.create(notificationId, { appId: params?.appId })",
-    "appSdkClient.notification.popupSeen.create(notificationId, { appId: params?.appId })",
+    "appSdkClient.notification.acknowledge.create(notificationId)",
+    "appSdkClient.notification.popupSeen.create(notificationId)",
   ]) {
     assert.ok(serviceSource.includes(marker), `missing shared notification service marker: ${marker}`);
   }
@@ -672,11 +672,13 @@ test("portal notification facade remains typed and backend SDK construction has 
   for (const marker of [
     "export type PortalNotificationClient = SdkworkNotificationGeneratedClient;",
     "appSdkClient.notification.list({",
-    "appSdkClient.notification.acknowledge.create(notificationId, { appId: params?.appId })",
-    "appSdkClient.notification.popupSeen.create(notificationId, { appId: params?.appId })",
+    "appSdkClient.notification.acknowledge.create(notificationId)",
+    "appSdkClient.notification.popupSeen.create(notificationId)",
   ]) {
     assert.ok(notificationSource.includes(marker), `missing notification client facade marker: ${marker}`);
   }
+
+  assert.doesNotMatch(notificationSource, /appId: params\?\.appId/u);
 
   for (const marker of [
     "BackendDomainDependencyOverlay",

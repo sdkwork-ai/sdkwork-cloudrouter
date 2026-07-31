@@ -742,7 +742,7 @@ test("admin model service calls generated backend SDK paths and normalizes model
           ],
         };
       }
-      if (url === "/backend/v3/api/ai/models/refresh" && method === "POST") {
+      if (url === "/backend/v3/api/ai/models/sync" && method === "POST") {
         return {
           synced: true,
           source: "sdkwork_models",
@@ -918,7 +918,7 @@ test("admin model service calls generated backend SDK paths and normalizes model
           "GET /backend/v3/api/ai/model_vendors",
           "GET /backend/v3/api/ai/models",
           "GET /backend/v3/api/ai/model_rankings?page_size=200",
-          "POST /backend/v3/api/ai/models/refresh",
+          "POST /backend/v3/api/ai/models/sync",
           "POST /backend/v3/api/ai/model_vendors",
           "POST /backend/v3/api/ai/models",
           "PATCH /backend/v3/api/ai/models/model-3",
@@ -1004,7 +1004,7 @@ test("admin model service initializes empty catalog through generated backend SD
       if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
         return { items: [] };
       }
-      if (url === "/backend/v3/api/ai/models/refresh" && method === "POST") {
+      if (url === "/backend/v3/api/ai/models/sync" && method === "POST") {
         return {
           synced: true,
           source: "sdkwork_models",
@@ -1060,7 +1060,7 @@ test("admin model service initializes empty catalog through generated backend SD
           "GET /backend/v3/api/ai/model_vendors",
           "GET /backend/v3/api/ai/models",
           "GET /backend/v3/api/ai/model_rankings?page_size=200",
-          "POST /backend/v3/api/ai/models/refresh",
+          "POST /backend/v3/api/ai/models/sync",
         ],
       );
       assert.deepEqual(JSON.parse(captured[3].body), {
@@ -2113,7 +2113,7 @@ test("admin model list fails closed when backend returns malformed model field c
 test("admin model catalog sync fails closed when backend returns malformed model rows", async () => {
   await withBackendSdkFetch(
     (url, init) => {
-      if (url === "/backend/v3/api/ai/models/refresh" && init?.method === "POST") {
+      if (url === "/backend/v3/api/ai/models/sync" && init?.method === "POST") {
         return {
           synced: true,
           source: "sdkwork_models",
@@ -2152,7 +2152,7 @@ test("admin model catalog sync fails closed when backend returns malformed model
 test("admin model catalog sync fails closed when governance metadata is missing", async () => {
   await withBackendSdkFetch(
     (url, init) => {
-      if (url === "/backend/v3/api/ai/models/refresh" && init?.method === "POST") {
+      if (url === "/backend/v3/api/ai/models/sync" && init?.method === "POST") {
         return {
           synced: true,
           source: "sdkwork_models",
@@ -2186,7 +2186,7 @@ test("admin model catalog sync fails closed when governance metadata is missing"
 test("admin model catalog sync rejects fractional fact counters", async () => {
   await withBackendSdkFetch(
     (url, init) => {
-      if (url === "/backend/v3/api/ai/models/refresh" && init?.method === "POST") {
+      if (url === "/backend/v3/api/ai/models/sync" && init?.method === "POST") {
         return {
           synced: true,
           source: "sdkwork_models",

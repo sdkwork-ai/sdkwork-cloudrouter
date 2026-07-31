@@ -165,7 +165,7 @@ class AdminModelRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("model.add(model)", service)
         self.assertNotIn("as unknown as Record<string, unknown>", service)
         self.assertIn("getModelsBackendSdkClient().ai.modelVendors.list()", service)
-        self.assertIn("getModelsBackendSdkClient().ai.models.refresh(", service)
+        self.assertIn("getModelsBackendSdkClient().ai.models.sync(", service)
         self.assertIn("getModelsBackendSdkClient().ai.modelVendors.create(", service)
         self.assertIn("getModelsBackendSdkClient().ai.modelRankings.list(", service)
         for count_field in [

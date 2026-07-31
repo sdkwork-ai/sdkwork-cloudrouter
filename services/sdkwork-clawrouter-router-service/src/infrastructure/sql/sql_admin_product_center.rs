@@ -66,41 +66,6 @@ pub(crate) fn drive_uri_from_resource(resource: &Value) -> Option<String> {
         .map(str::to_owned)
 }
 
-pub(crate) fn media_resource_from_snapshot(snapshot: &str, kind: &str) -> Value {
-    let trimmed = snapshot.trim();
-    if trimmed.is_empty() {
-        return empty_media_resource(kind);
-    }
-    match serde_json::from_str::<Value>(trimmed) {
-        Ok(Value::Object(object)) => {
-            let value = Value::Object(object);
-            let has_kind = value
-                .get("kind")
-                .and_then(Value::as_str)
-                .map(str::trim)
-                .is_some_and(|value| !value.is_empty());
-            let has_source = value
-                .get("source")
-                .and_then(Value::as_str)
-                .map(str::trim)
-                .is_some_and(|value| !value.is_empty());
-            if has_kind && has_source {
-                value
-            } else {
-                empty_media_resource(kind)
-            }
-        }
-        _ => empty_media_resource(kind),
-    }
-}
-
-pub(crate) fn empty_media_resource(kind: &str) -> Value {
-    json!({
-        "kind": kind,
-        "source": "external_url"
-    })
-}
-
 pub(crate) fn provider_asset_media_resource(kind: &str, uri: &str) -> Value {
     json!({
         "kind": kind,

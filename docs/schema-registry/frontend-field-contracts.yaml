@@ -1686,10 +1686,26 @@ frontend_operations:
   api_path: /app/v3/api/ai/model_vendors
   sdk_domain: ai
   read_sources:
-  - ops_audit_log
+  - ai_model_vendor
+  - ai_model
   response_schema:
-    name: NoData
-    properties: {}
+    name: AppModelVendorCatalogResponse
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items:
+          name: AppModelVendorOption
+          type: object
+          additionalProperties: false
+          required: [label, code, modelCount]
+          properties:
+            label: { type: string, minLength: 1, maxLength: 200 }
+            code: { type: string, minLength: 1, maxLength: 64 }
+            modelCount: { type: integer, format: int32, minimum: 0 }
   query_parameters: []
 - route: /models
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-models/src/modelService.ts
@@ -1701,12 +1717,168 @@ frontend_operations:
   api_path: /app/v3/api/ai/models
   sdk_domain: ai
   read_sources:
+  - ai_model_vendor
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
+  - ai_upstream_supplier
+  - ai_upstream_account
   - ai_upstream_account_group
   - ai_upstream_account_group_member
+  - ai_upstream_account_group_resource
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AppModelCatalogPage
+    type: object
+    additionalProperties: false
+    required: [items, groups, pageInfo]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items:
+          name: AppModelCatalogItem
+          type: object
+          additionalProperties: false
+          required: [catalogKey, model, displayName, vendorCode, vendor, capabilities, groups, categories, description, modalities, inputModalities, outputModalities, apiFormat, capabilityIntro, limitations, supportedLanguages, useCases, trainingDataCutoff, contextTokens, maxOutputTokens, supportsStreaming, supportsTools, supportsJsonSchema, releaseStage, shelfState, routingState, replacementModel, providerCodes, officialReferencePrices, priceAvailability]
+          properties:
+            catalogKey: { type: string, minLength: 3, maxLength: 512 }
+            model: { type: string, minLength: 1, maxLength: 256 }
+            displayName: { type: string, minLength: 1, maxLength: 256 }
+            vendorCode: { type: string, minLength: 1, maxLength: 64 }
+            vendor: { type: string, minLength: 1, maxLength: 64 }
+            capabilities:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 64 }
+            groups:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 64 }
+            categories:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 64 }
+            description: { type: string, maxLength: 2048, nullable: true }
+            modalities:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 64 }
+            inputModalities:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 64 }
+            outputModalities:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 64 }
+            apiFormat: { type: string, maxLength: 128, nullable: true }
+            capabilityIntro: { type: string, maxLength: 4096, nullable: true }
+            limitations:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 512 }
+            supportedLanguages:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 128 }
+            useCases:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 512 }
+            trainingDataCutoff: { type: string, maxLength: 128, nullable: true }
+            contextTokens: { type: integer, format: int32, minimum: 1, maximum: 100000000, nullable: true }
+            maxOutputTokens: { type: integer, format: int32, minimum: 1, maximum: 100000000, nullable: true }
+            supportsStreaming: { type: boolean }
+            supportsTools: { type: boolean }
+            supportsJsonSchema: { type: boolean }
+            releaseStage: { type: integer, format: int32, minimum: 1, maximum: 3, nullable: true }
+            shelfState: { type: integer, format: int32, minimum: 1, maximum: 3, nullable: true }
+            routingState: { type: integer, format: int32, minimum: 0, maximum: 2, nullable: true }
+            replacementModel: { type: string, maxLength: 256, nullable: true }
+            providerCodes:
+              type: array
+              maxItems: 200
+              items: { type: string, minLength: 1, maxLength: 64 }
+            officialReferencePrices:
+              type: array
+              maxItems: 200
+              items:
+                name: AppModelCatalogReferencePrice
+                type: object
+                additionalProperties: false
+                required: [regionCode, billingMeter, unitPrice, currency]
+                properties:
+                  regionCode: { type: string, minLength: 1, maxLength: 64 }
+                  billingMeter: { type: string, minLength: 1, maxLength: 64 }
+                  unitPrice: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                  currency: { type: string, pattern: '^[A-Z]{3}$' }
+            priceAvailability:
+              name: AppModelCatalogPriceAvailability
+              type: object
+              additionalProperties: false
+              required: [status, reason]
+              properties:
+                status: { type: string, enum: [reference, unavailable] }
+                reason: { type: string, maxLength: 256, nullable: true }
+      groups:
+        type: array
+        maxItems: 100
+        items:
+          name: AppModelCatalogGroup
+          type: object
+          additionalProperties: false
+          required: [key, label, modelCount]
+          properties:
+            key: { type: string, minLength: 1, maxLength: 64 }
+            label: { type: string, minLength: 1, maxLength: 128 }
+            modelCount: { type: integer, format: int32, minimum: 0 }
+      pageInfo: { $ref: '#/components/schemas/PageInfo' }
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 200 }
+  - name: billing_meter
+    schema: { type: string, maxLength: 64 }
+  - name: vendor_code
+    schema: { type: string, maxLength: 64 }
+  - name: vendor_codes
+    style: form
+    explode: false
+    schema:
+      type: array
+      maxItems: 200
+      items: { type: string, minLength: 1, maxLength: 64 }
+  - name: modalities
+    style: form
+    explode: false
+    schema:
+      type: array
+      maxItems: 128
+      items: { type: string, minLength: 1, maxLength: 64 }
+  - name: capabilities
+    style: form
+    explode: false
+    schema:
+      type: array
+      maxItems: 128
+      items: { type: string, minLength: 1, maxLength: 64 }
+  - name: categories
+    style: form
+    explode: false
+    schema:
+      type: array
+      maxItems: 128
+      items: { type: string, minLength: 1, maxLength: 64 }
+  - name: groups
+    style: form
+    explode: false
+    schema:
+      type: array
+      maxItems: 128
+      items: { type: string, minLength: 1, maxLength: 64 }
 - route: /playground
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-playground/src/appRuntimeApiOperations.ts
   operation: listModelCatalog
@@ -3917,7 +4089,7 @@ frontend_operations:
 - route: /
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts
   operation: fetchSiteBranding
-  operation_id: system.site.runtime.get
+  operation_id: site.runtime.retrieve
   kind: read
   api_surface: app
   api_method: GET
@@ -3926,9 +4098,45 @@ frontend_operations:
   read_sources:
   - ops_audit_log
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: SiteRuntimeSettingsResponse
+    type: object
+    additionalProperties: false
+    required: [siteName, shortName, description, logo, icon, favicon, brandColor, accentColor, footerCopyright, icpRecordNumber, icpRecordUrl, policeRecordNumber, policeRecordUrl, seoTitle, seoDescription, supportUrl, docsUrl, privacyUrl, termsUrl, customCss]
+    properties:
+      siteName: { type: string, minLength: 1, maxLength: 255 }
+      shortName: { type: string, maxLength: 255 }
+      description: { type: string, maxLength: 4096 }
+      logo:
+        anyOf:
+        - { $ref: '#/components/schemas/MediaResource' }
+        - { type: 'null' }
+      icon:
+        anyOf:
+        - { $ref: '#/components/schemas/MediaResource' }
+        - { type: 'null' }
+      favicon:
+        anyOf:
+        - { $ref: '#/components/schemas/MediaResource' }
+        - { type: 'null' }
+      brandColor: { type: string, pattern: '^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$' }
+      accentColor: { type: string, pattern: '^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$' }
+      footerCopyright: { type: string, maxLength: 4096 }
+      icpRecordNumber: { type: string, maxLength: 255 }
+      icpRecordUrl: { type: string, maxLength: 2048 }
+      policeRecordNumber: { type: string, maxLength: 255 }
+      policeRecordUrl: { type: string, maxLength: 2048 }
+      seoTitle: { type: string, maxLength: 255 }
+      seoDescription: { type: string, maxLength: 4096 }
+      supportUrl: { type: string, maxLength: 2048 }
+      docsUrl: { type: string, maxLength: 2048 }
+      privacyUrl: { type: string, maxLength: 2048 }
+      termsUrl: { type: string, maxLength: 2048 }
+      customCss: { type: string, maxLength: 20000 }
+  query_parameters:
+  - name: tenant_code
+    schema: { type: string, maxLength: 64 }
+  - name: organization_code
+    schema: { type: string, maxLength: 64 }
   operation_scope: app_shell
 - route: /admin/model/mappings
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -4336,10 +4544,35 @@ frontend_operations:
   api_path: /backend/v3/api/ai/model_vendors
   sdk_domain: ai
   read_sources:
-  - ai_pricing_import_snapshot
+  - ai_model_vendor
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminModelVendorListResponse
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items:
+          name: AdminModelVendorItem
+          type: object
+          additionalProperties: false
+          required: [id, vendorCode, name, status, color, description, supportedProtocols, clientApiCompatibility]
+          properties:
+            id: { type: string, pattern: '^[1-9][0-9]*$' }
+            vendorCode: { type: string, minLength: 1, maxLength: 64 }
+            name: { type: string, minLength: 1, maxLength: 128 }
+            status: { type: string, enum: [active, inactive] }
+            color: { type: string, maxLength: 64 }
+            description: { type: string, maxLength: 512 }
+            supportedProtocols:
+              type: array
+              maxItems: 100
+              items: { type: string, minLength: 1, maxLength: 128 }
+            clientApiCompatibility:
+              type: object
+              additionalProperties: true
   query_parameters: []
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -4368,11 +4601,101 @@ frontend_operations:
   api_path: /backend/v3/api/ai/models
   sdk_domain: ai
   read_sources:
-  - ai_pricing_import_snapshot
+  - ai_model_vendor
+  - ai_model
+  - ai_model_capability
+  - ai_model_pricing
   response_schema:
-    name: NoData
-    properties: {}
-  query_parameters: []
+    name: AdminAiModelPage
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        maxItems: 200
+        items:
+          name: AdminAiModelItem
+          type: object
+          additionalProperties: false
+          required: [id, vendorId, vendorCode, model, displayName, name, type, regionPrices, status, calls, description, modalities, inputModalities, outputModalities, apiFormat, capabilityIntro, limitations, supportedLanguages, useCases, trainingDataCutoff, contextTokens, maxOutputTokens, supportsStreaming, supportsTools, supportsJsonSchema, releaseStage, shelfState, routingState, replacementModel]
+          properties:
+            id: { type: string, pattern: '^[1-9][0-9]*$' }
+            vendorId: { type: string, pattern: '^[1-9][0-9]*$' }
+            vendorCode: { type: string, minLength: 1, maxLength: 64 }
+            model: { type: string, minLength: 1, maxLength: 256 }
+            displayName: { type: string, minLength: 1, maxLength: 256 }
+            name: { type: string, minLength: 1, maxLength: 256 }
+            type: { type: string, enum: [Chat, Image, Audio, Embedding, Music, SoundEffect, Video] }
+            regionPrices:
+              type: array
+              maxItems: 200
+              items:
+                name: AdminAiModelRegionPrice
+                type: object
+                additionalProperties: false
+                required: [regionCode, currency, priceIn, priceOut, cacheReadPrice, cacheWritePrice]
+                properties:
+                  regionCode: { type: string, minLength: 1, maxLength: 64 }
+                  currency: { type: string, pattern: '^[A-Z]{3}$' }
+                  priceIn: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                  priceOut: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
+                  cacheReadPrice: { type: string, pattern: '^(?:|[0-9]+(?:\.[0-9]{1,12})?)$' }
+                  cacheWritePrice: { type: string, pattern: '^(?:|[0-9]+(?:\.[0-9]{1,12})?)$' }
+            status: { type: string, enum: [active, inactive] }
+            calls: { type: string, pattern: '^[0-9]+$' }
+            description: { type: string, maxLength: 2048, nullable: true }
+            modalities:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 512 }
+            inputModalities:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 512 }
+            outputModalities:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 512 }
+            apiFormat: { type: string, maxLength: 128, nullable: true }
+            capabilityIntro: { type: string, maxLength: 4096, nullable: true }
+            limitations:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 512 }
+            supportedLanguages:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 512 }
+            useCases:
+              type: array
+              maxItems: 128
+              items: { type: string, minLength: 1, maxLength: 512 }
+            trainingDataCutoff: { type: string, maxLength: 128, nullable: true }
+            contextTokens: { type: integer, format: int32, minimum: 1, maximum: 100000000, nullable: true }
+            maxOutputTokens: { type: integer, format: int32, minimum: 1, maximum: 100000000, nullable: true }
+            supportsStreaming: { type: boolean }
+            supportsTools: { type: boolean }
+            supportsJsonSchema: { type: boolean }
+            releaseStage: { type: integer, format: int32, minimum: 1, maximum: 3, nullable: true }
+            shelfState: { type: integer, format: int32, minimum: 1, maximum: 3, nullable: true }
+            routingState: { type: integer, format: int32, minimum: 0, maximum: 2, nullable: true }
+            replacementModel: { type: string, maxLength: 256, nullable: true }
+      pageInfo: { $ref: '#/components/schemas/PageInfo' }
+  query_parameters:
+  - name: page
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
+  - name: page_size
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - name: q
+    schema: { type: string, maxLength: 128 }
+  - name: vendor_codes
+    style: form
+    explode: false
+    schema:
+      type: array
+      maxItems: 32
+      items: { type: string, minLength: 1, maxLength: 64 }
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: fetchInitializedCatalog
@@ -4441,11 +4764,11 @@ frontend_operations:
 - route: /admin/model
   source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
   operation: syncVendorsAndModels
-  operation_id: ai.models.refresh.post
+  operation_id: ai.models.sync.post
   kind: action
   api_surface: backend
   api_method: POST
-  api_path: /backend/v3/api/ai/models/refresh
+  api_path: /backend/v3/api/ai/models/sync
   sdk_domain: ai
   read_sources:
   - ai_pricing_import_snapshot
@@ -4596,6 +4919,103 @@ frontend_operations:
     name: NoData
     properties: {}
   query_parameters: []
+- route: /admin/model/resources
+  source: ../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs
+  operation: createAiResource
+  operation_id: ai.resources.post
+  kind: create
+  api_surface: backend
+  api_method: POST
+  api_path: /backend/v3/api/ai/resources
+  sdk_domain: ai
+  read_sources:
+  - ai_resource
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema:
+    name: AdminAiResourceCreateRequest
+    type: object
+    additionalProperties: false
+    required: [resourceCode, resourceType, displayName]
+    properties:
+      resourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+      resourceType: { type: string, enum: [vendor, modality, api_endpoint, model_api, bundle] }
+      displayName: { type: string, minLength: 1, maxLength: 128 }
+      vendorCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+      modalityCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+      apiEndpointCode: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+      catalogKey: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
+      model: { type: [string, 'null'], maxLength: 128, pattern: '^[\x20-\x7E]*$' }
+      providerNativeModel: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
+      compositionMode: { type: [string, 'null'], enum: [single, any, all, null] }
+      status: { type: [string, 'null'], enum: [active, disabled, inactive, null] }
+      sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      members:
+        type: array
+        maxItems: 512
+        items:
+          name: AdminAiResourceMemberInput
+          type: object
+          additionalProperties: false
+          required: [memberResourceCode]
+          properties:
+            memberResourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+            memberRole: { type: [string, 'null'], enum: [included, optional, fallback, null] }
+            required: { type: boolean }
+            sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+  request_body_required: true
+  write_tables:
+  - ai_resource
+  - ops_audit_log
+- route: /admin/model/resources
+  source: ../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs
+  operation: updateAiResource
+  operation_id: ai.resources.byId.put
+  kind: update
+  api_surface: backend
+  api_method: PUT
+  api_path: /backend/v3/api/ai/resources/{resourceId}
+  sdk_domain: ai
+  read_sources:
+  - ai_resource
+  response_schema:
+    name: NoData
+    properties: {}
+  request_schema:
+    name: AdminAiResourceUpdateRequest
+    type: object
+    additionalProperties: false
+    properties:
+      resourceCode: { type: [string, 'null'], maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+      resourceType: { type: [string, 'null'], enum: [vendor, modality, api_endpoint, model_api, bundle, null] }
+      displayName: { type: [string, 'null'], maxLength: 128 }
+      vendorCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+      modalityCode: { type: [string, 'null'], maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+      apiEndpointCode: { type: [string, 'null'], maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$' }
+      catalogKey: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
+      model: { type: [string, 'null'], maxLength: 128, pattern: '^[\x20-\x7E]*$' }
+      providerNativeModel: { type: [string, 'null'], maxLength: 256, pattern: '^[\x20-\x7E]*$' }
+      compositionMode: { type: [string, 'null'], enum: [single, any, all, null] }
+      status: { type: [string, 'null'], enum: [active, disabled, inactive, null] }
+      sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      members:
+        type: array
+        maxItems: 512
+        items:
+          name: AdminAiResourceMemberInput
+          type: object
+          additionalProperties: false
+          required: [memberResourceCode]
+          properties:
+            memberResourceCode: { type: string, maxLength: 192, pattern: '^[A-Za-z0-9._:-]+$' }
+            memberRole: { type: [string, 'null'], enum: [included, optional, fallback, null] }
+            required: { type: boolean }
+            sortOrder: { type: [string, 'null'], format: int64, pattern: '^(0|[1-9][0-9]*)$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+  request_body_required: true
+  write_tables:
+  - ai_resource
+  - ops_audit_log
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
   operation: fetchFirewalls
@@ -5087,7 +5507,7 @@ frontend_operations:
 - route: /admin/cache
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-cache/src/cacheService.ts
   operation: fetchOverview
-  operation_id: system.cache.overview.get
+  operation_id: cache.overview.retrieve
   kind: read
   api_surface: backend
   api_method: GET
@@ -5121,7 +5541,7 @@ frontend_operations:
 - route: /admin/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
   operation: fetchDashboardData
-  operation_id: system.dashboard.admin.overview.get
+  operation_id: dashboard.admin.overview.retrieve
   kind: read
   api_surface: backend
   api_method: GET
@@ -5134,24 +5554,95 @@ frontend_operations:
   - iam_user
   - iam_organization_membership
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminDashboardOverview
+    type: object
+    additionalProperties: false
+    required: [activeUsers, userConsumption, multimodal, traffic, modelDistribution, recentUsage]
+    properties:
+      activeUsers: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+      userConsumption:
+        type: array
+        maxItems: 50
+        items:
+          name: AdminDashboardPieChartItem
+          type: object
+          additionalProperties: false
+          required: [name, value, color]
+          properties:
+            name: { type: string, minLength: 1, maxLength: 256 }
+            value: { type: number, minimum: 0 }
+            color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+      multimodal:
+        type: array
+        maxItems: 16
+        items: { $ref: '#/components/schemas/AdminDashboardPieChartItem' }
+      traffic:
+        type: array
+        maxItems: 100
+        items:
+          name: AdminDashboardTrafficItem
+          type: object
+          additionalProperties: false
+          required: [time, tokens, requests, cost]
+          properties:
+            time: { type: string, minLength: 1, maxLength: 64 }
+            tokens: { type: number, minimum: 0 }
+            requests: { type: number, minimum: 0 }
+            cost: { type: number, minimum: 0 }
+      modelDistribution:
+        type: array
+        maxItems: 50
+        items: { $ref: '#/components/schemas/AdminDashboardPieChartItem' }
+      recentUsage:
+        type: array
+        maxItems: 100
+        items:
+          name: AdminDashboardRecentUsageItem
+          type: object
+          additionalProperties: false
+          required: [id, user, isApiUser, model, type, billingMode, time, status, cost]
+          properties:
+            id: { type: string, minLength: 1, maxLength: 128 }
+            user: { type: string, minLength: 1, maxLength: 256 }
+            isApiUser: { type: boolean }
+            model: { type: string, minLength: 1, maxLength: 256 }
+            type: { type: string, minLength: 1, maxLength: 64 }
+            billingMode: { type: string, minLength: 1, maxLength: 64 }
+            usageIn: { type: number, minimum: 0 }
+            usageOut: { type: number, minimum: 0 }
+            usageCount: { type: number, minimum: 0 }
+            time: { type: string, minLength: 1, maxLength: 64 }
+            status: { type: string, minLength: 1, maxLength: 64 }
+            cost: { type: string, maxLength: 64, pattern: '^[0-9]+(?:\.[0-9]{1,12})?$' }
   query_parameters: []
 - route: /admin/dashboard
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-dashboard/src/dashboardService.ts
   operation: fetchInstallationStatus
-  operation_id: system.installation.status.get
+  operation_id: installation.status.retrieve
   kind: read
   api_surface: backend
   api_method: GET
   api_path: /backend/v3/api/system/installation/status
   sdk_domain: system
   read_sources:
-  - system_installation_state
-  - system_schema_migration
+  - ai_upstream_supplier
+  - ai_model
+  - ops_gateway_instance
   response_schema:
-    name: NoData
-    properties: {}
+    name: InstallationStatusResponse
+    type: object
+    additionalProperties: false
+    required: [status, schemaVersion, catalogVersion, catalogSource, externalCatalog, lastCatalogRefreshStatus, environment, seedProfile, changed]
+    properties:
+      status: { type: string, enum: [not_installed, installed, upgrade_required, incomplete, corrupt, catalog_unavailable] }
+      schemaVersion: { type: string, minLength: 1, maxLength: 64 }
+      catalogVersion: { type: string, maxLength: 128 }
+      catalogSource: { type: string, maxLength: 2048 }
+      externalCatalog: { type: boolean }
+      lastCatalogRefreshStatus: { type: string, enum: [succeeded, schema_not_ready, dependency_schema_not_ready, pending, invalid, catalog_unavailable] }
+      environment: { type: string, minLength: 1, maxLength: 64 }
+      seedProfile: { type: string, minLength: 1, maxLength: 128 }
+      changed: { type: boolean }
   query_parameters: []
 - route: /admin/ratelimit
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-ratelimit/src/ratelimitService.ts
@@ -5288,13 +5779,58 @@ frontend_operations:
   - ai_usage
   - ai_routing_decision_log
   response_schema:
-    name: NoData
-    properties: {}
+    name: AdminRecordPage
+    type: object
+    additionalProperties: false
+    required: [items, pageInfo]
+    properties:
+      items:
+        type: array
+        items:
+          name: AdminRecordLogItem
+          type: object
+          additionalProperties: false
+          required: [id, user, requestId, time, tokenName, group, type, model, providerNativeModel, requestedModelCatalogKey, regionCode, status, httpStatus, httpMethod, errorCode, errorType, errorMessage, totalTime, ttft, isStream, inputTokens, cacheReadTokens, outputTokens, cost, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, path, reasoningEffort, ip, userAgent]
+          properties:
+            id: { type: string, maxLength: 128 }
+            user: { type: string, maxLength: 320 }
+            requestId: { type: string, maxLength: 128 }
+            time: { type: string, maxLength: 64 }
+            tokenName: { type: string, maxLength: 200 }
+            group: { type: string, maxLength: 200 }
+            type: { type: string, maxLength: 64 }
+            model: { type: string, maxLength: 256 }
+            providerNativeModel: { type: string, maxLength: 256 }
+            requestedModelCatalogKey: { type: string, maxLength: 256 }
+            regionCode: { type: string, maxLength: 128 }
+            status: { type: string, enum: [success, error] }
+            httpStatus: { type: integer, format: int32, minimum: 0, maximum: 599 }
+            httpMethod: { type: string, enum: [GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD] }
+            errorCode: { type: string, maxLength: 256 }
+            errorType: { type: string, maxLength: 128 }
+            errorMessage: { type: string, maxLength: 4096 }
+            totalTime: { type: string, maxLength: 64 }
+            ttft: { type: string, maxLength: 64 }
+            isStream: { type: boolean }
+            inputTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            cacheReadTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            outputTokens: { type: string, format: int64, pattern: '^[0-9]+$', x-sdkwork-int64-string: true, x-sdkwork-rust-type: i64 }
+            cost: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            multiplier: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            baseInputPrice: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            baseOutputPrice: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            cacheReadPrice: { type: string, pattern: '^[0-9]+(?:\.[0-9]{1,6})?$' }
+            path: { type: string, maxLength: 2048 }
+            reasoningEffort: { type: string, maxLength: 64 }
+            ip: { type: string, maxLength: 128 }
+            userAgent: { type: string, maxLength: 2048 }
+      pageInfo:
+        $ref: '#/components/schemas/PageInfo'
   query_parameters:
   - name: page
-    schema: { type: integer, minimum: 1, default: 1 }
+    schema: { type: integer, format: int32, minimum: 1, default: 1 }
   - name: page_size
-    schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+    schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
   - name: user
     schema: { type: string, maxLength: 128 }
   - name: token
@@ -5304,7 +5840,7 @@ frontend_operations:
 - route: /admin/runtime-region
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
   operation: fetchSettings
-  operation_id: system.runtime.region.settings.get
+  operation_id: runtimeRegion.settings.retrieve
   kind: read
   api_surface: backend
   api_method: GET
@@ -5427,7 +5963,7 @@ frontend_operations:
 - route: /admin/site
   source: apps/sdkwork-clawrouter-pc/packages/sdkwork-clawrouter-pc-admin-site/src/SiteSettingsService.ts
   operation: fetchSettings
-  operation_id: system.site.settings.get
+  operation_id: site.settings.retrieve
   kind: read
   api_surface: backend
   api_method: GET
@@ -8393,7 +8929,7 @@ frontend_models:
   fields:
   - id
   - user
-  - gatewayRequestId
+  - requestId
   - time
   - tokenName
   - group
@@ -8994,8 +9530,9 @@ routes:
   - ai_request_trace
   - ai_usage
   - ops_metric_snapshot
-  - system_installation_state
-  - system_schema_migration
+  - ai_upstream_supplier
+  - ai_model
+  - ops_gateway_instance
   - iam_user
   - iam_organization_membership
   dependency_owned: true

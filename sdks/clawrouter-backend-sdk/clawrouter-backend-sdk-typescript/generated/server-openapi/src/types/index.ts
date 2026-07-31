@@ -10,9 +10,14 @@ export type { AdminAnalyticsUserRankItem } from './admin-analytics-user-rank-ite
 export type { AdminAnalyticsUserRankings } from './admin-analytics-user-rankings';
 export type { AdminAuthSettingsResponse } from './admin-auth-settings-response';
 export type { AdminAuthSettingsUpdateRequest } from './admin-auth-settings-update-request';
+export type { AdminDashboardOverview } from './admin-dashboard-overview';
+export type { AdminDashboardPieChartItem } from './admin-dashboard-pie-chart-item';
+export type { AdminDashboardRecentUsageItem } from './admin-dashboard-recent-usage-item';
+export type { AdminDashboardTrafficItem } from './admin-dashboard-traffic-item';
 export type { AdminFirewallRuleCreateRequest } from './admin-firewall-rule-create-request';
 export type { AdminIpLimitCreateRequest } from './admin-ip-limit-create-request';
 export type { AdminModelLimitCreateRequest } from './admin-model-limit-create-request';
+export type { AdminRecordLogItem } from './admin-record-log-item';
 export type { AdminRecordPage } from './admin-record-page';
 export type { AdminRuntimeRegionSettingsResponse } from './admin-runtime-region-settings-response';
 export type { AdminRuntimeRegionSettingsUpdateRequest } from './admin-runtime-region-settings-update-request';
@@ -46,6 +51,8 @@ export type { ExplainUpstreamAccountGroupRouteRequest } from './explain-upstream
 export type { FieldError } from './field-error';
 export type { FirewallRuleItem } from './firewall-rule-item';
 export type { FirewallRulePage } from './firewall-rule-page';
+
+export type { InstallationStatusResponse } from './installation-status-response';
 
 export type { IpLimitRuleItem } from './ip-limit-rule-item';
 export type { IpLimitRulePage } from './ip-limit-rule-page';

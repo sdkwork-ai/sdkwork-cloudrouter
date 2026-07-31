@@ -13,7 +13,7 @@ function createBackendSdkMock() {
     system: {
       cache: {
         overview: {
-          list: vi.fn(),
+          retrieve: vi.fn(),
         },
         refresh: vi.fn(),
         instances: {
@@ -150,12 +150,12 @@ describe('AdminCacheService', () => {
 
   it('loads cache overview through the generated backend SDK and normalizes the response', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.overview.list.mockResolvedValue(createOverviewPayload());
+    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewPayload());
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     const overview = await AdminCacheService.fetchOverview();
 
-    expect(backendSdk.system.cache.overview.list).toHaveBeenCalledTimes(1);
+    expect(backendSdk.system.cache.overview.retrieve).toHaveBeenCalledTimes(1);
     expect(overview.summary).toEqual({
       runtimeTarget: 'service',
       totalInstances: 1,
@@ -194,7 +194,7 @@ describe('AdminCacheService', () => {
 
   it('rejects overview payloads that omit required collection fields', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.overview.list.mockResolvedValue(createOverviewPayload({ instances: undefined }));
+    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewPayload({ instances: undefined }));
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
     await expect(AdminCacheService.fetchOverview()).rejects.toThrow('Cache instances are required');
@@ -202,7 +202,7 @@ describe('AdminCacheService', () => {
 
   it('rejects overview payloads whose summary counts do not match returned collections', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.overview.list.mockResolvedValue(createOverviewPayload({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewPayload({
       summary: {
         runtimeTarget: 'service',
         totalInstances: 2,
@@ -227,7 +227,7 @@ describe('AdminCacheService', () => {
     const backendSdk = createBackendSdkMock();
     mockedGetBackendClient.mockReturnValue(backendSdk as never);
 
-    backendSdk.system.cache.overview.list.mockResolvedValueOnce(createOverviewPayload({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewPayload({
       summary: {
         runtimeTarget: 'service',
         totalInstances: 1,
@@ -245,7 +245,7 @@ describe('AdminCacheService', () => {
     }));
     await expect(AdminCacheService.fetchOverview()).rejects.toThrow('Cache hit metric does not match returned instances');
 
-    backendSdk.system.cache.overview.list.mockResolvedValueOnce(createOverviewPayload({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewPayload({
       summary: {
         runtimeTarget: 'service',
         totalInstances: 1,
@@ -263,7 +263,7 @@ describe('AdminCacheService', () => {
     }));
     await expect(AdminCacheService.fetchOverview()).rejects.toThrow('Cache error metric is lower than returned instance errors');
 
-    backendSdk.system.cache.overview.list.mockResolvedValueOnce(createOverviewPayload({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValueOnce(createOverviewPayload({
       summary: {
         runtimeTarget: 'service',
         totalInstances: 1,
@@ -293,7 +293,7 @@ describe('AdminCacheService', () => {
 
   it('rejects namespace policies that use unsupported policy values', async () => {
     const backendSdk = createBackendSdkMock();
-    backendSdk.system.cache.overview.list.mockResolvedValue(createOverviewPayload({
+    backendSdk.system.cache.overview.retrieve.mockResolvedValue(createOverviewPayload({
       namespacePolicies: [
         {
           namespace: 'auth.qr.challenge',

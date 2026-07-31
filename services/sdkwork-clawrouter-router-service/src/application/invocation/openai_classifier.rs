@@ -734,24 +734,6 @@ fn parent_composite_api(
     }
 }
 
-fn parent_optional_api(
-    route_key: &'static str,
-    api_code: &'static str,
-    resource_type: ResourceType,
-    capability: RoutingCapability,
-    sticky_object_type: &'static str,
-) -> OpenAiRouteSpec {
-    OpenAiRouteSpec {
-        strategy: AiRouteStrategy::ParentSticky,
-        sticky_object_type: Some(sticky_object_type),
-        sticky_scope: ClassifiedStickyScope::ParentLookup,
-        model_requirement: AiRouteModelRequirement::Optional,
-        meter: Some(BillingMeter::ApiRequest),
-        billing_mode: ClassifiedBillingMode::ApiRequest,
-        ..api(route_key, api_code, resource_type, capability)
-    }
-}
-
 fn free_endpoint(
     route_key: &'static str,
     api_code: &'static str,

@@ -2,6 +2,7 @@
   "schemaVersion": 5,
   "kind": "sdkwork.app.topology",
   "appId": "sdkwork-clawrouter",
+  "applicationCode": "router",
   "archetype": "application-http-gateway",
   "profileRoot": "etc/topology",
   "profilePattern": "{deploymentProfile}.{environment}.env",
@@ -91,9 +92,6 @@
       "bindEnv": "SDKWORK_CLAW_ROUTER_INTERNAL_PORTAL_RENDERER_BIND"
     }
   },
-  "database": {
-    "appPrefix": "SDKWORK_CLAW"
-  },
   "components": {
     "standaloneGateway": {
       "crate": "sdkwork-api-clawrouter-standalone-gateway",
@@ -122,26 +120,54 @@
             "required": true,
             "role": "client",
             "bindEnv": "SDKWORK_CLAW_ROUTER_INTERNAL_PORTAL_RENDERER_BIND",
-            "runtimeTargets": ["browser"],
-            "clientArchitectures": ["pc-web"]
+            "runtimeTargets": [
+              "browser"
+            ],
+            "clientArchitectures": [
+              "pc-web"
+            ]
+          }
+        ],
+        "browserDeliveries": [
+          {
+            "id": "pc-web",
+            "applicationRoot": "apps/sdkwork-clawrouter-pc",
+            "clientArchitectures": [
+              "pc-web"
+            ],
+            "originMode": "same-origin",
+            "deliveryMode": "dev-server-proxy",
+            "apiSurfaceId": "application.public-ingress",
+            "clientProcessId": "portal-renderer",
+            "preserveCanonicalPaths": true
           }
         ],
         "accessEndpoints": [
           {
             "id": "application-ui",
             "kind": "user-interface",
-            "source": { "processId": "portal-renderer" },
+            "source": {
+              "processId": "portal-renderer"
+            },
             "path": "/",
             "primary": true,
-            "runtimeTargets": ["browser"],
-            "clientArchitectures": ["pc-web"]
+            "runtimeTargets": [
+              "browser"
+            ],
+            "clientArchitectures": [
+              "pc-web"
+            ]
           },
           {
             "id": "application-api-reference",
             "kind": "api-reference",
-            "source": { "surfaceId": "application.public-ingress" },
+            "source": {
+              "surfaceId": "application.public-ingress"
+            },
             "path": "/openapi.json",
-            "runtimeTargets": ["browser"]
+            "runtimeTargets": [
+              "browser"
+            ]
           }
         ],
         "healthSurfaces": [
@@ -156,6 +182,23 @@
             "binary": "sdkwork-api-clawrouter-standalone-gateway",
             "required": true,
             "role": "api-standalone-gateway"
+          }
+        ],
+        "browserDeliveries": [
+          {
+            "id": "pc-web",
+            "applicationRoot": "apps/sdkwork-clawrouter-pc",
+            "clientArchitectures": [
+              "pc-web"
+            ],
+            "originMode": "same-origin",
+            "deliveryMode": "gateway-static",
+            "apiSurfaceId": "application.public-ingress",
+            "hostProcessId": "application.public-ingress",
+            "buildOutput": "apps/sdkwork-clawrouter-pc/dist",
+            "runtimeRootEnv": "SDKWORK_CLAW_ROUTER_PORTAL_STATIC_DIST",
+            "mountPath": "/",
+            "spaFallback": "/index.html"
           }
         ],
         "healthSurfaces": [
@@ -178,26 +221,54 @@
             "required": true,
             "role": "client",
             "bindEnv": "SDKWORK_CLAW_ROUTER_INTERNAL_PORTAL_RENDERER_BIND",
-            "runtimeTargets": ["browser"],
-            "clientArchitectures": ["pc-web"]
+            "runtimeTargets": [
+              "browser"
+            ],
+            "clientArchitectures": [
+              "pc-web"
+            ]
+          }
+        ],
+        "browserDeliveries": [
+          {
+            "id": "pc-web",
+            "applicationRoot": "apps/sdkwork-clawrouter-pc",
+            "clientArchitectures": [
+              "pc-web"
+            ],
+            "originMode": "same-origin",
+            "deliveryMode": "dev-server-proxy",
+            "apiSurfaceId": "application.public-ingress",
+            "clientProcessId": "portal-renderer",
+            "preserveCanonicalPaths": true
           }
         ],
         "accessEndpoints": [
           {
             "id": "application-ui",
             "kind": "user-interface",
-            "source": { "processId": "portal-renderer" },
+            "source": {
+              "processId": "portal-renderer"
+            },
             "path": "/",
             "primary": true,
-            "runtimeTargets": ["browser"],
-            "clientArchitectures": ["pc-web"]
+            "runtimeTargets": [
+              "browser"
+            ],
+            "clientArchitectures": [
+              "pc-web"
+            ]
           },
           {
             "id": "application-api-reference",
             "kind": "api-reference",
-            "source": { "surfaceId": "application.public-ingress" },
+            "source": {
+              "surfaceId": "application.public-ingress"
+            },
             "path": "/openapi.json",
-            "runtimeTargets": ["browser"]
+            "runtimeTargets": [
+              "browser"
+            ]
           }
         ],
         "healthSurfaces": [
@@ -212,6 +283,23 @@
             "binary": "sdkwork-api-clawrouter-standalone-gateway",
             "required": true,
             "role": "api-standalone-gateway"
+          }
+        ],
+        "browserDeliveries": [
+          {
+            "id": "pc-web",
+            "applicationRoot": "apps/sdkwork-clawrouter-pc",
+            "clientArchitectures": [
+              "pc-web"
+            ],
+            "originMode": "same-origin",
+            "deliveryMode": "gateway-static",
+            "apiSurfaceId": "application.public-ingress",
+            "hostProcessId": "application.public-ingress",
+            "buildOutput": "apps/sdkwork-clawrouter-pc/dist",
+            "runtimeRootEnv": "SDKWORK_CLAW_ROUTER_PORTAL_STATIC_DIST",
+            "mountPath": "/",
+            "spaFallback": "/index.html"
           }
         ],
         "healthSurfaces": [
@@ -256,7 +344,9 @@
       }
     }
   },
-  "packaging": { "targets": [] },
+  "packaging": {
+    "targets": []
+  },
   "scripts": {
     "applicationDev": "scripts/claw-router-dev.mjs",
     "pnpm": {

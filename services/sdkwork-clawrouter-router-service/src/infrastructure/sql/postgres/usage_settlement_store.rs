@@ -11,6 +11,7 @@ use crate::infrastructure::sql::runtime_id::next_claw_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
+    MAX_PRICING_SNAPSHOT_BYTES,
 };
 
 const POINTS_CURRENCY_CODE: &str = "POINT";
@@ -92,6 +93,7 @@ struct UsageFactForSettlement {
     tokens: i64,
     currency: String,
     pricing_snapshot: String,
+    pricing_snapshot_bytes: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -204,7 +206,12 @@ async fn load_settleable_usage_facts(
             CAST(COALESCE(NULLIF(CAST(customer_charge_amount AS TEXT), ''), '0') AS TEXT) AS amount,
             CAST(COALESCE(total_tokens, 0) AS TEXT) AS tokens,
             COALESCE(NULLIF(currency, ''), 'USD') AS currency,
-            CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT) AS pricing_snapshot
+            CASE
+                WHEN octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) <= $6
+                THEN CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)
+                ELSE '{}'
+            END AS pricing_snapshot,
+            CAST(octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) AS TEXT) AS pricing_snapshot_bytes
         FROM ai_usage
         WHERE ($1 <= 0 OR tenant_id = $1)
           AND ($2 <= 0 OR organization_id = $2)
@@ -219,6 +226,7 @@ async fn load_settleable_usage_facts(
     .bind(USAGE_SETTLEMENT_PENDING)
     .bind(USAGE_SETTLEMENT_FAILED)
     .bind(command.limit)
+    .bind(MAX_PRICING_SNAPSHOT_BYTES)
     .fetch_all(&mut **tx)
     .await
     .map_err(|error| store_error("failed to load settleable usage facts", error))?;
@@ -236,6 +244,7 @@ async fn load_settleable_usage_facts(
             tokens: integer_cell(row, "tokens"),
             currency: string_cell(row, "currency"),
             pricing_snapshot: string_cell(row, "pricing_snapshot"),
+            pricing_snapshot_bytes: integer_cell(row, "pricing_snapshot_bytes"),
         })
         .collect())
 }
@@ -251,11 +260,29 @@ async fn collect_settlement_groups(
         if already_settled(tx, &usage_fact).await? {
             continue;
         }
+        if usage_fact.pricing_snapshot_bytes > i64::from(MAX_PRICING_SNAPSHOT_BYTES) {
+            mark_invalid_usage_fact_failed(
+                tx,
+                command,
+                &usage_fact,
+                "INVALID_PRICING_SNAPSHOT",
+                "usage pricing snapshot exceeds the settlement byte budget",
+            )
+            .await?;
+            outcome.failed_count += 1;
+            continue;
+        }
         let scaled_amount = match parse_decimal_scaled(&usage_fact.amount) {
             Ok(amount) => amount,
             Err(error) => {
-                mark_invalid_usage_fact_failed(tx, command, &usage_fact, &error.to_string())
-                    .await?;
+                mark_invalid_usage_fact_failed(
+                    tx,
+                    command,
+                    &usage_fact,
+                    "INVALID_USAGE_AMOUNT",
+                    &error.to_string(),
+                )
+                .await?;
                 outcome.failed_count += 1;
                 continue;
             }
@@ -287,19 +314,13 @@ async fn mark_invalid_usage_fact_failed(
     tx: &mut Transaction<'_, Postgres>,
     command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
+    failure_code: &str,
     failure_message: &str,
 ) -> SettlementResult<()> {
     let account = projection_wallet_account(usage_fact);
     let settlement_id =
         upsert_processing_settlement(tx, command, usage_fact, &account.id, 0).await?;
-    mark_settlement_failed(
-        tx,
-        usage_fact,
-        settlement_id,
-        "INVALID_USAGE_AMOUNT",
-        failure_message,
-    )
-    .await
+    mark_settlement_failed(tx, usage_fact, settlement_id, failure_code, failure_message).await
 }
 
 async fn settle_zero_usage_fact(

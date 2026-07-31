@@ -1058,7 +1058,7 @@
     {
       "method": "GET",
       "path": "/app/v3/api/system/site/runtime",
-      "operationId": "site.runtime.list",
+      "operationId": "site.runtime.retrieve",
       "tags": [
         "system"
       ],

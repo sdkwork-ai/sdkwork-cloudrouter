@@ -174,12 +174,12 @@ pub use admin_service_node_store::{
     UpdateAdminServiceNodeCommand, UpdateAdminServiceNodeStatusCommand,
 };
 pub use admin_storage_store::{
-    AdminStorageCollection, AdminStorageCommandFuture, AdminStorageJsonRecord, AdminStorageStore,
-    AdminStorageSubject, CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
-    CreateStorageGarbageCollectionJobCommand, CreateStorageProviderCommand,
-    CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
-    ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand, UpdateStorageBucketCommand,
-    UpdateStorageProviderCommand,
+    AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
+    AdminStorageStore, AdminStorageSubject, CheckStorageProviderHealthCommand,
+    CreateStorageBucketCommand, CreateStorageGarbageCollectionJobCommand,
+    CreateStorageProviderCommand, CreateStorageQuotaPolicyCommand,
+    CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
+    SetStorageDefaultBucketCommand, UpdateStorageBucketCommand, UpdateStorageProviderCommand,
 };
 pub use admin_transaction_center_store::{
     AdminTransactionCenterFuture, AdminTransactionCenterStore, AdminTransactionCenterSubject,
@@ -274,6 +274,7 @@ pub use gateway_accounting_retry_queue::{
     GatewayAccountingRetryPayload, GatewayAccountingRetryQueue, GatewayAccountingRetryQueueFuture,
     GATEWAY_ACCOUNTING_RETRY_SCHEMA_VERSION,
 };
+pub(crate) use gateway_usage_recorder::MAX_PRICING_SNAPSHOT_BYTES;
 pub use gateway_usage_recorder::{
     hash_optional_text, GatewayAccountingRecordContext, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageQuantity, GatewayUsageRecordCommand,

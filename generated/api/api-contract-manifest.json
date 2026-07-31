@@ -238,19 +238,339 @@
       "operation": "fetchAllModels",
       "operation_id": "models.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          "style": "form"
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminAiModelPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminAiModelPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiModelItem",
+                "properties": {
+                  "apiFormat": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "calls": {
+                    "pattern": "^[0-9]+$",
+                    "type": "string"
+                  },
+                  "capabilityIntro": {
+                    "maxLength": 4096,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "contextTokens": {
+                    "format": "int32",
+                    "maximum": 100000000,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "description": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "id": {
+                    "pattern": "^[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "inputModalities": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "limitations": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "maxOutputTokens": {
+                    "format": "int32",
+                    "maximum": 100000000,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "modalities": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "model": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "outputModalities": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "regionPrices": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "AdminAiModelRegionPrice",
+                      "properties": {
+                        "cacheReadPrice": {
+                          "pattern": "^(?:|[0-9]+(?:\\.[0-9]{1,12})?)$",
+                          "type": "string"
+                        },
+                        "cacheWritePrice": {
+                          "pattern": "^(?:|[0-9]+(?:\\.[0-9]{1,12})?)$",
+                          "type": "string"
+                        },
+                        "currency": {
+                          "pattern": "^[A-Z]{3}$",
+                          "type": "string"
+                        },
+                        "priceIn": {
+                          "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                          "type": "string"
+                        },
+                        "priceOut": {
+                          "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                          "type": "string"
+                        },
+                        "regionCode": {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "regionCode",
+                        "currency",
+                        "priceIn",
+                        "priceOut",
+                        "cacheReadPrice",
+                        "cacheWritePrice"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 200,
+                    "type": "array"
+                  },
+                  "releaseStage": {
+                    "format": "int32",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "replacementModel": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "routingState": {
+                    "format": "int32",
+                    "maximum": 2,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "shelfState": {
+                    "format": "int32",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "supportedLanguages": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "supportsJsonSchema": {
+                    "type": "boolean"
+                  },
+                  "supportsStreaming": {
+                    "type": "boolean"
+                  },
+                  "supportsTools": {
+                    "type": "boolean"
+                  },
+                  "trainingDataCutoff": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "Chat",
+                      "Image",
+                      "Audio",
+                      "Embedding",
+                      "Music",
+                      "SoundEffect",
+                      "Video"
+                    ],
+                    "type": "string"
+                  },
+                  "useCases": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "vendorCode": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "vendorId": {
+                    "pattern": "^[1-9][0-9]*$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "vendorId",
+                  "vendorCode",
+                  "model",
+                  "displayName",
+                  "name",
+                  "type",
+                  "regionPrices",
+                  "status",
+                  "calls",
+                  "description",
+                  "modalities",
+                  "inputModalities",
+                  "outputModalities",
+                  "apiFormat",
+                  "capabilityIntro",
+                  "limitations",
+                  "supportedLanguages",
+                  "useCases",
+                  "trainingDataCutoff",
+                  "contextTokens",
+                  "maxOutputTokens",
+                  "supportsStreaming",
+                  "supportsTools",
+                  "supportsJsonSchema",
+                  "releaseStage",
+                  "shelfState",
+                  "routingState",
+                  "replacementModel"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -1345,16 +1665,83 @@
       "query_parameters": [],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminModelVendorListResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminModelVendorListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminModelVendorItem",
+                "properties": {
+                  "clientApiCompatibility": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "color": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "description": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "id": {
+                    "pattern": "^[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "supportedProtocols": {
+                    "items": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 100,
+                    "type": "array"
+                  },
+                  "vendorCode": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "vendorCode",
+                  "name",
+                  "status",
+                  "color",
+                  "description",
+                  "supportedProtocols",
+                  "clientApiCompatibility"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
           "type": "object"
         }
       },
@@ -1974,6 +2361,370 @@
       "write_tables": [
         "ai_resource_group",
         "ai_resource_group_item",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs#createAiResource@/admin/model/resources",
+      "kind": "create",
+      "module": "resources",
+      "openapi_exposed": true,
+      "operation": "createAiResource",
+      "operation_id": "resources.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_resource"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminAiResourceCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminAiResourceCreateRequest",
+          "properties": {
+            "apiEndpointCode": {
+              "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "catalogKey": {
+              "maxLength": 256,
+              "nullable": true,
+              "pattern": "^[\\x20-\\x7E]*$",
+              "type": "string"
+            },
+            "compositionMode": {
+              "enum": [
+                "single",
+                "any",
+                "all",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "displayName": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "members": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiResourceMemberInput",
+                "properties": {
+                  "memberResourceCode": {
+                    "maxLength": 192,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "memberRole": {
+                    "enum": [
+                      "included",
+                      "optional",
+                      "fallback",
+                      null
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "memberResourceCode"
+                ],
+                "type": "object"
+              },
+              "maxItems": 512,
+              "type": "array"
+            },
+            "modalityCode": {
+              "maxLength": 64,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "model": {
+              "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[\\x20-\\x7E]*$",
+              "type": "string"
+            },
+            "providerNativeModel": {
+              "maxLength": 256,
+              "nullable": true,
+              "pattern": "^[\\x20-\\x7E]*$",
+              "type": "string"
+            },
+            "resourceCode": {
+              "maxLength": 192,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "resourceType": {
+              "enum": [
+                "vendor",
+                "modality",
+                "api_endpoint",
+                "model_api",
+                "bundle"
+              ],
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "disabled",
+                "inactive",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "vendorCode": {
+              "maxLength": 64,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "resourceCode",
+            "resourceType",
+            "displayName"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/model/resources",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs",
+      "tag": "ai",
+      "write_tables": [
+        "ai_resource",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/resources/{resourceId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs#updateAiResource@/admin/model/resources",
+      "kind": "update",
+      "module": "resources",
+      "openapi_exposed": true,
+      "operation": "updateAiResource",
+      "operation_id": "resources.update",
+      "path_params": [
+        "resourceId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_resource"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AdminAiResourceUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminAiResourceUpdateRequest",
+          "properties": {
+            "apiEndpointCode": {
+              "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "catalogKey": {
+              "maxLength": 256,
+              "nullable": true,
+              "pattern": "^[\\x20-\\x7E]*$",
+              "type": "string"
+            },
+            "compositionMode": {
+              "enum": [
+                "single",
+                "any",
+                "all",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "displayName": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            },
+            "members": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminAiResourceMemberInput",
+                "properties": {
+                  "memberResourceCode": {
+                    "maxLength": 192,
+                    "pattern": "^[A-Za-z0-9._:-]+$",
+                    "type": "string"
+                  },
+                  "memberRole": {
+                    "enum": [
+                      "included",
+                      "optional",
+                      "fallback",
+                      null
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "sortOrder": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^(0|[1-9][0-9]*)$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "memberResourceCode"
+                ],
+                "type": "object"
+              },
+              "maxItems": 512,
+              "type": "array"
+            },
+            "modalityCode": {
+              "maxLength": 64,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "model": {
+              "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[\\x20-\\x7E]*$",
+              "type": "string"
+            },
+            "providerNativeModel": {
+              "maxLength": 256,
+              "nullable": true,
+              "pattern": "^[\\x20-\\x7E]*$",
+              "type": "string"
+            },
+            "resourceCode": {
+              "maxLength": 192,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            },
+            "resourceType": {
+              "enum": [
+                "vendor",
+                "modality",
+                "api_endpoint",
+                "model_api",
+                "bundle",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^(0|[1-9][0-9]*)$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "disabled",
+                "inactive",
+                null
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "vendorCode": {
+              "maxLength": 64,
+              "nullable": true,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/model/resources",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "clawrouter-backend-sdk",
+      "source": "../sdkwork-models/crates/sdkwork-models-catalog-service/src/api/admin_ai_resource.rs",
+      "tag": "ai",
+      "write_tables": [
+        "ai_resource",
         "ops_audit_log"
       ]
     },
@@ -2683,7 +3434,7 @@
       "module": "pc-admin-cache",
       "openapi_exposed": true,
       "operation": "fetchOverview",
-      "operation_id": "cache.overview.list",
+      "operation_id": "cache.overview.retrieve",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": true,
@@ -3140,7 +3891,7 @@
       "module": "pc-admin-dashboard",
       "openapi_exposed": true,
       "operation": "fetchDashboardData",
-      "operation_id": "dashboard.admin.overview.list",
+      "operation_id": "dashboard.admin.overview.retrieve",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": true,
@@ -3154,11 +3905,181 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AdminDashboardOverview",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AdminDashboardOverview",
+          "properties": {
+            "activeUsers": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "modelDistribution": {
+              "items": {
+                "$ref": "#/components/schemas/AdminDashboardPieChartItem"
+              },
+              "maxItems": 50,
+              "type": "array"
+            },
+            "multimodal": {
+              "items": {
+                "$ref": "#/components/schemas/AdminDashboardPieChartItem"
+              },
+              "maxItems": 16,
+              "type": "array"
+            },
+            "recentUsage": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminDashboardRecentUsageItem",
+                "properties": {
+                  "billingMode": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "cost": {
+                    "maxLength": 64,
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "isApiUser": {
+                    "type": "boolean"
+                  },
+                  "model": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "status": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "time": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "usageCount": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "usageIn": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "usageOut": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "user": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "user",
+                  "isApiUser",
+                  "model",
+                  "type",
+                  "billingMode",
+                  "time",
+                  "status",
+                  "cost"
+                ],
+                "type": "object"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            "traffic": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminDashboardTrafficItem",
+                "properties": {
+                  "cost": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "requests": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "time": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "tokens": {
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "time",
+                  "tokens",
+                  "requests",
+                  "cost"
+                ],
+                "type": "object"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            "userConsumption": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminDashboardPieChartItem",
+                "properties": {
+                  "color": {
+                    "pattern": "^#[0-9A-Fa-f]{6}$",
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "value": {
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "value",
+                  "color"
+                ],
+                "type": "object"
+              },
+              "maxItems": 50,
+              "type": "array"
+            }
+          },
+          "required": [
+            "activeUsers",
+            "userConsumption",
+            "multimodal",
+            "traffic",
+            "modelDistribution",
+            "recentUsage"
+          ],
           "type": "object"
         }
       },
@@ -3184,22 +4105,86 @@
       "module": "pc-admin-dashboard",
       "openapi_exposed": true,
       "operation": "fetchInstallationStatus",
-      "operation_id": "installation.status.list",
+      "operation_id": "installation.status.retrieve",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": true,
       "read_sources": [
-        "system_installation_state",
-        "system_schema_migration"
+        "ai_upstream_supplier",
+        "ai_model",
+        "ops_gateway_instance"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "InstallationStatusResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "InstallationStatusResponse",
+          "properties": {
+            "catalogSource": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "catalogVersion": {
+              "maxLength": 128,
+              "type": "string"
+            },
+            "changed": {
+              "type": "boolean"
+            },
+            "environment": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "externalCatalog": {
+              "type": "boolean"
+            },
+            "lastCatalogRefreshStatus": {
+              "enum": [
+                "succeeded",
+                "schema_not_ready",
+                "dependency_schema_not_ready",
+                "pending",
+                "invalid",
+                "catalog_unavailable"
+              ],
+              "type": "string"
+            },
+            "schemaVersion": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "seedProfile": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "not_installed",
+                "installed",
+                "upgrade_required",
+                "incomplete",
+                "corrupt",
+                "catalog_unavailable"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "schemaVersion",
+            "catalogVersion",
+            "catalogSource",
+            "externalCatalog",
+            "lastCatalogRefreshStatus",
+            "environment",
+            "seedProfile",
+            "changed"
+          ],
           "type": "object"
         }
       },
@@ -4439,6 +5424,7 @@
           "required": false,
           "schema": {
             "default": 1,
+            "format": "int32",
             "minimum": 1,
             "type": "integer"
           }
@@ -4449,6 +5435,7 @@
           "required": false,
           "schema": {
             "default": 20,
+            "format": "int32",
             "maximum": 200,
             "minimum": 1,
             "type": "integer"
@@ -4494,12 +5481,197 @@
         "name": "AdminRecordPage",
         "schema": {
           "additionalProperties": false,
-          "description": "AdminRecordPage contract.",
+          "name": "AdminRecordPage",
           "properties": {
             "items": {
-              "description": "items field on AdminRecordPage.",
               "items": {
-                "additionalProperties": true,
+                "additionalProperties": false,
+                "name": "AdminRecordLogItem",
+                "properties": {
+                  "baseInputPrice": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "baseOutputPrice": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "cacheReadPrice": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "cacheReadTokens": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "cost": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "errorCode": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "errorMessage": {
+                    "maxLength": 4096,
+                    "type": "string"
+                  },
+                  "errorType": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "group": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "httpMethod": {
+                    "enum": [
+                      "GET",
+                      "POST",
+                      "PUT",
+                      "PATCH",
+                      "DELETE",
+                      "OPTIONS",
+                      "HEAD"
+                    ],
+                    "type": "string"
+                  },
+                  "httpStatus": {
+                    "format": "int32",
+                    "maximum": 599,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "id": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "inputTokens": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "ip": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "isStream": {
+                    "type": "boolean"
+                  },
+                  "model": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "multiplier": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "outputTokens": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "path": {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  "providerNativeModel": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "reasoningEffort": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "regionCode": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "requestId": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "requestedModelCatalogKey": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "success",
+                      "error"
+                    ],
+                    "type": "string"
+                  },
+                  "time": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "tokenName": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "totalTime": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "ttft": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "type": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "user": {
+                    "maxLength": 320,
+                    "type": "string"
+                  },
+                  "userAgent": {
+                    "maxLength": 2048,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "user",
+                  "requestId",
+                  "time",
+                  "tokenName",
+                  "group",
+                  "type",
+                  "model",
+                  "providerNativeModel",
+                  "requestedModelCatalogKey",
+                  "regionCode",
+                  "status",
+                  "httpStatus",
+                  "httpMethod",
+                  "errorCode",
+                  "errorType",
+                  "errorMessage",
+                  "totalTime",
+                  "ttft",
+                  "isStream",
+                  "inputTokens",
+                  "cacheReadTokens",
+                  "outputTokens",
+                  "cost",
+                  "multiplier",
+                  "baseInputPrice",
+                  "baseOutputPrice",
+                  "cacheReadPrice",
+                  "path",
+                  "reasoningEffort",
+                  "ip",
+                  "userAgent"
+                ],
                 "type": "object"
               },
               "type": "array"
@@ -4537,7 +5709,7 @@
       "module": "pc-admin-runtime-region",
       "openapi_exposed": true,
       "operation": "fetchSettings",
-      "operation_id": "runtimeRegion.settings.list",
+      "operation_id": "runtimeRegion.settings.retrieve",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": true,
@@ -5699,7 +6871,7 @@
       "module": "pc-admin-site",
       "openapi_exposed": true,
       "operation": "fetchSettings",
-      "operation_id": "site.settings.list",
+      "operation_id": "site.settings.retrieve",
       "path_params": [],
       "query_parameters": [],
       "query_parameters_declared": true,
@@ -13080,20 +14252,483 @@
       "operation": "fetchModels",
       "operation_id": "models.list",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "billing_meter",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "modalities",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "capabilities",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "categories",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "groups",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 128,
+            "type": "array"
+          },
+          "style": "form"
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
+        "ai_upstream_supplier",
+        "ai_upstream_account",
         "ai_upstream_account_group",
-        "ai_upstream_account_group_member"
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_resource"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AppModelCatalogPage",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AppModelCatalogPage",
+          "properties": {
+            "groups": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AppModelCatalogGroup",
+                "properties": {
+                  "key": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "label": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "modelCount": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "key",
+                  "label",
+                  "modelCount"
+                ],
+                "type": "object"
+              },
+              "maxItems": 100,
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AppModelCatalogItem",
+                "properties": {
+                  "apiFormat": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "capabilities": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "capabilityIntro": {
+                    "maxLength": 4096,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "catalogKey": {
+                    "maxLength": 512,
+                    "minLength": 3,
+                    "type": "string"
+                  },
+                  "categories": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "contextTokens": {
+                    "format": "int32",
+                    "maximum": 100000000,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "description": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "groups": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "inputModalities": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "limitations": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "maxOutputTokens": {
+                    "format": "int32",
+                    "maximum": 100000000,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "modalities": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "model": {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "officialReferencePrices": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "AppModelCatalogReferencePrice",
+                      "properties": {
+                        "billingMeter": {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "currency": {
+                          "pattern": "^[A-Z]{3}$",
+                          "type": "string"
+                        },
+                        "regionCode": {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "unitPrice": {
+                          "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "regionCode",
+                        "billingMeter",
+                        "unitPrice",
+                        "currency"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 200,
+                    "type": "array"
+                  },
+                  "outputModalities": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "priceAvailability": {
+                    "additionalProperties": false,
+                    "name": "AppModelCatalogPriceAvailability",
+                    "properties": {
+                      "reason": {
+                        "maxLength": 256,
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "status": {
+                        "enum": [
+                          "reference",
+                          "unavailable"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "type": "object"
+                  },
+                  "providerCodes": {
+                    "items": {
+                      "maxLength": 64,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 200,
+                    "type": "array"
+                  },
+                  "releaseStage": {
+                    "format": "int32",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "replacementModel": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "routingState": {
+                    "format": "int32",
+                    "maximum": 2,
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "shelfState": {
+                    "format": "int32",
+                    "maximum": 3,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "supportedLanguages": {
+                    "items": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "supportsJsonSchema": {
+                    "type": "boolean"
+                  },
+                  "supportsStreaming": {
+                    "type": "boolean"
+                  },
+                  "supportsTools": {
+                    "type": "boolean"
+                  },
+                  "trainingDataCutoff": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "useCases": {
+                    "items": {
+                      "maxLength": 512,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 128,
+                    "type": "array"
+                  },
+                  "vendor": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "vendorCode": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "catalogKey",
+                  "model",
+                  "displayName",
+                  "vendorCode",
+                  "vendor",
+                  "capabilities",
+                  "groups",
+                  "categories",
+                  "description",
+                  "modalities",
+                  "inputModalities",
+                  "outputModalities",
+                  "apiFormat",
+                  "capabilityIntro",
+                  "limitations",
+                  "supportedLanguages",
+                  "useCases",
+                  "trainingDataCutoff",
+                  "contextTokens",
+                  "maxOutputTokens",
+                  "supportsStreaming",
+                  "supportsTools",
+                  "supportsJsonSchema",
+                  "releaseStage",
+                  "shelfState",
+                  "routingState",
+                  "replacementModel",
+                  "providerCodes",
+                  "officialReferencePrices",
+                  "priceAvailability"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "groups",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -16405,16 +18040,52 @@
       "query_parameters": [],
       "query_parameters_declared": true,
       "read_sources": [
-        "ops_audit_log"
+        "ai_model_vendor",
+        "ai_model"
       ],
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "AppModelVendorCatalogResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "AppModelVendorCatalogResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AppModelVendorOption",
+                "properties": {
+                  "code": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "label": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "modelCount": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "label",
+                  "code",
+                  "modelCount"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
           "type": "object"
         }
       },
@@ -17741,9 +19412,28 @@
       "module": "sdkwork-clawroutes-pc-commons",
       "openapi_exposed": true,
       "operation": "fetchSiteBranding",
-      "operation_id": "site.runtime.list",
+      "operation_id": "site.runtime.retrieve",
       "path_params": [],
-      "query_parameters": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "tenant_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "organization_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        }
+      ],
       "query_parameters_declared": true,
       "read_sources": [
         "ops_audit_log"
@@ -17751,11 +19441,133 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "NoData",
+        "name": "SiteRuntimeSettingsResponse",
         "schema": {
           "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
+          "name": "SiteRuntimeSettingsResponse",
+          "properties": {
+            "accentColor": {
+              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "type": "string"
+            },
+            "brandColor": {
+              "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+              "type": "string"
+            },
+            "customCss": {
+              "maxLength": 20000,
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "docsUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "favicon": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MediaResource"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "footerCopyright": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "icon": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MediaResource"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "icpRecordNumber": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "icpRecordUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "logo": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MediaResource"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "policeRecordNumber": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "policeRecordUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "privacyUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "seoDescription": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "seoTitle": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "shortName": {
+              "maxLength": 255,
+              "type": "string"
+            },
+            "siteName": {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            "supportUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "termsUrl": {
+              "maxLength": 2048,
+              "type": "string"
+            }
+          },
+          "required": [
+            "siteName",
+            "shortName",
+            "description",
+            "logo",
+            "icon",
+            "favicon",
+            "brandColor",
+            "accentColor",
+            "footerCopyright",
+            "icpRecordNumber",
+            "icpRecordUrl",
+            "policeRecordNumber",
+            "policeRecordUrl",
+            "seoTitle",
+            "seoDescription",
+            "supportUrl",
+            "docsUrl",
+            "privacyUrl",
+            "termsUrl",
+            "customCss"
+          ],
           "type": "object"
         }
       },
@@ -23314,22 +25126,22 @@
       "DELETE": 19,
       "GET": 129,
       "PATCH": 26,
-      "POST": 72,
-      "PUT": 9
+      "POST": 73,
+      "PUT": 10
     },
     "api_surface_counts": {
       "app": 86,
-      "backend": 169
+      "backend": 171
     },
-    "operation_count": 255,
+    "operation_count": 257,
     "route_scope_counts": {
-      "admin": 169,
+      "admin": 171,
       "console": 31,
       "public": 55
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 86,
-      "SdkworkBackendClient": 169
+      "SdkworkBackendClient": 171
     }
   }
 }

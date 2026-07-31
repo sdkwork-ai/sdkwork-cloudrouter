@@ -51,7 +51,6 @@ export const CLAW_ROUTER_RELEASE_ENV_KEY_ORDER = Object.freeze([
   CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment,
   CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile,
   CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget,
-  'SDKWORK_DATABASE_URL',
   'PORTAL_PUBLIC_SDK_BASE_URL',
   'PORTAL_PUBLIC_API_BASE_URL',
   'PORTAL_PUBLIC_OPEN_API_BASE_URL',
@@ -245,8 +244,6 @@ export function buildClawRouterReleaseGeneratedEnv({
     [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
     [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: deploymentProfile,
     [CLAW_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: runtimeTarget,
-    SDKWORK_DATABASE_URL:
-      normalizeText(env.SDKWORK_DATABASE_URL),
     PORTAL_PUBLIC_SDK_BASE_URL:
       normalizeText(env.PORTAL_PUBLIC_SDK_BASE_URL) ?? '/',
     PORTAL_PUBLIC_API_BASE_URL:

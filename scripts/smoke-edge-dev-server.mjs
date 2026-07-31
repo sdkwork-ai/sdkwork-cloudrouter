@@ -32,7 +32,7 @@ const EXPECTED_RUNTIME_ENV_OUTPUT = [
 const BACKEND_SURFACE_OPENAPI_CONTRACT = {
   expectedTitle: 'SDKWork Claw Router Backend API',
   requiredPaths: [
-    '/backend/v3/api/ai/model_vendors',
+    '/backend/v3/api/ai/upstream_suppliers',
     '/backend/v3/api/recharges/packages',
   ],
 };
@@ -40,8 +40,8 @@ const BACKEND_SURFACE_OPENAPI_CONTRACT = {
 const APP_SURFACE_OPENAPI_CONTRACT = {
   expectedTitle: 'SDKWork Claw Router App API',
   requiredPaths: [
-    '/app/v3/api/ai/models',
-    '/app/v3/api/recharges/packages',
+    '/app/v3/api/ai/routing/account_groups',
+    '/app/v3/api/ai/generations',
   ],
 };
 

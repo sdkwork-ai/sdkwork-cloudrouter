@@ -88,7 +88,7 @@
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "1767747e3d600c9a4748f0788875ace4a78d6f0f16514ea05af150c0a09935e6"
+      "sha256": "04a138238275de8559d6a4e5819b566288c2b630dfb54141ed2117f39712441b"
     },
     {
       "path": "src/auth/index.ts",
@@ -155,6 +155,22 @@
       "sha256": "ea2083352ad0c2143576f7225f8612f43d3fc2c4184472c14b3285914e062c29"
     },
     {
+      "path": "src/types/admin-dashboard-overview.ts",
+      "sha256": "2ba7f8bf56baf3480ab0d76a22724413382d11f98d5ba82a42bcd9e43cb69a26"
+    },
+    {
+      "path": "src/types/admin-dashboard-pie-chart-item.ts",
+      "sha256": "d25f57a4f7c3b9888f4d65c9545c610470275d6743cf9d740a3a494b3105d499"
+    },
+    {
+      "path": "src/types/admin-dashboard-recent-usage-item.ts",
+      "sha256": "4ae634bf7cedcd3162274013eca445849cee23ba196bef526e8d11940d2aa8a2"
+    },
+    {
+      "path": "src/types/admin-dashboard-traffic-item.ts",
+      "sha256": "39bc7c4292dbaae09e4ec33938bb58845c8c1e3873e4cf98f6e0949593a9e68e"
+    },
+    {
       "path": "src/types/admin-firewall-rule-create-request.ts",
       "sha256": "b6b28a2660d3f074f87075905f32332f492ece63316fffa92a9596692b8b3749"
     },
@@ -167,8 +183,12 @@
       "sha256": "5cdd8cb435cd01831eff2519c787a4da86e1d1785e07e161124c1a181deda325"
     },
     {
+      "path": "src/types/admin-record-log-item.ts",
+      "sha256": "8e21013d1139e3d137fbbe01ecd0cadfd536daa51fb9ca917c3a76c39cbef204"
+    },
+    {
       "path": "src/types/admin-record-page.ts",
-      "sha256": "60360e6df77d83c8341e763100fbe6a7f862dbee6d3d548dd940b356d92a1004"
+      "sha256": "a2d88edde09c87335c4b31423e43b088285ef21a0170f25a4422564348904356"
     },
     {
       "path": "src/types/admin-runtime-region-settings-response.ts",
@@ -288,7 +308,11 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "efa34987e9f69a7f3642a399cfcc614fb34910d91ee481625a1c1d58dd065b7e"
+      "sha256": "11a67caa72864756b69e9707c87ef301b4d02da14883a43480bbfe0bfb4a80a3"
+    },
+    {
+      "path": "src/types/installation-status-response.ts",
+      "sha256": "42410a9155d771d1c4547a335ba2eb3b9add7642ec20daf2c5676b6f3cfada46"
     },
     {
       "path": "src/types/ip-limit-rule-item.ts",

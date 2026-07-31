@@ -391,8 +391,8 @@ impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
 }
 
 impl PricingCatalog for RefreshableSqlPricingCatalog {
-    fn list_models(&self, vendor_code: Option<&str>) -> Vec<AiModel> {
-        self.current_snapshot().list_models(vendor_code)
+    fn visit_models(&self, vendor_code: Option<&str>, visitor: &mut dyn FnMut(&AiModel) -> bool) {
+        self.current_snapshot().visit_models(vendor_code, visitor);
     }
 
     fn list_model_upstream_routes(&self, model: &str) -> Vec<ModelUpstreamRoute> {
@@ -583,16 +583,16 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
 }
 
 impl PricingCatalog for SqlPricingCatalogSnapshot {
-    fn list_models(&self, vendor_code: Option<&str>) -> Vec<AiModel> {
-        self.models
-            .iter()
-            .filter(|model| {
-                vendor_code
-                    .map(|vendor_code| model.vendor_code == vendor_code)
-                    .unwrap_or(true)
-            })
-            .cloned()
-            .collect()
+    fn visit_models(&self, vendor_code: Option<&str>, visitor: &mut dyn FnMut(&AiModel) -> bool) {
+        for model in self.models.iter().filter(|model| {
+            vendor_code
+                .map(|vendor_code| model.vendor_code == vendor_code)
+                .unwrap_or(true)
+        }) {
+            if !visitor(model) {
+                break;
+            }
+        }
     }
 
     fn list_model_upstream_routes(&self, model: &str) -> Vec<ModelUpstreamRoute> {

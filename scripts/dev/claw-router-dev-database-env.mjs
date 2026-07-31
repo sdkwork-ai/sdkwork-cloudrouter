@@ -111,27 +111,111 @@ function postgresKindFromUrl(databaseUrl) {
   if (/^postgres(?:ql)?:\/\//iu.test(databaseUrl)) {
     return 'postgresql';
   }
-  if (/^sqlite:\/\//iu.test(databaseUrl)) {
+  if (/^sqlite:/iu.test(databaseUrl)) {
     return 'sqlite';
   }
   return 'custom';
 }
 
-function resolvePostgresDatabaseUrlFromFields(env) {
-  if (normalizeText(env.SDKWORK_DATABASE_PROVIDER)) {
+function rejectRetiredDatabaseKeys(env) {
+  for (const name of Object.keys(env)) {
+    const retiredScopedKey = /^SDKWORK_.+_DATABASE_/u.test(name)
+      && !name.startsWith('SDKWORK_DATABASE_');
+    if (retiredScopedKey) {
+      throw new Error(
+        `${name} is retired; use the workspace-scoped SDKWORK_DATABASE_* contract`,
+      );
+    }
+  }
+
+  for (const [retired, replacement] of [
+    ['DATABASE_URL', 'SDKWORK_DATABASE_URL'],
+    ['DATABASE_PROVIDER', 'SDKWORK_DATABASE_ENGINE'],
+    ['DATABASE_SSLMODE', 'SDKWORK_DATABASE_SSL_MODE'],
+    ['SDKWORK_DATABASE_PROVIDER', 'SDKWORK_DATABASE_ENGINE'],
+    ['SDKWORK_DATABASE_SSLMODE', 'SDKWORK_DATABASE_SSL_MODE'], // sdkwork-retired-database-key-rejection
+  ]) {
+    if (!normalizeText(env[retired])) {
+      continue;
+    }
     throw new Error(
-      'SDKWORK_DATABASE_PROVIDER is not supported; use SDKWORK_DATABASE_ENGINE',
+      `${retired} is not supported; use ${replacement}`,
     );
   }
-  if (normalizeText(env.SDKWORK_DATABASE_SSLMODE)) { // sdkwork-retired-database-key-rejection
+}
+
+function canonicalWorkspaceDatabaseProfile(database) {
+  if (database === 'sdkwork_ai_dev') return 'development';
+  if (database === 'sdkwork_ai_test') return 'test';
+  if (database === 'sdkwork_ai_staging') return 'staging';
+  if (database === 'sdkwork_ai_prod') return 'production';
+  if (/^sdkwork_ai_test_[A-Za-z0-9_]+$/u.test(database)) return 'test';
+  return undefined;
+}
+
+function expectedWorkspaceDatabaseUsername(database) {
+  return database.startsWith('sdkwork_ai_test_') ? 'sdkwork_ai_test' : database;
+}
+
+function validateCanonicalWorkspacePostgresUrl(databaseUrl, env) {
+  let parsed;
+  try {
+    parsed = new URL(databaseUrl);
+  } catch (error) {
+    throw new Error(`invalid SDKWORK PostgreSQL URL: ${error.message}`);
+  }
+
+  const database = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
+  if (!canonicalWorkspaceDatabaseProfile(database)) {
     throw new Error(
-      'SDKWORK_DATABASE_SSLMODE is not supported; use SDKWORK_DATABASE_SSL_MODE', // sdkwork-retired-database-key-rejection
+      `SDKWORK_DATABASE_NAME must use a canonical workspace identity, got ${database || '<empty>'}`,
     );
   }
+  const schema = normalizeText(env.SDKWORK_DATABASE_SCHEMA) ?? database;
+  if (schema !== database) {
+    throw new Error(
+      `SDKWORK_DATABASE_SCHEMA must equal workspace database ${database}, got ${schema}`,
+    );
+  }
+  const username = decodeURIComponent(parsed.username);
+  const expectedUsername = expectedWorkspaceDatabaseUsername(database);
+  if (username !== expectedUsername) {
+    throw new Error(
+      `workspace database ${database} requires SDKWORK_DATABASE_USERNAME=${expectedUsername}, got ${username || '<empty>'}`,
+    );
+  }
+}
+
+function resolveStructuredDatabasePassword(env) {
+  const password = normalizeText(env.SDKWORK_DATABASE_PASSWORD);
+  const passwordFile = normalizeText(env.SDKWORK_DATABASE_PASSWORD_FILE);
+  if (password && passwordFile) {
+    throw new Error(
+      'SDKWORK_DATABASE_PASSWORD and SDKWORK_DATABASE_PASSWORD_FILE are mutually exclusive',
+    );
+  }
+  if (!passwordFile) {
+    return password;
+  }
+  try {
+    return normalizeText(readFileSync(passwordFile, 'utf8'));
+  } catch (error) {
+    throw new Error(`cannot read SDKWORK_DATABASE_PASSWORD_FILE ${passwordFile}: ${error.message}`);
+  }
+}
+
+function resolveDatabaseUrlFromFields(env) {
 
   const engine = normalizeText(env.SDKWORK_DATABASE_ENGINE);
   if (!engine) {
     return undefined;
+  }
+  if (/^sqlite$/iu.test(engine)) {
+    const databaseFile = normalizeText(env.SDKWORK_DATABASE_FILE);
+    if (!databaseFile) {
+      throw new Error('SDKWORK_DATABASE_ENGINE=sqlite requires SDKWORK_DATABASE_FILE');
+    }
+    return `sqlite:${databaseFile}`;
   }
   if (!/^postgres(?:ql)?$/iu.test(engine)) {
     throw new Error(`unsupported SDKWORK_DATABASE_ENGINE: ${engine}`);
@@ -140,7 +224,7 @@ function resolvePostgresDatabaseUrlFromFields(env) {
   const host = normalizeText(env.SDKWORK_DATABASE_HOST);
   const database = normalizeText(env.SDKWORK_DATABASE_NAME);
   const username = normalizeText(env.SDKWORK_DATABASE_USERNAME);
-  const password = normalizeText(env.SDKWORK_DATABASE_PASSWORD);
+  const password = resolveStructuredDatabasePassword(env);
   const missing = [];
   if (!host) {
     missing.push('SDKWORK_DATABASE_HOST');
@@ -152,7 +236,7 @@ function resolvePostgresDatabaseUrlFromFields(env) {
     missing.push('SDKWORK_DATABASE_USERNAME');
   }
   if (!password) {
-    missing.push('SDKWORK_DATABASE_PASSWORD');
+    missing.push('SDKWORK_DATABASE_PASSWORD[_FILE]');
   }
   if (missing.length > 0) {
     throw new Error(
@@ -161,7 +245,7 @@ function resolvePostgresDatabaseUrlFromFields(env) {
   }
 
   const port = normalizeText(env.SDKWORK_DATABASE_PORT);
-  return buildPostgresDatabaseUrl({
+  const databaseUrl = buildPostgresDatabaseUrl({
     host,
     port,
     database,
@@ -169,14 +253,16 @@ function resolvePostgresDatabaseUrlFromFields(env) {
     password,
     sslmode: env.SDKWORK_DATABASE_SSL_MODE,
   });
+  validateCanonicalWorkspacePostgresUrl(databaseUrl, env);
+  return databaseUrl;
 }
 
-export function hasCompletePostgresSplitProfile(env) {
+export function hasCompleteStructuredDatabaseProfile(env) {
   if (!normalizeText(env.SDKWORK_DATABASE_ENGINE)) {
     return false;
   }
   try {
-    return resolvePostgresDatabaseUrlFromFields(env) !== undefined;
+    return resolveDatabaseUrlFromFields(env) !== undefined;
   } catch {
     return false;
   }
@@ -186,7 +272,7 @@ export function mergeDevEnvWithDatabasePrecedence(baseEnv, fileEnv) {
   const merged = { ...baseEnv, ...fileEnv };
   if (
     fileEnv
-    && hasCompletePostgresSplitProfile(fileEnv)
+    && hasCompleteStructuredDatabaseProfile(fileEnv)
     && !normalizeText(fileEnv.SDKWORK_DATABASE_URL)
   ) {
     delete merged.SDKWORK_DATABASE_URL;
@@ -234,14 +320,16 @@ export function resolveClawRouterDevDatabaseEnv({
   env = process.env,
   defaultDatabase = 'postgresql',
 } = {}) {
+  rejectRetiredDatabaseKeys(env);
   const databaseUrl = normalizeText(env.SDKWORK_DATABASE_URL)
-    ?? resolvePostgresDatabaseUrlFromFields(env);
+    ?? resolveDatabaseUrlFromFields(env);
   if (!databaseUrl) {
     if (defaultDatabase === 'postgresql') {
       const defaultDatabaseUrl = defaultClawRouterDevPostgresDatabaseUrl();
       return {
         databaseUrl: defaultDatabaseUrl,
         env: {
+          SDKWORK_DATABASE_ENGINE: 'postgresql',
           SDKWORK_DATABASE_URL: defaultDatabaseUrl,
           SDKWORK_DATABASE_MAX_CONNECTIONS:
             normalizeText(env.SDKWORK_DATABASE_MAX_CONNECTIONS)
@@ -257,9 +345,17 @@ export function resolveClawRouterDevDatabaseEnv({
     };
   }
 
+  const databaseKind = postgresKindFromUrl(databaseUrl);
+  if (databaseKind === 'postgresql') {
+    validateCanonicalWorkspacePostgresUrl(databaseUrl, env);
+  }
+
   const resultEnv = {
     SDKWORK_DATABASE_URL: databaseUrl,
   };
+  if (['postgresql', 'sqlite'].includes(databaseKind)) {
+    resultEnv.SDKWORK_DATABASE_ENGINE = databaseKind;
+  }
   const maxConnections = normalizeText(env.SDKWORK_DATABASE_MAX_CONNECTIONS);
   if (maxConnections) {
     resultEnv.SDKWORK_DATABASE_MAX_CONNECTIONS = maxConnections;
@@ -268,6 +364,6 @@ export function resolveClawRouterDevDatabaseEnv({
   return {
     databaseUrl,
     env: resultEnv,
-    kind: postgresKindFromUrl(databaseUrl),
+    kind: databaseKind,
   };
 }

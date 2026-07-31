@@ -18,10 +18,23 @@ pub struct AdminStorageSubject {
     pub operator_type: i32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AdminStorageCursor(i64);
+
+impl AdminStorageCursor {
+    pub fn new(id: i64) -> Option<Self> {
+        (id > 0).then_some(Self(id))
+    }
+
+    pub fn id(self) -> i64 {
+        self.0
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminStorageRecordsQuery {
     pub subject: AdminStorageSubject,
-    pub cursor: Option<String>,
+    pub cursor: Option<AdminStorageCursor>,
     pub limit: i64,
     pub status: Option<String>,
     pub logical_scope: Option<String>,
@@ -34,7 +47,8 @@ pub struct ListAdminStorageRecordsQuery {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminStorageCollection {
     pub items: Vec<AdminStorageJsonRecord>,
-    pub next_cursor: Option<String>,
+    pub next_cursor: Option<AdminStorageCursor>,
+    pub page_size: i64,
     pub request_id: String,
 }
 

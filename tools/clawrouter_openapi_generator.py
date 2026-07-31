@@ -779,6 +779,11 @@ class ClawRouterOpenApiGenerator:
             "x-file-targets": self._string_list(operation.get("file_targets")),
         }
         spec["security"] = self._operation_security(operation_id, surface=surface)
+        auth_mode = self._operation_auth_mode(operation_id, surface=surface)
+        if auth_mode:
+            spec["x-sdkwork-auth-mode"] = auth_mode
+        if auth_mode == "refresh-token":
+            spec["x-sdkwork-forbid-credential-headers"] = True
         if bool(operation.get("idempotency_required")):
             spec["x-sdkwork-idempotent"] = True
         if bool(operation.get("if_match_required")):
@@ -1094,16 +1099,26 @@ class ClawRouterOpenApiGenerator:
     def _operation_security(
         self, operation_id: str, *, surface: str | None = None
     ) -> list[dict[str, list[str]]]:
-        if operation_id in self.PUBLIC_IAM_OPERATION_IDS:
+        if self._operation_auth_mode(operation_id, surface=surface) in {
+            "anonymous",
+            "refresh-token",
+        }:
             return []
+        return [{"AuthToken": [], "AccessToken": []}]
+
+    def _operation_auth_mode(
+        self, operation_id: str, *, surface: str | None = None
+    ) -> str:
+        if operation_id in self.PUBLIC_IAM_OPERATION_IDS:
+            return "anonymous"
         if (
             surface == "app"
             and operation_id in self.PUBLIC_APP_CATALOG_OPERATION_IDS
         ):
-            return []
+            return "anonymous"
         if operation_id in self.REFRESH_TOKEN_OPERATION_IDS:
-            return [{"AuthToken": [], "AccessToken": []}]
-        return [{"AuthToken": [], "AccessToken": []}]
+            return "refresh-token"
+        return ""
 
     def _components(
         self,

@@ -100,16 +100,16 @@ export function bridgeLegacyWorkspaceEnv(profileEnv = {}, {
       runtimeMode === 'client' ? undefined : APP_API_PREFIX;
   }
 
-  if (backendHttpUrl || productBaseUrl) {
-    const backendBase = runtimeMode === 'client' ? productBaseUrl : backendHttpUrl;
+  const backendBase = runtimeMode === 'client' ? productBaseUrl : backendHttpUrl;
+  if (backendBase) {
     bridged.VITE_CLAWROUTER_BACKEND_API_BASE_URL = appendPath(backendBase, BACKEND_API_PREFIX);
     bridged.PORTAL_PUBLIC_BACKEND_API_BASE_URL =
       runtimeMode === 'client' ? undefined : BACKEND_API_PREFIX;
     bridged.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL = appendPath(backendBase, BACKEND_API_PREFIX);
   }
 
-  if (openHttpUrl || productBaseUrl) {
-    const openBase = runtimeMode === 'client' ? productBaseUrl : openHttpUrl;
+  const openBase = runtimeMode === 'client' ? productBaseUrl : openHttpUrl;
+  if (openBase) {
     bridged.VITE_CLAWROUTER_OPEN_API_BASE_URL = appendPath(openBase, GATEWAY_API_PREFIX);
     bridged.PORTAL_PUBLIC_API_BASE_URL = runtimeMode === 'client' ? undefined : GATEWAY_API_PREFIX;
     bridged.PORTAL_PUBLIC_OPEN_API_BASE_URL = runtimeMode === 'client' ? undefined : GATEWAY_API_PREFIX;

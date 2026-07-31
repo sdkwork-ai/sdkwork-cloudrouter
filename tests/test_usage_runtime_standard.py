@@ -15,16 +15,6 @@ class UsageRuntimeStandardTest(unittest.TestCase):
             / "ports"
             / "usage_logs_read_store.rs"
         ).read_text(encoding="utf-8")
-        sqlite_store = (
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "usage_logs_read_store.rs"
-        ).read_text(encoding="utf-8")
         postgres_store = (
             ROOT
             / "services"
@@ -34,16 +24,6 @@ class UsageRuntimeStandardTest(unittest.TestCase):
             / "sql"
             / "postgres"
             / "usage_logs_read_store.rs"
-        ).read_text(encoding="utf-8")
-        sqlite_admin_record_store = (
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "admin_record_store.rs"
         ).read_text(encoding="utf-8")
         postgres_admin_record_store = (
             ROOT
@@ -66,7 +46,7 @@ class UsageRuntimeStandardTest(unittest.TestCase):
             self.assertIn(f"pub {field}: String", usage_port)
             self.assertNotIn(f"pub {field}: f64", usage_port)
 
-        for store in [sqlite_store, postgres_store]:
+        for store in [postgres_store]:
             compact_store = " ".join(store.split())
             self.assertIn("DecimalValue", store)
             self.assertIn('"customer_charge_amount", USAGE_SPEND_DECIMAL_DIGITS, "usage log cost",', compact_store)
@@ -87,7 +67,7 @@ class UsageRuntimeStandardTest(unittest.TestCase):
             self.assertNotIn("fn decimal_cell", store)
             self.assertNotIn("parse::<f64>()", store)
 
-        for store in [sqlite_admin_record_store, postgres_admin_record_store]:
+        for store in [postgres_admin_record_store]:
             compact_store = " ".join(store.split())
             self.assertIn("DecimalValue", store)
             self.assertIn('"customer_charge_amount", 6, "admin record customer charge",', compact_store)
@@ -123,6 +103,15 @@ class UsageRuntimeStandardTest(unittest.TestCase):
             / "src"
             / "usageService.ts"
         ).read_text(encoding="utf-8")
+        usage_sdk_type = (
+            ROOT
+            / "sdks"
+            / "clawrouter-app-sdk"
+            / "clawrouter-app-sdk-typescript"
+            / "src"
+            / "types"
+            / "usage-log-item.ts"
+        ).read_text(encoding="utf-8")
         usage_view = (
             ROOT
             / "apps"
@@ -151,22 +140,32 @@ class UsageRuntimeStandardTest(unittest.TestCase):
             / "index.tsx"
         ).read_text(encoding="utf-8")
 
-        for service in [usage_service, record_service]:
+        for service in [usage_sdk_type, record_service]:
             for field in ["cost", "multiplier", "baseInputPrice", "baseOutputPrice", "cacheReadPrice"]:
                 self.assertIn(f"{field}: string", service)
                 self.assertNotIn(f"{field}: number", service)
+
+        for service in [usage_service, record_service]:
+            for field in ["cost", "multiplier", "baseInputPrice", "baseOutputPrice", "cacheReadPrice"]:
                 self.assertNotIn(f"readNumber(item, '{field}')", service)
             self.assertIn("readDecimalString", service)
 
+        self.assertIn("export type UsageLog = SdkUsageLogItem", usage_service)
+
         for view in [usage_view, record_view]:
-            self.assertIn("formatDecimalAmount(", view)
             self.assertNotIn(".cost.toFixed(6)", view)
             self.assertNotIn(".baseInputPrice.toFixed(6)", view)
             self.assertNotIn(".baseOutputPrice.toFixed(6)", view)
             self.assertNotIn(".cacheReadPrice.toFixed(6)", view)
             self.assertNotIn("sum + log.cost", view)
 
-        self.assertIn("sumDecimalStrings(usageLogs.map(log => log.cost), 6)", usage_view)
+        self.assertIn("formatLocalizedDecimalAmount(", usage_view)
+        self.assertIn("usageLogs.map(log => log.cost)", usage_view)
+        self.assertIn("SPEND_DECIMAL_DIGITS", usage_view)
+        self.assertNotIn("toSafeNumber(log.cost)", usage_view)
+        self.assertIn("formatDecimalAmount(", record_view)
+        self.assertIn("sumDecimalStrings(logs.map(log => log.cost), 6)", record_view)
+        self.assertNotIn("Number(log.cost)", record_view)
 
 
 if __name__ == "__main__":

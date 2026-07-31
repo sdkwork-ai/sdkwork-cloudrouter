@@ -80,14 +80,6 @@ const DEFAULT_DEV_INTERNAL_GATEWAY_SIGNING_SECRET_RELATIVE_PATH = path.join(
   'secrets',
   'internal-gateway-signing.development.secret',
 );
-const DEFAULT_DEV_SNOWFLAKE_NODE_IDS = Object.freeze({
-  installer: '1000',
-  modelCatalogRefresh: '1001',
-  gateway: '1002',
-  adminApi: '1003',
-  appApi: '1004',
-  server: '1005',
-});
 const EDGE_GATEWAY_PACKAGE = 'sdkwork-api-clawrouter-standalone-gateway';
 const APP_API_GATEWAY_PACKAGE = 'sdkwork-clawrouter-standalone-gateway';
 const DEFAULT_DEV_REDIS_HOST = '127.0.0.1';
@@ -212,9 +204,9 @@ function deriveFoundationPortalEnv(runtimeEnv, settings, {
 }) {
   const platformGatewayOrigin = remoteApiIngressOrigin(settings);
   const derived = deriveFoundationEnvFromResolution(compositionResolution, {
-    platformGatewayOrigin,
-    productAppApiBaseUrl: clawRouterAppApiBaseUrl,
-    productBackendApiBaseUrl: clawRouterBackendApiBaseUrl,
+    platformApiOrigin: platformGatewayOrigin,
+    applicationAppApiBaseUrl: clawRouterAppApiBaseUrl,
+    applicationBackendApiBaseUrl: clawRouterBackendApiBaseUrl,
   });
 
   const merged = { ...runtimeEnv };
@@ -706,12 +698,8 @@ export function parseWorkspaceArgs(argv = [], {
 }
 
 function serviceEnv(settings, bindEnvName, bindValue, {
-  snowflakeNodeId,
   startupInstallMode = 'ensure',
 } = {}) {
-  if (snowflakeNodeId === undefined) {
-    throw new Error('development service Snowflake node id must be explicitly assigned');
-  }
   const databaseMaxConnections = process.env.SDKWORK_DATABASE_MAX_CONNECTIONS
     ?? (String(settings.databaseUrl ?? '').trim().toLowerCase().startsWith('sqlite:')
       ? '1'
@@ -756,10 +744,13 @@ function serviceEnv(settings, bindEnvName, bindValue, {
     ...redisStructuredDefaults,
     ...developmentSecurityEnv,
     SDKWORK_CLAW_DEPLOYMENT_MODE: 'server',
-    SDKWORK_CLAW_SNOWFLAKE_NODE_ID:
-      process.env.SDKWORK_CLAW_SNOWFLAKE_NODE_ID ?? snowflakeNodeId,
     [bindEnvName]: bindValue,
+    SDKWORK_DATABASE_ENGINE: String(settings.databaseUrl ?? '').trim().toLowerCase().startsWith('sqlite:')
+      ? 'sqlite'
+      : 'postgresql',
     SDKWORK_DATABASE_URL: settings.databaseUrl,
+    SDKWORK_CLAW_REDIS_ENABLED:
+      process.env.SDKWORK_CLAW_REDIS_ENABLED ?? 'true',
     SDKWORK_CLAW_STARTUP_INSTALL_MODE: startupInstallMode,
     SDKWORK_MODELS_CATALOG_ROOT: settings.modelsCatalogRoot,
     SDKWORK_CLAW_MODEL_RANKING_RUN_ON_STARTUP:
@@ -817,7 +808,6 @@ function edgeServerEnv(settings) {
   const allInOne = settings.runtimeMode === 'all-in-one';
   return {
     ...withSharedFoundationPortalRuntimeEnv(serviceEnv(settings, 'SDKWORK_CLAW_SERVER_BIND', settings.serverBind, {
-      snowflakeNodeId: DEFAULT_DEV_SNOWFLAKE_NODE_IDS.server,
       startupInstallMode: 'skip',
     }), settings),
     SDKWORK_CLAW_EDGE_SERVER: '1',
@@ -901,9 +891,7 @@ export function buildWorkspaceCommandPlan(settings, {
       cwd: workspaceRoot,
       env: clawRouterDevCargoEnv(
         workspaceRoot,
-        serviceEnv(settings, 'SDKWORK_CLAW_INSTALLER_BIND', '127.0.0.1:0', {
-          snowflakeNodeId: DEFAULT_DEV_SNOWFLAKE_NODE_IDS.installer,
-        }),
+        serviceEnv(settings, 'SDKWORK_CLAW_INSTALLER_BIND', '127.0.0.1:0'),
       ),
       shell: false,
       windowsHide: platform === 'win32',
@@ -921,9 +909,7 @@ export function buildWorkspaceCommandPlan(settings, {
       cwd: workspaceRoot,
       env: clawRouterDevCargoEnv(
         workspaceRoot,
-        serviceEnv(settings, 'SDKWORK_CLAW_INSTALLER_BIND', '127.0.0.1:0', {
-          snowflakeNodeId: DEFAULT_DEV_SNOWFLAKE_NODE_IDS.modelCatalogRefresh,
-        }),
+        serviceEnv(settings, 'SDKWORK_CLAW_INSTALLER_BIND', '127.0.0.1:0'),
       ),
       shell: false,
       windowsHide: platform === 'win32',
@@ -942,7 +928,6 @@ export function buildWorkspaceCommandPlan(settings, {
       env: clawRouterDevCargoEnv(
         workspaceRoot,
         serviceEnv(settings, 'SDKWORK_CLAW_GATEWAY_BIND', settings.gatewayBind, {
-          snowflakeNodeId: DEFAULT_DEV_SNOWFLAKE_NODE_IDS.gateway,
           startupInstallMode: 'skip',
         }),
       ),
@@ -957,7 +942,6 @@ export function buildWorkspaceCommandPlan(settings, {
       env: clawRouterDevCargoEnv(
         workspaceRoot,
         serviceEnv(settings, 'SDKWORK_CLAW_ADMIN_API_BIND', settings.adminApiBind, {
-          snowflakeNodeId: DEFAULT_DEV_SNOWFLAKE_NODE_IDS.adminApi,
           startupInstallMode: 'skip',
         }),
       ),
@@ -971,7 +955,6 @@ export function buildWorkspaceCommandPlan(settings, {
       cwd: workspaceRoot,
       env: clawRouterDevCargoEnv(workspaceRoot, {
         ...serviceEnv(settings, 'SDKWORK_CLAW_APP_API_BIND', settings.appApiBind, {
-          snowflakeNodeId: DEFAULT_DEV_SNOWFLAKE_NODE_IDS.appApi,
           startupInstallMode: 'skip',
         }),
         SDKWORK_CLAW_APP_RUNTIME_GATEWAY_BASE_URL: settings.gatewayForwardUrl,

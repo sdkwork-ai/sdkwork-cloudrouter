@@ -2367,10 +2367,13 @@ dependencies = [
 name = "sdkwork-api-clawrouter-standalone-gateway"
 version = "0.3.0"
 dependencies = [
+ "axum",
  "sdkwork-api-clawrouter-assembly",
  "sdkwork-claw-config",
  "sdkwork-web-bootstrap",
+ "serde_json",
  "tokio",
+ "tower",
 ]
 
 [[package]]
@@ -2397,6 +2400,7 @@ version = "0.3.0"
 dependencies = [
  "sdkwork-claw-provider-adapter-contract",
  "sdkwork-claw-provider-adapter-registry",
+ "sdkwork-database-config",
  "serde",
  "serde_json",
  "toml",
@@ -2737,7 +2741,6 @@ dependencies = [
  "sdkwork-database-repository",
  "sdkwork-database-sqlx",
  "sdkwork-iam-bootstrap",
- "sdkwork-iam-embedded-application-bootstrap",
  "sdkwork-iam-web-adapter",
  "sdkwork-invoice-database-bootstrap",
  "sdkwork-invoice-service",
@@ -3447,6 +3450,9 @@ dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "sdkwork-payment-database-host",
+ "sdkwork-payment-providers",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
 ]
 
 [[package]]

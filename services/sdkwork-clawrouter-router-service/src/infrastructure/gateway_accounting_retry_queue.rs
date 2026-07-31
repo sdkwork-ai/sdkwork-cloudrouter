@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -5,6 +6,7 @@ use std::time::Duration;
 use redis::aio::ConnectionManager;
 use redis::streams::{StreamAutoClaimOptions, StreamReadOptions, StreamReadReply};
 use redis::{AsyncCommands, Script};
+use sha2::{Digest, Sha256};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
@@ -19,6 +21,8 @@ const DEDUPE_SUFFIX: &str = "gateway-accounting-retry:dedupe";
 const SCHEDULE_SUFFIX: &str = "gateway-accounting-retry:schedule";
 const PAYLOAD_SUFFIX: &str = "gateway-accounting-retry:payload";
 const MAX_CLAIM_BATCH_SIZE: usize = 200;
+const MAX_RETRY_ENVELOPE_BYTES: usize = 32 * 1024;
+const MAX_IN_MEMORY_RETRY_ENTRIES: usize = 1024;
 
 fn redis_hash_tag(value: &str) -> Option<&str> {
     let open = value.find('{')?;
@@ -55,17 +59,41 @@ fn delivery_lease_lost_error(operation: &str) -> DomainError {
 }
 
 fn serialize_envelope(envelope: &GatewayAccountingRetryEnvelope) -> DomainResult<String> {
-    serde_json::to_string(envelope).map_err(|error| {
+    let payload = serde_json::to_string(envelope).map_err(|error| {
         queue_error(
             "gateway accounting retry envelope serialization failed",
             error,
         )
-    })
+    })?;
+    validate_envelope_size(&payload)?;
+    Ok(payload)
 }
 
 fn deserialize_envelope(value: &str) -> DomainResult<GatewayAccountingRetryEnvelope> {
+    validate_envelope_size(value)?;
     serde_json::from_str(value)
         .map_err(|error| queue_error("gateway accounting retry envelope is invalid", error))
+}
+
+fn validate_envelope_size(value: &str) -> DomainResult<()> {
+    if value.len() > MAX_RETRY_ENVELOPE_BYTES {
+        return Err(DomainError::new(format!(
+            "gateway accounting retry envelope must not exceed {MAX_RETRY_ENVELOPE_BYTES} bytes"
+        )));
+    }
+    Ok(())
+}
+
+fn bounded_invalid_envelope_evidence(value: &str) -> Cow<'_, str> {
+    if value.len() <= MAX_RETRY_ENVELOPE_BYTES {
+        return Cow::Borrowed(value);
+    }
+    let digest = Sha256::digest(value.as_bytes());
+    Cow::Owned(format!(
+        "{{\"omitted\":true,\"bytes\":{},\"sha256\":\"{}\"}}",
+        value.len(),
+        hex::encode(digest)
+    ))
 }
 
 fn deserialize_and_validate_envelope(value: &str) -> DomainResult<GatewayAccountingRetryEnvelope> {
@@ -202,6 +230,7 @@ impl RedisGatewayAccountingRetryQueue {
         raw_envelope: &str,
         available_at_epoch_millis: u64,
     ) -> DomainResult<bool> {
+        let envelope_evidence = bounded_invalid_envelope_evidence(raw_envelope);
         let script = Script::new(
             r#"
             local pending = redis.call('XPENDING', KEYS[1], ARGV[1], ARGV[2], ARGV[2], 1)
@@ -240,7 +269,7 @@ impl RedisGatewayAccountingRetryQueue {
             .arg(stream_entry_id)
             .arg(consumer_id)
             .arg(event_id)
-            .arg(raw_envelope)
+            .arg(envelope_evidence.as_ref())
             .arg(available_at_epoch_millis)
             .invoke_async::<i64>(connection)
             .await
@@ -359,6 +388,7 @@ impl RedisGatewayAccountingRetryQueue {
         failure_code: &str,
         canonical_event_id: Option<&str>,
     ) -> DomainResult<()> {
+        let envelope_evidence = bounded_invalid_envelope_evidence(raw_envelope);
         let script = Script::new(
             r#"
             local pending = redis.call('XPENDING', KEYS[1], ARGV[1], ARGV[2], ARGV[2], 1)
@@ -392,7 +422,7 @@ impl RedisGatewayAccountingRetryQueue {
             .arg(stream_entry_id)
             .arg(consumer_id)
             .arg(stream_event_id)
-            .arg(raw_envelope)
+            .arg(envelope_evidence.as_ref())
             .arg(failure_code)
             .arg(canonical_event_id.unwrap_or_default())
             .invoke_async::<i64>(connection)
@@ -755,13 +785,21 @@ impl GatewayAccountingRetryQueue for InMemoryGatewayAccountingRetryQueue {
         envelope: GatewayAccountingRetryEnvelope,
     ) -> GatewayAccountingRetryQueueFuture<'a, ()> {
         Box::pin(async move {
+            envelope.validate()?;
+            serialize_envelope(&envelope)?;
             let mut entries = self.entries.lock().await;
-            if !entries
+            if entries
                 .iter()
                 .any(|item| item.event_id == envelope.event_id)
             {
-                entries.push(envelope);
+                return Ok(());
             }
+            if entries.len() >= MAX_IN_MEMORY_RETRY_ENTRIES {
+                return Err(DomainError::new(format!(
+                    "in-memory gateway accounting retry queue must not exceed {MAX_IN_MEMORY_RETRY_ENTRIES} entries"
+                )));
+            }
+            entries.push(envelope);
             Ok(())
         })
     }
@@ -936,6 +974,43 @@ mod tests {
         assert_eq!(1, bounded_claim_batch_size(1));
         assert_eq!(MAX_CLAIM_BATCH_SIZE, bounded_claim_batch_size(201));
         assert_eq!(MAX_CLAIM_BATCH_SIZE, bounded_claim_batch_size(usize::MAX));
+    }
+
+    #[test]
+    fn retry_envelope_bytes_are_bounded_before_json_parsing_or_dlq_copy() {
+        let oversized = "x".repeat(MAX_RETRY_ENVELOPE_BYTES + 1);
+        let error = deserialize_envelope(&oversized)
+            .expect_err("oversized retry envelope must fail before JSON parsing");
+        assert!(error.to_string().contains("must not exceed 32768 bytes"));
+
+        let evidence = bounded_invalid_envelope_evidence(&oversized);
+        assert!(evidence.len() < 256);
+        assert!(evidence.contains("\"omitted\":true"));
+        assert!(evidence.contains("\"bytes\":32769"));
+        assert!(!evidence.contains(&oversized[..1024]));
+    }
+
+    #[tokio::test]
+    async fn in_memory_retry_queue_rejects_invalid_or_over_capacity_entries() {
+        let queue = InMemoryGatewayAccountingRetryQueue::default();
+        let mut invalid = trace_envelope("invalid");
+        invalid.event_id = "x".repeat(129);
+        queue
+            .enqueue(invalid)
+            .await
+            .expect_err("in-memory queue must validate envelopes");
+
+        for index in 0..MAX_IN_MEMORY_RETRY_ENTRIES {
+            queue
+                .enqueue(trace_envelope(&format!("bounded-{index}")))
+                .await
+                .expect("entry inside the in-memory capacity must pass");
+        }
+        let error = queue
+            .enqueue(trace_envelope("over-capacity"))
+            .await
+            .expect_err("in-memory queue must reject entries above its capacity");
+        assert!(error.to_string().contains("must not exceed 1024 entries"));
     }
 
     #[tokio::test]

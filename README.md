@@ -356,10 +356,10 @@ workspace-local `../sdkwork-models` directory as
 `refresh-catalog --catalog-root ../sdkwork-models --force` step after
 `ensure`. Local JSON model or pricing edits are therefore imported into the dev
 database on every server-mode startup. Default workspace commands
-(`pnpm dev`, `pnpm dev:server`) start the topology-aware integrated
-product server workspace. Gateway-backed client commands
-(`pnpm dev:desktop`) start `sdkwork-api-cloud-gateway` plus
-the portal only and do not run installer or catalog refresh steps.
+(`pnpm dev`, `pnpm dev:browser`, `pnpm dev:desktop`, and `pnpm dev:server`)
+use the same PostgreSQL-backed `standalone.development` application gateway.
+Cloud development commands are remote-client-only and never start a local
+platform gateway, application API process, installer, or catalog refresh.
 
 Command intent:
 
@@ -367,19 +367,19 @@ Command intent:
   integrated product server workspace (`standalone.development`).
   See `docs/topology-standard.md` for the full command matrix and env keys.
 - `pnpm dev:browser:postgres:standalone:debug` starts distributed internal validation layout.
-- `pnpm dev:desktop` starts the gateway-backed client workspace only.
+- `pnpm dev:desktop` starts the standalone gateway-backed desktop client workspace.
 - `pnpm test` runs the launcher/tooling contract tests.
 - `pnpm build` builds production portal assets, builds the generated app
   and backend SDK runtime packages, creates SDK ZIP archives under
-  `apps/sdkwork-clawrouter-pc/dist/sdk-archives`, and builds the Rust edge
-  server release binary.
+  `apps/sdkwork-clawrouter-pc/dist/sdk-archives`, and builds the canonical Rust
+  standalone gateway release binary.
 - `pnpm start` serves the built production portal from
-  `apps/sdkwork-clawrouter-pc/dist` through a single all-in-one Rust edge
-  process by default, using the release binary when it exists.
+  `apps/sdkwork-clawrouter-pc/dist` through the single canonical Rust
+  standalone gateway process, using the release binary when it exists.
 - `pnpm release` validates the release environment, regenerates
   `.env.release` from the release host process environment, runs strict
   `release:preflight`, and then runs the full `verify` gate.
-- `pnpm dev:desktop` is the canonical gateway-backed desktop client entrypoint.
+- `pnpm dev:desktop` is the canonical standalone desktop client entrypoint.
 - `pnpm dev:server` is an alias of `pnpm dev`.
 - `pnpm smoke:dev` starts the explicit `pnpm dev:server` entrypoint on
   isolated random local ports, verifies the edge and portal OpenAPI/runtime
@@ -399,29 +399,27 @@ Use the extensionless `pnpm` command in cross-platform examples. On Windows
 shells that block `pnpm.ps1`, call the package-manager shim through your shell
 or adjust the execution policy instead of changing committed scripts.
 
-Client development commands use `sdkwork-api-cloud-gateway` for API integration.
-Gateway-backed client commands (`pnpm dev:desktop`) use
-that gateway workspace. Explicit product server development commands use PostgreSQL for integration
-testing. Desktop packages and first-run local user data use SQLite under `~/.sdkwork/router/data`.
+Standalone client development commands use
+`sdkwork-api-clawrouter-standalone-gateway` for API integration. Explicit product server development commands use PostgreSQL for integration testing.
+Desktop packages and first-run local user data use SQLite under `~/.sdkwork/router/data`.
 On Windows, the equivalent path is `%USERPROFILE%/.sdkwork/router/data`.
 Use `pnpm dev:desktop:sqlite` when validating client-local SQLite behavior; it
 does not select SQLite for a product backend service.
 
-Gateway-backed client startup (`pnpm dev:desktop`) prints
-the browser and API access matrix before launching processes. With default
-ports, `sdkwork-api-cloud-gateway` listens on `3902` and the portal dev server
-listens on `3901`:
+Standalone client startup (`pnpm dev:desktop`) prints the browser and API
+access matrix before launching processes. With default ports, the application
+gateway listens on `3900` and the portal dev server listens on `3901`:
 
 - Direct Portal Dev: `http://127.0.0.1:3901/`
-- SDKWork API Gateway: `http://127.0.0.1:3902/`
-- Gateway/Open API: `http://127.0.0.1:3902/v1`
-- Backend/Admin API: `http://127.0.0.1:3902/backend/v3/api`
-- App API: `http://127.0.0.1:3902/app/v3/api`
-- SDKWork API Gateway Health: `http://127.0.0.1:3902/healthz`
-- SDKWork API Gateway Ready: `http://127.0.0.1:3902/readyz`
+- Application Gateway: `http://127.0.0.1:3900/`
+- Gateway/Open API: `http://127.0.0.1:3900/v1`
+- Backend/Admin API: `http://127.0.0.1:3900/backend/v3/api`
+- App API: `http://127.0.0.1:3900/app/v3/api`
+- Application Gateway Health: `http://127.0.0.1:3900/healthz`
+- Application Gateway Ready: `http://127.0.0.1:3900/readyz`
 
 The portal dev server proxies same-origin API requests to the managed
-`sdkwork-api-cloud-gateway` process:
+standalone application gateway:
 
 - Direct Portal Gateway API Proxy: `http://127.0.0.1:3901/v1`
 - Direct Portal Backend/Admin API Proxy:
@@ -538,13 +536,13 @@ through the HTTP `Connection` header on both request and response proxy paths.
 
 ## Standard Verification
 
-Run the full commercial gate before delivery:
+Run the repository verification gate before delivery:
 
 ```powershell
 pnpm verify
 ```
 
-`pnpm verify` runs the static, build, production-smoke, and broad test gates
+`pnpm verify` runs the static, build, local production-smoke, and broad test gates
 without starting the live `pnpm dev` workspace by default:
 
 - `cargo fmt --check`
@@ -669,7 +667,8 @@ pnpm verify -- --build-jobs 4
 It intentionally skips Rust compile/tests, SDK and architecture guardians,
 portal typecheck/build, production smoke tests, broad Python tests, and schema
 quality gate. This makes it suitable for frequent local iteration, not final
-delivery. Always run `pnpm verify` before release or handoff.
+delivery. Always run `pnpm verify` before release or handoff, but do not treat a
+passing local gate as commercial or production approval.
 
 Clean rebuildable local artifacts when Codex or local tools slow down because
 of stale temporary output:
@@ -691,7 +690,7 @@ node scripts/clean-claw-router-workspace.mjs --rust-target --node-modules
 
 ## Release Preflight
 
-Run the lightweight preflight before the full commercial gate:
+Run the lightweight preflight before the repository verification gate:
 
 ```powershell
 pnpm release:preflight
@@ -978,13 +977,16 @@ use placeholder values and startup refuses server configurations that still use
 
 Redis configuration is part of the standard runtime TOML but is disabled by
 default. When Redis is enabled, the gateway uses a fenced Redis Streams queue
-for durable trace and usage retries; otherwise it uses the independent
-`gateway-accounting-retry.sqlite3` WAL database under `[paths].data_directory`.
-A provider success response is preserved when accounting persistence fails,
-while queue failure or any dead-letter entry makes readiness degraded until the
-records are reconciled. Redis mode does not automatically switch to SQLite
-after startup, so production Redis requires its normal HA and persistence
-policy. Set `[redis].enabled = true`, configure `[redis].host`, `[redis].port`, and
+for durable trace and usage retries. Server, container, and Kubernetes startup
+fails when Redis is absent because there is no alternate durable accounting
+queue. Desktop mode may use a bounded 1024-entry in-memory retry queue; those
+records are lost on process restart, so that mode is not durable and is not a
+server production topology. A provider success response is preserved when
+accounting persistence fails, while queue failure or any dead-letter entry
+makes readiness degraded until the records are reconciled. There is no runtime
+fallback from Redis to SQLite or memory after startup, so production Redis
+requires its normal HA and persistence policy. Set `[redis].enabled = true`,
+configure `[redis].host`, `[redis].port`, and
 `[redis].database`, and prefer `[redis].password_file` over `[redis].password`.
 Use `[redis].url` only as an advanced override for managed Redis endpoints that
 cannot be represented cleanly with separate fields. Standard optional secret
@@ -1438,6 +1440,12 @@ configured but the normalized archive is missing, it returns
 `sdk_archive_not_found`.
 
 ## Recommended Delivery Sequence
+
+The commands below are necessary release-candidate checks. Commercial release
+also requires the accepted PostgreSQL, multi-replica HA, backup/restore,
+security, load/soak, process-RSS, observability, rollback, and human-approval
+evidence defined by
+[`REQ-2026-0001`](docs/product/requirements/REQ-2026-0001-commercial-production-readiness.md).
 
 1. On CI or a release host, run `pnpm release`. The root release script
    runs `pnpm release:env:write -- --check`, regenerates

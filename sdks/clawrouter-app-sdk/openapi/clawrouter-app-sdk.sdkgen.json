@@ -4654,22 +4654,22 @@
         ],
         "type": "object"
       },
-      "SiteRuntimeListResult": {
+      "SiteRuntimeRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by site runtime list result.",
+            "description": "Object schema used by site runtime retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/SiteRuntimeSettingsResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on site runtime retrieve result."
               }
             },
             "required": [
@@ -4678,8 +4678,175 @@
             "type": "object"
           }
         ],
-        "description": "Site runtime list result schema exposed by Claw Router.",
-        "x-operation-id": "site.runtime.list"
+        "description": "Site runtime retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "site.runtime.retrieve"
+      },
+      "SiteRuntimeSettingsResponse": {
+        "additionalProperties": false,
+        "description": "Site runtime settings response schema exposed by Claw Router.",
+        "name": "SiteRuntimeSettingsResponse",
+        "properties": {
+          "accentColor": {
+            "description": "Accent color field on site runtime settings response.",
+            "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+            "type": "string"
+          },
+          "brandColor": {
+            "description": "Brand color field on site runtime settings response.",
+            "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
+            "type": "string"
+          },
+          "customCss": {
+            "description": "Custom css field on site runtime settings response.",
+            "maxLength": 20000,
+            "type": "string"
+          },
+          "description": {
+            "description": "Description field on site runtime settings response.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "docsUrl": {
+            "description": "Docs url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "favicon": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaResource"
+                  }
+                ],
+                "description": "Favicon variant using media resource."
+              },
+              {
+                "description": "Null variant accepted by favicon.",
+                "type": "null"
+              }
+            ],
+            "description": "Favicon field on site runtime settings response."
+          },
+          "footerCopyright": {
+            "description": "Footer copyright field on site runtime settings response.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaResource"
+                  }
+                ],
+                "description": "Icon variant using media resource."
+              },
+              {
+                "description": "Null variant accepted by icon.",
+                "type": "null"
+              }
+            ],
+            "description": "Icon field on site runtime settings response."
+          },
+          "icpRecordNumber": {
+            "description": "Icp record number field on site runtime settings response.",
+            "maxLength": 255,
+            "type": "string"
+          },
+          "icpRecordUrl": {
+            "description": "Icp record url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "logo": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaResource"
+                  }
+                ],
+                "description": "Logo variant using media resource."
+              },
+              {
+                "description": "Null variant accepted by logo.",
+                "type": "null"
+              }
+            ],
+            "description": "Logo field on site runtime settings response."
+          },
+          "policeRecordNumber": {
+            "description": "Police record number field on site runtime settings response.",
+            "maxLength": 255,
+            "type": "string"
+          },
+          "policeRecordUrl": {
+            "description": "Police record url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "privacyUrl": {
+            "description": "Privacy url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "seoDescription": {
+            "description": "Seo description field on site runtime settings response.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "seoTitle": {
+            "description": "Seo title field on site runtime settings response.",
+            "maxLength": 255,
+            "type": "string"
+          },
+          "shortName": {
+            "description": "Short name field on site runtime settings response.",
+            "maxLength": 255,
+            "type": "string"
+          },
+          "siteName": {
+            "description": "Site name field on site runtime settings response.",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "supportUrl": {
+            "description": "Support url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "termsUrl": {
+            "description": "Terms url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          }
+        },
+        "required": [
+          "siteName",
+          "shortName",
+          "description",
+          "logo",
+          "icon",
+          "favicon",
+          "brandColor",
+          "accentColor",
+          "footerCopyright",
+          "icpRecordNumber",
+          "icpRecordUrl",
+          "policeRecordNumber",
+          "policeRecordUrl",
+          "seoTitle",
+          "seoDescription",
+          "supportUrl",
+          "docsUrl",
+          "privacyUrl",
+          "termsUrl",
+          "customCss"
+        ],
+        "type": "object"
       },
       "SpacesCreateResult": {
         "allOf": [
@@ -9539,14 +9706,35 @@
     "/app/v3/api/system/site/runtime": {
       "get": {
         "description": "List site branding. Reads ops_audit_log. Writes none. File targets none.",
-        "operationId": "site.runtime.list",
-        "parameters": [],
+        "operationId": "site.runtime.retrieve",
+        "parameters": [
+          {
+            "description": "Tenant code query parameter.",
+            "in": "query",
+            "name": "tenant_code",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Organization code query parameter.",
+            "in": "query",
+            "name": "organization_code",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteRuntimeListResult"
+                  "$ref": "#/components/schemas/SiteRuntimeRetrieveResult"
                 }
               }
             },
@@ -9593,12 +9781,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List site branding",
         "tags": [
           "system"
@@ -9610,6 +9793,7 @@
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "system",
+        "x-sdkwork-auth-mode": "anonymous",
         "x-sdkwork-domain": "system",
         "x-sdkwork-resource": "site.runtime",
         "x-source-file": "apps/sdkwork-clawrouter-pc/packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts",

@@ -55,6 +55,18 @@
       "require": "./src/components/BusinessState.tsx",
       "default": "./src/components/BusinessState.tsx"
     },
+    "./components/AdminTableShell": {
+      "types": "./src/components/AdminTableShell.tsx",
+      "import": "./src/components/AdminTableShell.tsx",
+      "require": "./src/components/AdminTableShell.tsx",
+      "default": "./src/components/AdminTableShell.tsx"
+    },
+    "./components/BottomPagination": {
+      "types": "./src/components/BottomPagination.tsx",
+      "import": "./src/components/BottomPagination.tsx",
+      "require": "./src/components/BottomPagination.tsx",
+      "default": "./src/components/BottomPagination.tsx"
+    },
     "./components/ConfirmDialog": {
       "types": "./src/components/ConfirmDialog.tsx",
       "import": "./src/components/ConfirmDialog.tsx",
@@ -72,6 +84,12 @@
       "import": "./src/clipboard.ts",
       "require": "./src/clipboard.ts",
       "default": "./src/clipboard.ts"
+    },
+    "./media-resource": {
+      "types": "./src/media-resource.ts",
+      "import": "./src/media-resource.ts",
+      "require": "./src/media-resource.ts",
+      "default": "./src/media-resource.ts"
     },
     "./idempotency": {
       "types": "./src/idempotency.ts",

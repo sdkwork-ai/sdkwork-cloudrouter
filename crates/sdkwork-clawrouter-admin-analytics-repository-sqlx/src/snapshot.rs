@@ -15,6 +15,8 @@ const COLORS: [&str; 10] = [
     "#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d",
     "#ea580c", "#475569",
 ];
+const DECIMAL_SCALE_FACTOR: i128 = 1_000_000_000_000;
+const PERCENT_DECIMAL_SCALE_FACTOR: i128 = 100 * DECIMAL_SCALE_FACTOR;
 
 #[derive(Debug, Clone)]
 pub(crate) struct AnalyticsSummaryRow {
@@ -94,8 +96,6 @@ pub(crate) fn build_snapshot(
         .unwrap_or_default();
     let total_requests = summary.total_requests;
     let failed_requests = summary.failed_requests;
-    let error_rate = summary.error_rate;
-
     Ok(AdminAnalyticsSnapshot {
         time_range,
         start_time,
@@ -129,7 +129,6 @@ pub(crate) fn build_snapshot(
             top_user_requests,
             top_model_requests,
             failed_requests,
-            error_rate,
         )?,
     })
 }
@@ -227,29 +226,26 @@ fn build_insights(
     top_user_requests: i64,
     top_model_requests: i64,
     failed_requests: i64,
-    error_rate: DecimalValue,
 ) -> RepositoryResult<Vec<AdminAnalyticsInsight>> {
-    let top_user_share = safe_percent(top_user_requests, total_requests)?;
-    let top_model_share = safe_percent(top_model_requests, total_requests)?;
     Ok(vec![
         AdminAnalyticsInsight {
             key: "topUserShare".to_owned(),
             title: "admin.analytics.insights.topUserShare.title".to_owned(),
-            value: format_percent(top_user_share),
+            value: format_ratio_percent(top_user_requests, total_requests)?,
             severity: concentration_severity(top_user_requests, total_requests).to_owned(),
             detail: "admin.analytics.insights.topUserShare.detail".to_owned(),
         },
         AdminAnalyticsInsight {
             key: "topModelShare".to_owned(),
             title: "admin.analytics.insights.topModelShare.title".to_owned(),
-            value: format_percent(top_model_share),
+            value: format_ratio_percent(top_model_requests, total_requests)?,
             severity: concentration_severity(top_model_requests, total_requests).to_owned(),
             detail: "admin.analytics.insights.topModelShare.detail".to_owned(),
         },
         AdminAnalyticsInsight {
             key: "errorRate".to_owned(),
             title: "admin.analytics.insights.errorRate.title".to_owned(),
-            value: format_percent(error_rate),
+            value: format_ratio_percent(failed_requests, total_requests)?,
             severity: if request_share_at_least(failed_requests, total_requests, 5) {
                 "warning"
             } else {
@@ -283,14 +279,11 @@ pub(crate) fn safe_percent(value: i64, denominator: i64) -> RepositoryResult<Dec
     if denominator <= 0 {
         return Ok(DecimalValue::ZERO);
     }
-    if value < 0 {
-        return Err(RepositoryError::new(
-            "admin analytics percentage numerator must not be negative",
-        ));
-    }
-    DecimalValue::parse(&value.to_string())
-        .and_then(|decimal| decimal.multiply_i64(100))
-        .and_then(|decimal| decimal.divide_i64(denominator))
+    validate_ratio(value, denominator)?;
+    let scaled = rounded_ratio(value, denominator, PERCENT_DECIMAL_SCALE_FACTOR)?;
+    let whole = scaled / DECIMAL_SCALE_FACTOR;
+    let fraction = scaled % DECIMAL_SCALE_FACTOR;
+    DecimalValue::parse(&format!("{whole}.{fraction:012}"))
         .map_err(|error| RepositoryError::new(error.to_string()))
 }
 
@@ -302,8 +295,38 @@ fn request_share_at_least(value: i64, denominator: i64, percentage: i64) -> bool
     }
 }
 
-pub(crate) fn format_percent(value: DecimalValue) -> String {
-    format!("{}%", value.to_fixed_string(1))
+fn format_ratio_percent(value: i64, denominator: i64) -> RepositoryResult<String> {
+    if denominator <= 0 {
+        return Ok("0.0%".to_owned());
+    }
+    validate_ratio(value, denominator)?;
+    let tenths = rounded_ratio(value, denominator, 1_000)?;
+    Ok(format!("{}.{:01}%", tenths / 10, tenths % 10))
+}
+
+fn validate_ratio(value: i64, denominator: i64) -> RepositoryResult<()> {
+    if value < 0 {
+        return Err(RepositoryError::new(
+            "admin analytics percentage numerator must not be negative",
+        ));
+    }
+    if value > denominator {
+        return Err(RepositoryError::new(
+            "admin analytics percentage numerator exceeds denominator",
+        ));
+    }
+    Ok(())
+}
+
+fn rounded_ratio(value: i64, denominator: i64, scale: i128) -> RepositoryResult<i128> {
+    let numerator = i128::from(value)
+        .checked_mul(scale)
+        .ok_or_else(|| RepositoryError::new("admin analytics percentage overflow"))?;
+    let rounding = i128::from(denominator) / 2;
+    numerator
+        .checked_add(rounding)
+        .and_then(|rounded| rounded.checked_div(i128::from(denominator)))
+        .ok_or_else(|| RepositoryError::new("admin analytics percentage overflow"))
 }
 
 pub(crate) fn vendor_from_catalog_key(catalog_key: &str, fallback_model: &str) -> String {
@@ -327,13 +350,25 @@ pub(crate) fn concentration_severity(value: i64, denominator: i64) -> &'static s
     }
 }
 
-pub(crate) fn scope_filter(
-    tenant_column: &str,
-    organization_column: &str,
-    tenant_placeholder: &str,
-    organization_placeholder: &str,
-) -> String {
-    format!(
-        "{tenant_column} = {tenant_placeholder}\n          AND ({organization_column} = {organization_placeholder} OR {organization_column} = 0 OR {organization_column} IS NULL)"
-    )
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn percentages_round_half_up_without_binary_floating_point() {
+        assert_eq!("16.7%", format_ratio_percent(1, 6).unwrap());
+        assert_eq!("66.7%", format_ratio_percent(2, 3).unwrap());
+        assert_eq!("0.0%", format_ratio_percent(0, 0).unwrap());
+        assert_eq!(
+            "16.666666666667",
+            safe_percent(1, 6).unwrap().to_fixed_string(12)
+        );
+    }
+
+    #[test]
+    fn percentages_reject_inconsistent_counts() {
+        assert!(safe_percent(-1, 10).is_err());
+        assert!(safe_percent(11, 10).is_err());
+        assert!(format_ratio_percent(11, 10).is_err());
+    }
 }

@@ -8,7 +8,7 @@ const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 async fn postgres_loader_can_be_constructed_without_connecting_for_server_deployments() {
     let pool = PgPoolOptions::new()
         .max_connections(1)
-        .connect_lazy("postgres://sdkwork:sdkwork@localhost:5432/sdkwork_claw_router")
+        .connect_lazy("postgres://sdkwork_ai_dev:sdkworkdev123@localhost:5432/sdkwork_ai_dev")
         .unwrap();
 
     let _loader = PostgresPricingCatalogLoader::new(pool);

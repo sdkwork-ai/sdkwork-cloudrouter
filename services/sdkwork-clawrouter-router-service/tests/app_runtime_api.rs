@@ -3993,10 +3993,11 @@ impl Default for TestRuntimeCatalog {
 }
 
 impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCatalog {
-    fn list_models(
+    fn visit_models(
         &self,
         _vendor_code: Option<&str>,
-    ) -> Vec<sdkwork_clawrouter_router_service::domain::AiModel> {
+        visitor: &mut dyn FnMut(&sdkwork_clawrouter_router_service::domain::AiModel) -> bool,
+    ) {
         let mut model = sdkwork_clawrouter_router_service::domain::AiModel::new(
             &self.model,
             &self.model,
@@ -4006,7 +4007,7 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         .with_catalog_key(&self.catalog_key);
         model.api_format = self.api_format.clone();
         model.supports_streaming = true;
-        vec![model]
+        visitor(&model);
     }
 
     fn list_model_upstream_routes(
@@ -4268,9 +4269,15 @@ impl sdkwork_clawrouter_router_service::ports::PricingCatalog for TestRuntimeCat
         &self,
         model: &str,
     ) -> Option<sdkwork_clawrouter_router_service::domain::AiModel> {
-        self.list_models(None)
-            .into_iter()
-            .find(|candidate| candidate.catalog_key == model)
+        if self.catalog_key != model {
+            return None;
+        }
+        let mut result = None;
+        self.visit_models(None, &mut |candidate| {
+            result = Some(candidate.clone());
+            false
+        });
+        result
     }
 
     fn find_vendor(

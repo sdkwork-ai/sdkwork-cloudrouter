@@ -39,26 +39,8 @@ pub fn resolve_trace_id(context: Option<&WebRequestContext>) -> String {
         .unwrap_or_else(new_trace_id)
 }
 
-pub fn trace_id_from_context(context: Option<&WebRequestContext>) -> String {
-    resolve_trace_id(context)
-}
-
 pub fn success_envelope<T: Serialize>(data: T) -> SdkWorkApiResponse<T> {
     SdkWorkApiResponse::success(data, new_trace_id())
-}
-
-pub fn success_envelope_for_context<T: Serialize>(
-    context: Option<&WebRequestContext>,
-    data: T,
-) -> SdkWorkApiResponse<T> {
-    SdkWorkApiResponse::success(data, resolve_trace_id(context))
-}
-
-pub fn success_envelope_with_trace<T: Serialize>(
-    trace_id: impl Into<String>,
-    data: T,
-) -> SdkWorkApiResponse<T> {
-    SdkWorkApiResponse::success(data, trace_id)
 }
 
 /// Maps transitional legacy string wire codes to platform `ProblemDetail`.
@@ -121,18 +103,6 @@ pub fn validation_problem(detail: impl Into<String>) -> ProblemResponse {
 
 pub fn not_found_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::NotFound, detail)
-}
-
-pub fn conflict_problem(detail: impl Into<String>) -> ProblemResponse {
-    platform_problem(SdkWorkResultCode::Conflict, detail)
-}
-
-pub fn unauthorized_problem(detail: impl Into<String>) -> ProblemResponse {
-    platform_problem(SdkWorkResultCode::AuthenticationRequired, detail)
-}
-
-pub fn unprocessable_problem(detail: impl Into<String>) -> ProblemResponse {
-    platform_problem(SdkWorkResultCode::UnprocessableEntity, detail)
 }
 
 pub fn internal_problem(detail: impl Into<String>) -> ProblemResponse {

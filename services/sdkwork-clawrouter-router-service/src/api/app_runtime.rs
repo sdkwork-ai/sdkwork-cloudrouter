@@ -2115,12 +2115,18 @@ where
     C: UpstreamAccountRouteCatalog,
 {
     let model = model.trim();
-    catalog.find_model(model).or_else(|| {
-        catalog
-            .list_models(None)
-            .into_iter()
-            .find(|candidate| candidate.model == model)
-    })
+    if let Some(model) = catalog.find_model(model) {
+        return Some(model);
+    }
+    let mut found = None;
+    catalog.visit_models(None, &mut |candidate| {
+        if candidate.model != model {
+            return true;
+        }
+        found = Some(candidate.clone());
+        false
+    });
+    found
 }
 
 fn build_runtime_responses_request_body(

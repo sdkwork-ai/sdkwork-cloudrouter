@@ -37,6 +37,21 @@ MODELS_CATALOG_DOMAIN_PATH = (
     / "domain"
     / "catalog.rs"
 )
+MODELS_CATALOG_IMPORT_PATH = (
+    SDKWORK_MODELS_ROOT
+    / "crates"
+    / "sdkwork-models-catalog-repository-sqlx"
+    / "src"
+    / "model_catalog_import.rs"
+)
+MODELS_CATALOG_STORE_PATH = (
+    SDKWORK_MODELS_ROOT
+    / "crates"
+    / "sdkwork-models-catalog-repository-sqlx"
+    / "src"
+    / "postgres"
+    / "model_catalog_admin_store.rs"
+)
 REGISTRY_PATH = ROOT / "docs" / "schema-registry" / "sdkwork-clawrouter.tables.yaml"
 GENERATED_SCHEMA_PATH = ROOT / "generated" / "schema" / "postgres" / "schema.sql"
 BACKEND_OPENAPI_PATH = ROOT / "generated" / "openapi" / "clawrouter-backend-openapi.json"
@@ -49,24 +64,31 @@ TS_DOMAIN_PATH = ROOT / "generated" / "types" / "typescript" / "domain-types.ts"
 RUST_TEST_SUPPORT_PATH = ROOT / "crates" / "sdkwork-claw-test-support" / "src" / "lib.rs"
 RUST_INSTALLER_PATH = ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "installer.rs"
 RUST_INSTALLER_CLI_PATH = ROOT / "services" / "sdkwork-claw-installer" / "src" / "main.rs"
-AI_CHANNEL_ROUTE_CONTRACT_PATHS = (
-    ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "models" / "admin-channel.yaml",
-    ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "models" / "admin-group.yaml",
-    ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "models" / "console-api-keys.yaml",
-    ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "operations" / "app-ai.yaml",
-    ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "operations" / "app-iam.yaml",
-    ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "operations" / "backend-ai.yaml",
-    ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "operations" / "backend-integration.yaml",
-    ROOT / "docs" / "schema-registry" / "frontend-route-classification.yaml",
+FRONTEND_CONTRACT_PATH = ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
+CANON_DOCUMENTATION_PATHS = (
+    ROOT / "docs" / "README.md",
+    ROOT / "docs" / "product" / "prd" / "PRD.md",
+    ROOT / "docs" / "product" / "prd" / "PRD-UPSTREAM-SUPPLIER.md",
+    ROOT / "docs" / "architecture" / "tech" / "TECH_ARCHITECTURE.md",
+    ROOT / "docs" / "product" / "requirements" / "REQ-2026-0001-commercial-production-readiness.md",
+    ROOT / "docs" / "engineering" / "reviews" / "REVIEW-20260714-production-readiness-revalidation.md",
+    ROOT / "docs" / "schema-registry" / "table-catalog.md",
+    ROOT / "deployments" / "runbooks" / "production-operations.md",
+)
+AI_UPSTREAM_ROUTE_CONTRACT_PATHS = (
+    FRONTEND_CONTRACT_PATH,
+    ROOT / "docs" / "schema-registry" / "tables" / "ai-routing.yaml",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "ai_routing_seed.rs",
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "queries" / "snapshot.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "queries" / "lookup.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite" / "queries.rs",
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "app_routing_read_store.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite" / "app_routing_read_store.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_channel_group_store.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite" / "admin_channel_group_store.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_channel_store.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite" / "admin_channel_store.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_upstream_store" / "supplier.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_upstream_store" / "supplier_endpoint.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_upstream_store" / "supplier_auth.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_upstream_store" / "supplier_resource.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_upstream_store" / "account.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_upstream_store" / "account_group.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_upstream_store" / "account_group_member.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_upstream_store" / "account_group_resource.rs",
     SDKWORK_MODELS_ROOT
     / "crates"
     / "sdkwork-models-catalog-repository-sqlx"
@@ -80,7 +102,22 @@ AI_CHANNEL_ROUTE_CONTRACT_PATHS = (
     / "sqlite"
     / "admin_ai_resource_store.rs",
 )
-AI_CHANNEL_ROUTE_REQUIRED_TABLES = (
+AI_UPSTREAM_ROUTE_REQUIRED_TABLES = (
+    "ai_upstream_supplier",
+    "ai_upstream_supplier_endpoint",
+    "ai_upstream_supplier_auth_method",
+    "ai_upstream_supplier_resource",
+    "ai_upstream_account",
+    "ai_upstream_account_credential",
+    "ai_upstream_account_group",
+    "ai_upstream_account_group_member",
+    "ai_upstream_account_group_resource",
+    "ai_upstream_account_group_metric_snapshot",
+    "ai_resource",
+    "ai_resource_group",
+    "ai_resource_group_item",
+)
+OBSOLETE_ROUTER_TABLES = {
     "ai_provider",
     "ai_channel",
     "ai_channel_resource",
@@ -88,11 +125,6 @@ AI_CHANNEL_ROUTE_REQUIRED_TABLES = (
     "ai_channel_group_member",
     "ai_channel_group_resource",
     "ai_channel_group_metric_snapshot",
-    "ai_resource",
-    "ai_resource_group",
-    "ai_resource_group_item",
-)
-OBSOLETE_ROUTER_TABLES = {
     "ai_channel_vendor",
     "ai_rate_limit_bucket",
     "ai_resource_route_profile",
@@ -110,14 +142,12 @@ RUNTIME_MODEL_IDENTITY_FIXTURE_PATHS = (
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "openai_chat_adapter_api.rs",
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "openai_embeddings_adapter_api.rs",
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "openai_responses_adapter_api.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "sqlite_admin_channel_group_store.rs",
-    ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "sqlite_openai_invocation_telemetry.rs",
-    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
-    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_http.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "postgres_app_routing_read_store.rs",
+    ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "postgres_openai_invocation_telemetry_plugin.rs",
+    ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
+    ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_http.rs",
 )
 PORTAL_RUNTIME_MODEL_IDENTITY_FIXTURE_PATHS = (
-    ROOT / "apps" / "sdkwork-clawrouter-pc" / "admin-channel-runtime.test.ts",
-    ROOT / "apps" / "sdkwork-clawrouter-pc" / "admin-group-runtime.test.ts",
     ROOT / "apps" / "sdkwork-clawrouter-pc" / "admin-operations-runtime.test.ts",
     ROOT / "apps" / "sdkwork-clawrouter-pc" / "models-runtime.test.ts",
     ROOT / "apps" / "sdkwork-clawrouter-pc" / "playground-chat-runtime.test.ts",
@@ -126,26 +156,21 @@ PORTAL_RUNTIME_MODEL_IDENTITY_FIXTURE_PATHS = (
     ROOT / "apps" / "sdkwork-clawrouter-pc" / "console-app-runtime.test.ts",
 )
 API_GATEWAY_MODEL_IDENTITY_FIXTURE_PATHS = (
-    ROOT / "services" / "sdkwork-clawrouter-admin-api-server" / "tests" / "database_config_router.rs",
-    ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "tests" / "contract_routes.rs",
-    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "tests" / "provider_passthrough_route.rs",
-    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "tests" / "edge_server_sqlite_smoke.rs",
+    ROOT / "services" / "sdkwork-clawrouter-admin-gateway" / "tests" / "contract_routes.rs",
+    ROOT / "services" / "sdkwork-clawrouter-standalone-gateway" / "tests" / "contract_routes.rs",
+    ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "tests" / "provider_adapter_invocation.rs",
+    ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "tests" / "edge_server.rs",
 )
-AI_CHANNEL_ROUTE_RUNTIME_ROOTS = (
+AI_UPSTREAM_ROUTE_RUNTIME_ROOTS = (
     ROOT / "services" / "sdkwork-clawrouter-router-service" / "src",
-    ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src",
-    ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "src",
+    ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src",
+    ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src",
 )
 SERVER_RESOURCES = ROOT.parents[1] / "spring-ai-plus-server-application" / "src" / "main" / "resources"
 POSTGRES_MIGRATION_DIR = SERVER_RESOURCES / "database" / "postgresql"
 DATA_DIR = SERVER_RESOURCES / "data"
 BOOTSTRAP_DIR = DATA_DIR / "bootstrap"
 FRONTEND_GENERATED_DIR = ROOT / "generated" / "schema" / "frontend"
-
-SYSTEM_TABLES = {
-    "system_installation_state",
-    "system_schema_migration",
-}
 
 SCHEMA_REGISTRY_REQUIRED_TABLE_PREFIXES = (
     "ai_",
@@ -161,13 +186,16 @@ SCHEMA_REGISTRY_REQUIRED_TABLE_PREFIXES = (
 )
 
 CANONICAL_TABLES = {
-    "ai_provider",
-    "ai_channel",
-    "ai_channel_resource",
-    "ai_channel_group",
-    "ai_channel_group_member",
-    "ai_channel_group_resource",
-    "ai_channel_group_metric_snapshot",
+    "ai_upstream_supplier",
+    "ai_upstream_supplier_endpoint",
+    "ai_upstream_supplier_auth_method",
+    "ai_upstream_supplier_resource",
+    "ai_upstream_account",
+    "ai_upstream_account_credential",
+    "ai_upstream_account_group",
+    "ai_upstream_account_group_member",
+    "ai_upstream_account_group_resource",
+    "ai_upstream_account_group_metric_snapshot",
     "ai_model_vendor",
     "ai_modality",
     "ai_api_endpoint",
@@ -220,13 +248,16 @@ MODELS_CATALOG_TABLES = frozenset(
 CLAWROUTER_GENERATED_CANONICAL_TABLES = frozenset(CANONICAL_TABLES - MODELS_CATALOG_TABLES)
 
 CANONICAL_TABLE_PROFILES = {
-    "ai_provider": "tenant_entity",
-    "ai_channel": "tenant_entity",
-    "ai_channel_resource": "tenant_entity",
-    "ai_channel_group": "tenant_entity",
-    "ai_channel_group_member": "tenant_entity",
-    "ai_channel_group_resource": "tenant_entity",
-    "ai_channel_group_metric_snapshot": "projection",
+    "ai_upstream_supplier": "tenant_entity",
+    "ai_upstream_supplier_endpoint": "tenant_entity",
+    "ai_upstream_supplier_auth_method": "tenant_entity",
+    "ai_upstream_supplier_resource": "relation_entity",
+    "ai_upstream_account": "tenant_entity",
+    "ai_upstream_account_credential": "secret_entity",
+    "ai_upstream_account_group": "tenant_entity",
+    "ai_upstream_account_group_member": "relation_entity",
+    "ai_upstream_account_group_resource": "relation_entity",
+    "ai_upstream_account_group_metric_snapshot": "projection",
     "ai_model_vendor": "tenant_entity",
     "ai_modality": "tenant_entity",
     "ai_api_endpoint": "tenant_entity",
@@ -245,20 +276,16 @@ CANONICAL_TABLE_PROFILES = {
     "ai_model_catalog_sync_run": "event_log",
     "ai_billing_meter": "tenant_entity",
     "ai_model_pricing": "tenant_entity",
-    "ai_pricing_plan": "tenant_entity",
-    "ai_pricing_plan_binding": "tenant_entity",
-    "ai_pricing_rule": "tenant_entity",
-    "ai_pricing_tier": "tenant_entity",
+    "ai_pricing_plan": "pricing",
+    "ai_pricing_plan_binding": "relation_entity",
+    "ai_pricing_rule": "pricing",
+    "ai_pricing_tier": "pricing",
     "ai_pricing_import_snapshot": "event_log",
     "ai_model_rank_snapshot": "projection",
 }
 
 FINANCIAL_TABLES = {
     "ai_model_pricing",
-    "ai_pricing_plan",
-    "ai_pricing_plan_binding",
-    "ai_pricing_rule",
-    "ai_pricing_tier",
 }
 
 REQUIRED_PROFILE_COLUMNS = {
@@ -302,6 +329,48 @@ REQUIRED_PROFILE_COLUMNS = {
         "created_at",
         "updated_at",
         "rebuild_version",
+        "metadata",
+    },
+    "relation_entity": {
+        "id",
+        "uuid",
+        "tenant_id",
+        "organization_id",
+        "data_scope",
+        "status",
+        "created_at",
+        "updated_at",
+        "version",
+        "deleted_at",
+        "deleted_by",
+        "metadata",
+    },
+    "secret_entity": {
+        "id",
+        "uuid",
+        "tenant_id",
+        "organization_id",
+        "data_scope",
+        "status",
+        "created_at",
+        "updated_at",
+        "version",
+        "deleted_at",
+        "deleted_by",
+        "metadata",
+    },
+    "pricing": {
+        "id",
+        "uuid",
+        "tenant_id",
+        "organization_id",
+        "data_scope",
+        "status",
+        "created_at",
+        "updated_at",
+        "version",
+        "deleted_at",
+        "deleted_by",
         "metadata",
     },
 }
@@ -563,6 +632,11 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     self.assertTrue(table.get("security", {}).get("financial"))
                     self.assertTrue(table.get("security", {}).get("decimal_only"))
                 self.assertEqual(CANONICAL_TABLE_PROFILES[table_name], table.get("common_columns"))
+                assert_canonical_table_contract(
+                    self,
+                    schema_sql_for_table(table_name),
+                    table_name,
+                )
 
                 unique_constraints = table.get("unique_constraints", [])
                 uuid_unique = any(
@@ -578,23 +652,9 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                 )
                 self.assertTrue(uuid_unique or uuid_index_unique, f"{table_name} must declare a unique uuid constraint")
 
-                not_null_columns = set(table.get("not_null_columns", []))
-                self.assertIn("uuid", not_null_columns)
-                self.assertIn("tenant_id", not_null_columns)
-                self.assertIn("organization_id", not_null_columns)
-                self.assertIn("status", not_null_columns)
-
-                if table_name == "ai_pricing_import_snapshot":
-                    required_prefixes = (["tenant_id", "organization_id", "status"], ["tenant_id", "organization_id", "request_id"])
-                elif table_name == "ai_model_catalog_sync_run":
-                    required_prefixes = (["tenant_id", "organization_id", "status"], ["tenant_id", "organization_id", "source_code"])
-                elif table_name == "ai_model_rank_snapshot":
-                    required_prefixes = (["tenant_id", "organization_id", "status"], ["tenant_id", "organization_id", "source_type"])
-                else:
-                    required_prefixes = (["tenant_id", "organization_id", "status"],)
                 tenant_leading_index = any(
                     isinstance(item, dict)
-                    and any(item.get("columns", [])[:len(prefix)] == prefix for prefix in required_prefixes)
+                    and item.get("columns", [])[:2] == ["tenant_id", "organization_id"]
                     for item in indexes
                 )
                 self.assertTrue(tenant_leading_index, f"{table_name} must have a tenant-leading index")
@@ -839,15 +899,14 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             text = read_text(path)
             self.assertNotIn("ai_model_vendor_region", text, f"legacy vendor-region table leaked into {path}")
 
-    def test_ai_channel_route_contracts_use_canonical_channel_resource_tables(self) -> None:
-        for path in AI_CHANNEL_ROUTE_CONTRACT_PATHS:
-            with self.subTest(path=path.relative_to(ROOT)):
-                self.assertTrue(path.is_file(), f"AI channel route contract path is missing: {path}")
+    def test_ai_upstream_route_contracts_use_supplier_account_resource_tables(self) -> None:
+        for path in AI_UPSTREAM_ROUTE_CONTRACT_PATHS:
+            with self.subTest(path=path):
+                self.assertTrue(path.is_file(), f"AI upstream route contract path is missing: {path}")
                 text = read_text(path)
-                self.assertRegex(
-                    text,
-                    r"\b(?:ai_channel|ai_channel_group|ai_resource|ai_channel_resource)\b",
-                    f"{path.relative_to(ROOT)} must reference canonical AI channel/resource route tables.",
+                self.assertTrue(
+                    any(table_name in text for table_name in AI_UPSTREAM_ROUTE_REQUIRED_TABLES),
+                    f"{path} must reference canonical AI supplier/account/resource route tables.",
                 )
 
     def test_obsolete_router_tables_are_removed_from_schema_contract_and_runtime(self) -> None:
@@ -886,14 +945,14 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                             f"{table_name} must not be recreated in runtime schema, SQL, or fixtures.",
                         )
 
-    def test_ai_channel_route_runtime_uses_channel_route_vocabulary(self) -> None:
+    def test_ai_upstream_route_runtime_uses_account_group_vocabulary(self) -> None:
         forbidden_fragments = (
             "account" + "_pool",
             "Account" + "Pool",
         )
         paths = [
             path
-            for root in AI_CHANNEL_ROUTE_RUNTIME_ROOTS
+            for root in AI_UPSTREAM_ROUTE_RUNTIME_ROOTS
             for path in root.rglob("*.rs")
             if "target" not in path.parts
         ]
@@ -904,28 +963,11 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     fragment,
                     text,
                     f"{fragment} leaked into {path.relative_to(ROOT)}; "
-                    "AI channel routing must use channel route/group/resource vocabulary.",
+                    "AI upstream routing must use supplier/account/account-group/resource vocabulary.",
                 )
 
     def test_catalog_importers_do_not_use_region_in_model_identity_uuids(self) -> None:
-        importer_paths = (
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "model_catalog_import.rs",
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "postgres"
-            / "model_catalog_import.rs",
-        )
+        importer_paths = (MODELS_CATALOG_IMPORT_PATH, MODELS_CATALOG_STORE_PATH)
         for path in importer_paths:
             source = read_text(path)
             for uuid_prefix in ("sdk-model", "sdk-cap"):
@@ -935,35 +977,19 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                         source,
                         re.DOTALL,
                     ),
-                    f"{uuid_prefix} identity UUID in {path.relative_to(ROOT)} must be vendor/model based; "
+                        f"{uuid_prefix} identity UUID in {path.relative_to(ROOT.parent)} must be vendor/model based; "
                     "region belongs to pricing, ranking, and provider endpoint resources.",
                 )
 
     def test_postgres_catalog_importer_casts_decimal_string_parameters(self) -> None:
-        source = read_text(
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "postgres"
-            / "model_catalog_import.rs"
-        )
+        source = read_text(MODELS_CATALOG_STORE_PATH)
 
         for fragment in (
-            "CAST($11 AS NUMERIC)",
-            "$31::jsonb",
-            "CAST($32 AS NUMERIC)",
-            "CAST($17 AS NUMERIC)",
-            "CAST($18 AS NUMERIC)",
-            "CAST($19 AS NUMERIC)",
-            "CAST($20 AS NUMERIC)",
-            "$25::timestamptz",
-            "$26::timestamptz",
-            "$7::date",
-            "CAST($24 AS NUMERIC)",
-            "CAST($25 AS NUMERIC)",
+            "$4::timestamptz",
+            "$5::timestamptz",
+            "$13::numeric",
+            "$16::timestamptz",
+            "unit_price::text AS unit_price",
         ):
             self.assertIn(
                 fragment,
@@ -1048,19 +1074,21 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             / "infrastructure"
             / "sql"
         )
-        installer_source = read_text(product_sql_dir / "installer.rs")
         admin_catalog_source = read_text(
             product_sql_dir / "postgres" / "admin_catalog_store.rs"
+        )
+        admin_marketing_source = read_text(
+            product_sql_dir / "postgres" / "admin_marketing_store.rs"
         )
 
         self.assertIn(
             "'commerce-recharge', 1, 0, 'active'",
-            installer_source,
-            "PostgreSQL commerce bootstrap must write integer primary_flag values.",
+            admin_marketing_source,
+            "PostgreSQL recharge product writes must use the integer primary_flag contract.",
         )
         self.assertNotIn(
             "'commerce-recharge', TRUE, 0, 'active'",
-            installer_source,
+            admin_marketing_source,
         )
         self.assertIn(
             ".bind(if index == 0 { 1 } else { 0 })",
@@ -1127,10 +1155,21 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
 
     def test_project_docs_do_not_document_removed_router_tables(self) -> None:
         offenders = []
-        for path in (ROOT / "docs").rglob("*.md"):
-            if not path.is_file():
-                continue
+        retired_authority_notice = re.compile(
+            r"The retired upstream aggregates are not valid production authorities:\s*"
+            r"`ai_provider`, `ai_site\*`, `ai_channel\*`, `ai_upstream_pool`,\s*"
+            r"`integration_provider_account`, and `integration_service_provider\*`\."
+        )
+        for path in CANON_DOCUMENTATION_PATHS:
+            self.assertTrue(path.is_file(), f"Canonical documentation path is missing: {path}")
             text = read_text(path)
+            if path.name == "TECH_ARCHITECTURE.md":
+                text, notice_count = retired_authority_notice.subn("", text)
+                self.assertEqual(
+                    1,
+                    notice_count,
+                    "Technical architecture must explicitly identify retired upstream authorities once.",
+                )
             for legacy in (*sorted(OBSOLETE_ROUTER_TABLES), "ai_channel_model", "ai_channel_endpoint", "ChannelEndpointTemplate"):
                 for match in re.finditer(re.escape(legacy), text):
                     line_no = text.count("\n", 0, match.start()) + 1
@@ -1140,7 +1179,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         self.assertEqual(
             [],
             offenders,
-            "Project docs must describe canonical resource/provider-edge router tables, "
+            "Canonical project docs must describe supplier/account/resource router tables, "
             "not removed router tables.",
         )
 
@@ -1185,15 +1224,21 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     self.assertIn(meter, source)
 
     def test_model_vendor_domain_types_use_unique_vendor_identity_not_region_or_product_aliases(self) -> None:
-        registry = load_registry()
-        values = registry["domain_names"]["model_vendor"]["builtin_values"]
-        vendor_codes = {
-            item.get("code")
-            for item in values
-            if isinstance(item, dict)
-        }
+        vendor_files = sorted((SDKWORK_MODELS_ROOT / "models").glob("*/*/vendor.json"))
+        self.assertTrue(vendor_files, "sdkwork-models vendor catalog must be available")
+        vendor_codes = set()
+        for path in vendor_files:
+            payload = json.loads(read_text(path))
+            vendor_code = payload.get("vendorCode")
+            self.assertEqual(
+                path.parents[1].name,
+                vendor_code,
+                f"{path.relative_to(ROOT.parent)} must use one stable vendor identity across regions.",
+            )
+            vendor_codes.add(vendor_code)
 
-        self.assertTrue(REQUIRED_MODEL_VENDOR_CODES.issubset(vendor_codes))
+        catalog_vendor_codes = REQUIRED_MODEL_VENDOR_CODES - {"custom", "unknown"}
+        self.assertTrue(catalog_vendor_codes.issubset(vendor_codes))
         self.assertTrue(FORBIDDEN_MODEL_VENDOR_CODES.isdisjoint(vendor_codes))
 
         generated_sources = {
@@ -1259,8 +1304,9 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         self.assertIn("region_code", ai_model_pricing.get("columns", {}))
         self.assertIn("region_code", ai_model_pricing.get("required_columns", []))
         self.assertIn("region_code", ai_model_pricing.get("not_null_columns", []))
-        for column in ("provider_code", "channel_id"):
+        for column in ("supplier_code", "provider_code", "account_id"):
             self.assertIn(column, ai_model_pricing.get("columns", {}))
+        self.assertNotIn("channel_id", ai_model_pricing.get("columns", {}))
         self.assertEqual(
             [
                 "tenant_id",
@@ -1295,12 +1341,6 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         self.assertNotIn("region_code", model_indexes["idx_ai_model_catalog_search"])
 
         capability_tables = {
-            "ai_provider",
-            "ai_channel",
-            "ai_channel_resource",
-            "ai_channel_group",
-            "ai_channel_group_member",
-            "ai_channel_group_resource",
             "ai_modality",
             "ai_api_endpoint",
             "ai_vendor_modality",
@@ -1315,36 +1355,106 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         self.assertTrue(capability_tables.issubset(tables))
 
         self.assertTrue(
-            set(AI_CHANNEL_ROUTE_REQUIRED_TABLES).issubset(tables),
-            "AI routing schema must expose the canonical channel/resource/group route table set.",
+            set(AI_UPSTREAM_ROUTE_REQUIRED_TABLES).issubset(tables),
+            "AI routing schema must expose the canonical supplier/account/resource route table set.",
         )
 
-        channel = tables["ai_channel"]
+        supplier = tables["ai_upstream_supplier"]
         for column in (
-            "channel_code",
-            "channel_name",
-            "channel_type",
-            "provider_code",
+            "supplier_code",
+            "supplier_name",
+            "supplier_type",
+            "adapter_code",
             "protocol_code",
-            "credential_ref",
-            "base_url",
-            "health_status",
+            "region_code",
         ):
-            self.assertIn(column, channel.get("columns", {}))
+            self.assertIn(column, supplier.get("columns", {}))
 
-        channel_group = tables["ai_channel_group"]
-        for column in ("group_code", "group_name", "group_type", "routing_policy_id", "pricing_plan_code"):
-            self.assertIn(column, channel_group.get("columns", {}))
+        supplier_endpoint = tables["ai_upstream_supplier_endpoint"]
+        for column in (
+            "supplier_id",
+            "supplier_code",
+            "endpoint_code",
+            "base_url",
+            "protocol_code",
+            "region_code",
+            "priority",
+            "routing_weight",
+            "timeout_ms",
+        ):
+            self.assertIn(column, supplier_endpoint.get("columns", {}))
 
-        group_member = tables["ai_channel_group_member"]
-        for column in ("channel_group_id", "channel_id", "priority", "weight", "effective_from", "effective_to"):
+        supplier_auth_method = tables["ai_upstream_supplier_auth_method"]
+        for column in (
+            "supplier_id",
+            "supplier_code",
+            "auth_method_code",
+            "auth_type",
+            "runtime_auth_config",
+        ):
+            self.assertIn(column, supplier_auth_method.get("columns", {}))
+
+        account = tables["ai_upstream_account"]
+        for column in (
+            "supplier_id",
+            "supplier_code",
+            "preferred_endpoint_id",
+            "account_code",
+            "auth_method_code",
+            "region_code",
+            "retry_policy",
+            "circuit_breaker_policy",
+        ):
+            self.assertIn(column, account.get("columns", {}))
+
+        credential = tables["ai_upstream_account_credential"]
+        for column in (
+            "account_id",
+            "auth_method_code",
+            "secret_ciphertext",
+            "secret_key_id",
+            "secret_fingerprint",
+            "credential_version",
+            "is_active",
+        ):
+            self.assertIn(column, credential.get("columns", {}))
+
+        account_group = tables["ai_upstream_account_group"]
+        for column in (
+            "group_code",
+            "group_name",
+            "group_type",
+            "routing_strategy",
+            "fallback_mode",
+            "routing_policy_id",
+            "pricing_plan_code",
+        ):
+            self.assertIn(column, account_group.get("columns", {}))
+
+        group_member = tables["ai_upstream_account_group_member"]
+        for column in (
+            "account_group_id",
+            "account_id",
+            "priority",
+            "routing_weight",
+            "effective_from",
+            "effective_to",
+        ):
             self.assertIn(column, group_member.get("columns", {}))
 
-        group_resource = tables["ai_channel_group_resource"]
-        for column in ("channel_group_id", "resource_id", "resource_group_id", "grant_type", "priority"):
+        group_resource = tables["ai_upstream_account_group_resource"]
+        for column in ("account_group_id", "resource_id", "resource_group_id", "grant_type", "priority"):
             self.assertIn(column, group_resource.get("columns", {}))
         for column in ("resource_code", "resource_group_code"):
             column_spec = group_resource["columns"][column]
+            self.assertIsInstance(column_spec, dict)
+            self.assertEqual("NOT NULL DEFAULT ''", column_spec.get("constraints"))
+
+        supplier_resource = tables["ai_upstream_supplier_resource"]
+        for column in ("supplier_id", "supplier_code", "resource_id", "resource_group_id", "grant_type", "priority"):
+            self.assertIn(column, supplier_resource.get("columns", {}))
+        for column in ("resource_code", "resource_group_code"):
+            column_spec = supplier_resource["columns"][column]
             self.assertIsInstance(column_spec, dict)
             self.assertEqual("NOT NULL DEFAULT ''", column_spec.get("constraints"))
 
@@ -1392,14 +1502,6 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                 "otherwise duplicate seed/admin members can bypass ON CONFLICT through NULL semantics.",
             )
 
-        channel_resource = tables["ai_channel_resource"]
-        for column in ("channel_id", "resource_code", "resource_group_code", "grant_type", "priority"):
-            self.assertIn(column, channel_resource.get("columns", {}))
-        for column in ("resource_code", "resource_group_code"):
-            column_spec = channel_resource["columns"][column]
-            self.assertIsInstance(column_spec, dict)
-            self.assertEqual("NOT NULL DEFAULT ''", column_spec.get("constraints"))
-
         sdkwork_models_root = SDKWORK_MODELS_ROOT / "models"
         self.assertTrue((sdkwork_models_root / "minimax" / "cn" / "vendor.json").is_file())
         self.assertTrue((sdkwork_models_root / "minimax" / "global" / "vendor.json").is_file())
@@ -1430,7 +1532,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     self.assertEqual(
                         expected_catalog_key,
                         model_payload.get("catalogKey"),
-                        f"{model_file.relative_to(ROOT)} must use vendor/model as model identity; "
+                        f"{model_file.relative_to(ROOT.parent)} must use vendor/model as model identity; "
                         "regionCode is a separate deployment/pricing dimension.",
                     )
                 for pricing_file in (region_dir / "pricing").glob("*.json"):
@@ -1441,7 +1543,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     self.assertEqual(
                         expected_catalog_key,
                         pricing_payload.get("catalogKey"),
-                        f"{pricing_file.relative_to(ROOT)} must use vendor/model as pricing subject; "
+                        f"{pricing_file.relative_to(ROOT.parent)} must use vendor/model as pricing subject; "
                         "regionCode remains the regional price dimension.",
                     )
                 rankings_file = region_dir / "rankings.json"
@@ -1453,18 +1555,12 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                             self.assertEqual(
                                 expected_catalog_key,
                                 item.get("catalogKey"),
-                                f"{rankings_file.relative_to(ROOT)} must use vendor/model ranking identity; "
+                                f"{rankings_file.relative_to(ROOT.parent)} must use vendor/model ranking identity; "
                                 "regionCode remains the regional ranking context.",
                             )
 
-        importer_source = read_text(
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "model_catalog_import.rs"
+        importer_source = read_text(MODELS_CATALOG_IMPORT_PATH) + read_text(
+            MODELS_CATALOG_STORE_PATH
         )
         self.assertNotIn(
             "format!(\"{vendor_code}/{region_code}/{model_id}\")",
@@ -1511,7 +1607,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     )
 
     def test_gateway_usage_does_not_recreate_regional_requested_catalog_key_compatibility(self) -> None:
-        source = read_text(ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "passthrough.rs")
+        source = read_text(ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "passthrough.rs")
         domain_source = read_text(MODELS_CATALOG_DOMAIN_PATH)
         self.assertNotIn(
             "canonical_adapter_usage_catalog_key",
@@ -1555,13 +1651,10 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         )
 
     def test_regional_catalog_key_guards_use_shared_domain_region_standard(self) -> None:
-        direct_region_guard_sources = [
-            ROOT / "services" / "sdkwork-clawrouter-app-api-server" / "tests" / "model_rankings_route.rs",
-            MODELS_CATALOG_DOMAIN_PATH,
-        ]
+        direct_region_guard_sources = [MODELS_CATALOG_DOMAIN_PATH]
         for path in direct_region_guard_sources:
             source = read_text(path)
-            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+            with self.subTest(path=path.relative_to(ROOT.parent).as_posix()):
                 self.assertNotIn(
                     "known_region_segment",
                     source,
@@ -1573,7 +1666,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     source,
                     "Regional catalog-key guards must reject region segments through the shared domain standard.",
                 )
-        passthrough_source = read_text(ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "passthrough.rs")
+        passthrough_source = read_text(ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "passthrough.rs")
         self.assertIn(
             "ensure_canonical_model_catalog_key",
             passthrough_source,
@@ -1614,65 +1707,62 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     "Persistence and analytics catalog-key handling must reuse the shared domain identity standard.",
                 )
 
-    def test_app_routing_channel_store_uses_resource_bindings_not_model_parsing(self) -> None:
-        channel_store_sources = [
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "app_routing_channel_command_store.rs",
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "postgres"
-            / "app_routing_channel_command_store.rs",
-        ]
-        for path in channel_store_sources:
+    def test_upstream_resource_stores_use_resource_bindings_not_model_parsing(self) -> None:
+        upstream_store_contracts = (
+            (
+                ROOT
+                / "services"
+                / "sdkwork-clawrouter-router-service"
+                / "src"
+                / "infrastructure"
+                / "sql"
+                / "postgres"
+                / "admin_upstream_store"
+                / "supplier_resource.rs",
+                "replace_upstream_supplier_resources",
+                "ai_upstream_supplier_resource",
+            ),
+            (
+                ROOT
+                / "services"
+                / "sdkwork-clawrouter-router-service"
+                / "src"
+                / "infrastructure"
+                / "sql"
+                / "postgres"
+                / "admin_upstream_store"
+                / "account_group_resource.rs",
+                "replace_upstream_account_group_resources",
+                "ai_upstream_account_group_resource",
+            ),
+        )
+        for path, replace_operation, table_name in upstream_store_contracts:
             source = read_text(path)
             with self.subTest(path=path.relative_to(ROOT).as_posix()):
                 self.assertNotIn(
                     "ai_channel_model",
                     source,
-                    "App routing channel stores must not recreate direct account-to-model bindings.",
-                )
-                self.assertNotIn(
-                    "replace_channel_models",
-                    source,
-                    "App routing channel stores must bind account access through resources.",
+                    "Upstream stores must not recreate direct account-to-model bindings.",
                 )
                 self.assertIn(
-                    "replace_channel_resource_bindings",
+                    replace_operation,
                     source,
-                    "App routing channel stores must maintain channel access through ai_channel_resource.",
+                    "Upstream stores must expose explicit resource replacement operations.",
                 )
                 self.assertIn(
-                    "ai_channel_resource",
+                    table_name,
                     source,
-                    "App routing channel stores must persist channel resource bindings.",
+                    "Upstream stores must persist canonical resource bindings.",
                 )
                 self.assertNotRegex(
                     source,
                     r"parse_model_catalog_identity|ensure_canonical_model_catalog_key",
-                    "App routing account setup should not parse model catalog keys; "
+                    "Upstream resource setup should not parse model catalog keys; "
                     "model selection belongs to resource routing and model mapping.",
                 )
 
-    def test_admin_channel_store_uses_resource_bindings_not_channel_models(self) -> None:
-        channel_store_sources = [
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "admin_channel_store.rs",
+    def test_app_routing_read_store_uses_account_group_resource_bindings(self) -> None:
+        path = (
             ROOT
             / "services"
             / "sdkwork-clawrouter-router-service"
@@ -1680,51 +1770,16 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             / "infrastructure"
             / "sql"
             / "postgres"
-            / "admin_channel_store.rs",
-        ]
-        for path in channel_store_sources:
-            source = read_text(path)
-            with self.subTest(path=path.relative_to(ROOT).as_posix()):
-                self.assertNotIn(
-                    "ai_channel_model",
-                    source,
-                    "Admin channel stores must not recreate direct account-to-model bindings.",
-                )
-                self.assertNotIn(
-                    "replace_channel_models",
-                    source,
-                    "Admin channel stores must use resource bindings instead of model replacement helpers.",
-                )
-                self.assertIn(
-                    "replace_ai_resource_bindings",
-                    source,
-                    "Admin channel stores must maintain channel access through ai_channel_resource.",
-                )
-                self.assertIn(
-                    "ai_channel_resource",
-                    source,
-                    "Admin channel stores must persist channel resource bindings.",
-                )
-                self.assertNotIn(
-                    "models:",
-                    source,
-                    "Admin channel read models must not expose direct account model bindings.",
-                )
-                self.assertIn(
-                    "resource_codes: ai_resources.get(&id).cloned().unwrap_or_default()",
-                    source,
-                    "Admin channel read models must expose account routing through resource bindings.",
-                )
+            / "app_routing_read_store.rs"
+        )
+        source = read_text(path)
+        self.assertIn("ai_upstream_account_group_resource", source)
+        self.assertIn("resource_codes_json", source)
+        self.assertNotIn("ai_channel_model", source)
+        self.assertNotRegex(source, r"parse_model_catalog_identity|ensure_canonical_model_catalog_key")
 
     def test_portal_catalog_key_parsers_reuse_shared_identity_standard(self) -> None:
         parser_sources = [
-            ROOT
-            / "apps"
-            / "sdkwork-clawrouter-pc"
-            / "packages"
-            / "sdkwork-clawrouter-pc-admin-channel"
-            / "src"
-            / "channelService.ts",
             ROOT
             / "apps"
             / "sdkwork-clawrouter-pc"
@@ -1787,14 +1842,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         self.assertIn("update_model:anthropic/claude-3-opus:", runtime_test)
 
     def test_app_model_reference_prices_are_region_scoped(self) -> None:
-        contract_source = read_text(
-            ROOT
-            / "docs"
-            / "schema-registry"
-            / "frontend-field-contracts"
-            / "operations"
-            / "app-ai.yaml"
-        )
+        contract_source = read_text(FRONTEND_CONTRACT_PATH)
         runtime_catalog_source = read_text(
             ROOT
             / "apps"
@@ -1836,16 +1884,6 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         registry = load_schema_registry(REGISTRY_PATH)
         tables = {table["table"]: table for table in registry["tables"]}
         generated_schema = read_text(GENERATED_SCHEMA_PATH)
-        sqlite_recorder_source = read_text(
-            ROOT
-            / "services"
-            / "sdkwork-clawrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-            / "sqlite"
-            / "gateway_usage_recorder.rs"
-        )
         postgres_recorder_source = read_text(
             ROOT
             / "services"
@@ -1872,52 +1910,61 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                 table_sql = create_table_block(generated_schema, table_name)
                 self.assertIn("region_code VARCHAR(64)", table_sql)
         self.assertIn("pub region_code: String", port_source)
-        for source in (sqlite_recorder_source, postgres_recorder_source):
-            self.assertIn("region_code", source)
-            self.assertIn(".bind(&command.region_code)", source)
+        self.assertIn("region_code", postgres_recorder_source)
+        self.assertIn(".bind(&command.region_code)", postgres_recorder_source)
 
     def test_usage_log_read_models_expose_deployment_region(self) -> None:
-        admin_record_contract = yaml.safe_load(
-            read_text(ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "models" / "admin-record.yaml")
+        frontend_contract = yaml.safe_load(read_text(FRONTEND_CONTRACT_PATH))
+        frontend_models = frontend_contract["frontend_models"]
+        admin_record_contract = next(
+            model
+            for model in frontend_models
+            if model.get("interface") == "LogRecord"
+            and model.get("source", "").endswith("/recordService.ts")
         )
-        console_usage_contract = yaml.safe_load(
-            read_text(ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "models" / "console-usage.yaml")
-        )
-        backend_system_contract = yaml.safe_load(
-            read_text(ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "operations" / "backend-system.yaml")
-        )
-        app_ai_contract = yaml.safe_load(
-            read_text(ROOT / "docs" / "schema-registry" / "frontend-field-contracts" / "operations" / "app-ai.yaml")
+        console_usage_contract = next(
+            model
+            for model in frontend_models
+            if model.get("interface") == "UsageLog"
+            and model.get("source", "").endswith("/usageService.ts")
         )
         backend_openapi = load_generated_openapi(BACKEND_OPENAPI_PATH)
         app_openapi = load_generated_openapi(APP_OPENAPI_PATH)
         sources = {
             "admin_port": read_text(ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports" / "admin_record_store.rs"),
             "usage_port": read_text(ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "ports" / "usage_logs_read_store.rs"),
-            "sqlite_admin": read_text(ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite" / "admin_record_store.rs"),
             "postgres_admin": read_text(ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "admin_record_store.rs"),
-            "sqlite_usage": read_text(ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite" / "usage_logs_read_store.rs"),
             "postgres_usage": read_text(ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "usage_logs_read_store.rs"),
             "admin_service": read_text(ROOT / "apps" / "sdkwork-clawrouter-pc" / "packages" / "sdkwork-clawrouter-pc-admin-record" / "src" / "recordService.ts"),
             "usage_service": read_text(ROOT / "apps" / "sdkwork-clawrouter-pc" / "packages" / "sdkwork-clawrouter-pc-console-usage" / "src" / "usageService.ts"),
         }
 
         for contract in (admin_record_contract, console_usage_contract):
-            model_fields = contract["frontend_models"][0]["fields"]
-            self.assertIn("regionCode", model_fields)
+            self.assertIn("regionCode", contract["fields"])
+        self.assertIn("requestId", admin_record_contract["fields"])
+        self.assertNotIn("gatewayRequestId", admin_record_contract["fields"])
 
-        for operation_contract, schema_name in (
-            (backend_system_contract, "AdminRecordLogItem"),
-            (app_ai_contract, "UsageLogItem"),
-        ):
+        for schema_name in ("AdminRecordLogItem", "UsageLogItem"):
             response_items = next(
-                operation["response_schema"]["properties"]["logs"]["items"]
-                for operation in operation_contract["frontend_operations"]
-                if operation["response_schema"]["properties"].get("logs")
+                operation["response_schema"]["properties"]["items"]["items"]
+                for operation in frontend_contract["frontend_operations"]
+                if operation.get("response_schema", {}).get("properties", {}).get("items")
+                and operation["response_schema"]["properties"]["items"]["items"].get("name") == schema_name
             )
             self.assertEqual(schema_name, response_items["name"])
             self.assertIn("regionCode", response_items["required"])
             self.assertIn("regionCode", response_items["properties"])
+
+        admin_record_items = next(
+            operation["response_schema"]["properties"]["items"]["items"]
+            for operation in frontend_contract["frontend_operations"]
+            if operation.get("api_path") == "/backend/v3/api/system/records"
+        )
+        self.assertIn("requestId", admin_record_items["required"])
+        self.assertNotIn("gatewayRequestId", admin_record_items["properties"])
+        for token_field in ("inputTokens", "cacheReadTokens", "outputTokens"):
+            self.assertEqual("string", admin_record_items["properties"][token_field]["type"])
+            self.assertEqual("int64", admin_record_items["properties"][token_field]["format"])
 
         for spec, schema_name in (
             (backend_openapi, "AdminRecordLogItem"),
@@ -1972,9 +2019,9 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         )
         offenders = []
         for path in (
-            ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
-            ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_http.rs",
-            ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_router.rs",
+            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
+            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_http.rs",
+            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "invocation_router.rs",
         ):
             text = read_text(path)
             negative_ranges = [
@@ -2001,7 +2048,8 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         )
         offenders = []
         for path in (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "model_rankings_read_store.rs",
+            ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "postgres_model_rankings_read_store_sql_contract.rs",
+            ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "model_rankings_service.rs",
         ):
             text = read_text(path)
             for match in regional_catalog_key.finditer(text):
@@ -2047,9 +2095,9 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         )
         offenders = []
         for path in (
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "sqlite_gateway_usage_recorder.rs",
+            ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "postgres_gateway_usage_recorder_sql_contract.rs",
             ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "postgres_transaction_integration.rs",
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "sqlite_admin_analytics_read_store.rs",
+            ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "postgres_admin_analytics_read_store_sql_contract.rs",
             ROOT / "services" / "sdkwork-clawrouter-router-service" / "tests" / "admin_record_api.rs",
         ):
             text = read_text(path)
@@ -2135,27 +2183,19 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             "API and gateway fixtures must use vendor/model catalog keys; deployment region is a route, endpoint, pricing, and usage dimension.",
         )
 
-    def test_rust_test_support_uses_canonical_model_catalog_schema(self) -> None:
+    def test_rust_test_support_does_not_duplicate_model_catalog_schema(self) -> None:
         source = read_text(RUST_TEST_SUPPORT_PATH)
 
+        self.assertNotIn(
+            "CREATE TABLE",
+            source,
+            "Shared test support must not embed a second database schema authority.",
+        )
         for table in CANONICAL_TABLES:
-            self.assertIn(f"CREATE TABLE {table}", source)
+            self.assertNotIn(table, source)
         for legacy in LEGACY_MODEL_PATTERNS:
             self.assertNotIn(legacy, source)
-        for meter in REQUIRED_BILLING_METERS - {"unknown"}:
-            self.assertIn(meter, source)
-        regional_catalog_key = re.compile(r"openai/global/(?:gpt-4o-mini|text-embedding-3-small)")
-        offenders = []
-        for match in regional_catalog_key.finditer(source):
-            line_no = source.count("\n", 0, match.start()) + 1
-            line = source.splitlines()[line_no - 1].strip()
-            offenders.append(f"{RUST_TEST_SUPPORT_PATH.relative_to(ROOT)}:{line_no}: {line}")
-        self.assertEqual(
-            [],
-            offenders,
-            "Shared Rust test support seed data must use vendor/model catalog keys; "
-            "region_code columns keep regional pricing and ranking context.",
-        )
+        self.assertIn("assert_server_generated_request_id", source)
 
     def test_environment_seed_data_replaces_legacy_model_files(self) -> None:
         if not DATA_DIR.is_dir():
@@ -2197,16 +2237,13 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             "dev seed must include multimodal model examples",
         )
 
-    def test_rust_database_installer_has_explicit_install_state_and_cli(self) -> None:
+    def test_rust_database_installer_delegates_schema_and_catalog_ownership(self) -> None:
         installer_source = read_source(RUST_INSTALLER_PATH)
         cli_source = read_source(RUST_INSTALLER_CLI_PATH)
-        registry_source = render_schema_registry(REGISTRY_PATH)
-        generated_schema = read_text(GENERATED_SCHEMA_PATH)
 
         for required in (
-            "system_installation_state",
-            "system_schema_migration",
             "InstallationStatus",
+            "ensure_bootstrap_data",
             "ensure_installed",
             "CURRENT_SCHEMA_VERSION",
             "ENV_INSTALL_ENVIRONMENT",
@@ -2217,69 +2254,35 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             "refresh_catalog",
             "NotInstalled",
             "UpgradeRequired",
+            "Incomplete",
             "Corrupt",
+            "CatalogUnavailable",
             "load_install_model_catalog",
-            "catalog_completeness_spec",
-            "sdkwork_models_catalog_complete",
-            "generated_schema_table_names",
-            "last_catalog_refresh_status().await?",
-            "sqlite_last_catalog_refresh_status",
-            "postgres_last_catalog_refresh_status",
-            "catalog_refresh_status_code",
-            "catalog_refresh_metadata_is_dry_run",
-            "record_failed_catalog_refresh",
-            "try_record_failed_catalog_refresh",
-            "sqlite_record_failed_catalog_refresh",
-            "postgres_record_failed_catalog_refresh",
-            "failed_catalog_refresh_row",
-            "CATALOG_REFRESH_SEQUENCE",
-            "catalog_refresh_id_with_entropy",
-            "error_message_masked",
-            "last_catalog_refresh_status",
-            '"not_run"',
-            '"success"',
-            '"dry_run"',
-            '"failed"',
+            "MODEL_CATALOG_TABLES",
+            "require_application_schema",
+            "require_model_catalog_schema",
+            "postgres_table_exists",
+            "AdminModelStore",
+            "with_admin_model_store",
+            "SyncAdminModelCatalogCommand",
+            ".sync_catalog(command)",
+            "snapshot_id: item.snapshot_id",
+            "sync_run_id: item.sync_run_id",
+            "import_postgres_ai_routing_seed",
         ):
             self.assertIn(required, installer_source)
 
+        self.assertNotIn("CREATE TABLE", installer_source)
+        self.assertNotIn("system_installation_state", installer_source)
+        self.assertNotIn("system_schema_migration", installer_source)
+        self.assertNotIn("sqlite_", installer_source.lower())
         self.assertNotIn("CURRENT_CATALOG_VERSION", installer_source)
         self.assertNotIn("MIN_SDKWORK_MODELS_", installer_source)
-        self.assertNotIn('"succeeded"', installer_source)
-        self.assertNotIn('last_catalog_refresh_status: "not_run".to_owned()', installer_source)
-        self.assertIn("Some(loaded_catalog_version)", installer_source)
-        self.assertIn("let audit_options = options.clone();", installer_source)
-        self.assertIn("&audit_options", installer_source)
         self.assertIn("options.catalog_version.as_deref()", installer_source)
-        self.assertIn(".sync_catalog(command.clone())", installer_source)
-        self.assertIn("return Err(error);", installer_source)
-        self.assertIn("let _ = self", installer_source)
-        self.assertIn(".record_failed_catalog_refresh(options, catalog_root, catalog_version, error)", installer_source)
-        self.assertEqual(
-            2,
-            installer_source.count("ORDER BY started_at DESC, id DESC"),
-            "SQLite and Postgres refresh status queries must order by timestamp and id for deterministic latest status",
-        )
-        self.assertRegex(
-            installer_source,
-            r"CATALOG_REFRESH_SEQUENCE\.fetch_add\(1,\s*Ordering::Relaxed\)",
-        )
-        self.assertRegex(
-            installer_source,
-            r"Err\(error\)\s*=>\s*\{\s*self\.try_record_failed_catalog_refresh\(",
-        )
         self.assertNotIn("'ai_model_catalog_source'", installer_source)
         self.assertNotIn("'ai_model_catalog_sync_run'", installer_source)
-        self.assertNotIn("COUNT(1)\n        FROM sqlite_master\n        WHERE type = 'table'\n          AND name IN", installer_source)
-        for model_file in (ROOT / "data" / "sdkwork-models" / "models").glob("*/models/*.json"):
-            model_payload = json.loads(read_text(model_file))
-            model_id = model_payload.get("modelId")
-            if model_id:
-                self.assertNotIn(
-                    model_id,
-                    installer_source,
-                    f"installer must load model facts from sdkwork-models, not hardcode {model_id}",
-                )
+        self.assertIn("schema is owned by", installer_source)
+        self.assertIn("lifecycle host", installer_source)
 
         for command in ("status", "install", "upgrade", "ensure", "refresh-catalog"):
             self.assertIn(f"\"{command}\"", cli_source)
@@ -2304,17 +2307,24 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             "ExitCode",
             "print_json",
             "last_catalog_refresh_status",
+            "require_postgres_installer_database",
+            "connect_models_database",
+            "connect_claw_router_database",
+            "apply_explicit_schema_lifecycle_if_required",
+            "PostgresModelCatalogAdminStore",
+            ".with_admin_model_store",
         ):
             self.assertIn(required, cli_source)
+        self.assertNotIn("run_sqlite", cli_source)
+        self.assertNotIn("DatabaseInstaller::for_sqlite", cli_source)
+        self.assertIn("clawrouterctl requires PostgreSQL", cli_source)
         self.assertIn("serde_json::to_string", cli_source)
         self.assertLess(
             cli_source.index("let command = parse_cli_command"),
             cli_source.index("DatabaseConfig::from_env_or_initialize()"),
             "installer CLI must validate command syntax before requiring database environment",
         )
-        run_body = cli_source[
-            cli_source.index("async fn run()") : cli_source.index("async fn run_sqlite")
-        ]
+        run_body = cli_source[cli_source.index("async fn run()") : cli_source.index("fn require_postgres_installer_database")]
         self.assertIn("let command = parse_cli_command", run_body)
         self.assertLess(
             run_body.index("let command = parse_cli_command"),
@@ -2361,19 +2371,21 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         self.assertIn('"invalid_state"', cli_source)
         self.assertIn('"database_error"', cli_source)
         self.assertIn('"catalog_error"', cli_source)
-        self.assertIn('"commerce_error"', cli_source)
+        self.assertIn('"installer_error"', cli_source)
         self.assertNotIn("changed={}", cli_source)
         self.assertNotIn("catalog_version={}", cli_source)
 
         for service_runtime in (
-            ROOT / "services" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
+            ROOT / "crates" / "sdkwork-clawrouter-edge-runtime" / "src" / "runtime.rs",
             ROOT / "crates" / "sdkwork-routes-clawrouter-app-api" / "src" / "routes.rs",
             ROOT / "crates" / "sdkwork-routes-clawrouter-backend-api" / "src" / "routes.rs",
         ):
             source = read_text(service_runtime)
             self.assertIn("DatabaseInstaller", source)
+            self.assertIn("PostgresModelCatalogAdminStore", source)
+            self.assertIn(".with_admin_model_store", source)
             self.assertIn(".with_env_options()?", source)
-            self.assertIn(".ensure_installed()", source)
+            self.assertIn(".ensure_bootstrap_data()", source)
 
         workspace_launcher = read_text(ROOT / "scripts" / "dev" / "start-workspace.mjs")
         for required in (
@@ -2404,14 +2416,6 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             workspace_launcher.index("name: 'gateway'"),
             "dev startup must refresh model catalog data before starting Rust services",
         )
-
-        for table in SYSTEM_TABLES:
-            self.assertIn(f"- table: {table}", registry_source)
-            self.assertIn(f"CREATE TABLE IF NOT EXISTS {table}", generated_schema)
-            self.assertRegex(
-                generated_schema,
-                rf"CREATE TABLE IF NOT EXISTS {table} \(\r?\n\s+id BIGINT NOT NULL PRIMARY KEY,",
-            )
 
 
 if __name__ == "__main__":

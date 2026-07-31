@@ -224,7 +224,7 @@ async fn admin_model_command_route_creates_lists_and_syncs_catalog_models() {
         router.clone(),
         signed_request(
             "POST",
-            "/backend/v3/api/ai/models/refresh",
+            "/backend/v3/api/ai/models/sync",
             r#"{"source":"sdkwork_models","mode":"catalog_version_refresh","vendorCodes":["openai","google","openai"],"force":true,"catalogRoot":"D:/catalogs/sdkwork-models","catalogVersion":"2026.05.08.1"}"#,
         ),
     )

@@ -12,7 +12,6 @@ Workspace desktop commands are gateway-backed client commands. They start the
 desktop shell plus `sdkwork-api-cloud-gateway`, not a product backend service. Use
 `pnpm dev:server` for PostgreSQL-backed product server debugging and
 `pnpm dev:desktop:sqlite` for the client-local SQLite profile.
-Use `pnpm dev:server` for PostgreSQL-backed product server debugging.
 Desktop packages and desktop user data still use SQLite by default.
 
 Desktop SQLite defaults are unchanged by this profile:
@@ -67,7 +66,24 @@ SDKWORK_DATABASE_MAX_CONNECTIONS=10
 
 Do not commit `.env.postgres`. The repository only tracks `.env.postgres.example`.
 
-## 3. Start With PostgreSQL
+## 3. Start Local Redis
+
+The server development profile requires Redis for durable gateway accounting
+retries. Start a local Redis 7 instance on `127.0.0.1:6379`. A persistent Docker
+development instance can be created with:
+
+```powershell
+docker run -d --name sdkwork-dev-redis -p 6379:6379 -v sdkwork-dev-redis-data:/data redis:7-alpine redis-server --appendonly yes
+```
+
+For an existing stopped container, run `docker start sdkwork-dev-redis`. Verify
+the dependency with `docker exec sdkwork-dev-redis redis-cli ping`; the expected
+response is `PONG`.
+
+Redis remains disabled for the client-local desktop profile. Do not bypass the
+server requirement with an in-memory retry queue.
+
+## 4. Start With PostgreSQL
 
 Start the explicit product server workspace with PostgreSQL:
 
@@ -129,7 +145,7 @@ pnpm dev:desktop:sqlite
 Use that SQLite entrypoint, or a desktop package, when validating local data
 behavior. The PostgreSQL dev profile is not the desktop persistence default.
 
-## 4. Configuration Precedence
+## 5. Configuration Precedence
 
 Development startup resolves the database in this order:
 
@@ -142,7 +158,7 @@ Normal local PostgreSQL development should use the default profile or split fiel
 
 Unsupported engines fail startup. A PostgreSQL split-field profile must define `SDKWORK_DATABASE_HOST`, `SDKWORK_DATABASE_NAME`, `SDKWORK_DATABASE_USERNAME`, and `SDKWORK_DATABASE_PASSWORD`.
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 If product server startup shows SQLite in the dry-run output, remove the
 SQLite database override; product server development is PostgreSQL-only.
@@ -157,3 +173,7 @@ psql -h 127.0.0.1 -p 5432 -U sdkwork_ai_dev -d sdkwork_ai_dev -c "select 1;"
 ```
 
 Use `SDKWORK_DATABASE_SSL_MODE=disable` for local unencrypted PostgreSQL. Use `require` only when the local PostgreSQL server supports TLS.
+
+If startup reports that Redis is required, verify that the local instance is
+running and that `SDKWORK_CLAW_REDIS_ENABLED`, `SDKWORK_CLAW_REDIS_HOST`,
+`SDKWORK_CLAW_REDIS_PORT`, and `SDKWORK_CLAW_REDIS_DATABASE` match it.

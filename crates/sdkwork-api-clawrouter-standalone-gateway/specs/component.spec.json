@@ -67,11 +67,19 @@
   ],
   "contracts": {
     "layerRole": "runtime-gateway",
-    "publicExports": [],
+    "publicExports": [
+      "."
+    ],
     "providedPorts": [],
-    "requiredPorts": [],
+    "requiredPorts": [
+      {
+        "name": "clawrouterApiAssembly",
+        "export": "sdkwork_api_clawrouter_assembly::assemble_api_router"
+      }
+    ],
     "runtimeEntrypoints": [
-      "src/main.rs"
+      "src/main.rs",
+      "src/lib.rs#portal::mount_portal_static"
     ],
     "routeManifest": null,
     "sdkClients": [],
@@ -79,11 +87,14 @@
     "dependencyApiExports": [],
     "dependencyApiSurfaces": [],
     "events": [],
-    "configKeys": []
+    "configKeys": [
+      "SDKWORK_CLAWROUTER_APPLICATION_PUBLIC_INGRESS_BIND",
+      "SDKWORK_CLAW_ROUTER_PORTAL_STATIC_DIST"
+    ]
   },
   "verification": {
     "commands": [
-      "cargo check -p sdkwork-api-clawrouter-standalone-gateway"
+      "cargo test -p sdkwork-api-clawrouter-standalone-gateway"
     ]
   }
 }

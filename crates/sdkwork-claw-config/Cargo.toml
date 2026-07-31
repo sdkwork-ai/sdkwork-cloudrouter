@@ -9,5 +9,6 @@ serde.workspace = true
 serde_json.workspace = true
 sdkwork-claw-provider-adapter-contract.workspace = true
 sdkwork-claw-provider-adapter-registry.workspace = true
+sdkwork-database-config.workspace = true
 toml.workspace = true
 url.workspace = true

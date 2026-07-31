@@ -2620,7 +2620,7 @@ async fn insert_recharge_product_row(
         INSERT INTO commerce_product_spu_category
             (id, tenant_id, organization_id, spu_id, category_id, primary_flag, sort_order, status, created_at, updated_at)
         VALUES
-            ($1, $2::text, $3::text, $4, 'commerce-recharge', TRUE, 0, 'active', $5, $6)
+            ($1, $2::text, $3::text, $4, 'commerce-recharge', 1, 0, 'active', $5, $6)
         ON CONFLICT (tenant_id, spu_id, category_id) DO UPDATE SET
             organization_id = EXCLUDED.organization_id,
             primary_flag = EXCLUDED.primary_flag,
@@ -3396,27 +3396,6 @@ fn recharge_package_status_from_storage(value: &str) -> DomainResult<AdminRechar
             "unsupported recharge package seed status: {status}"
         ))),
     }
-}
-
-fn exchange_rule_matches_filters(
-    item: &AdminExchangeRuleItem,
-    query: &ListAdminExchangeRulesQuery,
-) -> bool {
-    query
-        .source_asset_type
-        .as_deref()
-        .map(|value| value == item.source_asset_type)
-        .unwrap_or(true)
-        && query
-            .target_asset_type
-            .as_deref()
-            .map(|value| value == item.target_asset_type)
-            .unwrap_or(true)
-        && query
-            .status
-            .as_deref()
-            .map(|value| value == item.status)
-            .unwrap_or(true)
 }
 
 fn payment_provider_label(value: &str) -> String {

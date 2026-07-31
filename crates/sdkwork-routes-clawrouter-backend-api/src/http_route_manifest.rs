@@ -398,7 +398,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/system/cache/overview",
         "system",
-        "cache.overview.list",
+        "cache.overview.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Post,
@@ -410,7 +410,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/system/dashboard/admin/overview",
         "system",
-        "dashboard.admin.overview.list",
+        "dashboard.admin.overview.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -434,7 +434,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/system/installation/status",
         "system",
-        "installation.status.list",
+        "installation.status.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -500,7 +500,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/system/runtime_region/settings",
         "system",
-        "runtimeRegion.settings.list",
+        "runtimeRegion.settings.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,
@@ -542,7 +542,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/system/site/settings",
         "system",
-        "site.settings.list",
+        "site.settings.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Patch,

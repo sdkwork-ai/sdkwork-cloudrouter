@@ -432,17 +432,25 @@ where
     if requested_model.contains('/') && catalog.find_model(requested_model).is_some() {
         return Ok(requested_model.to_owned());
     }
-    let matches = catalog
-        .list_models(None)
-        .into_iter()
-        .filter(|model| model_matches_requested(model, requested_model))
-        .collect::<Vec<_>>();
-    match matches.as_slice() {
-        [model] => Ok(model.catalog_key.clone()),
-        [] => Err(route_error(format!(
+    let mut first_catalog_key = None;
+    let mut ambiguous = false;
+    catalog.visit_models(None, &mut |model| {
+        if !model_matches_requested(model, requested_model) {
+            return true;
+        }
+        if first_catalog_key.is_none() {
+            first_catalog_key = Some(model.catalog_key.clone());
+            return true;
+        }
+        ambiguous = true;
+        false
+    });
+    match (first_catalog_key, ambiguous) {
+        (Some(catalog_key), false) => Ok(catalog_key),
+        (None, _) => Err(route_error(format!(
             "model is not available for route planning: {requested_model}"
         ))),
-        _ => Err(route_error(format!(
+        (Some(_), true) => Err(route_error(format!(
             "model id is ambiguous for route planning: {requested_model}"
         ))),
     }

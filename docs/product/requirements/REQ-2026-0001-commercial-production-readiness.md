@@ -68,12 +68,21 @@ artifacts without trustworthy evidence.
 13. Production logs, traces, metrics, health/readiness, dashboards, and alerts cover every security,
     provider-attempt, streaming, financial, reconciliation, outbox, and breaker lifecycle with
     bounded labels, secret/PII redaction, tested alert fire/resolve behavior, and runbook links.
+14. Admin analytics rejects unbounded or ambiguous time ranges, returns exact int64/decimal strings,
+    reads one PostgreSQL repeatable-read snapshot, limits trend/rank/distribution cardinality in SQL,
+    and has API, generated-SDK, strict-consumer, precision, and memory-bound regression evidence.
+15. Accounting rejects pricing snapshots above 16 KiB before parsing, rejects durable retry
+    envelopes above 32 KiB before decoding, stores only bounded evidence for oversized poison
+    records, and settles no more than 200 usage facts per claim without transferring oversized
+    historical snapshot text into the router process.
 
 ## Non-Functional Requirements
 
 - Security: Follow `SECURITY_SPEC.md`, least privilege, fail-closed egress, and write-only secrets.
 - Privacy: Provider routing must enforce declared data region and retention constraints.
-- Performance: Gateway p95 overhead below 50 ms; incremental SSE without a fixed body-size cap.
+- Performance: Gateway p95 overhead below 50 ms; incremental SSE without a fixed body-size cap;
+  list, analytics, batch, and projection paths enforce row and byte/cardinality budgets before
+  accumulating results in process memory.
 - Reliability: No unbounded stream lifetime, duplicate provider spend, partial settlement, or
   silent usage loss; every irreversible boundary has idempotency and recovery evidence.
 - Architecture: Preserve route/service/repository/adapter/runtime ownership and use focused ports.

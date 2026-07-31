@@ -15,8 +15,9 @@ const validReleaseEnv = Object.freeze({
   SDKWORK_CLAW_TOOL_API_RATE_LIMIT_WINDOW_SECONDS: '60',
 });
 
-test('release environment contract v4 documents optional edge private env keys', () => {
-  assert.equal(RELEASE_ENVIRONMENT_CONTRACT.version, 4);
+test('release environment contract v5 documents optional database and edge private env keys', () => {
+  assert.equal(RELEASE_ENVIRONMENT_CONTRACT.version, 5);
+  assert.deepEqual(RELEASE_ENVIRONMENT_CONTRACT.requiredReleaseEnv, []);
   for (const key of CLAW_ROUTER_RELEASE_EDGE_ENV_KEY_ORDER) {
     assert.ok(
       RELEASE_ENVIRONMENT_CONTRACT.optionalEdgePrivateEnv.includes(key),

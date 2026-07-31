@@ -812,6 +812,217 @@
         },
         "type": "object"
       },
+      "AdminDashboardOverview": {
+        "additionalProperties": false,
+        "description": "Admin dashboard overview schema exposed by Claw Router.",
+        "name": "AdminDashboardOverview",
+        "properties": {
+          "activeUsers": {
+            "description": "Active users field on admin dashboard overview.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "modelDistribution": {
+            "description": "Model distribution field on admin dashboard overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardPieChartItem"
+            },
+            "maxItems": 50,
+            "type": "array"
+          },
+          "multimodal": {
+            "description": "Multimodal field on admin dashboard overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardPieChartItem"
+            },
+            "maxItems": 16,
+            "type": "array"
+          },
+          "recentUsage": {
+            "description": "Recent usage field on admin dashboard overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardRecentUsageItem"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "traffic": {
+            "description": "Traffic field on admin dashboard overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardTrafficItem"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "userConsumption": {
+            "description": "User consumption field on admin dashboard overview.",
+            "items": {
+              "$ref": "#/components/schemas/AdminDashboardPieChartItem"
+            },
+            "maxItems": 50,
+            "type": "array"
+          }
+        },
+        "required": [
+          "activeUsers",
+          "userConsumption",
+          "multimodal",
+          "traffic",
+          "modelDistribution",
+          "recentUsage"
+        ],
+        "type": "object"
+      },
+      "AdminDashboardPieChartItem": {
+        "additionalProperties": false,
+        "description": "Admin dashboard pie chart item schema exposed by Claw Router.",
+        "properties": {
+          "color": {
+            "description": "Color field on admin dashboard pie chart item.",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "type": "string"
+          },
+          "name": {
+            "description": "Name field on admin dashboard pie chart item.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "value": {
+            "description": "Value field on admin dashboard pie chart item.",
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "color"
+        ],
+        "type": "object"
+      },
+      "AdminDashboardRecentUsageItem": {
+        "additionalProperties": false,
+        "description": "Admin dashboard recent usage item schema exposed by Claw Router.",
+        "properties": {
+          "billingMode": {
+            "description": "Billing mode field on admin dashboard recent usage item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "cost": {
+            "description": "Cost field on admin dashboard recent usage item.",
+            "maxLength": 64,
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on admin dashboard recent usage item.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "isApiUser": {
+            "description": "Is api user field on admin dashboard recent usage item.",
+            "type": "boolean"
+          },
+          "model": {
+            "description": "Model field on admin dashboard recent usage item.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on admin dashboard recent usage item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "time": {
+            "description": "Time field on admin dashboard recent usage item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "description": "Type field on admin dashboard recent usage item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "usageCount": {
+            "description": "Usage count field on admin dashboard recent usage item.",
+            "minimum": 0,
+            "type": "number"
+          },
+          "usageIn": {
+            "description": "Usage in field on admin dashboard recent usage item.",
+            "minimum": 0,
+            "type": "number"
+          },
+          "usageOut": {
+            "description": "Usage out field on admin dashboard recent usage item.",
+            "minimum": 0,
+            "type": "number"
+          },
+          "user": {
+            "description": "User field on admin dashboard recent usage item.",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user",
+          "isApiUser",
+          "model",
+          "type",
+          "billingMode",
+          "time",
+          "status",
+          "cost"
+        ],
+        "type": "object"
+      },
+      "AdminDashboardTrafficItem": {
+        "additionalProperties": false,
+        "description": "Admin dashboard traffic item schema exposed by Claw Router.",
+        "properties": {
+          "cost": {
+            "description": "Cost field on admin dashboard traffic item.",
+            "minimum": 0,
+            "type": "number"
+          },
+          "requests": {
+            "description": "Requests field on admin dashboard traffic item.",
+            "minimum": 0,
+            "type": "number"
+          },
+          "time": {
+            "description": "Time field on admin dashboard traffic item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "tokens": {
+            "description": "Tokens field on admin dashboard traffic item.",
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "time",
+          "tokens",
+          "requests",
+          "cost"
+        ],
+        "type": "object"
+      },
       "AdminFirewallRuleCreateRequest": {
         "additionalProperties": false,
         "description": "AdminFirewallRuleCreateRequest contract.",
@@ -899,23 +1110,231 @@
         ],
         "type": "object"
       },
+      "AdminRecordLogItem": {
+        "additionalProperties": false,
+        "description": "Admin record log item schema exposed by Claw Router.",
+        "properties": {
+          "baseInputPrice": {
+            "description": "Base input price field on admin record log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "baseOutputPrice": {
+            "description": "Base output price field on admin record log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "cacheReadPrice": {
+            "description": "Cache read price field on admin record log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "cacheReadTokens": {
+            "description": "Cache read tokens field on admin record log item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "cost": {
+            "description": "Cost field on admin record log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "errorCode": {
+            "description": "Error code field on admin record log item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "errorMessage": {
+            "description": "Error message field on admin record log item.",
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "errorType": {
+            "description": "Error type field on admin record log item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "group": {
+            "description": "Group field on admin record log item.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "httpMethod": {
+            "description": "Http method field on admin record log item.",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "OPTIONS",
+              "HEAD"
+            ],
+            "type": "string"
+          },
+          "httpStatus": {
+            "description": "Http status field on admin record log item.",
+            "format": "int32",
+            "maximum": 599,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "description": "Id field on admin record log item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "inputTokens": {
+            "description": "Input tokens field on admin record log item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "ip": {
+            "description": "Ip field on admin record log item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "isStream": {
+            "description": "Is stream field on admin record log item.",
+            "type": "boolean"
+          },
+          "model": {
+            "description": "Model field on admin record log item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "multiplier": {
+            "description": "Multiplier field on admin record log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "outputTokens": {
+            "description": "Output tokens field on admin record log item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "path": {
+            "description": "Path field on admin record log item.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "providerNativeModel": {
+            "description": "Provider native model field on admin record log item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "reasoningEffort": {
+            "description": "Reasoning effort field on admin record log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "regionCode": {
+            "description": "Region code field on admin record log item.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "requestedModelCatalogKey": {
+            "description": "Requested model catalog key field on admin record log item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on admin record log item.",
+            "enum": [
+              "success",
+              "error"
+            ],
+            "type": "string"
+          },
+          "time": {
+            "description": "Time field on admin record log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "tokenName": {
+            "description": "Token name field on admin record log item.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "totalTime": {
+            "description": "Total time field on admin record log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "ttft": {
+            "description": "Ttft field on admin record log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "type": {
+            "description": "Type field on admin record log item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "user": {
+            "description": "User field on admin record log item.",
+            "maxLength": 320,
+            "type": "string"
+          },
+          "userAgent": {
+            "description": "User agent field on admin record log item.",
+            "maxLength": 2048,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user",
+          "time",
+          "tokenName",
+          "group",
+          "type",
+          "model",
+          "providerNativeModel",
+          "requestedModelCatalogKey",
+          "regionCode",
+          "status",
+          "httpStatus",
+          "httpMethod",
+          "errorCode",
+          "errorType",
+          "errorMessage",
+          "totalTime",
+          "ttft",
+          "isStream",
+          "inputTokens",
+          "cacheReadTokens",
+          "outputTokens",
+          "cost",
+          "multiplier",
+          "baseInputPrice",
+          "baseOutputPrice",
+          "cacheReadPrice",
+          "path",
+          "reasoningEffort",
+          "ip",
+          "userAgent"
+        ],
+        "type": "object"
+      },
       "AdminRecordPage": {
         "additionalProperties": false,
-        "description": "AdminRecordPage contract.",
+        "description": "Admin record page schema exposed by Claw Router.",
+        "name": "AdminRecordPage",
         "properties": {
           "items": {
-            "description": "items field on AdminRecordPage.",
+            "description": "Items field on admin record page.",
             "items": {
-              "additionalProperties": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/JsonValue"
-                  }
-                ],
-                "description": "Items field on admin record page."
-              },
-              "description": "Items field on admin record page.",
-              "type": "object"
+              "$ref": "#/components/schemas/AdminRecordLogItem"
             },
             "type": "array"
           },
@@ -2184,14 +2603,14 @@
         ],
         "type": "object"
       },
-      "CacheOverviewListResult": {
+      "CacheOverviewRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by cache overview list result.",
+            "description": "Object schema used by cache overview retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2208,8 +2627,8 @@
             "type": "object"
           }
         ],
-        "description": "Cache overview list result schema exposed by Claw Router.",
-        "x-operation-id": "cache.overview.list"
+        "description": "Cache overview retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "cache.overview.retrieve"
       },
       "CacheRefreshResult": {
         "allOf": [
@@ -2556,22 +2975,22 @@
         ],
         "type": "object"
       },
-      "DashboardAdminOverviewListResult": {
+      "DashboardAdminOverviewRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by dashboard admin overview list result.",
+            "description": "Object schema used by dashboard admin overview retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/AdminDashboardOverview"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on dashboard admin overview retrieve result."
               }
             },
             "required": [
@@ -2580,8 +2999,8 @@
             "type": "object"
           }
         ],
-        "description": "Dashboard admin overview list result schema exposed by Claw Router.",
-        "x-operation-id": "dashboard.admin.overview.list"
+        "description": "Dashboard admin overview retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "dashboard.admin.overview.retrieve"
       },
       "DefaultBucketsListResult": {
         "allOf": [
@@ -2916,22 +3335,101 @@
         "description": "Gc jobs list result schema exposed by Claw Router.",
         "x-operation-id": "gcJobs.list"
       },
-      "InstallationStatusListResult": {
+      "InstallationStatusResponse": {
+        "additionalProperties": false,
+        "description": "Installation status response schema exposed by Claw Router.",
+        "name": "InstallationStatusResponse",
+        "properties": {
+          "catalogSource": {
+            "description": "Catalog source field on installation status response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "catalogVersion": {
+            "description": "Catalog version field on installation status response.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "changed": {
+            "description": "Changed field on installation status response.",
+            "type": "boolean"
+          },
+          "environment": {
+            "description": "Environment field on installation status response.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "externalCatalog": {
+            "description": "External catalog field on installation status response.",
+            "type": "boolean"
+          },
+          "lastCatalogRefreshStatus": {
+            "description": "Last catalog refresh status field on installation status response.",
+            "enum": [
+              "succeeded",
+              "schema_not_ready",
+              "dependency_schema_not_ready",
+              "pending",
+              "invalid",
+              "catalog_unavailable"
+            ],
+            "type": "string"
+          },
+          "schemaVersion": {
+            "description": "Schema version field on installation status response.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "seedProfile": {
+            "description": "Seed profile field on installation status response.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on installation status response.",
+            "enum": [
+              "not_installed",
+              "installed",
+              "upgrade_required",
+              "incomplete",
+              "corrupt",
+              "catalog_unavailable"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "schemaVersion",
+          "catalogVersion",
+          "catalogSource",
+          "externalCatalog",
+          "lastCatalogRefreshStatus",
+          "environment",
+          "seedProfile",
+          "changed"
+        ],
+        "type": "object"
+      },
+      "InstallationStatusRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by installation status list result.",
+            "description": "Object schema used by installation status retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
                   {
-                    "$ref": "#/components/schemas/NoData"
+                    "$ref": "#/components/schemas/InstallationStatusResponse"
                   }
                 ],
-                "description": "No business data returned by this operation."
+                "description": "Data field on installation status retrieve result."
               }
             },
             "required": [
@@ -2940,8 +3438,8 @@
             "type": "object"
           }
         ],
-        "description": "Installation status list result schema exposed by Claw Router.",
-        "x-operation-id": "installation.status.list"
+        "description": "Installation status retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "installation.status.retrieve"
       },
       "IpLimitRuleItem": {
         "additionalProperties": false,
@@ -5221,7 +5719,7 @@
                     "$ref": "#/components/schemas/AdminRecordPage"
                   }
                 ],
-                "description": "Typed AdminRecordPage response data."
+                "description": "Data field on records list result."
               }
             },
             "required": [
@@ -5328,14 +5826,14 @@
         ],
         "type": "object"
       },
-      "RuntimeRegionSettingsListResult": {
+      "RuntimeRegionSettingsRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by runtime region settings list result.",
+            "description": "Object schema used by runtime region settings retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -5352,8 +5850,8 @@
             "type": "object"
           }
         ],
-        "description": "Runtime region settings list result schema exposed by Claw Router.",
-        "x-operation-id": "runtimeRegion.settings.list"
+        "description": "Runtime region settings retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "runtimeRegion.settings.retrieve"
       },
       "RuntimeRegionSettingsUpdateResult": {
         "allOf": [
@@ -5687,14 +6185,14 @@
         "description": "Settings update result schema exposed by Claw Router.",
         "x-operation-id": "settings.update"
       },
-      "SiteSettingsListResult": {
+      "SiteSettingsRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by site settings list result.",
+            "description": "Object schema used by site settings retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -5711,8 +6209,8 @@
             "type": "object"
           }
         ],
-        "description": "Site settings list result schema exposed by Claw Router.",
-        "x-operation-id": "site.settings.list"
+        "description": "Site settings retrieve result schema exposed by Claw Router.",
+        "x-operation-id": "site.settings.retrieve"
       },
       "SiteSettingsUpdateResult": {
         "allOf": [
@@ -17483,14 +17981,14 @@
     "/backend/v3/api/system/cache/overview": {
       "get": {
         "description": "List overview. Reads ops_config_snapshot, ops_audit_log. Writes none. File targets none.",
-        "operationId": "cache.overview.list",
+        "operationId": "cache.overview.retrieve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CacheOverviewListResult"
+                  "$ref": "#/components/schemas/CacheOverviewRetrieveResult"
                 }
               }
             },
@@ -17647,14 +18145,14 @@
     "/backend/v3/api/system/dashboard/admin/overview": {
       "get": {
         "description": "List dashboard data. Reads ai_usage, ai_request_trace, ops_metric_snapshot, iam_user, iam_organization_membership. Writes none. File targets none.",
-        "operationId": "dashboard.admin.overview.list",
+        "operationId": "dashboard.admin.overview.retrieve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DashboardAdminOverviewListResult"
+                  "$ref": "#/components/schemas/DashboardAdminOverviewRetrieveResult"
                 }
               }
             },
@@ -18023,15 +18521,15 @@
     },
     "/backend/v3/api/system/installation/status": {
       "get": {
-        "description": "List installation status. Reads system_installation_state, system_schema_migration. Writes none. File targets none.",
-        "operationId": "installation.status.list",
+        "description": "List installation status. Reads ai_upstream_supplier, ai_model, ops_gateway_instance. Writes none. File targets none.",
+        "operationId": "installation.status.retrieve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InstallationStatusListResult"
+                  "$ref": "#/components/schemas/InstallationStatusRetrieveResult"
                 }
               }
             },
@@ -18091,8 +18589,9 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "system_installation_state",
-          "system_schema_migration"
+          "ai_upstream_supplier",
+          "ai_model",
+          "ops_gateway_instance"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "system",
@@ -19088,6 +19587,7 @@
             "required": false,
             "schema": {
               "default": 1,
+              "format": "int32",
               "minimum": 1,
               "type": "integer"
             }
@@ -19099,6 +19599,7 @@
             "required": false,
             "schema": {
               "default": 20,
+              "format": "int32",
               "maximum": 200,
               "minimum": 1,
               "type": "integer"
@@ -19215,14 +19716,14 @@
     "/backend/v3/api/system/runtime_region/settings": {
       "get": {
         "description": "List settings. Reads ops_config_snapshot. Writes none. File targets none.",
-        "operationId": "runtimeRegion.settings.list",
+        "operationId": "runtimeRegion.settings.retrieve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RuntimeRegionSettingsListResult"
+                  "$ref": "#/components/schemas/RuntimeRegionSettingsRetrieveResult"
                 }
               }
             },
@@ -19890,14 +20391,14 @@
     "/backend/v3/api/system/site/settings": {
       "get": {
         "description": "List settings. Reads ops_config_snapshot. Writes none. File targets none.",
-        "operationId": "site.settings.list",
+        "operationId": "site.settings.retrieve",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteSettingsListResult"
+                  "$ref": "#/components/schemas/SiteSettingsRetrieveResult"
                 }
               }
             },

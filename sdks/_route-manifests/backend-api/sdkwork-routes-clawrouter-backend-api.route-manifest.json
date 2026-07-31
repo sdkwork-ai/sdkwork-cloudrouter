@@ -1708,7 +1708,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/system/cache/overview",
-      "operationId": "cache.overview.list",
+      "operationId": "cache.overview.retrieve",
       "tags": [
         "system"
       ],
@@ -1760,7 +1760,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/system/dashboard/admin/overview",
-      "operationId": "dashboard.admin.overview.list",
+      "operationId": "dashboard.admin.overview.retrieve",
       "tags": [
         "system"
       ],
@@ -1864,7 +1864,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/system/installation/status",
-      "operationId": "installation.status.list",
+      "operationId": "installation.status.retrieve",
       "tags": [
         "system"
       ],
@@ -2150,7 +2150,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/system/runtime_region/settings",
-      "operationId": "runtimeRegion.settings.list",
+      "operationId": "runtimeRegion.settings.retrieve",
       "tags": [
         "system"
       ],
@@ -2332,7 +2332,7 @@
     {
       "method": "GET",
       "path": "/backend/v3/api/system/site/settings",
-      "operationId": "site.settings.list",
+      "operationId": "site.settings.retrieve",
       "tags": [
         "system"
       ],

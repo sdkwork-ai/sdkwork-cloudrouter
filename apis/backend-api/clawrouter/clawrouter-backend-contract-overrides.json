@@ -455,29 +455,6 @@
       },
       "description": "AdminProviderSecretUpdateRequest contract."
     },
-    "AdminRecordPage": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "items",
-        "pageInfo"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "description": "items field on AdminRecordPage."
-        },
-        "pageInfo": {
-          "$ref": "#/components/schemas/PageInfo",
-          "description": "pageInfo field on AdminRecordPage."
-        }
-      },
-      "description": "AdminRecordPage contract."
-    },
     "AdminRuntimeRegionSettingsResponse": {
       "type": "object",
       "additionalProperties": false,
@@ -2379,9 +2356,6 @@
     "PATCH /backend/v3/api/system/runtime_region/settings": {
       "requestSchema": "AdminRuntimeRegionSettingsUpdateRequest",
       "responseSchema": "AdminRuntimeRegionSettingsResponse"
-    },
-    "GET /backend/v3/api/system/records": {
-      "responseSchema": "AdminRecordPage"
     },
     "GET /backend/v3/api/system/rate_limits/models": {
       "responseSchema": "ModelLimitRulePage"

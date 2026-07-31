@@ -4,7 +4,7 @@ import test from 'node:test';
 import { fetchSiteBranding, resetSiteBrandingCache, DEFAULT_SITE_BRANDING } from './packages/sdkwork-clawroutes-pc-commons/src/siteBranding.ts';
 import { resetClawRouterSdkClients } from './packages/sdkwork-clawroutes-pc-commons/src/sdk-clients.ts';
 
-test('site branding fetch reads from the app sites runtime sdk surface', async () => {
+test('site branding fetch reads from the app system site runtime sdk surface', async () => {
   resetClawRouterSdkClients();
   resetSiteBrandingCache();
 
@@ -16,27 +16,31 @@ test('site branding fetch reads from the app sites runtime sdk surface', async (
   let called = 0;
   (host as typeof globalThis & {
     __SDKWORK_CLAW_ROUTER_APP_SDK_CLIENT__?: {
-      sites: {
-        runtime: {
-          retrieve: () => Promise<unknown>;
+      system: {
+        site: {
+          runtime: {
+            retrieve: () => Promise<unknown>;
+          };
         };
       };
     };
   }).__SDKWORK_CLAW_ROUTER_APP_SDK_CLIENT__ = {
-    sites: {
-      runtime: {
-        async retrieve() {
-          called += 1;
-          return {
-            code: 0,
-            data: {
-              siteName: 'Custom Site',
-              shortName: 'CS',
-              description: 'Branding source test',
-              brandColor: '#112233',
-              accentColor: '#445566',
-            },
-          };
+    system: {
+      site: {
+        runtime: {
+          async retrieve() {
+            called += 1;
+            return {
+              code: 0,
+              data: {
+                siteName: 'Custom Site',
+                shortName: 'CS',
+                description: 'Branding source test',
+                brandColor: '#112233',
+                accentColor: '#445566',
+              },
+            };
+          },
         },
       },
     },
@@ -59,7 +63,7 @@ test('site branding fetch reads from the app sites runtime sdk surface', async (
   }
 });
 
-test('site branding falls back to the default branding when the sites runtime sdk surface is unavailable', async () => {
+test('site branding falls back to the default branding when the system site runtime sdk surface is unavailable', async () => {
   resetClawRouterSdkClients();
   resetSiteBrandingCache();
 

@@ -646,7 +646,7 @@ function buildReleasePreflightReport({
     ));
   }
 
-  const missingReleaseEnv = missingEnv(env, REQUIRED_RELEASE_ENV);
+  const postgresUrl = String(env.SDKWORK_DATABASE_URL ?? '').trim();
   const envFileLabel = settings.envFile || RELEASE_ENVIRONMENT_CONTRACT.profileFile;
   const contractIssues = releaseEnvironmentIssues(env);
   checks.push(createCheck(
@@ -661,12 +661,12 @@ function buildReleasePreflightReport({
 
   checks.push(createCheck(
     'env.postgres',
-    'Postgres integration environment',
-    missingReleaseEnv.length === 0 ? 'PASS' : settings.strict ? 'FAIL' : 'WARN',
-    missingReleaseEnv.length === 0
-      ? 'SDKWORK_DATABASE_URL is configured'
-      : `missing: ${missingReleaseEnv.join(', ')}`,
-    'Set SDKWORK_DATABASE_URL or run pnpm.cmd test:postgres:docker on a Docker-enabled host.',
+    'Postgres runtime configuration',
+    'PASS',
+    postgresUrl
+      ? 'SDKWORK_DATABASE_URL process override is configured'
+      : 'SDKWORK_DATABASE_URL is not set; structured runtime TOML remains authoritative',
+    'Use structured runtime TOML for release hosts; set SDKWORK_DATABASE_URL only as an explicit process override.',
   ));
 
   const missingPortalRequiredEnv = missingEnv(env, REQUIRED_PORTAL_PUBLIC_ENV);

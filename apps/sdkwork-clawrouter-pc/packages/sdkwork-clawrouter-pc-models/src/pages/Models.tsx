@@ -36,6 +36,7 @@ const DEFAULT_MODEL_CATALOG_UI_PAGE_SIZE = 20;
 export function Models() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const modelLoadErrorMessage = t('models.loadError', 'Failed to load models');
   const [filters, setFilters] = useState<ModelCatalogFilters>(() => createDefaultModelCatalogFilters());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAllProviders, setShowAllProviders] = useState(false);
@@ -51,6 +52,9 @@ export function Models() {
   const [catalogLoading, setCatalogLoading] = useState(false);
 
   const updateFilters = (updates: Partial<ModelCatalogFilters>) => {
+    if (updates.searchQuery !== undefined) {
+      setCatalogPage(1);
+    }
     setFilters(prev => ({ ...prev, ...updates }));
   };
 
@@ -58,6 +62,7 @@ export function Models() {
     key: 'selectedProviders' | 'selectedModalities' | 'selectedCapabilities' | 'selectedCategories',
     value: string,
   ) => {
+    setCatalogPage(1);
     setFilters(prev => {
       const current = prev[key];
       return {
@@ -68,6 +73,7 @@ export function Models() {
   };
 
   const toggleGroupFilter = (value: ModelGroupKey) => {
+    setCatalogPage(1);
     setFilters(prev => ({
       ...prev,
       selectedGroups: prev.selectedGroups.includes(value)
@@ -77,6 +83,7 @@ export function Models() {
   };
 
   const clearFilters = () => {
+    setCatalogPage(1);
     setFilters(resetModelCatalogFilters);
   };
 
@@ -106,21 +113,28 @@ export function Models() {
     }
     return resolveSelectedProviderCodes(catalogModels, catalogProviders, filters.selectedProviders);
   }, [catalogModels, catalogProviders, filters.selectedProviders]);
-  const selectedProviderCodesKey = selectedProviderCodes.join(',');
-  const selectedModalitiesKey = filters.selectedModalities.join(',');
-  const selectedCapabilitiesKey = filters.selectedCapabilities.join(',');
-  const selectedCategoriesKey = filters.selectedCategories.join(',');
-  const selectedGroupsKey = filters.selectedGroups.join(',');
-
-  useEffect(() => {
-    setCatalogPage(1);
-  }, [
+  const selectedProviderCodesKey = serializeModelCatalogFilterValues(selectedProviderCodes);
+  const selectedModalitiesKey = serializeModelCatalogFilterValues(filters.selectedModalities);
+  const selectedCapabilitiesKey = serializeModelCatalogFilterValues(filters.selectedCapabilities);
+  const selectedCategoriesKey = serializeModelCatalogFilterValues(filters.selectedCategories);
+  const selectedGroupsKey = serializeModelCatalogFilterValues(filters.selectedGroups);
+  const catalogRequest = useMemo(() => ({
+    vendorCodes: deserializeModelCatalogFilterValues(selectedProviderCodesKey),
+    modalities: deserializeModelCatalogFilterValues(selectedModalitiesKey),
+    capabilities: deserializeModelCatalogFilterValues(selectedCapabilitiesKey),
+    categories: deserializeModelCatalogFilterValues(selectedCategoriesKey),
+    groups: deserializeModelCatalogFilterValues(selectedGroupsKey),
+    searchQuery: filters.searchQuery,
+    page: catalogPage,
+    pageSize: catalogPageSize,
+  }), [
     filters.searchQuery,
     selectedProviderCodesKey,
     selectedModalitiesKey,
     selectedCapabilitiesKey,
     selectedCategoriesKey,
     selectedGroupsKey,
+    catalogPage,
     catalogPageSize,
   ]);
 
@@ -137,7 +151,7 @@ export function Models() {
       .catch((error: unknown) => {
         if (!cancelled) {
           setProviderLoadError(
-            error instanceof Error ? error.message : t('models.loadError', 'Failed to load models'),
+            error instanceof Error ? error.message : modelLoadErrorMessage,
           );
         }
       });
@@ -145,23 +159,14 @@ export function Models() {
     return () => {
       cancelled = true;
     };
-  }, [t]);
+  }, [modelLoadErrorMessage]);
 
   useEffect(() => {
     let cancelled = false;
     setCatalogLoadError(null);
     setCatalogLoading(true);
 
-    ModelService.fetchModelCatalog({
-      vendorCodes: selectedProviderCodes,
-      modalities: filters.selectedModalities,
-      capabilities: filters.selectedCapabilities,
-      categories: filters.selectedCategories,
-      groups: filters.selectedGroups,
-      searchQuery: filters.searchQuery,
-      page: catalogPage,
-      pageSize: catalogPageSize,
-    })
+    ModelService.fetchModelCatalog(catalogRequest)
       .then((catalog) => {
         if (!cancelled) {
           setCatalogModels(catalog.models);
@@ -177,7 +182,7 @@ export function Models() {
           setCatalogGroups([]);
           setCatalogTotal(0);
           setCatalogHasMore(false);
-          setCatalogLoadError(error instanceof Error ? error.message : t('models.loadError', 'Failed to load models'));
+          setCatalogLoadError(error instanceof Error ? error.message : modelLoadErrorMessage);
         }
       })
       .finally(() => {
@@ -189,22 +194,7 @@ export function Models() {
     return () => {
       cancelled = true;
     };
-  }, [
-    filters.searchQuery,
-    selectedProviderCodesKey,
-    selectedModalitiesKey,
-    selectedCapabilitiesKey,
-    selectedCategoriesKey,
-    selectedGroupsKey,
-    catalogPage,
-    catalogPageSize,
-    selectedProviderCodes,
-    filters.selectedModalities,
-    filters.selectedCapabilities,
-    filters.selectedCategories,
-    filters.selectedGroups,
-    t,
-  ]);
+  }, [catalogRequest, modelLoadErrorMessage]);
 
   const filteredModels = useMemo(() => {
     return filterModelsForCatalog(catalogModels, filters, selectedProviderCodes);
@@ -547,4 +537,12 @@ function resolveSelectedProviderCodes(
   return providers
     .map((provider) => providerCodesByDisplayName.get(provider))
     .filter((code): code is string => code !== undefined);
+}
+
+function serializeModelCatalogFilterValues(values: readonly string[]): string {
+  return JSON.stringify(values);
+}
+
+function deserializeModelCatalogFilterValues(serializedValues: string): string[] {
+  return JSON.parse(serializedValues) as string[];
 }

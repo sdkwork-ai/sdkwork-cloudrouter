@@ -13,8 +13,8 @@ use sdkwork_clawrouter_router_service::application::{
     GatewayInvocationPolicyViolation, Invocation, InvocationBody, InvocationClassification,
     InvocationClassificationRequest, InvocationDispatchResponse, InvocationError,
     InvocationErrorKind, InvocationPipelineExecution, InvocationRequest,
-    InvocationResourceClassifier, InvocationSubject, InvocationSurface,
-    OpenAiResourceClassifier, ProviderNativeResourceClassifier, ResourceType,
+    InvocationResourceClassifier, InvocationSubject, InvocationSurface, OpenAiResourceClassifier,
+    ProviderNativeResourceClassifier, ResourceType,
 };
 use sdkwork_clawrouter_router_service::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 use serde_json::{json, Value};
@@ -402,27 +402,26 @@ where
         && invocation.request.method == axum::http::Method::GET
         && invocation.request.path == "/v1/models"
     {
+        let mut models = Vec::new();
+        catalog.visit_models(None, &mut |model| {
+            let owned_by = catalog
+                .find_vendor(&model.vendor_code)
+                .map(|vendor| vendor.vendor.code().to_owned())
+                .unwrap_or_else(|| model.vendor_code.clone());
+            models.push(json!({
+                "id": model.model,
+                "object": "model",
+                "created": 0,
+                "owned_by": owned_by
+            }));
+            true
+        });
         invocation.dispatch.mode = DispatchMode::SyntheticLocalResponse;
         invocation.dispatch.response = Some(InvocationDispatchResponse::json(
             200,
             json!({
                 "object": "list",
-                "data": catalog
-                    .list_models(None)
-                    .into_iter()
-                    .map(|model| {
-                        let owned_by = catalog
-                            .find_vendor(&model.vendor_code)
-                            .map(|vendor| vendor.vendor.code().to_owned())
-                            .unwrap_or(model.vendor_code);
-                        json!({
-                            "id": model.model,
-                            "object": "model",
-                            "created": 0,
-                            "owned_by": owned_by
-                        })
-                    })
-                    .collect::<Vec<_>>()
+                "data": models
             }),
         ));
         return;

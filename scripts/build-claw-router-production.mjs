@@ -24,7 +24,7 @@ function cargoCommand(platform = process.platform) {
 function printHelp() {
   console.log(`Usage: node scripts/build-claw-router-production.mjs [options]
 
-Build production portal assets and the Rust edge server release binary.
+Build production portal assets and the Rust standalone gateway release binary.
 
 Options:
   --dry-run       Print the build plan without executing commands.
@@ -111,7 +111,7 @@ function createProductionBuildPlan(
       cwd: root,
     },
     {
-      label: 'Rust edge release binary',
+      label: 'Rust standalone gateway release binary',
       command: cargoCommand(platform),
       args: [
         'build',
@@ -137,7 +137,7 @@ function renderProductionBuildPlan(
     '[build-production] Build Plan',
     ...plan.map((step) => `[build-production]   ${step.label}: ${step.command} ${step.args.join(' ')}`),
     `[build-production]   SDK archive root: ${path.join(root, 'apps', 'sdkwork-clawrouter-pc', 'dist', 'sdk-archives')}`,
-    `[build-production]   Rust edge binary: ${productionGatewayBinaryPath({
+    `[build-production]   Rust standalone gateway binary: ${productionGatewayBinaryPath({
       env,
       platform,
       workspaceRoot: root,

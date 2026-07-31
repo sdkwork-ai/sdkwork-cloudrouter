@@ -33,6 +33,21 @@ fn usage_settlement_locks_pending_usage_and_points_account_in_one_transaction() 
 }
 
 #[test]
+fn usage_settlement_bounds_pricing_snapshot_bytes_before_loading_json_text() {
+    for expected in [
+        "octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) <= $6",
+        "ELSE '{}' END AS pricing_snapshot",
+        "AS pricing_snapshot_bytes",
+        ".bind(MAX_PRICING_SNAPSHOT_BYTES)",
+        "usage_fact.pricing_snapshot_bytes > i64::from(MAX_PRICING_SNAPSHOT_BYTES)",
+        "INVALID_PRICING_SNAPSHOT",
+        "usage pricing snapshot exceeds the settlement byte budget",
+    ] {
+        assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, expected);
+    }
+}
+
+#[test]
 fn usage_settlement_requires_explicit_pending_or_failed_status() {
     assert!(
         !compact_sql(POSTGRES_USAGE_SETTLEMENT_STORE).contains("COALESCE(settlement_status, 0) IN"),

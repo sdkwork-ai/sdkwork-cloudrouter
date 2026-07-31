@@ -1,10 +1,10 @@
-import type { JsonValue } from './json-value';
+import type { AdminRecordLogItem } from './admin-record-log-item';
 import type { PageInfo } from './page-info';
 
-/** AdminRecordPage contract. */
+/** Admin record page schema exposed by Claw Router. */
 export interface AdminRecordPage {
-  /** items field on AdminRecordPage. */
-  items: Record<string, JsonValue>[];
+  /** Items field on admin record page. */
+  items: AdminRecordLogItem[];
   /** Page info field on admin record page. */
   pageInfo: PageInfo;
 }

@@ -129,7 +129,11 @@ const result = await client.runtime.invocations.list(params);
 
 ```typescript
 // List site branding
-const result = await client.system.site.runtime.list();
+const params = {
+  tenant_code: 'tenant_code',
+  organization_code: 'organization_code',
+};
+const result = await client.system.site.runtime.retrieve(params);
 ```
 
 ## Error Handling

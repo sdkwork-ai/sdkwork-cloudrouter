@@ -594,7 +594,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn standard_postgres_config_materializes_the_workspace_schema_search_path() {
+    fn standard_postgres_config_materializes_canonical_only_workspace_search_path() {
         let previous_schema = std::env::var("SDKWORK_DATABASE_SCHEMA").ok();
         std::env::set_var("SDKWORK_DATABASE_SCHEMA", "sdkwork_ai_dev");
         let config = sdkwork_claw_config::DatabaseConfig {
@@ -611,9 +611,8 @@ mod tests {
             None => std::env::remove_var("SDKWORK_DATABASE_SCHEMA"),
         }
         assert!(standard.url.contains("/sdkwork_ai_dev?"));
-        assert!(standard
-            .url
-            .contains("search_path%3Dsdkwork_ai_dev%2Cpublic"));
+        assert!(standard.url.contains("search_path%3Dsdkwork_ai_dev"));
+        assert!(!standard.url.contains("%2Cpublic"));
     }
 
     #[test]

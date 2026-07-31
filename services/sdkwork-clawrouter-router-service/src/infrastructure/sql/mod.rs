@@ -3,7 +3,6 @@ pub(crate) mod ai_routing_seed;
 pub mod catalog;
 pub(crate) mod commerce_bootstrap;
 pub(crate) mod dashboard_overview_metrics;
-pub(crate) mod iam_application_bootstrap;
 pub mod iam_scope_resolver;
 pub mod installer;
 pub(crate) mod model_catalog_import;

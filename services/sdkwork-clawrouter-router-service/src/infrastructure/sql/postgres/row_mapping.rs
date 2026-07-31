@@ -1,11 +1,6 @@
 use sqlx::postgres::PgRow;
 use sqlx::{Executor, Row};
 
-pub(crate) fn postgres_row_i64(row: &PgRow, column: &str) -> Result<i64, sqlx::Error> {
-    row.try_get::<i64, _>(column)
-        .or_else(|_| row.try_get::<i32, _>(column).map(i64::from))
-}
-
 use crate::infrastructure::sql::rows::{
     AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
     ModelPriceRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow, RoutingPolicyRow,

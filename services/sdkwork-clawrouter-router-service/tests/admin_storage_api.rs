@@ -6,8 +6,8 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_clawrouter_router_service::ports::{
-    AdminStorageCollection, AdminStorageCommandFuture, AdminStorageJsonRecord, AdminStorageStore,
-    CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
+    AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
+    AdminStorageStore, CheckStorageProviderHealthCommand, CreateStorageBucketCommand,
     CreateStorageGarbageCollectionJobCommand, CreateStorageProviderCommand,
     CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
     ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand, UpdateStorageBucketCommand,
@@ -51,11 +51,68 @@ async fn admin_storage_route_exposes_complete_oss_management_center() {
         let payload = request_json(router.clone(), trusted_request("GET", path)).await;
         assert_eq!(0, payload["code"], "{path}");
         assert_eq!(expected_id, payload["data"]["items"][0]["id"], "{path}");
-        assert!(
-            payload["data"]["requestId"].as_str().unwrap().len() > 4,
-            "{path}"
-        );
+        assert!(payload["traceId"].as_str().unwrap().len() > 4, "{path}");
+        assert_eq!("cursor", payload["data"]["pageInfo"]["mode"], "{path}");
+        assert_eq!(20, payload["data"]["pageInfo"]["pageSize"], "{path}");
         assert_ne!("Not implemented", payload["detail"], "{path}");
+    }
+}
+
+#[tokio::test]
+async fn admin_storage_cursor_pages_are_opaque_and_do_not_skip_rows() {
+    let router = sdkwork_clawrouter_router_service::api::admin_storage_router_with_store(Arc::new(
+        TestAdminStorageStore,
+    ));
+    let mut path = "/backend/v3/api/storage/providers?page_size=1".to_owned();
+    let mut ids = Vec::new();
+
+    for expected_has_more in [true, true, false] {
+        let payload = request_json(router.clone(), trusted_request("GET", &path)).await;
+        ids.push(
+            payload["data"]["items"][0]["id"]
+                .as_str()
+                .unwrap()
+                .to_owned(),
+        );
+        assert_eq!("cursor", payload["data"]["pageInfo"]["mode"]);
+        assert_eq!(1, payload["data"]["pageInfo"]["pageSize"]);
+        assert_eq!(expected_has_more, payload["data"]["pageInfo"]["hasMore"]);
+
+        if expected_has_more {
+            let cursor = payload["data"]["pageInfo"]["nextCursor"]
+                .as_str()
+                .expect("next page cursor");
+            assert_ne!(ids.last().unwrap(), cursor);
+            assert!(cursor.chars().all(
+                |character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_')
+            ));
+            path = format!("/backend/v3/api/storage/providers?page_size=1&cursor={cursor}");
+        } else {
+            assert!(payload["data"]["pageInfo"]["nextCursor"].is_null());
+        }
+    }
+
+    assert_eq!(vec!["5", "4", "3"], ids);
+}
+
+#[tokio::test]
+async fn admin_storage_list_rejects_pagination_aliases_and_plain_cursors() {
+    let router = sdkwork_clawrouter_router_service::api::admin_storage_router_with_store(Arc::new(
+        TestAdminStorageStore,
+    ));
+
+    for query in ["pageSize=1", "limit=1", "page=1", "cursor=5"] {
+        let response = router
+            .clone()
+            .oneshot(trusted_request(
+                "GET",
+                &format!("/backend/v3/api/storage/providers?{query}"),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(StatusCode::BAD_REQUEST, response.status(), "query: {query}");
+        let payload = json_payload(response).await;
+        assert_eq!(40003, payload["code"].as_i64().unwrap(), "query: {query}");
     }
 }
 
@@ -214,9 +271,27 @@ struct TestAdminStorageStore;
 impl AdminStorageStore for TestAdminStorageStore {
     fn list_providers<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("provider-1", provider_record)
+        if query.limit != 1 {
+            return collection("provider-1", provider_record, query.limit, None);
+        }
+        match query.cursor.map(AdminStorageCursor::id) {
+            None => collection(
+                "5",
+                provider_record,
+                query.limit,
+                AdminStorageCursor::new(5),
+            ),
+            Some(5) => collection(
+                "4",
+                provider_record,
+                query.limit,
+                AdminStorageCursor::new(4),
+            ),
+            Some(4) => collection("3", provider_record, query.limit, None),
+            Some(_) => collection("2", provider_record, query.limit, None),
+        }
     }
 
     fn create_provider<'a>(
@@ -257,9 +332,9 @@ impl AdminStorageStore for TestAdminStorageStore {
 
     fn list_buckets<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("bucket-1", bucket_record)
+        collection("bucket-1", bucket_record, query.limit, None)
     }
 
     fn create_bucket<'a>(
@@ -286,9 +361,14 @@ impl AdminStorageStore for TestAdminStorageStore {
 
     fn list_default_buckets<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("default-tenant-private", default_bucket_record)
+        collection(
+            "default-tenant-private",
+            default_bucket_record,
+            query.limit,
+            None,
+        )
     }
 
     fn set_default_bucket<'a>(
@@ -303,9 +383,9 @@ impl AdminStorageStore for TestAdminStorageStore {
 
     fn list_quota_policies<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("quota-1", quota_record)
+        collection("quota-1", quota_record, query.limit, None)
     }
 
     fn create_quota_policy<'a>(
@@ -320,30 +400,30 @@ impl AdminStorageStore for TestAdminStorageStore {
 
     fn list_usage_counters<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("usage-1", usage_record)
+        collection("usage-1", usage_record, query.limit, None)
     }
 
     fn list_usage_ledger<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("ledger-1", usage_ledger_record)
+        collection("ledger-1", usage_ledger_record, query.limit, None)
     }
 
     fn list_usage_snapshots<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("snapshot-1", usage_snapshot_record)
+        collection("snapshot-1", usage_snapshot_record, query.limit, None)
     }
 
     fn list_reconciliation_runs<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("reconciliation-1", reconciliation_record)
+        collection("reconciliation-1", reconciliation_record, query.limit, None)
     }
 
     fn create_reconciliation_run<'a>(
@@ -358,9 +438,9 @@ impl AdminStorageStore for TestAdminStorageStore {
 
     fn list_gc_jobs<'a>(
         &'a self,
-        _query: ListAdminStorageRecordsQuery,
+        query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("gc-job-1", gc_record)
+        collection("gc-job-1", gc_record, query.limit, None)
     }
 
     fn create_gc_job<'a>(
@@ -377,11 +457,14 @@ impl AdminStorageStore for TestAdminStorageStore {
 fn collection<'a>(
     id: &'static str,
     build: fn(&str) -> AdminStorageJsonRecord,
+    page_size: i64,
+    next_cursor: Option<AdminStorageCursor>,
 ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
     Box::pin(async move {
         Ok(AdminStorageCollection {
             items: vec![build(id)],
-            next_cursor: None,
+            next_cursor,
+            page_size,
             request_id: "req-test-storage".to_owned(),
         })
     })

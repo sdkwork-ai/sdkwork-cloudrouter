@@ -1,6 +1,6 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { AdminAnalyticsOverview, AdminAuthSettingsResponse, AdminAuthSettingsUpdateRequest, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRecordPage, AdminRuntimeRegionSettingsResponse, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeItem, AdminServiceNodePage, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsResponse, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview, FirewallRuleItem, FirewallRulePage, IpLimitRuleItem, IpLimitRulePage, ModelLimitRuleItem, ModelLimitRulePage, MonitorAlertPage, MonitorNodePage, MonitorPerformancePage, TokenLimitRuleItem, TokenLimitRulePage } from '../types';
+import type { AdminAnalyticsOverview, AdminAuthSettingsResponse, AdminAuthSettingsUpdateRequest, AdminDashboardOverview, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRecordPage, AdminRuntimeRegionSettingsResponse, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeItem, AdminServiceNodePage, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsResponse, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview, FirewallRuleItem, FirewallRulePage, InstallationStatusResponse, IpLimitRuleItem, IpLimitRulePage, ModelLimitRuleItem, ModelLimitRulePage, MonitorAlertPage, MonitorNodePage, MonitorPerformancePage, TokenLimitRuleItem, TokenLimitRulePage } from '../types';
 export class SystemSiteSettingsApi {
   private client: HttpClient;
 
@@ -10,7 +10,7 @@ export class SystemSiteSettingsApi {
 
 
 /** List settings */
-  async list(requestOptions?: ApiRequestOptions): Promise<AdminSiteSettingsResponse> {
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<AdminSiteSettingsResponse> {
     return this.client.request<AdminSiteSettingsResponse>(backendApiPath(`/system/site/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
@@ -98,7 +98,7 @@ export class SystemRuntimeRegionSettingsApi {
 
 
 /** List settings */
-  async list(requestOptions?: ApiRequestOptions): Promise<AdminRuntimeRegionSettingsResponse> {
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<AdminRuntimeRegionSettingsResponse> {
     return this.client.request<AdminRuntimeRegionSettingsResponse>(backendApiPath(`/system/runtime_region/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
@@ -352,8 +352,8 @@ export class SystemInstallationStatusApi {
 
 
 /** List installation status */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/system/installation/status`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<InstallationStatusResponse> {
+    return this.client.request<InstallationStatusResponse>(backendApiPath(`/system/installation/status`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -423,8 +423,8 @@ export class SystemDashboardAdminOverviewApi {
 
 
 /** List dashboard data */
-  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/system/dashboard/admin/overview`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<AdminDashboardOverview> {
+    return this.client.request<AdminDashboardOverview>(backendApiPath(`/system/dashboard/admin/overview`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -459,7 +459,7 @@ export class SystemCacheOverviewApi {
 
 
 /** List overview */
-  async list(requestOptions?: ApiRequestOptions): Promise<CacheOverview> {
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<CacheOverview> {
     return this.client.request<CacheOverview>(backendApiPath(`/system/cache/overview`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }

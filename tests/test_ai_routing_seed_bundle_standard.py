@@ -24,18 +24,6 @@ SNAPSHOT_QUERY_SOURCE = (
     / "queries"
     / "snapshot.rs"
 )
-SQLITE_QUERY_SOURCE = (
-    ROOT
-    / "services"
-    / "sdkwork-clawrouter-router-service"
-    / "src"
-    / "infrastructure"
-    / "sql"
-    / "sqlite"
-    / "queries.rs"
-)
-
-
 class AiRoutingSeedBundleStandardTest(unittest.TestCase):
     def test_ai_routing_seed_bundle_is_split_and_references_route_taxonomy(self) -> None:
         manifest = read_json(AI_ROUTING_ROOT / "install-manifest.json")
@@ -187,7 +175,7 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
             "OpenAI Codex API group must include every Codex-related API resource",
         )
 
-    def test_ai_routing_seed_has_installer_hooks_for_sqlite_and_postgres(self) -> None:
+    def test_ai_routing_seed_has_postgres_installer_hooks_only(self) -> None:
         installer = (
             ROOT
             / "services"
@@ -208,15 +196,20 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         for token in [
-            "import_sqlite_ai_routing_seed",
             "import_postgres_ai_routing_seed",
-            "sqlite_ai_routing_seed_complete",
             "postgres_ai_routing_seed_complete",
-            "bundled_ai_routing_seed_payload",
         ]:
             with self.subTest(token=token):
                 self.assertIn(token, installer)
                 self.assertIn(token, ai_seed)
+        for retired_token in [
+            "import_sqlite_ai_routing_seed",
+            "sqlite_ai_routing_seed_complete",
+            "bundled_ai_routing_seed_payload",
+        ]:
+            with self.subTest(retired_token=retired_token):
+                self.assertNotIn(retired_token, installer)
+                self.assertNotIn(retired_token, ai_seed)
         self.assertIn("validate_bundle_kind", ai_seed)
 
     def test_api_endpoint_resources_do_not_require_channel_endpoint_templates(self) -> None:
@@ -385,7 +378,7 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
         self.assertIn("let digest_chars = MAX_SEED_UUID_LENGTH - prefix.len() - 1;", ai_seed)
         self.assertNotIn("hex::encode(&digest[..20])", ai_seed)
 
-    def test_postgres_default_channel_seed_casts_text_backed_identity_parameters(self) -> None:
+    def test_postgres_default_channel_seed_scopes_bigint_identity_parameters(self) -> None:
         ai_seed = (
             ROOT
             / "services"
@@ -396,30 +389,23 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
             / "ai_routing_seed.rs"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("$2::bigint, $3::bigint", ai_seed)
-        self.assertIn("WHERE c.tenant_id = $13::bigint", ai_seed)
-        self.assertIn("AND c.organization_id = $14::bigint", ai_seed)
-        self.assertIn("WHERE tenant_id = $1::bigint", ai_seed)
-        self.assertIn("AND organization_id = $2::bigint", ai_seed)
-        self.assertIn("WHERE c.tenant_id = $1::bigint", ai_seed)
-        self.assertIn("AND c.organization_id = $2::bigint", ai_seed)
+        self.assertIn("WHERE supplier.tenant_id = $1::bigint", ai_seed)
+        self.assertIn("AND supplier.organization_id = $2::bigint", ai_seed)
+        self.assertIn("WHERE account_group.tenant_id = $1::bigint", ai_seed)
+        self.assertIn("AND account_group.organization_id = $2::bigint", ai_seed)
 
-    def test_sql_runtime_snapshot_loads_api_codes_from_resource_scopes(self) -> None:
-        query_sources = {
-            "postgres": SNAPSHOT_QUERY_SOURCE.read_text(encoding="utf-8"),
-            "sqlite": SQLITE_QUERY_SOURCE.read_text(encoding="utf-8"),
-        }
+    def test_postgres_runtime_snapshot_loads_api_codes_from_resource_scopes(self) -> None:
+        snapshot_source = SNAPSHOT_QUERY_SOURCE.read_text(encoding="utf-8")
 
-        for runtime, snapshot_source in query_sources.items():
-            with self.subTest(runtime=runtime):
-                self.assertIn("JOIN ai_resource r", snapshot_source)
-                self.assertIn("r.api_code", snapshot_source)
-                self.assertIn("group_resource_scope AS", snapshot_source)
-                self.assertIn("channel_resource_scope AS", snapshot_source)
-                self.assertIn("matched_resource_scope AS", snapshot_source)
-                self.assertNotIn("channel_model_scope AS", snapshot_source)
-                self.assertNotIn("ai_channel_model", snapshot_source)
-                self.assertNotIn("ai_channel_endpoint", snapshot_source)
+        self.assertIn("JOIN ai_resource resource", snapshot_source)
+        self.assertIn("resource.api_code", snapshot_source)
+        self.assertIn("group_resource_scope AS", snapshot_source)
+        self.assertIn("supplier_resource_scope AS", snapshot_source)
+        self.assertIn("matched_resource_scope AS", snapshot_source)
+        self.assertNotIn("channel_resource_scope AS", snapshot_source)
+        self.assertNotIn("channel_model_scope AS", snapshot_source)
+        self.assertNotIn("ai_channel_model", snapshot_source)
+        self.assertNotIn("ai_channel_endpoint", snapshot_source)
 
 
 def load_section_items(folder: str, files: list[str]) -> list[dict]:
@@ -458,11 +444,11 @@ def unique_values(values, label: str) -> set[str]:
     return set(materialized)
 
 
-def group_resource_codes(groups: list[dict], group_type: str) -> set[str]:
+def group_resource_codes(groups: list[dict], group_code_prefix: str) -> set[str]:
     return {
         item["resourceCode"]
         for group in groups
-        if group["groupType"] == group_type
+        if group["groupCode"].startswith(f"{group_code_prefix}.")
         for item in group["items"]
         if item["itemType"] == "resource"
     }

@@ -17,6 +17,15 @@ SDKWORK_MODELS = (
     else _SDKWORK_MODELS_SIBLING
 )
 SDKWORK_MODELS_SDK = SDKWORK_MODELS / "sdks" / "sdkwork-models-sdk"
+MODEL_CATALOG_STORE_PATH = (
+    SDKWORK_MODELS
+    / "crates"
+    / "sdkwork-models-catalog-repository-sqlx"
+    / "src"
+    / "postgres"
+    / "model_catalog_admin_store.rs"
+)
+AI_ROUTING_ROOT = ROOT / "data" / "ai-routing"
 CLIENT_API_SUPPORT_STATUSES = ("supported", "unsupported", "partial", "convert")
 RUST_INSTALLER_PATH = (
     ROOT
@@ -870,8 +879,8 @@ class SdkworkModelsStandardTest(unittest.TestCase):
         self.assertIn("clientApiCompatibility", vendors_index["vendors"][0]["regions"][0])
 
         resource_payloads = [
-            load_json(SDKWORK_MODELS.parent / "ai-routing" / "resources" / "openai-resources.json"),
-            load_json(SDKWORK_MODELS.parent / "ai-routing" / "resources" / "vendor-native-resources.json"),
+            load_json(AI_ROUTING_ROOT / "resources" / "openai-resources.json"),
+            load_json(AI_ROUTING_ROOT / "resources" / "vendor-native-resources.json"),
         ]
         resource_codes = {
             item["resourceCode"]
@@ -947,13 +956,9 @@ class SdkworkModelsStandardTest(unittest.TestCase):
         self.assertIn("client_api_compatibility JSONB", models_baseline)
         generated_schema = read_text(ROOT / "generated" / "schema" / "postgres" / "schema.sql")
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_model_vendor (", generated_schema)
-        for importer in [
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "sqlite" / "model_catalog_import.rs",
-            ROOT / "services" / "sdkwork-clawrouter-router-service" / "src" / "infrastructure" / "sql" / "postgres" / "model_catalog_import.rs",
-        ]:
-            source = read_text(importer)
-            self.assertIn("supported_protocols", source)
-            self.assertIn("client_api_compatibility", source)
+        source = read_text(MODEL_CATALOG_STORE_PATH)
+        self.assertIn("supported_protocols", source)
+        self.assertIn("client_api_compatibility", source)
 
     def test_prices_are_decimal_strings(self) -> None:
         for pricing_path in sorted((SDKWORK_MODELS / "models").glob("*/*/pricing/**/*.json")):

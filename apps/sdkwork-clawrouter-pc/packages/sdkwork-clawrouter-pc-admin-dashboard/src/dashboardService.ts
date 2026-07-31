@@ -139,7 +139,7 @@ export class AdminDashboardService {
     query: DashboardDataQuery = {},
   ): Promise<DashboardDataSnapshot> {
     normalizeDashboardTrafficTimeRange(query.timeRange);
-    const result = await getClawRouterBackendSdkClient().system.dashboard.admin.overview.list();
+    const result = await getClawRouterBackendSdkClient().system.dashboard.admin.overview.retrieve();
     const data = readRequiredRecord(result, 'Admin dashboard overview is required');
     const activeUsers = readRequiredNonNegativeNumber(data, 'activeUsers', 'Dashboard active users are required');
     const backendUserConsumption = readRequiredRecordArray(data, 'userConsumption', 'Dashboard userConsumption is required', 'Dashboard pie chart record is required')
@@ -173,7 +173,7 @@ export class AdminDashboardService {
   }
 
   static async fetchInstallationStatus(): Promise<InstallationStatusResponse> {
-    const result = await getClawRouterBackendSdkClient().system.installation.status.list();
+    const result = await getClawRouterBackendSdkClient().system.installation.status.retrieve();
     return normalizeInstallationStatus(readRequiredRecord(result, 'Installation status is required'));
   }
 }

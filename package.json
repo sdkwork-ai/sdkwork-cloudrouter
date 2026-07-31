@@ -66,7 +66,7 @@
                     "gateway:validate:standalone": "cargo check -p sdkwork-api-clawrouter-standalone-gateway",
                     "gateway:matrix": "node ../sdkwork-app-topology/scripts/sdkwork-topology.mjs print-matrix --root . --spec specs/topology.spec.json --profile all",
                     "sbom:release": "node scripts/generate-release-sbom.mjs",
-                    "test:tooling": "node scripts/run-claw-router-application.test.mjs && node --test scripts/stop-claw-router-application.test.mjs",
+                    "test:tooling": "node scripts/run-claw-router-application.test.mjs && node --test scripts/stop-claw-router-application.test.mjs scripts/lib/standard-alignment-runtime-facts.test.mjs",
                     "test:rust:auto": "node scripts/run-claw-router-rust-tests.mjs auto",
                     "test:rust:smoke": "node scripts/run-claw-router-rust-tests.mjs smoke",
                     "test:rust:quick": "node scripts/run-claw-router-rust-tests.mjs quick",

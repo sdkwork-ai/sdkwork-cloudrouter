@@ -17,8 +17,8 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
-const DEFAULT_RELEASE_POSTGRES_URL = 'postgres://release-smoke.invalid:5432/sdkwork_claw_router';
-const DEFAULT_RELEASE_POSTGRES_RUNTIME_URL = 'postgresql://release-smoke.invalid:5432/sdkwork_claw_router';
+const DEFAULT_RELEASE_POSTGRES_URL = 'postgres://sdkwork_ai_prod@release-smoke.invalid:5432/sdkwork_ai_prod';
+const DEFAULT_RELEASE_POSTGRES_RUNTIME_URL = 'postgresql://sdkwork_ai_prod@release-smoke.invalid:5432/sdkwork_ai_prod';
 
 function printHelp() {
   console.log(`Usage: node scripts/smoke-install-package-init.mjs [options]
@@ -229,7 +229,6 @@ function createInstallInitSmokePlan({
 function createSmokeEnvironment({ databaseUrl, databaseEngine, deploymentMode, releaseEnvPath, runtimeConfigPath, modelsCatalogRoot }) {
   const env = {
     SDKWORK_MODELS_CATALOG_ROOT: modelsCatalogRoot,
-    SDKWORK_DATABASE_URL: DEFAULT_RELEASE_POSTGRES_URL,
     PORTAL_PUBLIC_SDK_BASE_URL: '/',
     PORTAL_PUBLIC_API_BASE_URL: '/v1',
     PORTAL_PUBLIC_APP_API_BASE_URL: '/app/v3/api',
@@ -385,8 +384,8 @@ async function writeRuntimeConfigForSmoke(plan) {
       'engine = "postgresql"',
       'host = "release-smoke.invalid"',
       'port = 5432',
-      'database = "sdkwork_claw_router"',
-      'username = "release_smoke"',
+      'database = "sdkwork_ai_prod"',
+      'username = "sdkwork_ai_prod"',
       `password_file = "${toPosixPath(plan.databasePasswordPath)}"`,
       'ssl_mode = "require"',
       'max_connections = 16',

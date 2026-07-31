@@ -42,7 +42,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsForm = {
 
 export const SiteSettingsService = {
   async fetchSettings(): Promise<SiteSettingsForm> {
-    const result = await getClawRouterBackendSdkClient().system.site.settings.list();
+    const result = await getClawRouterBackendSdkClient().system.site.settings.retrieve();
     ensureSdkworkApiSuccess(result, 'Unable to load site settings');
     return toSiteSettings(readApiRecord(result));
   },

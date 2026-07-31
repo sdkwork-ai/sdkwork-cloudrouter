@@ -6,11 +6,6 @@ use sha2::{Digest, Sha256};
 
 use sdkwork_models::{ClientApiCompatibility, ModelCatalog, ModelInfo, VendorCatalog};
 
-pub(crate) const SYSTEM_TENANT_ID: i64 = 0;
-pub(crate) const SYSTEM_ORGANIZATION_ID: i64 = 0;
-pub(crate) const SYSTEM_DATA_SCOPE: i32 = 1;
-pub(crate) const ACTIVE_STATUS: i32 = 1;
-pub(crate) const INACTIVE_STATUS: i32 = 0;
 pub(crate) const DEFAULT_CATALOG_REFRESH_SOURCE: &str = "sdkwork_models";
 
 pub(crate) fn pricing_catalog_key(vendor_code: &str, model_id: &str) -> String {
@@ -87,14 +82,6 @@ pub(crate) fn sdkwork_model_is_publicly_active(model: &ModelInfo) -> bool {
             model.lifecycle.as_str(),
             "deprecated" | "catalog_only" | "retired"
         )
-}
-
-pub(crate) fn catalog_model_status(model: &ModelInfo) -> i32 {
-    if sdkwork_model_is_publicly_active(model) {
-        ACTIVE_STATUS
-    } else {
-        INACTIVE_STATUS
-    }
 }
 
 #[derive(Debug)]
@@ -1292,43 +1279,6 @@ fn normalized_vendor_set(vendor_codes: &[String]) -> BTreeSet<String> {
         .collect()
 }
 
-pub(crate) fn catalog_payload(catalog: &ModelCatalog) -> String {
-    let catalog_hash = catalog_scope_source_hash("sdkwork_models", catalog);
-    serde_json::json!({
-        "catalogVersion": catalog.manifest.catalog_version,
-        "schemaVersion": catalog.manifest.schema_version,
-        "generatedAt": catalog.manifest.generated_at,
-        "catalogHash": catalog_hash,
-        "vendorCount": catalog_scope_vendor_codes(catalog).len(),
-        "regionCount": catalog.vendors.len(),
-        "modelCount": catalog_scope_model_count(catalog),
-        "meterCount": catalog.meters.len(),
-    })
-    .to_string()
-}
-
-pub(crate) fn catalog_scope_source_hash(source_code: &str, catalog: &ModelCatalog) -> String {
-    let payload = serde_json::json!({
-        "hashKind": "sdkwork-models.catalog-scope.v1",
-        "sourceCode": source_code,
-        "catalog": catalog,
-    });
-    let bytes = serde_json::to_vec(&payload).unwrap_or_else(|_| {
-        format!(
-            "{}:{}:{}:{}:{}",
-            source_code,
-            catalog.manifest.schema_version,
-            catalog.manifest.catalog_version,
-            catalog.manifest.generated_at,
-            catalog.vendors.len()
-        )
-        .into_bytes()
-    });
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-    hex::encode(hasher.finalize())
-}
-
 pub(crate) fn stable_uuid(prefix: &str, parts: &[&str]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(prefix.as_bytes());
@@ -1338,86 +1288,6 @@ pub(crate) fn stable_uuid(prefix: &str, parts: &[&str]) -> String {
     }
     let digest = format!("{:x}", hasher.finalize());
     format!("{prefix}-{}", &digest[..40])
-}
-
-pub(crate) fn stable_catalog_id(prefix: &str, parts: &[&str]) -> i64 {
-    let mut hasher = Sha256::new();
-    hasher.update(prefix.as_bytes());
-    for part in parts {
-        hasher.update(b":");
-        hasher.update(part.as_bytes());
-    }
-    let digest = hasher.finalize();
-    let mut bytes = [0_u8; 8];
-    bytes.copy_from_slice(&digest[..8]);
-    let value = u64::from_be_bytes(bytes) & 0x3fff_ffff_ffff_ffff;
-    (value as i64) + 1
-}
-
-pub(crate) fn metadata_json(
-    catalog: &ModelCatalog,
-    source: &str,
-    extra: serde_json::Value,
-) -> String {
-    serde_json::json!({
-        "source": source,
-        "catalogVersion": catalog.manifest.catalog_version,
-        "schemaVersion": catalog.manifest.schema_version,
-        "generatedAt": catalog.manifest.generated_at,
-        "extra": extra,
-    })
-    .to_string()
-}
-
-pub(crate) fn modality_code(value: &str) -> i32 {
-    match value {
-        "text" => 1,
-        "image" => 2,
-        "audio" => 3,
-        "music" => 4,
-        "video" => 5,
-        "embedding" => 6,
-        "rerank" => 7,
-        "tool" => 8,
-        "storage" => 9,
-        "network" => 10,
-        _ => 0,
-    }
-}
-
-pub(crate) fn capability_code(value: &str) -> i32 {
-    match value {
-        "image" => 2,
-        "audio" => 3,
-        "music" => 4,
-        "video" => 5,
-        "embedding" => 6,
-        "rerank" => 7,
-        "tool" => 8,
-        _ => 1,
-    }
-}
-
-pub(crate) fn family_type_code(value: &str) -> i32 {
-    match value {
-        "embedding" => 2,
-        "image" => 3,
-        "audio" => 4,
-        "music" => 5,
-        "video" => 6,
-        "rerank" => 7,
-        "multimodal" => 8,
-        _ => 1,
-    }
-}
-
-pub(crate) fn vendor_type_code(value: &str) -> i32 {
-    match value {
-        "open_source" => 2,
-        "research" => 3,
-        "community" => 4,
-        _ => 1,
-    }
 }
 
 pub(crate) fn release_stage_code(value: &str) -> i32 {
@@ -1444,14 +1314,6 @@ pub(crate) fn routing_state_code(value: &str) -> i32 {
     }
 }
 
-pub(crate) fn price_side_code(value: &str) -> i32 {
-    match value {
-        "upstream" => 2,
-        "customer" => 3,
-        _ => 1,
-    }
-}
-
 pub(crate) fn price_supplier_code(
     vendor_code: &str,
     _region_code: &str,
@@ -1463,24 +1325,6 @@ pub(crate) fn price_supplier_code(
     } else {
         None
     }
-}
-
-pub(crate) fn pricing_scope_code(value: Option<&str>) -> i32 {
-    match value {
-        Some("provider") => 2,
-        Some("channel") => 3,
-        Some("plan") => 4,
-        _ => 1,
-    }
-}
-
-pub(crate) fn primary_modality(model: &ModelInfo) -> i32 {
-    model
-        .output_modalities
-        .first()
-        .or_else(|| model.input_modalities.first())
-        .map(|value| modality_code(value))
-        .unwrap_or_else(|| capability_code(&model.primary_capability))
 }
 
 pub(crate) fn model_modalities_json(model: &ModelInfo) -> String {

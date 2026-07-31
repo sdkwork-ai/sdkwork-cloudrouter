@@ -946,7 +946,7 @@ function resolveStartProductionEnv(
     ...mergePortalPublicRuntimeEnv(baseEnv),
     SDKWORK_CLAW_EDGE_SERVER: '1',
     SDKWORK_CLAW_ALL_IN_ONE_RUNTIME: allInOne ? '1' : '0',
-    SDKWORK_CLAW_EDGE_PORTAL_STATIC_DIST: distRoot,
+    SDKWORK_CLAW_ROUTER_PORTAL_STATIC_DIST: distRoot,
     SDKWORK_CLAW_SERVER_BIND: serverBind,
     SDKWORK_CLAW_EDGE_GATEWAY_BASE_URL:
       settings.gatewayForwardUrl

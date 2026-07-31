@@ -113,7 +113,8 @@ pub fn postgres_database_readiness_check(pool: PgPool) -> sdkwork_claw_http::Rea
     std::sync::Arc::new(move || {
         let pool = pool.clone();
         Box::pin(async move {
-            run_with_readiness_timeout("postgres", sqlx::query("SELECT 1").execute(&pool)).await
+            run_with_readiness_timeout("postgres", sqlx::query("SELECT 1").execute(&pool), |_| true)
+                .await
         })
     })
 }
@@ -278,18 +279,26 @@ pub fn postgres_runtime_schema_readiness_check(
             run_with_readiness_timeout(
                 "postgres-runtime-schema",
                 postgres_runtime_schema_ready(&pool),
+                |ready| ready,
             )
             .await
         })
     })
 }
 
-async fn run_with_readiness_timeout<F, T>(probe: &'static str, future: F) -> bool
+async fn run_with_readiness_timeout<F, T, E>(probe: &'static str, future: F, evaluate: E) -> bool
 where
     F: std::future::Future<Output = Result<T, sqlx::Error>>,
+    E: FnOnce(T) -> bool,
 {
     match tokio::time::timeout(READINESS_CHECK_TIMEOUT, future).await {
-        Ok(Ok(_)) => true,
+        Ok(Ok(result)) => {
+            let ready = evaluate(result);
+            if !ready {
+                tracing::warn!(probe, "readiness probe reported not ready");
+            }
+            ready
+        }
         Ok(Err(error)) => {
             tracing::warn!(probe, error = %error, "readiness probe failed");
             false
@@ -373,10 +382,15 @@ pub fn postgres_usage_settlement_readiness_check(
     std::sync::Arc::new(move || {
         let pool = pool.clone();
         Box::pin(async move {
-            !required
-                || postgres_usage_settlement_schema_ready(&pool)
-                    .await
-                    .unwrap_or(false)
+            if !required {
+                return true;
+            }
+            run_with_readiness_timeout(
+                "postgres-usage-settlement-schema",
+                postgres_usage_settlement_schema_ready(&pool),
+                |ready| ready,
+            )
+            .await
         })
     })
 }
@@ -450,6 +464,33 @@ mod tests {
         .expect_err("duplicate tables must fail closed");
 
         assert!(error.contains("duplicate table"));
+    }
+
+    #[tokio::test]
+    async fn readiness_timeout_preserves_false_probe_results() {
+        let ready = run_with_readiness_timeout(
+            "test-false-probe",
+            async { Ok::<_, sqlx::Error>(false) },
+            |result| result,
+        )
+        .await;
+
+        assert!(
+            !ready,
+            "a successful false schema probe must fail readiness"
+        );
+    }
+
+    #[tokio::test]
+    async fn readiness_timeout_accepts_successful_non_boolean_queries() {
+        let ready = run_with_readiness_timeout(
+            "test-query-probe",
+            async { Ok::<_, sqlx::Error>(42_u8) },
+            |_| true,
+        )
+        .await;
+
+        assert!(ready, "a successful connectivity query must pass readiness");
     }
 
     #[tokio::test]

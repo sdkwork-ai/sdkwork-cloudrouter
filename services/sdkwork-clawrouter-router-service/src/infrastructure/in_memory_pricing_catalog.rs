@@ -133,17 +133,17 @@ fn normalized_region_code(value: &str) -> String {
 }
 
 impl PricingCatalog for InMemoryPricingCatalog {
-    fn list_models(&self, vendor_code: Option<&str>) -> Vec<AiModel> {
-        self.models
-            .iter()
-            .filter(|model| {
-                model.is_publicly_active()
-                    && vendor_code
-                        .map(|vendor_code| model.vendor_code == vendor_code)
-                        .unwrap_or(true)
-            })
-            .cloned()
-            .collect()
+    fn visit_models(&self, vendor_code: Option<&str>, visitor: &mut dyn FnMut(&AiModel) -> bool) {
+        for model in self.models.iter().filter(|model| {
+            model.is_publicly_active()
+                && vendor_code
+                    .map(|vendor_code| model.vendor_code == vendor_code)
+                    .unwrap_or(true)
+        }) {
+            if !visitor(model) {
+                break;
+            }
+        }
     }
 
     fn list_model_upstream_routes(&self, model: &str) -> Vec<ModelUpstreamRoute> {

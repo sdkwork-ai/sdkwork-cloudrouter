@@ -3,7 +3,7 @@
 Status: active  
 Owner: SDKWork maintainers  
 Application: sdkwork-clawrouter  
-Updated: 2026-07-30
+Updated: 2026-07-31
 Specs: `REQUIREMENTS_SPEC.md`, `DOCUMENTATION_SPEC.md`
 
 ## 1. Background And Problem
@@ -51,6 +51,11 @@ evidence.
 - Generate app, backend, and open SDK families from reviewed API authorities.
 - Produce usage, routing-decision, health, audit, and settlement facts required
   for commercial reconciliation.
+- Bound every persisted pricing snapshot to 16 KiB, every durable accounting
+  retry envelope to 32 KiB, and every settlement claim to 200 facts so finance
+  recovery cannot create an unbounded in-process payload.
+- Give operators a bounded, tenant-scoped analytics overview without losing
+  integer or financial precision in API, SDK, or UI boundaries.
 - Persist first-party Chat conversations, turns, visible messages, context
   snapshots, runtime references, and usage links with strict user isolation and
   concurrent-write correctness.
@@ -124,6 +129,30 @@ is recorded in
 - Usage, finance, notification, settings, monitoring, and audit capabilities
   required to operate the gateway.
 
+### Operational Analytics
+
+The admin analytics overview is a PostgreSQL-backed read model exposed by
+`GET /backend/v3/api/system/analytics/admin/overview` and generated as
+`system.analytics.admin.overview.retrieve(...)` in
+`@sdkwork/clawrouter-backend-sdk`. It reports summary totals, UTC trends, user
+and model rankings, model/modality distributions, and deterministic insights
+from tenant-scoped `ai_usage` and `ai_request_trace` facts.
+
+- `time_range` accepts only `hourly`, `daily`, `weekly`, `monthly`, or `yearly`.
+  The default is `daily`; every request has a bounded UTC start and end time.
+- Explicit `start_time` and `end_time` are supplied together as ISO 8601 UTC
+  timestamps. Reversed, partial, non-UTC, malformed, or oversized windows are
+  rejected with `400` rather than widened silently.
+- `ranking_size` defaults to `10` and is constrained to `3..=50`. The trend is
+  limited to the latest 30 buckets. Per-user model distributions are computed
+  only for users present in the bounded rankings.
+- JSON int64 and fixed-point decimal values are strings. The generated SDK and
+  UI preserve those strings; chart-only numeric projections are bounded to the
+  JavaScript safe-integer range and never become financial authorities.
+- All aggregates in one response use one PostgreSQL `REPEATABLE READ`,
+  `READ ONLY` transaction so summaries, rankings, and distributions describe
+  the same database snapshot.
+
 ## 5. User Scenarios
 
 1. An operator creates an official or relay supplier, configures its Base URLs,
@@ -142,6 +171,9 @@ is recorded in
 7. An authenticated product user creates a conversation, submits turns from
    multiple sessions or replicas, and receives a stable ordered transcript
    that cannot cross tenant, organization, or user boundaries.
+8. An operator requests a bounded analytics window and compares exact usage,
+   cost, error, user, and model aggregates from one consistent database
+   snapshot without loading an unbounded tenant result set into memory.
 
 ## 6. Success Metrics
 
@@ -156,6 +188,8 @@ These are launch targets and require production-like evidence.
 | Retired upstream aggregates in production code and current contracts | 0 |
 | API operations traceable to authority OpenAPI and generated SDK | 100% |
 | Usage and settlement writes covered by transaction/idempotency evidence | 100% |
+| Usage pricing snapshots over 16 KiB or retry envelopes over 32 KiB admitted | 0 |
+| Admin analytics responses with bounded UTC windows, rankings, and exact string numerics | 100% |
 | Server write replicas using healthy database-leased runtime IDs in readiness | 100% |
 | Chat tables, reads, joins, and mutations binding tenant/org/user scope | 100% |
 | Chat sequence collisions under accepted concurrent-write load | 0 |

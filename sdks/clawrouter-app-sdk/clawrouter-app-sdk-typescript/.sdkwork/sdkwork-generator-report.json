@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "15f250124f1a7887dd611ca06c480492af1993f9c94bf84c17a1f0c1d2ea7215",
+  "changeFingerprint": "ab8298aba22e549dd74a479c67a619e1eb2ed18cc254eaea241fd260540a3200",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -121,6 +121,7 @@
           "src/types/sdk-work-resource-response.ts",
           "src/types/settings-data-response.ts",
           "src/types/settings-notifications.ts",
+          "src/types/site-runtime-settings-response.ts",
           "src/types/update-api-key-request.ts",
           "src/types/update-api-key-response.ts",
           "src/types/update-settings-notifications-request.ts",
@@ -295,10 +296,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 151,
-    "models": 121,
+    "totalFiles": 152,
+    "models": 122,
     "apis": 7,
-    "types": 123
+    "types": 124
   },
   "warnings": [
     {
@@ -320,10 +321,6 @@
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/runtime.ts"
-    },
-    {
-      "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied ClawRouter strict TypeScript contract normalization to src/api/system.ts"
     },
     {
       "code": "CLAWROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -349,12 +346,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 110,
+    "writtenFiles": 111,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "15f250124f1a7887dd611ca06c480492af1993f9c94bf84c17a1f0c1d2ea7215",
+    "changeFingerprint": "ab8298aba22e549dd74a479c67a619e1eb2ed18cc254eaea241fd260540a3200",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -457,6 +454,7 @@
         "src/types/sdk-work-resource-response.ts",
         "src/types/settings-data-response.ts",
         "src/types/settings-notifications.ts",
+        "src/types/site-runtime-settings-response.ts",
         "src/types/update-api-key-request.ts",
         "src/types/update-api-key-response.ts",
         "src/types/update-settings-notifications-request.ts",
@@ -584,6 +582,7 @@
             "src/types/sdk-work-resource-response.ts",
             "src/types/settings-data-response.ts",
             "src/types/settings-notifications.ts",
+            "src/types/site-runtime-settings-response.ts",
             "src/types/update-api-key-request.ts",
             "src/types/update-api-key-response.ts",
             "src/types/update-settings-notifications-request.ts",

@@ -124,25 +124,29 @@ where
         return Ok(catalog_model);
     }
 
-    let matches = catalog
-        .list_models(None)
-        .into_iter()
-        .filter(|candidate| candidate.model == model)
-        .collect::<Vec<_>>();
-    match matches.as_slice() {
-        [] => Err(model_not_found(model)),
-        [model] => Ok(model.clone()),
-        _ => Err(Box::new(openai_error(
+    let mut first_match = None;
+    let mut second_catalog_key = None;
+    catalog.visit_models(None, &mut |candidate| {
+        if candidate.model != model {
+            return true;
+        }
+        if first_match.is_none() {
+            first_match = Some(candidate.clone());
+            return true;
+        }
+        second_catalog_key = Some(candidate.catalog_key.clone());
+        false
+    });
+    match (first_match, second_catalog_key) {
+        (None, _) => Err(model_not_found(model)),
+        (Some(model), None) => Ok(model),
+        (Some(first), Some(second_catalog_key)) => Err(Box::new(openai_error(
             StatusCode::BAD_REQUEST,
             "ambiguous_model",
             "invalid_request_error",
             format!(
-                "model id is ambiguous: {model}. Use one of these catalog keys: {}",
-                matches
-                    .iter()
-                    .map(|candidate| candidate.catalog_key.as_str())
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                "model id is ambiguous: {model}. Use a catalog key such as {} or {}",
+                first.catalog_key, second_catalog_key
             ),
         ))),
     }

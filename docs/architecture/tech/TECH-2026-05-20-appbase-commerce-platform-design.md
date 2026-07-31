@@ -20,11 +20,11 @@ Reusable commerce foundations live in sibling T1 capability repositories (`sdkwo
 
 Database-backed Claw Router bootstrap:
 
-1. Materialize `SDKWORK_<CAPABILITY>_DATABASE_*` and `SDKWORK_<CAPABILITY>_APP_ROOT` from the active Claw database profile.
+1. Materialize the workspace `SDKWORK_DATABASE_*` profile once; each capability consumes that same connection identity while retaining only its capability-owned app root metadata.
 2. Bootstrap legacy-compatible T1 service hosts (`PaymentServiceHost`, `PromotionServiceHost`) for recharge and wallet exchange routes.
 3. Merge T1 app-api routers through `merge_federated_app_capability_router` alongside existing IAM and Invoice federation.
 
-Additional commerce domains (`account`, `membership`, `order`, `shop`, `catalog`) remain staged until legacy appbase schema cutover and sibling manifest/bootstrap debt are cleared. Claw Router sets `SDKWORK_ACCOUNT_AUTO_MIGRATE=false` during federation so account migrations never run against the legacy schema.
+Additional commerce domains (`account`, `membership`, `order`, `shop`, `catalog`) remain staged until legacy appbase schema cutover and sibling manifest/bootstrap debt are cleared. The Claw Router lifecycle plan excludes account migrations during federation so they never run against the legacy schema; it does not create a capability-scoped database environment contract.
 
 Zero-config/default router surfaces intentionally omit commerce handlers; contract OpenAPI still documents the routes for SDK generation.
 

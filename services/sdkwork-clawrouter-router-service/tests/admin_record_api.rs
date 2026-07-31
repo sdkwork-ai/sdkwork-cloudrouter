@@ -58,9 +58,9 @@ async fn admin_record_route_lists_logs_and_normalizes_filters() {
     assert_eq!("842ms", payload["data"]["items"][0]["totalTime"]);
     assert_eq!("120ms", payload["data"]["items"][0]["ttft"]);
     assert_eq!(true, payload["data"]["items"][0]["isStream"]);
-    assert_eq!(1200, payload["data"]["items"][0]["inputTokens"]);
-    assert_eq!(128, payload["data"]["items"][0]["cacheReadTokens"]);
-    assert_eq!(300, payload["data"]["items"][0]["outputTokens"]);
+    assert_eq!("1200", payload["data"]["items"][0]["inputTokens"]);
+    assert_eq!("128", payload["data"]["items"][0]["cacheReadTokens"]);
+    assert_eq!("300", payload["data"]["items"][0]["outputTokens"]);
     assert_eq!("0.012300", payload["data"]["items"][0]["cost"]);
     assert_eq!("1.200000", payload["data"]["items"][0]["multiplier"]);
     assert_eq!("0.150000", payload["data"]["items"][0]["baseInputPrice"]);

@@ -115,7 +115,7 @@ const CACHE_KEY_STATUSES = new Set(['active', 'expired']);
 
 export class AdminCacheService {
   static async fetchOverview(): Promise<CacheOverview> {
-    const result = await getClawRouterBackendSdkClient().system.cache.overview.list();
+    const result = await getClawRouterBackendSdkClient().system.cache.overview.retrieve();
     return normalizeOverview(readRequiredRecord(result, 'Cache overview is required'));
   }
 
