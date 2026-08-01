@@ -229,6 +229,28 @@ groups:
           description: "At least one provider response could not produce an authoritative usage fact. The request trace requires reconciliation; zero usage must not be inferred."
           runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
+      - alert: ClawRouterUsageSettlementError
+        expr: sum(increase(clawrouter_usage_settlement_errors_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: accounting-integrity
+        annotations:
+          summary: "Usage settlement worker failed"
+          description: "At least one settlement run failed before producing an authoritative outcome; unsettled usage may be accumulating."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: ClawRouterUsageSettlementPartialFailure
+        expr: sum(increase(clawrouter_usage_settlement_runs_total{outcome="partial_failure"}[10m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: accounting-integrity
+        annotations:
+          summary: "Usage settlement completed with failed items"
+          description: "A settlement batch persisted one or more failed items. Successful rows remain authoritative, while failed rows require bounded retry or reconciliation."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
   - name: clawrouter-infrastructure
     interval: 30s
     rules:
@@ -260,6 +282,28 @@ groups:
         annotations:
           summary: "Claw Router dropped bounded metric series"
           description: "The HTTP metric registry rejected a new series because its fixed capacity or label-byte bound was reached."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: ClawRouterCircuitBreakerCoordinationDegraded
+        expr: sum(increase(clawrouter_circuit_breaker_degraded_total[5m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: provider-resilience
+        annotations:
+          summary: "Distributed circuit breaker coordination is degraded"
+          description: "At least one Redis-backed circuit breaker operation failed. Inspect the mode label before mitigation; fail-closed rejects provider calls while fail-open reduces protection."
+          runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: ClawRouterCircuitBreakerRejectionsHigh
+        expr: sum(increase(clawrouter_circuit_breaker_rejections_total[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: provider-resilience
+        annotations:
+          summary: "Circuit breaker provider rejections are elevated"
+          description: "More than ten provider account permits were rejected in five minutes. Correlate reasons and transitions with provider health and fallback capacity."
           runbook_url: "https://github.com/Sdkwork-Cloud/sdkwork-clawrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
       - alert: ClawRouterContainerMemoryHigh

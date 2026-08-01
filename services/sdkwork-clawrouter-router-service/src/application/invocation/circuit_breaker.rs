@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use sdkwork_claw_config::RedisConfig;
@@ -36,6 +36,91 @@ impl CircuitState {
             _ => Self::Closed,
         }
     }
+}
+
+fn observe_circuit_breaker_transition(backend: &'static str, from: CircuitState, to: CircuitState) {
+    if from == to {
+        return;
+    }
+    circuit_breaker_transition_counter()
+        .with_label_values(&[backend, from.as_str(), to.as_str()])
+        .inc();
+}
+
+fn observe_circuit_breaker_rejection(backend: &'static str, reason: &'static str, count: usize) {
+    if count == 0 {
+        return;
+    }
+    circuit_breaker_rejection_counter()
+        .with_label_values(&[backend, reason])
+        .inc_by(u64::try_from(count).unwrap_or(u64::MAX));
+}
+
+fn observe_circuit_breaker_degraded(operation: &'static str, fail_open: bool) {
+    circuit_breaker_degraded_counter()
+        .with_label_values(&[
+            operation,
+            if fail_open {
+                "fail_open"
+            } else {
+                "fail_closed"
+            },
+        ])
+        .inc();
+}
+
+fn circuit_breaker_transition_counter() -> prometheus::IntCounterVec {
+    static METRIC: OnceLock<prometheus::IntCounterVec> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounterVec::new(
+                prometheus::Opts::new(
+                    "clawrouter_circuit_breaker_transitions_total",
+                    "Circuit breaker state transitions by coordination backend.",
+                ),
+                &["backend", "from", "to"],
+            )
+            .expect("circuit breaker transition metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
+}
+
+fn circuit_breaker_rejection_counter() -> prometheus::IntCounterVec {
+    static METRIC: OnceLock<prometheus::IntCounterVec> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounterVec::new(
+                prometheus::Opts::new(
+                    "clawrouter_circuit_breaker_rejections_total",
+                    "Provider account call permits rejected by circuit breakers.",
+                ),
+                &["backend", "reason"],
+            )
+            .expect("circuit breaker rejection metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
+}
+
+fn circuit_breaker_degraded_counter() -> prometheus::IntCounterVec {
+    static METRIC: OnceLock<prometheus::IntCounterVec> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounterVec::new(
+                prometheus::Opts::new(
+                    "clawrouter_circuit_breaker_degraded_total",
+                    "Distributed circuit breaker coordination failures by operation and fallback mode.",
+                ),
+                &["operation", "mode"],
+            )
+            .expect("circuit breaker degraded metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
 }
 
 #[derive(Debug)]
@@ -233,6 +318,7 @@ impl CircuitBreakerInterceptor {
                         true,
                     ),
                     Err(error) => {
+                        observe_circuit_breaker_degraded("configuration", config.fail_open);
                         tracing::error!(
                             error = %error,
                             circuit_breaker_coordination_unavailable = 1,
@@ -298,16 +384,16 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
+        let previous_state = circuits
+            .get(&account_id)
+            .map(|entry| entry.state)
+            .unwrap_or(CircuitState::Closed);
         if let Some(entry) = circuits.get_mut(&account_id) {
             *entry = CircuitEntry::closed();
         }
-        let mut stats = match self.stats.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        if let Some(s) = stats.get_mut(&account_id) {
-            s.state = CircuitState::Closed;
-            s.last_state_change = Some(std::time::SystemTime::now());
+        drop(circuits);
+        if previous_state != CircuitState::Closed {
+            self.record_state_change(account_id, previous_state, CircuitState::Closed);
         }
     }
 
@@ -329,20 +415,27 @@ impl CircuitBreakerInterceptor {
                     .is_some_and(|opened| opened.elapsed() >= self.config.open_duration);
                 if should_transition {
                     if self.config.half_open_max_probes == 0 {
+                        observe_circuit_breaker_rejection("local", "probes_disabled", 1);
                         return CircuitCallPermit::Rejected;
                     }
                     entry.state = CircuitState::HalfOpen;
                     entry.half_open_probes = 1;
                     entry.consecutive_successes = 0;
-                    self.record_state_change(account_id, CircuitState::HalfOpen);
+                    self.record_state_change(
+                        account_id,
+                        CircuitState::Open,
+                        CircuitState::HalfOpen,
+                    );
                     tracing::debug!(account_id, "circuit breaker transitioned open -> half_open");
                     CircuitCallPermit::HalfOpenProbe
                 } else {
+                    observe_circuit_breaker_rejection("local", "open", 1);
                     CircuitCallPermit::Rejected
                 }
             }
             CircuitState::HalfOpen => {
                 if entry.half_open_probes >= self.config.half_open_max_probes {
+                    observe_circuit_breaker_rejection("local", "probe_limit", 1);
                     CircuitCallPermit::Rejected
                 } else {
                     entry.half_open_probes = entry.half_open_probes.saturating_add(1);
@@ -386,14 +479,16 @@ impl CircuitBreakerInterceptor {
                 entry.half_open_probes = entry.half_open_probes.saturating_sub(1);
                 entry.consecutive_successes = entry.consecutive_successes.saturating_add(1);
                 if entry.consecutive_successes >= self.config.success_threshold {
-                    let prev_state = entry.state;
                     *entry = CircuitEntry::closed();
-                    self.record_state_change(account_id, CircuitState::Closed);
+                    self.record_state_change(
+                        account_id,
+                        CircuitState::HalfOpen,
+                        CircuitState::Closed,
+                    );
                     tracing::info!(
                         account_id,
                         "circuit breaker transitioned half_open -> closed"
                     );
-                    let _ = prev_state;
                 }
             }
             CircuitState::Open => {}
@@ -417,7 +512,7 @@ impl CircuitBreakerInterceptor {
                     entry.state = CircuitState::Open;
                     entry.opened_at = Some(Instant::now());
                     entry.half_open_probes = 0;
-                    self.record_state_change(account_id, CircuitState::Open);
+                    self.record_state_change(account_id, CircuitState::Closed, CircuitState::Open);
                     tracing::warn!(
                         account_id,
                         failures = entry.consecutive_failures,
@@ -430,7 +525,7 @@ impl CircuitBreakerInterceptor {
                 entry.opened_at = Some(Instant::now());
                 entry.half_open_probes = 0;
                 entry.consecutive_successes = 0;
-                self.record_state_change(account_id, CircuitState::Open);
+                self.record_state_change(account_id, CircuitState::HalfOpen, CircuitState::Open);
                 tracing::warn!(
                     account_id,
                     "circuit breaker re-opened from half-open due to probe failure"
@@ -443,7 +538,13 @@ impl CircuitBreakerInterceptor {
         self.record_failure_metric(account_id);
     }
 
-    fn record_state_change(&self, account_id: i64, new_state: CircuitState) {
+    fn record_state_change(
+        &self,
+        account_id: i64,
+        previous_state: CircuitState,
+        new_state: CircuitState,
+    ) {
+        observe_circuit_breaker_transition("local", previous_state, new_state);
         let mut stats = match self.stats.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
@@ -493,6 +594,14 @@ impl CircuitBreakerInterceptor {
                     store.record_failure(attempt.account_id).await;
                 }
             } else if self.distributed_required {
+                observe_circuit_breaker_degraded(
+                    if attempt.success {
+                        "record_success"
+                    } else {
+                        "record_failure"
+                    },
+                    self.config.fail_open,
+                );
                 continue;
             } else if attempt.success {
                 self.record_success(attempt.account_id);
@@ -526,6 +635,8 @@ impl CircuitBreakerInterceptor {
                 store.release_half_open_probe(account_id).await;
             } else if !self.distributed_required {
                 self.release_half_open_probe(account_id);
+            } else {
+                observe_circuit_breaker_degraded("release_probe", self.config.fail_open);
             }
         }
     }
@@ -588,7 +699,19 @@ impl InvocationInterceptor for CircuitBreakerInterceptor {
                 }
                 plan.candidates = allowed;
             } else if self.distributed_required {
+                observe_circuit_breaker_degraded("acquire", self.config.fail_open);
                 if !self.config.fail_open {
+                    let rejected_accounts = plan
+                        .candidates
+                        .iter()
+                        .map(|candidate| candidate.account_id)
+                        .collect::<HashSet<_>>()
+                        .len();
+                    observe_circuit_breaker_rejection(
+                        "redis",
+                        "coordination_unavailable",
+                        rejected_accounts,
+                    );
                     plan.candidates.clear();
                 }
             } else {
@@ -713,16 +836,16 @@ impl RedisCircuitBreakerStore {
 
             if elapsed >= open_duration then
                 if max_probes <= 0 then
-                    return 0
+                    return -3
                 end
                 redis.call('HSET', key, 'state', 'half_open')
                 redis.call('HSET', key, 'half_open_probes', 1)
                 redis.call('HSET', key, 'consecutive_successes', 0)
                 redis.call('EXPIRE', key, ttl)
-                return 2
+                return 3
             end
 
-            return 0
+            return -1
         end
 
         if state == 'half_open' then
@@ -732,10 +855,10 @@ impl RedisCircuitBreakerStore {
                 redis.call('EXPIRE', key, ttl)
                 return 2
             end
-            return 0
+            return -2
         end
 
-        return 1
+        return -4
         "#
     }
 
@@ -770,6 +893,8 @@ impl RedisCircuitBreakerStore {
                 redis.call('HSET', key, 'consecutive_failures', 0)
                 redis.call('HSET', key, 'consecutive_successes', 0)
                 redis.call('HSET', key, 'half_open_probes', 0)
+                redis.call('EXPIRE', key, ttl)
+                return 'closed'
             end
 
             redis.call('EXPIRE', key, ttl)
@@ -800,6 +925,8 @@ impl RedisCircuitBreakerStore {
                 redis.call('HSET', key, 'state', 'open')
                 redis.call('HSET', key, 'opened_at', now)
                 redis.call('HSET', key, 'half_open_probes', 0)
+                redis.call('EXPIRE', key, ttl)
+                return 'opened'
             end
 
             redis.call('EXPIRE', key, ttl)
@@ -837,17 +964,47 @@ impl RedisCircuitBreakerStore {
         return 1
         "#
     }
+
+    fn lua_reset() -> &'static str {
+        r#"
+        local key = KEYS[1]
+        local state = redis.call('HGET', key, 'state') or 'closed'
+        redis.call('DEL', key)
+        return state
+        "#
+    }
+
+    fn degraded_permit(&self) -> CircuitCallPermit {
+        if self.config.fail_open {
+            CircuitCallPermit::Closed
+        } else {
+            CircuitCallPermit::Rejected
+        }
+    }
+
+    fn observe_coordination_error(&self, operation: &'static str, error: impl std::fmt::Display) {
+        observe_circuit_breaker_degraded(operation, self.config.fail_open);
+        tracing::warn!(
+            operation,
+            fail_open = self.config.fail_open,
+            error = %error,
+            "distributed circuit breaker coordination failed"
+        );
+    }
 }
 
 #[async_trait::async_trait]
 impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
     async fn acquire_call_permit(&self, account_id: i64) -> CircuitCallPermit {
-        let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
-            return if self.config.fail_open {
-                CircuitCallPermit::Closed
-            } else {
-                CircuitCallPermit::Rejected
-            };
+        let mut conn = match self.client.get_multiplexed_async_connection().await {
+            Ok(conn) => conn,
+            Err(error) => {
+                self.observe_coordination_error("acquire", error);
+                if !self.config.fail_open {
+                    observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
+                }
+                return self.degraded_permit();
+            }
         };
         let key = self.redis_key(account_id);
         let now = now_unix_timestamp();
@@ -866,32 +1023,71 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
         match result {
             Ok(1) => CircuitCallPermit::Closed,
             Ok(2) => CircuitCallPermit::HalfOpenProbe,
-            Ok(_) => CircuitCallPermit::Rejected,
-            Err(_) if self.config.fail_open => CircuitCallPermit::Closed,
-            Err(_) => CircuitCallPermit::Rejected,
+            Ok(3) => {
+                observe_circuit_breaker_transition(
+                    "redis",
+                    CircuitState::Open,
+                    CircuitState::HalfOpen,
+                );
+                CircuitCallPermit::HalfOpenProbe
+            }
+            Ok(-1) => {
+                observe_circuit_breaker_rejection("redis", "open", 1);
+                CircuitCallPermit::Rejected
+            }
+            Ok(-2) => {
+                observe_circuit_breaker_rejection("redis", "probe_limit", 1);
+                CircuitCallPermit::Rejected
+            }
+            Ok(-3) => {
+                observe_circuit_breaker_rejection("redis", "probes_disabled", 1);
+                CircuitCallPermit::Rejected
+            }
+            Ok(_) => {
+                observe_circuit_breaker_rejection("redis", "invalid_state", 1);
+                CircuitCallPermit::Rejected
+            }
+            Err(error) => {
+                self.observe_coordination_error("acquire", error);
+                if !self.config.fail_open {
+                    observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
+                }
+                self.degraded_permit()
+            }
         }
     }
 
     async fn release_half_open_probe(&self, account_id: i64) {
-        let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
-            return;
+        let mut conn = match self.client.get_multiplexed_async_connection().await {
+            Ok(conn) => conn,
+            Err(error) => {
+                self.observe_coordination_error("release_probe", error);
+                return;
+            }
         };
-        let _: Result<i64, _> = redis::cmd("EVAL")
+        let result: Result<i64, _> = redis::cmd("EVAL")
             .arg(Self::lua_release_half_open_probe())
             .arg(1)
             .arg(self.redis_key(account_id))
             .arg(self.key_ttl_seconds() as i64)
             .query_async(&mut conn)
             .await;
+        if let Err(error) = result {
+            self.observe_coordination_error("release_probe", error);
+        }
     }
 
     async fn record_success(&self, account_id: i64) {
-        let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
-            return;
+        let mut conn = match self.client.get_multiplexed_async_connection().await {
+            Ok(conn) => conn,
+            Err(error) => {
+                self.observe_coordination_error("record_success", error);
+                return;
+            }
         };
         let key = self.redis_key(account_id);
 
-        let _: Result<String, _> = redis::cmd("EVAL")
+        let result: Result<String, _> = redis::cmd("EVAL")
             .arg(Self::lua_record_success())
             .arg(1)
             .arg(&key)
@@ -899,11 +1095,24 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
             .arg(self.key_ttl_seconds() as i64)
             .query_async(&mut conn)
             .await;
+        match result {
+            Ok(result) if result == "closed" => observe_circuit_breaker_transition(
+                "redis",
+                CircuitState::HalfOpen,
+                CircuitState::Closed,
+            ),
+            Ok(_) => {}
+            Err(error) => self.observe_coordination_error("record_success", error),
+        }
     }
 
     async fn record_failure(&self, account_id: i64) {
-        let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
-            return;
+        let mut conn = match self.client.get_multiplexed_async_connection().await {
+            Ok(conn) => conn,
+            Err(error) => {
+                self.observe_coordination_error("record_failure", error);
+                return;
+            }
         };
         let key = self.redis_key(account_id);
         let now = now_unix_timestamp();
@@ -918,37 +1127,82 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
             .query_async(&mut conn)
             .await;
 
-        if let Ok(state) = result {
-            if state == "reopened" {
+        match result {
+            Ok(state) if state == "opened" => observe_circuit_breaker_transition(
+                "redis",
+                CircuitState::Closed,
+                CircuitState::Open,
+            ),
+            Ok(state) if state == "reopened" => {
+                observe_circuit_breaker_transition(
+                    "redis",
+                    CircuitState::HalfOpen,
+                    CircuitState::Open,
+                );
                 tracing::warn!(
                     account_id,
                     "circuit breaker re-opened from half-open (distributed)"
                 );
             }
+            Ok(_) => {}
+            Err(error) => self.observe_coordination_error("record_failure", error),
         }
     }
 
     async fn get_state(&self, account_id: i64) -> CircuitState {
-        let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
-            return CircuitState::Closed;
+        let mut conn = match self.client.get_multiplexed_async_connection().await {
+            Ok(conn) => conn,
+            Err(error) => {
+                self.observe_coordination_error("get_state", error);
+                return if self.config.fail_open {
+                    CircuitState::Closed
+                } else {
+                    CircuitState::Open
+                };
+            }
         };
         let key = self.redis_key(account_id);
-        let state: Option<String> = redis::cmd("HGET")
+        let state: Result<Option<String>, _> = redis::cmd("HGET")
             .arg(&key)
             .arg("state")
             .query_async(&mut conn)
-            .await
-            .ok()
-            .flatten();
-        CircuitState::from_str(state.as_deref().unwrap_or("closed"))
+            .await;
+        match state {
+            Ok(state) => CircuitState::from_str(state.as_deref().unwrap_or("closed")),
+            Err(error) => {
+                self.observe_coordination_error("get_state", error);
+                if self.config.fail_open {
+                    CircuitState::Closed
+                } else {
+                    CircuitState::Open
+                }
+            }
+        }
     }
 
     async fn reset(&self, account_id: i64) {
-        let Ok(mut conn) = self.client.get_multiplexed_async_connection().await else {
-            return;
+        let mut conn = match self.client.get_multiplexed_async_connection().await {
+            Ok(conn) => conn,
+            Err(error) => {
+                self.observe_coordination_error("reset", error);
+                return;
+            }
         };
         let key = self.redis_key(account_id);
-        let _: Result<(), _> = redis::cmd("DEL").arg(&key).query_async(&mut conn).await;
+        let result: Result<String, _> = redis::cmd("EVAL")
+            .arg(Self::lua_reset())
+            .arg(1)
+            .arg(&key)
+            .query_async(&mut conn)
+            .await;
+        match result {
+            Ok(previous) => observe_circuit_breaker_transition(
+                "redis",
+                CircuitState::from_str(&previous),
+                CircuitState::Closed,
+            ),
+            Err(error) => self.observe_coordination_error("reset", error),
+        }
     }
 
     fn is_distributed_ha(&self) -> bool {
@@ -1191,8 +1445,11 @@ mod tests {
 
         assert!(script.contains("redis.call('HSET', key, 'half_open_probes', 1)"));
         assert!(script.contains("if max_probes <= 0 then"));
-        assert!(script.contains("return 2"));
+        assert!(script.contains("return 3"));
+        assert!(script.contains("return -4"));
         assert!(success.contains("'half_open_probes', probes - 1"));
+        assert!(success.contains("return 'closed'"));
+        assert!(RedisCircuitBreakerStore::lua_record_failure().contains("return 'opened'"));
         assert!(release.contains("state ~= 'half_open'"));
         assert!(release.contains("'half_open_probes', probes - 1"));
     }

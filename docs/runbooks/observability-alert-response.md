@@ -8,8 +8,9 @@ Specs: `OBSERVABILITY_SPEC.md`, `HEALTH_CHECK_SPEC.md`, `DOCUMENTATION_SPEC.md`
 ## Scope
 
 Use this runbook for HTTP availability burn, control-plane latency, provider
-usage integrity, scrape loss, readiness failure, bounded metric-series
-saturation, high container memory, and OOMKilled alerts emitted by
+usage and settlement integrity, circuit-breaker coordination, scrape loss,
+readiness failure, bounded metric-series saturation, high container memory,
+and OOMKilled alerts emitted by
 [`deployments/prometheus/claw-router-alerts.yaml`](../../deployments/prometheus/claw-router-alerts.yaml).
 The alert rules operate on runtime metrics exposed by `GET /metrics`; metrics
 are operational projections and are never billing or audit authorities.
@@ -86,6 +87,49 @@ are operational projections and are never billing or audit authorities.
 - Resolve only after the faulty route is contained, the reconciliation owner is
   recorded, and the counter remains unchanged for two complete alert windows
   under representative traffic.
+
+## Usage Settlement
+
+- `clawrouter_usage_settlement_runs_total` has only the fixed outcomes
+  `success`, `partial_failure`, `error`, and `disabled`. A partial failure is
+  not a successful batch: inspect the failed durable usage rows while retaining
+  already committed settlement entries as authoritative.
+- Correlate `clawrouter_usage_settlement_errors_total` with
+  `clawrouter_usage_settlement_duration_seconds` and PostgreSQL readiness,
+  connection-pool saturation, transaction errors, deadlocks, and retry logs.
+  Never replay a batch by inserting synthetic zero-value usage or debit rows.
+- Compare the `settled` and `failed` series in
+  `clawrouter_usage_settlement_items_total`. Retry only rows still in the
+  durable pending/failed state and preserve their idempotency key and original
+  usage authority.
+- Resolve only after failed rows have an owned reconciliation decision, the
+  worker completes two representative batches without error or partial
+  failure, and pending age/volume is back within the release-candidate
+  capacity envelope.
+
+## Circuit Breaker Coordination
+
+- `clawrouter_circuit_breaker_degraded_total` reports Redis coordination
+  failures by a fixed operation and `fail_open`/`fail_closed` mode. In
+  fail-closed mode, provider calls are intentionally rejected; in fail-open
+  mode, calls may proceed without distributed circuit protection and require
+  immediate containment.
+- Break down `clawrouter_circuit_breaker_rejections_total` by its fixed
+  `backend` and `reason` labels, then correlate with
+  `clawrouter_circuit_breaker_transitions_total`. Repeated
+  `closed -> open -> half_open` churn indicates provider instability or
+  thresholds unsupported by measured traffic, not a reason to disable the
+  breaker.
+- Confirm Redis connectivity, latency, authentication, key prefix, TTL, and
+  replica/failover health. Follow [redis-failover.md](redis-failover.md) for a
+  shared Redis incident and [provider-outage.md](provider-outage.md) for an
+  upstream failure.
+- Metric labels never contain supplier codes, account IDs, tenant IDs, or
+  request identifiers. Provider invocation metrics normalize suppliers to a
+  fixed family dictionary and map custom values to `other`.
+- Resolve only after coordination is healthy on every gateway replica,
+  expected transitions resume, rejection rate returns to baseline, and a
+  bounded fallback test succeeds.
 
 ## Memory And OOM
 

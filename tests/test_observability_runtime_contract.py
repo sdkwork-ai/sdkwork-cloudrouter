@@ -20,7 +20,15 @@ RUNBOOK_URL = (
 )
 
 RUNTIME_METRICS = {
+    "clawrouter_circuit_breaker_degraded_total",
+    "clawrouter_circuit_breaker_rejections_total",
+    "clawrouter_circuit_breaker_transitions_total",
     "clawrouter_gateway_missing_usage_total",
+    "clawrouter_invocation_total",
+    "clawrouter_usage_settlement_duration_seconds_bucket",
+    "clawrouter_usage_settlement_errors_total",
+    "clawrouter_usage_settlement_items_total",
+    "clawrouter_usage_settlement_runs_total",
     "sdkwork_http_requests_labeled_total",
     "sdkwork_http_request_duration_seconds_bucket",
     "sdkwork_http_metric_series_dropped_total",
@@ -31,6 +39,19 @@ EXTERNAL_METRICS = {
     "container_memory_working_set_bytes",
     "container_spec_memory_limit_bytes",
     "kube_pod_container_status_last_terminated_reason",
+}
+DASHBOARD_METRICS = {
+    "clawrouter_circuit_breaker_degraded_total",
+    "clawrouter_circuit_breaker_rejections_total",
+    "clawrouter_circuit_breaker_transitions_total",
+    "clawrouter_gateway_missing_usage_total",
+    "clawrouter_invocation_total",
+    "clawrouter_usage_settlement_duration_seconds_bucket",
+    "clawrouter_usage_settlement_errors_total",
+    "clawrouter_usage_settlement_items_total",
+    "clawrouter_usage_settlement_runs_total",
+    "sdkwork_http_request_duration_seconds_bucket",
+    "sdkwork_http_requests_labeled_total",
 }
 METRIC_REFERENCE = re.compile(
     r"\b(?:clawrouter|sdkwork|http|container|kube)_[a-z0-9_]+"
@@ -64,14 +85,7 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         expressions = _dashboard_expressions(dashboard)
         self.assertTrue(expressions)
         references = set(METRIC_REFERENCE.findall("\n".join(expressions)))
-        self.assertEqual(
-            {
-                "clawrouter_gateway_missing_usage_total",
-                "sdkwork_http_requests_labeled_total",
-                "sdkwork_http_request_duration_seconds_bucket",
-            },
-            references,
-        )
+        self.assertEqual(DASHBOARD_METRICS, references)
         serialized = json.dumps(dashboard)
         self.assertNotIn("tenant_id", serialized)
         self.assertNotIn("clawrouter_slo_", serialized)
@@ -91,6 +105,31 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
             variables,
         )
 
+        panel_ids = [panel["id"] for panel in dashboard["panels"]]
+        self.assertEqual(len(panel_ids), len(set(panel_ids)))
+        panels = dashboard["panels"]
+        for index, panel in enumerate(panels):
+            left = panel["gridPos"]["x"]
+            top = panel["gridPos"]["y"]
+            right = left + panel["gridPos"]["w"]
+            bottom = top + panel["gridPos"]["h"]
+            self.assertLessEqual(right, 24)
+            for other in panels[index + 1 :]:
+                other_left = other["gridPos"]["x"]
+                other_top = other["gridPos"]["y"]
+                other_right = other_left + other["gridPos"]["w"]
+                other_bottom = other_top + other["gridPos"]["h"]
+                overlaps = (
+                    left < other_right
+                    and other_left < right
+                    and top < other_bottom
+                    and other_top < bottom
+                )
+                self.assertFalse(
+                    overlaps,
+                    f"dashboard panels {panel['id']} and {other['id']} overlap",
+                )
+
     def test_alerts_query_declared_runtime_or_platform_metrics(self) -> None:
         alerts = ALERTS.read_text(encoding="utf-8")
         references = set(METRIC_REFERENCE.findall(alerts))
@@ -101,7 +140,7 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         self.assertNotIn("tenant_id", alerts)
 
         alert_blocks = alerts.split("      - alert: ")[1:]
-        self.assertGreaterEqual(len(alert_blocks), 10)
+        self.assertGreaterEqual(len(alert_blocks), 14)
         for block in alert_blocks:
             alert_name = block.splitlines()[0].strip()
             with self.subTest(alert=alert_name):
@@ -114,7 +153,7 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         claw_metrics = (
             ROOT / "crates" / "sdkwork-claw-http" / "src" / "metrics.rs"
         ).read_text(encoding="utf-8")
-        router_metrics = (
+        openai_usage_metrics = (
             ROOT
             / "services"
             / "sdkwork-clawrouter-router-service"
@@ -122,17 +161,59 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
             / "api"
             / "openai_usage.rs"
         ).read_text(encoding="utf-8")
-        runtime_source = framework_metrics + claw_metrics + router_metrics
+        settlement_metrics = (
+            ROOT
+            / "services"
+            / "sdkwork-clawrouter-router-service"
+            / "src"
+            / "application"
+            / "usage_settlement_worker.rs"
+        ).read_text(encoding="utf-8")
+        circuit_metrics = (
+            ROOT
+            / "services"
+            / "sdkwork-clawrouter-router-service"
+            / "src"
+            / "application"
+            / "invocation"
+            / "circuit_breaker.rs"
+        ).read_text(encoding="utf-8")
+        invocation_metrics = (
+            ROOT
+            / "services"
+            / "sdkwork-clawrouter-router-service"
+            / "src"
+            / "application"
+            / "invocation"
+            / "metrics_interceptor.rs"
+        ).read_text(encoding="utf-8")
+        runtime_source = (
+            framework_metrics
+            + claw_metrics
+            + openai_usage_metrics
+            + settlement_metrics
+            + circuit_metrics
+            + invocation_metrics
+        )
         for metric in RUNTIME_METRICS:
             with self.subTest(metric=metric):
-                self.assertIn(metric, runtime_source)
+                source_name = metric.removesuffix("_bucket")
+                self.assertIn(source_name, runtime_source)
 
         self.assertIn("operation_id=", framework_metrics)
         self.assertNotIn("operationId=", framework_metrics)
         self.assertIn("REQUEST_SERIES_SHARDS: usize = 64", framework_metrics)
         self.assertIn("DEFAULT_MAX_LABELED_REQUEST_SERIES: usize = 4_096", framework_metrics)
-        self.assertIn('&["endpoint", "streaming"]', router_metrics)
-        self.assertNotIn("tenant_id", router_metrics[router_metrics.index("provider_usage_missing_counter"):])
+        self.assertIn('&["endpoint", "streaming"]', openai_usage_metrics)
+        self.assertNotIn(
+            "tenant_id",
+            openai_usage_metrics[
+                openai_usage_metrics.index("provider_usage_missing_counter") :
+            ],
+        )
+        self.assertIn("normalized_provider_metric_label", invocation_metrics)
+        self.assertIn('"other"', invocation_metrics)
+        self.assertIn('&["backend", "from", "to"]', circuit_metrics)
 
     def test_kubernetes_scrape_ports_match_process_bind_contracts(self) -> None:
         root = ROOT / "deployments" / "kubernetes"
@@ -153,6 +234,8 @@ class ObservabilityRuntimeContractTest(unittest.TestCase):
         )
         self.assertIn("sdkwork_http_requests_labeled_total", runbook)
         self.assertIn("clawrouter_gateway_missing_usage_total", runbook)
+        self.assertIn("clawrouter_usage_settlement_runs_total", runbook)
+        self.assertIn("clawrouter_circuit_breaker_degraded_total", runbook)
         self.assertIn("provider_usage_missing", runbook)
         self.assertIn("OOMKilled", runbook)
         self.assertIn(RUNBOOK.name, index)

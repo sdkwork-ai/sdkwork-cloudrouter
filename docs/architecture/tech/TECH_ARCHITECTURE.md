@@ -418,6 +418,15 @@ Claw HTTP router layer. The registry has an exact 4096 request-series ceiling,
 `sdkwork_http_metric_series_dropped_total` without growing memory or rejecting
 business traffic.
 
+Invocation metrics normalize configurable supplier codes into a fixed provider
+family dictionary (`openai`, `anthropic`, `google`, selected cloud/provider
+families, `local`, `other`, and `unknown`); custom tenant supplier names never
+become Prometheus labels. Usage settlement exports fixed-outcome run, item,
+duration, and error metrics. Circuit breakers export only fixed backend,
+state-transition, rejection-reason, coordination-operation, and fallback-mode
+labels. Redis coordination errors are observable, and an unknown distributed
+circuit state rejects the permit instead of silently degrading to closed.
+
 `GET /metrics` combines the canonical framework exposition with native
 readiness, tenant-isolation, runtime-ID, and invocation metrics registered in
 the process. There is no independent metrics listener or in-process SLO sample

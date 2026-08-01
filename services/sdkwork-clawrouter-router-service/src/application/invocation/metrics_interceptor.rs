@@ -79,8 +79,8 @@ impl MetricsInterceptor {
         }
     }
 
-    fn provider_label(invocation: &Invocation) -> &str {
-        invocation
+    fn provider_label(invocation: &Invocation) -> &'static str {
+        let supplier_code = invocation
             .routing
             .attempted_routes
             .last()
@@ -93,7 +93,8 @@ impl MetricsInterceptor {
                     .and_then(|plan| plan.current_candidate())
                     .map(|candidate| candidate.supplier_code.as_str())
             })
-            .unwrap_or("unknown")
+            .unwrap_or("unknown");
+        normalized_provider_metric_label(supplier_code)
     }
 
     fn surface_label(invocation: &Invocation) -> &'static str {
@@ -156,6 +157,51 @@ impl MetricsInterceptor {
     }
 }
 
+fn normalized_provider_metric_label(value: &str) -> &'static str {
+    let normalized = value.trim().to_ascii_lowercase().replace(['_', '.'], "-");
+    let provider = normalized.as_str();
+    if provider.is_empty() || provider == "unknown" {
+        "unknown"
+    } else if provider.contains("openrouter") {
+        "openrouter"
+    } else if provider.contains("azure") && provider.contains("openai") {
+        "azure_openai"
+    } else if provider.contains("openai") {
+        "openai"
+    } else if provider.contains("anthropic") || provider.contains("claude") {
+        "anthropic"
+    } else if provider.contains("google")
+        || provider.contains("gemini")
+        || provider.contains("vertex")
+    {
+        "google"
+    } else if provider.contains("bedrock") || provider.starts_with("aws") {
+        "aws"
+    } else if provider.contains("alibaba")
+        || provider.contains("alicloud")
+        || provider.contains("dashscope")
+        || provider.contains("qwen")
+    {
+        "alibaba"
+    } else if provider.contains("tencent") || provider.contains("hunyuan") {
+        "tencent"
+    } else if provider.contains("baidu") || provider.contains("ernie") {
+        "baidu"
+    } else if provider.contains("deepseek") {
+        "deepseek"
+    } else if provider.contains("mistral") {
+        "mistral"
+    } else if provider.contains("cohere") {
+        "cohere"
+    } else if provider == "xai" || provider.starts_with("xai-") {
+        "xai"
+    } else if provider.contains("ollama") || provider.contains("local") {
+        "local"
+    } else {
+        "other"
+    }
+}
+
 impl Default for MetricsInterceptor {
     fn default() -> Self {
         Self::new()
@@ -195,5 +241,26 @@ impl InvocationInterceptor for MetricsInterceptor {
             self.record_error(invocation, error);
             Ok(())
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalized_provider_metric_label;
+
+    #[test]
+    fn provider_metric_labels_use_a_fixed_family_dictionary() {
+        assert_eq!("openai", normalized_provider_metric_label("openai-primary"));
+        assert_eq!(
+            "azure_openai",
+            normalized_provider_metric_label("azure.openai/eastus")
+        );
+        assert_eq!("google", normalized_provider_metric_label("vertex-gemini"));
+        assert_eq!("alibaba", normalized_provider_metric_label("dashscope-cn"));
+        assert_eq!(
+            "other",
+            normalized_provider_metric_label("tenant-reseller-42")
+        );
+        assert_eq!("unknown", normalized_provider_metric_label(""));
     }
 }

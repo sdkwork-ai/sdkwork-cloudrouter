@@ -1,5 +1,5 @@
-use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, OnceLock};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use crate::domain::DomainResult;
 use crate::ports::{
@@ -120,7 +120,9 @@ impl UsageSettlementWorker {
     }
 
     pub async fn run_once(&self) -> DomainResult<UsageSettlementOutcome> {
+        let started_at = Instant::now();
         if !self.config.enabled {
+            observe_settlement_run("disabled", started_at.elapsed());
             return Ok(UsageSettlementOutcome {
                 settled_count: 0,
                 failed_count: 0,
@@ -128,15 +130,122 @@ impl UsageSettlementWorker {
             });
         }
 
-        self.store
+        let result = self
+            .store
             .settle_pending_usage(UsageSettlementCommand {
                 tenant_id: self.config.tenant_id,
                 organization_id: self.config.organization_id,
                 limit: self.config.batch_size,
                 requested_at: current_timestamp_string(),
             })
-            .await
+            .await;
+        match &result {
+            Ok(outcome) => {
+                let outcome_label = settlement_outcome_label(outcome);
+                observe_settlement_run(outcome_label, started_at.elapsed());
+                settlement_item_counter()
+                    .with_label_values(&["settled"])
+                    .inc_by(non_negative_counter_value(outcome.settled_count));
+                settlement_item_counter()
+                    .with_label_values(&["failed"])
+                    .inc_by(non_negative_counter_value(outcome.failed_count));
+            }
+            Err(_) => {
+                observe_settlement_run("error", started_at.elapsed());
+                settlement_error_counter().inc();
+            }
+        }
+        result
     }
+}
+
+fn settlement_outcome_label(outcome: &UsageSettlementOutcome) -> &'static str {
+    if outcome.failed_count > 0 {
+        "partial_failure"
+    } else {
+        "success"
+    }
+}
+
+fn non_negative_counter_value(value: i64) -> u64 {
+    u64::try_from(value).unwrap_or(0)
+}
+
+fn observe_settlement_run(outcome: &'static str, duration: std::time::Duration) {
+    settlement_run_counter().with_label_values(&[outcome]).inc();
+    settlement_duration_histogram()
+        .with_label_values(&[outcome])
+        .observe(duration.as_secs_f64());
+}
+
+fn settlement_run_counter() -> prometheus::IntCounterVec {
+    static METRIC: OnceLock<prometheus::IntCounterVec> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounterVec::new(
+                prometheus::Opts::new(
+                    "clawrouter_usage_settlement_runs_total",
+                    "Usage settlement worker runs by terminal outcome.",
+                ),
+                &["outcome"],
+            )
+            .expect("usage settlement run metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
+}
+
+fn settlement_duration_histogram() -> prometheus::HistogramVec {
+    static METRIC: OnceLock<prometheus::HistogramVec> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::HistogramVec::new(
+                prometheus::HistogramOpts::new(
+                    "clawrouter_usage_settlement_duration_seconds",
+                    "Usage settlement worker run duration in seconds.",
+                )
+                .buckets(vec![0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]),
+                &["outcome"],
+            )
+            .expect("usage settlement duration metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
+}
+
+fn settlement_error_counter() -> prometheus::IntCounter {
+    static METRIC: OnceLock<prometheus::IntCounter> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounter::new(
+                "clawrouter_usage_settlement_errors_total",
+                "Usage settlement worker runs that failed before producing an outcome.",
+            )
+            .expect("usage settlement error metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
+}
+
+fn settlement_item_counter() -> prometheus::IntCounterVec {
+    static METRIC: OnceLock<prometheus::IntCounterVec> = OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntCounterVec::new(
+                prometheus::Opts::new(
+                    "clawrouter_usage_settlement_items_total",
+                    "Usage settlement items by settled or failed outcome.",
+                ),
+                &["outcome"],
+            )
+            .expect("usage settlement item metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
 }
 
 fn current_timestamp_string() -> String {

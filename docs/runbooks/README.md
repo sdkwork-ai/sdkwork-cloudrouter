@@ -3,7 +3,7 @@
 Status: pre-launch; target procedures require current-candidate evidence
 Owner: SDKWork Claw Router SRE / clawrouter-release
 Application: sdkwork-clawrouter
-Updated: 2026-07-14
+Updated: 2026-08-01
 Specs: DOCUMENTATION_SPEC.md §7, HEALTH_CHECK_SPEC.md, DEPLOYMENT_SPEC.md
 
 ## Purpose
@@ -42,7 +42,7 @@ Day-2 operations, capacity, and change-management runbooks.
 | Production operations (health, shutdown, password rate limit, supply chain) | [../../deployments/runbooks/production-operations.md](../../deployments/runbooks/production-operations.md) | P0 | Historical date only; no current-candidate evidence |
 | Database migration rollback (Flyway down / PITR) | [database-migration-rollback.md](database-migration-rollback.md) | P1 | Historical date only; no current-candidate evidence |
 | Rate limit / circuit break tuning | [rate-limit-circuit-break.md](rate-limit-circuit-break.md) | P1 | Historical date only; no current-candidate evidence |
-| HTTP/SLO, accounting integrity, metrics, readiness, memory, and OOM alerts | [observability-alert-response.md](observability-alert-response.md) | P0/P1 | Not executed for current candidate |
+| HTTP/SLO, usage settlement, circuit coordination, metrics, readiness, memory, and OOM alerts | [observability-alert-response.md](observability-alert-response.md) | P0/P1 | Not executed for current candidate |
 
 ### Security (安全)
 
