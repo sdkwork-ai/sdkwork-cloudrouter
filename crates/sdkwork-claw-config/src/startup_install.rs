@@ -72,13 +72,12 @@ pub fn is_production_like_runtime_environment(
 fn is_production_like_install_environment(runtime_toml: Option<&crate::RuntimeTomlConfig>) -> bool {
     let environment = crate::runtime::env_optional(StartupInstallMode::ENV_ROUTER_ENVIRONMENT)
         .or_else(|| runtime_toml.and_then(|config| config.install.environment.clone()));
-    match environment
-        .as_deref()
-        .map(|value| value.trim().to_ascii_lowercase())
-    {
-        Some(env) if env == "production" || env == "prod" || env == "staging" => true,
-        _ => false,
-    }
+    matches!(
+        environment
+            .as_deref()
+            .map(|value| value.trim().to_ascii_lowercase()),
+        Some(env) if env == "production" || env == "prod" || env == "staging"
+    )
 }
 
 #[cfg(test)]

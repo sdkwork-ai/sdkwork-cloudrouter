@@ -154,7 +154,7 @@ fn validate_key_id(field: &str, value: String) -> Result<String, String> {
 
 fn validate_key(field: &str, value: String) -> Result<String, String> {
     let value = value.trim();
-    if value.as_bytes().len() < UpstreamCredentialSecurityConfig::MIN_KEY_BYTES {
+    if value.len() < UpstreamCredentialSecurityConfig::MIN_KEY_BYTES {
         return Err(format!(
             "upstream credential key ring {field} must contain at least {} bytes",
             UpstreamCredentialSecurityConfig::MIN_KEY_BYTES

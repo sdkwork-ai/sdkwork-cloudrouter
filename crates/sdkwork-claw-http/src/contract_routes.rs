@@ -61,6 +61,7 @@ struct OpenApiSchemaServiceGroup {
     code: &'static str,
     name: &'static str,
     description: &'static str,
+    #[serde(rename = "providerCodes")]
     supplier_codes: Vec<&'static str>,
     operations: Vec<&'static str>,
 }

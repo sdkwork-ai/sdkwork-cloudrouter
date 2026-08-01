@@ -862,13 +862,12 @@ fn is_placeholder_postgres_url(value: &str) -> bool {
     if host == DatabaseConfig::SERVER_DEFAULT_POSTGRES_HOST {
         return true;
     }
-    if is_workspace_development_postgres_url(&parsed) {
-        if parsed
+    if is_workspace_development_postgres_url(&parsed)
+        && parsed
             .password()
             .is_some_and(is_workspace_development_postgres_password)
-        {
-            return false;
-        }
+    {
+        return false;
     }
     parsed.password().is_some_and(is_known_placeholder_password)
 }
