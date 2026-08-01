@@ -305,8 +305,7 @@ fn fallback_route_key(supplier_code: &str, endpoint_key: &str) -> String {
 fn infer_endpoint_key(path: &str) -> String {
     path.trim_matches('/')
         .split('/')
-        .filter(|segment| !segment.is_empty())
-        .next_back()
+        .rfind(|segment| !segment.is_empty())
         .map(normalize_key)
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "native_api".to_owned())
