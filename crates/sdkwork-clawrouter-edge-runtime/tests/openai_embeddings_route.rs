@@ -46,6 +46,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter", 3001)
+            .with_account_group_binding(10, 10, 100)
             .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/embedding"),
@@ -107,7 +108,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             r#"{"catalogKey":"openai/text-embedding-3-small"}"#,
             "openai/text-embedding-3-small",
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }

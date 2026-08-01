@@ -48,6 +48,7 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
     );
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new("openrouter", 3001)
+            .with_account_group_binding(10, 10, 100)
             .with_upstream_endpoint(
                 Some("http://provider-proxy.internal/openrouter"),
                 Some("vault://providers/openrouter/account/main"),
@@ -111,7 +112,6 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         9102,
         "standard-group-gpt-4o-mini",
         "openai/gpt-4o-mini",
-        3001,
     );
     catalog
 }
@@ -124,7 +124,6 @@ fn add_group_routing_policy(
     rule_id: i64,
     rule_code: &str,
     catalog_key: &str,
-    account_id: i64,
 ) {
     catalog.add_routing_policy(
         RoutingPolicy::new(
@@ -149,7 +148,7 @@ fn add_group_routing_policy(
             &format!(r#"{{"catalogKey":"{catalog_key}"}}"#),
             catalog_key,
         )
-        .with_candidate_account_groups(vec![RouteCandidate::new(account_id, 100)]),
+        .with_candidate_account_groups(vec![RouteCandidate::new(group_id, 100)]),
     );
 }
 
