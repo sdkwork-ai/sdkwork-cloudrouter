@@ -41,8 +41,8 @@ use crate::application::ApiKeySecretHasher;
 use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
 use crate::ports::GatewayUsageRecordFuture;
 use crate::ports::{
-    require_stream_usage, ChatCompletionRelay, ChatCompletionRelayRequest, ChatCompletionStreamRelay,
-    GatewayUsageRecorder, UpstreamAccountRouteCatalog,
+    require_stream_usage, ChatCompletionRelay, ChatCompletionRelayRequest,
+    ChatCompletionStreamRelay, GatewayUsageRecorder, UpstreamAccountRouteCatalog,
 };
 
 const MAX_STREAM_USAGE_EVENT_BUFFER_BYTES: usize = 256 * 1024;
@@ -1339,8 +1339,7 @@ impl StreamingUsageRecordingBody {
     }
 
     fn observe_chunk(&mut self, chunk: &Bytes) {
-        if self.event_buffer.len().saturating_add(chunk.len())
-            > MAX_STREAM_USAGE_EVENT_BUFFER_BYTES
+        if self.event_buffer.len().saturating_add(chunk.len()) > MAX_STREAM_USAGE_EVENT_BUFFER_BYTES
         {
             self.event_buffer.clear();
             self.terminal_error = Some(format!(
@@ -1477,13 +1476,8 @@ impl StreamingUsageRecordingBody {
         let relay_outcome = self.relay_outcome.clone();
         self.completion_notification = Some(Box::pin(async move {
             notify_route_success(&plugins, &invocation_context, &route, &relay_outcome).await;
-            notify_after_relay_observers(
-                &plugins,
-                &invocation_context,
-                &route,
-                &relay_outcome,
-            )
-            .await;
+            notify_after_relay_observers(&plugins, &invocation_context, &route, &relay_outcome)
+                .await;
         }));
     }
 
@@ -1491,9 +1485,8 @@ impl StreamingUsageRecordingBody {
         let plugins = self.plugins.clone();
         let invocation_context = self.invocation_context.clone();
         let route = self.route.clone();
-        let fault = OpenAiInvocationFault::provider_usage_missing(
-            PROVIDER_STREAM_USAGE_MISSING_MESSAGE,
-        );
+        let fault =
+            OpenAiInvocationFault::provider_usage_missing(PROVIDER_STREAM_USAGE_MISSING_MESSAGE);
         self.completion_notification = Some(Box::pin(async move {
             notify_route_fault(&plugins, &invocation_context, &route, &fault).await;
             let plugin_error = OpenAiInvocationPluginError::new(
@@ -1502,13 +1495,7 @@ impl StreamingUsageRecordingBody {
                 "server_error",
                 fault.message.clone(),
             );
-            notify_error(
-                &plugins,
-                &invocation_context,
-                Some(&route),
-                &plugin_error,
-            )
-            .await;
+            notify_error(&plugins, &invocation_context, Some(&route), &plugin_error).await;
         }));
     }
 

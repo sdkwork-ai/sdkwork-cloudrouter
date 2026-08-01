@@ -111,11 +111,7 @@ where
                 ),
             )
         })?;
-        if body
-            .get("usage")
-            .filter(|usage| !usage.is_null())
-            .is_none()
-        {
+        if body.get("usage").filter(|usage| !usage.is_null()).is_none() {
             observe_provider_usage_missing(context.endpoint, false);
         }
         let usage =
@@ -905,10 +901,7 @@ pub(crate) fn provider_usage_record_error(error: DomainError) -> OpenAiInvocatio
     )
 }
 
-pub(crate) fn observe_provider_usage_missing(
-    endpoint: OpenAiInvocationEndpoint,
-    streaming: bool,
-) {
+pub(crate) fn observe_provider_usage_missing(endpoint: OpenAiInvocationEndpoint, streaming: bool) {
     provider_usage_missing_counter()
         .with_label_values(&[
             endpoint_metric_label(endpoint),
