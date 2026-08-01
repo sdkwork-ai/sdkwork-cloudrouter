@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use sdkwork_clawrouter_router_service::application::{
     UsageSettlementWorker, UsageSettlementWorkerConfig,
 };
-use sdkwork_clawrouter_router_service::domain::DomainResult;
+use sdkwork_clawrouter_router_service::domain::{DomainError, DomainResult};
 use sdkwork_clawrouter_router_service::ports::{
     UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
 };
@@ -94,6 +94,78 @@ async fn usage_settlement_worker_clamps_directly_constructed_oversized_batches()
         SETTLEMENT_BATCH_HARD_LIMIT,
         store.commands.lock().unwrap()[0].limit
     );
+}
+
+#[tokio::test]
+async fn usage_settlement_worker_propagates_store_errors_and_records_failure_metrics() {
+    let store = Arc::new(FailingSettlementStore::default());
+    let worker = UsageSettlementWorker::new(
+        store.clone(),
+        UsageSettlementWorkerConfig {
+            enabled: true,
+            tenant_id: 100001,
+            organization_id: 200001,
+            batch_size: 50,
+            interval_millis: 10_000,
+        },
+    );
+    let errors_before = counter_value("clawrouter_usage_settlement_errors_total", &[]);
+    let error_runs_before = counter_value(
+        "clawrouter_usage_settlement_runs_total",
+        &[("outcome", "error")],
+    );
+
+    let error = worker.run_once().await.unwrap_err();
+
+    assert!(error.to_string().contains("settlement store unavailable"));
+    let commands = store.commands.lock().unwrap();
+    assert_eq!(1, commands.len());
+    assert_eq!(100001, commands[0].tenant_id);
+    assert_eq!(200001, commands[0].organization_id);
+    assert!(counter_value("clawrouter_usage_settlement_errors_total", &[]) > errors_before);
+    assert!(
+        counter_value(
+            "clawrouter_usage_settlement_runs_total",
+            &[("outcome", "error")]
+        ) > error_runs_before
+    );
+}
+
+fn counter_value(name: &str, expected_labels: &[(&str, &str)]) -> f64 {
+    prometheus::gather()
+        .iter()
+        .find(|family| family.get_name() == name)
+        .and_then(|family| {
+            family.get_metric().iter().find(|metric| {
+                expected_labels
+                    .iter()
+                    .all(|(expected_name, expected_value)| {
+                        metric.get_label().iter().any(|label| {
+                            label.get_name() == *expected_name
+                                && label.get_value() == *expected_value
+                        })
+                    })
+            })
+        })
+        .map(|metric| metric.get_counter().get_value())
+        .unwrap_or(0.0)
+}
+
+#[derive(Debug, Default)]
+struct FailingSettlementStore {
+    commands: Mutex<Vec<UsageSettlementCommand>>,
+}
+
+impl UsageSettlementStore for FailingSettlementStore {
+    fn settle_pending_usage<'a>(
+        &'a self,
+        command: UsageSettlementCommand,
+    ) -> UsageSettlementFuture<'a> {
+        Box::pin(async move {
+            self.commands.lock().unwrap().push(command);
+            Err(DomainError::new("settlement store unavailable"))
+        })
+    }
 }
 
 #[derive(Debug)]

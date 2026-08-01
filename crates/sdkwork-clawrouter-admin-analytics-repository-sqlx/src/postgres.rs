@@ -60,8 +60,8 @@ const MODEL_TOKENS_ORDER: &str = "total_tokens_sort DESC, request_count_sort DES
 const MODEL_REQUESTS_ORDER: &str =
     "request_count_sort DESC, total_tokens_sort DESC, points_sort DESC, model ASC";
 
-fn user_model_distribution_sql() -> String {
-    format!(
+fn user_model_distribution_sql() -> sqlx::AssertSqlSafe<String> {
+    sqlx::AssertSqlSafe(format!(
         r#"
 WITH agg AS (
     SELECT
@@ -112,11 +112,11 @@ SELECT user_id, name, CAST(value_decimal AS TEXT) AS value
 FROM combined
 ORDER BY user_id ASC, value_decimal DESC, name ASC
 "#
-    )
+    ))
 }
 
-fn model_distribution_sql() -> String {
-    format!(
+fn model_distribution_sql() -> sqlx::AssertSqlSafe<String> {
+    sqlx::AssertSqlSafe(format!(
         r#"
 WITH agg AS (
     SELECT
@@ -161,11 +161,11 @@ SELECT name, CAST(value_decimal AS TEXT) AS value
 FROM combined
 ORDER BY value_decimal DESC, name ASC
 "#
-    )
+    ))
 }
 
-fn modality_distribution_sql() -> String {
-    format!(
+fn modality_distribution_sql() -> sqlx::AssertSqlSafe<String> {
+    sqlx::AssertSqlSafe(format!(
         r#"
 WITH agg AS (
     SELECT
@@ -210,7 +210,7 @@ SELECT modality, CAST(value_decimal AS TEXT) AS value
 FROM combined
 ORDER BY value_decimal DESC, modality ASC
 "#
-    )
+    ))
 }
 
 #[derive(Debug, Clone)]
@@ -357,7 +357,7 @@ async fn load_snapshot(
     .await?;
     let model_distribution_rows = load_pie_rows(
         &mut transaction,
-        &model_distribution_sql(),
+        model_distribution_sql(),
         tenant_id,
         organization_id,
         start_time,
@@ -459,7 +459,7 @@ async fn load_trend(
         "#,
         period_expr = period_expr,
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -502,7 +502,7 @@ async fn load_user_rankings(
     start_time: &str,
     end_time: &str,
     limit: i64,
-    order_by: &str,
+    order_by: &'static str,
 ) -> RepositoryResult<Vec<AnalyticsUserRankRow>> {
     let sql = format!(
         r#"
@@ -526,7 +526,7 @@ async fn load_user_rankings(
         LIMIT $5
         "#
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -556,7 +556,7 @@ async fn load_model_rankings(
     start_time: &str,
     end_time: &str,
     limit: i64,
-    order_by: &str,
+    order_by: &'static str,
 ) -> RepositoryResult<Vec<AnalyticsModelRankRow>> {
     let sql = format!(
         r#"
@@ -604,7 +604,7 @@ async fn load_model_rankings(
         LIMIT $5
         "#
     );
-    let rows = sqlx::query(&sql)
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -645,7 +645,7 @@ async fn load_user_model_distributions(
     if user_ids.is_empty() {
         return Ok(Vec::new());
     }
-    let rows = sqlx::query(&user_model_distribution_sql())
+    let rows = sqlx::query(user_model_distribution_sql())
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -672,7 +672,7 @@ async fn load_user_model_distributions(
 
 async fn load_pie_rows(
     connection: &mut PgConnection,
-    sql: &str,
+    sql: sqlx::AssertSqlSafe<String>,
     tenant_id: i64,
     organization_id: i64,
     start_time: &str,
@@ -704,7 +704,7 @@ async fn load_modality_distribution(
     start_time: &str,
     end_time: &str,
 ) -> RepositoryResult<Vec<AnalyticsPieRow>> {
-    let rows = sqlx::query(&modality_distribution_sql())
+    let rows = sqlx::query(modality_distribution_sql())
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
